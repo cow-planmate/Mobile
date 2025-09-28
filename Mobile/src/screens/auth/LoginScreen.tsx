@@ -9,6 +9,7 @@ import {
   Pressable,
   TouchableOpacity,
 } from 'react-native';
+import { useAuth } from '../../contexts/AuthContext';
 
 // 색상 팔레트를 정의하여 일관성 유지
 const COLORS = {
@@ -31,6 +32,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('Failed to fetch'); // 에러 메시지 UI 확인용
+  const { login } = useAuth();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -69,10 +71,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       </View>
 
       {/* 로그인 버튼 */}
-      <Pressable
-        style={styles.submitButton}
-        onPress={() => alert('로그인 시도!')}
-      >
+      <Pressable style={styles.submitButton} onPress={login}>
         <Text style={styles.submitButtonText}>로그인</Text>
       </Pressable>
 
