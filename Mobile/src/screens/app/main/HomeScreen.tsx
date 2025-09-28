@@ -9,13 +9,16 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+// ⭐️ 1. 필요한 타입들을 navigation에서 불러옵니다.
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { AppStackParamList } from '../../../navigation/types';
+
 import CalendarModal from '../../../components/common/CalendarModal';
 import PaxModal from '../../../components/common/PaxModal';
 import SelectionModal, {
   OptionType,
 } from '../../../components/common/SelectionModal';
 
-// --- 컴포넌트 및 상수 정의 (이전과 동일) ---
 const COLORS = {
   primary: '#007AFF',
   background: '#F0F2F5',
@@ -23,7 +26,7 @@ const COLORS = {
   text: '#1C1C1E',
   placeholder: '#8E8E93',
   border: '#E5E5EA',
-  white: '#FFFFFF',
+  white: '#FFFFFF', // 사용자님이 추가한 코드 유지
 };
 
 type InputFieldProps = {
@@ -53,22 +56,21 @@ const InputField = ({
     {!isLast && <View style={styles.separator} />}
   </>
 );
-// --- 여기까지 컴포넌트 및 상수 정의 ---
 
-export default function HomeScreen() {
-  // 날짜 관련 State
+// ⭐️ 2. HomeScreen이 받을 props 타입을 정확하게 정의합니다.
+type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
+
+export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(
     new Date(new Date().setDate(new Date().getDate() + 3)),
   );
   const [isCalendarVisible, setCalendarVisible] = useState(false);
 
-  // 인원수 관련 State
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [isPaxModalVisible, setPaxModalVisible] = useState(false);
 
-  // 이동수단 관련 State
   const [transport, setTransport] = useState('대중교통');
   const [isTransportModalVisible, setTransportModalVisible] = useState(false);
   const transportOptions: OptionType[] = [
@@ -76,22 +78,32 @@ export default function HomeScreen() {
     { label: '자동차', icon: '🚗' },
   ];
 
-  // 기타 입력값 State
   const [departure, setDeparture] = useState('서울');
   const [destination, setDestination] = useState('부산');
 
-  // 날짜 포맷 함수
   const formatDate = (date: Date) => {
     return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
   };
 
-  // 인원수 텍스트 포맷 함수
   const getPaxText = () => {
     let text = `성인 ${adults}명`;
     if (children > 0) {
       text += `, 어린이 ${children}명`;
     }
     return text;
+  };
+
+  // ⭐️ 3. '일정 생성하기' 버튼을 눌렀을 때 실행될 함수
+  const handleCreateItinerary = () => {
+    navigation.navigate('ItineraryEditor', {
+      departure,
+      destination,
+      startDate: startDate.toISOString(), // Date 객체를 문자열로 변환하여 전달
+      endDate: endDate.toISOString(),
+      adults,
+      children,
+      transport,
+    });
   };
 
   return (
@@ -123,12 +135,11 @@ export default function HomeScreen() {
           />
         </View>
 
-        <Pressable style={styles.submitButton}>
+        <Pressable style={styles.submitButton} onPress={handleCreateItinerary}>
           <Text style={styles.submitButtonText}>일정 생성하기</Text>
         </Pressable>
       </ScrollView>
 
-      {/* 달력 모달 */}
       <CalendarModal
         visible={isCalendarVisible}
         onClose={() => setCalendarVisible(false)}
@@ -141,7 +152,6 @@ export default function HomeScreen() {
         initialEndDate={endDate}
       />
 
-      {/* 인원수 선택 모달 */}
       <PaxModal
         visible={isPaxModalVisible}
         onClose={() => setPaxModalVisible(false)}
@@ -154,17 +164,16 @@ export default function HomeScreen() {
         initialChildren={children}
       />
 
-      {/* 이동수단 선택 모달 */}
       <SelectionModal
         visible={isTransportModalVisible}
         title="이동수단 선택"
         options={transportOptions}
+        currentValue={transport}
         onClose={() => setTransportModalVisible(false)}
-        onSelect={(option: string) => {
+        onSelect={option => {
           setTransport(option);
           setTransportModalVisible(false);
         }}
-        currentValue={transport}
       />
     </SafeAreaView>
   );
