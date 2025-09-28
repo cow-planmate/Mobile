@@ -11,6 +11,9 @@ import {
 } from 'react-native';
 import CalendarModal from '../../../components/common/CalendarModal';
 import PaxModal from '../../../components/common/PaxModal';
+import SelectionModal, {
+  OptionType,
+} from '../../../components/common/SelectionModal';
 
 // --- 컴포넌트 및 상수 정의 (이전과 동일) ---
 const COLORS = {
@@ -20,6 +23,7 @@ const COLORS = {
   text: '#1C1C1E',
   placeholder: '#8E8E93',
   border: '#E5E5EA',
+  white: '#FFFFFF',
 };
 
 type InputFieldProps = {
@@ -64,10 +68,17 @@ export default function HomeScreen() {
   const [children, setChildren] = useState(0);
   const [isPaxModalVisible, setPaxModalVisible] = useState(false);
 
+  // 이동수단 관련 State
+  const [transport, setTransport] = useState('대중교통');
+  const [isTransportModalVisible, setTransportModalVisible] = useState(false);
+  const transportOptions: OptionType[] = [
+    { label: '대중교통', icon: '🚌' },
+    { label: '자동차', icon: '🚗' },
+  ];
+
   // 기타 입력값 State
   const [departure, setDeparture] = useState('서울');
   const [destination, setDestination] = useState('부산');
-  const [transport, setTransport] = useState('대중교통');
 
   // 날짜 포맷 함수
   const formatDate = (date: Date) => {
@@ -108,6 +119,7 @@ export default function HomeScreen() {
             value={transport}
             icon="🚗"
             isLast={true}
+            onPress={() => setTransportModalVisible(true)}
           />
         </View>
 
@@ -140,6 +152,19 @@ export default function HomeScreen() {
         }}
         initialAdults={adults}
         initialChildren={children}
+      />
+
+      {/* 이동수단 선택 모달 */}
+      <SelectionModal
+        visible={isTransportModalVisible}
+        title="이동수단 선택"
+        options={transportOptions}
+        onClose={() => setTransportModalVisible(false)}
+        onSelect={(option: string) => {
+          setTransport(option);
+          setTransportModalVisible(false);
+        }}
+        currentValue={transport}
       />
     </SafeAreaView>
   );

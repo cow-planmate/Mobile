@@ -39,45 +39,6 @@ const PaxCounter = ({ label, count, onIncrease, onDecrease }: any) => (
   </View>
 );
 
-export default function PaxModal({
-  visible,
-  onClose,
-  onConfirm,
-  initialAdults,
-  initialChildren,
-}: PaxModalProps) {
-  const [adults, setAdults] = useState(initialAdults);
-  const [children, setChildren] = useState(initialChildren);
-
-  const handleConfirm = () => {
-    onConfirm({ adults, children });
-  };
-
-  return (
-    <Modal visible={visible} animationType="fade" transparent={true}>
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
-          <PaxCounter
-            label="성인"
-            count={adults}
-            onIncrease={() => setAdults(adults + 1)}
-            onDecrease={() => setAdults(Math.max(1, adults - 1))} // 성인은 최소 1명
-          />
-          <PaxCounter
-            label="어린이 (만 17세 이하)"
-            count={children}
-            onIncrease={() => setChildren(children + 1)}
-            onDecrease={() => setChildren(Math.max(0, children - 1))} // 어린이는 최소 0명
-          />
-          <Pressable style={styles.confirmButton} onPress={handleConfirm}>
-            <Text style={styles.confirmButtonText}>확인</Text>
-          </Pressable>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
 const styles = StyleSheet.create({
   centeredView: {
     flex: 1,
@@ -144,3 +105,50 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+export default function PaxModal({
+  visible,
+  onClose,
+  onConfirm,
+  initialAdults,
+  initialChildren,
+}: PaxModalProps) {
+  const [adults, setAdults] = useState(initialAdults);
+  const [children, setChildren] = useState(initialChildren);
+
+  const handleConfirm = () => {
+    onConfirm({ adults, children });
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <View style={styles.centeredView}>
+        <View style={styles.modalView}>
+          <PaxCounter
+            label="성인"
+            count={adults}
+            onIncrease={() => setAdults(adults + 1)}
+            onDecrease={() => setAdults(Math.max(1, adults - 1))} // 성인은 최소 1명
+          />
+          <PaxCounter
+            label="어린이 (만 17세 이하)"
+            count={children}
+            onIncrease={() => setChildren(children + 1)}
+            onDecrease={() => setChildren(Math.max(0, children - 1))} // 어린이는 최소 0명
+          />
+          <Pressable style={styles.confirmButton} onPress={handleConfirm}>
+            <Text style={styles.confirmButtonText}>확인</Text>
+          </Pressable>
+          <Pressable style={{ marginTop: 10 }} onPress={onClose}>
+            <Text style={{ color: COLORS.placeholder }}>닫기</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
