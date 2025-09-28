@@ -9,10 +9,10 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-// ⭐️ 1. 기존 DatePicker import를 삭제하고, 새로 만든 CalendarModal을 불러옵니다.
 import CalendarModal from '../../../components/common/CalendarModal';
+import PaxModal from '../../../components/common/PaxModal';
 
-// (이하 COLORS, InputField 컴포넌트는 이전과 동일)
+// --- 컴포넌트 및 상수 정의 (이전과 동일) ---
 const COLORS = {
   primary: '#007AFF',
   background: '#F0F2F5',
@@ -21,6 +21,7 @@ const COLORS = {
   placeholder: '#8E8E93',
   border: '#E5E5EA',
 };
+
 type InputFieldProps = {
   label: string;
   value: string;
@@ -28,6 +29,7 @@ type InputFieldProps = {
   isLast?: boolean;
   onPress?: () => void;
 };
+
 const InputField = ({
   label,
   value,
@@ -47,22 +49,38 @@ const InputField = ({
     {!isLast && <View style={styles.separator} />}
   </>
 );
+// --- 여기까지 컴포넌트 및 상수 정의 ---
 
 export default function HomeScreen() {
+  // 날짜 관련 State
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(
     new Date(new Date().setDate(new Date().getDate() + 3)),
-  ); // 예시로 3일 뒤로 설정
-  // ⭐️ 2. isPickerVisible을 isCalendarVisible로 이름 변경 (의미 명확화)
+  );
   const [isCalendarVisible, setCalendarVisible] = useState(false);
 
+  // 인원수 관련 State
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
+  const [isPaxModalVisible, setPaxModalVisible] = useState(false);
+
+  // 기타 입력값 State
   const [departure, setDeparture] = useState('서울');
   const [destination, setDestination] = useState('부산');
-  const [pax, setPax] = useState('성인 2명');
   const [transport, setTransport] = useState('대중교통');
 
+  // 날짜 포맷 함수
   const formatDate = (date: Date) => {
     return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
+  };
+
+  // 인원수 텍스트 포맷 함수
+  const getPaxText = () => {
+    let text = `성인 ${adults}명`;
+    if (children > 0) {
+      text += `, 어린이 ${children}명`;
+    }
+    return text;
   };
 
   return (
@@ -77,10 +95,14 @@ export default function HomeScreen() {
             label="기간"
             value={`${formatDate(startDate)} ~ ${formatDate(endDate)}`}
             icon="🗓️"
-            // ⭐️ 3. 달력 모달을 열도록 onPress 이벤트 수정
             onPress={() => setCalendarVisible(true)}
           />
-          <InputField label="인원수" value={pax} icon="👥" />
+          <InputField
+            label="인원수"
+            value={getPaxText()}
+            icon="👥"
+            onPress={() => setPaxModalVisible(true)}
+          />
           <InputField
             label="이동수단"
             value={transport}
@@ -94,7 +116,7 @@ export default function HomeScreen() {
         </Pressable>
       </ScrollView>
 
-      {/* ⭐️ 4. 기존 DatePicker를 지우고 CalendarModal 컴포넌트를 사용 */}
+      {/* 달력 모달 */}
       <CalendarModal
         visible={isCalendarVisible}
         onClose={() => setCalendarVisible(false)}
@@ -106,11 +128,23 @@ export default function HomeScreen() {
         initialStartDate={startDate}
         initialEndDate={endDate}
       />
+
+      {/* 인원수 선택 모달 */}
+      <PaxModal
+        visible={isPaxModalVisible}
+        onClose={() => setPaxModalVisible(false)}
+        onConfirm={({ adults, children }) => {
+          setAdults(adults);
+          setChildren(children);
+          setPaxModalVisible(false);
+        }}
+        initialAdults={adults}
+        initialChildren={children}
+      />
     </SafeAreaView>
   );
 }
 
-// (styles 부분은 이전과 동일합니다.)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
