@@ -7,12 +7,11 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  FlatList, // ⭐️ ScrollView 대신 FlatList 사용
+  FlatList,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
 
-// ⭐️ 새로 만든 컴포넌트들 불러오기
 import TimelineItem, {
   Place,
 } from '../../../components/itinerary/TimelineItem';
@@ -26,19 +25,17 @@ const COLORS = {
   placeholder: '#8E8E93',
   border: '#E5E5EA',
   white: '#FFFFFF',
-  lightGray: '#F5F5F7', // Added lightGray color
+  lightGray: '#F5F5F7',
 };
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
-// 날짜별 일정 데이터 타입
 interface Day {
   date: Date;
   dayNumber: number;
-  places: Place[]; // 각 날짜는 Place 객체의 배열을 가짐
+  places: Place[];
 }
 
-// ⭐️ UI 확인을 위한 임시 데이터
 const DUMMY_PLACES_DAY1: Place[] = [
   {
     id: '1',
@@ -58,15 +55,6 @@ const DUMMY_PLACES_DAY1: Place[] = [
     rating: 4.1,
     imageUrl: 'https://picsum.photos/id/12/100/100',
   },
-  {
-    id: '3',
-    name: '서울식물원',
-    type: '식당',
-    time: '11:15',
-    address: '서울특별시 강서구',
-    rating: 4.3,
-    imageUrl: 'https://picsum.photos/id/13/100/100',
-  },
 ];
 const DUMMY_PLACES_DAY2: Place[] = [
   {
@@ -82,15 +70,14 @@ const DUMMY_PLACES_DAY2: Place[] = [
 
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const tripData = route.params;
+  const newPlace = route.params?.newPlace; // ⭐️ 1. AddPlaceScreen에서 전달받은 데이터
 
   const [days, setDays] = useState<Day[]>([]);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-
-  // ⭐️ 여행 이름 수정을 위한 State
   const [tripName, setTripName] = useState('강서구 1');
 
   useEffect(() => {
-    // 이전과 동일한 날짜 탭 생성 로직
+    // ... (날짜 탭 생성 로직은 동일)
     const start = new Date(tripData.startDate);
     const end = new Date(tripData.endDate);
     const tripDays: Day[] = [];
@@ -98,7 +85,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     let dayCounter = 1;
 
     while (currentDate <= end) {
-      // ⭐️ 임시 데이터 할당
       let placesForDay: Place[] = [];
       if (dayCounter === 1) placesForDay = DUMMY_PLACES_DAY1;
       if (dayCounter === 2) placesForDay = DUMMY_PLACES_DAY2;
@@ -113,15 +99,28 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     }
     setDays(tripDays);
 
-    // 네비게이션 헤더 제목 설정
     navigation.setOptions({ title: tripName });
   }, [tripData.startDate, tripData.endDate, navigation, tripName]);
+
+  // ⭐️ 2. AddPlaceScreen에서 장소를 선택하고 돌아왔을 때 실행되는 로직
+  useEffect(() => {
+    if (newPlace) {
+      alert(
+        `'${newPlace.name}'이(가) Day ${
+          selectedDayIndex + 1
+        }에 추가됩니다! (실제 추가 로직 필요)`,
+      );
+      // 여기에 실제로 days State를 업데이트하는 로직을 추가해야 합니다.
+
+      // 데이터를 한번 사용한 뒤에는 params를 초기화하여 중복 실행 방지
+      navigation.setParams({ newPlace: undefined });
+    }
+  }, [newPlace, navigation, selectedDayIndex]);
 
   const selectedDay = days[selectedDayIndex];
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 상단 날짜 탭 스크롤 */}
       <View>
         <ScrollView
           horizontal
@@ -150,7 +149,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         </ScrollView>
       </View>
 
-      {/* ⭐️ 선택된 날짜의 타임라인을 FlatList로 렌더링 */}
       {selectedDay && (
         <FlatList
           data={selectedDay.places}
@@ -170,8 +168,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         />
       )}
 
-      {/* ⭐️ 플로팅 액션 버튼 */}
-      <FloatingActionButton onPress={() => alert('장소 추가 화면으로 이동!')} />
+      {/* ⭐️ 3. 플로팅 버튼을 누르면 AddPlace 화면으로 이동 */}
+      <FloatingActionButton onPress={() => navigation.navigate('AddPlace')} />
     </SafeAreaView>
   );
 }

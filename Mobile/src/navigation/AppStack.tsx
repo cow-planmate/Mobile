@@ -3,9 +3,9 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '../screens/app/main/HomeScreen';
 import ItineraryEditorScreen from '../screens/app/itinerary/ItineraryEditorScreen';
-import { AppStackParamList } from './types'; // ⭐️ 1. 타입 불러오기
+import AddPlaceScreen from '../screens/app/itinerary/AddPlaceScreen'; // ⭐️ 1. 새로 추가
+import { AppStackParamList } from './types';
 
-// ⭐️ 2. Stack에 타입 적용
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
 export default function AppStack() {
@@ -20,6 +20,12 @@ export default function AppStack() {
         name="ItineraryEditor"
         component={ItineraryEditorScreen}
         options={{ title: '일정 만들기' }}
+      />
+      {/* ⭐️ 2. 장소 추가 화면을 모달 형태로 추가 */}
+      <Stack.Screen
+        name="AddPlace"
+        component={AddPlaceScreen}
+        options={{ title: '장소 추가', presentation: 'modal' }}
       />
     </Stack.Navigator>
   );

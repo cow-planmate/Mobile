@@ -34,6 +34,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [error, setError] = useState('Failed to fetch'); // 에러 메시지 UI 확인용
   const { login } = useAuth();
 
+  function alert(arg0: string): void {
+    throw new Error('Function not implemented.');
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>로그인</Text>
