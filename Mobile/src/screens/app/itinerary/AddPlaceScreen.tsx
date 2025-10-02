@@ -8,30 +8,94 @@ import {
   TextInput,
   FlatList,
   TouchableOpacity,
+  Pressable,
 } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { AppStackParamList } from '../../../navigation/types';
+import { Place } from '../../../components/itinerary/TimelineItem'; // Place 타입을 가져옵니다.
 
 const COLORS = {
   primary: '#007AFF',
-  background: '#F0F2F5',
+  background: '#FFFFFF', // 배경을 흰색으로 변경
   card: '#FFFFFF',
   text: '#1C1C1E',
   placeholder: '#8E8E93',
   border: '#E5E5EA',
-  lightGray: '#F0F0F0', // Renamed from '#F5F5F7' for consistency
+  lightGray: '#F0F2F5',
 };
 
-// 임시 검색 결과 데이터
-const DUMMY_SEARCH_RESULTS = [
-  { id: '10', name: '새로운 관광지 1' },
-  { id: '11', name: '새로운 맛집 2' },
-  { id: '12', name: '새로운 숙소 3' },
+// ⭐️ 1. 임시 검색 결과 데이터 확장
+const DUMMY_PLACES: Omit<Place, 'time'>[] = [
+  {
+    id: '10',
+    name: '더현대 서울',
+    type: '관광지',
+    address: '서울 영등포구',
+    rating: 4.8,
+    imageUrl: 'https://picsum.photos/id/20/100/100',
+  },
+  {
+    id: '11',
+    name: '콘래드 서울',
+    type: '숙소',
+    address: '서울 영등포구',
+    rating: 4.9,
+    imageUrl: 'https://picsum.photos/id/21/100/100',
+  },
+  {
+    id: '12',
+    name: '세상의모든아침',
+    type: '식당',
+    address: '서울 영등포구',
+    rating: 4.5,
+    imageUrl: 'https://picsum.photos/id/22/100/100',
+  },
+  {
+    id: '13',
+    name: '63빌딩',
+    type: '관광지',
+    address: '서울 영등포구',
+    rating: 4.6,
+    imageUrl: 'https://picsum.photos/id/23/100/100',
+  },
 ];
 
-export default function AddPlaceScreen({ navigation }: any) {
-  const [searchQuery, setSearchQuery] = useState('');
+type Props = NativeStackScreenProps<AppStackParamList, 'AddPlace'>;
 
-  const handleSelectPlace = (place: { id: string; name: string }) => {
-    // ⭐️ 1. 장소를 선택하면 이전 화면으로 데이터를 가지고 돌아갑니다.
+// 검색 결과 항목을 위한 컴포넌트
+const PlaceSearchResultItem = ({
+  item,
+  onSelect,
+}: {
+  item: Omit<Place, 'time'>;
+  onSelect: () => void;
+}) => (
+  <TouchableOpacity style={styles.resultItem} onPress={onSelect}>
+    <View style={{ flex: 1 }}>
+      <Text style={styles.resultName}>{item.name}</Text>
+      <Text style={styles.resultMeta}>
+        ⭐️ {item.rating} · {item.address}
+      </Text>
+    </View>
+    <Pressable style={styles.addButton} onPress={onSelect}>
+      <Text style={styles.addButtonText}>추가</Text>
+    </Pressable>
+  </TouchableOpacity>
+);
+
+export default function AddPlaceScreen({ navigation }: Props) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTab, setSelectedTab] = useState<'관광지' | '숙소' | '식당'>(
+    '관광지',
+  );
+
+  // 선택된 탭에 따라 검색 결과를 필터링
+  const filteredPlaces = DUMMY_PLACES.filter(
+    place => place.type === selectedTab,
+  );
+
+  const handleSelectPlace = (place: Omit<Place, 'time'>) => {
+    // ⭐️ 2. 선택한 장소의 전체 정보를 이전 화면으로 전달합니다.
     navigation.navigate('ItineraryEditor', { newPlace: place });
   };
 
@@ -40,25 +104,66 @@ export default function AddPlaceScreen({ navigation }: any) {
       <View style={styles.header}>
         <TextInput
           style={styles.searchInput}
-          placeholder="장소, 숙소, 식당 검색..."
+          placeholder="장소를 검색하세요"
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text>취소</Text>
+          <Text style={styles.cancelText}>취소</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ⭐️ 3. 필터 탭 UI */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          onPress={() => setSelectedTab('관광지')}
+          style={[styles.tab, selectedTab === '관광지' && styles.tabSelected]}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === '관광지' && styles.tabTextSelected,
+            ]}
+          >
+            관광지
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setSelectedTab('숙소')}
+          style={[styles.tab, selectedTab === '숙소' && styles.tabSelected]}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === '숙소' && styles.tabTextSelected,
+            ]}
+          >
+            숙소
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setSelectedTab('식당')}
+          style={[styles.tab, selectedTab === '식당' && styles.tabSelected]}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === '식당' && styles.tabTextSelected,
+            ]}
+          >
+            식당
+          </Text>
         </TouchableOpacity>
       </View>
 
       <FlatList
-        data={DUMMY_SEARCH_RESULTS}
+        data={filteredPlaces}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.resultItem}
-            onPress={() => handleSelectPlace(item)}
-          >
-            <Text style={styles.resultText}>{item.name}</Text>
-          </TouchableOpacity>
+          <PlaceSearchResultItem
+            item={item}
+            onSelect={() => handleSelectPlace(item)}
+          />
         )}
       />
     </SafeAreaView>
@@ -75,8 +180,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 15,
     backgroundColor: COLORS.card,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   searchInput: {
     flex: 1,
@@ -86,13 +189,58 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginRight: 15,
   },
-  resultItem: {
+  cancelText: {
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 15,
+    paddingTop: 10,
+    paddingBottom: 5,
     backgroundColor: COLORS.card,
-    padding: 20,
+  },
+  tab: {
+    marginRight: 15,
+    paddingVertical: 10,
+  },
+  tabSelected: {
+    borderBottomWidth: 2,
+    borderBottomColor: COLORS.primary,
+  },
+  tabText: {
+    fontSize: 16,
+    color: COLORS.placeholder,
+    fontWeight: '600',
+  },
+  tabTextSelected: {
+    color: COLORS.primary,
+  },
+  resultItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.card,
+    padding: 15,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
-  resultText: {
+  resultName: {
     fontSize: 16,
+    fontWeight: '600',
+  },
+  resultMeta: {
+    fontSize: 12,
+    color: COLORS.placeholder,
+    marginTop: 2,
+  },
+  addButton: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 20,
+  },
+  addButtonText: {
+    color: COLORS.primary,
+    fontWeight: 'bold',
   },
 });

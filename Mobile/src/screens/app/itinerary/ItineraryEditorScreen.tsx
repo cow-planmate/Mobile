@@ -70,14 +70,15 @@ const DUMMY_PLACES_DAY2: Place[] = [
 
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const tripData = route.params;
-  const newPlace = route.params?.newPlace; // ⭐️ 1. AddPlaceScreen에서 전달받은 데이터
+  const newPlaceData = route.params?.newPlace;
 
   const [days, setDays] = useState<Day[]>([]);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [tripName, setTripName] = useState('강서구 1');
 
   useEffect(() => {
-    // ... (날짜 탭 생성 로직은 동일)
+    if (days.length > 0) return;
+
     const start = new Date(tripData.startDate);
     const end = new Date(tripData.endDate);
     const tripDays: Day[] = [];
@@ -98,24 +99,38 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       dayCounter++;
     }
     setDays(tripDays);
+  }, [tripData, days.length]);
 
-    navigation.setOptions({ title: tripName });
-  }, [tripData.startDate, tripData.endDate, navigation, tripName]);
-
-  // ⭐️ 2. AddPlaceScreen에서 장소를 선택하고 돌아왔을 때 실행되는 로직
   useEffect(() => {
-    if (newPlace) {
-      alert(
-        `'${newPlace.name}'이(가) Day ${
-          selectedDayIndex + 1
-        }에 추가됩니다! (실제 추가 로직 필요)`,
-      );
-      // 여기에 실제로 days State를 업데이트하는 로직을 추가해야 합니다.
+    navigation.setOptions({ title: tripName });
+  }, [navigation, tripName]);
 
-      // 데이터를 한번 사용한 뒤에는 params를 초기화하여 중복 실행 방지
+  useEffect(() => {
+    if (newPlaceData) {
+      setDays(currentDays => {
+        // ⭐️⭐️⭐️ 여기가 수정된 부분입니다! ⭐️⭐️⭐️
+        // days 배열이 아직 준비되지 않았다면 아무것도 하지 않고 반환합니다.
+        if (currentDays.length === 0) {
+          return currentDays;
+        }
+
+        const placeToAdd: Place = { ...newPlaceData, time: '미정' };
+
+        const updatedDays = [...currentDays];
+        const updatedPlaces = [
+          ...updatedDays[selectedDayIndex].places,
+          placeToAdd,
+        ];
+
+        updatedPlaces.sort((a, b) => a.time.localeCompare(b.time));
+
+        updatedDays[selectedDayIndex].places = updatedPlaces;
+        return updatedDays;
+      });
+
       navigation.setParams({ newPlace: undefined });
     }
-  }, [newPlace, navigation, selectedDayIndex]);
+  }, [newPlaceData, navigation, selectedDayIndex]);
 
   const selectedDay = days[selectedDayIndex];
 
@@ -168,7 +183,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         />
       )}
 
-      {/* ⭐️ 3. 플로팅 버튼을 누르면 AddPlace 화면으로 이동 */}
       <FloatingActionButton onPress={() => navigation.navigate('AddPlace')} />
     </SafeAreaView>
   );
