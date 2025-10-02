@@ -8,9 +8,9 @@ const COLORS = {
   text: '#1C1C1E',
   placeholder: '#8E8E93',
   border: '#E5E5EA',
+  error: '#FF3B30', // 삭제 버튼을 위한 색상
 };
 
-// 이 컴포넌트가 받을 데이터의 타입을 정의
 export type Place = {
   id: string;
   name: string;
@@ -21,11 +21,13 @@ export type Place = {
   imageUrl: string;
 };
 
+// ⭐️ 1. onDelete prop 추가
 type TimelineItemProps = {
   item: Place;
+  onDelete: () => void;
 };
 
-export default function TimelineItem({ item }: TimelineItemProps) {
+export default function TimelineItem({ item, onDelete }: TimelineItemProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.timeText}>{item.time}</Text>
@@ -38,8 +40,9 @@ export default function TimelineItem({ item }: TimelineItemProps) {
           </Text>
           <Text style={styles.metaText}>{item.address}</Text>
         </View>
-        <Pressable style={styles.addButton}>
-          <Text style={styles.addButtonText}>+</Text>
+        {/* ⭐️ 2. '+' 버튼을 '삭제' 버튼으로 변경하고 onPress에 onDelete 연결 */}
+        <Pressable style={styles.deleteButton} onPress={onDelete}>
+          <Text style={styles.deleteButtonText}>삭제</Text>
         </Pressable>
       </View>
     </View>
@@ -50,12 +53,14 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     marginBottom: 20,
+    alignItems: 'flex-start',
   },
   timeText: {
     width: 60,
     fontSize: 14,
     color: COLORS.placeholder,
     fontWeight: '600',
+    paddingTop: 5,
   },
   card: {
     flex: 1,
@@ -89,18 +94,19 @@ const styles = StyleSheet.create({
     color: COLORS.placeholder,
     marginTop: 2,
   },
-  addButton: {
-    width: 30,
-    height: 30,
+  // ⭐️ 3. 삭제 버튼 스타일 추가
+  deleteButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#FFEBEE',
     borderRadius: 15,
-    backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
   },
-  addButtonText: {
-    color: 'white',
-    fontSize: 20,
-    lineHeight: 22,
+  deleteButtonText: {
+    color: COLORS.error,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

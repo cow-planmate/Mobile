@@ -15,7 +15,7 @@ import TimelineItem, {
   Place,
 } from '../../../components/itinerary/TimelineItem';
 import FloatingActionButton from '../../../components/common/FloatingActionButton';
-import { useItinerary, Day } from '../../../contexts/ItineraryContext'; // ⭐️ Context 훅과 Day 타입 가져오기
+import { useItinerary, Day } from '../../../contexts/ItineraryContext';
 
 const COLORS = {
   primary: '#007AFF',
@@ -30,7 +30,7 @@ const COLORS = {
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
-// ⭐️ UI 확인을 위한 임시 데이터
+// UI 확인을 위한 임시 데이터
 const DUMMY_PLACES_DAY1: Place[] = [
   {
     id: '1',
@@ -66,13 +66,16 @@ const DUMMY_PLACES_DAY2: Place[] = [
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const tripData = route.params;
 
-  // useState 대신 ItineraryContext에서 days와 setDays를 가져옵니다.
-  const { days, setDays } = useItinerary();
+  // Context에서 days 상태와 삭제 함수를 가져옵니다.
+  const { days, setDays, deletePlaceFromDay } = useItinerary();
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [tripName, setTripName] = useState('강서구 1');
 
+  // 화면이 처음 열릴 때 날짜 탭 생성
   useEffect(() => {
-    // 날짜 탭 생성 로직
+    // Context에 이미 데이터가 있으면 다시 생성하지 않음
+    if (days.length > 0) return;
+
     const start = new Date(tripData.startDate);
     const end = new Date(tripData.endDate);
     const tripDays: Day[] = [];
@@ -90,9 +93,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       currentDate.setDate(currentDate.getDate() + 1);
       dayCounter++;
     }
-    setDays(tripDays); // Context의 setDays를 호출
-  }, []); // 의존성 배열을 비워서 최초 한 번만 실행되도록 수정
+    setDays(tripDays);
+  }, []);
 
+  // 네비게이션 헤더 제목 설정
   useEffect(() => {
     navigation.setOptions({ title: tripName });
   }, [navigation, tripName]);
@@ -101,6 +105,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* 상단 날짜 탭 스크롤 */}
       <View>
         <ScrollView
           horizontal
@@ -129,10 +134,16 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         </ScrollView>
       </View>
 
+      {/* 선택된 날짜의 타임라인 */}
       {selectedDay && (
         <FlatList
           data={selectedDay.places}
-          renderItem={({ item }) => <TimelineItem item={item} />}
+          renderItem={({ item }) => (
+            <TimelineItem
+              item={item}
+              onDelete={() => deletePlaceFromDay(selectedDayIndex, item.id)}
+            />
+          )}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.timelineContainer}
           ListHeaderComponent={
@@ -147,6 +158,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           }
         />
       )}
+
+      {/* 장소 추가 버튼 */}
       <FloatingActionButton
         onPress={() =>
           navigation.navigate('AddPlace', { dayIndex: selectedDayIndex })
