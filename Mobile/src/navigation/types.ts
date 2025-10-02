@@ -1,6 +1,4 @@
 // src/navigation/types.ts
-import { Place } from '../components/itinerary/TimelineItem';
-
 export type AppStackParamList = {
   Home: undefined;
   ItineraryEditor: {
@@ -11,8 +9,9 @@ export type AppStackParamList = {
     adults: number;
     children: number;
     transport: string;
-    // ⭐️ newPlace의 타입을 Omit<Place, 'time'>으로 더 구체화
-    newPlace?: Omit<Place, 'time'>;
   };
-  AddPlace: undefined;
+  // ⭐️ AddPlace로 이동할 때 dayIndex를 전달
+  AddPlace: {
+    dayIndex: number;
+  };
 };

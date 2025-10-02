@@ -12,11 +12,12 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
-import { Place } from '../../../components/itinerary/TimelineItem'; // Place 타입을 가져옵니다.
+import { Place } from '../../../components/itinerary/TimelineItem';
+import { useItinerary } from '../../../contexts/ItineraryContext'; // ⭐️ 1. Context 훅 가져오기
 
 const COLORS = {
   primary: '#007AFF',
-  background: '#FFFFFF', // 배경을 흰색으로 변경
+  background: '#FFFFFF',
   card: '#FFFFFF',
   text: '#1C1C1E',
   placeholder: '#8E8E93',
@@ -24,11 +25,11 @@ const COLORS = {
   lightGray: '#F0F2F5',
 };
 
-// ⭐️ 1. 임시 검색 결과 데이터 확장
-const DUMMY_PLACES: Omit<Place, 'time'>[] = [
+// 임시 검색 결과 데이터
+const DUMMY_SEARCH_RESULTS: Omit<Place, 'time'>[] = [
   {
     id: '10',
-    name: '더현대 서울',
+    name: '새로운 관광지 1',
     type: '관광지',
     address: '서울 영등포구',
     rating: 4.8,
@@ -36,27 +37,19 @@ const DUMMY_PLACES: Omit<Place, 'time'>[] = [
   },
   {
     id: '11',
-    name: '콘래드 서울',
-    type: '숙소',
-    address: '서울 영등포구',
-    rating: 4.9,
-    imageUrl: 'https://picsum.photos/id/21/100/100',
-  },
-  {
-    id: '12',
-    name: '세상의모든아침',
+    name: '새로운 맛집 2',
     type: '식당',
     address: '서울 영등포구',
     rating: 4.5,
     imageUrl: 'https://picsum.photos/id/22/100/100',
   },
   {
-    id: '13',
-    name: '63빌딩',
-    type: '관광지',
+    id: '12',
+    name: '새로운 숙소 3',
+    type: '숙소',
     address: '서울 영등포구',
-    rating: 4.6,
-    imageUrl: 'https://picsum.photos/id/23/100/100',
+    rating: 4.9,
+    imageUrl: 'https://picsum.photos/id/21/100/100',
   },
 ];
 
@@ -83,20 +76,24 @@ const PlaceSearchResultItem = ({
   </TouchableOpacity>
 );
 
-export default function AddPlaceScreen({ navigation }: Props) {
+export default function AddPlaceScreen({ route, navigation }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState<'관광지' | '숙소' | '식당'>(
     '관광지',
   );
 
-  // 선택된 탭에 따라 검색 결과를 필터링
-  const filteredPlaces = DUMMY_PLACES.filter(
+  const { addPlaceToDay } = useItinerary(); // ⭐️ 2. Context에서 함수 가져오기
+  const { dayIndex } = route.params; // ⭐️ 3. 몇 번째 날에 추가할지 인덱스 받기
+
+  const filteredPlaces = DUMMY_SEARCH_RESULTS.filter(
     place => place.type === selectedTab,
   );
 
   const handleSelectPlace = (place: Omit<Place, 'time'>) => {
-    // ⭐️ 2. 선택한 장소의 전체 정보를 이전 화면으로 전달합니다.
-    navigation.navigate('ItineraryEditor', { newPlace: place });
+    // ⭐️ 4. Context의 함수를 호출하여 데이터 업데이트
+    addPlaceToDay(dayIndex, place);
+    // ⭐️ 5. 뒤로가기
+    navigation.goBack();
   };
 
   return (
@@ -113,7 +110,6 @@ export default function AddPlaceScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
 
-      {/* ⭐️ 3. 필터 탭 UI */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
           onPress={() => setSelectedTab('관광지')}

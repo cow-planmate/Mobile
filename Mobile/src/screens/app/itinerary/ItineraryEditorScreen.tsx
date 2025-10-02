@@ -11,11 +11,11 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
-
 import TimelineItem, {
   Place,
 } from '../../../components/itinerary/TimelineItem';
 import FloatingActionButton from '../../../components/common/FloatingActionButton';
+import { useItinerary, Day } from '../../../contexts/ItineraryContext'; // ⭐️ Context 훅과 Day 타입 가져오기
 
 const COLORS = {
   primary: '#007AFF',
@@ -30,12 +30,7 @@ const COLORS = {
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
-interface Day {
-  date: Date;
-  dayNumber: number;
-  places: Place[];
-}
-
+// ⭐️ UI 확인을 위한 임시 데이터
 const DUMMY_PLACES_DAY1: Place[] = [
   {
     id: '1',
@@ -70,26 +65,23 @@ const DUMMY_PLACES_DAY2: Place[] = [
 
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const tripData = route.params;
-  const newPlaceData = route.params?.newPlace;
 
-  const [days, setDays] = useState<Day[]>([]);
+  // useState 대신 ItineraryContext에서 days와 setDays를 가져옵니다.
+  const { days, setDays } = useItinerary();
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [tripName, setTripName] = useState('강서구 1');
 
   useEffect(() => {
-    if (days.length > 0) return;
-
+    // 날짜 탭 생성 로직
     const start = new Date(tripData.startDate);
     const end = new Date(tripData.endDate);
     const tripDays: Day[] = [];
     let currentDate = new Date(start);
     let dayCounter = 1;
-
     while (currentDate <= end) {
       let placesForDay: Place[] = [];
       if (dayCounter === 1) placesForDay = DUMMY_PLACES_DAY1;
       if (dayCounter === 2) placesForDay = DUMMY_PLACES_DAY2;
-
       tripDays.push({
         date: new Date(currentDate),
         dayNumber: dayCounter,
@@ -98,39 +90,12 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       currentDate.setDate(currentDate.getDate() + 1);
       dayCounter++;
     }
-    setDays(tripDays);
-  }, [tripData, days.length]);
+    setDays(tripDays); // Context의 setDays를 호출
+  }, []); // 의존성 배열을 비워서 최초 한 번만 실행되도록 수정
 
   useEffect(() => {
     navigation.setOptions({ title: tripName });
   }, [navigation, tripName]);
-
-  useEffect(() => {
-    if (newPlaceData) {
-      setDays(currentDays => {
-        // ⭐️⭐️⭐️ 여기가 수정된 부분입니다! ⭐️⭐️⭐️
-        // days 배열이 아직 준비되지 않았다면 아무것도 하지 않고 반환합니다.
-        if (currentDays.length === 0) {
-          return currentDays;
-        }
-
-        const placeToAdd: Place = { ...newPlaceData, time: '미정' };
-
-        const updatedDays = [...currentDays];
-        const updatedPlaces = [
-          ...updatedDays[selectedDayIndex].places,
-          placeToAdd,
-        ];
-
-        updatedPlaces.sort((a, b) => a.time.localeCompare(b.time));
-
-        updatedDays[selectedDayIndex].places = updatedPlaces;
-        return updatedDays;
-      });
-
-      navigation.setParams({ newPlace: undefined });
-    }
-  }, [newPlaceData, navigation, selectedDayIndex]);
 
   const selectedDay = days[selectedDayIndex];
 
@@ -182,8 +147,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           }
         />
       )}
-
-      <FloatingActionButton onPress={() => navigation.navigate('AddPlace')} />
+      <FloatingActionButton
+        onPress={() =>
+          navigation.navigate('AddPlace', { dayIndex: selectedDayIndex })
+        }
+      />
     </SafeAreaView>
   );
 }
