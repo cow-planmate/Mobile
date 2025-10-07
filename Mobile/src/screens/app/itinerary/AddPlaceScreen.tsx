@@ -25,7 +25,9 @@ const COLORS = {
   lightGray: '#F0F2F5',
 };
 
-const DUMMY_PLACES: Omit<Place, 'time'>[] = [
+// ⭐️⭐️⭐️ 여기가 수정된 부분입니다! ⭐️⭐️⭐️
+// 임시 데이터에 latitude와 longitude를 추가합니다.
+const DUMMY_SEARCH_RESULTS: Omit<Place, 'time'>[] = [
   {
     id: '10',
     name: '더현대 서울',
@@ -33,6 +35,8 @@ const DUMMY_PLACES: Omit<Place, 'time'>[] = [
     address: '서울 영등포구',
     rating: 4.8,
     imageUrl: 'https://picsum.photos/id/20/100/100',
+    latitude: 37.525,
+    longitude: 126.928,
   },
   {
     id: '11',
@@ -41,6 +45,8 @@ const DUMMY_PLACES: Omit<Place, 'time'>[] = [
     address: '서울 영등포구',
     rating: 4.9,
     imageUrl: 'https://picsum.photos/id/21/100/100',
+    latitude: 37.526,
+    longitude: 126.927,
   },
   {
     id: '12',
@@ -49,6 +55,8 @@ const DUMMY_PLACES: Omit<Place, 'time'>[] = [
     address: '서울 영등포구',
     rating: 4.5,
     imageUrl: 'https://picsum.photos/id/22/100/100',
+    latitude: 37.527,
+    longitude: 126.929,
   },
   {
     id: '13',
@@ -57,22 +65,8 @@ const DUMMY_PLACES: Omit<Place, 'time'>[] = [
     address: '서울 영등포구',
     rating: 4.6,
     imageUrl: 'https://picsum.photos/id/23/100/100',
-  },
-  {
-    id: '14',
-    name: 'IFC몰',
-    type: '관광지',
-    address: '서울 영등포구',
-    rating: 4.7,
-    imageUrl: 'https://picsum.photos/id/24/100/100',
-  },
-  {
-    id: '15',
-    name: '영등포 타임스퀘어',
-    type: '관광지',
-    address: '서울 영등포구',
-    rating: 4.8,
-    imageUrl: 'https://picsum.photos/id/25/100/100',
+    latitude: 37.519,
+    longitude: 126.94,
   },
 ];
 
@@ -107,16 +101,11 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
   const { addPlaceToDay } = useItinerary();
   const { dayIndex } = route.params;
 
-  // ⭐️⭐️⭐️ 여기가 수정된 부분입니다! ⭐️⭐️⭐️
-  // 선택된 탭과 검색어를 모두 사용하여 목록을 필터링합니다.
-  const filteredPlaces = DUMMY_PLACES.filter(place => {
-    // 1. 탭 필터링
+  const filteredPlaces = DUMMY_SEARCH_RESULTS.filter(place => {
     const matchesTab = place.type === selectedTab;
-    // 2. 검색어 필터링 (대소문자 구분 없이)
     const matchesSearch = place.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-
     return matchesTab && matchesSearch;
   });
 
@@ -133,7 +122,6 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
           placeholder="장소를 검색하세요"
           value={searchQuery}
           onChangeText={setSearchQuery}
-          autoFocus={true} // 화면이 열리면 자동으로 키보드 포커스
         />
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.cancelText}>취소</Text>
@@ -191,12 +179,6 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
             onSelect={() => handleSelectPlace(item)}
           />
         )}
-        // ⭐️ 검색 결과가 없을 때 보여줄 UI
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>검색 결과가 없습니다.</Text>
-          </View>
-        }
       />
     </SafeAreaView>
   );
@@ -274,14 +256,5 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: COLORS.primary,
     fontWeight: 'bold',
-  },
-  emptyContainer: {
-    flex: 1,
-    padding: 50,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: COLORS.placeholder,
   },
 });

@@ -17,8 +17,8 @@ interface ItineraryContextType {
   days: Day[];
   setDays: React.Dispatch<React.SetStateAction<Day[]>>;
   addPlaceToDay: (dayIndex: number, place: Omit<Place, 'time'>) => void;
-  deletePlaceFromDay: (dayIndex: number, placeId: string) => void; // ⭐️ 1. 삭제 함수 타입 추가
-  updatePlaceTime: (dayIndex: number, placeId: string, newTime: string) => void; // ⭐️ 1. 시간 수정 함수 타입 추가
+  deletePlaceFromDay: (dayIndex: number, placeId: string) => void;
+  updatePlaceTime: (dayIndex: number, placeId: string, newTime: string) => void;
 }
 
 const ItineraryContext = createContext<ItineraryContextType | undefined>(
@@ -33,7 +33,14 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       if (currentDays.length === 0 || !currentDays[dayIndex]) {
         return currentDays;
       }
-      const placeToAdd: Place = { ...placeData, time: '미정' };
+      // ⭐️⭐️⭐️ 여기가 수정된 부분입니다! ⭐️⭐️⭐️
+      // placeData에 latitude나 longitude가 없을 경우, 기본값(0)을 할당해줍니다.
+      const placeToAdd: Place = {
+        ...placeData,
+        time: '미정',
+        latitude: placeData.latitude ?? 0,
+        longitude: placeData.longitude ?? 0,
+      };
 
       const updatedDays = [...currentDays];
       const updatedPlaces = [...updatedDays[dayIndex].places, placeToAdd];
@@ -45,25 +52,20 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     });
   };
 
-  // ⭐️ 2. 장소를 삭제하는 함수 구현
   const deletePlaceFromDay = (dayIndex: number, placeId: string) => {
     setDays(currentDays => {
       if (currentDays.length === 0 || !currentDays[dayIndex]) {
         return currentDays;
       }
-
       const updatedDays = [...currentDays];
-      // `filter`를 사용해 삭제할 placeId와 다른 항목들만 남겨 새 배열을 만듭니다.
       const updatedPlaces = updatedDays[dayIndex].places.filter(
         place => place.id !== placeId,
       );
-
       updatedDays[dayIndex].places = updatedPlaces;
       return updatedDays;
     });
   };
 
-  // ⭐️ 2. 장소의 시간을 수정하는 함수 구현
   const updatePlaceTime = (
     dayIndex: number,
     placeId: string,
@@ -73,7 +75,6 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       if (currentDays.length === 0 || !currentDays[dayIndex]) {
         return currentDays;
       }
-
       const updatedDays = [...currentDays];
       const dayToUpdate = { ...updatedDays[dayIndex] };
       const placeIndex = dayToUpdate.places.findIndex(p => p.id === placeId);
@@ -84,10 +85,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
           ...updatedPlaces[placeIndex],
           time: newTime,
         };
-
-        // 시간순으로 재정렬
         updatedPlaces.sort((a, b) => a.time.localeCompare(b.time));
-
         dayToUpdate.places = updatedPlaces;
         updatedDays[dayIndex] = dayToUpdate;
       }
@@ -95,6 +93,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       return updatedDays;
     });
   };
+
   return (
     <ItineraryContext.Provider
       value={{

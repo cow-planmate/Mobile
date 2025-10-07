@@ -15,10 +15,10 @@ const COLORS = {
   text: '#1C1C1E',
   placeholder: '#8E8E93',
   border: '#E5E5EA',
-  error: '#FF3B30', // 삭제 버튼을 위한 색상
+  error: '#FF3B30',
 };
 
-// 이 컴포넌트가 받을 데이터의 타입을 정의합니다.
+// ⭐️⭐️⭐️ 여기가 수정된 부분입니다! ⭐️⭐️⭐️
 export type Place = {
   id: string;
   name: string;
@@ -27,9 +27,10 @@ export type Place = {
   address: string;
   rating: number;
   imageUrl: string;
+  latitude: number; // ⭐️ 위도(latitude) 속성 추가
+  longitude: number; // ⭐️ 경도(longitude) 속성 추가
 };
 
-// onDelete와 onEditTime prop을 추가합니다.
 type TimelineItemProps = {
   item: Place;
   onDelete: () => void;
@@ -43,7 +44,6 @@ export default function TimelineItem({
 }: TimelineItemProps) {
   return (
     <View style={styles.container}>
-      {/* 시간을 누르면 onEditTime 함수가 호출되도록 TouchableOpacity로 감쌉니다. */}
       <TouchableOpacity onPress={onEditTime}>
         <Text style={styles.timeText}>{item.time}</Text>
       </TouchableOpacity>
@@ -56,7 +56,6 @@ export default function TimelineItem({
           </Text>
           <Text style={styles.metaText}>{item.address}</Text>
         </View>
-        {/* '삭제' 버튼을 누르면 onDelete 함수가 호출됩니다. */}
         <Pressable style={styles.deleteButton} onPress={onDelete}>
           <Text style={styles.deleteButtonText}>삭제</Text>
         </Pressable>
@@ -74,10 +73,10 @@ const styles = StyleSheet.create({
   timeText: {
     width: 60,
     fontSize: 14,
-    color: COLORS.primary, // 수정 가능하다는 느낌을 주기 위해 색상 변경
+    color: COLORS.primary,
     fontWeight: '600',
     paddingTop: 5,
-    textDecorationLine: 'underline', // 밑줄 추가
+    textDecorationLine: 'underline',
   },
   card: {
     flex: 1,
