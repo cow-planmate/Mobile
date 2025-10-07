@@ -16,6 +16,7 @@ import TimelineItem, {
 } from '../../../components/itinerary/TimelineItem';
 import FloatingActionButton from '../../../components/common/FloatingActionButton';
 import { useItinerary, Day } from '../../../contexts/ItineraryContext';
+import TimePickerModal from '../../../components/common/TimePickerModal';
 
 const COLORS = {
   primary: '#007AFF',
@@ -30,7 +31,6 @@ const COLORS = {
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
-// UI 확인을 위한 임시 데이터
 const DUMMY_PLACES_DAY1: Place[] = [
   {
     id: '1',
@@ -64,20 +64,17 @@ const DUMMY_PLACES_DAY2: Place[] = [
 ];
 
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
-  const tripData = route.params;
-
-  // Context에서 days 상태와 삭제 함수를 가져옵니다.
-  const { days, setDays, deletePlaceFromDay } = useItinerary();
+  const { days, setDays, deletePlaceFromDay, updatePlaceTime } = useItinerary();
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [tripName, setTripName] = useState('강서구 1');
 
-  // 화면이 처음 열릴 때 날짜 탭 생성
-  useEffect(() => {
-    // Context에 이미 데이터가 있으면 다시 생성하지 않음
-    if (days.length > 0) return;
+  const [isTimePickerVisible, setTimePickerVisible] = useState(false);
+  const [editingPlace, setEditingPlace] = useState<Place | null>(null);
 
-    const start = new Date(tripData.startDate);
-    const end = new Date(tripData.endDate);
+  useEffect(() => {
+    if (days.length > 0) return;
+    const start = new Date(route.params.startDate);
+    const end = new Date(route.params.endDate);
     const tripDays: Day[] = [];
     let currentDate = new Date(start);
     let dayCounter = 1;
@@ -96,16 +93,26 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setDays(tripDays);
   }, []);
 
-  // 네비게이션 헤더 제목 설정
   useEffect(() => {
     navigation.setOptions({ title: tripName });
   }, [navigation, tripName]);
+
+  const handleEditTime = (place: Place) => {
+    setEditingPlace(place);
+    setTimePickerVisible(true);
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
   const selectedDay = days[selectedDayIndex];
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 상단 날짜 탭 스크롤 */}
       <View>
         <ScrollView
           horizontal
@@ -134,14 +141,16 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         </ScrollView>
       </View>
 
-      {/* 선택된 날짜의 타임라인 */}
       {selectedDay && (
         <FlatList
           data={selectedDay.places}
+          // ⭐️⭐️⭐️ 여기가 수정된 부분입니다! ⭐️⭐️⭐️
+          // TimelineItem에 onDelete와 onEditTime 함수를 전달합니다.
           renderItem={({ item }) => (
             <TimelineItem
               item={item}
               onDelete={() => deletePlaceFromDay(selectedDayIndex, item.id)}
+              onEditTime={() => handleEditTime(item)}
             />
           )}
           keyExtractor={item => item.id}
@@ -158,13 +167,23 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           }
         />
       )}
-
-      {/* 장소 추가 버튼 */}
       <FloatingActionButton
         onPress={() =>
           navigation.navigate('AddPlace', { dayIndex: selectedDayIndex })
         }
       />
+
+      {editingPlace && (
+        <TimePickerModal
+          visible={isTimePickerVisible}
+          onClose={() => setTimePickerVisible(false)}
+          initialDate={new Date()}
+          onConfirm={date => {
+            const newTime = formatTime(date);
+            updatePlaceTime(selectedDayIndex, editingPlace.id, newTime);
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }

@@ -18,6 +18,7 @@ interface ItineraryContextType {
   setDays: React.Dispatch<React.SetStateAction<Day[]>>;
   addPlaceToDay: (dayIndex: number, place: Omit<Place, 'time'>) => void;
   deletePlaceFromDay: (dayIndex: number, placeId: string) => void; // ⭐️ 1. 삭제 함수 타입 추가
+  updatePlaceTime: (dayIndex: number, placeId: string, newTime: string) => void; // ⭐️ 1. 시간 수정 함수 타입 추가
 }
 
 const ItineraryContext = createContext<ItineraryContextType | undefined>(
@@ -62,9 +63,47 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     });
   };
 
+  // ⭐️ 2. 장소의 시간을 수정하는 함수 구현
+  const updatePlaceTime = (
+    dayIndex: number,
+    placeId: string,
+    newTime: string,
+  ) => {
+    setDays(currentDays => {
+      if (currentDays.length === 0 || !currentDays[dayIndex]) {
+        return currentDays;
+      }
+
+      const updatedDays = [...currentDays];
+      const dayToUpdate = { ...updatedDays[dayIndex] };
+      const placeIndex = dayToUpdate.places.findIndex(p => p.id === placeId);
+
+      if (placeIndex > -1) {
+        const updatedPlaces = [...dayToUpdate.places];
+        updatedPlaces[placeIndex] = {
+          ...updatedPlaces[placeIndex],
+          time: newTime,
+        };
+
+        // 시간순으로 재정렬
+        updatedPlaces.sort((a, b) => a.time.localeCompare(b.time));
+
+        dayToUpdate.places = updatedPlaces;
+        updatedDays[dayIndex] = dayToUpdate;
+      }
+
+      return updatedDays;
+    });
+  };
   return (
     <ItineraryContext.Provider
-      value={{ days, setDays, addPlaceToDay, deletePlaceFromDay }}
+      value={{
+        days,
+        setDays,
+        addPlaceToDay,
+        deletePlaceFromDay,
+        updatePlaceTime,
+      }}
     >
       {children}
     </ItineraryContext.Provider>
