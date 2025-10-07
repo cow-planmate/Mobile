@@ -13,7 +13,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
 import { Place } from '../../../components/itinerary/TimelineItem';
-import { useItinerary } from '../../../contexts/ItineraryContext'; // ⭐️ 1. Context 훅 가져오기
+import { useItinerary } from '../../../contexts/ItineraryContext';
 
 const COLORS = {
   primary: '#007AFF',
@@ -25,11 +25,10 @@ const COLORS = {
   lightGray: '#F0F2F5',
 };
 
-// 임시 검색 결과 데이터
-const DUMMY_SEARCH_RESULTS: Omit<Place, 'time'>[] = [
+const DUMMY_PLACES: Omit<Place, 'time'>[] = [
   {
     id: '10',
-    name: '새로운 관광지 1',
+    name: '더현대 서울',
     type: '관광지',
     address: '서울 영등포구',
     rating: 4.8,
@@ -37,25 +36,48 @@ const DUMMY_SEARCH_RESULTS: Omit<Place, 'time'>[] = [
   },
   {
     id: '11',
-    name: '새로운 맛집 2',
+    name: '콘래드 서울',
+    type: '숙소',
+    address: '서울 영등포구',
+    rating: 4.9,
+    imageUrl: 'https://picsum.photos/id/21/100/100',
+  },
+  {
+    id: '12',
+    name: '세상의모든아침',
     type: '식당',
     address: '서울 영등포구',
     rating: 4.5,
     imageUrl: 'https://picsum.photos/id/22/100/100',
   },
   {
-    id: '12',
-    name: '새로운 숙소 3',
-    type: '숙소',
+    id: '13',
+    name: '63빌딩',
+    type: '관광지',
     address: '서울 영등포구',
-    rating: 4.9,
-    imageUrl: 'https://picsum.photos/id/21/100/100',
+    rating: 4.6,
+    imageUrl: 'https://picsum.photos/id/23/100/100',
+  },
+  {
+    id: '14',
+    name: 'IFC몰',
+    type: '관광지',
+    address: '서울 영등포구',
+    rating: 4.7,
+    imageUrl: 'https://picsum.photos/id/24/100/100',
+  },
+  {
+    id: '15',
+    name: '영등포 타임스퀘어',
+    type: '관광지',
+    address: '서울 영등포구',
+    rating: 4.8,
+    imageUrl: 'https://picsum.photos/id/25/100/100',
   },
 ];
 
 type Props = NativeStackScreenProps<AppStackParamList, 'AddPlace'>;
 
-// 검색 결과 항목을 위한 컴포넌트
 const PlaceSearchResultItem = ({
   item,
   onSelect,
@@ -82,17 +104,24 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
     '관광지',
   );
 
-  const { addPlaceToDay } = useItinerary(); // ⭐️ 2. Context에서 함수 가져오기
-  const { dayIndex } = route.params; // ⭐️ 3. 몇 번째 날에 추가할지 인덱스 받기
+  const { addPlaceToDay } = useItinerary();
+  const { dayIndex } = route.params;
 
-  const filteredPlaces = DUMMY_SEARCH_RESULTS.filter(
-    place => place.type === selectedTab,
-  );
+  // ⭐️⭐️⭐️ 여기가 수정된 부분입니다! ⭐️⭐️⭐️
+  // 선택된 탭과 검색어를 모두 사용하여 목록을 필터링합니다.
+  const filteredPlaces = DUMMY_PLACES.filter(place => {
+    // 1. 탭 필터링
+    const matchesTab = place.type === selectedTab;
+    // 2. 검색어 필터링 (대소문자 구분 없이)
+    const matchesSearch = place.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+
+    return matchesTab && matchesSearch;
+  });
 
   const handleSelectPlace = (place: Omit<Place, 'time'>) => {
-    // ⭐️ 4. Context의 함수를 호출하여 데이터 업데이트
     addPlaceToDay(dayIndex, place);
-    // ⭐️ 5. 뒤로가기
     navigation.goBack();
   };
 
@@ -104,6 +133,7 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
           placeholder="장소를 검색하세요"
           value={searchQuery}
           onChangeText={setSearchQuery}
+          autoFocus={true} // 화면이 열리면 자동으로 키보드 포커스
         />
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.cancelText}>취소</Text>
@@ -161,6 +191,12 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
             onSelect={() => handleSelectPlace(item)}
           />
         )}
+        // ⭐️ 검색 결과가 없을 때 보여줄 UI
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>검색 결과가 없습니다.</Text>
+          </View>
+        }
       />
     </SafeAreaView>
   );
@@ -238,5 +274,14 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: COLORS.primary,
     fontWeight: 'bold',
+  },
+  emptyContainer: {
+    flex: 1,
+    padding: 50,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: COLORS.placeholder,
   },
 });
