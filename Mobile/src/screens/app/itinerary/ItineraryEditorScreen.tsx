@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   FlatList,
   Button,
-  TextInput, // ⭐️ 1. TextInput을 import 합니다.
+  TextInput,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
@@ -18,7 +18,7 @@ import TimelineItem, {
 } from '../../../components/itinerary/TimelineItem';
 import FloatingActionButton from '../../../components/common/FloatingActionButton';
 import { useItinerary, Day } from '../../../contexts/ItineraryContext';
-import TimePickerModal from '../../../components/common/TimePickerModal';
+import TimePickerModal from '../../../components/common/TimePickerModal'; // ⭐️ 1. TimePickerModal import
 import MapView, { Marker } from 'react-native-maps';
 
 const COLORS = {
@@ -76,8 +76,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const { days, setDays, deletePlaceFromDay, updatePlaceTime } = useItinerary();
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [tripName, setTripName] = useState('강서구 1');
-  const [isEditingTripName, setIsEditingTripName] = useState(false); // ⭐️ 2. 이름 수정 모드 상태
+  const [isEditingTripName, setIsEditingTripName] = useState(false);
 
+  // ⭐️ 2. 시간 선택 모달과 관련된 State를 다시 추가합니다.
   const [isTimePickerVisible, setTimePickerVisible] = useState(false);
   const [editingPlace, setEditingPlace] = useState<Place | null>(null);
 
@@ -85,7 +86,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     if (days.length > 0) return;
     const start = new Date(route.params.startDate);
     const end = new Date(route.params.endDate);
-    // ... (날짜 탭 생성 로직은 동일)
     const tripDays: Day[] = [];
     let currentDate = new Date(start);
     let dayCounter = 1;
@@ -104,17 +104,15 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setDays(tripDays);
   }, []);
 
-  // ⭐️ 3. 헤더 렌더링을 위한 useLayoutEffect 사용
   useLayoutEffect(() => {
     navigation.setOptions({
-      // 이름 수정 모드일 때는 TextInput을, 아닐 때는 Text를 헤더 제목으로 사용
       headerTitle: () =>
         isEditingTripName ? (
           <TextInput
             value={tripName}
             onChangeText={setTripName}
             autoFocus={true}
-            onBlur={() => setIsEditingTripName(false)} // 입력창 포커스를 잃으면 수정 모드 해제
+            onBlur={() => setIsEditingTripName(false)}
             style={styles.headerInput}
           />
         ) : (
@@ -133,17 +131,24 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     });
   }, [navigation, tripName, days, isEditingTripName]);
 
+  // ⭐️ 3. 시간 아이템을 눌렀을 때 모달을 열어주는 함수
   const handleEditTime = (place: Place) => {
-    /* ... */
+    setEditingPlace(place);
+    setTimePickerVisible(true);
   };
+
+  // 시간을 'HH:mm' 형식의 문자열로 변환
   const formatTime = (date: Date) => {
-    /* ... */
+    return date.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
+
   const selectedDay = days[selectedDayIndex];
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* (모든 UI 코드는 이전과 동일) */}
       <View style={styles.mapContainer}>
         <MapView
           style={styles.map}
@@ -204,6 +209,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         <FlatList
           data={selectedDay.places}
           renderItem={({ item }) => (
+            // ⭐️ 4. onEditTime 함수를 TimelineItem에 전달합니다.
             <TimelineItem
               item={item}
               onDelete={() => deletePlaceFromDay(selectedDayIndex, item.id)}
@@ -230,6 +236,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         }
       />
 
+      {/* ⭐️ 5. TimePickerModal 컴포넌트를 추가합니다. */}
       {editingPlace && (
         <TimePickerModal
           visible={isTimePickerVisible}
@@ -250,7 +257,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  // ⭐️ 4. 헤더 관련 스타일 추가
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
