@@ -1,4 +1,3 @@
-// src/screens/auth/LoginScreen.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -11,15 +10,14 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 
-// 색상 팔레트를 정의하여 일관성 유지
 const COLORS = {
-  primary: '#007AFF', // 주요 파란색
-  lightGray: '#F0F0F0', // 입력창 배경 회색
+  primary: '#1344FF',
+  lightGray: '#F0F0F0',
   gray: '#E5E5EA',
   darkGray: '#8E8E93',
   text: '#1C1C1E',
   white: '#FFFFFF',
-  error: '#FF3B30', // 에러 색상
+  error: '#FF3B30',
 };
 
 type LoginScreenProps = {
@@ -31,30 +29,24 @@ type LoginScreenProps = {
 export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('Failed to fetch'); // 에러 메시지 UI 확인용
+  const [error, setError] = useState('');
   const { login } = useAuth();
-
-  function alert(arg0: string): void {
-    throw new Error('Function not implemented.');
-  }
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>로그인</Text>
 
-      {/* 에러 메시지 표시 영역 */}
       {error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : null}
 
-      {/* 이메일 섹션 */}
       <View style={styles.inputGroup}>
         <Text style={styles.label}>이메일</Text>
         <TextInput
           style={styles.input}
-          placeholder="이메일을 입력하세요" // ⭐️ 1. 플레이스홀더 추가
+          placeholder="이메일을 입력하세요"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -62,24 +54,21 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         />
       </View>
 
-      {/* 비밀번호 섹션 */}
       <View style={styles.inputGroup}>
         <Text style={styles.label}>비밀번호</Text>
         <TextInput
           style={styles.input}
-          placeholder="비밀번호를 입력하세요" // ⭐️ 1. 플레이스홀더 추가
+          placeholder="비밀번호를 입력하세요"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
       </View>
 
-      {/* 로그인 버튼 */}
       <Pressable style={styles.submitButton} onPress={login}>
         <Text style={styles.submitButtonText}>로그인</Text>
       </Pressable>
 
-      {/* 추가 옵션 링크 */}
       <View style={styles.linksContainer}>
         <TouchableOpacity onPress={() => alert('비밀번호 찾기!')}>
           <Text style={styles.linkText}>비밀번호 찾기</Text>
@@ -100,7 +89,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 40,
@@ -124,8 +113,9 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: COLORS.darkGray,
+    color: COLORS.text,
     marginBottom: 8,
+    fontWeight: 'bold',
   },
   input: {
     width: '100%',
@@ -135,12 +125,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 15,
     fontSize: 16,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.white,
   },
   submitButton: {
     width: '100%',
     height: 50,
-    borderRadius: 25, // ⭐️ 2. 버튼 모서리를 더 둥글게 수정
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,

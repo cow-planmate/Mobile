@@ -1,7 +1,5 @@
-// src/navigation/AuthStack.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
 import LoginScreen from '../screens/auth/LoginScreen';
 import SignupScreen from '../screens/auth/SignupScreen';
 
@@ -13,7 +11,7 @@ export default function AuthStack() {
       <Stack.Screen
         name="Login"
         component={LoginScreen}
-        options={{ title: '로그인' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Signup"
