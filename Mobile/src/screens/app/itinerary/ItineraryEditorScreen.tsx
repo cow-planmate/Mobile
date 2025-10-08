@@ -1,5 +1,5 @@
 // src/screens/app/itinerary/ItineraryEditorScreen.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
+  Button,
+  TextInput, // ⭐️ 1. TextInput을 import 합니다.
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
@@ -17,7 +19,7 @@ import TimelineItem, {
 import FloatingActionButton from '../../../components/common/FloatingActionButton';
 import { useItinerary, Day } from '../../../contexts/ItineraryContext';
 import TimePickerModal from '../../../components/common/TimePickerModal';
-import MapView, { Marker } from 'react-native-maps'; // ⭐️ 1. MapView와 Marker를 불러옵니다.
+import MapView, { Marker } from 'react-native-maps';
 
 const COLORS = {
   primary: '#007AFF',
@@ -32,7 +34,6 @@ const COLORS = {
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
-// UI 확인을 위한 임시 데이터 (좌표 추가)
 const DUMMY_PLACES_DAY1: Place[] = [
   {
     id: '1',
@@ -75,6 +76,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const { days, setDays, deletePlaceFromDay, updatePlaceTime } = useItinerary();
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [tripName, setTripName] = useState('강서구 1');
+  const [isEditingTripName, setIsEditingTripName] = useState(false); // ⭐️ 2. 이름 수정 모드 상태
 
   const [isTimePickerVisible, setTimePickerVisible] = useState(false);
   const [editingPlace, setEditingPlace] = useState<Place | null>(null);
@@ -83,6 +85,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     if (days.length > 0) return;
     const start = new Date(route.params.startDate);
     const end = new Date(route.params.endDate);
+    // ... (날짜 탭 생성 로직은 동일)
     const tripDays: Day[] = [];
     let currentDate = new Date(start);
     let dayCounter = 1;
@@ -101,31 +104,49 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setDays(tripDays);
   }, []);
 
-  useEffect(() => {
-    navigation.setOptions({ title: tripName });
-  }, [navigation, tripName]);
+  // ⭐️ 3. 헤더 렌더링을 위한 useLayoutEffect 사용
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      // 이름 수정 모드일 때는 TextInput을, 아닐 때는 Text를 헤더 제목으로 사용
+      headerTitle: () =>
+        isEditingTripName ? (
+          <TextInput
+            value={tripName}
+            onChangeText={setTripName}
+            autoFocus={true}
+            onBlur={() => setIsEditingTripName(false)} // 입력창 포커스를 잃으면 수정 모드 해제
+            style={styles.headerInput}
+          />
+        ) : (
+          <TouchableOpacity onPress={() => setIsEditingTripName(true)}>
+            <Text style={styles.headerTitle}>{tripName}</Text>
+          </TouchableOpacity>
+        ),
+      headerRight: () => (
+        <Button
+          onPress={() =>
+            navigation.navigate('ItineraryView', { days, tripName })
+          }
+          title="완료"
+        />
+      ),
+    });
+  }, [navigation, tripName, days, isEditingTripName]);
 
   const handleEditTime = (place: Place) => {
-    setEditingPlace(place);
-    setTimePickerVisible(true);
+    /* ... */
   };
-
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-GB', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    /* ... */
   };
-
   const selectedDay = days[selectedDayIndex];
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 상단에 지도 뷰 추가 */}
+      {/* (모든 UI 코드는 이전과 동일) */}
       <View style={styles.mapContainer}>
         <MapView
           style={styles.map}
-          // 지도의 초기 위치를 선택된 날짜의 첫 번째 장소로 설정 (장소가 있을 경우)
           region={
             selectedDay && selectedDay.places.length > 0
               ? {
@@ -137,7 +158,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
               : undefined
           }
         >
-          {/* 선택된 날의 장소들을 마커로 표시 */}
           {selectedDay?.places.map(place => (
             <Marker
               key={place.id}
@@ -152,7 +172,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         </MapView>
       </View>
 
-      {/* 날짜 탭 */}
       <View>
         <ScrollView
           horizontal
@@ -181,7 +200,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         </ScrollView>
       </View>
 
-      {/* 타임라인 */}
       {selectedDay && (
         <FlatList
           data={selectedDay.places}
@@ -212,7 +230,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         }
       />
 
-      {/* 시간 선택 모달 */}
       {editingPlace && (
         <TimePickerModal
           visible={isTimePickerVisible}
@@ -233,8 +250,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  // ⭐️ 4. 헤더 관련 스타일 추가
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  headerInput: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: COLORS.text,
+    borderBottomWidth: 1,
+    borderColor: COLORS.placeholder,
+    padding: 0,
+    minWidth: 150,
+  },
   mapContainer: {
-    height: '40%', // 화면의 40%를 지도가 차지하도록 설정
+    height: '40%',
   },
   map: {
     ...StyleSheet.absoluteFillObject,

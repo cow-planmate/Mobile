@@ -3,7 +3,8 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '../screens/app/main/HomeScreen';
 import ItineraryEditorScreen from '../screens/app/itinerary/ItineraryEditorScreen';
-import AddPlaceScreen from '../screens/app/itinerary/AddPlaceScreen'; // ⭐️ 1. 새로 추가
+import AddPlaceScreen from '../screens/app/itinerary/AddPlaceScreen';
+import ItineraryViewScreen from '../screens/app/itinerary/ItineraryViewScreen'; // ⭐️ 2. 새로 추가
 import { AppStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -16,16 +17,17 @@ export default function AppStack() {
         component={HomeScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen
-        name="ItineraryEditor"
-        component={ItineraryEditorScreen}
-        options={{ title: '일정 만들기' }}
-      />
-      {/* ⭐️ 2. 장소 추가 화면을 모달 형태로 추가 */}
+      <Stack.Screen name="ItineraryEditor" component={ItineraryEditorScreen} />
       <Stack.Screen
         name="AddPlace"
         component={AddPlaceScreen}
-        options={{ title: '장소 추가', presentation: 'modal' }}
+        options={{ presentation: 'modal' }}
+      />
+      {/* ⭐️ 3. 완성본 보기 화면 추가 */}
+      <Stack.Screen
+        name="ItineraryView"
+        component={ItineraryViewScreen}
+        options={{ title: '일정 확인' }}
       />
     </Stack.Navigator>
   );
