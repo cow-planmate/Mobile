@@ -1,4 +1,3 @@
-// src/screens/auth/SignupScreen.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -8,13 +7,12 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Pressable, // Button 대신 사용할 컴포넌트
+  Pressable,
 } from 'react-native';
 
-// 색상 팔레트를 정의하여 일관성 유지
 const COLORS = {
-  primary: '#007AFF', // 주요 파란색
-  lightGray: '#F0F0F0', // 비활성 회색
+  primary: '#1344FF',
+  lightGray: '#F0F0F0',
   gray: '#E5E5EA',
   darkGray: '#8E8E93',
   text: '#1C1C1E',
@@ -29,15 +27,17 @@ export default function SignupScreen() {
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] =
     useState(false);
   const [nickname, setNickname] = useState('');
-  const [gender, setGender] = useState(''); // 'male' or 'female'
+  const [gender, setGender] = useState('');
   const [age, setAge] = useState('');
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.title}>회원가입</Text>
 
-        {/* 이메일 섹션 */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>이메일</Text>
           <View style={styles.inlineInputContainer}>
@@ -47,20 +47,22 @@ export default function SignupScreen() {
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
+              autoCapitalize="none"
             />
-            <Pressable style={[styles.inlineButton, styles.primaryButton]}>
-              <Text style={styles.primaryButtonText}>인증번호발송</Text>
+            <Pressable style={styles.inlineButton}>
+              <Text style={styles.inlineButtonText}>인증번호발송</Text>
             </Pressable>
           </View>
         </View>
 
-        {/* 비밀번호 섹션 */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>비밀번호</Text>
           <View style={styles.passwordContainer}>
             <TextInput
               style={styles.input}
               value={password}
+              placeholder="••••••••"
+              placeholderTextColor={COLORS.darkGray}
               onChangeText={setPassword}
               secureTextEntry={!isPasswordVisible}
             />
@@ -73,13 +75,14 @@ export default function SignupScreen() {
           </View>
         </View>
 
-        {/* 비밀번호 재입력 섹션 */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>비밀번호 재입력</Text>
           <View style={styles.passwordContainer}>
             <TextInput
               style={styles.input}
               value={confirmPassword}
+              placeholder="••••••••"
+              placeholderTextColor={COLORS.darkGray}
               onChangeText={setConfirmPassword}
               secureTextEntry={!isConfirmPasswordVisible}
             />
@@ -94,7 +97,6 @@ export default function SignupScreen() {
           </View>
         </View>
 
-        {/* 닉네임 섹션 */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>닉네임</Text>
           <View style={styles.inlineInputContainer}>
@@ -104,15 +106,14 @@ export default function SignupScreen() {
               value={nickname}
               onChangeText={setNickname}
             />
-            <Pressable style={[styles.inlineButton, styles.primaryButton]}>
-              <Text style={styles.primaryButtonText}>중복확인</Text>
+            <Pressable style={styles.inlineButton}>
+              <Text style={styles.inlineButtonText}>중복확인</Text>
             </Pressable>
           </View>
         </View>
 
-        {/* 나이/성별 섹션 */}
         <View style={styles.rowContainer}>
-          <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
+          <View style={[styles.inputGroup, { flex: 1 }]}>
             <Text style={styles.label}>나이</Text>
             <TextInput
               style={styles.input}
@@ -121,20 +122,20 @@ export default function SignupScreen() {
               keyboardType="number-pad"
             />
           </View>
-          <View style={[styles.inputGroup, { flex: 1, marginLeft: 10 }]}>
+          <View style={[styles.inputGroup, { flex: 1 }]}>
             <Text style={styles.label}>성별</Text>
             <View style={styles.genderContainer}>
               <Pressable
                 style={[
                   styles.genderButton,
-                  gender === 'male' && styles.primaryButton,
+                  gender === 'male' && styles.genderButtonSelected,
                 ]}
                 onPress={() => setGender('male')}
               >
                 <Text
                   style={[
                     styles.genderButtonText,
-                    gender === 'male' && styles.primaryButtonText,
+                    gender === 'male' && styles.genderButtonTextSelected,
                   ]}
                 >
                   남
@@ -143,14 +144,14 @@ export default function SignupScreen() {
               <Pressable
                 style={[
                   styles.genderButton,
-                  gender === 'female' && styles.primaryButton,
+                  gender === 'female' && styles.genderButtonSelected,
                 ]}
                 onPress={() => setGender('female')}
               >
                 <Text
                   style={[
                     styles.genderButtonText,
-                    gender === 'female' && styles.primaryButtonText,
+                    gender === 'female' && styles.genderButtonTextSelected,
                   ]}
                 >
                   여
@@ -160,7 +161,6 @@ export default function SignupScreen() {
           </View>
         </View>
 
-        {/* 회원가입 버튼 */}
         <Pressable style={styles.submitButton}>
           <Text style={styles.submitButtonText}>회원가입</Text>
         </Pressable>
@@ -175,33 +175,34 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
   scrollContainer: {
-    padding: 20,
+    padding: 24,
   },
   title: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: 48,
     color: COLORS.text,
   },
   inputGroup: {
     width: '100%',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   label: {
     fontSize: 14,
-    color: COLORS.darkGray,
-    marginBottom: 8,
+    color: COLORS.text,
+    marginBottom: 10,
+    fontWeight: 'bold',
   },
   input: {
     flex: 1,
-    height: 50,
+    height: 52,
     borderWidth: 1,
     borderColor: COLORS.gray,
     borderRadius: 8,
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
     fontSize: 16,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.white,
   },
   inlineInputContainer: {
     flexDirection: 'row',
@@ -209,23 +210,22 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   inlineButton: {
-    height: 50,
-    paddingHorizontal: 15,
+    height: 52,
+    paddingHorizontal: 16,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  primaryButton: {
     backgroundColor: COLORS.primary,
   },
-  primaryButtonText: {
+  inlineButtonText: {
     color: COLORS.white,
     fontWeight: 'bold',
+    fontSize: 14,
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: COLORS.gray,
     borderRadius: 8,
@@ -235,10 +235,11 @@ const styles = StyleSheet.create({
   },
   rowContainer: {
     flexDirection: 'row',
+    gap: 20,
   },
   genderContainer: {
     flexDirection: 'row',
-    height: 50,
+    height: 52,
     gap: 10,
   },
   genderButton: {
@@ -250,18 +251,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.gray,
   },
+  genderButtonSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
   genderButtonText: {
     fontWeight: 'bold',
     color: COLORS.darkGray,
+    fontSize: 16,
+  },
+  genderButtonTextSelected: {
+    color: COLORS.white,
   },
   submitButton: {
     width: '100%',
-    height: 50,
+    height: 52,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.gray,
-    marginTop: 20,
+    marginTop: 24,
   },
   submitButtonText: {
     fontSize: 16,

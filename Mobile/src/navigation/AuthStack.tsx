@@ -16,7 +16,7 @@ export default function AuthStack() {
       <Stack.Screen
         name="Signup"
         component={SignupScreen}
-        options={{ title: '회원가입' }}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );
