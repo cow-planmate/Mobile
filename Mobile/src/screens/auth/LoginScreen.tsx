@@ -30,6 +30,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const { login } = useAuth();
 
   return (
@@ -45,23 +46,33 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       <View style={styles.inputGroup}>
         <Text style={styles.label}>이메일</Text>
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            focusedInput === 'email' && styles.inputFocused,
+          ]}
           placeholder="이메일을 입력하세요"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
+          onFocus={() => setFocusedInput('email')}
+          onBlur={() => setFocusedInput(null)}
         />
       </View>
 
       <View style={styles.inputGroup}>
         <Text style={styles.label}>비밀번호</Text>
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            focusedInput === 'password' && styles.inputFocused,
+          ]}
           placeholder="비밀번호를 입력하세요"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          onFocus={() => setFocusedInput('password')}
+          onBlur={() => setFocusedInput(null)}
         />
       </View>
 
@@ -126,6 +137,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     backgroundColor: COLORS.white,
+  },
+  inputFocused: {
+    borderColor: COLORS.primary,
+    borderWidth: 1.5,
   },
   submitButton: {
     width: '100%',

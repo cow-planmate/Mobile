@@ -29,6 +29,7 @@ export default function SignupScreen() {
   const [nickname, setNickname] = useState('');
   const [gender, setGender] = useState('');
   const [age, setAge] = useState('');
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -42,12 +43,18 @@ export default function SignupScreen() {
           <Text style={styles.label}>이메일</Text>
           <View style={styles.inlineInputContainer}>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                { flex: 1 },
+                focusedInput === 'email' && styles.inputFocused,
+              ]}
               placeholder="이메일을 입력하세요"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              onFocus={() => setFocusedInput('email')}
+              onBlur={() => setFocusedInput(null)}
             />
             <Pressable style={styles.inlineButton}>
               <Text style={styles.inlineButtonText}>인증번호발송</Text>
@@ -57,14 +64,21 @@ export default function SignupScreen() {
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>비밀번호</Text>
-          <View style={styles.passwordContainer}>
+          <View
+            style={[
+              styles.passwordContainer,
+              focusedInput === 'password' && styles.inputFocused,
+            ]}
+          >
             <TextInput
-              style={styles.input}
+              style={styles.passwordInput}
               value={password}
               placeholder="••••••••"
               placeholderTextColor={COLORS.darkGray}
               onChangeText={setPassword}
               secureTextEntry={!isPasswordVisible}
+              onFocus={() => setFocusedInput('password')}
+              onBlur={() => setFocusedInput(null)}
             />
             <TouchableOpacity
               style={styles.eyeIcon}
@@ -77,14 +91,21 @@ export default function SignupScreen() {
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>비밀번호 재입력</Text>
-          <View style={styles.passwordContainer}>
+          <View
+            style={[
+              styles.passwordContainer,
+              focusedInput === 'confirmPassword' && styles.inputFocused,
+            ]}
+          >
             <TextInput
-              style={styles.input}
+              style={styles.passwordInput}
               value={confirmPassword}
               placeholder="••••••••"
               placeholderTextColor={COLORS.darkGray}
               onChangeText={setConfirmPassword}
               secureTextEntry={!isConfirmPasswordVisible}
+              onFocus={() => setFocusedInput('confirmPassword')}
+              onBlur={() => setFocusedInput(null)}
             />
             <TouchableOpacity
               style={styles.eyeIcon}
@@ -101,10 +122,16 @@ export default function SignupScreen() {
           <Text style={styles.label}>닉네임</Text>
           <View style={styles.inlineInputContainer}>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                { flex: 1 },
+                focusedInput === 'nickname' && styles.inputFocused,
+              ]}
               placeholder="닉네임을 입력하세요"
               value={nickname}
               onChangeText={setNickname}
+              onFocus={() => setFocusedInput('nickname')}
+              onBlur={() => setFocusedInput(null)}
             />
             <Pressable style={styles.inlineButton}>
               <Text style={styles.inlineButtonText}>중복확인</Text>
@@ -116,10 +143,15 @@ export default function SignupScreen() {
           <View style={[styles.inputGroup, { flex: 1 }]}>
             <Text style={styles.label}>나이</Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                focusedInput === 'age' && styles.inputFocused,
+              ]}
               value={age}
               onChangeText={setAge}
               keyboardType="number-pad"
+              onFocus={() => setFocusedInput('age')}
+              onBlur={() => setFocusedInput(null)}
             />
           </View>
           <View style={[styles.inputGroup, { flex: 1 }]}>
@@ -195,7 +227,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   input: {
-    flex: 1,
     height: 52,
     borderWidth: 1,
     borderColor: COLORS.gray,
@@ -203,6 +234,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     backgroundColor: COLORS.white,
+  },
+  passwordInput: {
+    flex: 1,
+    height: 52,
+    borderWidth: 0,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    backgroundColor: 'transparent',
+  },
+  inputFocused: {
+    borderColor: COLORS.primary,
+    borderWidth: 1.5,
   },
   inlineInputContainer: {
     flexDirection: 'row',
