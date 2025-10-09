@@ -36,11 +36,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const handleLogin = () => {
     setError('');
 
-    if (!email || !password) {
-      setError('이메일과 비밀번호를 모두 입력해주세요.');
+    if (!email && !password) {
+      login();
       return;
     }
-
     if (email.toLowerCase() !== 'test@test.com' || password !== 'password123') {
       setError('이메일 또는 비밀번호가 올바르지 않습니다.');
       return;

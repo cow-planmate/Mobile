@@ -1,4 +1,3 @@
-// src/screens/auth/ForgotPasswordScreen.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -35,11 +34,18 @@ export default function ForgotPasswordScreen({
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   const handlePasswordReset = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!email) {
       Alert.alert('오류', '이메일을 입력해주세요.');
       return;
     }
-    // 여기에 비밀번호 재설정 로직을 추가합니다.
+
+    if (!emailRegex.test(email)) {
+      Alert.alert('오류', '올바른 이메일 형식이 아닙니다.');
+      return;
+    }
+
     console.log('Password reset requested for:', email);
     Alert.alert(
       '요청 완료',
