@@ -81,7 +81,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       </Pressable>
 
       <View style={styles.linksContainer}>
-        <TouchableOpacity onPress={() => alert('비밀번호 찾기!')}>
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
           <Text style={styles.linkText}>비밀번호 찾기</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
