@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,35 @@ const COLORS = {
   darkGray: '#8E8E93',
   text: '#1C1C1E',
   white: '#FFFFFF',
+  success: '#34C759',
 };
+
+const PasswordRequirement = ({
+  met,
+  label,
+}: {
+  met: boolean;
+  label: string;
+}) => (
+  <View style={styles.requirementRow}>
+    <Text
+      style={[
+        styles.requirementIcon,
+        { color: met ? COLORS.success : COLORS.darkGray },
+      ]}
+    >
+      ✓
+    </Text>
+    <Text
+      style={[
+        styles.requirementText,
+        { color: met ? COLORS.text : COLORS.darkGray },
+      ]}
+    >
+      {label}
+    </Text>
+  </View>
+);
 
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
@@ -30,6 +58,14 @@ export default function SignupScreen() {
   const [gender, setGender] = useState('');
   const [age, setAge] = useState('');
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+
+  const passwordRequirements = useMemo(() => {
+    const hasMinLength = password.length >= 8;
+    const hasCombination = /(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*])/.test(
+      password,
+    );
+    return { hasMinLength, hasCombination };
+  }, [password]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -86,6 +122,16 @@ export default function SignupScreen() {
             >
               <Text>👁️</Text>
             </TouchableOpacity>
+          </View>
+          <View style={styles.requirementsContainer}>
+            <PasswordRequirement
+              met={passwordRequirements.hasMinLength}
+              label="최소 8자"
+            />
+            <PasswordRequirement
+              met={passwordRequirements.hasCombination}
+              label="영문, 숫자, 특수문자 3가지 조합"
+            />
           </View>
         </View>
 
@@ -218,7 +264,7 @@ const styles = StyleSheet.create({
   },
   inputGroup: {
     width: '100%',
-    marginBottom: 16,
+    marginBottom: 24,
   },
   label: {
     fontSize: 14,
@@ -313,11 +359,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.gray,
-    marginTop: 24,
+    marginTop: 20,
   },
   submitButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
     color: COLORS.darkGray,
+  },
+  requirementsContainer: {
+    marginTop: 10,
+  },
+  requirementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  requirementIcon: {
+    marginRight: 10,
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  requirementText: {
+    fontSize: 14,
   },
 });
