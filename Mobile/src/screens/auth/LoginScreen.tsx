@@ -33,6 +33,36 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const { login } = useAuth();
 
+  const handleLogin = () => {
+    setError('');
+
+    if (!email || !password) {
+      setError('이메일과 비밀번호를 모두 입력해주세요.');
+      return;
+    }
+
+    if (email.toLowerCase() !== 'test@test.com' || password !== 'password123') {
+      setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+      return;
+    }
+
+    login();
+  };
+
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+    if (error) {
+      setError('');
+    }
+  };
+
+  const handlePasswordChange = (text: string) => {
+    setPassword(text);
+    if (error) {
+      setError('');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>로그인</Text>
@@ -52,7 +82,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           ]}
           placeholder="이메일을 입력하세요"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={handleEmailChange}
           keyboardType="email-address"
           autoCapitalize="none"
           onFocus={() => setFocusedInput('email')}
@@ -69,14 +99,14 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           ]}
           placeholder="비밀번호를 입력하세요"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={handlePasswordChange}
           secureTextEntry
           onFocus={() => setFocusedInput('password')}
           onBlur={() => setFocusedInput(null)}
         />
       </View>
 
-      <Pressable style={styles.submitButton} onPress={login}>
+      <Pressable style={styles.submitButton} onPress={handleLogin}>
         <Text style={styles.submitButtonText}>로그인</Text>
       </Pressable>
 

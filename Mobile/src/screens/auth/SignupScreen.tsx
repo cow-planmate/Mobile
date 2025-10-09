@@ -47,7 +47,13 @@ const PasswordRequirement = ({
   </View>
 );
 
-export default function SignupScreen() {
+type SignupScreenProps = {
+  navigation: {
+    goBack: () => void;
+  };
+};
+
+export default function SignupScreen({ navigation }: SignupScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -69,6 +75,12 @@ export default function SignupScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.backButtonText}>‹</Text>
+      </TouchableOpacity>
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
@@ -252,8 +264,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.white,
   },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    zIndex: 1,
+  },
+  backButtonText: {
+    fontSize: 30,
+    color: COLORS.text,
+  },
   scrollContainer: {
     padding: 24,
+    paddingTop: 80,
   },
   title: {
     fontSize: 32,
