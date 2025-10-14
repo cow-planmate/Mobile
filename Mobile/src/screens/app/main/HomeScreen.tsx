@@ -19,9 +19,11 @@ import PaxModal from '../../../components/common/PaxModal';
 import SelectionModal, {
   OptionType,
 } from '../../../components/common/SelectionModal';
+// ⭐️ 1. SearchLocationScreen 대신 SearchLocationModal을 import 합니다.
+import SearchLocationModal from '../../../components/common/SearchLocationModal';
 
 const COLORS = {
-  primary: '#1344FF', // ⭐️ 1. primary 색상 코드를 변경했습니다.
+  primary: '#1344FF',
   background: '#F0F2F5',
   card: '#FFFFFF',
   text: '#1C1C1E',
@@ -91,6 +93,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
+  // ⭐️ 2. 검색 모달의 상태와 어떤 필드를 수정할지 관리하는 state를 추가합니다.
+  const [isSearchModalVisible, setSearchModalVisible] = useState(false);
+  const [fieldToUpdate, setFieldToUpdate] = useState<
+    'departure' | 'destination'
+  >('departure');
+
+  // ⭐️ 3. 네비게이션 파라미터를 사용하던 useEffect를 제거합니다.
+
   useEffect(() => {
     const interval = setInterval(() => {
       Animated.timing(fadeAnim, {
@@ -130,6 +140,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     });
   };
 
+  // ⭐️ 4. 검색 모달을 여는 함수를 새로 만듭니다.
+  const openSearchModal = (field: 'departure' | 'destination') => {
+    setFieldToUpdate(field);
+    setSearchModalVisible(true);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -152,8 +168,19 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           </View>
 
           <View style={styles.card}>
-            <InputField label="출발지" value={departure} icon="📍" />
-            <InputField label="여행지" value={destination} icon="🌍" />
+            {/* ⭐️ 5. onPress 핸들러를 navigation.navigate 대신 openSearchModal 호출로 변경합니다. */}
+            <InputField
+              label="출발지"
+              value={departure}
+              icon="📍"
+              onPress={() => openSearchModal('departure')}
+            />
+            <InputField
+              label="여행지"
+              value={destination}
+              icon="🌍"
+              onPress={() => openSearchModal('destination')}
+            />
             <InputField
               label="기간"
               value={`${formatDate(startDate)} ~ ${formatDate(endDate)}`}
@@ -184,7 +211,53 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         </View>
       </ScrollView>
 
-      {/* ... (모달 부분은 그대로 유지) ... */}
+      {/* ⭐️ 6. SearchLocationModal을 렌더링하고 필요한 props를 전달합니다. */}
+      <SearchLocationModal
+        visible={isSearchModalVisible}
+        onClose={() => setSearchModalVisible(false)}
+        fieldToUpdate={fieldToUpdate}
+        currentValue={fieldToUpdate === 'departure' ? departure : destination}
+        onSelect={location => {
+          if (fieldToUpdate === 'departure') {
+            setDeparture(location);
+          } else {
+            setDestination(location);
+          }
+        }}
+      />
+      <CalendarModal
+        visible={isCalendarVisible}
+        onClose={() => setCalendarVisible(false)}
+        onConfirm={({ startDate, endDate }) => {
+          setStartDate(startDate);
+          setEndDate(endDate);
+          setCalendarVisible(false);
+        }}
+        initialStartDate={startDate}
+        initialEndDate={endDate}
+      />
+      <PaxModal
+        visible={isPaxModalVisible}
+        onClose={() => setPaxModalVisible(false)}
+        onConfirm={({ adults, children }) => {
+          setAdults(adults);
+          setChildren(children);
+          setPaxModalVisible(false);
+        }}
+        initialAdults={adults}
+        initialChildren={children}
+      />
+      <SelectionModal
+        visible={isTransportModalVisible}
+        title="이동수단 선택"
+        options={transportOptions}
+        currentValue={transport}
+        onClose={() => setTransportModalVisible(false)}
+        onSelect={option => {
+          setTransport(option);
+          setTransportModalVisible(false);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -194,7 +267,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  // ⭐️ 2. scrollContainer 스타일을 수정하여 UI 비율을 조정합니다.
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
