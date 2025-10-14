@@ -21,7 +21,7 @@ import SelectionModal, {
 } from '../../../components/common/SelectionModal';
 
 const COLORS = {
-  primary: '#007AFF',
+  primary: '#1344FF', // ⭐️ 1. primary 색상 코드를 변경했습니다.
   background: '#F0F2F5',
   card: '#FFFFFF',
   text: '#1C1C1E',
@@ -38,7 +38,6 @@ const IMAGE_URIS = [
   'https://picsum.photos/id/50/800/600',
 ];
 
-// ⭐️ 1. 애니메이션을 적용할 ImageBackground 컴포넌트를 새로 만듭니다.
 const AnimatedImageBackground =
   Animated.createAnimatedComponent(ImageBackground);
 
@@ -92,16 +91,15 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  // ⭐️ 2. 크로스페이드 애니메이션 로직을 수정합니다.
   useEffect(() => {
     const interval = setInterval(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: 1500, // 사라지는 시간
+        duration: 1500,
         useNativeDriver: true,
       }).start(() => {
         setCurrentImageIndex(prevIndex => (prevIndex + 1) % IMAGE_URIS.length);
-        fadeAnim.setValue(1); // 애니메이션 값 즉시 1로 리셋
+        fadeAnim.setValue(1);
       });
     }, 5000);
 
@@ -135,56 +133,57 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* ⭐️ 3. UI 구조를 변경하여 애니메이션과 텍스트를 분리합니다. */}
-        <View style={styles.headerImage}>
-          {/* 현재 이미지 (서서히 사라짐) */}
-          <AnimatedImageBackground
-            source={{ uri: IMAGE_URIS[currentImageIndex] }}
-            style={[styles.image, { opacity: fadeAnim }]}
-            imageStyle={styles.headerImageStyle}
-          />
-          {/* 다음 이미지 (뒤에서 대기) */}
-          <ImageBackground
-            source={{
-              uri: IMAGE_URIS[(currentImageIndex + 1) % IMAGE_URIS.length],
-            }}
-            style={styles.image}
-            imageStyle={styles.headerImageStyle}
-          />
-          {/* 텍스트 가독성을 위한 어두운 오버레이 */}
-          <View style={styles.overlay} />
-          {/* 고정된 텍스트 */}
-          <Text style={styles.title}>{'나다운, 우리다운\n여행의 시작'}</Text>
-        </View>
+        <View>
+          <View style={styles.headerImage}>
+            <AnimatedImageBackground
+              source={{ uri: IMAGE_URIS[currentImageIndex] }}
+              style={[styles.image, { opacity: fadeAnim }]}
+              imageStyle={styles.headerImageStyle}
+            />
+            <ImageBackground
+              source={{
+                uri: IMAGE_URIS[(currentImageIndex + 1) % IMAGE_URIS.length],
+              }}
+              style={styles.image}
+              imageStyle={styles.headerImageStyle}
+            />
+            <View style={styles.overlay} />
+            <Text style={styles.title}>{'나다운, 우리다운\n여행의 시작'}</Text>
+          </View>
 
-        <View style={styles.card}>
-          <InputField label="출발지" value={departure} icon="📍" />
-          <InputField label="여행지" value={destination} icon="🌍" />
-          <InputField
-            label="기간"
-            value={`${formatDate(startDate)} ~ ${formatDate(endDate)}`}
-            icon="🗓️"
-            onPress={() => setCalendarVisible(true)}
-          />
-          <InputField
-            label="인원수"
-            value={getPaxText()}
-            icon="👥"
-            onPress={() => setPaxModalVisible(true)}
-          />
-          <InputField
-            label="이동수단"
-            value={transport}
-            icon="🚗"
-            isLast={true}
-            onPress={() => setTransportModalVisible(true)}
-          />
-        </View>
+          <View style={styles.card}>
+            <InputField label="출발지" value={departure} icon="📍" />
+            <InputField label="여행지" value={destination} icon="🌍" />
+            <InputField
+              label="기간"
+              value={`${formatDate(startDate)} ~ ${formatDate(endDate)}`}
+              icon="🗓️"
+              onPress={() => setCalendarVisible(true)}
+            />
+            <InputField
+              label="인원수"
+              value={getPaxText()}
+              icon="👥"
+              onPress={() => setPaxModalVisible(true)}
+            />
+            <InputField
+              label="이동수단"
+              value={transport}
+              icon="🚗"
+              isLast={true}
+              onPress={() => setTransportModalVisible(true)}
+            />
+          </View>
 
-        <Pressable style={styles.submitButton} onPress={handleCreateItinerary}>
-          <Text style={styles.submitButtonText}>일정 생성하기</Text>
-        </Pressable>
+          <Pressable
+            style={styles.submitButton}
+            onPress={handleCreateItinerary}
+          >
+            <Text style={styles.submitButtonText}>일정 생성하기</Text>
+          </Pressable>
+        </View>
       </ScrollView>
+
       {/* ... (모달 부분은 그대로 유지) ... */}
     </SafeAreaView>
   );
@@ -195,7 +194,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  // ⭐️ 2. scrollContainer 스타일을 수정하여 UI 비율을 조정합니다.
   scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
     padding: 20,
   },
   headerImage: {
@@ -203,22 +205,19 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     padding: 20,
     marginBottom: 20,
-    borderRadius: 12, // 컨테이너에도 borderRadius 적용
-    overflow: 'hidden', // 자식 요소들이 모서리를 벗어나지 않도록
+    borderRadius: 12,
+    overflow: 'hidden',
   },
-  // ⭐️ 4. 새로운 스타일들을 추가합니다.
   image: {
-    ...StyleSheet.absoluteFillObject, // 부모 뷰를 꽉 채우도록 설정
+    ...StyleSheet.absoluteFillObject,
     width: undefined,
     height: undefined,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)', // 어두운 반투명 오버레이
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
-  headerImageStyle: {
-    // borderRadius는 이제 컨테이너에서 관리하므로 제거해도 됩니다.
-  },
+  headerImageStyle: {},
   title: {
     fontSize: 34,
     fontWeight: 'bold',
