@@ -1,9 +1,9 @@
 // src/components/common/CalendarModal.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, StyleSheet, Pressable } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 
-// 달력 한글 설정
+// ... (LocaleConfig 부분은 그대로 유지)
 LocaleConfig.locales.kr = {
   monthNames: [
     '1월',
@@ -47,7 +47,13 @@ LocaleConfig.locales.kr = {
 };
 LocaleConfig.defaultLocale = 'kr';
 
-// 컴포넌트가 받을 props 타입 정의
+const COLORS = {
+  primary: '#1344FF',
+  white: '#FFFFFF',
+  lightGray: '#F0F0F0',
+  text: '#1C1C1E',
+};
+
 type CalendarModalProps = {
   visible: boolean;
   onClose: () => void;
@@ -63,10 +69,15 @@ export default function CalendarModal({
   initialStartDate,
   initialEndDate,
 }: CalendarModalProps) {
-  const [startDate, setStartDate] = useState<Date | null>(
-    initialStartDate || null,
-  );
-  const [endDate, setEndDate] = useState<Date | null>(initialEndDate || null);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    if (visible) {
+      setStartDate(initialStartDate || null);
+      setEndDate(initialEndDate || null);
+    }
+  }, [visible, initialStartDate, initialEndDate]);
 
   const onDayPress = (day: any) => {
     if (!startDate || (startDate && endDate)) {
@@ -87,10 +98,9 @@ export default function CalendarModal({
     const marked: any = {};
     if (!startDate) return marked;
 
-    const selectedColor = '#007AFF';
-    const textColor = 'white';
+    const selectedColor = COLORS.primary;
+    const textColor = COLORS.white;
 
-    // 시작일만 선택된 경우, 동그랗게 표시
     if (!endDate) {
       const startKey = startDate.toISOString().split('T')[0];
       marked[startKey] = {
@@ -102,7 +112,6 @@ export default function CalendarModal({
       return marked;
     }
 
-    // 기간이 선택된 경우
     let current = new Date(startDate.getTime());
     while (current <= endDate) {
       const key = current.toISOString().split('T')[0];
@@ -113,7 +122,6 @@ export default function CalendarModal({
 
       const containerStyle: any = {
         backgroundColor: selectedColor,
-        // 기본적으로는 모서리를 둥글게 하지 않음
         borderRadius: 0,
         borderTopLeftRadius: 0,
         borderBottomLeftRadius: 0,
@@ -121,7 +129,6 @@ export default function CalendarModal({
         borderBottomRightRadius: 0,
       };
 
-      // 조건에 따라 모서리 둥글게 처리
       if (isStart || isSunday) {
         containerStyle.borderTopLeftRadius = 15;
         containerStyle.borderBottomLeftRadius = 15;
@@ -130,7 +137,6 @@ export default function CalendarModal({
         containerStyle.borderTopRightRadius = 15;
         containerStyle.borderBottomRightRadius = 15;
       }
-      // 하루만 선택된 경우 전체를 둥글게
       if (isStart && isEnd) {
         containerStyle.borderRadius = 15;
       }
@@ -151,23 +157,23 @@ export default function CalendarModal({
     if (startDate && endDate) {
       onConfirm({ startDate, endDate });
     } else if (startDate && !endDate) {
-      // 날짜를 하나만 선택하고 확인을 누른 경우, 시작일과 종료일을 동일하게 처리
       onConfirm({ startDate, endDate: startDate });
     }
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={true}>
+    // ⭐️ 'slide'를 'fade'로 변경하여 다른 모달과 동일한 애니메이션 효과를 적용합니다.
+    <Modal visible={visible} animationType="fade" transparent={true}>
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
           <Calendar
             onDayPress={onDayPress}
-            markingType={'custom'} // ⭐️ 'period'에서 'custom'으로 변경
+            markingType={'custom'}
             markedDates={getMarkedDates()}
           />
           <View style={styles.buttonRow}>
             <Pressable style={styles.button} onPress={onClose}>
-              <Text>취소</Text>
+              <Text style={styles.buttonText}>취소</Text>
             </Pressable>
             <Pressable
               style={[styles.button, styles.confirmButton]}
@@ -191,7 +197,7 @@ const styles = StyleSheet.create({
   },
   modalView: {
     margin: 20,
-    backgroundColor: 'white',
+    backgroundColor: COLORS.white,
     borderRadius: 20,
     padding: 20,
     alignItems: 'center',
@@ -214,14 +220,17 @@ const styles = StyleSheet.create({
     padding: 12,
     elevation: 2,
     marginHorizontal: 5,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: COLORS.lightGray,
     alignItems: 'center',
   },
+  buttonText: {
+    color: COLORS.text,
+  },
   confirmButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: COLORS.primary,
   },
   confirmButtonText: {
-    color: 'white',
+    color: COLORS.white,
     fontWeight: 'bold',
   },
 });
