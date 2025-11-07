@@ -25,7 +25,7 @@ const Tab = createMaterialTopTabNavigator();
 
 const COLORS = {
   primary: '#1344FF',
-  background: '#F0F2F5',
+  background: '#FFFFFF', // 1. (지시 2) 배경색을 흰색으로 변경
   card: '#FFFFFF',
   text: '#1C1C1E',
   placeholder: '#8E8E93',
@@ -140,8 +140,8 @@ const PlaceSearchResultItem = ({
 );
 
 const HOUR_HEIGHT = 120;
-const MINUTE_HEIGHT = HOUR_HEIGHT / 60; // 1분당 높이 (2px)
-const MIN_ITEM_HEIGHT = 80; // 1. (문제 2) 장소 카드의 최소 높이
+const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
+const MIN_ITEM_HEIGHT = 80;
 
 const timeToMinutes = (time: string) => {
   if (!time || typeof time !== 'string' || !time.includes(':')) {
@@ -173,41 +173,45 @@ const minutesToTime = (totalMinutes: number) => {
     .padStart(2, '0')}`;
 };
 
+// --- 시간 그리드 배경 컴포넌트 (수정) ---
 const TimeGridBackground = ({ hours }: { hours: number[] }) => {
+  const hourStr = (h: number) => h.toString().padStart(2, '0');
+
   return (
     <View style={styles.gridContainer}>
       {hours.map(hour => (
         <View key={hour} style={[styles.hourBlock, { height: HOUR_HEIGHT }]}>
+          {/* 2. (지시 1) 시간 라벨 열 수정 */}
           <View style={styles.hourLabelContainer}>
-            <Text style={[styles.hourText, styles.hourTextMain]}>
-              {`${hour.toString().padStart(2, '0')} 00`}
+            <Text style={[styles.timeLabelText, { top: 0 }]}>
+              {`${hourStr(hour)}:00`}
             </Text>
             <Text
               style={[
-                styles.hourText,
-                styles.hourTextSub,
+                styles.timeLabelText,
+                styles.minuteLabel,
                 { top: HOUR_HEIGHT / 4 },
               ]}
             >
-              15
+              {`${hourStr(hour)}:15`}
             </Text>
             <Text
               style={[
-                styles.hourText,
-                styles.hourTextSub,
+                styles.timeLabelText,
+                styles.minuteLabel,
                 { top: HOUR_HEIGHT / 2 },
               ]}
             >
-              30
+              {`${hourStr(hour)}:30`}
             </Text>
             <Text
               style={[
-                styles.hourText,
-                styles.hourTextSub,
+                styles.timeLabelText,
+                styles.minuteLabel,
                 { top: (HOUR_HEIGHT * 3) / 4 },
               ]}
             >
-              45
+              {`${hourStr(hour)}:45`}
             </Text>
           </View>
 
@@ -342,7 +346,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
               const startMinutes = timeToMinutes(place.startTime);
               const endMinutes = timeToMinutes(place.endTime);
 
-              // 2. (문제 1) top 위치 계산 수정 (paddingVertical 반영)
               const top =
                 (startMinutes - offsetMinutes) * MINUTE_HEIGHT +
                 styles.timelineWrapper.paddingVertical;
@@ -350,7 +353,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
               const calculatedHeight =
                 (endMinutes - startMinutes) * MINUTE_HEIGHT;
 
-              // 3. (문제 2) 최소 높이 적용
               const height = Math.max(calculatedHeight, MIN_ITEM_HEIGHT);
 
               return (
@@ -529,7 +531,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         <Tab.Screen name="장소추가">{() => <AddPlaceView />}</Tab.Screen>
       </Tab.Navigator>
 
-      {/* 4. (문제 3) 시간 로직 수정 */}
       {editingTime && (
         <TimePickerModal
           visible={isTimePickerVisible}
@@ -545,11 +546,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
                 const newStartTimeMinutes = timeToMinutes(newTime);
                 const endTimeMinutes = timeToMinutes(place.endTime);
 
-                // 기존 duration 계산
                 const durationMinutes =
                   endTimeMinutes - timeToMinutes(place.startTime);
 
-                // 새 종료 시간 계산
                 const newEndTimeMinutes = newStartTimeMinutes + durationMinutes;
                 const newEndTime = minutesToTime(newEndTimeMinutes);
 
@@ -560,12 +559,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
                   newEndTime,
                 );
               } else {
-                // endTime 수정 시
                 const newEndTimeMinutes = timeToMinutes(newTime);
                 const startTimeMinutes = timeToMinutes(place.startTime);
 
                 if (newEndTimeMinutes <= startTimeMinutes) {
-                  // 종료 시간이 시작 시간보다 빠르면, 시작 시간 + 15분으로 설정
                   const newEndTime = minutesToTime(startTimeMinutes + 15);
                   updatePlaceTimes(
                     selectedDayIndex,
@@ -574,7 +571,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
                     newEndTime,
                   );
                 } else {
-                  // 정상 범위면 그대로 업데이트
                   updatePlaceTimes(
                     selectedDayIndex,
                     place.id,
@@ -670,51 +666,61 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   timelineContentContainer: {
-    paddingBottom: 200, // 5. (문제 3) 스크롤 영역 확보
+    paddingBottom: 200,
   },
   timelineWrapper: {
     position: 'relative',
-    paddingVertical: 20, // 6. (문제 1) top 계산의 기준이 됨
+    paddingVertical: 20,
   },
   gridContainer: {
-    paddingVertical: 20, // 7. wrapper와 동일하게 설정
+    paddingVertical: 20,
   },
   hourBlock: {
     flexDirection: 'row',
   },
+  // --- (지시 1) 스타일 수정 ---
   hourLabelContainer: {
     width: 60,
     height: HOUR_HEIGHT,
     position: 'relative',
-    alignItems: 'flex-end',
-    paddingRight: 10,
+    alignItems: 'center',
+  },
+  hourLabelGroup: {
+    // 3. 이 스타일은 이제 사용되지 않음
   },
   hourText: {
-    position: 'absolute',
-    marginTop: -8,
-    right: 10,
+    // 4. 이 스타일은 이제 사용되지 않음
   },
   hourTextMain: {
-    fontSize: 14,
-    color: COLORS.text,
-    fontWeight: '500',
-    top: 0,
+    // 5. 이 스타일은 이제 사용되지 않음
   },
   hourTextSub: {
-    fontSize: 10,
-    color: COLORS.placeholder,
+    // 6. 이 스타일은 이제 사용되지 않음
   },
+  minuteLabel: {
+    // 7. 이 스타일은 이제 사용되지 않음
+  },
+  // 8. (지시 1) 새로운 시간 라벨 스타일
+  timeLabelText: {
+    position: 'absolute',
+    marginTop: -8,
+    color: COLORS.placeholder,
+    fontSize: 12,
+    fontWeight: '500',
+    width: '100%',
+    textAlign: 'center',
+  },
+  // ---
   hourContent: {
     flex: 1,
     marginLeft: 30,
     height: HOUR_HEIGHT,
     flexDirection: 'column',
   },
-  // 8. (문제 2) 15분 간격 높이(30px)와 선 스타일
   quarterBlock: {
     height: HOUR_HEIGHT / 4,
     borderTopWidth: 1,
-    borderTopColor: COLORS.lightGray,
+    borderTopColor: COLORS.border,
   },
   firstQuarterBlock: {
     borderTopColor: COLORS.border,

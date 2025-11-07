@@ -5,7 +5,6 @@ import React, {
   useContext,
   PropsWithChildren,
 } from 'react';
-// Place 타입 임포트 경로가 수정되었을 수 있으니 확인
 import { Place } from '../components/itinerary/TimelineItem';
 
 export interface Day {
@@ -13,6 +12,54 @@ export interface Day {
   dayNumber: number;
   places: Place[];
 }
+
+// --- 헬퍼 함수 추가 ---
+const timeToMinutes = (time: string) => {
+  if (!time || typeof time !== 'string' || !time.includes(':')) {
+    return 0;
+  }
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+};
+
+const minutesToTime = (totalMinutes: number) => {
+  const hours = Math.floor(totalMinutes / 60) % 24;
+  const minutes = totalMinutes % 60;
+  return `${hours.toString().padStart(2, '0')}:${minutes
+    .toString()
+    .padStart(2, '0')}`;
+};
+
+// 1. (문제 1) 충돌 해결 및 정렬 함수
+const resolveConflictsAndSort = (places: Place[]): Place[] => {
+  // 1. startTime 기준으로 먼저 정렬
+  const sortedPlaces = [...places].sort(
+    (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
+  );
+
+  // 2. 순회하면서 겹치는 일정 밀어내기
+  for (let i = 1; i < sortedPlaces.length; i++) {
+    const prev = sortedPlaces[i - 1];
+    const curr = sortedPlaces[i];
+
+    const prevEndTime = timeToMinutes(prev.endTime);
+    const currStartTime = timeToMinutes(curr.startTime);
+
+    // 겹칠 경우 (이전 아이템이 끝나는 시간보다 현재 아이템이 빨리 시작하면)
+    if (currStartTime < prevEndTime) {
+      const currDuration =
+        timeToMinutes(curr.endTime) - timeToMinutes(curr.startTime);
+
+      // 현재 아이템의 시작 시간을 이전 아이템의 종료 시간으로 설정
+      curr.startTime = minutesToTime(prevEndTime);
+      // 기존 소요 시간을 유지하며 종료 시간도 밀어냄
+      curr.endTime = minutesToTime(prevEndTime + currDuration);
+    }
+  }
+
+  return sortedPlaces;
+};
+// --- ---
 
 interface ItineraryContextType {
   days: Day[];
@@ -22,8 +69,6 @@ interface ItineraryContextType {
     place: Omit<Place, 'startTime' | 'endTime'>,
   ) => void;
   deletePlaceFromDay: (dayIndex: number, placeId: string) => void;
-  // updatePlaceTime: (dayIndex: number, placeId: string, newTime: string) => void;
-  // startTime, endTime을 모두 업데이트하는 함수로 변경 (혹은 2개로 분리)
   updatePlaceTimes: (
     dayIndex: number,
     placeId: string,
@@ -39,7 +84,6 @@ const ItineraryContext = createContext<ItineraryContextType | undefined>(
 export function ItineraryProvider({ children }: PropsWithChildren) {
   const [days, setDays] = useState<Day[]>([]);
 
-  // Omit 타입을 startTime, endTime 기준으로 수정
   const addPlaceToDay = (
     dayIndex: number,
     placeData: Omit<Place, 'startTime' | 'endTime'>,
@@ -49,22 +93,20 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         return currentDays;
       }
 
-      // 새 장소에 기본 startTime과 endTime을 할당합니다.
       const placeToAdd: Place = {
         ...placeData,
-        startTime: '12:00', // 기본 시작 시간
-        endTime: '13:00', // 기본 종료 시간 (1시간)
+        startTime: '12:00',
+        endTime: '13:00',
         latitude: placeData.latitude ?? 0,
         longitude: placeData.longitude ?? 0,
       };
 
       const updatedDays = [...currentDays];
-      const updatedPlaces = [...updatedDays[dayIndex].places, placeToAdd];
+      const newPlacesList = [...updatedDays[dayIndex].places, placeToAdd];
 
-      // 정렬 기준을 startTime으로 변경
-      updatedPlaces.sort((a, b) => a.startTime.localeCompare(b.startTime));
+      // 2. (문제 1) 충돌 해결 함수 적용
+      updatedDays[dayIndex].places = resolveConflictsAndSort(newPlacesList);
 
-      updatedDays[dayIndex].places = updatedPlaces;
       return updatedDays;
     });
   };
@@ -78,12 +120,11 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       const updatedPlaces = updatedDays[dayIndex].places.filter(
         place => place.id !== placeId,
       );
-      updatedDays[dayIndex].places = updatedPlaces;
+      updatedDays[dayIndex].places = updatedPlaces; // 삭제 시에는 충돌 해결 불필요
       return updatedDays;
     });
   };
 
-  // updatePlaceTime -> updatePlaceTimes로 수정
   const updatePlaceTimes = (
     dayIndex: number,
     placeId: string,
@@ -96,20 +137,16 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       }
       const updatedDays = [...currentDays];
       const dayToUpdate = { ...updatedDays[dayIndex] };
-      const placeIndex = dayToUpdate.places.findIndex(p => p.id === placeId);
 
-      if (placeIndex > -1) {
-        const updatedPlaces = [...dayToUpdate.places];
-        updatedPlaces[placeIndex] = {
-          ...updatedPlaces[placeIndex],
-          startTime: newStartTime,
-          endTime: newEndTime,
-        };
-        // 정렬 기준을 startTime으로 변경
-        updatedPlaces.sort((a, b) => a.startTime.localeCompare(b.startTime));
-        dayToUpdate.places = updatedPlaces;
-        updatedDays[dayIndex] = dayToUpdate;
-      }
+      const newPlacesList = dayToUpdate.places.map(p =>
+        p.id === placeId
+          ? { ...p, startTime: newStartTime, endTime: newEndTime }
+          : p,
+      );
+
+      // 3. (문제 1) 충돌 해결 함수 적용
+      dayToUpdate.places = resolveConflictsAndSort(newPlacesList);
+      updatedDays[dayIndex] = dayToUpdate;
 
       return updatedDays;
     });
@@ -122,7 +159,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         setDays,
         addPlaceToDay,
         deletePlaceFromDay,
-        updatePlaceTimes, // 함수 이름 변경
+        updatePlaceTimes,
       }}
     >
       {children}
