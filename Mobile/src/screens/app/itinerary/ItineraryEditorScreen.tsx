@@ -140,6 +140,9 @@ const PlaceSearchResultItem = ({
 );
 
 const HOUR_HEIGHT = 120;
+const MINUTE_HEIGHT = HOUR_HEIGHT / 60; // 1분당 높이 (2px)
+const MIN_ITEM_HEIGHT = 80; // 1. (문제 2) 장소 카드의 최소 높이
+
 const timeToMinutes = (time: string) => {
   if (!time || typeof time !== 'string' || !time.includes(':')) {
     return 0;
@@ -162,29 +165,52 @@ const dateToTime = (date: Date) => {
   });
 };
 
-// --- 시간 그리드 배경 컴포넌트 (수정) ---
+const minutesToTime = (totalMinutes: number) => {
+  const hours = Math.floor(totalMinutes / 60) % 24;
+  const minutes = totalMinutes % 60;
+  return `${hours.toString().padStart(2, '0')}:${minutes
+    .toString()
+    .padStart(2, '0')}`;
+};
+
 const TimeGridBackground = ({ hours }: { hours: number[] }) => {
   return (
     <View style={styles.gridContainer}>
       {hours.map(hour => (
         <View key={hour} style={[styles.hourBlock, { height: HOUR_HEIGHT }]}>
-          {/* 1. 시간 라벨 열 */}
           <View style={styles.hourLabelContainer}>
             <Text style={[styles.hourText, styles.hourTextMain]}>
               {`${hour.toString().padStart(2, '0')} 00`}
             </Text>
-            <Text style={[styles.hourText, styles.hourTextSub, { top: 30 }]}>
+            <Text
+              style={[
+                styles.hourText,
+                styles.hourTextSub,
+                { top: HOUR_HEIGHT / 4 },
+              ]}
+            >
               15
             </Text>
-            <Text style={[styles.hourText, styles.hourTextSub, { top: 60 }]}>
+            <Text
+              style={[
+                styles.hourText,
+                styles.hourTextSub,
+                { top: HOUR_HEIGHT / 2 },
+              ]}
+            >
               30
             </Text>
-            <Text style={[styles.hourText, styles.hourTextSub, { top: 90 }]}>
+            <Text
+              style={[
+                styles.hourText,
+                styles.hourTextSub,
+                { top: (HOUR_HEIGHT * 3) / 4 },
+              ]}
+            >
               45
             </Text>
           </View>
 
-          {/* 2. 그리드 라인 열 (균일한 4개 블록으로 수정) */}
           <View style={styles.hourContent}>
             <View style={[styles.quarterBlock, styles.firstQuarterBlock]} />
             <View style={styles.quarterBlock} />
@@ -308,9 +334,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
     return (
       <View style={styles.tabContentContainer}>
-        {/* 3. ScrollView와 timelineContainer 스타일 수정 */}
         <ScrollView contentContainerStyle={styles.timelineContentContainer}>
-          {/* 4. 배경과 컨텐츠를 담을 래퍼 추가 */}
           <View style={styles.timelineWrapper}>
             <TimeGridBackground hours={gridHours} />
 
@@ -318,11 +342,16 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
               const startMinutes = timeToMinutes(place.startTime);
               const endMinutes = timeToMinutes(place.endTime);
 
-              // 5. top 위치 계산 시 ScrollView의 padding(timelineContainer) 값을 반영
+              // 2. (문제 1) top 위치 계산 수정 (paddingVertical 반영)
               const top =
-                ((startMinutes - offsetMinutes) / 60) * HOUR_HEIGHT +
-                styles.timelineContainer.paddingVertical; // 20px
-              const height = ((endMinutes - startMinutes) / 60) * HOUR_HEIGHT;
+                (startMinutes - offsetMinutes) * MINUTE_HEIGHT +
+                styles.timelineWrapper.paddingVertical;
+
+              const calculatedHeight =
+                (endMinutes - startMinutes) * MINUTE_HEIGHT;
+
+              // 3. (문제 2) 최소 높이 적용
+              const height = Math.max(calculatedHeight, MIN_ITEM_HEIGHT);
 
               return (
                 <TimelineItem
@@ -500,6 +529,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         <Tab.Screen name="장소추가">{() => <AddPlaceView />}</Tab.Screen>
       </Tab.Navigator>
 
+      {/* 4. (문제 3) 시간 로직 수정 */}
       {editingTime && (
         <TimePickerModal
           visible={isTimePickerVisible}
@@ -512,19 +542,46 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
             );
             if (place) {
               if (editingTime.type === 'startTime') {
+                const newStartTimeMinutes = timeToMinutes(newTime);
+                const endTimeMinutes = timeToMinutes(place.endTime);
+
+                // 기존 duration 계산
+                const durationMinutes =
+                  endTimeMinutes - timeToMinutes(place.startTime);
+
+                // 새 종료 시간 계산
+                const newEndTimeMinutes = newStartTimeMinutes + durationMinutes;
+                const newEndTime = minutesToTime(newEndTimeMinutes);
+
                 updatePlaceTimes(
                   selectedDayIndex,
                   place.id,
                   newTime,
-                  place.endTime,
+                  newEndTime,
                 );
               } else {
-                updatePlaceTimes(
-                  selectedDayIndex,
-                  place.id,
-                  place.startTime,
-                  newTime,
-                );
+                // endTime 수정 시
+                const newEndTimeMinutes = timeToMinutes(newTime);
+                const startTimeMinutes = timeToMinutes(place.startTime);
+
+                if (newEndTimeMinutes <= startTimeMinutes) {
+                  // 종료 시간이 시작 시간보다 빠르면, 시작 시간 + 15분으로 설정
+                  const newEndTime = minutesToTime(startTimeMinutes + 15);
+                  updatePlaceTimes(
+                    selectedDayIndex,
+                    place.id,
+                    place.startTime,
+                    newEndTime,
+                  );
+                } else {
+                  // 정상 범위면 그대로 업데이트
+                  updatePlaceTimes(
+                    selectedDayIndex,
+                    place.id,
+                    place.startTime,
+                    newTime,
+                  );
+                }
               }
             }
             setTimePickerVisible(false);
@@ -609,20 +666,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  // --- 타임라인 그리드 스타일 수정 ---
   timelineContainer: {
     paddingVertical: 20,
   },
   timelineContentContainer: {
-    // 6. ScrollView가 자식의 높이를 알 수 있도록
-    // paddingVertical을 여기 대신 timelineWrapper에 적용
+    paddingBottom: 200, // 5. (문제 3) 스크롤 영역 확보
   },
   timelineWrapper: {
-    position: 'relative', // 7. 자식(TimelineItem)의 absolute 기준점
-    paddingVertical: 20, // 8. ScrollView의 패딩을 여기로 이동
+    position: 'relative',
+    paddingVertical: 20, // 6. (문제 1) top 계산의 기준이 됨
   },
   gridContainer: {
-    // 9. paddingVertical 제거 (부모인 timelineWrapper가 담당)
+    paddingVertical: 20, // 7. wrapper와 동일하게 설정
   },
   hourBlock: {
     flexDirection: 'row',
@@ -648,29 +703,22 @@ const styles = StyleSheet.create({
   hourTextSub: {
     fontSize: 10,
     color: COLORS.placeholder,
-    // 10. top 위치를 15분 간격 높이에 맞게 수정
-    // (HOUR_HEIGHT / 4) * 1 = 30
-    // (HOUR_HEIGHT / 4) * 2 = 60
-    // (HOUR_HEIGHT / 4) * 3 = 90
   },
   hourContent: {
     flex: 1,
     marginLeft: 30,
     height: HOUR_HEIGHT,
     flexDirection: 'column',
-    // 11. justifyContent와 borderTopWidth 제거
   },
-  // 12. gridLine -> quarterBlock으로 이름 변경 및 스타일 수정
+  // 8. (문제 2) 15분 간격 높이(30px)와 선 스타일
   quarterBlock: {
-    height: HOUR_HEIGHT / 4, // 30px
+    height: HOUR_HEIGHT / 4,
     borderTopWidth: 1,
-    borderTopColor: COLORS.lightGray, // 15, 30, 45 line
+    borderTopColor: COLORS.lightGray,
   },
   firstQuarterBlock: {
-    borderTopColor: COLORS.border, // 00 line
+    borderTopColor: COLORS.border,
   },
-  // quarterLine 스타일 제거
-  // ---
   addPlaceListContainer: {
     flex: 1,
   },

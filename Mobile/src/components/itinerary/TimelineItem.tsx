@@ -35,14 +35,14 @@ export type Place = {
 type TimelineItemProps = {
   item: Place;
   onDelete: () => void;
-  onEditTime: (type: 'startTime' | 'endTime') => void; // 1. onEditTime prop 다시 추가
+  onEditTime: (type: 'startTime' | 'endTime') => void;
   style?: object;
 };
 
 export default function TimelineItem({
   item,
   onDelete,
-  onEditTime, // 1. prop 받기
+  onEditTime,
   style,
 }: TimelineItemProps) {
   return (
@@ -50,7 +50,6 @@ export default function TimelineItem({
       <View style={styles.card}>
         <Image source={{ uri: item.imageUrl }} style={styles.image} />
         <View style={styles.infoContainer}>
-          {/* 2. 시간 표시 영역을 TouchableOpacity로 분리 */}
           <View style={styles.timeRow}>
             <TouchableOpacity onPress={() => onEditTime('startTime')}>
               <Text style={styles.timeTextEditable}>{item.startTime}</Text>
@@ -60,7 +59,6 @@ export default function TimelineItem({
               <Text style={styles.timeTextEditable}>{item.endTime}</Text>
             </TouchableOpacity>
           </View>
-          {/* --- */}
           <Text style={styles.nameText}>{item.name}</Text>
           <Text style={styles.metaText}>
             ⭐️ {item.rating} · {item.type}
@@ -78,12 +76,12 @@ export default function TimelineItem({
 const styles = StyleSheet.create({
   cardContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
     width: '100%',
     paddingLeft: 90,
+    alignItems: 'stretch', // 1. stretch로 변경 (flex-start에서)
   },
   card: {
-    flex: 1,
+    flex: 1, // 2. flex: 1로 설정하여 부모의 높이를 꽉 채움
     flexDirection: 'row',
     backgroundColor: COLORS.card,
     borderRadius: 10,
@@ -104,7 +102,6 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     justifyContent: 'center',
   },
-  // 3. 시간 관련 스타일 추가/수정
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -117,11 +114,10 @@ const styles = StyleSheet.create({
   },
   timeTextEditable: {
     fontSize: 12,
-    color: COLORS.primary, // 수정 가능하도록 파란색
+    color: COLORS.primary,
     fontWeight: '600',
     textDecorationLine: 'underline',
   },
-  // ---
   nameText: {
     fontSize: 16,
     fontWeight: 'bold',
