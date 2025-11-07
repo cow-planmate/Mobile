@@ -1,5 +1,5 @@
 // src/screens/app/itinerary/ItineraryEditorScreen.tsx
-import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react'; // useMemo 추가
+import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,7 @@ import TimelineItem, {
 } from '../../../components/itinerary/TimelineItem';
 import { useItinerary, Day } from '../../../contexts/ItineraryContext';
 import TimePickerModal from '../../../components/common/TimePickerModal';
-import MapView, { Marker } from 'react-native-maps';
+// import MapView, { Marker } from 'react-native-maps'; // 지도 import 제거
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 
 const Tab = createMaterialTopTabNavigator();
@@ -37,7 +37,6 @@ const COLORS = {
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
-// --- 장소 데이터 (이전과 동일) ---
 const DUMMY_PLACES_DAY1: Place[] = [
   {
     id: '1',
@@ -117,7 +116,6 @@ const DUMMY_SEARCH_RESULTS: Omit<Place, 'time'>[] = [
     longitude: 126.94,
   },
 ];
-// --- ---
 
 const PlaceSearchResultItem = ({
   item,
@@ -139,7 +137,6 @@ const PlaceSearchResultItem = ({
   </TouchableOpacity>
 );
 
-// --- '이동 시간'을 표시할 새 컴포넌트 ---
 type TravelTimeItemProps = {
   duration: string;
 };
@@ -156,7 +153,6 @@ const TravelTimeItem = ({ duration }: TravelTimeItemProps) => (
   </View>
 );
 
-// --- FlatList에서 사용할 데이터 타입 정의 ---
 type TimelineListItem =
   | Place
   | { id: string; type: 'travel'; duration: string };
@@ -240,9 +236,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   const selectedDay = days[selectedDayIndex];
 
-  // "타임라인" 탭 컴포넌트
   const TimelineView = () => {
-    // FlatList에 장소와 이동 시간을 함께 넣기 위해 데이터 가공
     const timelineData: TimelineListItem[] = useMemo(() => {
       if (!selectedDay) return [];
 
@@ -250,7 +244,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       selectedDay.places.forEach((place, index) => {
         data.push(place);
 
-        // 마지막 장소가 아닐 경우 이동 시간 아이템 추가 (임시 데이터)
         if (index < selectedDay.places.length - 1) {
           data.push({
             id: `${place.id}-travel`,
@@ -266,9 +259,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       <View style={styles.tabContentContainer}>
         {selectedDay && (
           <FlatList
-            data={timelineData} // 가공된 데이터 사용
+            data={timelineData}
             renderItem={({ item }) => {
-              // 타입에 따라 다른 컴포넌트 렌더링
               if ('type' in item && item.type === 'travel') {
                 return <TravelTimeItem duration={item.duration} />;
               }
@@ -298,7 +290,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     );
   };
 
-  // "장소추가" 탭 컴포넌트 (AddPlaceScreen 로직)
   const AddPlaceView = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTab, setSelectedTab] = useState<'관광지' | '숙소' | '식당'>(
@@ -395,33 +386,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.mapContainer}>
-        <MapView
-          style={styles.map}
-          region={
-            selectedDay && selectedDay.places.length > 0
-              ? {
-                  latitude: selectedDay.places[0].latitude,
-                  longitude: selectedDay.places[0].longitude,
-                  latitudeDelta: 0.0922,
-                  longitudeDelta: 0.0421,
-                }
-              : undefined
-          }
-        >
-          {selectedDay?.places.map(place => (
-            <Marker
-              key={place.id}
-              coordinate={{
-                latitude: place.latitude,
-                longitude: place.longitude,
-              }}
-              title={place.name}
-              description={place.address}
-            />
-          ))}
-        </MapView>
-      </View>
+      {/* 지도 View 블록 제거 */}
+      {/* <View style={styles.mapContainer}>
+        <MapView ... />
+      </View> 
+      */}
 
       <View>
         <ScrollView
@@ -505,12 +474,7 @@ const styles = StyleSheet.create({
     padding: 0,
     minWidth: 150,
   },
-  mapContainer: {
-    height: '40%',
-  },
-  map: {
-    ...StyleSheet.absoluteFillObject,
-  },
+  // mapContainer 및 map 스타일 제거
   dayTabsContainer: {
     paddingVertical: 10,
     paddingHorizontal: 15,
@@ -622,10 +586,9 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: 'bold',
   },
-  // --- 이동 시간 아이템 스타일 ---
   travelContainer: {
     flexDirection: 'row',
-    height: 40, // 이동 시간 아이템의 높이
+    height: 40,
     alignItems: 'center',
   },
   timeContainer: {
@@ -642,7 +605,7 @@ const styles = StyleSheet.create({
   },
   travelTextContainer: {
     flex: 1,
-    paddingLeft: 10, // 카드 컨테이너의 패딩과 맞춤
+    paddingLeft: 10,
   },
   travelText: {
     fontSize: 12,
