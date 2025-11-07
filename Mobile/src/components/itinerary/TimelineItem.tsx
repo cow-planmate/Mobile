@@ -19,14 +19,12 @@ const COLORS = {
   lightGray: '#F0F0F5',
 };
 
-// 1. Place 타입을 수정합니다.
 export type Place = {
   id: string;
   name: string;
   type: '관광지' | '숙소' | '식당';
-  // time: string; // -> 삭제
-  startTime: string; // -> '10:00' 형식
-  endTime: string; // -> '11:30' 형식
+  startTime: string; // '10:00' 형식
+  endTime: string; // '11:30' 형식
   address: string;
   rating: number;
   imageUrl: string;
@@ -37,25 +35,32 @@ export type Place = {
 type TimelineItemProps = {
   item: Place;
   onDelete: () => void;
-  // onEditTime: () => void; // -> 우선 제거 (로직이 복잡해짐)
-  style?: object; // 2. 외부에서 top, height를 받기 위해 style prop 추가
+  onEditTime: (type: 'startTime' | 'endTime') => void; // 1. onEditTime prop 다시 추가
+  style?: object;
 };
 
 export default function TimelineItem({
   item,
   onDelete,
-  style, // 2. style prop 받기
+  onEditTime, // 1. prop 받기
+  style,
 }: TimelineItemProps) {
   return (
-    // 3. 레이아웃을 카드 본체만 남도록 수정합니다.
     <View style={[styles.cardContainer, style]}>
       <View style={styles.card}>
         <Image source={{ uri: item.imageUrl }} style={styles.image} />
         <View style={styles.infoContainer}>
-          {/* 4. 카드 내부에 시간 표시 (PC UI 참고) */}
-          <Text style={styles.timeText}>
-            {item.startTime} ~ {item.endTime}
-          </Text>
+          {/* 2. 시간 표시 영역을 TouchableOpacity로 분리 */}
+          <View style={styles.timeRow}>
+            <TouchableOpacity onPress={() => onEditTime('startTime')}>
+              <Text style={styles.timeTextEditable}>{item.startTime}</Text>
+            </TouchableOpacity>
+            <Text style={styles.timeText}> ~ </Text>
+            <TouchableOpacity onPress={() => onEditTime('endTime')}>
+              <Text style={styles.timeTextEditable}>{item.endTime}</Text>
+            </TouchableOpacity>
+          </View>
+          {/* --- */}
           <Text style={styles.nameText}>{item.name}</Text>
           <Text style={styles.metaText}>
             ⭐️ {item.rating} · {item.type}
@@ -71,12 +76,11 @@ export default function TimelineItem({
 }
 
 const styles = StyleSheet.create({
-  // 5. 스타일을 카드 중심으로 재구성
   cardContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     width: '100%',
-    paddingLeft: 90, // 시간 영역(60) + 세로줄 영역(30) 만큼 왼쪽 여백
+    paddingLeft: 90,
   },
   card: {
     flex: 1,
@@ -100,12 +104,24 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     justifyContent: 'center',
   },
+  // 3. 시간 관련 스타일 추가/수정
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   timeText: {
     fontSize: 12,
     color: COLORS.placeholder,
     fontWeight: '500',
-    marginBottom: 4,
   },
+  timeTextEditable: {
+    fontSize: 12,
+    color: COLORS.primary, // 수정 가능하도록 파란색
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+  // ---
   nameText: {
     fontSize: 16,
     fontWeight: 'bold',

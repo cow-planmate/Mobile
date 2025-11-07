@@ -7,7 +7,7 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  FlatList, // 1. FlatList를 다시 import 목록에 추가합니다.
+  FlatList,
   Button,
   TextInput,
   Pressable,
@@ -18,8 +18,7 @@ import TimelineItem, {
   Place,
 } from '../../../components/itinerary/TimelineItem';
 import { useItinerary, Day } from '../../../contexts/ItineraryContext';
-// TimePickerModal 관련 로직은 일단 제거 (시간 수정 로직 복잡화로)
-// import TimePickerModal from '../../../components/common/TimePickerModal';
+import TimePickerModal from '../../../components/common/TimePickerModal';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 
 const Tab = createMaterialTopTabNavigator();
@@ -37,7 +36,6 @@ const COLORS = {
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
-// --- DUMMY DATA: startTime, endTime으로 수정 ---
 const DUMMY_PLACES_DAY1: Place[] = [
   {
     id: '1',
@@ -78,9 +76,7 @@ const DUMMY_PLACES_DAY2: Place[] = [
     longitude: 126.8,
   },
 ];
-// DUMMY_SEARCH_RESULTS는 Omit 타입이므로 수정 불필요
 const DUMMY_SEARCH_RESULTS: Omit<Place, 'startTime' | 'endTime'>[] = [
-  // ... (기존 데이터 유지)
   {
     id: '10',
     name: '더현대 서울',
@@ -123,7 +119,6 @@ const DUMMY_SEARCH_RESULTS: Omit<Place, 'startTime' | 'endTime'>[] = [
   },
 ];
 
-// --- PlaceSearchResultItem (수정 없음) ---
 const PlaceSearchResultItem = ({
   item,
   onSelect,
@@ -144,37 +139,57 @@ const PlaceSearchResultItem = ({
   </TouchableOpacity>
 );
 
-// --- TravelTimeItem (제거) ---
-// TravelTimeItem은 이제 그리드 배경과 장소 카드의 top/height로 대체됩니다.
-
-// --- TimelineListItem (제거) ---
-// FlatList를 사용하지 않으므로 필요 없습니다.
-
-// --- 시간 계산 유틸리티 함수 ---
-const HOUR_HEIGHT = 120; // 1시간 = 120px (1분 = 2px)
+const HOUR_HEIGHT = 120;
 const timeToMinutes = (time: string) => {
+  if (!time || typeof time !== 'string' || !time.includes(':')) {
+    return 0;
+  }
   const [hours, minutes] = time.split(':').map(Number);
   return hours * 60 + minutes;
 };
 
-// --- 시간 그리드 배경 컴포넌트 ---
-const TimeGridBackground = () => {
-  const hours = Array.from({ length: 24 }, (_, i) => i); // 0시 ~ 23시
+const timeToDate = (time: string) => {
+  const [hours, minutes] = time.split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+};
 
+const dateToTime = (date: Date) => {
+  return date.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+// --- 시간 그리드 배경 컴포넌트 (수정) ---
+const TimeGridBackground = ({ hours }: { hours: number[] }) => {
   return (
     <View style={styles.gridContainer}>
       {hours.map(hour => (
         <View key={hour} style={[styles.hourBlock, { height: HOUR_HEIGHT }]}>
+          {/* 1. 시간 라벨 열 */}
           <View style={styles.hourLabelContainer}>
-            <Text style={styles.hourText}>{`${hour
-              .toString()
-              .padStart(2, '0')}:00`}</Text>
+            <Text style={[styles.hourText, styles.hourTextMain]}>
+              {`${hour.toString().padStart(2, '0')} 00`}
+            </Text>
+            <Text style={[styles.hourText, styles.hourTextSub, { top: 30 }]}>
+              15
+            </Text>
+            <Text style={[styles.hourText, styles.hourTextSub, { top: 60 }]}>
+              30
+            </Text>
+            <Text style={[styles.hourText, styles.hourTextSub, { top: 90 }]}>
+              45
+            </Text>
           </View>
+
+          {/* 2. 그리드 라인 열 (균일한 4개 블록으로 수정) */}
           <View style={styles.hourContent}>
-            <View style={styles.gridLine} />
-            <View style={[styles.gridLine, styles.quarterLine]} />
-            <View style={[styles.gridLine, styles.quarterLine]} />
-            <View style={[styles.gridLine, styles.quarterLine]} />
+            <View style={[styles.quarterBlock, styles.firstQuarterBlock]} />
+            <View style={styles.quarterBlock} />
+            <View style={styles.quarterBlock} />
+            <View style={styles.quarterBlock} />
           </View>
         </View>
       ))}
@@ -183,14 +198,18 @@ const TimeGridBackground = () => {
 };
 
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
-  const { days, setDays, deletePlaceFromDay, addPlaceToDay } = useItinerary();
+  const { days, setDays, deletePlaceFromDay, addPlaceToDay, updatePlaceTimes } =
+    useItinerary();
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [tripName, setTripName] = useState('강서구 1');
   const [isEditingTripName, setIsEditingTripName] = useState(false);
 
-  // TimePickerModal 관련 state 제거
-  // const [isTimePickerVisible, setTimePickerVisible] = useState(false);
-  // const [editingPlace, setEditingPlace] = useState<Place | null>(null);
+  const [isTimePickerVisible, setTimePickerVisible] = useState(false);
+  const [editingTime, setEditingTime] = useState<{
+    placeId: string;
+    type: 'startTime' | 'endTime';
+    time: string;
+  } | null>(null);
 
   const formatDate = (date: Date) => {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -249,48 +268,92 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     });
   }, [navigation, tripName, days, isEditingTripName]);
 
-  // handleEditTime 및 formatTime 제거 (TimePickerModal 제거됨)
+  const handleEditTime = (
+    placeId: string,
+    type: 'startTime' | 'endTime',
+    time: string,
+  ) => {
+    setEditingTime({ placeId, type, time });
+    setTimePickerVisible(true);
+  };
 
   const selectedDay = days[selectedDayIndex];
 
-  // "타임라인" 탭 컴포넌트 (그리드 레이아웃으로 변경)
   const TimelineView = () => {
+    const { gridHours, offsetMinutes } = useMemo(() => {
+      let minHour = 9;
+      let maxHour = 17;
+
+      if (selectedDay && selectedDay.places.length > 0) {
+        const startTimes = selectedDay.places.map(p =>
+          timeToMinutes(p.startTime),
+        );
+        const endTimes = selectedDay.places.map(p => timeToMinutes(p.endTime));
+
+        const minTime = Math.min(...startTimes);
+        const maxTime = Math.max(...endTimes);
+
+        minHour = Math.max(0, Math.floor(minTime / 60) - 1);
+        maxHour = Math.min(23, Math.ceil(maxTime / 60) + 1);
+      }
+
+      const gridHours = Array.from(
+        { length: maxHour - minHour + 1 },
+        (_, i) => i + minHour,
+      );
+      const offsetMinutes = minHour * 60;
+
+      return { gridHours, offsetMinutes };
+    }, [selectedDay]);
+
     return (
       <View style={styles.tabContentContainer}>
-        <ScrollView contentContainerStyle={styles.timelineContainer}>
-          {/* 1. 시간 그리드 배경 렌더링 */}
-          <TimeGridBackground />
+        {/* 3. ScrollView와 timelineContainer 스타일 수정 */}
+        <ScrollView contentContainerStyle={styles.timelineContentContainer}>
+          {/* 4. 배경과 컨텐츠를 담을 래퍼 추가 */}
+          <View style={styles.timelineWrapper}>
+            <TimeGridBackground hours={gridHours} />
 
-          {/* 2. 장소 아이템들을 absolute position으로 렌더링 */}
-          {selectedDay?.places.map(place => {
-            const startMinutes = timeToMinutes(place.startTime);
-            const endMinutes = timeToMinutes(place.endTime);
+            {selectedDay?.places.map(place => {
+              const startMinutes = timeToMinutes(place.startTime);
+              const endMinutes = timeToMinutes(place.endTime);
 
-            const top = (startMinutes / 60) * HOUR_HEIGHT;
-            const height = ((endMinutes - startMinutes) / 60) * HOUR_HEIGHT;
+              // 5. top 위치 계산 시 ScrollView의 padding(timelineContainer) 값을 반영
+              const top =
+                ((startMinutes - offsetMinutes) / 60) * HOUR_HEIGHT +
+                styles.timelineContainer.paddingVertical; // 20px
+              const height = ((endMinutes - startMinutes) / 60) * HOUR_HEIGHT;
 
-            return (
-              <TimelineItem
-                key={place.id}
-                item={place}
-                onDelete={() => deletePlaceFromDay(selectedDayIndex, place.id)}
-                style={{
-                  position: 'absolute',
-                  top: top,
-                  height: height,
-                  right: 0, // cardContainer의 paddingLeft와 대응
-                  paddingLeft: 0, // TimelineItem의 기본 paddingLeft 무시
-                  paddingRight: 15, // 스크롤바 영역 확보
-                }}
-              />
-            );
-          })}
+              return (
+                <TimelineItem
+                  key={place.id}
+                  item={place}
+                  onDelete={() =>
+                    deletePlaceFromDay(selectedDayIndex, place.id)
+                  }
+                  onEditTime={type =>
+                    handleEditTime(
+                      place.id,
+                      type,
+                      type === 'startTime' ? place.startTime : place.endTime,
+                    )
+                  }
+                  style={{
+                    position: 'absolute',
+                    top: top,
+                    height: height,
+                    left: 0,
+                    right: 15,
+                  }}
+                />
+              );
+            })}
+          </View>
         </ScrollView>
       </View>
     );
   };
 
-  // "장소추가" 탭 컴포넌트 (수정 없음)
   const AddPlaceView = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTab, setSelectedTab] = useState<'관광지' | '숙소' | '식당'>(
@@ -371,7 +434,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           </TouchableOpacity>
         </View>
 
-        {/* FlatList 사용 (AddPlaceView는 기존과 동일) */}
         <View style={styles.addPlaceListContainer}>
           <FlatList
             data={filteredPlaces}
@@ -434,11 +496,42 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           tabBarLabelStyle: { fontWeight: 'bold' },
         }}
       >
-        <Tab.Screen name="타임라인" component={TimelineView} />
-        <Tab.Screen name="장소추가" component={AddPlaceView} />
+        <Tab.Screen name="타임라인">{() => <TimelineView />}</Tab.Screen>
+        <Tab.Screen name="장소추가">{() => <AddPlaceView />}</Tab.Screen>
       </Tab.Navigator>
 
-      {/* TimePickerModal 제거 */}
+      {editingTime && (
+        <TimePickerModal
+          visible={isTimePickerVisible}
+          onClose={() => setTimePickerVisible(false)}
+          initialDate={timeToDate(editingTime.time)}
+          onConfirm={date => {
+            const newTime = dateToTime(date);
+            const place = selectedDay.places.find(
+              p => p.id === editingTime.placeId,
+            );
+            if (place) {
+              if (editingTime.type === 'startTime') {
+                updatePlaceTimes(
+                  selectedDayIndex,
+                  place.id,
+                  newTime,
+                  place.endTime,
+                );
+              } else {
+                updatePlaceTimes(
+                  selectedDayIndex,
+                  place.id,
+                  place.startTime,
+                  newTime,
+                );
+              }
+            }
+            setTimePickerVisible(false);
+            setEditingTime(null);
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -516,49 +609,70 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  // --- 그리드 스타일 ---
+  // --- 타임라인 그리드 스타일 수정 ---
   timelineContainer: {
-    paddingVertical: 20, // 상하 여백
+    paddingVertical: 20,
+  },
+  timelineContentContainer: {
+    // 6. ScrollView가 자식의 높이를 알 수 있도록
+    // paddingVertical을 여기 대신 timelineWrapper에 적용
+  },
+  timelineWrapper: {
+    position: 'relative', // 7. 자식(TimelineItem)의 absolute 기준점
+    paddingVertical: 20, // 8. ScrollView의 패딩을 여기로 이동
   },
   gridContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingVertical: 20, // 상하 여백 (timelineContainer와 동일)
+    // 9. paddingVertical 제거 (부모인 timelineWrapper가 담당)
   },
   hourBlock: {
     flexDirection: 'row',
   },
   hourLabelContainer: {
-    width: 60, // 시간 라벨 영역
-    alignItems: 'center',
-    paddingTop: -8, // 텍스트를 라인 위쪽에 걸치게
+    width: 60,
+    height: HOUR_HEIGHT,
+    position: 'relative',
+    alignItems: 'flex-end',
+    paddingRight: 10,
   },
   hourText: {
-    fontSize: 12,
+    position: 'absolute',
+    marginTop: -8,
+    right: 10,
+  },
+  hourTextMain: {
+    fontSize: 14,
+    color: COLORS.text,
+    fontWeight: '500',
+    top: 0,
+  },
+  hourTextSub: {
+    fontSize: 10,
     color: COLORS.placeholder,
+    // 10. top 위치를 15분 간격 높이에 맞게 수정
+    // (HOUR_HEIGHT / 4) * 1 = 30
+    // (HOUR_HEIGHT / 4) * 2 = 60
+    // (HOUR_HEIGHT / 4) * 3 = 90
   },
   hourContent: {
     flex: 1,
-    marginLeft: 30, // 세로줄 영역 (TimelineItem의 paddingLeft와 맞춤)
+    marginLeft: 30,
+    height: HOUR_HEIGHT,
+    flexDirection: 'column',
+    // 11. justifyContent와 borderTopWidth 제거
+  },
+  // 12. gridLine -> quarterBlock으로 이름 변경 및 스타일 수정
+  quarterBlock: {
+    height: HOUR_HEIGHT / 4, // 30px
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    height: '100%',
-    justifyContent: 'space-between', // 15분 간격선
+    borderTopColor: COLORS.lightGray, // 15, 30, 45 line
   },
-  gridLine: {
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    width: '100%',
+  firstQuarterBlock: {
+    borderTopColor: COLORS.border, // 00 line
   },
-  quarterLine: {
-    borderBottomColor: COLORS.lightGray, // 15분선은 더 연하게
-  },
-  // --- AddPlaceView 스타일 ---
+  // quarterLine 스타일 제거
+  // ---
   addPlaceListContainer: {
-    flex: 1, // 탭 전환 시 영역이 잡히도록
+    flex: 1,
   },
   searchHeader: {
     flexDirection: 'row',
