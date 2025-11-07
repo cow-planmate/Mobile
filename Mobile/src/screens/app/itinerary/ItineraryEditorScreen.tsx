@@ -1,5 +1,5 @@
 // src/screens/app/itinerary/ItineraryEditorScreen.tsx
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react'; // useMemo 추가
 import {
   View,
   Text,
@@ -10,18 +10,17 @@ import {
   FlatList,
   Button,
   TextInput,
-  Pressable, // Pressable 추가
+  Pressable,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
 import TimelineItem, {
   Place,
 } from '../../../components/itinerary/TimelineItem';
-// import FloatingActionButton from '../../../components/common/FloatingActionButton'; // 제거
 import { useItinerary, Day } from '../../../contexts/ItineraryContext';
 import TimePickerModal from '../../../components/common/TimePickerModal';
 import MapView, { Marker } from 'react-native-maps';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'; // 탭 네비게이터 import
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -38,6 +37,7 @@ const COLORS = {
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
+// --- 장소 데이터 (이전과 동일) ---
 const DUMMY_PLACES_DAY1: Place[] = [
   {
     id: '1',
@@ -75,8 +75,6 @@ const DUMMY_PLACES_DAY2: Place[] = [
     longitude: 126.8,
   },
 ];
-
-// --- AddPlaceScreen에서 가져온 컴포넌트 및 데이터 ---
 const DUMMY_SEARCH_RESULTS: Omit<Place, 'time'>[] = [
   {
     id: '10',
@@ -119,6 +117,7 @@ const DUMMY_SEARCH_RESULTS: Omit<Place, 'time'>[] = [
     longitude: 126.94,
   },
 ];
+// --- ---
 
 const PlaceSearchResultItem = ({
   item,
@@ -139,7 +138,28 @@ const PlaceSearchResultItem = ({
     </Pressable>
   </TouchableOpacity>
 );
-// --- AddPlaceScreen 로직 끝 ---
+
+// --- '이동 시간'을 표시할 새 컴포넌트 ---
+type TravelTimeItemProps = {
+  duration: string;
+};
+
+const TravelTimeItem = ({ duration }: TravelTimeItemProps) => (
+  <View style={styles.travelContainer}>
+    <View style={styles.timeContainer} />
+    <View style={styles.timelineLineContainer}>
+      <View style={styles.travelLine} />
+    </View>
+    <View style={styles.travelTextContainer}>
+      <Text style={styles.travelText}>🚗 {duration}</Text>
+    </View>
+  </View>
+);
+
+// --- FlatList에서 사용할 데이터 타입 정의 ---
+type TimelineListItem =
+  | Place
+  | { id: string; type: 'travel'; duration: string };
 
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const { days, setDays, deletePlaceFromDay, updatePlaceTime, addPlaceToDay } =
@@ -221,34 +241,62 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const selectedDay = days[selectedDayIndex];
 
   // "타임라인" 탭 컴포넌트
-  const TimelineView = () => (
-    <View style={styles.tabContentContainer}>
-      {selectedDay && (
-        <FlatList
-          data={selectedDay.places}
-          renderItem={({ item }) => (
-            <TimelineItem
-              item={item}
-              onDelete={() => deletePlaceFromDay(selectedDayIndex, item.id)}
-              onEditTime={() => handleEditTime(item)}
-            />
-          )}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.timelineContainer}
-          ListHeaderComponent={
-            <Text style={styles.timelineDateText}>
-              {selectedDay.date.toLocaleDateString('ko-KR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                weekday: 'long',
-              })}
-            </Text>
-          }
-        />
-      )}
-    </View>
-  );
+  const TimelineView = () => {
+    // FlatList에 장소와 이동 시간을 함께 넣기 위해 데이터 가공
+    const timelineData: TimelineListItem[] = useMemo(() => {
+      if (!selectedDay) return [];
+
+      const data: TimelineListItem[] = [];
+      selectedDay.places.forEach((place, index) => {
+        data.push(place);
+
+        // 마지막 장소가 아닐 경우 이동 시간 아이템 추가 (임시 데이터)
+        if (index < selectedDay.places.length - 1) {
+          data.push({
+            id: `${place.id}-travel`,
+            type: 'travel',
+            duration: '45분 소요',
+          });
+        }
+      });
+      return data;
+    }, [selectedDay]);
+
+    return (
+      <View style={styles.tabContentContainer}>
+        {selectedDay && (
+          <FlatList
+            data={timelineData} // 가공된 데이터 사용
+            renderItem={({ item }) => {
+              // 타입에 따라 다른 컴포넌트 렌더링
+              if ('type' in item && item.type === 'travel') {
+                return <TravelTimeItem duration={item.duration} />;
+              }
+              return (
+                <TimelineItem
+                  item={item as Place}
+                  onDelete={() => deletePlaceFromDay(selectedDayIndex, item.id)}
+                  onEditTime={() => handleEditTime(item as Place)}
+                />
+              );
+            }}
+            keyExtractor={item => item.id}
+            contentContainerStyle={styles.timelineContainer}
+            ListHeaderComponent={
+              <Text style={styles.timelineDateText}>
+                {selectedDay.date.toLocaleDateString('ko-KR', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  weekday: 'long',
+                })}
+              </Text>
+            }
+          />
+        )}
+      </View>
+    );
+  };
 
   // "장소추가" 탭 컴포넌트 (AddPlaceScreen 로직)
   const AddPlaceView = () => {
@@ -267,8 +315,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
     const handleSelectPlace = (place: Omit<Place, 'time'>) => {
       addPlaceToDay(selectedDayIndex, place);
-      // 장소 추가 후 타임라인 탭으로 이동 (선택 사항)
-      // navigation.navigate('Timeline'); // 탭 이름을 'Timeline'으로 가정
     };
 
     return (
@@ -413,7 +459,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         </ScrollView>
       </View>
 
-      {/* 기존 FlatList와 FAB 대신 탭 네비게이터 사용 */}
       <Tab.Navigator
         screenOptions={{
           tabBarActiveTintColor: COLORS.primary,
@@ -514,7 +559,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
   },
-  // --- AddPlaceScreen에서 가져온 스타일 ---
   searchHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -577,5 +621,32 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: COLORS.primary,
     fontWeight: 'bold',
+  },
+  // --- 이동 시간 아이템 스타일 ---
+  travelContainer: {
+    flexDirection: 'row',
+    height: 40, // 이동 시간 아이템의 높이
+    alignItems: 'center',
+  },
+  timeContainer: {
+    width: 60,
+  },
+  timelineLineContainer: {
+    width: 30,
+    alignItems: 'center',
+  },
+  travelLine: {
+    width: 2,
+    backgroundColor: COLORS.border,
+    flex: 1,
+  },
+  travelTextContainer: {
+    flex: 1,
+    paddingLeft: 10, // 카드 컨테이너의 패딩과 맞춤
+  },
+  travelText: {
+    fontSize: 12,
+    color: COLORS.placeholder,
+    fontWeight: '500',
   },
 });
