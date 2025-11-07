@@ -10,20 +10,23 @@ import {
 } from 'react-native';
 
 const COLORS = {
-  primary: '#1344FF', // 기본 색상 #1344FF로 통일
+  primary: '#1344FF',
   card: '#FFFFFF',
   text: '#1C1C1E',
   placeholder: '#8E8E93',
   border: '#E5E5EA',
   error: '#FF3B30',
-  lightGray: '#F0F2F5', // 연한 회색 추가
+  lightGray: '#F0F0F5',
 };
 
+// 1. Place 타입을 수정합니다.
 export type Place = {
   id: string;
   name: string;
   type: '관광지' | '숙소' | '식당';
-  time: string;
+  // time: string; // -> 삭제
+  startTime: string; // -> '10:00' 형식
+  endTime: string; // -> '11:30' 형식
   address: string;
   rating: number;
   imageUrl: string;
@@ -34,91 +37,46 @@ export type Place = {
 type TimelineItemProps = {
   item: Place;
   onDelete: () => void;
-  onEditTime: () => void;
+  // onEditTime: () => void; // -> 우선 제거 (로직이 복잡해짐)
+  style?: object; // 2. 외부에서 top, height를 받기 위해 style prop 추가
 };
 
 export default function TimelineItem({
   item,
   onDelete,
-  onEditTime,
+  style, // 2. style prop 받기
 }: TimelineItemProps) {
   return (
-    <View style={styles.container}>
-      {/* 1. 시간 표시 영역 */}
-      <View style={styles.timeContainer}>
-        <TouchableOpacity onPress={onEditTime}>
-          <Text style={styles.timeText}>{item.time}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* 2. 타임라인 (세로줄 + 원) 영역 */}
-      <View style={styles.timelineLineContainer}>
-        <View style={styles.timelineDot} />
-        <View style={styles.timelineLine} />
-      </View>
-
-      {/* 3. 장소 카드 영역 */}
-      <View style={styles.cardContainer}>
-        <View style={styles.card}>
-          <Image source={{ uri: item.imageUrl }} style={styles.image} />
-          <View style={styles.infoContainer}>
-            <Text style={styles.nameText}>{item.name}</Text>
-            <Text style={styles.metaText}>
-              ⭐️ {item.rating} · {item.type}
-            </Text>
-            <Text style={styles.metaText}>{item.address}</Text>
-          </View>
-          <Pressable style={styles.deleteButton} onPress={onDelete}>
-            <Text style={styles.deleteButtonText}>삭제</Text>
-          </Pressable>
+    // 3. 레이아웃을 카드 본체만 남도록 수정합니다.
+    <View style={[styles.cardContainer, style]}>
+      <View style={styles.card}>
+        <Image source={{ uri: item.imageUrl }} style={styles.image} />
+        <View style={styles.infoContainer}>
+          {/* 4. 카드 내부에 시간 표시 (PC UI 참고) */}
+          <Text style={styles.timeText}>
+            {item.startTime} ~ {item.endTime}
+          </Text>
+          <Text style={styles.nameText}>{item.name}</Text>
+          <Text style={styles.metaText}>
+            ⭐️ {item.rating} · {item.type}
+          </Text>
+          <Text style={styles.metaText}>{item.address}</Text>
         </View>
+        <Pressable style={styles.deleteButton} onPress={onDelete}>
+          <Text style={styles.deleteButtonText}>삭제</Text>
+        </Pressable>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    marginBottom: 10, // 카드 간 간격 조정
-    alignItems: 'flex-start',
-  },
-  // 1. 시간 표시 영역 스타일
-  timeContainer: {
-    width: 60,
-    paddingTop: 13, // 카드 상단과 시간 텍스트 정렬
-    alignItems: 'center', // 시간 중앙 정렬
-  },
-  timeText: {
-    fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: '600',
-    textDecorationLine: 'underline',
-  },
-  // 2. 타임라인 (세로줄 + 원) 스타일
-  timelineLineContainer: {
-    width: 30,
-    alignItems: 'center',
-  },
-  timelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: COLORS.primary,
-    marginTop: 18, // 카드 상단과 원 정렬
-    zIndex: 1,
-  },
-  timelineLine: {
-    width: 2,
-    backgroundColor: COLORS.border,
-    flex: 1,
-    marginTop: -8, // 원과 겹치도록
-  },
-  // 3. 장소 카드 영역 스타일
+  // 5. 스타일을 카드 중심으로 재구성
   cardContainer: {
-    flex: 1,
-    paddingTop: 10, // 시간, 원과 높이 맞추기
-    paddingBottom: 10, // 카드 하단 여백
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    width: '100%',
+    paddingLeft: 90, // 시간 영역(60) + 세로줄 영역(30) 만큼 왼쪽 여백
   },
   card: {
     flex: 1,
@@ -141,6 +99,12 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 10,
     justifyContent: 'center',
+  },
+  timeText: {
+    fontSize: 12,
+    color: COLORS.placeholder,
+    fontWeight: '500',
+    marginBottom: 4,
   },
   nameText: {
     fontSize: 16,
