@@ -8,7 +8,7 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
-  Button,
+  Button, // Button은 더 이상 사용하지 않지만, navigation 옵션 타입 때문에 유지합니다.
   TextInput,
   Pressable,
 } from 'react-native';
@@ -19,7 +19,6 @@ import TimelineItem, {
 } from '../../../components/itinerary/TimelineItem';
 import { useItinerary, Day } from '../../../contexts/ItineraryContext';
 import TimePickerModal from '../../../components/common/TimePickerModal';
-// import MapView, { Marker } from 'react-native-maps'; // 지도 import 제거
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 
 const Tab = createMaterialTopTabNavigator();
@@ -211,13 +210,16 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
             <Text style={styles.headerTitle}>{tripName}</Text>
           </TouchableOpacity>
         ),
+      // 1. 헤더 '완료' 버튼 디자인 변경
       headerRight: () => (
-        <Button
+        <TouchableOpacity
           onPress={() =>
             navigation.navigate('ItineraryView', { days, tripName })
           }
-          title="완료"
-        />
+          style={styles.headerDoneButton}
+        >
+          <Text style={styles.headerDoneButtonText}>완료</Text>
+        </TouchableOpacity>
       ),
     });
   }, [navigation, tripName, days, isEditingTripName]);
@@ -386,13 +388,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 지도 View 블록 제거 */}
-      {/* <View style={styles.mapContainer}>
-        <MapView ... />
-      </View> 
-      */}
-
-      <View>
+      {/* 2. Day 탭을 감싸는 View에 스타일 추가 */}
+      <View style={styles.dayTabsWrapper}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -474,13 +471,28 @@ const styles = StyleSheet.create({
     padding: 0,
     minWidth: 150,
   },
-  // mapContainer 및 map 스타일 제거
-  dayTabsContainer: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+  // 3. '완료' 버튼 스타일 추가
+  headerDoneButton: {
+    marginRight: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: COLORS.primary,
+  },
+  headerDoneButtonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // 4. Day 탭 스타일 수정
+  dayTabsWrapper: {
     backgroundColor: COLORS.card,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+  },
+  dayTabsContainer: {
+    paddingVertical: 10,
+    paddingHorizontal: 15, // 좌우 패딩을 주어 탭이 가장자리에서 살짝 떨어지게 함
   },
   dayTab: {
     paddingVertical: 10,
