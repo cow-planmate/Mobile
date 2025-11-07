@@ -18,11 +18,11 @@ import TimelineItem, {
 } from '../../../components/itinerary/TimelineItem';
 import FloatingActionButton from '../../../components/common/FloatingActionButton';
 import { useItinerary, Day } from '../../../contexts/ItineraryContext';
-import TimePickerModal from '../../../components/common/TimePickerModal'; // ⭐️ 1. TimePickerModal import
+import TimePickerModal from '../../../components/common/TimePickerModal';
 import MapView, { Marker } from 'react-native-maps';
 
 const COLORS = {
-  primary: '#007AFF',
+  primary: '#1344FF', // 색상 변경
   background: '#F0F2F5',
   card: '#FFFFFF',
   text: '#1C1C1E',
@@ -78,9 +78,14 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const [tripName, setTripName] = useState('강서구 1');
   const [isEditingTripName, setIsEditingTripName] = useState(false);
 
-  // ⭐️ 2. 시간 선택 모달과 관련된 State를 다시 추가합니다.
   const [isTimePickerVisible, setTimePickerVisible] = useState(false);
   const [editingPlace, setEditingPlace] = useState<Place | null>(null);
+
+  const formatDate = (date: Date) => {
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${month}.${day}`;
+  };
 
   useEffect(() => {
     if (days.length > 0) return;
@@ -131,13 +136,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     });
   }, [navigation, tripName, days, isEditingTripName]);
 
-  // ⭐️ 3. 시간 아이템을 눌렀을 때 모달을 열어주는 함수
   const handleEditTime = (place: Place) => {
     setEditingPlace(place);
     setTimePickerVisible(true);
   };
 
-  // 시간을 'HH:mm' 형식의 문자열로 변환
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-GB', {
       hour: '2-digit',
@@ -200,6 +203,14 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
               >
                 Day {day.dayNumber}
               </Text>
+              <Text
+                style={[
+                  styles.dayTabDateText,
+                  selectedDayIndex === index && styles.dayTabDateTextSelected,
+                ]}
+              >
+                {formatDate(day.date)}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -209,7 +220,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         <FlatList
           data={selectedDay.places}
           renderItem={({ item }) => (
-            // ⭐️ 4. onEditTime 함수를 TimelineItem에 전달합니다.
             <TimelineItem
               item={item}
               onDelete={() => deletePlaceFromDay(selectedDayIndex, item.id)}
@@ -236,7 +246,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         }
       />
 
-      {/* ⭐️ 5. TimePickerModal 컴포넌트를 추가합니다. */}
       {editingPlace && (
         <TimePickerModal
           visible={isTimePickerVisible}
@@ -285,11 +294,13 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   },
   dayTab: {
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 20,
+    borderRadius: 12,
     marginRight: 10,
     backgroundColor: COLORS.lightGray,
+    alignItems: 'center',
+    minWidth: 60,
   },
   dayTabSelected: {
     backgroundColor: COLORS.primary,
@@ -297,9 +308,19 @@ const styles = StyleSheet.create({
   dayTabText: {
     color: COLORS.text,
     fontWeight: '600',
+    fontSize: 14,
   },
   dayTabTextSelected: {
     color: COLORS.white,
+  },
+  dayTabDateText: {
+    color: COLORS.placeholder,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  dayTabDateTextSelected: {
+    color: COLORS.white,
+    opacity: 0.8,
   },
   timelineContainer: {
     padding: 20,
