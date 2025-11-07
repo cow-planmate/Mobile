@@ -10,15 +10,15 @@ import {
 } from 'react-native';
 
 const COLORS = {
-  primary: '#007AFF',
+  primary: '#1344FF', // 기본 색상 #1344FF로 통일
   card: '#FFFFFF',
   text: '#1C1C1E',
   placeholder: '#8E8E93',
   border: '#E5E5EA',
   error: '#FF3B30',
+  lightGray: '#F0F2F5', // 연한 회색 추가
 };
 
-// ⭐️⭐️⭐️ 여기가 수정된 부분입니다! ⭐️⭐️⭐️
 export type Place = {
   id: string;
   name: string;
@@ -27,8 +27,8 @@ export type Place = {
   address: string;
   rating: number;
   imageUrl: string;
-  latitude: number; // ⭐️ 위도(latitude) 속성 추가
-  longitude: number; // ⭐️ 경도(longitude) 속성 추가
+  latitude: number;
+  longitude: number;
 };
 
 type TimelineItemProps = {
@@ -44,21 +44,34 @@ export default function TimelineItem({
 }: TimelineItemProps) {
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={onEditTime}>
-        <Text style={styles.timeText}>{item.time}</Text>
-      </TouchableOpacity>
-      <View style={styles.card}>
-        <Image source={{ uri: item.imageUrl }} style={styles.image} />
-        <View style={styles.infoContainer}>
-          <Text style={styles.nameText}>{item.name}</Text>
-          <Text style={styles.metaText}>
-            ⭐️ {item.rating} · {item.type}
-          </Text>
-          <Text style={styles.metaText}>{item.address}</Text>
+      {/* 1. 시간 표시 영역 */}
+      <View style={styles.timeContainer}>
+        <TouchableOpacity onPress={onEditTime}>
+          <Text style={styles.timeText}>{item.time}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 2. 타임라인 (세로줄 + 원) 영역 */}
+      <View style={styles.timelineLineContainer}>
+        <View style={styles.timelineDot} />
+        <View style={styles.timelineLine} />
+      </View>
+
+      {/* 3. 장소 카드 영역 */}
+      <View style={styles.cardContainer}>
+        <View style={styles.card}>
+          <Image source={{ uri: item.imageUrl }} style={styles.image} />
+          <View style={styles.infoContainer}>
+            <Text style={styles.nameText}>{item.name}</Text>
+            <Text style={styles.metaText}>
+              ⭐️ {item.rating} · {item.type}
+            </Text>
+            <Text style={styles.metaText}>{item.address}</Text>
+          </View>
+          <Pressable style={styles.deleteButton} onPress={onDelete}>
+            <Text style={styles.deleteButtonText}>삭제</Text>
+          </Pressable>
         </View>
-        <Pressable style={styles.deleteButton} onPress={onDelete}>
-          <Text style={styles.deleteButtonText}>삭제</Text>
-        </Pressable>
       </View>
     </View>
   );
@@ -67,16 +80,45 @@ export default function TimelineItem({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: 10, // 카드 간 간격 조정
     alignItems: 'flex-start',
   },
-  timeText: {
+  // 1. 시간 표시 영역 스타일
+  timeContainer: {
     width: 60,
+    paddingTop: 13, // 카드 상단과 시간 텍스트 정렬
+    alignItems: 'center', // 시간 중앙 정렬
+  },
+  timeText: {
     fontSize: 14,
     color: COLORS.primary,
     fontWeight: '600',
-    paddingTop: 5,
     textDecorationLine: 'underline',
+  },
+  // 2. 타임라인 (세로줄 + 원) 스타일
+  timelineLineContainer: {
+    width: 30,
+    alignItems: 'center',
+  },
+  timelineDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: COLORS.primary,
+    marginTop: 18, // 카드 상단과 원 정렬
+    zIndex: 1,
+  },
+  timelineLine: {
+    width: 2,
+    backgroundColor: COLORS.border,
+    flex: 1,
+    marginTop: -8, // 원과 겹치도록
+  },
+  // 3. 장소 카드 영역 스타일
+  cardContainer: {
+    flex: 1,
+    paddingTop: 10, // 시간, 원과 높이 맞추기
+    paddingBottom: 10, // 카드 하단 여백
   },
   card: {
     flex: 1,
