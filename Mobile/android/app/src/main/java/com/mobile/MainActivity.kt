@@ -1,5 +1,7 @@
+// android/app/src/main/java/com/mobile/MainActivity.kt
 package com.mobile
 
+import android.os.Bundle // 1. import 추가
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
@@ -19,4 +21,10 @@ class MainActivity : ReactActivity() {
    */
   override fun createReactActivityDelegate(): ReactActivityDelegate =
       DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
+
+  // 2. 이 함수 전체를 추가합니다.
+  // (react-native-gesture-handler에 필요)
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(null)
+  }
 }

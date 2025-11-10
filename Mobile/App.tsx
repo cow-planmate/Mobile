@@ -3,18 +3,21 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider } from './src/contexts/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
-import { ItineraryProvider } from './src/contexts/ItineraryContext'; // ⭐️ 1. 새로 추가
+import { ItineraryProvider } from './src/contexts/ItineraryContext';
+import { GestureHandlerRootView } from 'react-native-gesture-handler'; // 1. import 추가
 
 function App() {
   return (
-    <AuthProvider>
-      {/* ⭐️ 2. ItineraryProvider로 감싸줍니다. */}
-      <ItineraryProvider>
-        <NavigationContainer>
-          <AppNavigator />
-        </NavigationContainer>
-      </ItineraryProvider>
-    </AuthProvider>
+    // 2. 최상위 뷰를 GestureHandlerRootView로 감싸줍니다.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <ItineraryProvider>
+          <NavigationContainer>
+            <AppNavigator />
+          </NavigationContainer>
+        </ItineraryProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }
 
