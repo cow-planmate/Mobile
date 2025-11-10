@@ -21,6 +21,7 @@ import { useItinerary, Day } from '../../../contexts/ItineraryContext';
 import TimePickerModal from '../../../components/common/TimePickerModal';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 
+// 1. (지시 3) Gesture Handler 및 Reanimated import
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -33,7 +34,7 @@ const Tab = createMaterialTopTabNavigator();
 
 const COLORS = {
   primary: '#1344FF',
-  background: '#FFFFFF',
+  background: '#FFFFFF', // 1. (지시 2) 배경색을 흰색으로 변경
   card: '#FFFFFF',
   text: '#1C1C1E',
   placeholder: '#8E8E93',
@@ -44,6 +45,7 @@ const COLORS = {
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
+// (Dummy 데이터는 이전과 동일...)
 const DUMMY_PLACES_DAY1: Place[] = [
   {
     id: '1',
@@ -149,7 +151,7 @@ const PlaceSearchResultItem = ({
 
 const HOUR_HEIGHT = 120;
 const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
-const MIN_ITEM_HEIGHT = 80; // 1. 최소 높이 상수 다시 추가
+const MIN_ITEM_HEIGHT = 80;
 const GRID_SNAP_HEIGHT = HOUR_HEIGHT / 4;
 
 const timeToMinutes = (time: string) => {
@@ -183,6 +185,7 @@ const minutesToTime = (totalMinutes: number) => {
     .padStart(2, '0')}`;
 };
 
+// --- 시간 그리드 배경 컴포넌트 (수정) ---
 const TimeGridBackground = ({ hours }: { hours: number[] }) => {
   const hourStr = (h: number) => h.toString().padStart(2, '0');
 
@@ -190,42 +193,37 @@ const TimeGridBackground = ({ hours }: { hours: number[] }) => {
     <View style={styles.gridContainer}>
       {hours.map(hour => (
         <View key={hour} style={[styles.hourBlock, { height: HOUR_HEIGHT }]}>
+          {/* 2. (지시 1) 시간 라벨 열 수정 */}
           <View style={styles.hourLabelContainer}>
-            <View style={[styles.hourLabelGroup, { top: 0 }]}>
-              <Text style={[styles.hourText, styles.hourTextMain]}>
-                {`${hourStr(hour)}`}
-              </Text>
-              <Text style={[styles.hourText, styles.hourTextSub]}>00</Text>
-            </View>
+            <Text style={[styles.timeLabelText, { top: 0 }]}>
+              {`${hourStr(hour)}:00`}
+            </Text>
             <Text
               style={[
-                styles.hourText,
-                styles.hourTextSub,
+                styles.timeLabelText,
                 styles.minuteLabel,
                 { top: HOUR_HEIGHT / 4 },
               ]}
             >
-              15
+              {`${hourStr(hour)}:15`}
             </Text>
             <Text
               style={[
-                styles.hourText,
-                styles.hourTextSub,
+                styles.timeLabelText,
                 styles.minuteLabel,
                 { top: HOUR_HEIGHT / 2 },
               ]}
             >
-              30
+              {`${hourStr(hour)}:30`}
             </Text>
             <Text
               style={[
-                styles.hourText,
-                styles.hourTextSub,
+                styles.timeLabelText,
                 styles.minuteLabel,
                 { top: (HOUR_HEIGHT * 3) / 4 },
               ]}
             >
-              45
+              {`${hourStr(hour)}:45`}
             </Text>
           </View>
 
@@ -241,7 +239,6 @@ const TimeGridBackground = ({ hours }: { hours: number[] }) => {
   );
 };
 
-// 2. onDragEnd prop 타입 수정 (string -> number)
 const DraggableTimelineItem = ({
   place,
   offsetMinutes,
@@ -255,8 +252,8 @@ const DraggableTimelineItem = ({
   onEditTime: (type: 'startTime' | 'endTime') => void;
   onDragEnd: (
     placeId: string,
-    newStartMinutes: number, // string -> number
-    newEndMinutes: number, // string -> number
+    newStartMinutes: number,
+    newEndMinutes: number,
   ) => void;
 }) => {
   const startMinutes = timeToMinutes(place.startTime);
@@ -266,7 +263,6 @@ const DraggableTimelineItem = ({
   const initialTop = (startMinutes - offsetMinutes) * MINUTE_HEIGHT + 20;
   const calculatedHeight = (endMinutes - startMinutes) * MINUTE_HEIGHT;
 
-  // 3. 최소 높이(MIN_ITEM_HEIGHT) 적용 복원
   const height = Math.max(calculatedHeight, MIN_ITEM_HEIGHT);
 
   const top = useSharedValue(initialTop);
@@ -288,12 +284,7 @@ const DraggableTimelineItem = ({
       const newStartMinutes = (snappedTop - 20) / MINUTE_HEIGHT + offsetMinutes;
       const newEndMinutes = newStartMinutes + durationMinutes;
 
-      // 4. (오류 수정) runOnJS에는 number 타입의 분(minutes)을 전달
-      runOnJS(onDragEnd)(
-        place.id,
-        newStartMinutes, // minutesToTime() 호출 제거
-        newEndMinutes, // minutesToTime() 호출 제거
-      );
+      runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
 
       top.value = withSpring(snappedTop + 20);
     });
@@ -302,7 +293,7 @@ const DraggableTimelineItem = ({
     return {
       position: 'absolute',
       top: top.value,
-      height: height, // 최소 높이가 적용된 'height' 사용
+      height: height,
       left: 0,
       right: 15,
     };
@@ -401,13 +392,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setTimePickerVisible(true);
   };
 
-  // 5. (오류 수정) handleDragEnd가 number 타입을 받도록 수정
   const handleDragEnd = (
     placeId: string,
     newStartMinutes: number,
     newEndMinutes: number,
   ) => {
-    // 6. (오류 수정) '분'을 '시간 문자열'로 변환하는 작업을 JS 스레드(여기)에서 수행
     const newStartTime = minutesToTime(newStartMinutes);
     const newEndTime = minutesToTime(newEndMinutes);
     updatePlaceTimes(selectedDayIndex, placeId, newStartTime, newEndTime);
@@ -763,6 +752,7 @@ const styles = StyleSheet.create({
   hourBlock: {
     flexDirection: 'row',
   },
+  // --- (지시 1, 3) 스타일 수정 ---
   hourLabelContainer: {
     width: 60,
     height: HOUR_HEIGHT,
@@ -770,34 +760,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   hourLabelGroup: {
-    flexDirection: 'row',
-    position: 'absolute',
-    width: '100%',
-    justifyContent: 'center',
-    top: 0,
-    marginTop: -8,
-    alignItems: 'baseline',
+    // 3. 이 스타일은 이제 사용되지 않음
   },
   hourText: {
-    color: COLORS.placeholder,
-    fontSize: 10,
+    // 4. 이 스타일은 이제 사용되지 않음
   },
   hourTextMain: {
-    color: COLORS.text,
-    fontSize: 14,
-    fontWeight: '500',
+    // 5. 이 스타일은 이제 사용되지 않음
   },
   hourTextSub: {
-    marginLeft: 2,
+    // 6. 이 스타일은 이제 사용되지 않음
   },
   minuteLabel: {
+    // 7. 이 스타일은 이제 사용되지 않음
+  },
+  // 8. (지시 1, 3) 새로운 시간 라벨 스타일
+  timeLabelText: {
     position: 'absolute',
+    marginTop: -8,
+    color: COLORS.placeholder,
+    fontSize: 12,
+    fontWeight: '500',
     width: '100%',
     textAlign: 'center',
-    marginTop: -8,
   },
+  // ---
   hourContent: {
     flex: 1,
+    marginLeft: 30,
     height: HOUR_HEIGHT,
     flexDirection: 'column',
     position: 'absolute',
