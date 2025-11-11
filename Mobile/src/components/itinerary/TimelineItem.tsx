@@ -91,6 +91,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 3,
+    alignItems: 'center', // ⭐️ 수정된 부분: 세로 중앙 정렬
   },
   image: {
     width: 60,
