@@ -75,9 +75,8 @@ type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(
-    new Date(new Date().setDate(new Date().getDate() + 3)),
-  );
+  // ⭐️ 수정: endDate의 기본값을 3일 뒤가 아닌 '오늘'로 변경
+  const [endDate, setEndDate] = useState(new Date());
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);

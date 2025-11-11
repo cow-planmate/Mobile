@@ -5,7 +5,7 @@ import React, {
   useLayoutEffect,
   useMemo,
   useCallback,
-} from 'react'; // ⭐️ 1. useCallback import
+} from 'react';
 import {
   View,
   Text,
@@ -53,6 +53,7 @@ const COLORS = {
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
 // (Dummy 데이터는 이전과 동일...)
+// ⭐️ 수정: DUMMY_PLACES 정의는 남겨두지만, useEffect에서 사용 안 함
 const DUMMY_PLACES_DAY1: Place[] = [
   {
     id: '1',
@@ -322,6 +323,7 @@ const DraggableTimelineItem = ({
       }
     })
     .onEnd(event => {
+      // ⭐️ 수정: onEnd에서 최종 값 계산 로직 수정
       const relativeTop = top.value - GRID_TOP_OFFSET;
       const snappedRelativeTop =
         Math.round(relativeTop / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
@@ -338,6 +340,7 @@ const DraggableTimelineItem = ({
       top.value = withSpring(finalSnappedTop);
       height.value = withSpring(finalSnappedHeight);
 
+      // ⭐️ 수정: runOnJS에 'finalSnappedTop'과 'finalSnappedHeight' 사용
       const newStartMinutes =
         (finalSnappedTop - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
       const newEndMinutes =
@@ -618,27 +621,34 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     return `${month}.${day}`;
   };
 
+  // ⭐️⭐️⭐️ 수정된 useEffect ⭐️⭐️⭐️
   useEffect(() => {
-    if (days.length > 0) return;
     const start = new Date(route.params.startDate);
     const end = new Date(route.params.endDate);
+
+    // 시간대 오차를 막기 위해 날짜의 0시 0분 0초로 표준화
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
     const tripDays: Day[] = [];
     let currentDate = new Date(start);
     let dayCounter = 1;
-    while (currentDate <= end) {
-      let placesForDay: Place[] = [];
-      if (dayCounter === 1) placesForDay = DUMMY_PLACES_DAY1;
-      if (dayCounter === 2) placesForDay = DUMMY_PLACES_DAY2;
+
+    // 루프가 end 날짜를 포함하도록 (currentDate <= end)
+    while (currentDate.getTime() <= end.getTime()) {
+      // DUMMY_PLACES 대신 빈 배열로 생성
       tripDays.push({
         date: new Date(currentDate),
         dayNumber: dayCounter,
-        places: placesForDay,
+        places: [], // ⭐️ 항상 빈 배열로 시작
       });
+
       currentDate.setDate(currentDate.getDate() + 1);
       dayCounter++;
     }
     setDays(tripDays);
-  }, []);
+  }, [route.params.startDate, route.params.endDate, setDays]); // ⭐️ 의존성 배열 추가
+  // ⭐️⭐️⭐️ 수정된 useEffect 끝 ⭐️⭐️⭐️
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -702,6 +712,17 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   );
 
   const selectedDay = days[selectedDayIndex];
+
+  // ⭐️ selectedDay가 없는 경우(초기 로딩)를 대비한 방어 코드
+  if (!selectedDay) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text>일정을 불러오는 중...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -822,6 +843,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  // ⭐️ 로딩 스타일 추가
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 17,
