@@ -102,7 +102,8 @@ export default function TimelineItem({
           )}
         </View>
         <Pressable style={styles.deleteButton} onPress={onDelete}>
-          <Text style={styles.deleteButtonText}>삭제</Text>
+          {/* ⭐️ 수정: "X" 텍스트를 "x"로 변경 */}
+          <Text style={styles.deleteButtonText}>x</Text>
         </Pressable>
       </View>
     </View>
@@ -167,17 +168,19 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   deleteButton: {
-    paddingHorizontal: 10, // ⭐️ 수정: 12 -> 10
-    paddingVertical: 4, // ⭐️ 수정: 6 -> 4
-    backgroundColor: '#FFEBEE',
-    borderRadius: 12, // ⭐️ 수정: 15 -> 12
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
+    marginLeft: 8,
   },
   deleteButtonText: {
     color: COLORS.error,
-    fontSize: 10, // ⭐️ 수정: 12 -> 10
-    fontWeight: 'bold',
+    fontSize: 18, // ⭐️ 수정: 14 -> 18
+    fontWeight: 'bold', // ⭐️ 수정: 'bold' -> 'normal'
+    lineHeight: 22, // ⭐️ 수정: 18 -> 22
   },
 });
