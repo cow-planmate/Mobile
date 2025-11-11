@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 const COLORS = {
-  primary: '#007AFF',
+  primary: '#1344FF', // ⭐️ 수정: #007AFF -> #1344FF
   text: '#1C1C1E',
   white: '#FFFFFF',
   border: '#E5E5EA',

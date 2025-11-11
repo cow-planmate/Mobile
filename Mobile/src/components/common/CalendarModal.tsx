@@ -52,6 +52,7 @@ const COLORS = {
   white: '#FFFFFF',
   lightGray: '#F0F0F0',
   text: '#1C1C1E',
+  placeholder: '#8E8E93', // ⭐️ placeholder 색상 추가
 };
 
 type CalendarModalProps = {
@@ -170,6 +171,13 @@ export default function CalendarModal({
             onDayPress={onDayPress}
             markingType={'custom'}
             markedDates={getMarkedDates()}
+            // ⭐️ 수정: 테마 색상 적용
+            theme={{
+              todayTextColor: COLORS.primary,
+              arrowColor: COLORS.primary,
+              monthTextColor: COLORS.text,
+              textSectionTitleColor: COLORS.placeholder,
+            }}
           />
           <View style={styles.buttonRow}>
             <Pressable style={styles.button} onPress={onClose}>
