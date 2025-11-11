@@ -256,11 +256,16 @@ const DraggableTimelineItem = ({
     newEndMinutes: number,
   ) => void;
 }) => {
+  // ⭐️ 1. (수정) 격자 시작 오프셋을 40 (wrapper 20 + container 20)으로 변경
+  const GRID_TOP_OFFSET = 40;
+
   const startMinutes = timeToMinutes(place.startTime);
   const endMinutes = timeToMinutes(place.endTime);
   const durationMinutes = endMinutes - startMinutes;
 
-  const initialTop = (startMinutes - offsetMinutes) * MINUTE_HEIGHT + 20;
+  // ⭐️ 2. (수정) initialTop 계산 시 오프셋 40 적용
+  const initialTop =
+    (startMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
   const calculatedHeight = (endMinutes - startMinutes) * MINUTE_HEIGHT;
 
   const height = Math.max(calculatedHeight, MIN_ITEM_HEIGHT);
@@ -275,18 +280,30 @@ const DraggableTimelineItem = ({
     .onUpdate(event => {
       top.value = startY.value + event.translationY;
     })
+    // ⭐️ 3. (수정) onEnd 스냅 로직을 GRID_TOP_OFFSET(40) 기준으로 변경
     .onEnd(event => {
       const newTop = startY.value + event.translationY;
 
-      const snappedTop =
-        Math.round(newTop / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
+      // 1. 격자 시작점(40px)을 기준으로 상대 위치 계산
+      const relativeTop = newTop - GRID_TOP_OFFSET;
 
-      const newStartMinutes = (snappedTop - 20) / MINUTE_HEIGHT + offsetMinutes;
+      // 2. 이 상대 위치를 15분(GRID_SNAP_HEIGHT) 단위로 스냅
+      const snappedRelativeTop =
+        Math.round(relativeTop / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
+
+      // 3. 스냅된 새로운 절대 위치 계산
+      const snappedTop = snappedRelativeTop + GRID_TOP_OFFSET;
+
+      // 4. 스냅된 상대 픽셀 위치를 다시 분(minutes)으로 변환
+      const newStartMinutes =
+        snappedRelativeTop / MINUTE_HEIGHT + offsetMinutes;
       const newEndMinutes = newStartMinutes + durationMinutes;
 
+      // 5. 변경된 시간으로 상태 업데이트
       runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
 
-      top.value = withSpring(snappedTop + 20);
+      // 6. 카드를 스냅된 절대 위치로 부드럽게 이동
+      top.value = withSpring(snappedTop);
     });
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -302,7 +319,6 @@ const DraggableTimelineItem = ({
   return (
     <GestureDetector gesture={panGesture}>
       <Animated.View style={animatedStyle}>
-        {/* ⭐️ 수정된 부분: style={{ flex: 1 }} 추가 */}
         <TimelineItem
           item={place}
           onDelete={onDelete}
