@@ -151,7 +151,7 @@ const PlaceSearchResultItem = ({
 
 const HOUR_HEIGHT = 120;
 const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
-const MIN_ITEM_HEIGHT = 80;
+const MIN_ITEM_HEIGHT = 30; // ⭐️ 수정: 60 -> 30 (15분 높이)
 const GRID_SNAP_HEIGHT = HOUR_HEIGHT / 4;
 
 const timeToMinutes = (time: string) => {

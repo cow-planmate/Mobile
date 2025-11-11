@@ -59,11 +59,15 @@ export default function TimelineItem({
               <Text style={styles.timeTextEditable}>{item.endTime}</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.nameText}>{item.name}</Text>
-          <Text style={styles.metaText}>
+          <Text style={styles.nameText} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text style={styles.metaText} numberOfLines={1}>
             ⭐️ {item.rating} · {item.type}
           </Text>
-          <Text style={styles.metaText}>{item.address}</Text>
+          <Text style={styles.metaText} numberOfLines={1}>
+            {item.address}
+          </Text>
         </View>
         <Pressable style={styles.deleteButton} onPress={onDelete}>
           <Text style={styles.deleteButtonText}>삭제</Text>
@@ -78,10 +82,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: '100%',
     paddingLeft: 90,
-    alignItems: 'stretch', // 1. stretch로 변경 (flex-start에서)
+    alignItems: 'stretch',
   },
   card: {
-    flex: 1, // 2. flex: 1로 설정하여 부모의 높이를 꽉 채움
+    flex: 1,
     flexDirection: 'row',
     backgroundColor: COLORS.card,
     borderRadius: 10,
@@ -91,11 +95,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 3,
-    alignItems: 'center', // ⭐️ 수정된 부분: 세로 중앙 정렬
+    alignItems: 'center',
+    overflow: 'hidden', // ⭐️ 수정: 컨텐츠가 카드를 벗어나지 않도록 잘라냄
   },
   image: {
-    width: 60,
-    height: 60,
+    width: 40,
+    height: 40,
     borderRadius: 8,
   },
   infoContainer: {
