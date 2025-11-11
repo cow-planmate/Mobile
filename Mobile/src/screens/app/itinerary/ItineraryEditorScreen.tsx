@@ -149,10 +149,10 @@ const PlaceSearchResultItem = ({
   </TouchableOpacity>
 );
 
-const HOUR_HEIGHT = 180; // ⭐️ 수정: 120 -> 180 (시간당 높이 증가)
-const MINUTE_HEIGHT = HOUR_HEIGHT / 60; // (자동으로 2 -> 3)
-const MIN_ITEM_HEIGHT = 45; // ⭐️ 수정: 30 -> 45 (15분 높이)
-const GRID_SNAP_HEIGHT = HOUR_HEIGHT / 4; // (자동으로 30 -> 45)
+const HOUR_HEIGHT = 180; // (시간당 높이 180px)
+const MINUTE_HEIGHT = HOUR_HEIGHT / 60; // (분당 3px)
+const MIN_ITEM_HEIGHT = 45; // (15분 높이)
+const GRID_SNAP_HEIGHT = HOUR_HEIGHT / 4; // (15분 = 45px)
 
 const timeToMinutes = (time: string) => {
   if (!time || typeof time !== 'string' || !time.includes(':')) {
@@ -311,7 +311,7 @@ const DraggableTimelineItem = ({
       position: 'absolute',
       top: top.value,
       height: height,
-      left: 0,
+      left: 90, // ⭐️ 수정: 0 -> 90
       right: 15,
     };
   });

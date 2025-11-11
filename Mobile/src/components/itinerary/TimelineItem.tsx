@@ -102,7 +102,7 @@ export default function TimelineItem({
           )}
         </View>
         <Pressable style={styles.deleteButton} onPress={onDelete}>
-          {/* ⭐️ 수정: "X" 텍스트를 "x"로 변경 */}
+          {/* "삭제" 텍스트를 "x"로 변경 */}
           <Text style={styles.deleteButtonText}>x</Text>
         </Pressable>
       </View>
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   cardContainer: {
     flexDirection: 'row',
     width: '100%',
-    paddingLeft: 90,
+    paddingLeft: 0, // ⭐️ 수정: 90 -> 0
     alignItems: 'stretch',
   },
   card: {
@@ -179,8 +179,8 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     color: COLORS.error,
-    fontSize: 18, // ⭐️ 수정: 14 -> 18
-    fontWeight: 'bold', // ⭐️ 수정: 'bold' -> 'normal'
-    lineHeight: 22, // ⭐️ 수정: 18 -> 22
+    fontSize: 18,
+    fontWeight: 'bold',
+    lineHeight: 22,
   },
 });
