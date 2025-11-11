@@ -5,7 +5,7 @@ import React, {
   useLayoutEffect,
   useMemo,
   useCallback,
-} from 'react'; // ⭐️ 1. useCallback import
+} from 'react';
 import {
   View,
   Text,
@@ -246,7 +246,7 @@ const TimeGridBackground = ({ hours }: { hours: number[] }) => {
   );
 };
 
-// ⭐️ --- DraggableTimelineItem 컴포넌트 수정 --- ⭐️
+// --- DraggableTimelineItem 컴포넌트 ---
 const DraggableTimelineItem = ({
   place,
   offsetMinutes, // 0 (00:00-23:00 기준)
@@ -264,7 +264,7 @@ const DraggableTimelineItem = ({
     newEndMinutes: number,
   ) => void;
 }) => {
-  // ⭐️ 1. 경계 상수 정의
+  // 1. 경계 상수 정의
   const GRID_TOP_OFFSET = 40;
   const MIN_TOP_PX = GRID_TOP_OFFSET; // 00:00 선의 픽셀 위치
   const TOTAL_TIMELINE_MINS = 24 * 60; // 1440분
@@ -296,9 +296,9 @@ const DraggableTimelineItem = ({
     })
     .onUpdate(event => {
       const newTop = startY.value + event.translationY;
-      // ⭐️ 2-1. 최대 top 값 계산 (카드 하단이 24:00을 넘지 않도록)
+      // 2-1. 최대 top 값 계산 (카드 하단이 24:00을 넘지 않도록)
       const maxTop = MAX_BOTTOM_PX - height.value;
-      // ⭐️ 2-2. top 값을 00:00(MIN_TOP_PX)와 maxTop 사이로 제한
+      // 2-2. top 값을 00:00(MIN_TOP_PX)와 maxTop 사이로 제한
       const clampedTop = Math.max(MIN_TOP_PX, Math.min(newTop, maxTop));
       top.value = clampedTop;
     })
@@ -327,26 +327,25 @@ const DraggableTimelineItem = ({
     .onBegin(() => {
       startY.value = top.value;
       startHeight.value = height.value;
-      isResizingTop.value = withSpring(1); // ⭐️ 수정: 피드백 활성화
+      isResizingTop.value = withSpring(1); // 피드백 활성화
     })
     .onUpdate(event => {
       const newTop = startY.value + event.translationY;
       const newHeight = startHeight.value - (newTop - startY.value);
 
-      // ⭐️ 3-1. 00:00시(MIN_TOP_PX) 위로 못 올라가게 제한
+      // 3-1. 00:00시(MIN_TOP_PX) 위로 못 올라가게 제한
       if (newHeight >= MIN_ITEM_HEIGHT && newTop >= MIN_TOP_PX) {
         top.value = newTop;
         height.value = newHeight;
       }
     })
     .onEnd(event => {
-      // ⭐️ 수정: onEnd에서 최종 값 계산 로직 수정
       const relativeTop = top.value - GRID_TOP_OFFSET;
       const snappedRelativeTop =
         Math.round(relativeTop / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
       let finalSnappedTop = snappedRelativeTop + GRID_TOP_OFFSET;
 
-      // ⭐️ 3-2. 스냅된 위치가 00:00시 위로 가지 않도록 최종 보정
+      // 3-2. 스냅된 위치가 00:00시 위로 가지 않도록 최종 보정
       finalSnappedTop = Math.max(MIN_TOP_PX, finalSnappedTop);
 
       const originalBottomPosition = startY.value + startHeight.value;
@@ -360,7 +359,6 @@ const DraggableTimelineItem = ({
       top.value = withSpring(finalSnappedTop);
       height.value = withSpring(finalSnappedHeight);
 
-      // ⭐️ 수정: runOnJS에 'finalSnappedTop'과 'finalSnappedHeight' 사용
       const newStartMinutes =
         (finalSnappedTop - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
       const newEndMinutes =
@@ -369,20 +367,20 @@ const DraggableTimelineItem = ({
       runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
     })
     .onFinalize(() => {
-      isResizingTop.value = withSpring(0); // ⭐️ 수정: 피드백 비활성화
+      isResizingTop.value = withSpring(0); // 피드백 비활성화
     });
 
   // 4. 제스처 핸들러 3: 하단 리사이즈 (Bottom Handle)
   const panGestureResizeBottom = Gesture.Pan()
     .onBegin(() => {
       startHeight.value = height.value;
-      isResizingBottom.value = withSpring(1); // ⭐️ 수정: 피드백 활성화
+      isResizingBottom.value = withSpring(1); // 피드백 활성화
     })
     .onUpdate(event => {
       const newHeight = startHeight.value + event.translationY;
       const newBottom = top.value + newHeight;
 
-      // ⭐️ 4-1. 24:00시(MAX_BOTTOM_PX) 아래로 못 내려가게 제한
+      // 4-1. 24:00시(MAX_BOTTOM_PX) 아래로 못 내려가게 제한
       if (newHeight >= MIN_ITEM_HEIGHT && newBottom <= MAX_BOTTOM_PX) {
         height.value = newHeight;
       }
@@ -394,7 +392,7 @@ const DraggableTimelineItem = ({
       const newBottom = top.value + snappedHeight;
       let finalHeight = snappedHeight;
 
-      // ⭐️ 4-2. 스냅된 위치가 24:00시 아래로 가지 않도록 최종 보정
+      // 4-2. 스냅된 위치가 24:00시 아래로 가지 않도록 최종 보정
       if (newBottom > MAX_BOTTOM_PX) {
         finalHeight = MAX_BOTTOM_PX - top.value;
       }
@@ -409,7 +407,7 @@ const DraggableTimelineItem = ({
       runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
     })
     .onFinalize(() => {
-      isResizingBottom.value = withSpring(0); // ⭐️ 수정: 피드백 비활성화
+      isResizingBottom.value = withSpring(0); // 피드백 비활성화
     });
 
   // 5. 애니메이션 스타일
@@ -418,7 +416,7 @@ const DraggableTimelineItem = ({
       position: 'absolute',
       top: top.value,
       height: height.value,
-      left: 90,
+      left: 60, // ⭐️ 수정: 90 -> 60
       right: 15,
     };
   });
@@ -437,7 +435,7 @@ const DraggableTimelineItem = ({
   });
 
   return (
-    // ⭐️ 7. 제스처 디텍터 중첩 구조로 변경
+    // 7. 제스처 디텍터 중첩 구조로 변경
     <Animated.View style={animatedStyle}>
       {/* 7-1. 이동 제스처 (가운데 영역) */}
       <GestureDetector gesture={panGestureMove}>
@@ -1004,13 +1002,13 @@ const styles = StyleSheet.create({
   // ---
   hourContent: {
     flex: 1,
-    marginLeft: 30,
+    marginLeft: 0, // ⭐️ 수정: 30 -> 0
     height: HOUR_HEIGHT,
     flexDirection: 'column',
     position: 'absolute',
     left: 0,
     right: 0,
-    paddingLeft: 90,
+    paddingLeft: 60, // ⭐️ 수정: 90 -> 60
   },
   quarterBlock: {
     height: HOUR_HEIGHT / 4,
