@@ -5,7 +5,7 @@ import React, {
   useLayoutEffect,
   useMemo,
   useCallback,
-} from 'react';
+} from 'react'; // ⭐️ 1. useCallback import
 import {
   View,
   Text,
@@ -53,7 +53,6 @@ const COLORS = {
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
 // (Dummy 데이터는 이전과 동일...)
-// ⭐️ 수정: DUMMY_PLACES 정의는 남겨두지만, useEffect에서 사용 안 함
 const DUMMY_PLACES_DAY1: Place[] = [
   {
     id: '1',
@@ -247,10 +246,10 @@ const TimeGridBackground = ({ hours }: { hours: number[] }) => {
   );
 };
 
-// --- DraggableTimelineItem 컴포넌트 ---
+// ⭐️ --- DraggableTimelineItem 컴포넌트 수정 --- ⭐️
 const DraggableTimelineItem = ({
   place,
-  offsetMinutes,
+  offsetMinutes, // 0 (00:00-23:00 기준)
   onDelete,
   onEditTime,
   onDragEnd,
@@ -265,7 +264,13 @@ const DraggableTimelineItem = ({
     newEndMinutes: number,
   ) => void;
 }) => {
+  // ⭐️ 1. 경계 상수 정의
   const GRID_TOP_OFFSET = 40;
+  const MIN_TOP_PX = GRID_TOP_OFFSET; // 00:00 선의 픽셀 위치
+  const TOTAL_TIMELINE_MINS = 24 * 60; // 1440분
+  const TOTAL_TIMELINE_PX = TOTAL_TIMELINE_MINS * MINUTE_HEIGHT; // 4320px
+  const MAX_BOTTOM_PX = GRID_TOP_OFFSET + TOTAL_TIMELINE_PX; // 4360px (24:00 선의 픽셀 위치)
+
   const startMinutes = timeToMinutes(place.startTime);
   const endMinutes = timeToMinutes(place.endTime);
   const durationMinutes = endMinutes - startMinutes;
@@ -284,17 +289,26 @@ const DraggableTimelineItem = ({
   const isResizingTop = useSharedValue(0);
   const isResizingBottom = useSharedValue(0);
 
-  // 1. 제스처 핸들러 1: 카드 이동 (중앙)
+  // 2. 제스처 핸들러 1: 카드 이동 (중앙)
   const panGestureMove = Gesture.Pan()
     .onBegin(() => {
       startY.value = top.value;
     })
     .onUpdate(event => {
-      top.value = startY.value + event.translationY;
+      const newTop = startY.value + event.translationY;
+      // ⭐️ 2-1. 최대 top 값 계산 (카드 하단이 24:00을 넘지 않도록)
+      const maxTop = MAX_BOTTOM_PX - height.value;
+      // ⭐️ 2-2. top 값을 00:00(MIN_TOP_PX)와 maxTop 사이로 제한
+      const clampedTop = Math.max(MIN_TOP_PX, Math.min(newTop, maxTop));
+      top.value = clampedTop;
     })
     .onEnd(event => {
+      // (onUpdate에서 이미 제한되었으므로, onEnd의 스냅 로직은 그대로 둬도 안전함)
       const newTop = startY.value + event.translationY;
-      const relativeTop = newTop - GRID_TOP_OFFSET;
+      const maxTop = MAX_BOTTOM_PX - height.value;
+      const clampedTop = Math.max(MIN_TOP_PX, Math.min(newTop, maxTop));
+
+      const relativeTop = clampedTop - GRID_TOP_OFFSET;
       const snappedRelativeTop =
         Math.round(relativeTop / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
       const snappedTop = snappedRelativeTop + GRID_TOP_OFFSET;
@@ -308,17 +322,20 @@ const DraggableTimelineItem = ({
       runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
     });
 
-  // 2. 제스처 핸들러 2: 상단 리사이즈 (Top Handle)
+  // 3. 제스처 핸들러 2: 상단 리사이즈 (Top Handle)
   const panGestureResizeTop = Gesture.Pan()
     .onBegin(() => {
       startY.value = top.value;
       startHeight.value = height.value;
-      isResizingTop.value = withSpring(1); // 피드백 활성화
+      isResizingTop.value = withSpring(1); // ⭐️ 수정: 피드백 활성화
     })
     .onUpdate(event => {
-      const newHeight = startHeight.value - event.translationY;
-      if (newHeight >= MIN_ITEM_HEIGHT) {
-        top.value = startY.value + event.translationY;
+      const newTop = startY.value + event.translationY;
+      const newHeight = startHeight.value - (newTop - startY.value);
+
+      // ⭐️ 3-1. 00:00시(MIN_TOP_PX) 위로 못 올라가게 제한
+      if (newHeight >= MIN_ITEM_HEIGHT && newTop >= MIN_TOP_PX) {
+        top.value = newTop;
         height.value = newHeight;
       }
     })
@@ -328,6 +345,9 @@ const DraggableTimelineItem = ({
       const snappedRelativeTop =
         Math.round(relativeTop / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
       let finalSnappedTop = snappedRelativeTop + GRID_TOP_OFFSET;
+
+      // ⭐️ 3-2. 스냅된 위치가 00:00시 위로 가지 않도록 최종 보정
+      finalSnappedTop = Math.max(MIN_TOP_PX, finalSnappedTop);
 
       const originalBottomPosition = startY.value + startHeight.value;
       let finalSnappedHeight = originalBottomPosition - finalSnappedTop;
@@ -349,23 +369,37 @@ const DraggableTimelineItem = ({
       runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
     })
     .onFinalize(() => {
-      isResizingTop.value = withSpring(0); // 피드백 비활성화
+      isResizingTop.value = withSpring(0); // ⭐️ 수정: 피드백 비활성화
     });
 
-  // 3. 제스처 핸들러 3: 하단 리사이즈 (Bottom Handle)
+  // 4. 제스처 핸들러 3: 하단 리사이즈 (Bottom Handle)
   const panGestureResizeBottom = Gesture.Pan()
     .onBegin(() => {
       startHeight.value = height.value;
-      isResizingBottom.value = withSpring(1); // 피드백 활성화
+      isResizingBottom.value = withSpring(1); // ⭐️ 수정: 피드백 활성화
     })
     .onUpdate(event => {
       const newHeight = startHeight.value + event.translationY;
-      height.value = Math.max(newHeight, MIN_ITEM_HEIGHT);
+      const newBottom = top.value + newHeight;
+
+      // ⭐️ 4-1. 24:00시(MAX_BOTTOM_PX) 아래로 못 내려가게 제한
+      if (newHeight >= MIN_ITEM_HEIGHT && newBottom <= MAX_BOTTOM_PX) {
+        height.value = newHeight;
+      }
     })
     .onEnd(event => {
       const snappedHeight =
         Math.round(height.value / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
-      const finalHeight = Math.max(snappedHeight, MIN_ITEM_HEIGHT);
+
+      const newBottom = top.value + snappedHeight;
+      let finalHeight = snappedHeight;
+
+      // ⭐️ 4-2. 스냅된 위치가 24:00시 아래로 가지 않도록 최종 보정
+      if (newBottom > MAX_BOTTOM_PX) {
+        finalHeight = MAX_BOTTOM_PX - top.value;
+      }
+
+      finalHeight = Math.max(finalHeight, MIN_ITEM_HEIGHT);
       height.value = withSpring(finalHeight);
 
       const newStartMinutes =
@@ -375,10 +409,10 @@ const DraggableTimelineItem = ({
       runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
     })
     .onFinalize(() => {
-      isResizingBottom.value = withSpring(0); // 피드백 비활성화
+      isResizingBottom.value = withSpring(0); // ⭐️ 수정: 피드백 비활성화
     });
 
-  // 4. 애니메이션 스타일
+  // 5. 애니메이션 스타일
   const animatedStyle = useAnimatedStyle(() => {
     return {
       position: 'absolute',
@@ -389,7 +423,7 @@ const DraggableTimelineItem = ({
     };
   });
 
-  // 5. 시각적 피드백(핸들)을 위한 애니메이션 스타일
+  // 6. 시각적 피드백(핸들)을 위한 애니메이션 스타일
   const topHandleStyle = useAnimatedStyle(() => {
     return {
       opacity: isResizingTop.value,
@@ -403,9 +437,9 @@ const DraggableTimelineItem = ({
   });
 
   return (
-    // 6. 제스처 디텍터 중첩 구조로 변경
+    // ⭐️ 7. 제스처 디텍터 중첩 구조로 변경
     <Animated.View style={animatedStyle}>
-      {/* 6-1. 이동 제스처 (가운데 영역) */}
+      {/* 7-1. 이동 제스처 (가운데 영역) */}
       <GestureDetector gesture={panGestureMove}>
         <Animated.View style={{ flex: 1 }}>
           <TimelineItem
@@ -417,7 +451,7 @@ const DraggableTimelineItem = ({
         </Animated.View>
       </GestureDetector>
 
-      {/* 6-2. 상단 리사이즈 핸들 */}
+      {/* 7-2. 상단 리사이즈 핸들 */}
       <GestureDetector gesture={panGestureResizeTop}>
         <Animated.View style={styles.resizeHandleTop}>
           <Animated.View
@@ -426,7 +460,7 @@ const DraggableTimelineItem = ({
         </Animated.View>
       </GestureDetector>
 
-      {/* 6-3. 하단 리사이즈 핸들 */}
+      {/* 7-3. 하단 리사이즈 핸들 */}
       <GestureDetector gesture={panGestureResizeBottom}>
         <Animated.View style={styles.resizeHandleBottom}>
           <Animated.View
@@ -437,6 +471,7 @@ const DraggableTimelineItem = ({
     </Animated.View>
   );
 };
+// ⭐️ --- DraggableTimelineItem 컴포넌트 수정 끝 --- ⭐️
 
 // ⭐️ 2. TimelineView 로직을 밖으로 꺼내고 React.memo로 감싸기
 const TimelineComponent = React.memo(
@@ -679,7 +714,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     });
   }, [navigation, tripName, days, isEditingTripName]);
 
-  // ⭐️ 4. 핸들러 함수들을 useCallback으로 안정화
+  // 4. 핸들러 함수들을 useCallback으로 안정화
   const handleEditTime = useCallback(
     (placeId: string, type: 'startTime' | 'endTime', time: string) => {
       setEditingTime({ placeId, type, time });
@@ -770,7 +805,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           tabBarLabelStyle: { fontWeight: 'bold' },
         }}
       >
-        {/* ⭐️ 5. children prop을 사용하고, 안정화된 props를 전달 */}
+        {/* 5. children prop을 사용하고, 안정화된 props를 전달 */}
         <Tab.Screen name="타임라인">
           {() => (
             <TimelineComponent
