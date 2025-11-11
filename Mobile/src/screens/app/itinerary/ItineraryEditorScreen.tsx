@@ -149,10 +149,10 @@ const PlaceSearchResultItem = ({
   </TouchableOpacity>
 );
 
-const HOUR_HEIGHT = 120;
-const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
-const MIN_ITEM_HEIGHT = 30; // ⭐️ 수정: 60 -> 30 (15분 높이)
-const GRID_SNAP_HEIGHT = HOUR_HEIGHT / 4;
+const HOUR_HEIGHT = 180; // ⭐️ 수정: 120 -> 180 (시간당 높이 증가)
+const MINUTE_HEIGHT = HOUR_HEIGHT / 60; // (자동으로 2 -> 3)
+const MIN_ITEM_HEIGHT = 45; // ⭐️ 수정: 30 -> 45 (15분 높이)
+const GRID_SNAP_HEIGHT = HOUR_HEIGHT / 4; // (자동으로 30 -> 45)
 
 const timeToMinutes = (time: string) => {
   if (!time || typeof time !== 'string' || !time.includes(':')) {
@@ -256,14 +256,14 @@ const DraggableTimelineItem = ({
     newEndMinutes: number,
   ) => void;
 }) => {
-  // ⭐️ 1. (수정) 격자 시작 오프셋을 40 (wrapper 20 + container 20)으로 변경
+  // 1. (수정) 격자 시작 오프셋을 40 (wrapper 20 + container 20)으로 변경
   const GRID_TOP_OFFSET = 40;
 
   const startMinutes = timeToMinutes(place.startTime);
   const endMinutes = timeToMinutes(place.endTime);
   const durationMinutes = endMinutes - startMinutes;
 
-  // ⭐️ 2. (수정) initialTop 계산 시 오프셋 40 적용
+  // 2. (수정) initialTop 계산 시 오프셋 40 적용
   const initialTop =
     (startMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
   const calculatedHeight = (endMinutes - startMinutes) * MINUTE_HEIGHT;
@@ -280,7 +280,7 @@ const DraggableTimelineItem = ({
     .onUpdate(event => {
       top.value = startY.value + event.translationY;
     })
-    // ⭐️ 3. (수정) onEnd 스냅 로직을 GRID_TOP_OFFSET(40) 기준으로 변경
+    // 3. (수정) onEnd 스냅 로직을 GRID_TOP_OFFSET(40) 기준으로 변경
     .onEnd(event => {
       const newTop = startY.value + event.translationY;
 

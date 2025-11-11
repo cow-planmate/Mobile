@@ -19,6 +19,18 @@ const COLORS = {
   lightGray: '#F0F0F5',
 };
 
+// 1. timeToMinutes 헬퍼 함수 추가 (ItineraryEditorScreen.tsx에서 가져옴)
+const timeToMinutes = (time: string) => {
+  if (!time || typeof time !== 'string' || !time.includes(':')) {
+    return 0;
+  }
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+};
+
+// 2. (수정) 30분 미만일 때 컴팩트 뷰로 전환 (45 -> 30)
+const IS_COMPACT_VIEW_THRESHOLD_MINUTES = 30;
+
 export type Place = {
   id: string;
   name: string;
@@ -45,29 +57,49 @@ export default function TimelineItem({
   onEditTime,
   style,
 }: TimelineItemProps) {
+  // 3. 일정 시간(분) 계산
+  const durationMinutes =
+    timeToMinutes(item.endTime) - timeToMinutes(item.startTime);
+  const isCompact = durationMinutes < IS_COMPACT_VIEW_THRESHOLD_MINUTES;
+
   return (
     <View style={[styles.cardContainer, style]}>
       <View style={styles.card}>
-        <Image source={{ uri: item.imageUrl }} style={styles.image} />
-        <View style={styles.infoContainer}>
-          <View style={styles.timeRow}>
-            <TouchableOpacity onPress={() => onEditTime('startTime')}>
-              <Text style={styles.timeTextEditable}>{item.startTime}</Text>
-            </TouchableOpacity>
-            <Text style={styles.timeText}> ~ </Text>
-            <TouchableOpacity onPress={() => onEditTime('endTime')}>
-              <Text style={styles.timeTextEditable}>{item.endTime}</Text>
-            </TouchableOpacity>
-          </View>
+        {/* 4. isCompact가 아닐 때만 이미지 표시 */}
+        {!isCompact && (
+          <Image source={{ uri: item.imageUrl }} style={styles.image} />
+        )}
+        {/* 5. isCompact일 때 marginLeft 0으로 조정 */}
+        <View style={[styles.infoContainer, isCompact && { marginLeft: 0 }]}>
+          {/* 6. isCompact가 아닐 때만 시간 표시 */}
+          {!isCompact && (
+            <View style={styles.timeRow}>
+              <TouchableOpacity onPress={() => onEditTime('startTime')}>
+                <Text style={styles.timeTextEditable}>{item.startTime}</Text>
+              </TouchableOpacity>
+              <Text style={styles.timeText}> ~ </Text>
+              <TouchableOpacity onPress={() => onEditTime('endTime')}>
+                <Text style={styles.timeTextEditable}>{item.endTime}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* 7. 이름은 항상 표시 */}
           <Text style={styles.nameText} numberOfLines={1}>
             {item.name}
           </Text>
-          <Text style={styles.metaText} numberOfLines={1}>
-            ⭐️ {item.rating} · {item.type}
-          </Text>
-          <Text style={styles.metaText} numberOfLines={1}>
-            {item.address}
-          </Text>
+
+          {/* 8. isCompact가 아닐 때만 부가 텍스트 표시 */}
+          {!isCompact && (
+            <>
+              <Text style={styles.metaText} numberOfLines={1}>
+                ⭐️ {item.rating} · {item.type}
+              </Text>
+              <Text style={styles.metaText} numberOfLines={1}>
+                {item.address}
+              </Text>
+            </>
+          )}
         </View>
         <Pressable style={styles.deleteButton} onPress={onDelete}>
           <Text style={styles.deleteButtonText}>삭제</Text>
@@ -96,7 +128,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 3,
     alignItems: 'center',
-    overflow: 'hidden', // ⭐️ 수정: 컨텐츠가 카드를 벗어나지 않도록 잘라냄
+    overflow: 'hidden',
   },
   image: {
     width: 40,
@@ -135,17 +167,17 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   deleteButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10, // ⭐️ 수정: 12 -> 10
+    paddingVertical: 4, // ⭐️ 수정: 6 -> 4
     backgroundColor: '#FFEBEE',
-    borderRadius: 15,
+    borderRadius: 12, // ⭐️ 수정: 15 -> 12
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
   },
   deleteButtonText: {
     color: COLORS.error,
-    fontSize: 12,
+    fontSize: 10, // ⭐️ 수정: 12 -> 10
     fontWeight: 'bold',
   },
 });
