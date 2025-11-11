@@ -28,6 +28,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   runOnJS,
+  interpolateColor,
 } from 'react-native-reanimated';
 
 const Tab = createMaterialTopTabNavigator();
@@ -239,6 +240,7 @@ const TimeGridBackground = ({ hours }: { hours: number[] }) => {
   );
 };
 
+// ⭐️ --- DraggableTimelineItem 컴포넌트 수정 --- ⭐️
 const DraggableTimelineItem = ({
   place,
   offsetMinutes,
@@ -256,79 +258,179 @@ const DraggableTimelineItem = ({
     newEndMinutes: number,
   ) => void;
 }) => {
-  // 1. (수정) 격자 시작 오프셋을 40 (wrapper 20 + container 20)으로 변경
   const GRID_TOP_OFFSET = 40;
-
   const startMinutes = timeToMinutes(place.startTime);
   const endMinutes = timeToMinutes(place.endTime);
   const durationMinutes = endMinutes - startMinutes;
 
-  // 2. (수정) initialTop 계산 시 오프셋 40 적용
   const initialTop =
     (startMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
-  const calculatedHeight = (endMinutes - startMinutes) * MINUTE_HEIGHT;
-
-  const height = Math.max(calculatedHeight, MIN_ITEM_HEIGHT);
+  const calculatedHeight = durationMinutes * MINUTE_HEIGHT;
+  const initialHeight = Math.max(calculatedHeight, MIN_ITEM_HEIGHT);
 
   const top = useSharedValue(initialTop);
-  const startY = useSharedValue(initialTop);
+  const height = useSharedValue(initialHeight);
 
-  const panGesture = Gesture.Pan()
+  const startY = useSharedValue(0);
+  const startHeight = useSharedValue(0);
+
+  const isResizingTop = useSharedValue(0);
+  const isResizingBottom = useSharedValue(0);
+
+  // 1. 제스처 핸들러 1: 카드 이동 (중앙)
+  const panGestureMove = Gesture.Pan()
     .onBegin(() => {
       startY.value = top.value;
     })
     .onUpdate(event => {
       top.value = startY.value + event.translationY;
     })
-    // 3. (수정) onEnd 스냅 로직을 GRID_TOP_OFFSET(40) 기준으로 변경
     .onEnd(event => {
       const newTop = startY.value + event.translationY;
-
-      // 1. 격자 시작점(40px)을 기준으로 상대 위치 계산
       const relativeTop = newTop - GRID_TOP_OFFSET;
-
-      // 2. 이 상대 위치를 15분(GRID_SNAP_HEIGHT) 단위로 스냅
       const snappedRelativeTop =
         Math.round(relativeTop / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
-
-      // 3. 스냅된 새로운 절대 위치 계산
       const snappedTop = snappedRelativeTop + GRID_TOP_OFFSET;
 
-      // 4. 스냅된 상대 픽셀 위치를 다시 분(minutes)으로 변환
+      top.value = withSpring(snappedTop);
+
       const newStartMinutes =
         snappedRelativeTop / MINUTE_HEIGHT + offsetMinutes;
       const newEndMinutes = newStartMinutes + durationMinutes;
 
-      // 5. 변경된 시간으로 상태 업데이트
       runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
-
-      // 6. 카드를 스냅된 절대 위치로 부드럽게 이동
-      top.value = withSpring(snappedTop);
     });
 
+  // 2. 제스처 핸들러 2: 상단 리사이즈 (Top Handle)
+  const panGestureResizeTop = Gesture.Pan()
+    .onBegin(() => {
+      startY.value = top.value;
+      startHeight.value = height.value;
+      isResizingTop.value = withSpring(1); // ⭐️ 수정: 피드백 활성화
+    })
+    .onUpdate(event => {
+      const newHeight = startHeight.value - event.translationY;
+      if (newHeight >= MIN_ITEM_HEIGHT) {
+        top.value = startY.value + event.translationY;
+        height.value = newHeight;
+      }
+    })
+    .onEnd(event => {
+      // ⭐️ 수정: onEnd에서 최종 값 계산 로직 수정
+      const relativeTop = top.value - GRID_TOP_OFFSET;
+      const snappedRelativeTop =
+        Math.round(relativeTop / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
+      let finalSnappedTop = snappedRelativeTop + GRID_TOP_OFFSET;
+
+      const originalBottomPosition = startY.value + startHeight.value;
+      let finalSnappedHeight = originalBottomPosition - finalSnappedTop;
+
+      if (finalSnappedHeight < MIN_ITEM_HEIGHT) {
+        finalSnappedHeight = MIN_ITEM_HEIGHT;
+        finalSnappedTop = originalBottomPosition - MIN_ITEM_HEIGHT;
+      }
+
+      top.value = withSpring(finalSnappedTop);
+      height.value = withSpring(finalSnappedHeight);
+
+      // ⭐️ 수정: runOnJS에 'finalSnappedTop'과 'finalSnappedHeight' 사용
+      const newStartMinutes =
+        (finalSnappedTop - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
+      const newEndMinutes =
+        newStartMinutes + finalSnappedHeight / MINUTE_HEIGHT;
+
+      runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
+    })
+    .onFinalize(() => {
+      isResizingTop.value = withSpring(0); // ⭐️ 수정: 피드백 비활성화
+    });
+
+  // 3. 제스처 핸들러 3: 하단 리사이즈 (Bottom Handle)
+  const panGestureResizeBottom = Gesture.Pan()
+    .onBegin(() => {
+      startHeight.value = height.value;
+      isResizingBottom.value = withSpring(1); // ⭐️ 수정: 피드백 활성화
+    })
+    .onUpdate(event => {
+      const newHeight = startHeight.value + event.translationY;
+      height.value = Math.max(newHeight, MIN_ITEM_HEIGHT);
+    })
+    .onEnd(event => {
+      const snappedHeight =
+        Math.round(height.value / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
+      const finalHeight = Math.max(snappedHeight, MIN_ITEM_HEIGHT);
+      height.value = withSpring(finalHeight);
+
+      const newStartMinutes =
+        (top.value - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
+      const newEndMinutes = newStartMinutes + finalHeight / MINUTE_HEIGHT;
+
+      runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
+    })
+    .onFinalize(() => {
+      isResizingBottom.value = withSpring(0); // ⭐️ 수정: 피드백 비활성화
+    });
+
+  // 4. 애니메이션 스타일
   const animatedStyle = useAnimatedStyle(() => {
     return {
       position: 'absolute',
       top: top.value,
-      height: height,
-      left: 90, // ⭐️ 수정: 0 -> 90
+      height: height.value,
+      left: 90,
       right: 15,
     };
   });
 
+  // 5. 시각적 피드백(핸들)을 위한 애니메이션 스타일
+  const topHandleStyle = useAnimatedStyle(() => {
+    return {
+      opacity: isResizingTop.value,
+    };
+  });
+
+  const bottomHandleStyle = useAnimatedStyle(() => {
+    return {
+      opacity: isResizingBottom.value,
+    };
+  });
+
   return (
-    <GestureDetector gesture={panGesture}>
-      <Animated.View style={animatedStyle}>
-        <TimelineItem
-          item={place}
-          onDelete={onDelete}
-          onEditTime={onEditTime}
-          style={{ flex: 1 }}
-        />
-      </Animated.View>
-    </GestureDetector>
+    // ⭐️ 6. 제스처 디텍터 중첩 구조로 변경
+    <Animated.View style={animatedStyle}>
+      {/* 6-1. 이동 제스처 (가운데 영역) */}
+      <GestureDetector gesture={panGestureMove}>
+        <Animated.View style={{ flex: 1 }}>
+          <TimelineItem
+            item={place}
+            onDelete={onDelete}
+            onEditTime={onEditTime}
+            style={{ flex: 1 }}
+          />
+        </Animated.View>
+      </GestureDetector>
+
+      {/* 6-2. 상단 리사이즈 핸들 */}
+      <GestureDetector gesture={panGestureResizeTop}>
+        <Animated.View style={styles.resizeHandleTop}>
+          <Animated.View
+            style={[styles.resizeHandleIndicator, topHandleStyle]}
+          />
+        </Animated.View>
+      </GestureDetector>
+
+      {/* 6-3. 하단 리사이즈 핸들 */}
+      <GestureDetector gesture={panGestureResizeBottom}>
+        <Animated.View style={styles.resizeHandleBottom}>
+          <Animated.View
+            style={[styles.resizeHandleIndicator, bottomHandleStyle]}
+          />
+        </Animated.View>
+      </GestureDetector>
+    </Animated.View>
   );
 };
+// ⭐️ --- DraggableTimelineItem 컴포넌트 수정 끝 --- ⭐️
 
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const { days, setDays, deletePlaceFromDay, addPlaceToDay, updatePlaceTimes } =
@@ -410,7 +512,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setTimePickerVisible(true);
   };
 
-  const handleDragEnd = (
+  const handleUpdatePlaceTimes = (
     placeId: string,
     newStartMinutes: number,
     newEndMinutes: number,
@@ -468,7 +570,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
                     type === 'startTime' ? place.startTime : place.endTime,
                   )
                 }
-                onDragEnd={handleDragEnd}
+                onDragEnd={handleUpdatePlaceTimes}
               />
             ))}
           </View>
@@ -642,32 +744,27 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
                   endTimeMinutes - timeToMinutes(place.startTime);
 
                 const newEndTimeMinutes = newStartTimeMinutes + durationMinutes;
-                const newEndTime = minutesToTime(newEndTimeMinutes);
 
-                updatePlaceTimes(
-                  selectedDayIndex,
+                handleUpdatePlaceTimes(
                   place.id,
-                  newTime,
-                  newEndTime,
+                  newStartTimeMinutes,
+                  newEndTimeMinutes,
                 );
               } else {
                 const newEndTimeMinutes = timeToMinutes(newTime);
                 const startTimeMinutes = timeToMinutes(place.startTime);
 
                 if (newEndTimeMinutes <= startTimeMinutes) {
-                  const newEndTime = minutesToTime(startTimeMinutes + 15);
-                  updatePlaceTimes(
-                    selectedDayIndex,
+                  handleUpdatePlaceTimes(
                     place.id,
-                    place.startTime,
-                    newEndTime,
+                    startTimeMinutes,
+                    startTimeMinutes + 15,
                   );
                 } else {
-                  updatePlaceTimes(
-                    selectedDayIndex,
+                  handleUpdatePlaceTimes(
                     place.id,
-                    place.startTime,
-                    newTime,
+                    startTimeMinutes,
+                    newEndTimeMinutes,
                   );
                 }
               }
@@ -886,5 +983,35 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: COLORS.primary,
     fontWeight: 'bold',
+  },
+  // ⭐️ 13. 리사이즈 핸들 스타일 수정
+  resizeHandleTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 24, // 터치 영역 20 -> 24
+    zIndex: 10,
+    alignItems: 'center',
+    justifyContent: 'flex-start', // ⭐️ 수정: 상단에 배치
+    paddingTop: 4, // ⭐️ 수정: 여백
+  },
+  resizeHandleBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 24, // 터치 영역 20 -> 24
+    zIndex: 10,
+    alignItems: 'center',
+    justifyContent: 'flex-end', // ⭐️ 수정: 하단에 배치
+    paddingBottom: 4, // ⭐️ 수정: 여백
+  },
+  resizeHandleIndicator: {
+    width: 30,
+    height: 3, // ⭐️ 수정: 4 -> 3
+    borderRadius: 2,
+    backgroundColor: COLORS.primary,
+    opacity: 0.8, // ⭐️ 수정: 기본 투명도 0, 드래그 시 1로 변경
   },
 });
