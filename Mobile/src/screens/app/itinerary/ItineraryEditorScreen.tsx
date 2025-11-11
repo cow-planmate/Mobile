@@ -1,5 +1,11 @@
 // src/screens/app/itinerary/ItineraryEditorScreen.tsx
-import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useCallback,
+} from 'react'; // ⭐️ 1. useCallback import
 import {
   View,
   Text,
@@ -240,7 +246,7 @@ const TimeGridBackground = ({ hours }: { hours: number[] }) => {
   );
 };
 
-// ⭐️ --- DraggableTimelineItem 컴포넌트 수정 --- ⭐️
+// --- DraggableTimelineItem 컴포넌트 ---
 const DraggableTimelineItem = ({
   place,
   offsetMinutes,
@@ -316,7 +322,6 @@ const DraggableTimelineItem = ({
       }
     })
     .onEnd(event => {
-      // ⭐️ 수정: onEnd에서 최종 값 계산 로직 수정
       const relativeTop = top.value - GRID_TOP_OFFSET;
       const snappedRelativeTop =
         Math.round(relativeTop / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
@@ -333,7 +338,6 @@ const DraggableTimelineItem = ({
       top.value = withSpring(finalSnappedTop);
       height.value = withSpring(finalSnappedHeight);
 
-      // ⭐️ 수정: runOnJS에 'finalSnappedTop'과 'finalSnappedHeight' 사용
       const newStartMinutes =
         (finalSnappedTop - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
       const newEndMinutes =
@@ -396,7 +400,7 @@ const DraggableTimelineItem = ({
   });
 
   return (
-    // ⭐️ 6. 제스처 디텍터 중첩 구조로 변경
+    // 6. 제스처 디텍터 중첩 구조로 변경
     <Animated.View style={animatedStyle}>
       {/* 6-1. 이동 제스처 (가운데 영역) */}
       <GestureDetector gesture={panGestureMove}>
@@ -430,147 +434,74 @@ const DraggableTimelineItem = ({
     </Animated.View>
   );
 };
-// ⭐️ --- DraggableTimelineItem 컴포넌트 수정 끝 --- ⭐️
 
-export default function ItineraryEditorScreen({ route, navigation }: Props) {
-  const { days, setDays, deletePlaceFromDay, addPlaceToDay, updatePlaceTimes } =
-    useItinerary();
-  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-  const [tripName, setTripName] = useState('강서구 1');
-  const [isEditingTripName, setIsEditingTripName] = useState(false);
-
-  const [isTimePickerVisible, setTimePickerVisible] = useState(false);
-  const [editingTime, setEditingTime] = useState<{
-    placeId: string;
-    type: 'startTime' | 'endTime';
-    time: string;
-  } | null>(null);
-
-  const formatDate = (date: Date) => {
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${month}.${day}`;
-  };
-
-  useEffect(() => {
-    if (days.length > 0) return;
-    const start = new Date(route.params.startDate);
-    const end = new Date(route.params.endDate);
-    const tripDays: Day[] = [];
-    let currentDate = new Date(start);
-    let dayCounter = 1;
-    while (currentDate <= end) {
-      let placesForDay: Place[] = [];
-      if (dayCounter === 1) placesForDay = DUMMY_PLACES_DAY1;
-      if (dayCounter === 2) placesForDay = DUMMY_PLACES_DAY2;
-      tripDays.push({
-        date: new Date(currentDate),
-        dayNumber: dayCounter,
-        places: placesForDay,
-      });
-      currentDate.setDate(currentDate.getDate() + 1);
-      dayCounter++;
-    }
-    setDays(tripDays);
-  }, []);
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerTitle: () =>
-        isEditingTripName ? (
-          <TextInput
-            value={tripName}
-            onChangeText={setTripName}
-            autoFocus={true}
-            onBlur={() => setIsEditingTripName(false)}
-            style={styles.headerInput}
-          />
-        ) : (
-          <TouchableOpacity onPress={() => setIsEditingTripName(true)}>
-            <Text style={styles.headerTitle}>{tripName}</Text>
-          </TouchableOpacity>
-        ),
-      headerRight: () => (
-        <TouchableOpacity
-          onPress={() =>
-            navigation.navigate('ItineraryView', { days, tripName })
-          }
-          style={styles.headerDoneButton}
-        >
-          <Text style={styles.headerDoneButtonText}>완료</Text>
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, tripName, days, isEditingTripName]);
-
-  const handleEditTime = (
-    placeId: string,
-    type: 'startTime' | 'endTime',
-    time: string,
-  ) => {
-    setEditingTime({ placeId, type, time });
-    setTimePickerVisible(true);
-  };
-
-  // (이름 변경) onDragEnd -> handleUpdatePlaceTimes
-  const handleUpdatePlaceTimes = (
-    placeId: string,
-    newStartMinutes: number,
-    newEndMinutes: number,
-  ) => {
-    const newStartTime = minutesToTime(newStartMinutes);
-    const newEndTime = minutesToTime(newEndMinutes);
-    updatePlaceTimes(selectedDayIndex, placeId, newStartTime, newEndTime);
-  };
-
-  const selectedDay = days[selectedDayIndex];
-
-  const TimelineView = () => {
-    // ⭐️ (수정) useMemo 로직 변경
+// ⭐️ 2. TimelineView 로직을 밖으로 꺼내고 React.memo로 감싸기
+const TimelineComponent = React.memo(
+  ({
+    selectedDay,
+    onDeletePlace,
+    onEditPlaceTime,
+    onUpdatePlaceTimes,
+  }: {
+    selectedDay: Day;
+    onDeletePlace: (placeId: string) => void;
+    onEditPlaceTime: (
+      placeId: string,
+      type: 'startTime' | 'endTime',
+      time: string,
+    ) => void;
+    onUpdatePlaceTimes: (
+      placeId: string,
+      newStartMinutes: number,
+      newEndMinutes: number,
+    ) => void;
+  }) => {
     const { gridHours, offsetMinutes } = useMemo(() => {
-      const minHour = 0; // ⭐️ 수정: 0시부터
-      const maxHour = 23; // ⭐️ 수정: 23시까지
-
-      // ⭐️ 수정: 동적 계산 로직 제거
-
+      const minHour = 0;
+      const maxHour = 23;
       const gridHours = Array.from(
         { length: maxHour - minHour + 1 },
         (_, i) => i + minHour,
       );
-      const offsetMinutes = minHour * 60; // ⭐️ 수정: 0
-
+      const offsetMinutes = minHour * 60;
       return { gridHours, offsetMinutes };
-    }, []); // ⭐️ 수정: 의존성 배열 제거 (항상 0-23시)
+    }, []);
 
     return (
       <View style={styles.tabContentContainer}>
         <ScrollView contentContainerStyle={styles.timelineContentContainer}>
           <View style={styles.timelineWrapper}>
             <TimeGridBackground hours={gridHours} />
-
             {selectedDay?.places.map(place => (
               <DraggableTimelineItem
                 key={place.id}
                 place={place}
                 offsetMinutes={offsetMinutes}
-                onDelete={() => deletePlaceFromDay(selectedDayIndex, place.id)}
+                onDelete={() => onDeletePlace(place.id)}
                 onEditTime={type =>
-                  handleEditTime(
+                  onEditPlaceTime(
                     place.id,
                     type,
                     type === 'startTime' ? place.startTime : place.endTime,
                   )
                 }
-                onDragEnd={handleUpdatePlaceTimes}
+                onDragEnd={onUpdatePlaceTimes}
               />
             ))}
           </View>
         </ScrollView>
       </View>
     );
-  };
+  },
+);
 
-  const AddPlaceView = () => {
+// ⭐️ 3. AddPlaceView 로직을 밖으로 꺼내고 React.memo로 감싸기
+const AddPlaceComponent = React.memo(
+  ({
+    onAddPlace,
+  }: {
+    onAddPlace: (place: Omit<Place, 'startTime' | 'endTime'>) => void;
+  }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTab, setSelectedTab] = useState<'관광지' | '숙소' | '식당'>(
       '관광지',
@@ -585,7 +516,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     });
 
     const handleSelectPlace = (place: Omit<Place, 'startTime' | 'endTime'>) => {
-      addPlaceToDay(selectedDayIndex, place);
+      onAddPlace(place);
     };
 
     return (
@@ -664,7 +595,113 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         </View>
       </View>
     );
+  },
+);
+
+export default function ItineraryEditorScreen({ route, navigation }: Props) {
+  const { days, setDays, deletePlaceFromDay, addPlaceToDay, updatePlaceTimes } =
+    useItinerary();
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [tripName, setTripName] = useState('강서구 1');
+  const [isEditingTripName, setIsEditingTripName] = useState(false);
+
+  const [isTimePickerVisible, setTimePickerVisible] = useState(false);
+  const [editingTime, setEditingTime] = useState<{
+    placeId: string;
+    type: 'startTime' | 'endTime';
+    time: string;
+  } | null>(null);
+
+  const formatDate = (date: Date) => {
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${month}.${day}`;
   };
+
+  useEffect(() => {
+    if (days.length > 0) return;
+    const start = new Date(route.params.startDate);
+    const end = new Date(route.params.endDate);
+    const tripDays: Day[] = [];
+    let currentDate = new Date(start);
+    let dayCounter = 1;
+    while (currentDate <= end) {
+      let placesForDay: Place[] = [];
+      if (dayCounter === 1) placesForDay = DUMMY_PLACES_DAY1;
+      if (dayCounter === 2) placesForDay = DUMMY_PLACES_DAY2;
+      tripDays.push({
+        date: new Date(currentDate),
+        dayNumber: dayCounter,
+        places: placesForDay,
+      });
+      currentDate.setDate(currentDate.getDate() + 1);
+      dayCounter++;
+    }
+    setDays(tripDays);
+  }, []);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: () =>
+        isEditingTripName ? (
+          <TextInput
+            value={tripName}
+            onChangeText={setTripName}
+            autoFocus={true}
+            onBlur={() => setIsEditingTripName(false)}
+            style={styles.headerInput}
+          />
+        ) : (
+          <TouchableOpacity onPress={() => setIsEditingTripName(true)}>
+            <Text style={styles.headerTitle}>{tripName}</Text>
+          </TouchableOpacity>
+        ),
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate('ItineraryView', { days, tripName })
+          }
+          style={styles.headerDoneButton}
+        >
+          <Text style={styles.headerDoneButtonText}>완료</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, tripName, days, isEditingTripName]);
+
+  // ⭐️ 4. 핸들러 함수들을 useCallback으로 안정화
+  const handleEditTime = useCallback(
+    (placeId: string, type: 'startTime' | 'endTime', time: string) => {
+      setEditingTime({ placeId, type, time });
+      setTimePickerVisible(true);
+    },
+    [], // setEditingTime, setTimePickerVisible는 안정적임
+  );
+
+  const handleUpdatePlaceTimes = useCallback(
+    (placeId: string, newStartMinutes: number, newEndMinutes: number) => {
+      const newStartTime = minutesToTime(newStartMinutes);
+      const newEndTime = minutesToTime(newEndMinutes);
+      updatePlaceTimes(selectedDayIndex, placeId, newStartTime, newEndTime);
+    },
+    [selectedDayIndex, updatePlaceTimes],
+  );
+
+  const handleDeletePlace = useCallback(
+    (placeId: string) => {
+      deletePlaceFromDay(selectedDayIndex, placeId);
+    },
+    [selectedDayIndex, deletePlaceFromDay],
+  );
+
+  const handleAddPlace = useCallback(
+    (place: Omit<Place, 'startTime' | 'endTime'>) => {
+      addPlaceToDay(selectedDayIndex, place);
+    },
+    [selectedDayIndex, addPlaceToDay],
+  );
+
+  const selectedDay = days[selectedDayIndex];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -712,8 +749,20 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           tabBarLabelStyle: { fontWeight: 'bold' },
         }}
       >
-        <Tab.Screen name="타임라인">{() => <TimelineView />}</Tab.Screen>
-        <Tab.Screen name="장소추가">{() => <AddPlaceView />}</Tab.Screen>
+        {/* ⭐️ 5. children prop을 사용하고, 안정화된 props를 전달 */}
+        <Tab.Screen name="타임라인">
+          {() => (
+            <TimelineComponent
+              selectedDay={selectedDay}
+              onDeletePlace={handleDeletePlace}
+              onEditPlaceTime={handleEditTime}
+              onUpdatePlaceTimes={handleUpdatePlaceTimes}
+            />
+          )}
+        </Tab.Screen>
+        <Tab.Screen name="장소추가">
+          {() => <AddPlaceComponent onAddPlace={handleAddPlace} />}
+        </Tab.Screen>
       </Tab.Navigator>
 
       {editingTime && (
@@ -975,7 +1024,7 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: 'bold',
   },
-  // ⭐️ 13. 리사이즈 핸들 스타일 수정
+  // 13. 리사이즈 핸들 스타일 수정
   resizeHandleTop: {
     position: 'absolute',
     top: 0,
@@ -984,7 +1033,7 @@ const styles = StyleSheet.create({
     height: 24, // 터치 영역
     zIndex: 10,
     alignItems: 'center',
-    justifyContent: 'flex-start', // ⭐️ 수정: 상단에 배치
+    justifyContent: 'flex-start', // 상단에 배치
     paddingTop: 4,
   },
   resizeHandleBottom: {
@@ -995,7 +1044,7 @@ const styles = StyleSheet.create({
     height: 24, // 터치 영역
     zIndex: 10,
     alignItems: 'center',
-    justifyContent: 'flex-end', // ⭐️ 수정: 하단에 배치
+    justifyContent: 'flex-end', // 하단에 배치
     paddingBottom: 4,
   },
   resizeHandleIndicator: {
