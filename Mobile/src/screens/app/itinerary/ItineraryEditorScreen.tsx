@@ -302,10 +302,12 @@ const DraggableTimelineItem = ({
   return (
     <GestureDetector gesture={panGesture}>
       <Animated.View style={animatedStyle}>
+        {/* ⭐️ 수정된 부분: style={{ flex: 1 }} 추가 */}
         <TimelineItem
           item={place}
           onDelete={onDelete}
           onEditTime={onEditTime}
+          style={{ flex: 1 }}
         />
       </Animated.View>
     </GestureDetector>
