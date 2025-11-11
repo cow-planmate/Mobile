@@ -306,7 +306,7 @@ const DraggableTimelineItem = ({
     .onBegin(() => {
       startY.value = top.value;
       startHeight.value = height.value;
-      isResizingTop.value = withSpring(1); // ⭐️ 수정: 피드백 활성화
+      isResizingTop.value = withSpring(1); // 피드백 활성화
     })
     .onUpdate(event => {
       const newHeight = startHeight.value - event.translationY;
@@ -342,14 +342,14 @@ const DraggableTimelineItem = ({
       runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
     })
     .onFinalize(() => {
-      isResizingTop.value = withSpring(0); // ⭐️ 수정: 피드백 비활성화
+      isResizingTop.value = withSpring(0); // 피드백 비활성화
     });
 
   // 3. 제스처 핸들러 3: 하단 리사이즈 (Bottom Handle)
   const panGestureResizeBottom = Gesture.Pan()
     .onBegin(() => {
       startHeight.value = height.value;
-      isResizingBottom.value = withSpring(1); // ⭐️ 수정: 피드백 활성화
+      isResizingBottom.value = withSpring(1); // 피드백 활성화
     })
     .onUpdate(event => {
       const newHeight = startHeight.value + event.translationY;
@@ -368,7 +368,7 @@ const DraggableTimelineItem = ({
       runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
     })
     .onFinalize(() => {
-      isResizingBottom.value = withSpring(0); // ⭐️ 수정: 피드백 비활성화
+      isResizingBottom.value = withSpring(0); // 피드백 비활성화
     });
 
   // 4. 애니메이션 스타일
@@ -512,6 +512,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setTimePickerVisible(true);
   };
 
+  // (이름 변경) onDragEnd -> handleUpdatePlaceTimes
   const handleUpdatePlaceTimes = (
     placeId: string,
     newStartMinutes: number,
@@ -525,31 +526,21 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const selectedDay = days[selectedDayIndex];
 
   const TimelineView = () => {
+    // ⭐️ (수정) useMemo 로직 변경
     const { gridHours, offsetMinutes } = useMemo(() => {
-      let minHour = 9;
-      let maxHour = 17;
+      const minHour = 0; // ⭐️ 수정: 0시부터
+      const maxHour = 23; // ⭐️ 수정: 23시까지
 
-      if (selectedDay && selectedDay.places.length > 0) {
-        const startTimes = selectedDay.places.map(p =>
-          timeToMinutes(p.startTime),
-        );
-        const endTimes = selectedDay.places.map(p => timeToMinutes(p.endTime));
-
-        const minTime = Math.min(...startTimes);
-        const maxTime = Math.max(...endTimes);
-
-        minHour = Math.max(0, Math.floor(minTime / 60) - 1);
-        maxHour = Math.min(23, Math.ceil(maxTime / 60) + 1);
-      }
+      // ⭐️ 수정: 동적 계산 로직 제거
 
       const gridHours = Array.from(
         { length: maxHour - minHour + 1 },
         (_, i) => i + minHour,
       );
-      const offsetMinutes = minHour * 60;
+      const offsetMinutes = minHour * 60; // ⭐️ 수정: 0
 
       return { gridHours, offsetMinutes };
-    }, [selectedDay]);
+    }, []); // ⭐️ 수정: 의존성 배열 제거 (항상 0-23시)
 
     return (
       <View style={styles.tabContentContainer}>
@@ -990,28 +981,28 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 24, // 터치 영역 20 -> 24
+    height: 24, // 터치 영역
     zIndex: 10,
     alignItems: 'center',
     justifyContent: 'flex-start', // ⭐️ 수정: 상단에 배치
-    paddingTop: 4, // ⭐️ 수정: 여백
+    paddingTop: 4,
   },
   resizeHandleBottom: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 24, // 터치 영역 20 -> 24
+    height: 24, // 터치 영역
     zIndex: 10,
     alignItems: 'center',
     justifyContent: 'flex-end', // ⭐️ 수정: 하단에 배치
-    paddingBottom: 4, // ⭐️ 수정: 여백
+    paddingBottom: 4,
   },
   resizeHandleIndicator: {
     width: 30,
-    height: 3, // ⭐️ 수정: 4 -> 3
+    height: 3,
     borderRadius: 2,
     backgroundColor: COLORS.primary,
-    opacity: 0.8, // ⭐️ 수정: 기본 투명도 0, 드래그 시 1로 변경
+    opacity: 0.8,
   },
 });
