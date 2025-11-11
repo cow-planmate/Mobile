@@ -28,6 +28,13 @@ const COLORS = {
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 
+// ⭐️ 1. ItineraryEditorScreen에서 formatDate 함수 복사
+const formatDate = (date: Date) => {
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${month}.${day}`;
+};
+
 export default function ItineraryViewScreen({ route, navigation }: Props) {
   const { days = [], tripName = '완성된 일정' } = route.params || {};
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
@@ -74,7 +81,8 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
 
       {/* 타임라인 영역 (flex: 1로 변경) */}
       <View style={{ flex: 1 }}>
-        <View>
+        {/* ⭐️ 2. Day 탭 JSX 및 스타일 구조 수정 */}
+        <View style={styles.dayTabsWrapper}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -97,6 +105,15 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
                 >
                   Day {day.dayNumber}
                 </Text>
+                {/* 날짜 텍스트 추가 */}
+                <Text
+                  style={[
+                    styles.dayTabDateText,
+                    selectedDayIndex === index && styles.dayTabDateTextSelected,
+                  ]}
+                >
+                  {formatDate(day.date)}
+                </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -110,6 +127,8 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
                 item={item}
                 onDelete={() => {}}
                 onEditTime={() => {}}
+                // ⭐️ 3. dayTabsWrapper의 left(90)만큼 paddingLeft 추가
+                style={{ paddingLeft: 90 }}
               />
             )}
             keyExtractor={item => item.id}
@@ -164,19 +183,24 @@ const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFillObject,
   },
-  dayTabsContainer: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+  // ⭐️ 4. ItineraryEditorScreen에서 스타일 복사 및 교체
+  dayTabsWrapper: {
     backgroundColor: COLORS.card,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
+  dayTabsContainer: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+  },
   dayTab: {
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 20,
+    borderRadius: 12,
     marginRight: 10,
     backgroundColor: COLORS.lightGray,
+    alignItems: 'center',
+    minWidth: 60,
   },
   dayTabSelected: {
     backgroundColor: COLORS.primary,
@@ -184,17 +208,31 @@ const styles = StyleSheet.create({
   dayTabText: {
     color: COLORS.text,
     fontWeight: '600',
+    fontSize: 14,
   },
   dayTabTextSelected: {
     color: COLORS.white,
   },
+  dayTabDateText: {
+    color: COLORS.placeholder,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  dayTabDateTextSelected: {
+    color: COLORS.white,
+    opacity: 0.8,
+  },
   timelineContainer: {
     padding: 20,
+    // ⭐️ 5. TimelineItem이 왼쪽으로 90px 패딩을 가지므로,
+    //    컨테이너의 paddingLeft는 0으로 수정
+    paddingLeft: 0,
   },
   timelineDateText: {
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 20,
+    paddingHorizontal: 20, // ⭐️ 6. 날짜 헤더에는 좌측 패딩(20) 다시 적용
   },
   footer: {
     flexDirection: 'row',
