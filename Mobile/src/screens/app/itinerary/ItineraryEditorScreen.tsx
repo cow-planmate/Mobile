@@ -107,9 +107,6 @@ const PlaceSearchResultItem = ({
         ⭐️ {item.rating} · {item.address}
       </Text>
     </View>
-    <Pressable style={styles.addButton} onPress={onSelect}>
-      <Text style={styles.addButtonText}>추가</Text>
-    </Pressable>
   </TouchableOpacity>
 );
 
@@ -893,7 +890,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   timelineContentContainer: {
-    paddingBottom: 200,
+    paddingBottom: 80,
   },
   timelineWrapper: {
     position: 'relative',
