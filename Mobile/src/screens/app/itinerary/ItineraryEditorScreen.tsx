@@ -890,7 +890,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   timelineContentContainer: {
-    paddingBottom: 80,
+    paddingBottom: 20,
   },
   timelineWrapper: {
     position: 'relative',
@@ -996,16 +996,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.placeholder,
     marginTop: 2,
-  },
-  addButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    backgroundColor: COLORS.lightGray,
-    borderRadius: 20,
-  },
-  addButtonText: {
-    color: COLORS.primary,
-    fontWeight: 'bold',
   },
   resizeHandleTop: {
     position: 'absolute',
