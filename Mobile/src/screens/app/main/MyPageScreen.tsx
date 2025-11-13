@@ -1,5 +1,5 @@
 // src/screens/app/main/MyPageScreen.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,13 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
+  Alert,
 } from 'react-native';
 import { useAuth } from '../../../contexts/AuthContext';
+import UpdateValueModal from '../../../components/common/UpdateValueModal';
+import UpdateGenderModal from '../../../components/common/UpdateGenderModal';
+import UpdateThemeModal from '../../../components/common/UpdateThemeModal';
+import UpdatePasswordModal from '../../../components/common/UpdatePasswordModal';
 
 const COLORS = {
   primary: '#1344FF',
@@ -66,13 +71,35 @@ const EditableCard = ({
 
 export default function MyPageScreen() {
   const { logout } = useAuth();
+  const [isAgeModalVisible, setAgeModalVisible] = useState(false);
+  const [isGenderModalVisible, setGenderModalVisible] = useState(false);
+  const [isThemeModalVisible, setThemeModalVisible] = useState(false);
+  const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
 
-  const user = {
+  const [user, setUser] = useState({
     name: '민영',
-    email: 'min301313@gmail.com',
-    age: '22',
-    gender: '남자',
+    email: '미설정',
+    age: '미설정',
+    gender: '미설정',
     preferredTheme: '미설정',
+  });
+
+  const handleUpdateAge = (newAge: string) => {
+    setUser(currentUser => ({ ...currentUser, age: newAge || '미설정' }));
+  };
+
+  const handleUpdateGender = (newGender: string) => {
+    setUser(currentUser => ({ ...currentUser, gender: newGender }));
+  };
+
+  const handleUpdateTheme = () => {
+    setUser(currentUser => ({ ...currentUser, preferredTheme: '테마1' }));
+    Alert.alert('완료', '선호 테마가 변경되었습니다.');
+  };
+
+  const handleUpdatePassword = (current: string, newPass: string) => {
+    console.log('Password Update:', { current, newPass });
+    Alert.alert('완료', '비밀번호가 성공적으로 변경되었습니다.');
   };
 
   return (
@@ -95,28 +122,28 @@ export default function MyPageScreen() {
             icon="🗓️"
             label="나이"
             value={user.age}
-            onPress={() => alert('나이 변경')}
+            onPress={() => setAgeModalVisible(true)}
           />
           <View style={styles.separator} />
           <EditableCard
             icon="♂"
             label="성별"
             value={user.gender}
-            onPress={() => alert('성별 변경')}
+            onPress={() => setGenderModalVisible(true)}
           />
           <View style={styles.separator} />
           <EditableCard
             icon="❤️"
             label="선호테마"
             value={user.preferredTheme}
-            onPress={() => alert('선호 테마 변경')}
+            onPress={() => setThemeModalVisible(true)}
           />
           <View style={styles.separator} />
           <EditableCard
             icon="🔒"
             label="비밀번호"
             value="••••••••"
-            onPress={() => alert('비밀번호 변경')}
+            onPress={() => setPasswordModalVisible(true)}
           />
         </View>
 
@@ -131,6 +158,35 @@ export default function MyPageScreen() {
           </Pressable>
         </View>
       </ScrollView>
+
+      <UpdateValueModal
+        visible={isAgeModalVisible}
+        onClose={() => setAgeModalVisible(false)}
+        onConfirm={handleUpdateAge}
+        title="나이 변경"
+        label="나이 입력"
+        initialValue={user.age === '미설정' ? '' : user.age}
+        keyboardType="number-pad"
+      />
+
+      <UpdateGenderModal
+        visible={isGenderModalVisible}
+        onClose={() => setGenderModalVisible(false)}
+        onConfirm={handleUpdateGender}
+        initialValue={user.gender}
+      />
+
+      <UpdateThemeModal
+        visible={isThemeModalVisible}
+        onClose={() => setThemeModalVisible(false)}
+        onConfirm={handleUpdateTheme}
+      />
+
+      <UpdatePasswordModal
+        visible={isPasswordModalVisible}
+        onClose={() => setPasswordModalVisible(false)}
+        onConfirm={handleUpdatePassword}
+      />
     </SafeAreaView>
   );
 }
