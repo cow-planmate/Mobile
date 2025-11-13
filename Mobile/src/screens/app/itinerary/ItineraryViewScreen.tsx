@@ -13,10 +13,10 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
 import TimelineItem from '../../../components/itinerary/TimelineItem';
-import MapView, { Marker } from 'react-native-maps'; // 지도 import 추가
+import MapView, { Marker } from 'react-native-maps';
 
 const COLORS = {
-  primary: '#1344FF', // 기본 색상 #1344FF로 통일
+  primary: '#1344FF',
   background: '#F0F2F5',
   card: '#FFFFFF',
   text: '#1C1C1E',
@@ -28,7 +28,6 @@ const COLORS = {
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 
-// ⭐️ 1. ItineraryEditorScreen에서 formatDate 함수 복사
 const formatDate = (date: Date) => {
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
@@ -50,7 +49,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 지도 영역 추가 */}
       <View style={styles.mapContainer}>
         <MapView
           style={styles.map}
@@ -79,9 +77,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         </MapView>
       </View>
 
-      {/* 타임라인 영역 (flex: 1로 변경) */}
       <View style={{ flex: 1 }}>
-        {/* ⭐️ 2. Day 탭 JSX 및 스타일 구조 수정 */}
         <View style={styles.dayTabsWrapper}>
           <ScrollView
             horizontal
@@ -103,9 +99,8 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
                     selectedDayIndex === index && styles.dayTabTextSelected,
                   ]}
                 >
-                  Day {day.dayNumber}
+                  {day.dayNumber}일차
                 </Text>
-                {/* 날짜 텍스트 추가 */}
                 <Text
                   style={[
                     styles.dayTabDateText,
@@ -127,7 +122,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
                 item={item}
                 onDelete={() => {}}
                 onEditTime={() => {}}
-                // ⭐️ 3. dayTabsWrapper의 left(90)만큼 paddingLeft 추가
                 style={{ paddingLeft: 90 }}
               />
             )}
@@ -176,14 +170,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  // 지도 스타일 추가
   mapContainer: {
     height: '40%',
   },
   map: {
     ...StyleSheet.absoluteFillObject,
   },
-  // ⭐️ 4. ItineraryEditorScreen에서 스타일 복사 및 교체
   dayTabsWrapper: {
     backgroundColor: COLORS.card,
     borderBottomWidth: 1,
@@ -224,15 +216,13 @@ const styles = StyleSheet.create({
   },
   timelineContainer: {
     padding: 20,
-    // ⭐️ 5. TimelineItem이 왼쪽으로 90px 패딩을 가지므로,
-    //    컨테이너의 paddingLeft는 0으로 수정
     paddingLeft: 0,
   },
   timelineDateText: {
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 20,
-    paddingHorizontal: 20, // ⭐️ 6. 날짜 헤더에는 좌측 패딩(20) 다시 적용
+    paddingHorizontal: 20,
   },
   footer: {
     flexDirection: 'row',

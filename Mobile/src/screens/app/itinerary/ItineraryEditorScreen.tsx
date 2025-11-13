@@ -16,6 +16,7 @@ import {
   FlatList,
   TextInput,
   Pressable,
+  Image,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
@@ -99,7 +100,8 @@ const PlaceSearchResultItem = ({
   onSelect: () => void;
 }) => (
   <TouchableOpacity style={styles.resultItem} onPress={onSelect}>
-    <View style={{ flex: 1 }}>
+    <Image source={{ uri: item.imageUrl }} style={styles.resultImage} />
+    <View style={{ flex: 1, marginLeft: 10 }}>
       <Text style={styles.resultName}>{item.name}</Text>
       <Text style={styles.resultMeta}>
         ⭐️ {item.rating} · {item.address}
@@ -577,7 +579,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const { days, setDays, deletePlaceFromDay, addPlaceToDay, updatePlaceTimes } =
     useItinerary();
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-  const [tripName, setTripName] = useState('강서구 1');
+  const [tripName, setTripName] = useState('나의 일정1');
   const [isEditingTripName, setIsEditingTripName] = useState(false);
 
   const [isTimePickerVisible, setTimePickerVisible] = useState(false);
@@ -712,7 +714,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
                   selectedDayIndex === index && styles.dayTabTextSelected,
                 ]}
               >
-                Day {day.dayNumber}
+                {day.dayNumber}일차
               </Text>
               <Text
                 style={[
@@ -983,6 +985,11 @@ const styles = StyleSheet.create({
     padding: 15,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+  },
+  resultImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
   },
   resultName: {
     fontSize: 16,

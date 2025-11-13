@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   Pressable,
   TouchableOpacity,
 } from 'react-native';
@@ -19,7 +18,6 @@ const COLORS = {
   lightGray: '#F0F0F5',
 };
 
-// 1. timeToMinutes 헬퍼 함수 추가 (ItineraryEditorScreen.tsx에서 가져옴)
 const timeToMinutes = (time: string) => {
   if (!time || typeof time !== 'string' || !time.includes(':')) {
     return 0;
@@ -28,15 +26,14 @@ const timeToMinutes = (time: string) => {
   return hours * 60 + minutes;
 };
 
-// 2. (수정) 30분 미만일 때 컴팩트 뷰로 전환 (45 -> 30)
 const IS_COMPACT_VIEW_THRESHOLD_MINUTES = 30;
 
 export type Place = {
   id: string;
   name: string;
   type: '관광지' | '숙소' | '식당';
-  startTime: string; // '10:00' 형식
-  endTime: string; // '11:30' 형식
+  startTime: string;
+  endTime: string;
   address: string;
   rating: number;
   imageUrl: string;
@@ -57,7 +54,6 @@ export default function TimelineItem({
   onEditTime,
   style,
 }: TimelineItemProps) {
-  // 3. 일정 시간(분) 계산
   const durationMinutes =
     timeToMinutes(item.endTime) - timeToMinutes(item.startTime);
   const isCompact = durationMinutes < IS_COMPACT_VIEW_THRESHOLD_MINUTES;
@@ -65,13 +61,7 @@ export default function TimelineItem({
   return (
     <View style={[styles.cardContainer, style]}>
       <View style={styles.card}>
-        {/* 4. isCompact가 아닐 때만 이미지 표시 */}
-        {!isCompact && (
-          <Image source={{ uri: item.imageUrl }} style={styles.image} />
-        )}
-        {/* 5. isCompact일 때 marginLeft 0으로 조정 */}
-        <View style={[styles.infoContainer, isCompact && { marginLeft: 0 }]}>
-          {/* 6. isCompact가 아닐 때만 시간 표시 */}
+        <View style={styles.infoContainer}>
           {!isCompact && (
             <View style={styles.timeRow}>
               <TouchableOpacity onPress={() => onEditTime('startTime')}>
@@ -84,12 +74,10 @@ export default function TimelineItem({
             </View>
           )}
 
-          {/* 7. 이름은 항상 표시 */}
           <Text style={styles.nameText} numberOfLines={1}>
             {item.name}
           </Text>
 
-          {/* 8. isCompact가 아닐 때만 부가 텍스트 표시 */}
           {!isCompact && (
             <>
               <Text style={styles.metaText} numberOfLines={1}>
@@ -102,7 +90,6 @@ export default function TimelineItem({
           )}
         </View>
         <Pressable style={styles.deleteButton} onPress={onDelete}>
-          {/* "삭제" 텍스트를 "x"로 변경 */}
           <Text style={styles.deleteButtonText}>x</Text>
         </Pressable>
       </View>
@@ -114,7 +101,7 @@ const styles = StyleSheet.create({
   cardContainer: {
     flexDirection: 'row',
     width: '100%',
-    paddingLeft: 0, // ⭐️ 수정: 90 -> 0
+    paddingLeft: 0,
     alignItems: 'stretch',
   },
   card: {
@@ -138,7 +125,7 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     flex: 1,
-    marginLeft: 10,
+    marginLeft: 0,
     justifyContent: 'center',
   },
   timeRow: {
