@@ -99,6 +99,8 @@ const resolveConflictsAndSort = (
 interface ItineraryContextType {
   days: Day[];
   setDays: React.Dispatch<React.SetStateAction<Day[]>>;
+  lastAddedPlaceId: string | null;
+  setLastAddedPlaceId: React.Dispatch<React.SetStateAction<string | null>>;
   addPlaceToDay: (
     dayIndex: number,
     place: Omit<Place, 'startTime' | 'endTime'>,
@@ -118,6 +120,7 @@ const ItineraryContext = createContext<ItineraryContextType | undefined>(
 
 export function ItineraryProvider({ children }: PropsWithChildren) {
   const [days, setDays] = useState<Day[]>([]);
+  const [lastAddedPlaceId, setLastAddedPlaceId] = useState<string | null>(null);
 
   const addPlaceToDay = (
     dayIndex: number,
@@ -145,6 +148,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         placeToAdd,
       ];
 
+      setLastAddedPlaceId(newId);
       updatedDays[dayIndex].places = resolveConflictsAndSort(
         newPlacesList,
         placeToAdd.id,
@@ -164,6 +168,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         place => place.id !== placeId,
       );
       updatedDays[dayIndex].places = updatedPlaces;
+      setLastAddedPlaceId(null);
       return updatedDays;
     });
   };
@@ -190,6 +195,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       dayToUpdate.places = resolveConflictsAndSort(newPlacesList, placeId);
       updatedDays[dayIndex] = dayToUpdate;
 
+      setLastAddedPlaceId(null);
       return updatedDays;
     });
   };
@@ -199,6 +205,8 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       value={{
         days,
         setDays,
+        lastAddedPlaceId,
+        setLastAddedPlaceId,
         addPlaceToDay,
         deletePlaceFromDay,
         updatePlaceTimes,

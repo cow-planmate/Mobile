@@ -5,6 +5,7 @@ import React, {
   useLayoutEffect,
   useMemo,
   useCallback,
+  useRef,
 } from 'react';
 import {
   View,
@@ -412,62 +413,68 @@ const DraggableTimelineItem = ({
 };
 
 const TimelineComponent = React.memo(
-  ({
-    selectedDay,
-    onDeletePlace,
-    onEditPlaceTime,
-    onUpdatePlaceTimes,
-  }: {
-    selectedDay: Day;
-    onDeletePlace: (placeId: string) => void;
-    onEditPlaceTime: (
-      placeId: string,
-      type: 'startTime' | 'endTime',
-      time: string,
-    ) => void;
-    onUpdatePlaceTimes: (
-      placeId: string,
-      newStartMinutes: number,
-      newEndMinutes: number,
-    ) => void;
-  }) => {
-    const { gridHours, offsetMinutes } = useMemo(() => {
-      const minHour = 0;
-      const maxHour = 23;
-      const gridHours = Array.from(
-        { length: maxHour - minHour + 1 },
-        (_, i) => i + minHour,
-      );
-      const offsetMinutes = minHour * 60;
-      return { gridHours, offsetMinutes };
-    }, []);
+  React.forwardRef<
+    ScrollView,
+    {
+      selectedDay: Day;
+      onDeletePlace: (placeId: string) => void;
+      onEditPlaceTime: (
+        placeId: string,
+        type: 'startTime' | 'endTime',
+        time: string,
+      ) => void;
+      onUpdatePlaceTimes: (
+        placeId: string,
+        newStartMinutes: number,
+        newEndMinutes: number,
+      ) => void;
+    }
+  >(
+    (
+      { selectedDay, onDeletePlace, onEditPlaceTime, onUpdatePlaceTimes },
+      ref,
+    ) => {
+      const { gridHours, offsetMinutes } = useMemo(() => {
+        const minHour = 0;
+        const maxHour = 23;
+        const gridHours = Array.from(
+          { length: maxHour - minHour + 1 },
+          (_, i) => i + minHour,
+        );
+        const offsetMinutes = minHour * 60;
+        return { gridHours, offsetMinutes };
+      }, []);
 
-    return (
-      <View style={styles.tabContentContainer}>
-        <ScrollView contentContainerStyle={styles.timelineContentContainer}>
-          <View style={styles.timelineWrapper}>
-            <TimeGridBackground hours={gridHours} />
-            {selectedDay?.places.map(place => (
-              <DraggableTimelineItem
-                key={place.id}
-                place={place}
-                offsetMinutes={offsetMinutes}
-                onDelete={() => onDeletePlace(place.id)}
-                onEditTime={type =>
-                  onEditPlaceTime(
-                    place.id,
-                    type,
-                    type === 'startTime' ? place.startTime : place.endTime,
-                  )
-                }
-                onDragEnd={onUpdatePlaceTimes}
-              />
-            ))}
-          </View>
-        </ScrollView>
-      </View>
-    );
-  },
+      return (
+        <View style={styles.tabContentContainer}>
+          <ScrollView
+            ref={ref}
+            contentContainerStyle={styles.timelineContentContainer}
+          >
+            <View style={styles.timelineWrapper}>
+              <TimeGridBackground hours={gridHours} />
+              {selectedDay?.places.map(place => (
+                <DraggableTimelineItem
+                  key={place.id}
+                  place={place}
+                  offsetMinutes={offsetMinutes}
+                  onDelete={() => onDeletePlace(place.id)}
+                  onEditTime={type =>
+                    onEditPlaceTime(
+                      place.id,
+                      type,
+                      type === 'startTime' ? place.startTime : place.endTime,
+                    )
+                  }
+                  onDragEnd={onUpdatePlaceTimes}
+                />
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+      );
+    },
+  ),
 );
 
 const AddPlaceComponent = React.memo(
@@ -573,8 +580,15 @@ const AddPlaceComponent = React.memo(
 );
 
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
-  const { days, setDays, deletePlaceFromDay, addPlaceToDay, updatePlaceTimes } =
-    useItinerary();
+  const {
+    days,
+    setDays,
+    deletePlaceFromDay,
+    addPlaceToDay,
+    updatePlaceTimes,
+    lastAddedPlaceId,
+    setLastAddedPlaceId,
+  } = useItinerary();
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [tripName, setTripName] = useState('나의 일정1');
   const [isEditingTripName, setIsEditingTripName] = useState(false);
@@ -585,6 +599,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     type: 'startTime' | 'endTime';
     time: string;
   } | null>(null);
+
+  const timelineScrollRef = useRef<ScrollView>(null);
 
   const formatDate = (date: Date) => {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -645,6 +661,19 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     });
   }, [navigation, tripName, days, isEditingTripName]);
 
+  const selectedDay = days[selectedDayIndex];
+
+  useEffect(() => {
+    if (lastAddedPlaceId && selectedDay && timelineScrollRef.current) {
+      const newPlace = selectedDay.places.find(p => p.id === lastAddedPlaceId);
+      if (newPlace) {
+        const yOffset = timeToMinutes(newPlace.startTime) * MINUTE_HEIGHT;
+        timelineScrollRef.current.scrollTo({ y: yOffset, animated: true });
+        setLastAddedPlaceId(null);
+      }
+    }
+  }, [lastAddedPlaceId, selectedDay, setLastAddedPlaceId]);
+
   const handleEditTime = useCallback(
     (placeId: string, type: 'startTime' | 'endTime', time: string) => {
       setEditingTime({ placeId, type, time });
@@ -675,8 +704,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     },
     [selectedDayIndex, addPlaceToDay],
   );
-
-  const selectedDay = days[selectedDayIndex];
 
   if (!selectedDay) {
     return (
@@ -737,6 +764,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         <Tab.Screen name="타임라인">
           {() => (
             <TimelineComponent
+              ref={timelineScrollRef}
               selectedDay={selectedDay}
               onDeletePlace={handleDeletePlace}
               onEditPlaceTime={handleEditTime}
