@@ -56,12 +56,6 @@ export default function ForgotPasswordScreen({
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Text style={styles.backButtonText}>‹</Text>
-      </TouchableOpacity>
       <Text style={styles.title}>비밀번호 찾기</Text>
       <Text style={styles.subtitle}>
         가입하신 이메일 주소를 입력하시면,{'\n'}비밀번호 재설정 메일을
@@ -98,21 +92,11 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: COLORS.white,
   },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    zIndex: 1,
-  },
-  backButtonText: {
-    fontSize: 30,
-    color: COLORS.text,
-  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginTop: 60,
+    marginTop: 24,
     marginBottom: 16,
     color: COLORS.text,
   },
