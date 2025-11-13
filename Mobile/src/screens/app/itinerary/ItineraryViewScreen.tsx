@@ -16,6 +16,7 @@ import TimelineItem, {
 } from '../../../components/itinerary/TimelineItem';
 import MapView, { Marker } from 'react-native-maps';
 import { Day } from '../../../contexts/ItineraryContext';
+import ShareModal from '../../../components/common/ShareModal';
 
 const COLORS = {
   primary: '#1344FF',
@@ -138,6 +139,7 @@ type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 export default function ItineraryViewScreen({ route, navigation }: Props) {
   const { days = [], tripName = '완성된 일정' } = route.params || {};
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [isShareModalVisible, setShareModalVisible] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -260,7 +262,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       <View style={styles.footer}>
         <Pressable
           style={styles.footerButton}
-          onPress={() => alert('공유 기능')}
+          onPress={() => setShareModalVisible(true)}
         >
           <Text style={styles.footerButtonText}>공유</Text>
         </Pressable>
@@ -277,6 +279,11 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
           <Text style={styles.confirmButtonText}>확인</Text>
         </Pressable>
       </View>
+
+      <ShareModal
+        visible={isShareModalVisible}
+        onClose={() => setShareModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
