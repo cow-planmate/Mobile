@@ -69,6 +69,62 @@ const EditableCard = ({
   </View>
 );
 
+const SectionHeader = ({
+  title,
+  subtitle,
+  count,
+  actionText,
+  onActionPress,
+}: {
+  title: string;
+  subtitle: string;
+  count: number;
+  actionText?: string;
+  onActionPress?: () => void;
+}) => (
+  <View style={styles.sectionHeader}>
+    <View style={styles.sectionTitleContainer}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.sectionSubtitle}>{subtitle}</Text>
+    </View>
+    <View style={styles.sectionActionContainer}>
+      <Text style={styles.sectionCount}>
+        <Text style={styles.sectionCountIcon}>🗓️</Text> {count}개의 계획
+      </Text>
+      {actionText && (
+        <TouchableOpacity onPress={onActionPress} style={styles.actionButton}>
+          <Text style={styles.sectionActionText}>{actionText}</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  </View>
+);
+
+const ItineraryCard = ({
+  title,
+  subtitle,
+  onPress,
+  onPressMore,
+}: {
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+  onPressMore: () => void;
+}) => (
+  <TouchableOpacity style={styles.itineraryCard} onPress={onPress}>
+    <View style={styles.itineraryIconContainer}>
+      <Text style={styles.itineraryIcon}>🗓️</Text>
+    </View>
+    <View style={styles.itineraryContent}>
+      <Text style={styles.itineraryTitle}>{title}</Text>
+      <Text style={styles.itinerarySubtitle}>{subtitle}</Text>
+    </View>
+    <TouchableOpacity onPress={onPressMore} style={styles.moreButton}>
+      <Text style={styles.moreButtonText}>⋮</Text>
+    </TouchableOpacity>
+  </TouchableOpacity>
+);
+
 export default function MyPageScreen() {
   const { logout } = useAuth();
   const [isAgeModalVisible, setAgeModalVisible] = useState(false);
@@ -101,6 +157,13 @@ export default function MyPageScreen() {
     console.log('Password Update:', { current, newPass });
     Alert.alert('완료', '비밀번호가 성공적으로 변경되었습니다.');
   };
+
+  const myItineraries = [
+    { id: '1', title: '나의 일정 3', subtitle: '클릭하여 상세보기' },
+    { id: '2', title: '나의 일정 2', subtitle: '클릭하여 상세보기' },
+  ];
+
+  const sharedItineraries: any[] = [];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -146,6 +209,52 @@ export default function MyPageScreen() {
             onPress={() => setPasswordModalVisible(true)}
           />
         </View>
+
+        <View style={styles.sectionSeparator} />
+
+        <SectionHeader
+          title="나의 일정"
+          subtitle="직접 생성한 일정을 관리하세요"
+          count={myItineraries.length}
+          actionText="다중삭제"
+          onActionPress={() => alert('다중삭제')}
+        />
+
+        {myItineraries.map(item => (
+          <ItineraryCard
+            key={item.id}
+            title={item.title}
+            subtitle={item.subtitle}
+            onPress={() => alert(`${item.title} 상세보기`)}
+            onPressMore={() => alert(`${item.title} 더보기`)}
+          />
+        ))}
+
+        <View style={styles.sectionSeparator} />
+
+        <SectionHeader
+          title="우리들의 일정"
+          subtitle="초대받은 일정에서 다른 멤버와 함께 편집하세요"
+          count={sharedItineraries.length}
+        />
+
+        {sharedItineraries.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              편집 권한을 받은 일정이 없습니다
+            </Text>
+          </View>
+        ) : (
+          sharedItineraries.map(item => (
+            <ItineraryCard
+              key={item.id}
+              title={item.title}
+              subtitle={item.subtitle}
+              onPress={() => alert(`${item.title} 상세보기`)}
+              onPressMore={() => alert(`${item.title} 더보기`)}
+            />
+          ))
+        )}
 
         <View style={styles.linksContainer}>
           <Pressable onPress={logout}>
@@ -286,5 +395,102 @@ const styles = StyleSheet.create({
   },
   deleteLinkText: {
     color: COLORS.error,
+  },
+  sectionSeparator: {
+    height: 12,
+    backgroundColor: COLORS.lightGray,
+    marginHorizontal: -20,
+    marginVertical: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 16,
+  },
+  sectionTitleContainer: {
+    flex: 1,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: COLORS.placeholder,
+    marginTop: 4,
+  },
+  sectionActionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sectionCount: {
+    fontSize: 14,
+    color: COLORS.placeholder,
+    fontWeight: '500',
+  },
+  sectionCountIcon: {
+    fontSize: 14,
+  },
+  actionButton: {
+    marginLeft: 8,
+  },
+  sectionActionText: {
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  itineraryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 16,
+    marginBottom: 12,
+  },
+  itineraryIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: COLORS.lightGray,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  itineraryIcon: {
+    fontSize: 24,
+  },
+  itineraryContent: {
+    flex: 1,
+  },
+  itineraryTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  itinerarySubtitle: {
+    fontSize: 14,
+    color: COLORS.placeholder,
+    marginTop: 2,
+  },
+  moreButton: {
+    padding: 8,
+  },
+  moreButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.placeholder,
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: COLORS.placeholder,
   },
 });
