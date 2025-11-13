@@ -1,5 +1,5 @@
 // src/screens/app/itinerary/ItineraryViewScreen.tsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -138,6 +138,7 @@ type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 export default function ItineraryViewScreen({ route, navigation }: Props) {
   const { days = [], tripName = '완성된 일정' } = route.params || {};
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     navigation.setOptions({
@@ -147,6 +148,15 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   }, [navigation, tripName]);
 
   const selectedDay = days[selectedDayIndex];
+
+  useEffect(() => {
+    if (selectedDay && selectedDay.places.length > 0 && scrollRef.current) {
+      const firstPlace = selectedDay.places[0];
+      const startMinutes = timeToMinutes(firstPlace.startTime);
+      const yOffset = startMinutes * MINUTE_HEIGHT;
+      scrollRef.current.scrollTo({ y: yOffset, animated: true });
+    }
+  }, [selectedDay]);
 
   const { gridHours, offsetMinutes } = useMemo(() => {
     const minHour = 0;
@@ -228,7 +238,10 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
 
         {selectedDay && (
           <View style={{ flex: 1 }}>
-            <ScrollView contentContainerStyle={styles.timelineContentContainer}>
+            <ScrollView
+              ref={scrollRef}
+              contentContainerStyle={styles.timelineContentContainer}
+            >
               <View style={styles.timelineWrapper}>
                 <TimeGridBackground hours={gridHours} />
                 {selectedDay.places.map(place => (
@@ -318,8 +331,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   timelineContentContainer: {
-    paddingBottom: 200,
-    paddingTop: 20,
+    paddingBottom: 20,
   },
   timelineWrapper: {
     position: 'relative',
