@@ -118,11 +118,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
   },
-  image: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-  },
   infoContainer: {
     flex: 1,
     marginLeft: 0,

@@ -1,5 +1,5 @@
 // src/screens/app/itinerary/ItineraryViewScreen.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,17 +7,19 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  FlatList,
   Pressable,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
-import TimelineItem from '../../../components/itinerary/TimelineItem';
+import TimelineItem, {
+  Place,
+} from '../../../components/itinerary/TimelineItem';
 import MapView, { Marker } from 'react-native-maps';
+import { Day } from '../../../contexts/ItineraryContext';
 
 const COLORS = {
   primary: '#1344FF',
-  background: '#F0F2F5',
+  background: '#FFFFFF',
   card: '#FFFFFF',
   text: '#1C1C1E',
   placeholder: '#8E8E93',
@@ -26,13 +28,112 @@ const COLORS = {
   lightGray: '#F5F5F7',
 };
 
-type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
+const HOUR_HEIGHT = 180;
+const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
+const MIN_ITEM_HEIGHT = 45;
+const GRID_TOP_OFFSET = 40;
+
+const timeToMinutes = (time: string) => {
+  if (!time || typeof time !== 'string' || !time.includes(':')) {
+    return 0;
+  }
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+};
 
 const formatDate = (date: Date) => {
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
   return `${month}.${day}`;
 };
+
+const TimeGridBackground = ({ hours }: { hours: number[] }) => {
+  const hourStr = (h: number) => h.toString().padStart(2, '0');
+
+  return (
+    <View style={styles.gridContainer}>
+      {hours.map(hour => (
+        <View key={hour} style={[styles.hourBlock, { height: HOUR_HEIGHT }]}>
+          <View style={styles.hourLabelContainer}>
+            <Text style={[styles.timeLabelText, { top: 0 }]}>
+              {`${hourStr(hour)}:00`}
+            </Text>
+            <Text
+              style={[
+                styles.timeLabelText,
+                styles.minuteLabel,
+                { top: HOUR_HEIGHT / 4 },
+              ]}
+            >
+              {`${hourStr(hour)}:15`}
+            </Text>
+            <Text
+              style={[
+                styles.timeLabelText,
+                styles.minuteLabel,
+                { top: HOUR_HEIGHT / 2 },
+              ]}
+            >
+              {`${hourStr(hour)}:30`}
+            </Text>
+            <Text
+              style={[
+                styles.timeLabelText,
+                styles.minuteLabel,
+                { top: (HOUR_HEIGHT * 3) / 4 },
+              ]}
+            >
+              {`${hourStr(hour)}:45`}
+            </Text>
+          </View>
+
+          <View style={styles.hourContent}>
+            <View style={[styles.quarterBlock, styles.firstQuarterBlock]} />
+            <View style={styles.quarterBlock} />
+            <View style={styles.quarterBlock} />
+            <View style={styles.quarterBlock} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+};
+
+const StaticTimelineItem = ({
+  place,
+  offsetMinutes,
+}: {
+  place: Place;
+  offsetMinutes: number;
+}) => {
+  const startMinutes = timeToMinutes(place.startTime);
+  const endMinutes = timeToMinutes(place.endTime);
+  const durationMinutes = endMinutes - startMinutes;
+
+  const top = (startMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
+  const height = durationMinutes * MINUTE_HEIGHT;
+
+  const itemStyle = {
+    position: 'absolute',
+    top: top,
+    height: Math.max(height, MIN_ITEM_HEIGHT),
+    left: 60,
+    right: 15,
+  };
+
+  return (
+    <View style={itemStyle}>
+      <TimelineItem
+        item={place}
+        onDelete={() => {}}
+        onEditTime={() => {}}
+        style={{ flex: 1 }}
+      />
+    </View>
+  );
+};
+
+type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 
 export default function ItineraryViewScreen({ route, navigation }: Props) {
   const { days = [], tripName = '완성된 일정' } = route.params || {};
@@ -46,6 +147,17 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   }, [navigation, tripName]);
 
   const selectedDay = days[selectedDayIndex];
+
+  const { gridHours, offsetMinutes } = useMemo(() => {
+    const minHour = 0;
+    const maxHour = 23;
+    const gridHours = Array.from(
+      { length: maxHour - minHour + 1 },
+      (_, i) => i + minHour,
+    );
+    const offsetMinutes = minHour * 60;
+    return { gridHours, offsetMinutes };
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -115,29 +227,20 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         </View>
 
         {selectedDay && (
-          <FlatList
-            data={selectedDay.places}
-            renderItem={({ item }) => (
-              <TimelineItem
-                item={item}
-                onDelete={() => {}}
-                onEditTime={() => {}}
-                style={{ paddingLeft: 90 }}
-              />
-            )}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.timelineContainer}
-            ListHeaderComponent={
-              <Text style={styles.timelineDateText}>
-                {selectedDay.date.toLocaleDateString('ko-KR', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  weekday: 'long',
-                })}
-              </Text>
-            }
-          />
+          <View style={{ flex: 1 }}>
+            <ScrollView contentContainerStyle={styles.timelineContentContainer}>
+              <View style={styles.timelineWrapper}>
+                <TimeGridBackground hours={gridHours} />
+                {selectedDay.places.map(place => (
+                  <StaticTimelineItem
+                    key={place.id}
+                    place={place}
+                    offsetMinutes={offsetMinutes}
+                  />
+                ))}
+              </View>
+            </ScrollView>
+          </View>
         )}
       </View>
 
@@ -214,15 +317,53 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     opacity: 0.8,
   },
-  timelineContainer: {
-    padding: 20,
-    paddingLeft: 0,
+  timelineContentContainer: {
+    paddingBottom: 200,
+    paddingTop: 20,
   },
-  timelineDateText: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    paddingHorizontal: 20,
+  timelineWrapper: {
+    position: 'relative',
+    paddingVertical: 20,
+  },
+  gridContainer: {
+    paddingVertical: 20,
+  },
+  hourBlock: {
+    flexDirection: 'row',
+  },
+  hourLabelContainer: {
+    width: 60,
+    height: HOUR_HEIGHT,
+    position: 'relative',
+    alignItems: 'center',
+  },
+  timeLabelText: {
+    position: 'absolute',
+    marginTop: -8,
+    color: COLORS.placeholder,
+    fontSize: 12,
+    fontWeight: '500',
+    width: '100%',
+    textAlign: 'center',
+  },
+  minuteLabel: {},
+  hourContent: {
+    flex: 1,
+    marginLeft: 0,
+    height: HOUR_HEIGHT,
+    flexDirection: 'column',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    paddingLeft: 60,
+  },
+  quarterBlock: {
+    height: HOUR_HEIGHT / 4,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  firstQuarterBlock: {
+    borderTopColor: COLORS.border,
   },
   footer: {
     flexDirection: 'row',
