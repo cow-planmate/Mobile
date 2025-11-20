@@ -11,7 +11,6 @@ import {
   PixelRatio,
   TouchableOpacity,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const scale = SCREEN_WIDTH / 360;
@@ -29,13 +28,13 @@ const COLORS = {
   white: '#FFFFFF',
   error: '#FF3B30',
   success: '#34C759',
-  gradientStart: '#e0e7ff',
-  gradientEnd: '#f8fafc',
+  lightBlue: '#e6f0ff', // 연한 파란색 추가
 };
 
 type ForgotPasswordScreenProps = {
   navigation: {
     goBack: () => void;
+    // ...other navigation props if needed
   };
 };
 
@@ -65,60 +64,52 @@ export default function ForgotPasswordScreen({
     );
   };
 
-  const handleGoBack = () => {
-    navigation.goBack();
-  };
-
   return (
-    <LinearGradient
-      colors={[COLORS.gradientStart, COLORS.gradientEnd]}
-      style={styles.gradientContainer}
-    >
-      <SafeAreaView style={styles.container}>
-        {/* <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-          <Text style={styles.backButtonText}>{'←'} 뒤로가기</Text>
-        </TouchableOpacity> */}
-        <Text style={styles.title}>비밀번호 찾기</Text>
-        <Text style={styles.subtitle}>
-          가입하신 이메일 주소를 입력하시면,{'\n'}비밀번호 재설정 메일을
-          보내드립니다.
-        </Text>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>이메일</Text>
-          <TextInput
-            style={[
-              styles.input,
-              focusedInput === 'email' && styles.inputFocused,
-            ]}
-            placeholder="이메일을 입력하세요"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            onFocus={() => setFocusedInput('email')}
-            onBlur={() => setFocusedInput(null)}
-            placeholderTextColor={COLORS.darkGray}
-          />
-        </View>
-
-        <Pressable style={styles.submitButton} onPress={handlePasswordReset}>
-          <Text style={styles.submitButtonText}>확인</Text>
-        </Pressable>
-      </SafeAreaView>
-    </LinearGradient>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.backButtonText} onPress={() => navigation.goBack()}>
+        {'<'} 뒤로가기
+      </Text>
+      <Text style={styles.title}>비밀번호 찾기</Text>
+      <Text style={styles.subtitle}>
+        가입하신 이메일 주소를 입력하시면,{'\n'}비밀번호 재설정 메일을
+        보내드립니다.
+      </Text>
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>이메일</Text>
+        <TextInput
+          style={[
+            styles.input,
+            focusedInput === 'email' && styles.inputFocused,
+          ]}
+          placeholder="이메일을 입력하세요"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          onFocus={() => setFocusedInput('email')}
+          onBlur={() => setFocusedInput(null)}
+          placeholderTextColor={COLORS.darkGray}
+        />
+      </View>
+      <Pressable style={styles.submitButton} onPress={handlePasswordReset}>
+        <Text style={styles.submitButtonText}>확인</Text>
+      </Pressable>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  gradientContainer: {
-    flex: 1,
-  },
   container: {
     flex: 1,
-    padding: normalize(24),
-    backgroundColor: 'transparent',
     justifyContent: 'center',
+    padding: normalize(24),
+    backgroundColor: COLORS.lightBlue,
+  },
+  // backButton style removed
+  backButtonText: {
+    fontSize: normalize(14),
+    color: COLORS.primary,
+    fontWeight: 'bold',
   },
   title: {
     fontSize: normalize(28),
@@ -183,17 +174,5 @@ const styles = StyleSheet.create({
     fontSize: normalize(16),
     fontWeight: 'bold',
     color: COLORS.white,
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: normalize(6),
-    paddingHorizontal: normalize(8),
-    marginBottom: normalize(8),
-    borderRadius: normalize(8),
-  },
-  backButtonText: {
-    fontSize: normalize(16),
-    color: COLORS.primary,
-    fontWeight: 'bold',
   },
 });

@@ -30,7 +30,7 @@ const COLORS = {
   text: '#1C1C1E',
   white: '#FFFFFF',
   error: '#FF3B30',
-  lightBlue: '#e6f0ff', // 연한 파란색 추가
+  lightBlue: '#e6f0ff',
 };
 
 type LoginScreenProps = {

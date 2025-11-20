@@ -27,8 +27,7 @@ export default function AuthStack() {
         name="ForgotPassword"
         component={ForgotPasswordScreen}
         options={{
-          headerTitle: '',
-          headerBackTitleVisible: false,
+          headerShown: false,
         }}
       />
     </Stack.Navigator>
