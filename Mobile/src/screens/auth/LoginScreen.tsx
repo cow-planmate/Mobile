@@ -9,9 +9,19 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Dimensions,
+  PixelRatio,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import LinearGradient from 'react-native-linear-gradient';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const scale = SCREEN_WIDTH / 360; // 기준: 360px (일반적인 디자인 기준)
+
+function normalize(size: number) {
+  const newSize = size * scale;
+  return Math.round(PixelRatio.roundToNearestPixel(newSize));
+}
 
 const COLORS = {
   primary: '#1344FF',
@@ -163,49 +173,49 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 24,
+    padding: normalize(24),
     backgroundColor: 'transparent',
   },
   title: {
-    fontSize: 32,
+    fontSize: normalize(32),
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: normalize(32),
     color: COLORS.text,
     letterSpacing: 1,
   },
   errorContainer: {
     width: '100%',
     backgroundColor: '#FFD2D2',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 18,
+    padding: normalize(12),
+    borderRadius: normalize(8),
+    marginBottom: normalize(18),
     alignItems: 'center',
   },
   errorText: {
     color: COLORS.error,
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: normalize(14),
   },
   inputGroup: {
     width: '100%',
-    marginBottom: 14,
+    marginBottom: normalize(14),
   },
   label: {
-    fontSize: 14,
+    fontSize: normalize(14),
     color: COLORS.text,
-    marginBottom: 8,
+    marginBottom: normalize(8),
     fontWeight: 'bold',
-    marginLeft: 4,
+    marginLeft: normalize(4),
   },
   input: {
     width: '100%',
-    height: 52,
+    height: normalize(52),
     borderWidth: 1,
     borderColor: COLORS.gray,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    fontSize: 16,
+    borderRadius: normalize(8),
+    paddingHorizontal: normalize(16),
+    fontSize: normalize(16),
     backgroundColor: COLORS.white,
     color: COLORS.text,
     shadowColor: COLORS.primary,
@@ -220,12 +230,12 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     width: '100%',
-    height: 52,
-    borderRadius: 26,
+    height: normalize(52),
+    borderRadius: normalize(26),
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
-    marginTop: 24,
+    marginTop: normalize(24),
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.18,
@@ -236,7 +246,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.darkGray,
   },
   submitButtonText: {
-    fontSize: 17,
+    fontSize: normalize(17),
     fontWeight: 'bold',
     color: COLORS.white,
     letterSpacing: 0.5,
@@ -245,17 +255,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    marginTop: 28,
-    paddingHorizontal: 8,
+    marginTop: normalize(28),
+    paddingHorizontal: normalize(8),
   },
   linkButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingVertical: normalize(6),
+    paddingHorizontal: normalize(12),
+    borderRadius: normalize(8),
   },
   linkText: {
     color: COLORS.primary,
-    fontSize: 15,
+    fontSize: normalize(15),
     fontWeight: '500',
   },
 });
