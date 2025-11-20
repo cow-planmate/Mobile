@@ -1,42 +1,100 @@
-// src/contexts/AuthContext.tsx
 import React, {
   createContext,
   useState,
   useContext,
   PropsWithChildren,
+  useEffect,
 } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@env';
 
-// Context가 가지게 될 값들의 타입을 정의합니다.
-interface AuthContextType {
-  user: object | null; // user가 있으면 로그인, null이면 로그아웃 상태
-  login: () => void;
-  logout: () => void;
+interface User {
+  userId: number;
+  nickname: string;
 }
 
-// Context 생성. 초기값은 undefined.
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// 앱 전체를 감싸서 user, login, logout 값을 제공할 Provider 컴포넌트
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [user, setUser] = useState<object | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // 지금은 간단하게 가짜 유저 객체를 설정하여 로그인 시뮬레이션
-  const login = () => {
-    setUser({ name: 'planMateUser' });
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const storedUser = await AsyncStorage.getItem('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+      } catch (e) {
+        console.error('Failed to load user', e);
+      }
+    };
+    loadUser();
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.loginSuccess) {
+        const userData = {
+          userId: data.userId,
+          nickname: data.nickname,
+        };
+
+        await AsyncStorage.setItem('accessToken', data.accessToken);
+        await AsyncStorage.setItem('refreshToken', data.refreshToken);
+        await AsyncStorage.setItem('user', JSON.stringify(userData));
+
+        setUser(userData);
+      } else {
+        throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
+      }
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      await AsyncStorage.removeItem('accessToken');
+      await AsyncStorage.removeItem('refreshToken');
+      await AsyncStorage.removeItem('user');
+      setUser(null);
+    } catch (e) {
+      console.error('Logout failed', e);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-// 다른 컴포넌트에서 쉽게 Context 값을 사용하기 위한 Custom Hook
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

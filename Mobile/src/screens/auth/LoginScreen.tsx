@@ -7,6 +7,8 @@ import {
   SafeAreaView,
   Pressable,
   TouchableOpacity,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -31,21 +33,22 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
-  const { login } = useAuth();
+  const { login, isLoading } = useAuth();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setError('');
 
-    if (!email && !password) {
-      login();
-      return;
-    }
-    if (email.toLowerCase() !== 'test@test.com' || password !== 'password123') {
-      setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+    if (!email || !password) {
+      setError('이메일과 비밀번호를 모두 입력해주세요.');
       return;
     }
 
-    login();
+    try {
+      await login(email, password);
+    } catch (e: any) {
+      setError(e.message || '로그인 중 오류가 발생했습니다.');
+      Alert.alert('로그인 실패', e.message || '다시 시도해주세요.');
+    }
   };
 
   const handleEmailChange = (text: string) => {
@@ -86,6 +89,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           autoCapitalize="none"
           onFocus={() => setFocusedInput('email')}
           onBlur={() => setFocusedInput(null)}
+          editable={!isLoading}
         />
       </View>
 
@@ -102,18 +106,33 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           secureTextEntry
           onFocus={() => setFocusedInput('password')}
           onBlur={() => setFocusedInput(null)}
+          editable={!isLoading}
         />
       </View>
 
-      <Pressable style={styles.submitButton} onPress={handleLogin}>
-        <Text style={styles.submitButtonText}>로그인</Text>
+      <Pressable
+        style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
+        onPress={handleLogin}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <ActivityIndicator color={COLORS.white} />
+        ) : (
+          <Text style={styles.submitButtonText}>로그인</Text>
+        )}
       </Pressable>
 
       <View style={styles.linksContainer}>
-        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('ForgotPassword')}
+          disabled={isLoading}
+        >
           <Text style={styles.linkText}>비밀번호 찾기</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Signup')}
+          disabled={isLoading}
+        >
           <Text style={styles.linkText}>회원가입</Text>
         </TouchableOpacity>
       </View>
@@ -179,6 +198,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.primary,
     marginTop: 24,
+  },
+  submitButtonDisabled: {
+    backgroundColor: COLORS.darkGray,
   },
   submitButtonText: {
     fontSize: 16,

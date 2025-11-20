@@ -1,7 +1,13 @@
-// babel.config.js
 module.exports = {
   presets: ['module:@react-native/babel-preset'],
   plugins: [
-    'react-native-reanimated/plugin', // 1. 이 줄을 추가합니다.
+    [
+      'module:react-native-dotenv',
+      {
+        moduleName: '@env',
+        path: '.env',
+      },
+    ],
+    'react-native-reanimated/plugin',
   ],
 };
