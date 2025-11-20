@@ -13,7 +13,6 @@ import {
   PixelRatio,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import LinearGradient from 'react-native-linear-gradient';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const scale = SCREEN_WIDTH / 360;
@@ -31,8 +30,7 @@ const COLORS = {
   text: '#1C1C1E',
   white: '#FFFFFF',
   error: '#FF3B30',
-  gradientStart: '#e0e7ff',
-  gradientEnd: '#f8fafc',
+  lightBlue: '#e6f0ff', // 연한 파란색 추가
 };
 
 type LoginScreenProps = {
@@ -79,101 +77,90 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   };
 
   return (
-    <LinearGradient
-      colors={[COLORS.gradientStart, COLORS.gradientEnd]}
-      style={styles.gradientContainer}
-    >
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.title}>로그인</Text>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>로그인</Text>
 
-        {error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>이메일</Text>
-          <TextInput
-            style={[
-              styles.input,
-              focusedInput === 'email' && styles.inputFocused,
-            ]}
-            placeholder="이메일을 입력하세요"
-            value={email}
-            onChangeText={handleEmailChange}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            onFocus={() => setFocusedInput('email')}
-            onBlur={() => setFocusedInput(null)}
-            editable={!isLoading}
-            placeholderTextColor={COLORS.darkGray}
-          />
+      {error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
+      ) : null}
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>비밀번호</Text>
-          <TextInput
-            style={[
-              styles.input,
-              focusedInput === 'password' && styles.inputFocused,
-            ]}
-            placeholder="비밀번호를 입력하세요"
-            value={password}
-            onChangeText={handlePasswordChange}
-            secureTextEntry
-            onFocus={() => setFocusedInput('password')}
-            onBlur={() => setFocusedInput(null)}
-            editable={!isLoading}
-            placeholderTextColor={COLORS.darkGray}
-          />
-        </View>
-
-        <Pressable
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>이메일</Text>
+        <TextInput
           style={[
-            styles.submitButton,
-            isLoading && styles.submitButtonDisabled,
+            styles.input,
+            focusedInput === 'email' && styles.inputFocused,
           ]}
-          onPress={handleLogin}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color={COLORS.white} />
-          ) : (
-            <Text style={styles.submitButtonText}>로그인</Text>
-          )}
-        </Pressable>
+          placeholder="이메일을 입력하세요"
+          value={email}
+          onChangeText={handleEmailChange}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          onFocus={() => setFocusedInput('email')}
+          onBlur={() => setFocusedInput(null)}
+          editable={!isLoading}
+          placeholderTextColor={COLORS.darkGray}
+        />
+      </View>
 
-        <View style={styles.linksContainer}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('ForgotPassword')}
-            disabled={isLoading}
-            style={styles.linkButton}
-          >
-            <Text style={styles.linkText}>비밀번호 찾기</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Signup')}
-            disabled={isLoading}
-            style={styles.linkButton}
-          >
-            <Text style={styles.linkText}>회원가입</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    </LinearGradient>
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>비밀번호</Text>
+        <TextInput
+          style={[
+            styles.input,
+            focusedInput === 'password' && styles.inputFocused,
+          ]}
+          placeholder="비밀번호를 입력하세요"
+          value={password}
+          onChangeText={handlePasswordChange}
+          secureTextEntry
+          onFocus={() => setFocusedInput('password')}
+          onBlur={() => setFocusedInput(null)}
+          editable={!isLoading}
+          placeholderTextColor={COLORS.darkGray}
+        />
+      </View>
+
+      <Pressable
+        style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
+        onPress={handleLogin}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <ActivityIndicator color={COLORS.white} />
+        ) : (
+          <Text style={styles.submitButtonText}>로그인</Text>
+        )}
+      </Pressable>
+
+      <View style={styles.linksContainer}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('ForgotPassword')}
+          disabled={isLoading}
+          style={styles.linkButton}
+        >
+          <Text style={styles.linkText}>비밀번호 찾기</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Signup')}
+          disabled={isLoading}
+          style={styles.linkButton}
+        >
+          <Text style={styles.linkText}>회원가입</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  gradientContainer: {
-    flex: 1,
-  },
   container: {
     flex: 1,
     justifyContent: 'center',
     padding: normalize(24),
-    backgroundColor: 'transparent',
+    backgroundColor: COLORS.lightBlue,
   },
   title: {
     fontSize: normalize(32),
@@ -190,6 +177,11 @@ const styles = StyleSheet.create({
     borderRadius: normalize(8),
     marginBottom: normalize(18),
     alignItems: 'center',
+    shadowColor: COLORS.error,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 6,
   },
   errorText: {
     color: COLORS.error,
