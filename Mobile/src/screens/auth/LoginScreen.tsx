@@ -11,15 +11,19 @@ import {
   Alert,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import LinearGradient from 'react-native-linear-gradient';
 
 const COLORS = {
   primary: '#1344FF',
+  secondary: '#5AC8FA',
   lightGray: '#F0F0F0',
   gray: '#E5E5EA',
   darkGray: '#8E8E93',
   text: '#1C1C1E',
   white: '#FFFFFF',
   error: '#FF3B30',
+  gradientStart: '#e0e7ff',
+  gradientEnd: '#f8fafc',
 };
 
 type LoginScreenProps = {
@@ -66,115 +70,134 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>로그인</Text>
+    <LinearGradient
+      colors={[COLORS.gradientStart, COLORS.gradientEnd]}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.title}>로그인</Text>
 
-      {error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>이메일</Text>
+          <TextInput
+            style={[
+              styles.input,
+              focusedInput === 'email' && styles.inputFocused,
+            ]}
+            placeholder="이메일을 입력하세요"
+            value={email}
+            onChangeText={handleEmailChange}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            onFocus={() => setFocusedInput('email')}
+            onBlur={() => setFocusedInput(null)}
+            editable={!isLoading}
+            placeholderTextColor={COLORS.darkGray}
+          />
         </View>
-      ) : null}
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>이메일</Text>
-        <TextInput
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>비밀번호</Text>
+          <TextInput
+            style={[
+              styles.input,
+              focusedInput === 'password' && styles.inputFocused,
+            ]}
+            placeholder="비밀번호를 입력하세요"
+            value={password}
+            onChangeText={handlePasswordChange}
+            secureTextEntry
+            onFocus={() => setFocusedInput('password')}
+            onBlur={() => setFocusedInput(null)}
+            editable={!isLoading}
+            placeholderTextColor={COLORS.darkGray}
+          />
+        </View>
+
+        <Pressable
           style={[
-            styles.input,
-            focusedInput === 'email' && styles.inputFocused,
+            styles.submitButton,
+            isLoading && styles.submitButtonDisabled,
+            styles.shadow,
           ]}
-          placeholder="이메일을 입력하세요"
-          value={email}
-          onChangeText={handleEmailChange}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          onFocus={() => setFocusedInput('email')}
-          onBlur={() => setFocusedInput(null)}
-          editable={!isLoading}
-        />
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>비밀번호</Text>
-        <TextInput
-          style={[
-            styles.input,
-            focusedInput === 'password' && styles.inputFocused,
-          ]}
-          placeholder="비밀번호를 입력하세요"
-          value={password}
-          onChangeText={handlePasswordChange}
-          secureTextEntry
-          onFocus={() => setFocusedInput('password')}
-          onBlur={() => setFocusedInput(null)}
-          editable={!isLoading}
-        />
-      </View>
-
-      <Pressable
-        style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
-        onPress={handleLogin}
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <ActivityIndicator color={COLORS.white} />
-        ) : (
-          <Text style={styles.submitButtonText}>로그인</Text>
-        )}
-      </Pressable>
-
-      <View style={styles.linksContainer}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('ForgotPassword')}
+          onPress={handleLogin}
           disabled={isLoading}
         >
-          <Text style={styles.linkText}>비밀번호 찾기</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Signup')}
-          disabled={isLoading}
-        >
-          <Text style={styles.linkText}>회원가입</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+          {isLoading ? (
+            <ActivityIndicator color={COLORS.white} />
+          ) : (
+            <Text style={styles.submitButtonText}>로그인</Text>
+          )}
+        </Pressable>
+
+        <View style={styles.linksContainer}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('ForgotPassword')}
+            disabled={isLoading}
+            style={styles.linkButton}
+          >
+            <Text style={styles.linkText}>비밀번호 찾기</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Signup')}
+            disabled={isLoading}
+            style={styles.linkButton}
+          >
+            <Text style={styles.linkText}>회원가입</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: COLORS.white,
+    backgroundColor: 'transparent',
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 48,
+    marginBottom: 32,
     color: COLORS.text,
+    letterSpacing: 1,
   },
   errorContainer: {
     width: '100%',
     backgroundColor: '#FFD2D2',
-    padding: 16,
+    padding: 12,
     borderRadius: 8,
-    marginBottom: 24,
+    marginBottom: 18,
     alignItems: 'center',
   },
   errorText: {
     color: COLORS.error,
     fontWeight: 'bold',
+    fontSize: 14,
   },
   inputGroup: {
     width: '100%',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   label: {
     fontSize: 14,
     color: COLORS.text,
-    marginBottom: 10,
+    marginBottom: 8,
     fontWeight: 'bold',
+    marginLeft: 4,
   },
   input: {
     width: '100%',
@@ -185,6 +208,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     backgroundColor: COLORS.white,
+    color: COLORS.text,
   },
   inputFocused: {
     borderColor: COLORS.primary,
@@ -203,18 +227,33 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.darkGray,
   },
   submitButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
     color: COLORS.white,
+    letterSpacing: 0.5,
+  },
+  shadow: {
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.32,
+    shadowRadius: 16,
+    elevation: 16,
   },
   linksContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    marginTop: 24,
+    marginTop: 28,
+    paddingHorizontal: 8,
+  },
+  linkButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
   },
   linkText: {
-    color: COLORS.darkGray,
-    fontSize: 14,
+    color: COLORS.primary,
+    fontSize: 15,
+    fontWeight: '500',
   },
 });
