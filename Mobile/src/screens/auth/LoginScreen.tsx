@@ -14,12 +14,9 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const scale = SCREEN_WIDTH / 360;
-function normalize(size: number) {
-  const newSize = size * scale;
-  return Math.round(PixelRatio.roundToNearestPixel(newSize));
-}
+const { width } = Dimensions.get('window');
+const normalize = (size: number) =>
+  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
 
 const COLORS = {
   primary: '#1344FF',
@@ -34,95 +31,72 @@ const COLORS = {
 };
 
 type LoginScreenProps = {
-  navigation: {
-    navigate: (screen: string) => void;
-  };
+  navigation: { navigate: (screen: string) => void };
 };
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
-  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [focused, setFocused] = useState<string | null>(null);
   const { login, isLoading } = useAuth();
+
+  const handleChange = (key: 'email' | 'password', value: string) => {
+    setForm(prev => ({ ...prev, [key]: value }));
+    if (error) setError('');
+  };
 
   const handleLogin = async () => {
     setError('');
-
-    if (!email || !password) {
+    if (!form.email || !form.password) {
       setError('이메일과 비밀번호를 모두 입력해주세요.');
       return;
     }
-
     try {
-      await login(email, password);
+      await login(form.email, form.password);
     } catch (e: any) {
-      setError(e.message || '로그인 중 오류가 발생했습니다.');
-      Alert.alert('로그인 실패', e.message || '다시 시도해주세요.');
-    }
-  };
-
-  const handleEmailChange = (text: string) => {
-    setEmail(text);
-    if (error) {
-      setError('');
-    }
-  };
-
-  const handlePasswordChange = (text: string) => {
-    setPassword(text);
-    if (error) {
-      setError('');
+      const msg = e.message || '로그인 중 오류가 발생했습니다.';
+      setError(msg);
+      Alert.alert('로그인 실패', msg);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>로그인</Text>
-
-      {error ? (
+      {!!error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
         </View>
-      ) : null}
-
+      )}
       <View style={styles.inputGroup}>
         <Text style={styles.label}>이메일</Text>
         <TextInput
-          style={[
-            styles.input,
-            focusedInput === 'email' && styles.inputFocused,
-          ]}
+          style={[styles.input, focused === 'email' && styles.inputFocused]}
           placeholder="이메일을 입력하세요"
-          value={email}
-          onChangeText={handleEmailChange}
+          value={form.email}
+          onChangeText={text => handleChange('email', text)}
           keyboardType="email-address"
           autoCapitalize="none"
-          onFocus={() => setFocusedInput('email')}
-          onBlur={() => setFocusedInput(null)}
+          onFocus={() => setFocused('email')}
+          onBlur={() => setFocused(null)}
           editable={!isLoading}
           placeholderTextColor={COLORS.darkGray}
         />
       </View>
-
       <View style={styles.inputGroup}>
         <Text style={styles.label}>비밀번호</Text>
         <TextInput
-          style={[
-            styles.input,
-            focusedInput === 'password' && styles.inputFocused,
-          ]}
+          style={[styles.input, focused === 'password' && styles.inputFocused]}
           placeholder="비밀번호를 입력하세요"
-          value={password}
-          onChangeText={handlePasswordChange}
+          value={form.password}
+          onChangeText={text => handleChange('password', text)}
           secureTextEntry
-          onFocus={() => setFocusedInput('password')}
-          onBlur={() => setFocusedInput(null)}
+          onFocus={() => setFocused('password')}
+          onBlur={() => setFocused(null)}
           editable={!isLoading}
           placeholderTextColor={COLORS.darkGray}
         />
       </View>
-
       <Pressable
         style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
         onPress={handleLogin}
@@ -134,7 +108,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           <Text style={styles.submitButtonText}>로그인</Text>
         )}
       </Pressable>
-
       <View style={styles.linksContainer}>
         <TouchableOpacity
           onPress={() => navigation.navigate('ForgotPassword')}
