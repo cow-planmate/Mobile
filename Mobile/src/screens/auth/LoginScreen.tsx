@@ -15,9 +15,8 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import LinearGradient from 'react-native-linear-gradient';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const scale = SCREEN_WIDTH / 360; // 기준: 360px (일반적인 디자인 기준)
-
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const scale = SCREEN_WIDTH / 360;
 function normalize(size: number) {
   const newSize = size * scale;
   return Math.round(PixelRatio.roundToNearestPixel(newSize));
