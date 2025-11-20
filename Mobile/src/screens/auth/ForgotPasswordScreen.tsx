@@ -6,9 +6,19 @@ import {
   TextInput,
   SafeAreaView,
   Pressable,
-  TouchableOpacity,
   Alert,
+  Dimensions,
+  PixelRatio,
+  TouchableOpacity,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const scale = SCREEN_WIDTH / 360;
+function normalize(size: number) {
+  const newSize = size * scale;
+  return Math.round(PixelRatio.roundToNearestPixel(newSize));
+}
 
 const COLORS = {
   primary: '#1344FF',
@@ -19,6 +29,8 @@ const COLORS = {
   white: '#FFFFFF',
   error: '#FF3B30',
   success: '#34C759',
+  gradientStart: '#e0e7ff',
+  gradientEnd: '#f8fafc',
 };
 
 type ForgotPasswordScreenProps = {
@@ -51,80 +63,103 @@ export default function ForgotPasswordScreen({
       '요청 완료',
       '비밀번호 재설정 이메일이 발송되었습니다. 이메일을 확인해주세요.',
     );
+  };
+
+  const handleGoBack = () => {
     navigation.goBack();
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>비밀번호 찾기</Text>
-      <Text style={styles.subtitle}>
-        가입하신 이메일 주소를 입력하시면,{'\n'}비밀번호 재설정 메일을
-        보내드립니다.
-      </Text>
+    <LinearGradient
+      colors={[COLORS.gradientStart, COLORS.gradientEnd]}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.container}>
+        {/* <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+          <Text style={styles.backButtonText}>{'←'} 뒤로가기</Text>
+        </TouchableOpacity> */}
+        <Text style={styles.title}>비밀번호 찾기</Text>
+        <Text style={styles.subtitle}>
+          가입하신 이메일 주소를 입력하시면,{'\n'}비밀번호 재설정 메일을
+          보내드립니다.
+        </Text>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>이메일</Text>
-        <TextInput
-          style={[
-            styles.input,
-            focusedInput === 'email' && styles.inputFocused,
-          ]}
-          placeholder="이메일을 입력하세요"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          onFocus={() => setFocusedInput('email')}
-          onBlur={() => setFocusedInput(null)}
-        />
-      </View>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>이메일</Text>
+          <TextInput
+            style={[
+              styles.input,
+              focusedInput === 'email' && styles.inputFocused,
+            ]}
+            placeholder="이메일을 입력하세요"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            onFocus={() => setFocusedInput('email')}
+            onBlur={() => setFocusedInput(null)}
+            placeholderTextColor={COLORS.darkGray}
+          />
+        </View>
 
-      <Pressable style={styles.submitButton} onPress={handlePasswordReset}>
-        <Text style={styles.submitButtonText}>확인</Text>
-      </Pressable>
-    </SafeAreaView>
+        <Pressable style={styles.submitButton} onPress={handlePasswordReset}>
+          <Text style={styles.submitButtonText}>확인</Text>
+        </Pressable>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    padding: 24,
-    backgroundColor: COLORS.white,
+    padding: normalize(24),
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: normalize(28),
     fontWeight: 'bold',
     textAlign: 'center',
-    marginTop: 24,
-    marginBottom: 16,
+    marginTop: normalize(24),
+    marginBottom: normalize(16),
     color: COLORS.text,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: normalize(16),
     textAlign: 'center',
     color: COLORS.darkGray,
-    marginBottom: 48,
+    marginBottom: normalize(48),
   },
   inputGroup: {
     width: '100%',
-    marginBottom: 24,
+    marginBottom: normalize(24),
   },
   label: {
-    fontSize: 14,
+    fontSize: normalize(14),
     color: COLORS.text,
-    marginBottom: 10,
+    marginBottom: normalize(10),
     fontWeight: 'bold',
+    marginLeft: normalize(4),
   },
   input: {
     width: '100%',
-    height: 52,
+    height: normalize(52),
     borderWidth: 1,
     borderColor: COLORS.gray,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    fontSize: 16,
+    borderRadius: normalize(8),
+    paddingHorizontal: normalize(16),
+    fontSize: normalize(16),
     backgroundColor: COLORS.white,
+    color: COLORS.text,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 8,
   },
   inputFocused: {
     borderColor: COLORS.primary,
@@ -132,16 +167,33 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     width: '100%',
-    height: 52,
-    borderRadius: 26,
+    height: normalize(52),
+    borderRadius: normalize(26),
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
-    marginTop: 24,
+    marginTop: normalize(24),
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 8,
   },
   submitButtonText: {
-    fontSize: 16,
+    fontSize: normalize(16),
     fontWeight: 'bold',
     color: COLORS.white,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: normalize(6),
+    paddingHorizontal: normalize(8),
+    marginBottom: normalize(8),
+    borderRadius: normalize(8),
+  },
+  backButtonText: {
+    fontSize: normalize(16),
+    color: COLORS.primary,
+    fontWeight: 'bold',
   },
 });
