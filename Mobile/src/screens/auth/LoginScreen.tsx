@@ -124,7 +124,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           style={[
             styles.submitButton,
             isLoading && styles.submitButtonDisabled,
-            styles.shadow,
           ]}
           onPress={handleLogin}
           disabled={isLoading}
@@ -209,6 +208,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: COLORS.white,
     color: COLORS.text,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 8,
   },
   inputFocused: {
     borderColor: COLORS.primary,
@@ -222,6 +226,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.primary,
     marginTop: 24,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 8,
   },
   submitButtonDisabled: {
     backgroundColor: COLORS.darkGray,
@@ -231,13 +240,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.white,
     letterSpacing: 0.5,
-  },
-  shadow: {
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.32,
-    shadowRadius: 16,
-    elevation: 16,
   },
   linksContainer: {
     flexDirection: 'row',
