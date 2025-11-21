@@ -110,18 +110,21 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       </Pressable>
       <View style={styles.linksContainer}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('ForgotPassword')}
-          disabled={isLoading}
-          style={styles.linkButton}
-        >
-          <Text style={styles.linkText}>비밀번호 찾기</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
           onPress={() => navigation.navigate('Signup')}
           disabled={isLoading}
-          style={styles.linkButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Text style={styles.linkText}>회원가입</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.separator}>|</Text>
+
+        <TouchableOpacity
+          onPress={() => navigation.navigate('ForgotPassword')}
+          disabled={isLoading}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={styles.linkText}>비밀번호 찾기</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -195,7 +198,7 @@ const styles = StyleSheet.create({
   submitButton: {
     width: '100%',
     height: normalize(52),
-    borderRadius: normalize(26),
+    borderRadius: normalize(8),
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
@@ -217,10 +220,21 @@ const styles = StyleSheet.create({
   },
   linksContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    alignItems: 'center',
     width: '100%',
     marginTop: normalize(28),
-    paddingHorizontal: normalize(8),
+    gap: normalize(24),
+  },
+  separatorWrapper: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+  },
+  separator: {
+    color: COLORS.primary,
+    fontSize: normalize(14),
+    fontWeight: '500',
   },
   linkButton: {
     paddingVertical: normalize(6),
