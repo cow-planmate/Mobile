@@ -11,6 +11,7 @@ import {
   PixelRatio,
   TouchableOpacity,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const scale = SCREEN_WIDTH / 360;
@@ -28,47 +29,41 @@ const COLORS = {
   white: '#FFFFFF',
   error: '#FF3B30',
   success: '#34C759',
-  lightBlue: '#e6f0ff', // 연한 파란색 추가
+  lightBlue: '#e6f0ff',
 };
 
-type ForgotPasswordScreenProps = {
-  navigation: {
-    goBack: () => void;
-    // ...other navigation props if needed
-  };
-};
-
-export default function ForgotPasswordScreen({
-  navigation,
-}: ForgotPasswordScreenProps) {
+export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const navigation = useNavigation();
 
-  const handlePasswordReset = () => {
+  const handlePasswordReset = React.useCallback(() => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
     if (!email) {
       Alert.alert('오류', '이메일을 입력해주세요.');
       return;
     }
-
     if (!emailRegex.test(email)) {
       Alert.alert('오류', '올바른 이메일 형식이 아닙니다.');
       return;
     }
-
     console.log('Password reset requested for:', email);
     Alert.alert(
       '요청 완료',
       '비밀번호 재설정 이메일이 발송되었습니다. 이메일을 확인해주세요.',
     );
-  };
+  }, [email]);
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.backButtonText} onPress={() => navigation.goBack()}>
-        {'<'} 뒤로가기
-      </Text>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Text style={styles.backButtonIcon}>{'‹'}</Text>
+        <Text style={styles.backButtonText}>뒤로가기</Text>
+      </TouchableOpacity>
       <Text style={styles.title}>비밀번호 찾기</Text>
       <Text style={styles.subtitle}>
         가입하신 이메일 주소를 입력하시면,{'\n'}비밀번호 재설정 메일을
@@ -105,9 +100,22 @@ const styles = StyleSheet.create({
     padding: normalize(24),
     backgroundColor: COLORS.lightBlue,
   },
-  // backButton style removed
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: normalize(24),
+    marginLeft: normalize(16),
+    marginBottom: normalize(10),
+    width: normalize(100),
+  },
+  backButtonIcon: {
+    fontSize: normalize(24),
+    color: COLORS.primary,
+    marginRight: normalize(4),
+    fontWeight: 'bold',
+  },
   backButtonText: {
-    fontSize: normalize(14),
+    fontSize: normalize(16),
     color: COLORS.primary,
     fontWeight: 'bold',
   },
