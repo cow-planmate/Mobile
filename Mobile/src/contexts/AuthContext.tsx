@@ -1,26 +1,22 @@
-// src/contexts/AuthContext.tsx
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '@env';
 
-// 사용자 데이터 타입 정의 (필요에 따라 수정)
+// 사용자 정보 타입 (백엔드 응답에 맞춰 수정)
 interface User {
-  id: number;
-  email: string;
+  userId: number;
   nickname: string;
-  // ... 기타 필요한 필드
 }
 
-interface AuthContextData {
+interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (token: string, refreshToken: string, userData: User) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateUser: (userData: User) => void;
 }
 
-const AuthContext = createContext<AuthContextData>({} as AuthContextData);
+const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const useAuth = () => useContext(AuthContext);
 
@@ -28,60 +24,82 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // 앱 실행 시 로그인 상태 복구
+  // 앱 시작 시 저장된 로그인 정보 복구
   useEffect(() => {
+    const loadStorageData = async () => {
+      try {
+        const userJson = await AsyncStorage.getItem('user');
+        const token = await AsyncStorage.getItem('accessToken');
+
+        if (userJson && token) {
+          setUser(JSON.parse(userJson));
+          // 앱 재시작 시에도 axios 헤더에 토큰 설정
+          axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.error('Failed to load auth data:', error);
+      }
+    };
     loadStorageData();
   }, []);
 
-  const loadStorageData = async () => {
+  // 로그인 함수 (이메일, 비밀번호 받아서 처리)
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
-      // 저장된 사용자 정보와 토큰 불러오기
-      const userJson = await AsyncStorage.getItem('user');
-      const token = await AsyncStorage.getItem('accessToken');
+      // 1. 백엔드 로그인 API 호출
+      const response = await axios.post(`${API_URL}/api/auth/login`, {
+        email,
+        password,
+      });
 
-      if (userJson && token) {
-        setUser(JSON.parse(userJson));
-        // axios 헤더에 토큰 설정
-        axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+      // 백엔드 응답 구조 분해 할당
+      const {
+        loginSuccess,
+        userId,
+        nickname,
+        accessToken,
+        refreshToken,
+        message,
+      } = response.data;
+
+      if (loginSuccess) {
+        const userData: User = { userId, nickname };
+
+        // 2. Axios 기본 헤더에 액세스 토큰 설정
+        axios.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+
+        // 3. 로컬 스토리지에 토큰 및 유저 정보 저장
+        await AsyncStorage.multiSet([
+          ['user', JSON.stringify(userData)],
+          ['accessToken', accessToken],
+          ['refreshToken', refreshToken],
+        ]);
+
+        // 4. 상태 업데이트 (로그인 완료)
+        setUser(userData);
+      } else {
+        throw new Error(message || '이메일 또는 비밀번호가 올바르지 않습니다.');
       }
-    } catch (error) {
-      console.error('Failed to load auth data:', error);
+    } catch (error: any) {
+      console.error('Login error:', error);
+      // LoginScreen에서 에러를 잡아서 Alert를 띄울 수 있도록 에러 전파
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const login = async (token: string, refreshToken: string, userData: User) => {
-    try {
-      // 1. 상태 업데이트
-      setUser(userData);
-
-      // 2. Axios 기본 헤더 설정
-      axios.defaults.headers.common.Authorization = `Bearer ${token}`;
-
-      // 3. 로컬 스토리지에 저장
-      await AsyncStorage.multiSet([
-        ['user', JSON.stringify(userData)],
-        ['accessToken', token],
-        ['refreshToken', refreshToken],
-      ]);
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    }
-  };
-
+  // 로그아웃 함수 (서버 연동 포함)
   const logout = async () => {
+    setIsLoading(true);
     try {
-      // 1. 서버에 로그아웃 요청 (리프레시 토큰 만료 처리)
-      // 백엔드 로그아웃 API 호출
       const accessToken = await AsyncStorage.getItem('accessToken');
 
+      // 1. 서버에 로그아웃 요청 (토큰 만료 처리)
       if (accessToken) {
-        // 서버 로그아웃 API 주소: /api/auth/logout
-        // (LoginController에 구현된 엔드포인트라고 가정)
         await axios.post(
           `${API_URL}/api/auth/logout`,
           {},
@@ -92,30 +110,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         console.log('서버 로그아웃 성공');
       }
     } catch (error) {
-      // 서버 요청이 실패하더라도(네트워크 오류 등), 앱에서는 로그아웃 처리를 진행해야 함
-      console.error(
-        '서버 로그아웃 요청 실패 (무시하고 로컬 로그아웃 진행):',
-        error,
-      );
+      console.error('서버 로그아웃 요청 실패 (로컬 로그아웃은 진행됨):', error);
     } finally {
-      // 2. 앱 내부 상태 및 저장소 초기화 (가장 중요)
+      // 2. 클라이언트 데이터 초기화 (항상 실행)
       setUser(null);
       delete axios.defaults.headers.common.Authorization;
-
-      // 저장된 모든 인증 정보 삭제
       await AsyncStorage.multiRemove(['user', 'accessToken', 'refreshToken']);
+      setIsLoading(false);
     }
   };
 
-  const updateUser = async (userData: User) => {
-    setUser(userData);
-    await AsyncStorage.setItem('user', JSON.stringify(userData));
-  };
-
   return (
-    <AuthContext.Provider
-      value={{ user, isLoading, login, logout, updateUser }}
-    >
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
