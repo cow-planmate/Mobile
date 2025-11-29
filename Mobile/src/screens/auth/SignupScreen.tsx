@@ -105,7 +105,6 @@ export default function SignupScreen() {
 
   const handleChange = useCallback((name: string, value: string) => {
     setForm(prev => ({ ...prev, [name]: value }));
-    // 개발 편의를 위해 상태 초기화 로직 잠시 주석 처리 가능 (필요 시 해제)
     if (name === 'nickname') setIsNicknameVerified(false);
     if (name === 'email') {
       setIsEmailVerified(false);
@@ -122,11 +121,6 @@ export default function SignupScreen() {
       }, 1000);
     } else if (timeLeft === 0) {
       resetTimer();
-      // 개발 중 불편함을 줄이기 위해 타임아웃 알림 제거 가능
-      // if (!isEmailVerified) {
-      //   Alert.alert('시간 초과', '인증 시간이 만료되었습니다.');
-      //   setShowVerificationInput(false);
-      // }
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -142,173 +136,40 @@ export default function SignupScreen() {
   // --- API 핸들러 ---
 
   const handleSendEmail = async () => {
-    // 개발 모드: 이메일 입력 없이도 인증번호 입력창 보여주기 (필요 시)
-    // if (!form.email) return Alert.alert('알림', '이메일을 입력해주세요.');
-
-    // 실제 API 호출 대신 바로 성공 처리 (개발용)
+    // 개발 모드
     Alert.alert('개발 모드', '인증 번호가 전송된 것으로 처리합니다.');
     setShowVerificationInput(true);
     setIsTimerActive(true);
     setTimeLeft(300);
-
-    /* 실제 로직 주석 처리
-    setIsLoading(true);
-    try {
-      await axios.post(`${API_URL}/api/auth/email/verification`, {
-        email: form.email,
-        purpose: 'SIGN_UP',
-      });
-      Alert.alert('발송 완료', '인증 번호가 전송되었습니다.');
-      setShowVerificationInput(true);
-      setIsTimerActive(true);
-      setTimeLeft(300);
-    } catch (error: any) {
-      const msg = error.response?.data?.message || '메일 발송 실패';
-      Alert.alert('오류', msg);
-    } finally {
-      setIsLoading(false);
-    }
-    */
   };
 
   const handleVerifyCode = async () => {
-    // 개발 모드: 무조건 성공 처리
+    // 개발 모드
     Alert.alert('개발 모드', '이메일 인증이 완료된 것으로 처리합니다.');
     setEmailAuthToken('dummy_token_for_dev');
     setIsEmailVerified(true);
     setIsTimerActive(false);
-
-    /* 실제 로직 주석 처리
-    if (!form.verificationCode) return Alert.alert('알림', '인증 번호를 입력해주세요.');
-    setIsLoading(true);
-    try {
-      const response = await axios.post(`${API_URL}/api/auth/email/verification/confirm`, {
-        email: form.email,
-        verificationCode: parseInt(form.verificationCode, 10),
-        purpose: 'SIGN_UP',
-      });
-
-      if (response.status === 200) {
-        const token = response.data.token;
-        if (token) {
-          setEmailAuthToken(token);
-          setIsEmailVerified(true);
-          setIsTimerActive(false);
-          Alert.alert('성공', '이메일 인증이 완료되었습니다.');
-        } else {
-          Alert.alert('오류', '인증 토큰을 받지 못했습니다.');
-        }
-      }
-    } catch (error: any) {
-      const msg = error.response?.data?.message || '인증 실패';
-      Alert.alert('인증 실패', msg);
-    } finally {
-      setIsLoading(false);
-    }
-    */
   };
 
   const handleCheckNickname = async () => {
-    // 개발 모드: 무조건 성공 처리
+    // 개발 모드
     setIsNicknameVerified(true);
     Alert.alert('개발 모드', '사용 가능한 닉네임으로 처리합니다.');
-
-    /* 실제 로직 주석 처리
-    if (!form.nickname) return Alert.alert('알림', '닉네임을 입력해주세요.');
-    setIsLoading(true);
-    try {
-      const response = await axios.post(`${API_URL}/api/auth/register/nickname/verify`, {
-        nickname: form.nickname,
-      });
-      if (response.status === 200) {
-        setIsNicknameVerified(true);
-        Alert.alert('확인 완료', '사용 가능한 닉네임입니다.');
-      }
-    } catch (error: any) {
-      setIsNicknameVerified(false);
-      const msg = error.response?.data?.message || '이미 사용 중인 닉네임입니다.';
-      Alert.alert('사용 불가', msg);
-    } finally {
-      setIsLoading(false);
-    }
-    */
   };
 
   const handleSignup = async () => {
-    // 개발 모드: 가입 완료 처리 후 로그인 화면으로 이동
+    // 개발 모드
     Alert.alert('개발 모드', '회원가입이 완료된 것으로 처리합니다.', [
       { text: '확인', onPress: () => navigation.navigate('Login') },
     ]);
-
-    /* 실제 로직 주석 처리
-    if (!form.age || !form.gender) return Alert.alert('알림', '나이와 성별을 선택해주세요.');
-    
-    setIsLoading(true);
-    try {
-      const genderInt = form.gender === 'male' ? 0 : 1;
-      
-      if (!emailAuthToken) {
-        Alert.alert('오류', '인증 토큰이 없습니다. 처음부터 다시 시도해주세요.');
-        return;
-      }
-
-      const headers = { Authorization: `Bearer ${emailAuthToken}` };
-      
-      const response = await axios.post(
-        `${API_URL}/api/auth/register`,
-        {
-          nickname: form.nickname,
-          password: form.password,
-          gender: genderInt,
-          age: parseInt(form.age, 10),
-        },
-        { headers }
-      );
-
-      if (response.status === 200) {
-        Alert.alert('가입 성공', '회원가입이 완료되었습니다.', [
-          { text: '확인', onPress: () => navigation.navigate('Login') },
-        ]);
-      }
-    } catch (error: any) {
-      console.error('Signup Error:', error);
-      if (error.response?.status === 401) {
-         Alert.alert('실패', '인증 세션이 만료되었습니다.');
-      } else {
-         const msg = error.response?.data?.message || '회원가입 실패';
-         Alert.alert('실패', msg);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-    */
   };
 
-  // --- 단계 이동 로직 (검증 무시) ---
+  // --- 단계 이동 로직 ---
 
   const handleNextStep = () => {
-    // [개발 모드] 유효성 검사 없이 무조건 다음 단계로 이동
     if (step < 4) {
       setStep(step + 1);
     }
-
-    /* 원래 검증 로직 (주석 처리)
-    if (step === 1) {
-      if (!isEmailVerified) return Alert.alert('알림', '이메일 인증을 완료해주세요.');
-      setStep(2);
-    } else if (step === 2) {
-      if (!passwordRequirements.hasMinLength || !passwordRequirements.hasCombination) {
-        return Alert.alert('알림', '비밀번호 조건을 만족해주세요.');
-      }
-      if (form.password !== form.confirmPassword) {
-        return Alert.alert('알림', '비밀번호가 일치하지 않습니다.');
-      }
-      setStep(3);
-    } else if (step === 3) {
-      if (!isNicknameVerified) return Alert.alert('알림', '닉네임 중복 확인을 해주세요.');
-      setStep(4);
-    }
-    */
   };
 
   const handlePrevStep = () => {
@@ -331,29 +192,22 @@ export default function SignupScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* 1. Header: 상단 고정 */}
+      <View style={styles.header}>
+        <View style={styles.stepIndicator}>
+          <Text style={styles.stepText}>
+            {step} / {totalSteps}
+          </Text>
+        </View>
+      </View>
+
+      {/* 2. Content: 입력 폼 영역 */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handlePrevStep}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Text style={styles.backButtonIcon}>{'‹'}</Text>
-            <Text style={styles.backButtonText}>
-              {step === 1 ? '로그인으로' : '이전 단계'}
-            </Text>
-          </TouchableOpacity>
-          <View style={styles.stepIndicator}>
-            <Text style={styles.stepText}>
-              {step} / {totalSteps}
-            </Text>
-          </View>
-        </View>
-
         <ScrollView
+          style={{ flex: 1 }}
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled"
         >
@@ -374,23 +228,17 @@ export default function SignupScreen() {
                 <Text style={styles.label}>이메일</Text>
                 <View style={styles.inlineInputContainer}>
                   <TextInput
-                    style={[
-                      styles.input,
-                      styles.flex1,
-                      // 개발 중엔 disabled 스타일 제거해서 편하게 수정 가능하도록
-                      // isEmailVerified && styles.inputDisabled,
-                    ]}
+                    style={[styles.input, styles.flex1]}
                     placeholder="example@email.com"
+                    placeholderTextColor={COLORS.darkGray}
                     value={form.email}
                     onChangeText={v => handleChange('email', v)}
                     keyboardType="email-address"
                     autoCapitalize="none"
-                    // editable={!isEmailVerified && !isLoading}
                   />
                   <Pressable
-                    style={[styles.inlineButton]} // disabled 스타일 제거
+                    style={styles.inlineButton}
                     onPress={handleSendEmail}
-                    // disabled={isEmailVerified || isLoading}
                   >
                     <Text style={styles.inlineButtonText}>
                       {isEmailVerified ? '완료' : '인증요청'}
@@ -412,7 +260,8 @@ export default function SignupScreen() {
                     >
                       <TextInput
                         style={styles.codeInput}
-                        placeholder="6자리 숫자"
+                        placeholder="123456"
+                        placeholderTextColor={COLORS.darkGray}
                         value={form.verificationCode}
                         onChangeText={v => handleChange('verificationCode', v)}
                         keyboardType="number-pad"
@@ -451,7 +300,8 @@ export default function SignupScreen() {
                   <TextInput
                     style={styles.passwordInput}
                     value={form.password}
-                    placeholder="••••••••"
+                    placeholder="********"
+                    placeholderTextColor={COLORS.darkGray}
                     onChangeText={v => handleChange('password', v)}
                     secureTextEntry={!isPasswordVisible}
                   />
@@ -480,7 +330,8 @@ export default function SignupScreen() {
                   <TextInput
                     style={styles.passwordInput}
                     value={form.confirmPassword}
-                    placeholder="••••••••"
+                    placeholder="********"
+                    placeholderTextColor={COLORS.darkGray}
                     onChangeText={v => handleChange('confirmPassword', v)}
                     secureTextEntry={!isConfirmPasswordVisible}
                   />
@@ -506,15 +357,15 @@ export default function SignupScreen() {
                 <View style={styles.inlineInputContainer}>
                   <TextInput
                     style={[styles.input, styles.flex1]}
-                    placeholder="닉네임 입력"
+                    placeholder="플랜메이트"
+                    placeholderTextColor={COLORS.darkGray}
                     value={form.nickname}
                     onChangeText={v => handleChange('nickname', v)}
                     editable={!isLoading}
                   />
                   <Pressable
-                    style={[styles.inlineButton]} // disabled 제거
+                    style={styles.inlineButton}
                     onPress={handleCheckNickname}
-                    // disabled={isNicknameVerified || isLoading}
                   >
                     <Text style={styles.inlineButtonText}>
                       {isNicknameVerified ? '사용가능' : '중복확인'}
@@ -538,7 +389,8 @@ export default function SignupScreen() {
                   value={form.age}
                   onChangeText={v => handleChange('age', v)}
                   keyboardType="number-pad"
-                  placeholder="숫자만 입력 (예: 25)"
+                  placeholder="25"
+                  placeholderTextColor={COLORS.darkGray}
                 />
               </View>
 
@@ -584,37 +436,33 @@ export default function SignupScreen() {
             </>
           )}
         </ScrollView>
-
-        <View style={styles.footer}>
-          {step < 4 ? (
-            <Pressable
-              style={[
-                styles.submitButton,
-                // 개발용: 버튼 무조건 활성화 (disabled 스타일 제거)
-                // (step === 1 && !isEmailVerified) ... ? styles.submitButtonDisabled : null
-              ]}
-              onPress={handleNextStep}
-              // disabled={...} // 비활성화 조건 제거
-            >
-              <Text style={styles.submitButtonText}>다음</Text>
-            </Pressable>
-          ) : (
-            <Pressable
-              style={[
-                styles.submitButton /*(isLoading || !form.age || !form.gender) && styles.submitButtonDisabled*/,
-              ]}
-              onPress={handleSignup}
-              // disabled={isLoading || !form.age || !form.gender}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={COLORS.white} />
-              ) : (
-                <Text style={styles.submitButtonText}>회원가입 완료</Text>
-              )}
-            </Pressable>
-          )}
-        </View>
       </KeyboardAvoidingView>
+
+      {/* 3. Footer: 하단 고정 */}
+      <View style={styles.footer}>
+        {step < 4 ? (
+          <Pressable style={styles.submitButton} onPress={handleNextStep}>
+            <Text style={styles.submitButtonText}>다음</Text>
+          </Pressable>
+        ) : (
+          <Pressable style={styles.submitButton} onPress={handleSignup}>
+            {isLoading ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : (
+              <Text style={styles.submitButtonText}>회원가입 완료</Text>
+            )}
+          </Pressable>
+        )}
+        <TouchableOpacity
+          style={styles.bottomBackButton}
+          onPress={handlePrevStep}
+          disabled={isLoading}
+        >
+          <Text style={styles.bottomBackButtonText}>
+            {step === 1 ? '로그인 화면으로 돌아가기' : '이전 단계'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -623,37 +471,30 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.lightBlue },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     paddingHorizontal: normalize(20),
-    paddingTop: normalize(10),
+    paddingTop: normalize(20), // 상태바 겹침 방지 여백
     paddingBottom: normalize(10),
-  },
-  backButton: { flexDirection: 'row', alignItems: 'center', padding: 8 },
-  backButtonIcon: {
-    fontSize: normalize(24),
-    color: COLORS.primary,
-    marginRight: 4,
-    fontWeight: 'bold',
-  },
-  backButtonText: {
-    fontSize: normalize(16),
-    color: COLORS.primary,
-    fontWeight: '600',
+    marginTop: normalize(10),
   },
   stepIndicator: {
     backgroundColor: COLORS.white,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   stepText: {
     fontSize: normalize(14),
     fontWeight: 'bold',
     color: COLORS.primary,
   },
-
-  scrollContainer: { padding: normalize(24) },
+  scrollContainer: { padding: normalize(24), paddingBottom: normalize(100) }, // 하단 여백 추가
   title: {
     fontSize: normalize(28),
     fontWeight: 'bold',
@@ -665,7 +506,6 @@ const styles = StyleSheet.create({
     color: COLORS.darkGray,
     marginBottom: normalize(32),
   },
-
   inputGroup: { marginBottom: normalize(24) },
   label: {
     fontSize: normalize(14),
@@ -687,9 +527,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 10,
     elevation: 8,
+    color: COLORS.text, // 색상 추가
   },
-  inputDisabled: { backgroundColor: COLORS.lightGray, color: COLORS.darkGray },
-
   inlineInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -716,19 +555,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: normalize(14),
   },
-
   codeInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  codeInput: { flex: 1, fontSize: normalize(16), padding: 0 },
+  codeInput: {
+    flex: 1,
+    fontSize: normalize(16),
+    padding: 0,
+    color: COLORS.text,
+  }, // 색상 추가
   timerText: {
     color: COLORS.error,
     fontWeight: 'bold',
     fontSize: normalize(14),
   },
-
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -748,12 +590,13 @@ const styles = StyleSheet.create({
     height: '100%',
     paddingHorizontal: normalize(16),
     fontSize: normalize(16),
+    color: COLORS.text, // 색상 추가
   },
-  eyeIcon: {
-    padding: normalize(16),
+  eyeIcon: { padding: normalize(16) },
+  requirementsContainer: {
+    marginTop: normalize(12),
+    marginLeft: normalize(10),
   },
-
-  requirementsContainer: { marginTop: normalize(12) },
   requirementRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -765,7 +608,6 @@ const styles = StyleSheet.create({
     fontSize: normalize(14),
   },
   requirementText: { fontSize: normalize(13) },
-
   genderContainer: { flexDirection: 'row', gap: normalize(12) },
   genderButton: {
     flex: 1,
@@ -792,8 +634,7 @@ const styles = StyleSheet.create({
     color: COLORS.darkGray,
   },
   genderButtonTextSelected: { color: COLORS.white },
-
-  footer: { padding: normalize(24), paddingTop: 0 },
+  footer: { padding: normalize(24), backgroundColor: COLORS.lightBlue },
   submitButton: {
     width: '100%',
     height: normalize(56),
@@ -807,14 +648,19 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  submitButtonDisabled: {
-    backgroundColor: COLORS.darkGray,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
   submitButtonText: {
     fontSize: normalize(18),
     fontWeight: 'bold',
     color: COLORS.white,
+  },
+  bottomBackButton: {
+    alignItems: 'center',
+    padding: normalize(12),
+    marginTop: normalize(12),
+  },
+  bottomBackButtonText: {
+    fontSize: normalize(14),
+    color: COLORS.darkGray,
+    textDecorationLine: 'underline',
   },
 });
