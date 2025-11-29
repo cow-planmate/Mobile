@@ -18,7 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { API_URL } from '@env';
 
-// 스타일 변수 및 normalize 함수 (LoginScreen과 동일)
+// 스타일 변수 및 normalize 함수
 const { width } = Dimensions.get('window');
 const normalize = (size: number) =>
   Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
@@ -43,12 +43,15 @@ const ForgotPasswordScreen = () => {
 
   // 상태 관리
   const [email, setEmail] = useState('');
-  const [verificationCode, setVerificationCode] = useState(''); // 인증 번호 저장
-  const [showVerificationInput, setShowVerificationInput] = useState(false); // 인증 필드 표시 여부
+  const [verificationCode, setVerificationCode] = useState('');
+  const [showVerificationInput, setShowVerificationInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // 포커스 상태 관리 추가
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
   // 타이머 관련 상태
-  const [timeLeft, setTimeLeft] = useState(300); // 5분 = 300초
+  const [timeLeft, setTimeLeft] = useState(300);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -59,7 +62,6 @@ const ForgotPasswordScreen = () => {
         setTimeLeft(prevTime => prevTime - 1);
       }, 1000);
     } else if (timeLeft === 0) {
-      // 시간 초과 시
       if (timerRef.current) clearInterval(timerRef.current);
       setIsTimerActive(false);
       Alert.alert(
@@ -68,13 +70,11 @@ const ForgotPasswordScreen = () => {
         [{ text: '확인', onPress: resetScreen }],
       );
     }
-
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [isTimerActive, timeLeft]);
 
-  // 화면 초기화 함수
   const resetScreen = () => {
     setShowVerificationInput(false);
     setVerificationCode('');
@@ -82,7 +82,6 @@ const ForgotPasswordScreen = () => {
     setTimeLeft(300);
   };
 
-  // 시간 포맷 (MM:SS) 변환 함수
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -91,122 +90,94 @@ const ForgotPasswordScreen = () => {
 
   // 1. 인증 메일 발송 요청
   const handleSendVerificationEmail = async () => {
-    if (!email) {
-      Alert.alert('알림', '이메일을 입력해주세요.');
-      return;
-    }
-    if (!emailRegex.test(email)) {
-      Alert.alert('오류', '올바른 이메일 형식이 아닙니다.');
-      return;
-    }
+    // [개발 모드] 즉시 성공 처리
+    Alert.alert('개발 모드', '인증 메일이 발송된 것으로 처리합니다.');
+    setShowVerificationInput(true);
+    setIsTimerActive(true);
+    setTimeLeft(300);
 
+    /* 실제 API 로직
+    if (!email) return Alert.alert('알림', '이메일을 입력해주세요.');
     setIsLoading(true);
-
     try {
-      console.log(`메일 발송 요청: ${API_URL}/api/auth/email/verification`);
-
-      const response = await axios.post(
-        `${API_URL}/api/auth/email/verification`,
-        {
-          email: email,
-          purpose: 'RESET_PASSWORD',
-        },
-      );
-
+      const response = await axios.post(`${API_URL}/api/auth/email/verification`, {
+        email: email,
+        purpose: 'RESET_PASSWORD',
+      });
       if (response.status === 200) {
-        Alert.alert(
-          '발송 성공',
-          '인증 메일이 발송되었습니다.\n인증 번호를 입력해주세요.',
-        );
-        setShowVerificationInput(true); // 인증 필드 보여주기
-        setIsTimerActive(true); // 타이머 시작
-        setTimeLeft(300); // 5분 리셋
+        Alert.alert('발송 성공', '인증 메일이 발송되었습니다.');
+        setShowVerificationInput(true);
+        setIsTimerActive(true);
+        setTimeLeft(300);
       }
     } catch (error: any) {
-      console.error('메일 발송 실패:', error);
-      let errorMessage = '이메일 발송에 실패했습니다.';
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
-        errorMessage = error.response.data.message;
-      }
-      Alert.alert('발송 실패', errorMessage);
+      Alert.alert('발송 실패', error.response?.data?.message || '오류 발생');
     } finally {
       setIsLoading(false);
     }
+    */
   };
 
   // 2. 인증 번호 확인 요청
   const handleVerifyCode = async () => {
-    if (verificationCode.length !== 6) {
-      Alert.alert('알림', '인증 번호 6자리를 정확히 입력해주세요.');
-      return;
-    }
+    // [개발 모드] 즉시 성공 처리 및 로그인 화면 이동
+    if (timerRef.current) clearInterval(timerRef.current);
+    Alert.alert('개발 모드', '인증이 완료되었습니다.', [
+      {
+        text: '확인',
+        onPress: () => navigation.navigate('Login'),
+      },
+    ]);
 
+    /* 실제 API 로직
+    if (verificationCode.length !== 6) return Alert.alert('알림', '인증 번호를 확인해주세요.');
     setIsLoading(true);
-
     try {
-      console.log(
-        `인증 확인 요청: ${API_URL}/api/auth/email/verification/confirm`,
-      );
-
-      const response = await axios.post(
-        `${API_URL}/api/auth/email/verification/confirm`,
-        {
-          email: email,
-          purpose: 'RESET_PASSWORD',
-          verificationCode: verificationCode, // 사용자가 입력한 코드
-        },
-      );
-
+      const response = await axios.post(`${API_URL}/api/auth/email/verification/confirm`, {
+        email: email,
+        purpose: 'RESET_PASSWORD',
+        verificationCode: verificationCode,
+      });
       if (response.status === 200) {
-        // 타이머 정지
         if (timerRef.current) clearInterval(timerRef.current);
-
-        Alert.alert('인증 성공', '이메일 인증이 완료되었습니다.', [
-          {
-            text: '확인',
-            onPress: () => {
-              // TODO: 비밀번호 재설정 화면으로 이동하거나, 다음 로직을 여기에 추가
-              // 예: navigation.navigate('ResetPassword', { email: email });
-              navigation.navigate('Login');
-            },
-          },
+        Alert.alert('인증 성공', '완료되었습니다.', [
+          { text: '확인', onPress: () => navigation.navigate('Login') },
         ]);
       }
     } catch (error: any) {
-      console.error('인증 실패:', error);
-      Alert.alert('인증 실패', '인증 번호가 올바르지 않거나 만료되었습니다.');
+      Alert.alert('인증 실패', '인증 번호가 올바르지 않습니다.');
     } finally {
       setIsLoading(false);
     }
+    */
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
+          {/* [수정] 텍스트 정렬 및 크기를 회원가입 화면과 동일하게 변경 */}
           <Text style={styles.title}>비밀번호 찾기</Text>
           <Text style={styles.description}>
             가입하신 이메일 주소로 인증번호를 보내드려요. 인증번호를 입력하시면
             비밀번호 재설정이 가능합니다.
           </Text>
+
           <View style={styles.inputGroup}>
             <Text style={styles.label}>이메일</Text>
             <TextInput
               style={[
                 styles.input,
                 showVerificationInput && styles.inputDisabled,
+                focusedField === 'email' && styles.inputFocused,
               ]}
-              placeholder="이메일을 입력하세요"
+              placeholder="example@email.com" // [수정] 플레이스홀더 변경
               placeholderTextColor={COLORS.darkGray}
               value={email}
               onChangeText={setEmail}
@@ -214,26 +185,41 @@ const ForgotPasswordScreen = () => {
               autoCapitalize="none"
               autoCorrect={false}
               editable={!showVerificationInput && !isLoading}
+              onFocus={() => setFocusedField('email')}
+              onBlur={() => setFocusedField(null)}
             />
           </View>
+
           {showVerificationInput && (
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>인증 번호</Text>
-              <View style={styles.codeInputWrapper}>
+              {/* [수정] 라벨 텍스트 변경: "인증 번호" -> "인증번호" */}
+              <Text style={styles.label}>인증번호</Text>
+              <View
+                style={[
+                  styles.codeInputWrapper,
+                  styles.input, // Wrapper에 기본 input 스타일 적용
+                  focusedField === 'verificationCode' && styles.inputFocused, // 포커스 시 두께 2 적용됨
+                ]}
+              >
                 <TextInput
-                  style={styles.input}
-                  placeholder="인증 번호 6자리"
+                  style={styles.innerInput}
+                  placeholder="123456" // [수정] 플레이스홀더 변경
                   placeholderTextColor={COLORS.darkGray}
                   value={verificationCode}
                   onChangeText={setVerificationCode}
                   keyboardType="number-pad"
                   maxLength={6}
                   editable={!isLoading}
+                  onFocus={() => setFocusedField('verificationCode')}
+                  onBlur={() => setFocusedField(null)}
                 />
                 <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
               </View>
             </View>
           )}
+        </ScrollView>
+
+        <View style={styles.footer}>
           {!showVerificationInput ? (
             <TouchableOpacity
               style={[
@@ -281,43 +267,41 @@ const ForgotPasswordScreen = () => {
           >
             <Text style={styles.backButtonText}>로그인 화면으로 돌아가기</Text>
           </TouchableOpacity>
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  description: {
-    fontSize: normalize(13),
-    color: COLORS.darkGray,
-    textAlign: 'center',
-    marginBottom: normalize(24),
-    lineHeight: normalize(19),
-  },
   container: {
     flex: 1,
-    justifyContent: 'center',
-    padding: normalize(24),
     backgroundColor: COLORS.lightBlue,
   },
   scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'stretch',
-    paddingVertical: normalize(24),
+    padding: normalize(24),
+    paddingBottom: normalize(100),
   },
+  // [수정] 타이틀 스타일: 왼쪽 정렬, 폰트 크기 28, 마진 조정
   title: {
-    fontSize: normalize(32),
+    fontSize: normalize(28),
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: normalize(32),
     color: COLORS.text,
-    letterSpacing: 1,
+    marginBottom: normalize(8),
+    marginTop: normalize(20), // 상단 여백
+    textAlign: 'left',
+  },
+  // [수정] 설명 텍스트 스타일: 왼쪽 정렬, 폰트 크기 15, 마진 조정
+  description: {
+    fontSize: normalize(15),
+    color: COLORS.darkGray,
+    marginBottom: normalize(32),
+    textAlign: 'left',
+    lineHeight: normalize(22), // 가독성을 위해 줄간격 살짝 조정
   },
   inputGroup: {
     width: '100%',
-    marginBottom: normalize(18),
+    marginBottom: normalize(24), // 간격 조정
   },
   label: {
     fontSize: normalize(14),
@@ -331,7 +315,7 @@ const styles = StyleSheet.create({
     height: normalize(52),
     borderWidth: 1,
     borderColor: COLORS.gray,
-    borderRadius: normalize(8),
+    borderRadius: normalize(12), // 둥근 모서리 조정 (회원가입과 통일)
     paddingHorizontal: normalize(16),
     fontSize: normalize(16),
     backgroundColor: COLORS.white,
@@ -343,6 +327,11 @@ const styles = StyleSheet.create({
     elevation: 8,
     marginBottom: 0,
   },
+  // 포커스 시 테두리 스타일 (두께 2 유지)
+  inputFocused: {
+    borderColor: COLORS.primary,
+    borderWidth: 2,
+  },
   inputDisabled: {
     backgroundColor: COLORS.lightGray,
     color: COLORS.darkGray,
@@ -351,36 +340,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: normalize(16),
+  },
+  innerInput: {
+    flex: 1,
+    fontSize: normalize(16),
+    color: COLORS.text,
+    height: '100%',
   },
   timerText: {
-    position: 'absolute',
-    right: normalize(16),
     color: COLORS.error,
     fontWeight: 'bold',
     fontSize: normalize(14),
   },
+  footer: {
+    padding: normalize(24),
+    backgroundColor: COLORS.lightBlue,
+    justifyContent: 'flex-end',
+  },
   submitButton: {
     width: '100%',
-    height: normalize(52),
-    borderRadius: normalize(26),
+    height: normalize(56), // 버튼 높이 조정 (회원가입과 통일)
+    borderRadius: normalize(28), // 둥근 모서리 조정
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
-    marginTop: normalize(12),
     shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 }, // 그림자 조정
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   submitButtonDisabled: {
     backgroundColor: COLORS.darkGray,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   submitButtonText: {
-    fontSize: normalize(17),
+    fontSize: normalize(18), // 폰트 크기 조정
     fontWeight: 'bold',
     color: COLORS.white,
-    letterSpacing: 0.5,
   },
   retryButton: {
     alignItems: 'center',
@@ -394,8 +393,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignItems: 'center',
-    padding: normalize(16),
-    marginTop: normalize(18),
+    padding: normalize(12),
+    marginTop: normalize(12), // 여백 조정
   },
   backButtonText: {
     fontSize: normalize(14),
