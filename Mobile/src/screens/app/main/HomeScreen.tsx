@@ -1,4 +1,3 @@
-// src/screens/app/main/HomeScreen.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -19,7 +18,6 @@ import PaxModal from '../../../components/common/PaxModal';
 import SelectionModal, {
   OptionType,
 } from '../../../components/common/SelectionModal';
-// ⭐️ 1. SearchLocationScreen 대신 SearchLocationModal을 import 합니다.
 import SearchLocationModal from '../../../components/common/SearchLocationModal';
 
 const COLORS = {
@@ -46,6 +44,7 @@ const AnimatedImageBackground =
 type InputFieldProps = {
   label: string;
   value: string;
+  placeholder?: string; // [추가] 값이 없을 때 보여줄 텍스트
   icon: string;
   isLast?: boolean;
   onPress?: () => void;
@@ -54,6 +53,7 @@ type InputFieldProps = {
 const InputField = ({
   label,
   value,
+  placeholder,
   icon,
   isLast = false,
   onPress,
@@ -63,7 +63,12 @@ const InputField = ({
       <Text style={styles.icon}>{icon}</Text>
       <View style={styles.textContainer}>
         <Text style={styles.label}>{label}</Text>
-        <Text style={styles.valueText}>{value}</Text>
+        {/* [수정] 값이 있으면 valueText, 없으면 placeholderText 스타일 적용 */}
+        {value ? (
+          <Text style={styles.valueText}>{value}</Text>
+        ) : (
+          <Text style={styles.placeholderText}>{placeholder}</Text>
+        )}
       </View>
       <Text style={styles.arrow}>›</Text>
     </TouchableOpacity>
@@ -75,7 +80,6 @@ type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [startDate, setStartDate] = useState(new Date());
-  // ⭐️ 수정: endDate의 기본값을 3일 뒤가 아닌 '오늘'로 변경
   const [endDate, setEndDate] = useState(new Date());
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const [adults, setAdults] = useState(1);
@@ -83,22 +87,23 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [isPaxModalVisible, setPaxModalVisible] = useState(false);
   const [transport, setTransport] = useState('대중교통');
   const [isTransportModalVisible, setTransportModalVisible] = useState(false);
+
   const transportOptions: OptionType[] = [
     { label: '대중교통', icon: '🚌' },
     { label: '자동차', icon: '🚗' },
   ];
-  const [departure, setDeparture] = useState('서울');
-  const [destination, setDestination] = useState('부산');
+
+  // [수정] 초기값을 빈 문자열로 설정하여 '선택 안 됨' 상태로 시작
+  const [departure, setDeparture] = useState('');
+  const [destination, setDestination] = useState('');
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  // ⭐️ 2. 검색 모달의 상태와 어떤 필드를 수정할지 관리하는 state를 추가합니다.
   const [isSearchModalVisible, setSearchModalVisible] = useState(false);
   const [fieldToUpdate, setFieldToUpdate] = useState<
     'departure' | 'destination'
   >('departure');
-
-  // ⭐️ 3. 네비게이션 파라미터를 사용하던 useEffect를 제거합니다.
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -128,6 +133,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   };
 
   const handleCreateItinerary = () => {
+    // 유효성 검사 (필요 시 추가)
+    if (!departure || !destination) {
+      // Alert.alert('알림', '출발지와 여행지를 선택해주세요.');
+      // return;
+    }
+
     navigation.navigate('ItineraryEditor', {
       departure,
       destination,
@@ -139,7 +150,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     });
   };
 
-  // ⭐️ 4. 검색 모달을 여는 함수를 새로 만듭니다.
   const openSearchModal = (field: 'departure' | 'destination') => {
     setFieldToUpdate(field);
     setSearchModalVisible(true);
@@ -167,16 +177,18 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           </View>
 
           <View style={styles.card}>
-            {/* ⭐️ 5. onPress 핸들러를 navigation.navigate 대신 openSearchModal 호출로 변경합니다. */}
+            {/* [수정] placeholder prop 전달 */}
             <InputField
               label="출발지"
               value={departure}
+              placeholder="출발지 입력"
               icon="📍"
               onPress={() => openSearchModal('departure')}
             />
             <InputField
               label="여행지"
               value={destination}
+              placeholder="여행지 입력"
               icon="🌍"
               onPress={() => openSearchModal('destination')}
             />
@@ -210,7 +222,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         </View>
       </ScrollView>
 
-      {/* ⭐️ 6. SearchLocationModal을 렌더링하고 필요한 props를 전달합니다. */}
       <SearchLocationModal
         visible={isSearchModalVisible}
         onClose={() => setSearchModalVisible(false)}
@@ -331,6 +342,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '500',
     color: COLORS.text,
+  },
+  // [추가] Placeholder 스타일 (회색)
+  placeholderText: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: COLORS.placeholder,
   },
   arrow: {
     fontSize: 20,
