@@ -105,6 +105,7 @@ export default function SignupScreen() {
 
   const handleChange = useCallback((name: string, value: string) => {
     setForm(prev => ({ ...prev, [name]: value }));
+    // 개발 편의를 위해 상태 초기화 로직 잠시 주석 처리 가능 (필요 시 해제)
     if (name === 'nickname') setIsNicknameVerified(false);
     if (name === 'email') {
       setIsEmailVerified(false);
@@ -121,13 +122,11 @@ export default function SignupScreen() {
       }, 1000);
     } else if (timeLeft === 0) {
       resetTimer();
-      if (!isEmailVerified) {
-        Alert.alert(
-          '시간 초과',
-          '인증 시간이 만료되었습니다. 다시 시도해주세요.',
-        );
-        setShowVerificationInput(false);
-      }
+      // 개발 중 불편함을 줄이기 위해 타임아웃 알림 제거 가능
+      // if (!isEmailVerified) {
+      //   Alert.alert('시간 초과', '인증 시간이 만료되었습니다.');
+      //   setShowVerificationInput(false);
+      // }
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -143,7 +142,16 @@ export default function SignupScreen() {
   // --- API 핸들러 ---
 
   const handleSendEmail = async () => {
-    if (!form.email) return Alert.alert('알림', '이메일을 입력해주세요.');
+    // 개발 모드: 이메일 입력 없이도 인증번호 입력창 보여주기 (필요 시)
+    // if (!form.email) return Alert.alert('알림', '이메일을 입력해주세요.');
+
+    // 실제 API 호출 대신 바로 성공 처리 (개발용)
+    Alert.alert('개발 모드', '인증 번호가 전송된 것으로 처리합니다.');
+    setShowVerificationInput(true);
+    setIsTimerActive(true);
+    setTimeLeft(300);
+
+    /* 실제 로직 주석 처리
     setIsLoading(true);
     try {
       await axios.post(`${API_URL}/api/auth/email/verification`, {
@@ -160,21 +168,25 @@ export default function SignupScreen() {
     } finally {
       setIsLoading(false);
     }
+    */
   };
 
   const handleVerifyCode = async () => {
-    if (!form.verificationCode)
-      return Alert.alert('알림', '인증 번호를 입력해주세요.');
+    // 개발 모드: 무조건 성공 처리
+    Alert.alert('개발 모드', '이메일 인증이 완료된 것으로 처리합니다.');
+    setEmailAuthToken('dummy_token_for_dev');
+    setIsEmailVerified(true);
+    setIsTimerActive(false);
+
+    /* 실제 로직 주석 처리
+    if (!form.verificationCode) return Alert.alert('알림', '인증 번호를 입력해주세요.');
     setIsLoading(true);
     try {
-      const response = await axios.post(
-        `${API_URL}/api/auth/email/verification/confirm`,
-        {
-          email: form.email,
-          verificationCode: parseInt(form.verificationCode, 10),
-          purpose: 'SIGN_UP',
-        },
-      );
+      const response = await axios.post(`${API_URL}/api/auth/email/verification/confirm`, {
+        email: form.email,
+        verificationCode: parseInt(form.verificationCode, 10),
+        purpose: 'SIGN_UP',
+      });
 
       if (response.status === 200) {
         const token = response.data.token;
@@ -193,50 +205,55 @@ export default function SignupScreen() {
     } finally {
       setIsLoading(false);
     }
+    */
   };
 
   const handleCheckNickname = async () => {
+    // 개발 모드: 무조건 성공 처리
+    setIsNicknameVerified(true);
+    Alert.alert('개발 모드', '사용 가능한 닉네임으로 처리합니다.');
+
+    /* 실제 로직 주석 처리
     if (!form.nickname) return Alert.alert('알림', '닉네임을 입력해주세요.');
     setIsLoading(true);
     try {
-      const response = await axios.post(
-        `${API_URL}/api/auth/register/nickname/verify`,
-        {
-          nickname: form.nickname,
-        },
-      );
+      const response = await axios.post(`${API_URL}/api/auth/register/nickname/verify`, {
+        nickname: form.nickname,
+      });
       if (response.status === 200) {
         setIsNicknameVerified(true);
         Alert.alert('확인 완료', '사용 가능한 닉네임입니다.');
       }
     } catch (error: any) {
       setIsNicknameVerified(false);
-      const msg =
-        error.response?.data?.message || '이미 사용 중인 닉네임입니다.';
+      const msg = error.response?.data?.message || '이미 사용 중인 닉네임입니다.';
       Alert.alert('사용 불가', msg);
     } finally {
       setIsLoading(false);
     }
+    */
   };
 
   const handleSignup = async () => {
-    if (!form.age || !form.gender)
-      return Alert.alert('알림', '나이와 성별을 선택해주세요.');
+    // 개발 모드: 가입 완료 처리 후 로그인 화면으로 이동
+    Alert.alert('개발 모드', '회원가입이 완료된 것으로 처리합니다.', [
+      { text: '확인', onPress: () => navigation.navigate('Login') },
+    ]);
 
+    /* 실제 로직 주석 처리
+    if (!form.age || !form.gender) return Alert.alert('알림', '나이와 성별을 선택해주세요.');
+    
     setIsLoading(true);
     try {
       const genderInt = form.gender === 'male' ? 0 : 1;
-
+      
       if (!emailAuthToken) {
-        Alert.alert(
-          '오류',
-          '인증 토큰이 없습니다. 처음부터 다시 시도해주세요.',
-        );
+        Alert.alert('오류', '인증 토큰이 없습니다. 처음부터 다시 시도해주세요.');
         return;
       }
 
       const headers = { Authorization: `Bearer ${emailAuthToken}` };
-
+      
       const response = await axios.post(
         `${API_URL}/api/auth/register`,
         {
@@ -245,7 +262,7 @@ export default function SignupScreen() {
           gender: genderInt,
           age: parseInt(form.age, 10),
         },
-        { headers },
+        { headers }
       );
 
       if (response.status === 200) {
@@ -256,28 +273,31 @@ export default function SignupScreen() {
     } catch (error: any) {
       console.error('Signup Error:', error);
       if (error.response?.status === 401) {
-        Alert.alert('실패', '인증 세션이 만료되었습니다.');
+         Alert.alert('실패', '인증 세션이 만료되었습니다.');
       } else {
-        const msg = error.response?.data?.message || '회원가입 실패';
-        Alert.alert('실패', msg);
+         const msg = error.response?.data?.message || '회원가입 실패';
+         Alert.alert('실패', msg);
       }
     } finally {
       setIsLoading(false);
     }
+    */
   };
 
-  // --- 단계 이동 로직 ---
+  // --- 단계 이동 로직 (검증 무시) ---
 
   const handleNextStep = () => {
+    // [개발 모드] 유효성 검사 없이 무조건 다음 단계로 이동
+    if (step < 4) {
+      setStep(step + 1);
+    }
+
+    /* 원래 검증 로직 (주석 처리)
     if (step === 1) {
-      if (!isEmailVerified)
-        return Alert.alert('알림', '이메일 인증을 완료해주세요.');
+      if (!isEmailVerified) return Alert.alert('알림', '이메일 인증을 완료해주세요.');
       setStep(2);
     } else if (step === 2) {
-      if (
-        !passwordRequirements.hasMinLength ||
-        !passwordRequirements.hasCombination
-      ) {
+      if (!passwordRequirements.hasMinLength || !passwordRequirements.hasCombination) {
         return Alert.alert('알림', '비밀번호 조건을 만족해주세요.');
       }
       if (form.password !== form.confirmPassword) {
@@ -285,10 +305,10 @@ export default function SignupScreen() {
       }
       setStep(3);
     } else if (step === 3) {
-      if (!isNicknameVerified)
-        return Alert.alert('알림', '닉네임 중복 확인을 해주세요.');
+      if (!isNicknameVerified) return Alert.alert('알림', '닉네임 중복 확인을 해주세요.');
       setStep(4);
     }
+    */
   };
 
   const handlePrevStep = () => {
@@ -357,22 +377,20 @@ export default function SignupScreen() {
                     style={[
                       styles.input,
                       styles.flex1,
-                      isEmailVerified && styles.inputDisabled,
+                      // 개발 중엔 disabled 스타일 제거해서 편하게 수정 가능하도록
+                      // isEmailVerified && styles.inputDisabled,
                     ]}
                     placeholder="example@email.com"
                     value={form.email}
                     onChangeText={v => handleChange('email', v)}
                     keyboardType="email-address"
                     autoCapitalize="none"
-                    editable={!isEmailVerified && !isLoading}
+                    // editable={!isEmailVerified && !isLoading}
                   />
                   <Pressable
-                    style={[
-                      styles.inlineButton,
-                      (isEmailVerified || isLoading) && styles.buttonDisabled,
-                    ]}
+                    style={[styles.inlineButton]} // disabled 스타일 제거
                     onPress={handleSendEmail}
-                    disabled={isEmailVerified || isLoading}
+                    // disabled={isEmailVerified || isLoading}
                   >
                     <Text style={styles.inlineButtonText}>
                       {isEmailVerified ? '완료' : '인증요청'}
@@ -494,13 +512,9 @@ export default function SignupScreen() {
                     editable={!isLoading}
                   />
                   <Pressable
-                    style={[
-                      styles.inlineButton,
-                      (isNicknameVerified || isLoading) &&
-                        styles.buttonDisabled,
-                    ]}
+                    style={[styles.inlineButton]} // disabled 제거
                     onPress={handleCheckNickname}
-                    disabled={isNicknameVerified || isLoading}
+                    // disabled={isNicknameVerified || isLoading}
                   >
                     <Text style={styles.inlineButtonText}>
                       {isNicknameVerified ? '사용가능' : '중복확인'}
@@ -576,37 +590,21 @@ export default function SignupScreen() {
             <Pressable
               style={[
                 styles.submitButton,
-                // 다음 버튼 비활성화 조건
-                (step === 1 && !isEmailVerified) ||
-                (step === 2 &&
-                  (!passwordRequirements.hasMinLength ||
-                    !passwordRequirements.hasCombination ||
-                    form.password !== form.confirmPassword)) ||
-                (step === 3 && !isNicknameVerified)
-                  ? styles.submitButtonDisabled
-                  : null,
+                // 개발용: 버튼 무조건 활성화 (disabled 스타일 제거)
+                // (step === 1 && !isEmailVerified) ... ? styles.submitButtonDisabled : null
               ]}
               onPress={handleNextStep}
-              disabled={
-                (step === 1 && !isEmailVerified) ||
-                (step === 2 &&
-                  (!passwordRequirements.hasMinLength ||
-                    !passwordRequirements.hasCombination ||
-                    form.password !== form.confirmPassword)) ||
-                (step === 3 && !isNicknameVerified)
-              }
+              // disabled={...} // 비활성화 조건 제거
             >
               <Text style={styles.submitButtonText}>다음</Text>
             </Pressable>
           ) : (
             <Pressable
               style={[
-                styles.submitButton,
-                (isLoading || !form.age || !form.gender) &&
-                  styles.submitButtonDisabled,
+                styles.submitButton /*(isLoading || !form.age || !form.gender) && styles.submitButtonDisabled*/,
               ]}
               onPress={handleSignup}
-              disabled={isLoading || !form.age || !form.gender}
+              // disabled={isLoading || !form.age || !form.gender}
             >
               {isLoading ? (
                 <ActivityIndicator color={COLORS.white} />
@@ -684,6 +682,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     fontSize: normalize(16),
     backgroundColor: COLORS.white,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 8,
   },
   inputDisabled: { backgroundColor: COLORS.lightGray, color: COLORS.darkGray },
 
@@ -701,6 +704,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.primary,
     minWidth: normalize(80),
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 8,
   },
   buttonDisabled: { backgroundColor: COLORS.darkGray },
   inlineButtonText: {
@@ -729,6 +737,11 @@ const styles = StyleSheet.create({
     borderColor: COLORS.gray,
     borderRadius: normalize(12),
     height: normalize(52),
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 8,
   },
   passwordInput: {
     flex: 1,
@@ -736,7 +749,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     fontSize: normalize(16),
   },
-  eyeIcon: { padding: normalize(16) },
+  eyeIcon: {
+    padding: normalize(16),
+  },
 
   requirementsContainer: { marginTop: normalize(12) },
   requirementRow: {
@@ -761,6 +776,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: COLORS.gray,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 8,
   },
   genderButtonSelected: {
     backgroundColor: COLORS.primary,
