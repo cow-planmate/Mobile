@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // [추가] 토큰 접근용
 import axios from 'axios';
 import { API_URL } from '@env';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -248,22 +249,51 @@ export default function MyPageScreen() {
     Alert.alert('완료', '비밀번호가 성공적으로 변경되었습니다.');
   };
 
-  // 회원 탈퇴
+  // [수정됨] 회원 탈퇴 핸들러 (강화된 로직)
   const handleResign = () => {
     Alert.alert(
       '회원 탈퇴',
-      '정말로 탈퇴하시겠습니까? 모든 데이터가 삭제됩니다.',
+      '정말로 탈퇴하시겠습니까? 탈퇴 후에는 모든 데이터가 삭제되며 복구할 수 없습니다.',
       [
         { text: '취소', style: 'cancel' },
         {
-          text: '탈퇴',
+          text: '탈퇴하기',
           style: 'destructive',
           onPress: async () => {
             try {
-              await axios.delete(`${API_URL}/api/user/account`);
-              logout();
-            } catch (e) {
-              Alert.alert('오류', '탈퇴 처리에 실패했습니다.');
+              // 1. 토큰 가져오기 (안전한 요청을 위해 명시적으로 가져옴)
+              const token = await AsyncStorage.getItem('accessToken');
+              if (!token) {
+                Alert.alert('오류', '로그인 정보가 유효하지 않습니다.');
+                return;
+              }
+
+              // 2. 탈퇴 API 호출
+              const response = await axios.delete(
+                `${API_URL}/api/user/account`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                },
+              );
+
+              // 3. 성공 시 처리
+              if (response.status === 200) {
+                Alert.alert('탈퇴 완료', '회원 탈퇴가 완료되었습니다.', [
+                  {
+                    text: '확인',
+                    onPress: async () => {
+                      await logout(); // 로그아웃 및 초기화
+                    },
+                  },
+                ]);
+              }
+            } catch (error: any) {
+              console.error('Resign Error:', error);
+              const msg =
+                error.response?.data?.message || '탈퇴 처리에 실패했습니다.';
+              Alert.alert('오류', msg);
             }
           },
         },
