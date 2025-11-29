@@ -1,4 +1,3 @@
-// src/screens/app/itinerary/ItineraryEditorScreen.tsx
 import React, {
   useState,
   useEffect,
@@ -18,8 +17,12 @@ import {
   TextInput,
   Pressable,
   Image,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import axios from 'axios'; // [추가]
+import { API_URL } from '@env'; // [추가]
 import { AppStackParamList } from '../../../navigation/types';
 import TimelineItem, {
   Place,
@@ -50,49 +53,28 @@ const COLORS = {
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
-const DUMMY_SEARCH_RESULTS: Omit<Place, 'startTime' | 'endTime'>[] = [
-  {
-    id: '10',
-    name: '더현대 서울',
-    type: '관광지',
-    address: '서울 영등포구',
-    rating: 4.8,
-    imageUrl: 'https://picsum.photos/id/20/100/100',
-    latitude: 37.525,
-    longitude: 126.928,
-  },
-  {
-    id: '11',
-    name: '콘래드 서울',
-    type: '숙소',
-    address: '서울 영등포구',
-    rating: 4.9,
-    imageUrl: 'https://picsum.photos/id/21/100/100',
-    latitude: 37.526,
-    longitude: 126.927,
-  },
-  {
-    id: '12',
-    name: '세상의모든아침',
-    type: '식당',
-    address: '서울 영등포구',
-    rating: 4.5,
-    imageUrl: 'https://picsum.photos/id/22/100/100',
-    latitude: 37.527,
-    longitude: 126.929,
-  },
-  {
-    id: '13',
-    name: '63빌딩',
-    type: '관광지',
-    address: '서울 영등포구',
-    rating: 4.6,
-    imageUrl: 'https://picsum.photos/id/23/100/100',
-    latitude: 37.519,
-    longitude: 126.94,
-  },
-];
+// [추가] 백엔드 데이터 구조
+interface PlaceVO {
+  placeId: string;
+  categoryId: number;
+  url: string;
+  name: string;
+  formatted_address: string;
+  rating: number;
+  xlocation: number;
+  ylocation: number;
+  iconUrl: string;
+}
 
+// [추가] 카테고리 매핑 함수
+const getCategoryType = (id: number): '관광지' | '숙소' | '식당' | '기타' => {
+  if ([12, 14, 15, 28].includes(id)) return '관광지';
+  if (id === 32) return '숙소';
+  if (id === 39) return '식당';
+  return '기타';
+};
+
+// [수정] 검색 결과 아이템 컴포넌트
 const PlaceSearchResultItem = ({
   item,
   onSelect,
@@ -101,13 +83,25 @@ const PlaceSearchResultItem = ({
   onSelect: () => void;
 }) => (
   <TouchableOpacity style={styles.resultItem} onPress={onSelect}>
-    <Image source={{ uri: item.imageUrl }} style={styles.resultImage} />
+    {item.imageUrl ? (
+      <Image source={{ uri: item.imageUrl }} style={styles.resultImage} />
+    ) : (
+      <View style={[styles.resultImage, styles.placeholderImage]}>
+        <Text style={styles.placeholderText}>{item.type[0]}</Text>
+      </View>
+    )}
     <View style={{ flex: 1, marginLeft: 10 }}>
       <Text style={styles.resultName}>{item.name}</Text>
       <Text style={styles.resultMeta}>
-        ⭐️ {item.rating} · {item.address}
+        {item.type} · ⭐ {item.rating > 0 ? item.rating : '-'}
+      </Text>
+      <Text style={styles.resultAddress} numberOfLines={1}>
+        {item.address}
       </Text>
     </View>
+    <Pressable style={styles.addButton} onPress={onSelect}>
+      <Text style={styles.addButtonText}>추가</Text>
+    </Pressable>
   </TouchableOpacity>
 );
 
@@ -477,23 +471,71 @@ const TimelineComponent = React.memo(
   ),
 );
 
+// [수정] AddPlaceComponent: API 연동 및 실제 검색 구현
 const AddPlaceComponent = React.memo(
   ({
     onAddPlace,
+    destination,
   }: {
     onAddPlace: (place: Omit<Place, 'startTime' | 'endTime'>) => void;
+    destination: string;
   }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTab, setSelectedTab] = useState<'관광지' | '숙소' | '식당'>(
       '관광지',
     );
+    const [searchResults, setSearchResults] = useState<Place[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const filteredPlaces = DUMMY_SEARCH_RESULTS.filter(place => {
-      const matchesTab = place.type === selectedTab;
-      const matchesSearch = place.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      return matchesTab && matchesSearch;
+    // API 검색 핸들러
+    const handleSearch = async () => {
+      if (!searchQuery.trim()) return;
+
+      setIsLoading(true);
+      try {
+        const query = destination
+          ? `${destination} ${searchQuery}`
+          : searchQuery;
+        console.log(`Searching for: ${query}`);
+
+        const response = await axios.get(
+          `${API_URL}/api/plan/place/${encodeURIComponent(query)}`,
+        );
+
+        if (response.data && response.data.places) {
+          const mappedPlaces: Place[] = response.data.places.map(
+            (p: PlaceVO) => ({
+              id: p.placeId,
+              name: p.name,
+              type: getCategoryType(p.categoryId),
+              address: p.formatted_address,
+              rating: p.rating,
+              imageUrl: p.iconUrl,
+              latitude: p.ylocation, // y -> lat
+              longitude: p.xlocation, // x -> lng
+              time: '10:00', // 임시 값
+              startTime: '10:00',
+              endTime: '11:00',
+            }),
+          );
+          setSearchResults(mappedPlaces);
+        } else {
+          setSearchResults([]);
+        }
+      } catch (error) {
+        console.error('Search failed:', error);
+        Alert.alert('오류', '장소 검색에 실패했습니다.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // 탭 필터링
+    const filteredPlaces = searchResults.filter(place => {
+      if (selectedTab === '관광지') {
+        return place.type === '관광지' || place.type === '기타';
+      }
+      return place.type === selectedTab;
     });
 
     const handleSelectPlace = (place: Omit<Place, 'startTime' | 'endTime'>) => {
@@ -505,74 +547,69 @@ const AddPlaceComponent = React.memo(
         <View style={styles.searchHeader}>
           <TextInput
             style={styles.searchInput}
-            placeholder="장소를 검색하세요"
+            placeholder={
+              destination ? `${destination} 근처 장소 검색` : '장소 검색'
+            }
             value={searchQuery}
             onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
           />
+          <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
+            <Text style={styles.searchButtonIcon}>🔍</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.placeTypeTabContainer}>
-          <TouchableOpacity
-            onPress={() => setSelectedTab('관광지')}
-            style={[
-              styles.placeTypeTab,
-              selectedTab === '관광지' && styles.placeTypeTabSelected,
-            ]}
-          >
-            <Text
+          {['관광지', '숙소', '식당'].map(tab => (
+            <TouchableOpacity
+              key={tab}
+              onPress={() => setSelectedTab(tab as any)}
               style={[
-                styles.placeTypeTabText,
-                selectedTab === '관광지' && styles.placeTypeTabTextSelected,
+                styles.placeTypeTab,
+                selectedTab === tab && styles.placeTypeTabSelected,
               ]}
             >
-              관광지
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setSelectedTab('숙소')}
-            style={[
-              styles.placeTypeTab,
-              selectedTab === '숙소' && styles.placeTypeTabSelected,
-            ]}
-          >
-            <Text
-              style={[
-                styles.placeTypeTabText,
-                selectedTab === '숙소' && styles.placeTypeTabTextSelected,
-              ]}
-            >
-              숙소
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setSelectedTab('식당')}
-            style={[
-              styles.placeTypeTab,
-              selectedTab === '식당' && styles.placeTypeTabSelected,
-            ]}
-          >
-            <Text
-              style={[
-                styles.placeTypeTabText,
-                selectedTab === '식당' && styles.placeTypeTabTextSelected,
-              ]}
-            >
-              식당
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.placeTypeTabText,
+                  selectedTab === tab && styles.placeTypeTabTextSelected,
+                ]}
+              >
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         <View style={styles.addPlaceListContainer}>
-          <FlatList
-            data={filteredPlaces}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-              <PlaceSearchResultItem
-                item={item}
-                onSelect={() => handleSelectPlace(item)}
-              />
-            )}
-          />
+          {isLoading ? (
+            <ActivityIndicator
+              size="large"
+              color={COLORS.primary}
+              style={{ marginTop: 20 }}
+            />
+          ) : (
+            <FlatList
+              data={filteredPlaces}
+              keyExtractor={item => item.id}
+              renderItem={({ item }) => (
+                <PlaceSearchResultItem
+                  item={item}
+                  onSelect={() => handleSelectPlace(item)}
+                />
+              )}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>
+                    {searchResults.length === 0
+                      ? '검색 결과가 없습니다.'
+                      : `${selectedTab}에 해당하는 장소가 없습니다.`}
+                  </Text>
+                </View>
+              }
+            />
+          )}
         </View>
       </View>
     );
@@ -773,7 +810,12 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           )}
         </Tab.Screen>
         <Tab.Screen name="장소추가">
-          {() => <AddPlaceComponent onAddPlace={handleAddPlace} />}
+          {() => (
+            <AddPlaceComponent
+              onAddPlace={handleAddPlace}
+              destination={route.params.destination} // [추가] 여행지 정보 전달
+            />
+          )}
         </Tab.Screen>
       </Tab.Navigator>
 
@@ -914,9 +956,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  timelineContainer: {
-    paddingVertical: 20,
-  },
   timelineContentContainer: {
     paddingBottom: 20,
   },
@@ -979,6 +1018,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.lightGray,
     borderRadius: 8,
     paddingHorizontal: 15,
+    marginRight: 10,
+  },
+  searchButton: {
+    padding: 10,
+  },
+  searchButtonIcon: {
+    fontSize: 20,
   },
   placeTypeTabContainer: {
     flexDirection: 'row',
@@ -1016,6 +1062,16 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 8,
   },
+  placeholderImage: {
+    backgroundColor: COLORS.lightGray,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.placeholder,
+  },
   resultName: {
     fontSize: 16,
     fontWeight: '600',
@@ -1024,6 +1080,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.placeholder,
     marginTop: 2,
+  },
+  resultAddress: {
+    fontSize: 12,
+    color: COLORS.placeholder,
+    marginTop: 2,
+  },
+  addButton: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 20,
+  },
+  addButtonText: {
+    color: COLORS.primary,
+    fontWeight: 'bold',
   },
   resizeHandleTop: {
     position: 'absolute',
@@ -1053,5 +1124,12 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: COLORS.primary,
     opacity: 0.8,
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: COLORS.placeholder,
   },
 });
