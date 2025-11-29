@@ -98,6 +98,9 @@ export default function SignupScreen() {
   const [isNicknameVerified, setIsNicknameVerified] = useState(false);
   const [emailAuthToken, setEmailAuthToken] = useState<string | null>(null);
 
+  // 포커스 상태 관리
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
   // 타이머 상태
   const [timeLeft, setTimeLeft] = useState(300);
   const [isTimerActive, setIsTimerActive] = useState(false);
@@ -134,9 +137,7 @@ export default function SignupScreen() {
   };
 
   // --- API 핸들러 ---
-
   const handleSendEmail = async () => {
-    // 개발 모드
     Alert.alert('개발 모드', '인증 번호가 전송된 것으로 처리합니다.');
     setShowVerificationInput(true);
     setIsTimerActive(true);
@@ -144,7 +145,6 @@ export default function SignupScreen() {
   };
 
   const handleVerifyCode = async () => {
-    // 개발 모드
     Alert.alert('개발 모드', '이메일 인증이 완료된 것으로 처리합니다.');
     setEmailAuthToken('dummy_token_for_dev');
     setIsEmailVerified(true);
@@ -152,20 +152,17 @@ export default function SignupScreen() {
   };
 
   const handleCheckNickname = async () => {
-    // 개발 모드
     setIsNicknameVerified(true);
     Alert.alert('개발 모드', '사용 가능한 닉네임으로 처리합니다.');
   };
 
   const handleSignup = async () => {
-    // 개발 모드
     Alert.alert('개발 모드', '회원가입이 완료된 것으로 처리합니다.', [
       { text: '확인', onPress: () => navigation.navigate('Login') },
     ]);
   };
 
   // --- 단계 이동 로직 ---
-
   const handleNextStep = () => {
     if (step < 4) {
       setStep(step + 1);
@@ -188,11 +185,17 @@ export default function SignupScreen() {
     return { hasMinLength, hasCombination };
   }, [form.password]);
 
-  // --- UI 렌더링 ---
+  // 비밀번호 일치 여부 확인 로직
+  const isPasswordMatch = useMemo(() => {
+    return (
+      form.confirmPassword.length > 0 && form.password === form.confirmPassword
+    );
+  }, [form.password, form.confirmPassword]);
 
+  // --- UI 렌더링 ---
   return (
     <SafeAreaView style={styles.container}>
-      {/* 1. Header: 상단 고정 */}
+      {/* 1. Header */}
       <View style={styles.header}>
         <View style={styles.stepIndicator}>
           <Text style={styles.stepText}>
@@ -201,7 +204,7 @@ export default function SignupScreen() {
         </View>
       </View>
 
-      {/* 2. Content: 입력 폼 영역 */}
+      {/* 2. Content */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
@@ -228,13 +231,19 @@ export default function SignupScreen() {
                 <Text style={styles.label}>이메일</Text>
                 <View style={styles.inlineInputContainer}>
                   <TextInput
-                    style={[styles.input, styles.flex1]}
+                    style={[
+                      styles.input,
+                      styles.flex1,
+                      focusedField === 'email' && styles.inputFocused,
+                    ]}
                     placeholder="example@email.com"
                     placeholderTextColor={COLORS.darkGray}
                     value={form.email}
                     onChangeText={v => handleChange('email', v)}
                     keyboardType="email-address"
                     autoCapitalize="none"
+                    onFocus={() => setFocusedField('email')}
+                    onBlur={() => setFocusedField(null)}
                   />
                   <Pressable
                     style={styles.inlineButton}
@@ -256,6 +265,8 @@ export default function SignupScreen() {
                         styles.input,
                         styles.flex1,
                         styles.codeInputWrapper,
+                        focusedField === 'verificationCode' &&
+                          styles.inputFocused,
                       ]}
                     >
                       <TextInput
@@ -267,6 +278,8 @@ export default function SignupScreen() {
                         keyboardType="number-pad"
                         maxLength={6}
                         editable={!isLoading}
+                        onFocus={() => setFocusedField('verificationCode')}
+                        onBlur={() => setFocusedField(null)}
                       />
                       <Text style={styles.timerText}>
                         {formatTime(timeLeft)}
@@ -296,7 +309,12 @@ export default function SignupScreen() {
               </Text>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>비밀번호</Text>
-                <View style={styles.passwordContainer}>
+                <View
+                  style={[
+                    styles.passwordContainer,
+                    focusedField === 'password' && styles.inputFocused,
+                  ]}
+                >
                   <TextInput
                     style={styles.passwordInput}
                     value={form.password}
@@ -304,6 +322,8 @@ export default function SignupScreen() {
                     placeholderTextColor={COLORS.darkGray}
                     onChangeText={v => handleChange('password', v)}
                     secureTextEntry={!isPasswordVisible}
+                    onFocus={() => setFocusedField('password')}
+                    onBlur={() => setFocusedField(null)}
                   />
                   <TouchableOpacity
                     style={styles.eyeIcon}
@@ -326,7 +346,12 @@ export default function SignupScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>비밀번호 확인</Text>
-                <View style={styles.passwordContainer}>
+                <View
+                  style={[
+                    styles.passwordContainer,
+                    focusedField === 'confirmPassword' && styles.inputFocused,
+                  ]}
+                >
                   <TextInput
                     style={styles.passwordInput}
                     value={form.confirmPassword}
@@ -334,6 +359,8 @@ export default function SignupScreen() {
                     placeholderTextColor={COLORS.darkGray}
                     onChangeText={v => handleChange('confirmPassword', v)}
                     secureTextEntry={!isConfirmPasswordVisible}
+                    onFocus={() => setFocusedField('confirmPassword')}
+                    onBlur={() => setFocusedField(null)}
                   />
                   <TouchableOpacity
                     style={styles.eyeIcon}
@@ -341,6 +368,13 @@ export default function SignupScreen() {
                   >
                     <Text>{isConfirmPasswordVisible ? '🙈' : '👁️'}</Text>
                   </TouchableOpacity>
+                </View>
+                {/* [수정] 문구 변경: "비밀번호가 일치합니다" -> "비밀번호 일치" */}
+                <View style={styles.requirementsContainer}>
+                  <PasswordRequirement
+                    met={isPasswordMatch}
+                    label="비밀번호 일치"
+                  />
                 </View>
               </View>
             </>
@@ -356,12 +390,18 @@ export default function SignupScreen() {
                 <Text style={styles.label}>닉네임</Text>
                 <View style={styles.inlineInputContainer}>
                   <TextInput
-                    style={[styles.input, styles.flex1]}
+                    style={[
+                      styles.input,
+                      styles.flex1,
+                      focusedField === 'nickname' && styles.inputFocused,
+                    ]}
                     placeholder="플랜메이트"
                     placeholderTextColor={COLORS.darkGray}
                     value={form.nickname}
                     onChangeText={v => handleChange('nickname', v)}
                     editable={!isLoading}
+                    onFocus={() => setFocusedField('nickname')}
+                    onBlur={() => setFocusedField(null)}
                   />
                   <Pressable
                     style={styles.inlineButton}
@@ -385,12 +425,17 @@ export default function SignupScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>나이</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    focusedField === 'age' && styles.inputFocused,
+                  ]}
                   value={form.age}
                   onChangeText={v => handleChange('age', v)}
                   keyboardType="number-pad"
                   placeholder="25"
                   placeholderTextColor={COLORS.darkGray}
+                  onFocus={() => setFocusedField('age')}
+                  onBlur={() => setFocusedField(null)}
                 />
               </View>
 
@@ -438,7 +483,7 @@ export default function SignupScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* 3. Footer: 하단 고정 */}
+      {/* 3. Footer */}
       <View style={styles.footer}>
         {step < 4 ? (
           <Pressable style={styles.submitButton} onPress={handleNextStep}>
@@ -474,7 +519,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingHorizontal: normalize(20),
-    paddingTop: normalize(20), // 상태바 겹침 방지 여백
+    paddingTop: normalize(20),
     paddingBottom: normalize(10),
     marginTop: normalize(10),
   },
@@ -494,7 +539,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.primary,
   },
-  scrollContainer: { padding: normalize(24), paddingBottom: normalize(100) }, // 하단 여백 추가
+  scrollContainer: { padding: normalize(24), paddingBottom: normalize(100) },
   title: {
     fontSize: normalize(28),
     fontWeight: 'bold',
@@ -527,7 +572,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 10,
     elevation: 8,
-    color: COLORS.text, // 색상 추가
+    color: COLORS.text,
+  },
+  inputFocused: {
+    borderColor: COLORS.primary,
+    borderWidth: 2,
   },
   inlineInputContainer: {
     flexDirection: 'row',
@@ -565,7 +614,7 @@ const styles = StyleSheet.create({
     fontSize: normalize(16),
     padding: 0,
     color: COLORS.text,
-  }, // 색상 추가
+  },
   timerText: {
     color: COLORS.error,
     fontWeight: 'bold',
@@ -590,7 +639,7 @@ const styles = StyleSheet.create({
     height: '100%',
     paddingHorizontal: normalize(16),
     fontSize: normalize(16),
-    color: COLORS.text, // 색상 추가
+    color: COLORS.text,
   },
   eyeIcon: { padding: normalize(16) },
   requirementsContainer: {
