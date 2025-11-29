@@ -161,25 +161,34 @@ export default function SignupScreen() {
     }
   };
 
-  // 2. 인증 번호 확인 [수정됨]
+  // 2. 인증 번호 확인
   const handleVerifyCode = async () => {
     if (!form.verificationCode)
       return Alert.alert('알림', '인증 번호를 입력해주세요.');
 
     setIsLoading(true);
     try {
+      console.log('Sending verify request:', {
+        email: form.email,
+        code: form.verificationCode,
+        purpose: 'SIGN_UP',
+      });
+
       const response = await axios.post(
         `${API_URL}/api/auth/email/verification/confirm`,
         {
           email: form.email,
-          verificationCode: parseInt(form.verificationCode, 10), // 숫자로 변환
+          verificationCode: parseInt(form.verificationCode, 10),
           purpose: 'SIGN_UP',
         },
       );
 
+      console.log('Verify Response Data:', response.data);
+
       if (response.status === 200) {
-        // [수정 핵심] 백엔드 DTO(EmailVerificationResponse)의 필드명은 'token'입니다.
         const token = response.data.token;
+
+        console.log('Extracted Token:', token);
 
         if (token) {
           setEmailAuthToken(token);
@@ -187,11 +196,15 @@ export default function SignupScreen() {
           setIsTimerActive(false);
           Alert.alert('성공', '이메일 인증이 완료되었습니다.');
         } else {
-          console.log('Token not found in response:', response.data);
+          console.error('Token is missing in response!');
           Alert.alert('오류', '서버에서 인증 토큰을 받지 못했습니다.');
         }
       }
     } catch (error: any) {
+      console.error(
+        'Verify Error:',
+        error.response ? error.response.data : error,
+      );
       const msg =
         error.response?.data?.message || '인증 번호가 올바르지 않습니다.';
       Alert.alert('인증 실패', msg);
@@ -200,21 +213,37 @@ export default function SignupScreen() {
     }
   };
 
-  // 3. 닉네임 중복 확인
+  // 3. 닉네임 중복 확인 (수정됨)
   const handleCheckNickname = async () => {
-    if (!form.nickname) return Alert.alert('알림', '닉네임을 입력해주세요.');
-
+    if (!form.nickname) {
+      Alert.alert('알림', '닉네임을 입력해주세요.');
+      return;
+    }
     setIsLoading(true);
     try {
-      await axios.post(`${API_URL}/api/auth/register/nickname/verify`, {
-        nickname: form.nickname,
-      });
-      setIsNicknameVerified(true);
-      Alert.alert('사용 가능', '사용 가능한 닉네임입니다.');
+      // [수정] 백엔드 API 주소 변경: /api/auth/register/nickname/verify
+      // 이 주소는 AuthWhitelist에 등록되어 있어 토큰 없이 호출 가능합니다.
+      const response = await axios.post(
+        `${API_URL}/api/auth/register/nickname/verify`,
+        {
+          nickname: form.nickname,
+        },
+      );
+
+      // 백엔드 응답이 성공(200 OK)이면 사용 가능한 닉네임임
+      // (중복이면 예외가 발생하여 catch 블록으로 이동함)
+      if (response.status === 200) {
+        setIsNicknameVerified(true);
+        Alert.alert('확인 완료', '사용 가능한 닉네임입니다.');
+      }
     } catch (error: any) {
-      setIsNicknameVerified(false);
+      console.error('Nickname Check Error:', error);
+
+      // 중복된 닉네임일 경우 백엔드에서 409 Conflict 또는 400 Bad Request 등을 보냄
       const msg =
         error.response?.data?.message || '이미 사용 중인 닉네임입니다.';
+
+      setIsNicknameVerified(false);
       Alert.alert('사용 불가', msg);
     } finally {
       setIsLoading(false);
@@ -227,29 +256,27 @@ export default function SignupScreen() {
       return Alert.alert('알림', '이메일 인증을 완료해주세요.');
     if (!isNicknameVerified)
       return Alert.alert('알림', '닉네임 중복 확인을 해주세요.');
-    if (!form.password || !form.confirmPassword)
-      return Alert.alert('알림', '비밀번호를 입력해주세요.');
-    if (form.password !== form.confirmPassword)
-      return Alert.alert('오류', '비밀번호가 일치하지 않습니다.');
-    if (
-      !passwordRequirements.hasMinLength ||
-      !passwordRequirements.hasCombination
-    ) {
-      return Alert.alert('오류', '비밀번호 요구사항을 충족해주세요.');
-    }
-    if (!form.age || !form.gender)
-      return Alert.alert('알림', '나이와 성별을 선택해주세요.');
 
     setIsLoading(true);
     try {
-      const genderInt = form.gender === 'male' ? 1 : 2;
+      const genderInt = form.gender === 'male' ? 0 : 1;
 
-      // 헤더에 토큰 설정
-      const headers = emailAuthToken
-        ? { Authorization: `Bearer ${emailAuthToken}` }
-        : undefined;
+      if (!emailAuthToken) {
+        Alert.alert(
+          '오류',
+          '이메일 인증 토큰이 없습니다. 인증을 다시 진행해주세요.',
+        );
+        return;
+      }
 
-      console.log('Signup Request Headers:', headers); // 디버깅용 로그
+      const headers = { Authorization: `Bearer ${emailAuthToken}` };
+      console.log('Signup Request Headers:', headers);
+      console.log('Signup Request Body:', {
+        nickname: form.nickname,
+        password: form.password,
+        gender: genderInt,
+        age: parseInt(form.age, 10),
+      });
 
       const response = await axios.post(
         `${API_URL}/api/auth/register`,
@@ -268,16 +295,24 @@ export default function SignupScreen() {
         ]);
       }
     } catch (error: any) {
-      console.error('Signup Error:', error);
-      // 401 에러 구체화
-      if (error.response?.status === 401) {
-        Alert.alert(
-          '가입 실패',
-          '인증 세션이 만료되었습니다. 이메일 인증을 다시 진행해주세요.',
-        );
+      console.error('Signup Error Full:', error);
+      if (error.response) {
+        console.log('Error Status:', error.response.status);
+        console.log('Error Data:', error.response.data);
+
+        if (error.response.status === 401 || error.response.status === 403) {
+          Alert.alert(
+            '가입 실패',
+            '인증 세션(토큰) 문제로 가입이 거부되었습니다. 처음부터 다시 시도해주세요.',
+          );
+        } else {
+          const msg =
+            error.response.data?.message ||
+            '회원가입 요청 중 오류가 발생했습니다.';
+          Alert.alert('가입 실패', msg);
+        }
       } else {
-        const msg = error.response?.data?.message || '회원가입에 실패했습니다.';
-        Alert.alert('가입 실패', msg);
+        Alert.alert('가입 실패', '네트워크 오류가 발생했습니다.');
       }
     } finally {
       setIsLoading(false);

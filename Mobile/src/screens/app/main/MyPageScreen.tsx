@@ -1,5 +1,4 @@
-// src/screens/app/main/MyPageScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,7 +8,11 @@ import {
   ScrollView,
   Pressable,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import axios from 'axios';
+import { API_URL } from '@env';
 import { useAuth } from '../../../contexts/AuthContext';
 import UpdateValueModal from '../../../components/common/UpdateValueModal';
 import UpdateGenderModal from '../../../components/common/UpdateGenderModal';
@@ -28,6 +31,7 @@ const COLORS = {
   lightGray: '#F0F2F5',
 };
 
+// --- 컴포넌트들 ---
 const InfoCard = ({
   icon,
   label,
@@ -125,31 +129,117 @@ const ItineraryCard = ({
   </TouchableOpacity>
 );
 
+// --- 타입 정의 ---
+interface PlanVO {
+  planId: number;
+  planName: string;
+}
+
+interface PreferredThemeVO {
+  preferredThemeId: number;
+  preferredThemeName: string;
+}
+
 export default function MyPageScreen() {
   const { logout } = useAuth();
+
+  // 모달 상태
   const [isAgeModalVisible, setAgeModalVisible] = useState(false);
   const [isGenderModalVisible, setGenderModalVisible] = useState(false);
   const [isThemeModalVisible, setThemeModalVisible] = useState(false);
   const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
 
+  // 사용자 데이터 상태
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState({
-    name: '민영',
-    email: '미설정',
-    age: '미설정',
-    gender: '미설정',
-    preferredTheme: '미설정',
+    name: '',
+    email: '',
+    age: '',
+    gender: '',
+    preferredTheme: '',
   });
 
-  const handleUpdateAge = (newAge: string) => {
-    setUser(currentUser => ({ ...currentUser, age: newAge || '미설정' }));
+  // 일정 데이터 상태
+  const [myItineraries, setMyItineraries] = useState<PlanVO[]>([]);
+  const [sharedItineraries, setSharedItineraries] = useState<PlanVO[]>([]);
+
+  // 화면이 포커스될 때마다 데이터 갱신
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserProfile();
+    }, []),
+  );
+
+  const fetchUserProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/api/user/profile`);
+      const data = response.data;
+
+      console.log('User Profile Data:', data);
+
+      // [수정] 성별 변환 (0: 남성, 1: 여성)
+      let genderStr = '미설정';
+      if (data.gender === 0) genderStr = '남성';
+      else if (data.gender === 1) genderStr = '여성';
+
+      // 선호 테마 변환
+      const themes =
+        data.preferredThemes && data.preferredThemes.length > 0
+          ? data.preferredThemes
+              .map((t: PreferredThemeVO) => t.preferredThemeName)
+              .join(', ')
+          : '미설정';
+
+      setUser({
+        name: data.nickname || '이름 없음',
+        email: data.email || '',
+        age: data.age ? data.age.toString() : '미설정',
+        gender: genderStr,
+        preferredTheme: themes,
+      });
+
+      setMyItineraries(data.myPlanVOs || []);
+      setSharedItineraries(data.editablePlanVOs || []);
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+      Alert.alert('오류', '사용자 정보를 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleUpdateGender = (newGender: string) => {
-    setUser(currentUser => ({ ...currentUser, gender: newGender }));
+  // --- 변경 핸들러 ---
+
+  const handleUpdateAge = async (newAge: string) => {
+    try {
+      await axios.patch(`${API_URL}/api/user/age`, {
+        age: parseInt(newAge, 10),
+      });
+      setUser(prev => ({ ...prev, age: newAge }));
+      Alert.alert('성공', '나이가 변경되었습니다.');
+    } catch (e) {
+      Alert.alert('실패', '나이 변경에 실패했습니다.');
+    }
   };
 
-  const handleUpdateTheme = () => {
-    setUser(currentUser => ({ ...currentUser, preferredTheme: '테마1' }));
+  const handleUpdateGender = async (newGender: string) => {
+    // [수정] newGender: 'male' | 'female' -> 서버: 0 | 1
+    try {
+      const genderInt = newGender === 'male' ? 0 : 1;
+      await axios.patch(`${API_URL}/api/user/gender`, { gender: genderInt });
+      setUser(prev => ({
+        ...prev,
+        gender: newGender === 'male' ? '남성' : '여성',
+      }));
+      Alert.alert('성공', '성별이 변경되었습니다.');
+    } catch (e) {
+      Alert.alert('실패', '성별 변경에 실패했습니다.');
+    }
+  };
+
+  const handleUpdateTheme = async () => {
+    fetchUserProfile(); // 테마 변경 후 프로필 다시 로드
     Alert.alert('완료', '선호 테마가 변경되었습니다.');
   };
 
@@ -158,12 +248,36 @@ export default function MyPageScreen() {
     Alert.alert('완료', '비밀번호가 성공적으로 변경되었습니다.');
   };
 
-  const myItineraries = [
-    { id: '1', title: '나의 일정 3', subtitle: '클릭하여 상세보기' },
-    { id: '2', title: '나의 일정 2', subtitle: '클릭하여 상세보기' },
-  ];
+  // 회원 탈퇴
+  const handleResign = () => {
+    Alert.alert(
+      '회원 탈퇴',
+      '정말로 탈퇴하시겠습니까? 모든 데이터가 삭제됩니다.',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '탈퇴',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await axios.delete(`${API_URL}/api/user/account`);
+              logout();
+            } catch (e) {
+              Alert.alert('오류', '탈퇴 처리에 실패했습니다.');
+            }
+          },
+        },
+      ],
+    );
+  };
 
-  const sharedItineraries: any[] = [];
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -222,11 +336,11 @@ export default function MyPageScreen() {
 
         {myItineraries.map(item => (
           <ItineraryCard
-            key={item.id}
-            title={item.title}
-            subtitle={item.subtitle}
-            onPress={() => alert(`${item.title} 상세보기`)}
-            onPressMore={() => alert(`${item.title} 더보기`)}
+            key={item.planId}
+            title={item.planName}
+            subtitle="클릭하여 상세보기"
+            onPress={() => alert(`${item.planName} 상세보기`)}
+            onPressMore={() => alert(`${item.planName} 더보기`)}
           />
         ))}
 
@@ -247,11 +361,11 @@ export default function MyPageScreen() {
         ) : (
           sharedItineraries.map(item => (
             <ItineraryCard
-              key={item.id}
-              title={item.title}
-              subtitle={item.subtitle}
-              onPress={() => alert(`${item.title} 상세보기`)}
-              onPressMore={() => alert(`${item.title} 더보기`)}
+              key={item.planId}
+              title={item.planName}
+              subtitle="클릭하여 상세보기"
+              onPress={() => alert(`${item.planName} 상세보기`)}
+              onPressMore={() => alert(`${item.planName} 더보기`)}
             />
           ))
         )}
@@ -260,7 +374,7 @@ export default function MyPageScreen() {
           <Pressable onPress={logout}>
             <Text style={styles.linkText}>로그아웃</Text>
           </Pressable>
-          <Pressable onPress={() => alert('탈퇴하기')}>
+          <Pressable onPress={handleResign}>
             <Text style={[styles.linkText, styles.deleteLinkText]}>
               탈퇴하기
             </Text>
@@ -282,7 +396,8 @@ export default function MyPageScreen() {
         visible={isGenderModalVisible}
         onClose={() => setGenderModalVisible(false)}
         onConfirm={handleUpdateGender}
-        initialValue={user.gender}
+        // 초기값: 남성일 때 'male', 여성일 때 'female'
+        initialValue={user.gender === '남성' ? 'male' : 'female'}
       />
 
       <UpdateThemeModal
@@ -304,6 +419,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollContainer: {
     paddingHorizontal: 20,
