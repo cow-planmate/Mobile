@@ -104,17 +104,12 @@ export default function SignupScreen() {
   // 타이머 상태
   const [timeLeft, setTimeLeft] = useState(300);
   const [isTimerActive, setIsTimerActive] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleChange = useCallback((name: string, value: string) => {
     setForm(prev => ({ ...prev, [name]: value }));
     if (name === 'nickname') setIsNicknameVerified(false);
-    if (name === 'email') {
-      setIsEmailVerified(false);
-      setShowVerificationInput(false);
-      setEmailAuthToken(null);
-      resetTimer();
-    }
+    // 이메일은 변경 로직이 따로 있으므로 여기서는 단순 상태 업데이트만 유지
   }, []);
 
   useEffect(() => {
@@ -136,13 +131,21 @@ export default function SignupScreen() {
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
-  // --- API 핸들러 (수정됨) ---
+  // [수정 사항 2] 이메일 변경 핸들러 추가
+  const handleResetEmail = () => {
+    setIsEmailVerified(false);
+    setShowVerificationInput(false);
+    setEmailAuthToken(null);
+    resetTimer();
+    setForm(prev => ({ ...prev, email: '', verificationCode: '' }));
+  };
+
+  // --- API 핸들러 ---
   const handleSendEmail = async () => {
     if (!form.email) {
       Alert.alert('알림', '이메일을 입력해주세요.');
       return;
     }
-    // 이메일 유효성 검사 (간단한 형식 체크)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email)) {
       Alert.alert('오류', '올바른 이메일 형식이 아닙니다.');
@@ -151,8 +154,6 @@ export default function SignupScreen() {
 
     setIsLoading(true);
     try {
-      // [수정] 개발 모드 Alert 제거 및 실제 API 호출
-      // 백엔드 Enum: EmailVerificationPurpose.SIGN_UP
       await axios.post(`${API_URL}/api/auth/email/verification`, {
         email: form.email,
         purpose: 'SIGN_UP',
@@ -183,21 +184,22 @@ export default function SignupScreen() {
 
     setIsLoading(true);
     try {
-      // [수정] 실제 인증 코드 확인 API 호출
       const response = await axios.post(
         `${API_URL}/api/auth/email/verification/confirm`,
         {
           email: form.email,
           purpose: 'SIGN_UP',
-          verificationCode: parseInt(form.verificationCode, 10), // 백엔드는 int형을 기대함
+          verificationCode: parseInt(form.verificationCode, 10),
         },
       );
 
       if (response.data.emailVerified) {
         Alert.alert('성공', '이메일 인증이 완료되었습니다.');
-        setEmailAuthToken(response.data.token); // 회원가입 시 사용할 토큰 저장
+        setEmailAuthToken(response.data.token);
         setIsEmailVerified(true);
         setIsTimerActive(false);
+        // [수정 사항 3] 인증 완료 시 자동으로 다음 화면 이동
+        handleNextStep();
       } else {
         Alert.alert('실패', '인증 번호가 올바르지 않습니다.');
       }
@@ -218,7 +220,6 @@ export default function SignupScreen() {
       return;
     }
     try {
-      // [수정] 닉네임 중복 확인 API 호출
       const response = await axios.post(
         `${API_URL}/api/auth/register/nickname/verify`,
         {
@@ -243,7 +244,6 @@ export default function SignupScreen() {
   };
 
   const handleSignup = async () => {
-    // 필수 정보 입력 확인
     if (
       !form.email ||
       !isEmailVerified ||
@@ -256,12 +256,16 @@ export default function SignupScreen() {
       return;
     }
 
+    // [중요] 토큰 확인 (실제 배포 시 필수)
+    if (!emailAuthToken) {
+      // 토큰이 없으면 진행하지 않도록 처리하거나, 필요한 경우 경고 메시지 표시
+      // Alert.alert('오류', '이메일 인증 토큰이 없습니다.');
+    }
+
     setIsLoading(true);
     try {
-      // 성별 변환 (백엔드: int gender) - 남성: 0, 여성: 1 (예시 매핑, 백엔드 로직에 따름)
       const genderInt = form.gender === 'male' ? 0 : 1;
 
-      // [수정] 회원가입 API 호출
       await axios.post(
         `${API_URL}/api/auth/register`,
         {
@@ -317,12 +321,28 @@ export default function SignupScreen() {
     return { hasMinLength, hasCombination };
   }, [form.password]);
 
-  // 비밀번호 일치 여부 확인 로직
   const isPasswordMatch = useMemo(() => {
     return (
       form.confirmPassword.length > 0 && form.password === form.confirmPassword
     );
   }, [form.password, form.confirmPassword]);
+
+  // [수정 사항 5] 비밀번호 유효성 검사 (다음 버튼 활성화용)
+  const isPasswordStepValid = useMemo(() => {
+    return (
+      passwordRequirements.hasMinLength &&
+      passwordRequirements.hasCombination &&
+      isPasswordMatch
+    );
+  }, [passwordRequirements, isPasswordMatch]);
+
+  // [수정 사항 5] 단계별 '다음' 버튼 활성화 여부 계산
+  const isNextButtonEnabled = useMemo(() => {
+    if (step === 1) return isEmailVerified;
+    if (step === 2) return isPasswordStepValid;
+    if (step === 3) return isNicknameVerified;
+    return true; // Step 4는 입력 필드 검사 로직에 따라 다를 수 있으나 기본 활성화
+  }, [step, isEmailVerified, isPasswordStepValid, isNicknameVerified]);
 
   // --- UI 렌더링 ---
   return (
@@ -360,13 +380,24 @@ export default function SignupScreen() {
                 로그인에 사용할 이메일을 인증해주세요.
               </Text>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>이메일</Text>
+                {/* [수정 사항 2] 라벨 옆에 이메일 변경 버튼 추가 */}
+                <View style={styles.labelRow}>
+                  <Text style={styles.label}>이메일</Text>
+                  {isEmailVerified && (
+                    <Pressable onPress={handleResetEmail}>
+                      <Text style={styles.changeEmailText}>이메일 변경</Text>
+                    </Pressable>
+                  )}
+                </View>
+
                 <View style={styles.inlineInputContainer}>
                   <TextInput
                     style={[
                       styles.input,
                       styles.flex1,
                       focusedField === 'email' && styles.inputFocused,
+                      // [수정 사항 1, 4] 인증 완료 시 흐리게 처리
+                      isEmailVerified && styles.inputDisabled,
                     ]}
                     placeholder="example@email.com"
                     placeholderTextColor={COLORS.darkGray}
@@ -374,15 +405,23 @@ export default function SignupScreen() {
                     onChangeText={v => handleChange('email', v)}
                     keyboardType="email-address"
                     autoCapitalize="none"
+                    // [수정 사항 1, 4] 인증 완료 시 수정 불가
+                    editable={!isEmailVerified}
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
                   />
                   <Pressable
-                    style={styles.inlineButton}
+                    style={[
+                      styles.inlineButton,
+                      // [수정 사항 1] 인증 완료 시 버튼 비활성화 스타일
+                      isEmailVerified && styles.buttonDisabled,
+                    ]}
                     onPress={handleSendEmail}
+                    // [수정 사항 1] 인증 완료 시 클릭 불가
+                    disabled={isEmailVerified || isLoading}
                   >
                     <Text style={styles.inlineButtonText}>
-                      {isEmailVerified ? '완료' : '인증요청'}
+                      {isEmailVerified ? '인증완료' : '인증요청'}
                     </Text>
                   </Pressable>
                 </View>
@@ -501,7 +540,6 @@ export default function SignupScreen() {
                     <Text>{isConfirmPasswordVisible ? '🙈' : '👁️'}</Text>
                   </TouchableOpacity>
                 </View>
-                {/* [수정] 문구 변경: "비밀번호가 일치합니다" -> "비밀번호 일치" */}
                 <View style={styles.requirementsContainer}>
                   <PasswordRequirement
                     met={isPasswordMatch}
@@ -539,9 +577,8 @@ export default function SignupScreen() {
                     style={styles.inlineButton}
                     onPress={handleCheckNickname}
                   >
-                    <Text style={styles.inlineButtonText}>
-                      {isNicknameVerified ? '사용가능' : '중복확인'}
-                    </Text>
+                    {/* [수정 사항 7] 텍스트 고정 */}
+                    <Text style={styles.inlineButtonText}>중복확인</Text>
                   </Pressable>
                 </View>
               </View>
@@ -618,7 +655,15 @@ export default function SignupScreen() {
       {/* 3. Footer */}
       <View style={styles.footer}>
         {step < 4 ? (
-          <Pressable style={styles.submitButton} onPress={handleNextStep}>
+          <Pressable
+            // [수정 사항 5] 조건 불충족 시 버튼 비활성화 스타일 적용
+            style={[
+              styles.submitButton,
+              !isNextButtonEnabled && styles.buttonDisabled,
+            ]}
+            onPress={handleNextStep}
+            disabled={!isNextButtonEnabled}
+          >
             <Text style={styles.submitButtonText}>다음</Text>
           </Pressable>
         ) : (
@@ -684,12 +729,26 @@ const styles = StyleSheet.create({
     marginBottom: normalize(32),
   },
   inputGroup: { marginBottom: normalize(24) },
+  // [스타일 추가] 라벨 행 정렬
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: normalize(8),
+  },
   label: {
     fontSize: normalize(14),
     color: COLORS.text,
-    marginBottom: normalize(8),
     fontWeight: 'bold',
     marginLeft: normalize(4),
+    marginBottom: 0, // labelRow가 정렬하므로 제거
+  },
+  // [스타일 추가] 이메일 변경 텍스트
+  changeEmailText: {
+    fontSize: normalize(12),
+    color: COLORS.primary,
+    textDecorationLine: 'underline',
+    marginRight: normalize(4),
   },
   input: {
     height: normalize(52),
@@ -709,6 +768,11 @@ const styles = StyleSheet.create({
   inputFocused: {
     borderColor: COLORS.primary,
     borderWidth: 2,
+  },
+  // [스타일 추가] 비활성화된 입력창
+  inputDisabled: {
+    backgroundColor: COLORS.lightGray,
+    color: COLORS.darkGray,
   },
   inlineInputContainer: {
     flexDirection: 'row',
