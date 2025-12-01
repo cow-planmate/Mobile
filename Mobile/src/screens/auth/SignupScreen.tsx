@@ -20,12 +20,14 @@ import {
   Platform,
   KeyboardAvoidingView,
   ScrollView,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { API_URL } from '@env';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const normalize = (size: number) =>
   Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
 
@@ -39,6 +41,7 @@ const COLORS = {
   success: '#34C759',
   error: '#FF3B30',
   lightBlue: '#e6f0ff',
+  modalBackground: 'rgba(0, 0, 0, 0.5)',
 };
 
 const PasswordRequirement = React.memo(
@@ -70,10 +73,12 @@ const formatTime = (seconds: number) => {
   return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 };
 
+// [수정 사항 2] 나이 선택을 위한 데이터 생성 (1~100세)
+const AGE_OPTIONS = Array.from({ length: 100 }, (_, i) => (i + 1).toString());
+
 export default function SignupScreen() {
   const navigation = useNavigation<any>();
 
-  // 단계 관리 (1: 이메일, 2: 비밀번호, 3: 닉네임, 4: 정보)
   const [step, setStep] = useState(1);
   const totalSteps = 4;
 
@@ -98,10 +103,12 @@ export default function SignupScreen() {
   const [isNicknameVerified, setIsNicknameVerified] = useState(false);
   const [emailAuthToken, setEmailAuthToken] = useState<string | null>(null);
 
+  // [수정 사항 2] 나이 선택 모달 상태
+  const [isAgeModalVisible, setAgeModalVisible] = useState(false);
+
   // 포커스 상태 관리
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  // 타이머 상태
   const [timeLeft, setTimeLeft] = useState(300);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -109,7 +116,6 @@ export default function SignupScreen() {
   const handleChange = useCallback((name: string, value: string) => {
     setForm(prev => ({ ...prev, [name]: value }));
     if (name === 'nickname') setIsNicknameVerified(false);
-    // 이메일은 변경 로직이 따로 있으므로 여기서는 단순 상태 업데이트만 유지
   }, []);
 
   useEffect(() => {
@@ -131,7 +137,6 @@ export default function SignupScreen() {
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
-  // [수정 사항 2] 이메일 변경 핸들러 추가
   const handleResetEmail = () => {
     setIsEmailVerified(false);
     setShowVerificationInput(false);
@@ -198,8 +203,7 @@ export default function SignupScreen() {
         setEmailAuthToken(response.data.token);
         setIsEmailVerified(true);
         setIsTimerActive(false);
-        // [수정 사항 3] 인증 완료 시 자동으로 다음 화면 이동
-        handleNextStep();
+        // [수정 사항 4] 인증 완료 시 자동 이동 동작 제거함
       } else {
         Alert.alert('실패', '인증 번호가 올바르지 않습니다.');
       }
@@ -256,9 +260,14 @@ export default function SignupScreen() {
       return;
     }
 
-    // [중요] 토큰 확인 (실제 배포 시 필수)
+    // [수정 사항 1] 나이 유효성 검사 (안전을 위해 추가)
+    const ageNum = parseInt(form.age, 10);
+    if (isNaN(ageNum) || ageNum <= 0 || ageNum > 120) {
+      Alert.alert('오류', '올바른 나이를 선택해주세요.');
+      return;
+    }
+
     if (!emailAuthToken) {
-      // 토큰이 없으면 진행하지 않도록 처리하거나, 필요한 경우 경고 메시지 표시
       // Alert.alert('오류', '이메일 인증 토큰이 없습니다.');
     }
 
@@ -272,7 +281,7 @@ export default function SignupScreen() {
           nickname: form.nickname,
           password: form.password,
           gender: genderInt,
-          age: parseInt(form.age, 10),
+          age: ageNum,
         },
         {
           headers: {
@@ -327,7 +336,6 @@ export default function SignupScreen() {
     );
   }, [form.password, form.confirmPassword]);
 
-  // [수정 사항 5] 비밀번호 유효성 검사 (다음 버튼 활성화용)
   const isPasswordStepValid = useMemo(() => {
     return (
       passwordRequirements.hasMinLength &&
@@ -336,13 +344,18 @@ export default function SignupScreen() {
     );
   }, [passwordRequirements, isPasswordMatch]);
 
-  // [수정 사항 5] 단계별 '다음' 버튼 활성화 여부 계산
   const isNextButtonEnabled = useMemo(() => {
     if (step === 1) return isEmailVerified;
     if (step === 2) return isPasswordStepValid;
     if (step === 3) return isNicknameVerified;
-    return true; // Step 4는 입력 필드 검사 로직에 따라 다를 수 있으나 기본 활성화
+    return true;
   }, [step, isEmailVerified, isPasswordStepValid, isNicknameVerified]);
+
+  // --- 나이 선택 핸들러 ---
+  const handleSelectAge = (selectedAge: string) => {
+    handleChange('age', selectedAge);
+    setAgeModalVisible(false);
+  };
 
   // --- UI 렌더링 ---
   return (
@@ -380,9 +393,11 @@ export default function SignupScreen() {
                 로그인에 사용할 이메일을 인증해주세요.
               </Text>
               <View style={styles.inputGroup}>
-                {/* [수정 사항 2] 라벨 옆에 이메일 변경 버튼 추가 */}
                 <View style={styles.labelRow}>
-                  <Text style={styles.label}>이메일</Text>
+                  {/* [수정 사항 3] 이메일 라벨은 부모(row)가 마진을 가지므로 자체 마진 제거 */}
+                  <Text style={[styles.label, { marginBottom: 0 }]}>
+                    이메일
+                  </Text>
                   {isEmailVerified && (
                     <Pressable onPress={handleResetEmail}>
                       <Text style={styles.changeEmailText}>이메일 변경</Text>
@@ -396,7 +411,6 @@ export default function SignupScreen() {
                       styles.input,
                       styles.flex1,
                       focusedField === 'email' && styles.inputFocused,
-                      // [수정 사항 1, 4] 인증 완료 시 흐리게 처리
                       isEmailVerified && styles.inputDisabled,
                     ]}
                     placeholder="example@email.com"
@@ -405,7 +419,6 @@ export default function SignupScreen() {
                     onChangeText={v => handleChange('email', v)}
                     keyboardType="email-address"
                     autoCapitalize="none"
-                    // [수정 사항 1, 4] 인증 완료 시 수정 불가
                     editable={!isEmailVerified}
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
@@ -413,11 +426,9 @@ export default function SignupScreen() {
                   <Pressable
                     style={[
                       styles.inlineButton,
-                      // [수정 사항 1] 인증 완료 시 버튼 비활성화 스타일
                       isEmailVerified && styles.buttonDisabled,
                     ]}
                     onPress={handleSendEmail}
-                    // [수정 사항 1] 인증 완료 시 클릭 불가
                     disabled={isEmailVerified || isLoading}
                   >
                     <Text style={styles.inlineButtonText}>
@@ -577,7 +588,6 @@ export default function SignupScreen() {
                     style={styles.inlineButton}
                     onPress={handleCheckNickname}
                   >
-                    {/* [수정 사항 7] 텍스트 고정 */}
                     <Text style={styles.inlineButtonText}>중복확인</Text>
                   </Pressable>
                 </View>
@@ -593,19 +603,20 @@ export default function SignupScreen() {
               </Text>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>나이</Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    focusedField === 'age' && styles.inputFocused,
-                  ]}
-                  value={form.age}
-                  onChangeText={v => handleChange('age', v)}
-                  keyboardType="number-pad"
-                  placeholder="25"
-                  placeholderTextColor={COLORS.darkGray}
-                  onFocus={() => setFocusedField('age')}
-                  onBlur={() => setFocusedField(null)}
-                />
+                {/* [수정 사항 2] 텍스트 입력 대신 TouchableOpacity 사용 */}
+                <TouchableOpacity
+                  style={[styles.input, { justifyContent: 'center' }]}
+                  onPress={() => setAgeModalVisible(true)}
+                >
+                  <Text
+                    style={{
+                      fontSize: normalize(16),
+                      color: form.age ? COLORS.text : COLORS.darkGray,
+                    }}
+                  >
+                    {form.age ? `${form.age}세` : '나이를 선택해주세요'}
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               <View style={styles.inputGroup}>
@@ -656,7 +667,6 @@ export default function SignupScreen() {
       <View style={styles.footer}>
         {step < 4 ? (
           <Pressable
-            // [수정 사항 5] 조건 불충족 시 버튼 비활성화 스타일 적용
             style={[
               styles.submitButton,
               !isNextButtonEnabled && styles.buttonDisabled,
@@ -685,6 +695,37 @@ export default function SignupScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* [수정 사항 2] 나이 선택 모달 */}
+      <Modal
+        visible={isAgeModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setAgeModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setAgeModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>나이 선택</Text>
+            <FlatList
+              data={AGE_OPTIONS}
+              keyExtractor={item => item}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.ageOption}
+                  onPress={() => handleSelectAge(item)}
+                >
+                  <Text style={styles.ageOptionText}>{item}세</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -729,7 +770,6 @@ const styles = StyleSheet.create({
     marginBottom: normalize(32),
   },
   inputGroup: { marginBottom: normalize(24) },
-  // [스타일 추가] 라벨 행 정렬
   labelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -741,9 +781,9 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontWeight: 'bold',
     marginLeft: normalize(4),
-    marginBottom: 0, // labelRow가 정렬하므로 제거
+    // [수정 사항 3] UI 간격 통일을 위해 기본 마진 8 추가
+    marginBottom: normalize(8),
   },
-  // [스타일 추가] 이메일 변경 텍스트
   changeEmailText: {
     fontSize: normalize(12),
     color: COLORS.primary,
@@ -769,7 +809,6 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
     borderWidth: 2,
   },
-  // [스타일 추가] 비활성화된 입력창
   inputDisabled: {
     backgroundColor: COLORS.lightGray,
     color: COLORS.darkGray,
@@ -907,5 +946,41 @@ const styles = StyleSheet.create({
     fontSize: normalize(14),
     color: COLORS.darkGray,
     textDecorationLine: 'underline',
+  },
+  // [수정 사항 2] 모달 관련 스타일 추가
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: COLORS.modalBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    width: width * 0.8,
+    maxHeight: height * 0.6,
+    borderRadius: normalize(16),
+    padding: normalize(20),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: normalize(20),
+    fontWeight: 'bold',
+    marginBottom: normalize(16),
+    textAlign: 'center',
+    color: COLORS.text,
+  },
+  ageOption: {
+    paddingVertical: normalize(12),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+  },
+  ageOptionText: {
+    fontSize: normalize(16),
+    textAlign: 'center',
+    color: COLORS.text,
   },
 });
