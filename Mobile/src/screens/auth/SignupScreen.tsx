@@ -136,30 +136,162 @@ export default function SignupScreen() {
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
-  // --- API 핸들러 ---
+  // --- API 핸들러 (수정됨) ---
   const handleSendEmail = async () => {
-    Alert.alert('개발 모드', '인증 번호가 전송된 것으로 처리합니다.');
-    setShowVerificationInput(true);
-    setIsTimerActive(true);
-    setTimeLeft(300);
+    if (!form.email) {
+      Alert.alert('알림', '이메일을 입력해주세요.');
+      return;
+    }
+    // 이메일 유효성 검사 (간단한 형식 체크)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      Alert.alert('오류', '올바른 이메일 형식이 아닙니다.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // [수정] 개발 모드 Alert 제거 및 실제 API 호출
+      // 백엔드 Enum: EmailVerificationPurpose.SIGN_UP
+      await axios.post(`${API_URL}/api/auth/email/verification`, {
+        email: form.email,
+        purpose: 'SIGN_UP',
+      });
+      Alert.alert(
+        '성공',
+        '인증 번호가 이메일로 전송되었습니다.\n(스팸 메일함도 확인해주세요)',
+      );
+      setShowVerificationInput(true);
+      setIsTimerActive(true);
+      setTimeLeft(300);
+    } catch (error: any) {
+      console.error('Email Send Error:', error);
+      const message =
+        error.response?.data?.message ||
+        '인증 번호 전송에 실패했습니다.\n네트워크 상태를 확인해주세요.';
+      Alert.alert('오류', message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleVerifyCode = async () => {
-    Alert.alert('개발 모드', '이메일 인증이 완료된 것으로 처리합니다.');
-    setEmailAuthToken('dummy_token_for_dev');
-    setIsEmailVerified(true);
-    setIsTimerActive(false);
+    if (!form.verificationCode) {
+      Alert.alert('알림', '인증 번호를 입력해주세요.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // [수정] 실제 인증 코드 확인 API 호출
+      const response = await axios.post(
+        `${API_URL}/api/auth/email/verification/confirm`,
+        {
+          email: form.email,
+          purpose: 'SIGN_UP',
+          verificationCode: parseInt(form.verificationCode, 10), // 백엔드는 int형을 기대함
+        },
+      );
+
+      if (response.data.emailVerified) {
+        Alert.alert('성공', '이메일 인증이 완료되었습니다.');
+        setEmailAuthToken(response.data.token); // 회원가입 시 사용할 토큰 저장
+        setIsEmailVerified(true);
+        setIsTimerActive(false);
+      } else {
+        Alert.alert('실패', '인증 번호가 올바르지 않습니다.');
+      }
+    } catch (error: any) {
+      console.error('Verify Code Error:', error);
+      Alert.alert(
+        '오류',
+        error.response?.data?.message || '인증 확인 중 오류가 발생했습니다.',
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCheckNickname = async () => {
-    setIsNicknameVerified(true);
-    Alert.alert('개발 모드', '사용 가능한 닉네임으로 처리합니다.');
+    if (!form.nickname) {
+      Alert.alert('알림', '닉네임을 입력해주세요.');
+      return;
+    }
+    try {
+      // [수정] 닉네임 중복 확인 API 호출
+      const response = await axios.post(
+        `${API_URL}/api/auth/register/nickname/verify`,
+        {
+          nickname: form.nickname,
+        },
+      );
+
+      if (response.data.nicknameAvailable) {
+        setIsNicknameVerified(true);
+        Alert.alert('사용 가능', '사용 가능한 닉네임입니다.');
+      } else {
+        setIsNicknameVerified(false);
+        Alert.alert('사용 불가', '이미 사용 중인 닉네임입니다.');
+      }
+    } catch (error: any) {
+      console.error('Nickname Check Error:', error);
+      Alert.alert(
+        '오류',
+        error.response?.data?.message || '닉네임 확인에 실패했습니다.',
+      );
+    }
   };
 
   const handleSignup = async () => {
-    Alert.alert('개발 모드', '회원가입이 완료된 것으로 처리합니다.', [
-      { text: '확인', onPress: () => navigation.navigate('Login') },
-    ]);
+    // 필수 정보 입력 확인
+    if (
+      !form.email ||
+      !isEmailVerified ||
+      !form.password ||
+      !form.nickname ||
+      !form.age ||
+      !form.gender
+    ) {
+      Alert.alert('알림', '모든 정보를 입력하고 인증을 완료해주세요.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // 성별 변환 (백엔드: int gender) - 남성: 0, 여성: 1 (예시 매핑, 백엔드 로직에 따름)
+      const genderInt = form.gender === 'male' ? 0 : 1;
+
+      // [수정] 회원가입 API 호출
+      await axios.post(
+        `${API_URL}/api/auth/register`,
+        {
+          nickname: form.nickname,
+          password: form.password,
+          gender: genderInt,
+          age: parseInt(form.age, 10),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${emailAuthToken}`,
+          },
+        },
+      );
+
+      Alert.alert('환영합니다!', '회원가입이 성공적으로 완료되었습니다.', [
+        {
+          text: '로그인하러 가기',
+          onPress: () => navigation.navigate('Login'),
+        },
+      ]);
+    } catch (error: any) {
+      console.error('Signup Error:', error);
+      Alert.alert(
+        '오류',
+        error.response?.data?.message || '회원가입에 실패했습니다.',
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // --- 단계 이동 로직 ---
