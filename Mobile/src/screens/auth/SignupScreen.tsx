@@ -73,7 +73,6 @@ const formatTime = (seconds: number) => {
   return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 };
 
-// [수정 사항 2] 나이 선택을 위한 데이터 생성 (1~100세)
 const AGE_OPTIONS = Array.from({ length: 100 }, (_, i) => (i + 1).toString());
 
 export default function SignupScreen() {
@@ -103,10 +102,10 @@ export default function SignupScreen() {
   const [isNicknameVerified, setIsNicknameVerified] = useState(false);
   const [emailAuthToken, setEmailAuthToken] = useState<string | null>(null);
 
-  // [수정 사항 2] 나이 선택 모달 상태
-  const [isAgeModalVisible, setAgeModalVisible] = useState(false);
+  // [수정 사항 1] 이메일 중복 상태
+  const [isEmailDuplicate, setIsEmailDuplicate] = useState(false);
 
-  // 포커스 상태 관리
+  const [isAgeModalVisible, setAgeModalVisible] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const [timeLeft, setTimeLeft] = useState(300);
@@ -116,6 +115,11 @@ export default function SignupScreen() {
   const handleChange = useCallback((name: string, value: string) => {
     setForm(prev => ({ ...prev, [name]: value }));
     if (name === 'nickname') setIsNicknameVerified(false);
+
+    // 이메일 입력 시 중복 상태 초기화
+    if (name === 'email') {
+      setIsEmailDuplicate(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -137,12 +141,15 @@ export default function SignupScreen() {
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
+  // [수정 사항 4] 이메일 재입력 핸들러 (비밀번호 찾기와 동일 로직)
   const handleResetEmail = () => {
     setIsEmailVerified(false);
     setShowVerificationInput(false);
     setEmailAuthToken(null);
+    setIsEmailDuplicate(false);
     resetTimer();
-    setForm(prev => ({ ...prev, email: '', verificationCode: '' }));
+    setForm(prev => ({ ...prev, verificationCode: '' })); // 이메일은 유지하고 코드만 초기화
+    // 필요시 이메일도 지우려면: setForm(prev => ({ ...prev, email: '', verificationCode: '' }));
   };
 
   // --- API 핸들러 ---
@@ -158,6 +165,8 @@ export default function SignupScreen() {
     }
 
     setIsLoading(true);
+    setIsEmailDuplicate(false); // 요청 시작 전 상태 초기화
+
     try {
       await axios.post(`${API_URL}/api/auth/email/verification`, {
         email: form.email,
@@ -172,10 +181,17 @@ export default function SignupScreen() {
       setTimeLeft(300);
     } catch (error: any) {
       console.error('Email Send Error:', error);
+      const status = error.response?.status;
       const message =
-        error.response?.data?.message ||
-        '인증 번호 전송에 실패했습니다.\n네트워크 상태를 확인해주세요.';
-      Alert.alert('오류', message);
+        error.response?.data?.message || '인증 번호 전송에 실패했습니다.';
+
+      // [수정 사항 1, 2] 중복 이메일 처리 (409 Conflict)
+      if (message.includes('exist') || status === 409) {
+        setIsEmailDuplicate(true);
+        // Alert.alert('오류', '이미 가입된 이메일입니다.'); // 안내문이 있으므로 알림은 선택 사항
+      } else {
+        Alert.alert('오류', message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -203,7 +219,6 @@ export default function SignupScreen() {
         setEmailAuthToken(response.data.token);
         setIsEmailVerified(true);
         setIsTimerActive(false);
-        // [수정 사항 4] 인증 완료 시 자동 이동 동작 제거함
       } else {
         Alert.alert('실패', '인증 번호가 올바르지 않습니다.');
       }
@@ -260,15 +275,10 @@ export default function SignupScreen() {
       return;
     }
 
-    // [수정 사항 1] 나이 유효성 검사 (안전을 위해 추가)
     const ageNum = parseInt(form.age, 10);
     if (isNaN(ageNum) || ageNum <= 0 || ageNum > 120) {
       Alert.alert('오류', '올바른 나이를 선택해주세요.');
       return;
-    }
-
-    if (!emailAuthToken) {
-      // Alert.alert('오류', '이메일 인증 토큰이 없습니다.');
     }
 
     setIsLoading(true);
@@ -307,7 +317,6 @@ export default function SignupScreen() {
     }
   };
 
-  // --- 단계 이동 로직 ---
   const handleNextStep = () => {
     if (step < 4) {
       setStep(step + 1);
@@ -351,16 +360,13 @@ export default function SignupScreen() {
     return true;
   }, [step, isEmailVerified, isPasswordStepValid, isNicknameVerified]);
 
-  // --- 나이 선택 핸들러 ---
   const handleSelectAge = (selectedAge: string) => {
     handleChange('age', selectedAge);
     setAgeModalVisible(false);
   };
 
-  // --- UI 렌더링 ---
   return (
     <SafeAreaView style={styles.container}>
-      {/* 1. Header */}
       <View style={styles.header}>
         <View style={styles.stepIndicator}>
           <Text style={styles.stepText}>
@@ -369,7 +375,6 @@ export default function SignupScreen() {
         </View>
       </View>
 
-      {/* 2. Content */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
@@ -394,15 +399,10 @@ export default function SignupScreen() {
               </Text>
               <View style={styles.inputGroup}>
                 <View style={styles.labelRow}>
-                  {/* [수정 사항 3] 이메일 라벨은 부모(row)가 마진을 가지므로 자체 마진 제거 */}
                   <Text style={[styles.label, { marginBottom: 0 }]}>
                     이메일
                   </Text>
-                  {isEmailVerified && (
-                    <Pressable onPress={handleResetEmail}>
-                      <Text style={styles.changeEmailText}>이메일 변경</Text>
-                    </Pressable>
-                  )}
+                  {/* 인증 완료 후 "이메일 변경" 버튼 제거 (하단 재입력 버튼으로 대체) */}
                 </View>
 
                 <View style={styles.inlineInputContainer}>
@@ -411,7 +411,11 @@ export default function SignupScreen() {
                       styles.input,
                       styles.flex1,
                       focusedField === 'email' && styles.inputFocused,
-                      isEmailVerified && styles.inputDisabled,
+                      // [수정 사항 3] 인증 요청 중/완료 시 비활성화 스타일
+                      (showVerificationInput || isEmailVerified) &&
+                        styles.inputDisabled,
+                      // [수정 사항 1] 중복 시 빨간 테두리
+                      isEmailDuplicate && { borderColor: COLORS.error },
                     ]}
                     placeholder="example@email.com"
                     placeholderTextColor={COLORS.darkGray}
@@ -419,23 +423,40 @@ export default function SignupScreen() {
                     onChangeText={v => handleChange('email', v)}
                     keyboardType="email-address"
                     autoCapitalize="none"
-                    editable={!isEmailVerified}
+                    // [수정 사항 3] 인증 요청 중/완료 시 수정 불가
+                    editable={!showVerificationInput && !isEmailVerified}
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
                   />
                   <Pressable
                     style={[
                       styles.inlineButton,
-                      isEmailVerified && styles.buttonDisabled,
+                      // [수정 사항 2] 인증 완료, 요청 중, 중복 시 버튼 비활성화
+                      (isEmailVerified ||
+                        showVerificationInput ||
+                        isEmailDuplicate) &&
+                        styles.buttonDisabled,
                     ]}
                     onPress={handleSendEmail}
-                    disabled={isEmailVerified || isLoading}
+                    disabled={
+                      isEmailVerified || showVerificationInput || isLoading
+                    }
                   >
                     <Text style={styles.inlineButtonText}>
-                      {isEmailVerified ? '인증완료' : '인증요청'}
+                      {isEmailVerified
+                        ? '인증완료'
+                        : showVerificationInput
+                        ? '전송됨'
+                        : '인증요청'}
                     </Text>
                   </Pressable>
                 </View>
+                {/* [수정 사항 1] 중복 이메일 경고 문구 */}
+                {isEmailDuplicate && (
+                  <Text style={styles.errorText}>
+                    이미 가입된 이메일입니다.
+                  </Text>
+                )}
               </View>
 
               {showVerificationInput && !isEmailVerified && (
@@ -486,6 +507,7 @@ export default function SignupScreen() {
           {/* STEP 2: 비밀번호 */}
           {step === 2 && (
             <>
+              {/* ... (기존 비밀번호 입력 UI 유지) ... */}
               <Text style={styles.description}>
                 안전한 비밀번호를 설정해주세요.
               </Text>
@@ -564,6 +586,7 @@ export default function SignupScreen() {
           {/* STEP 3: 닉네임 */}
           {step === 3 && (
             <>
+              {/* ... (기존 닉네임 입력 UI 유지) ... */}
               <Text style={styles.description}>
                 앱에서 사용할 닉네임을 정해주세요.
               </Text>
@@ -598,12 +621,12 @@ export default function SignupScreen() {
           {/* STEP 4: 내 정보 */}
           {step === 4 && (
             <>
+              {/* ... (기존 정보 입력 UI 유지) ... */}
               <Text style={styles.description}>
                 맞춤형 여행 계획을 위해 필요해요.
               </Text>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>나이</Text>
-                {/* [수정 사항 2] 텍스트 입력 대신 TouchableOpacity 사용 */}
                 <TouchableOpacity
                   style={[styles.input, { justifyContent: 'center' }]}
                   onPress={() => setAgeModalVisible(true)}
@@ -666,16 +689,29 @@ export default function SignupScreen() {
       {/* 3. Footer */}
       <View style={styles.footer}>
         {step < 4 ? (
-          <Pressable
-            style={[
-              styles.submitButton,
-              !isNextButtonEnabled && styles.buttonDisabled,
-            ]}
-            onPress={handleNextStep}
-            disabled={!isNextButtonEnabled}
-          >
-            <Text style={styles.submitButtonText}>다음</Text>
-          </Pressable>
+          <>
+            <Pressable
+              style={[
+                styles.submitButton,
+                !isNextButtonEnabled && styles.buttonDisabled,
+              ]}
+              onPress={handleNextStep}
+              disabled={!isNextButtonEnabled}
+            >
+              <Text style={styles.submitButtonText}>다음</Text>
+            </Pressable>
+
+            {/* [수정 사항 4] Step 1에서 인증 요청 중이거나 완료 시 '이메일 다시 입력하기' 버튼 표시 */}
+            {step === 1 && (showVerificationInput || isEmailVerified) && (
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={handleResetEmail}
+                disabled={isLoading}
+              >
+                <Text style={styles.retryButtonText}>이메일 다시 입력하기</Text>
+              </TouchableOpacity>
+            )}
+          </>
         ) : (
           <Pressable style={styles.submitButton} onPress={handleSignup}>
             {isLoading ? (
@@ -685,6 +721,8 @@ export default function SignupScreen() {
             )}
           </Pressable>
         )}
+
+        {/* Step 1이 아닐 때만 하단 '이전 단계' 버튼 표시 (Step 1은 디자인상 제외 가능하나 유지) */}
         <TouchableOpacity
           style={styles.bottomBackButton}
           onPress={handlePrevStep}
@@ -696,7 +734,7 @@ export default function SignupScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* [수정 사항 2] 나이 선택 모달 */}
+      {/* 나이 선택 모달 */}
       <Modal
         visible={isAgeModalVisible}
         transparent={true}
@@ -781,7 +819,6 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontWeight: 'bold',
     marginLeft: normalize(4),
-    // [수정 사항 3] UI 간격 통일을 위해 기본 마진 8 추가
     marginBottom: normalize(8),
   },
   changeEmailText: {
@@ -812,6 +849,13 @@ const styles = StyleSheet.create({
   inputDisabled: {
     backgroundColor: COLORS.lightGray,
     color: COLORS.darkGray,
+  },
+  // [수정 사항 1] 에러 텍스트 스타일 추가
+  errorText: {
+    color: COLORS.error,
+    fontSize: normalize(13),
+    marginTop: normalize(8),
+    marginLeft: normalize(4),
   },
   inlineInputContainer: {
     flexDirection: 'row',
@@ -937,6 +981,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.white,
   },
+  // [수정 사항 4] 재시도 버튼 스타일 (비밀번호 찾기 화면과 통일)
+  retryButton: {
+    alignItems: 'center',
+    padding: normalize(12),
+    marginTop: normalize(8),
+  },
+  retryButtonText: {
+    fontSize: normalize(14),
+    color: COLORS.darkGray,
+    textDecorationLine: 'underline',
+  },
   bottomBackButton: {
     alignItems: 'center',
     padding: normalize(12),
@@ -947,7 +1002,6 @@ const styles = StyleSheet.create({
     color: COLORS.darkGray,
     textDecorationLine: 'underline',
   },
-  // [수정 사항 2] 모달 관련 스타일 추가
   modalOverlay: {
     flex: 1,
     backgroundColor: COLORS.modalBackground,
