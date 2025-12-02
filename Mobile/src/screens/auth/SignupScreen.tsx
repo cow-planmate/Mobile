@@ -102,7 +102,7 @@ export default function SignupScreen() {
   const [isNicknameVerified, setIsNicknameVerified] = useState(false);
   const [emailAuthToken, setEmailAuthToken] = useState<string | null>(null);
 
-  // [수정 사항 1] 이메일 중복 상태
+  // 이메일 중복 상태
   const [isEmailDuplicate, setIsEmailDuplicate] = useState(false);
 
   const [isAgeModalVisible, setAgeModalVisible] = useState(false);
@@ -141,15 +141,14 @@ export default function SignupScreen() {
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
-  // [수정 사항 4] 이메일 재입력 핸들러 (비밀번호 찾기와 동일 로직)
+  // 이메일 재입력 핸들러
   const handleResetEmail = () => {
     setIsEmailVerified(false);
     setShowVerificationInput(false);
     setEmailAuthToken(null);
     setIsEmailDuplicate(false);
     resetTimer();
-    setForm(prev => ({ ...prev, verificationCode: '' })); // 이메일은 유지하고 코드만 초기화
-    // 필요시 이메일도 지우려면: setForm(prev => ({ ...prev, email: '', verificationCode: '' }));
+    setForm(prev => ({ ...prev, verificationCode: '' }));
   };
 
   // --- API 핸들러 ---
@@ -185,10 +184,9 @@ export default function SignupScreen() {
       const message =
         error.response?.data?.message || '인증 번호 전송에 실패했습니다.';
 
-      // [수정 사항 1, 2] 중복 이메일 처리 (409 Conflict)
+      // 중복 이메일 처리
       if (message.includes('exist') || status === 409) {
         setIsEmailDuplicate(true);
-        // Alert.alert('오류', '이미 가입된 이메일입니다.'); // 안내문이 있으므로 알림은 선택 사항
       } else {
         Alert.alert('오류', message);
       }
@@ -402,7 +400,6 @@ export default function SignupScreen() {
                   <Text style={[styles.label, { marginBottom: 0 }]}>
                     이메일
                   </Text>
-                  {/* 인증 완료 후 "이메일 변경" 버튼 제거 (하단 재입력 버튼으로 대체) */}
                 </View>
 
                 <View style={styles.inlineInputContainer}>
@@ -411,10 +408,8 @@ export default function SignupScreen() {
                       styles.input,
                       styles.flex1,
                       focusedField === 'email' && styles.inputFocused,
-                      // [수정 사항 3] 인증 요청 중/완료 시 비활성화 스타일
                       (showVerificationInput || isEmailVerified) &&
                         styles.inputDisabled,
-                      // [수정 사항 1] 중복 시 빨간 테두리
                       isEmailDuplicate && { borderColor: COLORS.error },
                     ]}
                     placeholder="example@email.com"
@@ -423,7 +418,6 @@ export default function SignupScreen() {
                     onChangeText={v => handleChange('email', v)}
                     keyboardType="email-address"
                     autoCapitalize="none"
-                    // [수정 사항 3] 인증 요청 중/완료 시 수정 불가
                     editable={!showVerificationInput && !isEmailVerified}
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
@@ -431,7 +425,6 @@ export default function SignupScreen() {
                   <Pressable
                     style={[
                       styles.inlineButton,
-                      // [수정 사항 2] 인증 완료, 요청 중, 중복 시 버튼 비활성화
                       (isEmailVerified ||
                         showVerificationInput ||
                         isEmailDuplicate) &&
@@ -451,7 +444,6 @@ export default function SignupScreen() {
                     </Text>
                   </Pressable>
                 </View>
-                {/* [수정 사항 1] 중복 이메일 경고 문구 */}
                 {isEmailDuplicate && (
                   <Text style={styles.errorText}>
                     이미 가입된 이메일입니다.
@@ -459,7 +451,8 @@ export default function SignupScreen() {
                 )}
               </View>
 
-              {showVerificationInput && !isEmailVerified && (
+              {/* [수정 사항 1, 2] 인증번호 필드: showVerificationInput이 true면 항상 표시 */}
+              {showVerificationInput && (
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>인증번호</Text>
                   <View style={styles.inlineInputContainer}>
@@ -470,33 +463,42 @@ export default function SignupScreen() {
                         styles.codeInputWrapper,
                         focusedField === 'verificationCode' &&
                           styles.inputFocused,
+                        // [수정 사항 2] 인증 완료 시 비활성화 스타일
+                        isEmailVerified && styles.inputDisabled,
                       ]}
                     >
                       <TextInput
-                        style={styles.codeInput}
+                        style={[
+                          styles.codeInput,
+                          // [수정 사항 2] 인증 완료 시 텍스트 색상 변경
+                          isEmailVerified && { color: COLORS.darkGray },
+                        ]}
                         placeholder="123456"
                         placeholderTextColor={COLORS.darkGray}
                         value={form.verificationCode}
                         onChangeText={v => handleChange('verificationCode', v)}
                         keyboardType="number-pad"
                         maxLength={6}
-                        editable={!isLoading}
+                        // [수정 사항 2] 인증 완료 시 입력 불가
+                        editable={!isLoading && !isEmailVerified}
                         onFocus={() => setFocusedField('verificationCode')}
                         onBlur={() => setFocusedField(null)}
                       />
                       <Text style={styles.timerText}>
-                        {formatTime(timeLeft)}
+                        {isEmailVerified ? '' : formatTime(timeLeft)}
                       </Text>
                     </View>
                     <Pressable
                       style={[
                         styles.inlineButton,
-                        isLoading && styles.buttonDisabled,
+                        (isLoading || isEmailVerified) && styles.buttonDisabled,
                       ]}
                       onPress={handleVerifyCode}
-                      disabled={isLoading}
+                      disabled={isLoading || isEmailVerified}
                     >
-                      <Text style={styles.inlineButtonText}>확인</Text>
+                      <Text style={styles.inlineButtonText}>
+                        {isEmailVerified ? '완료' : '확인'}
+                      </Text>
                     </Pressable>
                   </View>
                 </View>
@@ -507,7 +509,6 @@ export default function SignupScreen() {
           {/* STEP 2: 비밀번호 */}
           {step === 2 && (
             <>
-              {/* ... (기존 비밀번호 입력 UI 유지) ... */}
               <Text style={styles.description}>
                 안전한 비밀번호를 설정해주세요.
               </Text>
@@ -586,7 +587,6 @@ export default function SignupScreen() {
           {/* STEP 3: 닉네임 */}
           {step === 3 && (
             <>
-              {/* ... (기존 닉네임 입력 UI 유지) ... */}
               <Text style={styles.description}>
                 앱에서 사용할 닉네임을 정해주세요.
               </Text>
@@ -621,7 +621,6 @@ export default function SignupScreen() {
           {/* STEP 4: 내 정보 */}
           {step === 4 && (
             <>
-              {/* ... (기존 정보 입력 UI 유지) ... */}
               <Text style={styles.description}>
                 맞춤형 여행 계획을 위해 필요해요.
               </Text>
@@ -701,7 +700,6 @@ export default function SignupScreen() {
               <Text style={styles.submitButtonText}>다음</Text>
             </Pressable>
 
-            {/* [수정 사항 4] Step 1에서 인증 요청 중이거나 완료 시 '이메일 다시 입력하기' 버튼 표시 */}
             {step === 1 && (showVerificationInput || isEmailVerified) && (
               <TouchableOpacity
                 style={styles.retryButton}
@@ -722,7 +720,6 @@ export default function SignupScreen() {
           </Pressable>
         )}
 
-        {/* Step 1이 아닐 때만 하단 '이전 단계' 버튼 표시 (Step 1은 디자인상 제외 가능하나 유지) */}
         <TouchableOpacity
           style={styles.bottomBackButton}
           onPress={handlePrevStep}
@@ -850,7 +847,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.lightGray,
     color: COLORS.darkGray,
   },
-  // [수정 사항 1] 에러 텍스트 스타일 추가
   errorText: {
     color: COLORS.error,
     fontSize: normalize(13),
@@ -981,7 +977,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.white,
   },
-  // [수정 사항 4] 재시도 버튼 스타일 (비밀번호 찾기 화면과 통일)
   retryButton: {
     alignItems: 'center',
     padding: normalize(12),
