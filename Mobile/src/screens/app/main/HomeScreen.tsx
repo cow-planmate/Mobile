@@ -37,6 +37,9 @@ const COLORS = {
   iconBg: '#F5F7FF',
   success: '#34C759',
   placeholderLight: '#C7C7CC',
+  error: '#FF3B30',
+  errorLight: '#FFE5E5',
+  disabled: '#A8B5D1',
 };
 
 type InputRowProps = {
@@ -46,6 +49,7 @@ type InputRowProps = {
   icon: string;
   onPress?: () => void;
   isLast?: boolean;
+  hasError?: boolean;
 };
 
 const InputRow = ({
@@ -55,6 +59,7 @@ const InputRow = ({
   icon,
   onPress,
   isLast,
+  hasError,
 }: InputRowProps) => {
   const hasValue = Boolean(value);
   return (
@@ -64,25 +69,37 @@ const InputRow = ({
       activeOpacity={0.7}
     >
       <View
-        style={[styles.iconContainer, hasValue && styles.iconContainerFilled]}
+        style={[
+          styles.iconContainer,
+          hasValue && styles.iconContainerFilled,
+          hasError && styles.iconContainerError,
+        ]}
       >
         <Text style={styles.icon}>{icon}</Text>
       </View>
       <View style={styles.rowContent}>
         <View
-          style={[styles.textContainer, !isLast && styles.textContainerBorder]}
+          style={[
+            styles.textContainer,
+            !isLast && styles.textContainerBorder,
+          ]}
         >
-          <Text style={styles.label}>{label}</Text>
+          <Text style={[styles.label, hasError && styles.labelError]}>{label}</Text>
           {hasValue ? (
             <Text style={styles.valueText} numberOfLines={1}>
               {value}
             </Text>
           ) : (
-            <Text style={styles.placeholderText}>{placeholder}</Text>
+            <Text style={styles.placeholderText}>
+              {placeholder}
+            </Text>
           )}
         </View>
         <View
-          style={[styles.arrowContainer, !isLast && styles.textContainerBorder]}
+          style={[
+            styles.arrowContainer,
+            !isLast && styles.textContainerBorder,
+          ]}
         >
           {hasValue ? (
             <Text style={styles.checkIcon}>✓</Text>
@@ -121,6 +138,16 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [fieldToUpdate, setFieldToUpdate] = useState<
     'departure' | 'destination'
   >('departure');
+  const [showErrors, setShowErrors] = useState(false);
+
+  // 폼 유효성 검사
+  const isFormValid =
+    departure !== '' &&
+    destination !== '' &&
+    startDate !== null &&
+    endDate !== null &&
+    adults !== null &&
+    transport !== '';
 
   const formatDate = (date: Date) => {
     return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
@@ -141,6 +168,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   };
 
   const handleCreateItinerary = () => {
+    if (!isFormValid) {
+      setShowErrors(true);
+      return;
+    }
+    setShowErrors(false);
     navigation.navigate('ItineraryEditor', {
       departure,
       destination,
@@ -207,6 +239,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               placeholder="어디서 떠나시나요?"
               icon="📍"
               onPress={() => openSearchModal('departure')}
+              hasError={showErrors && !departure}
             />
             <InputRow
               label="여행지"
@@ -214,6 +247,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               placeholder="어디로 갈까요?"
               icon="🌍"
               onPress={() => openSearchModal('destination')}
+              hasError={showErrors && !destination}
             />
             <InputRow
               label="여행 기간"
@@ -221,6 +255,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               placeholder="언제 떠나시나요?"
               icon="🗓️"
               onPress={() => setCalendarVisible(true)}
+              hasError={showErrors && (!startDate || !endDate)}
             />
             <InputRow
               label="인원"
@@ -228,6 +263,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               placeholder="몇 명이서 떠나시나요?"
               icon="👥"
               onPress={() => setPaxModalVisible(true)}
+              hasError={showErrors && adults === null}
             />
             <InputRow
               label="이동수단"
@@ -236,14 +272,25 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               icon="🚗"
               onPress={() => setTransportModalVisible(true)}
               isLast={true}
+              hasError={showErrors && !transport}
             />
           </View>
 
           <Pressable
-            style={styles.submitButton}
+            style={[
+              styles.submitButton,
+              !isFormValid && styles.submitButtonDisabled,
+            ]}
             onPress={handleCreateItinerary}
           >
-            <Text style={styles.submitButtonText}>일정 생성하기</Text>
+            <Text
+              style={[
+                styles.submitButtonText,
+                !isFormValid && styles.submitButtonTextDisabled,
+              ]}
+            >
+              일정 생성하기
+            </Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -472,10 +519,26 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
   },
+  submitButtonDisabled: {
+    backgroundColor: COLORS.disabled,
+    shadowOpacity: 0.1,
+    elevation: 2,
+  },
   submitButtonText: {
     fontSize: normalize(18),
     fontWeight: 'bold',
     color: COLORS.white,
     letterSpacing: 0.5,
+  },
+  submitButtonTextDisabled: {
+    color: COLORS.white,
+    opacity: 0.8,
+  },
+  // Error styles
+  iconContainerError: {
+    backgroundColor: COLORS.errorLight,
+  },
+  labelError: {
+    color: COLORS.error,
   },
 });
