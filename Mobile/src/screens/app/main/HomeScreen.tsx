@@ -79,27 +79,21 @@ const InputRow = ({
       </View>
       <View style={styles.rowContent}>
         <View
-          style={[
-            styles.textContainer,
-            !isLast && styles.textContainerBorder,
-          ]}
+          style={[styles.textContainer, !isLast && styles.textContainerBorder]}
         >
-          <Text style={[styles.label, hasError && styles.labelError]}>{label}</Text>
+          <Text style={[styles.label, hasError && styles.labelError]}>
+            {label}
+          </Text>
           {hasValue ? (
             <Text style={styles.valueText} numberOfLines={1}>
               {value}
             </Text>
           ) : (
-            <Text style={styles.placeholderText}>
-              {placeholder}
-            </Text>
+            <Text style={styles.placeholderText}>{placeholder}</Text>
           )}
         </View>
         <View
-          style={[
-            styles.arrowContainer,
-            !isLast && styles.textContainerBorder,
-          ]}
+          style={[styles.arrowContainer, !isLast && styles.textContainerBorder]}
         >
           {hasValue ? (
             <Text style={styles.checkIcon}>✓</Text>
