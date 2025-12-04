@@ -34,6 +34,9 @@ const COLORS = {
   white: '#FFFFFF',
   lightBlue: '#e6f0ff',
   shadow: '#1344FF',
+  iconBg: '#F5F7FF',
+  success: '#34C759',
+  placeholderLight: '#C7C7CC',
 };
 
 type InputRowProps = {
@@ -52,41 +55,58 @@ const InputRow = ({
   icon,
   onPress,
   isLast,
-}: InputRowProps) => (
-  <TouchableOpacity
-    style={[styles.inputRow, !isLast && styles.inputRowBorder]}
-    onPress={onPress}
-    activeOpacity={0.7}
-  >
-    <View style={styles.iconContainer}>
-      <Text style={styles.icon}>{icon}</Text>
-    </View>
-    <View style={styles.textContainer}>
-      <Text style={styles.label}>{label}</Text>
-      {value ? (
-        <Text style={styles.valueText} numberOfLines={1}>
-          {value}
-        </Text>
-      ) : (
-        <Text style={styles.placeholderText}>{placeholder}</Text>
-      )}
-    </View>
-    <Text style={styles.arrow}>›</Text>
-  </TouchableOpacity>
-);
+}: InputRowProps) => {
+  const hasValue = Boolean(value);
+  return (
+    <TouchableOpacity
+      style={[styles.inputRow, isLast && styles.inputRowLast]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View
+        style={[styles.iconContainer, hasValue && styles.iconContainerFilled]}
+      >
+        <Text style={styles.icon}>{icon}</Text>
+      </View>
+      <View style={styles.rowContent}>
+        <View
+          style={[styles.textContainer, !isLast && styles.textContainerBorder]}
+        >
+          <Text style={styles.label}>{label}</Text>
+          {hasValue ? (
+            <Text style={styles.valueText} numberOfLines={1}>
+              {value}
+            </Text>
+          ) : (
+            <Text style={styles.placeholderText}>{placeholder}</Text>
+          )}
+        </View>
+        <View
+          style={[styles.arrowContainer, !isLast && styles.textContainerBorder]}
+        >
+          {hasValue ? (
+            <Text style={styles.checkIcon}>✓</Text>
+          ) : (
+            <Text style={styles.arrow}>›</Text>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const { user } = useAuth();
 
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [isCalendarVisible, setCalendarVisible] = useState(false);
-  const [adults, setAdults] = useState(1);
-  const [children, setChildren] = useState(0);
+  const [adults, setAdults] = useState<number | null>(null);
+  const [children, setChildren] = useState<number | null>(null);
   const [isPaxModalVisible, setPaxModalVisible] = useState(false);
-  const [transport, setTransport] = useState('대중교통');
+  const [transport, setTransport] = useState('');
   const [isTransportModalVisible, setTransportModalVisible] = useState(false);
 
   const transportOptions: OptionType[] = [
@@ -107,22 +127,28 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   };
 
   const getPaxText = () => {
+    if (adults === null) return '';
     let text = `성인 ${adults}명`;
-    if (children > 0) {
+    if (children && children > 0) {
       text += `, 어린이 ${children}명`;
     }
     return text;
+  };
+
+  const getDateText = () => {
+    if (!startDate || !endDate) return '';
+    return `${formatDate(startDate)} ~ ${formatDate(endDate)}`;
   };
 
   const handleCreateItinerary = () => {
     navigation.navigate('ItineraryEditor', {
       departure,
       destination,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      adults,
-      children,
-      transport,
+      startDate: startDate?.toISOString() ?? new Date().toISOString(),
+      endDate: endDate?.toISOString() ?? new Date().toISOString(),
+      adults: adults ?? 1,
+      children: children ?? 0,
+      transport: transport || '대중교통',
     });
   };
 
@@ -191,22 +217,22 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             />
             <InputRow
               label="여행 기간"
-              value={`${formatDate(startDate)} ~ ${formatDate(endDate)}`}
-              placeholder="언제 떠나나요?"
+              value={getDateText()}
+              placeholder="언제 떠나시나요?"
               icon="🗓️"
               onPress={() => setCalendarVisible(true)}
             />
             <InputRow
               label="인원"
               value={getPaxText()}
-              placeholder="누구와 함께하나요?"
+              placeholder="몇 명이서 떠나시나요?"
               icon="👥"
               onPress={() => setPaxModalVisible(true)}
             />
             <InputRow
               label="이동수단"
               value={transport}
-              placeholder="어떻게 이동하나요?"
+              placeholder="어떤 교통수단을 이용하시나요?"
               icon="🚗"
               onPress={() => setTransportModalVisible(true)}
               isLast={true}
@@ -239,24 +265,24 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       <CalendarModal
         visible={isCalendarVisible}
         onClose={() => setCalendarVisible(false)}
-        onConfirm={({ startDate, endDate }) => {
-          setStartDate(startDate);
-          setEndDate(endDate);
+        onConfirm={({ startDate: newStartDate, endDate: newEndDate }) => {
+          setStartDate(newStartDate);
+          setEndDate(newEndDate);
           setCalendarVisible(false);
         }}
-        initialStartDate={startDate}
-        initialEndDate={endDate}
+        initialStartDate={startDate ?? undefined}
+        initialEndDate={endDate ?? undefined}
       />
       <PaxModal
         visible={isPaxModalVisible}
         onClose={() => setPaxModalVisible(false)}
-        onConfirm={({ adults, children }) => {
-          setAdults(adults);
-          setChildren(children);
+        onConfirm={({ adults: newAdults, children: newChildren }) => {
+          setAdults(newAdults);
+          setChildren(newChildren);
           setPaxModalVisible(false);
         }}
-        initialAdults={adults}
-        initialChildren={children}
+        initialAdults={adults ?? 1}
+        initialChildren={children ?? 0}
       />
       <SelectionModal
         visible={isTransportModalVisible}
@@ -296,6 +322,7 @@ const styles = StyleSheet.create({
     fontSize: normalize(12),
     color: COLORS.darkGray,
     fontWeight: '500',
+    marginTop: normalize(20),
     marginBottom: normalize(4),
   },
   headerGreeting: {
@@ -348,31 +375,43 @@ const styles = StyleSheet.create({
 
   inputCard: {
     backgroundColor: COLORS.white,
-    borderRadius: normalize(16),
-    paddingVertical: normalize(8),
+    borderRadius: normalize(20),
+    paddingVertical: normalize(16),
     paddingHorizontal: normalize(16),
-    // 그림자 효과
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+    // 더 부드러운 그림자 효과
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
     marginBottom: normalize(24),
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: normalize(64),
+    height: normalize(78),
+    paddingVertical: normalize(4),
   },
-  inputRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
+  inputRowLast: {
+    paddingBottom: normalize(4),
+  },
+  rowContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: '100%',
   },
   iconContainer: {
-    width: normalize(40),
+    width: normalize(44),
+    height: normalize(44),
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: normalize(8),
+    marginRight: normalize(12),
+    backgroundColor: COLORS.iconBg,
+    borderRadius: normalize(12),
+  },
+  iconContainerFilled: {
+    backgroundColor: COLORS.lightBlue,
   },
   icon: {
     fontSize: normalize(22),
@@ -380,28 +419,45 @@ const styles = StyleSheet.create({
   textContainer: {
     flex: 1,
     justifyContent: 'center',
+    height: '100%',
+  },
+  textContainerBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
   },
   label: {
     fontSize: normalize(12),
     color: COLORS.darkGray,
     fontWeight: '600',
-    marginBottom: normalize(2),
+    marginBottom: normalize(4),
   },
   valueText: {
-    fontSize: normalize(16),
+    fontSize: normalize(15),
     color: COLORS.text,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    lineHeight: normalize(20),
   },
   placeholderText: {
-    fontSize: normalize(16),
-    color: COLORS.gray,
-    fontWeight: '500',
+    fontSize: normalize(15),
+    color: COLORS.placeholderLight,
+    fontWeight: '400',
+    lineHeight: normalize(20),
+  },
+  arrowContainer: {
+    height: '100%',
+    paddingLeft: normalize(8),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   arrow: {
-    fontSize: normalize(20),
+    fontSize: normalize(22),
     color: COLORS.gray,
+    fontWeight: '300',
+  },
+  checkIcon: {
+    fontSize: normalize(16),
+    color: COLORS.success,
     fontWeight: 'bold',
-    marginLeft: normalize(8),
   },
   submitButton: {
     width: '100%',
