@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,15 +7,12 @@ import {
   Pressable,
   TouchableOpacity,
   ScrollView,
-  ImageBackground,
-  Animated,
   Dimensions,
   PixelRatio,
-  Platform,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
-import { useAuth } from '../../../contexts/AuthContext'; // [추가] 닉네임 가져오기 위해 AuthContext 사용
+import { useAuth } from '../../../contexts/AuthContext';
 
 import CalendarModal from '../../../components/common/CalendarModal';
 import PaxModal from '../../../components/common/PaxModal';
@@ -39,25 +36,13 @@ const COLORS = {
   shadow: '#1344FF',
 };
 
-const IMAGE_URIS = [
-  'https://picsum.photos/id/10/800/600',
-  'https://picsum.photos/id/11/800/600',
-  'https://picsum.photos/id/12/800/600',
-  'https://picsum.photos/id/13/800/600',
-  'https://picsum.photos/id/14/800/600',
-];
-
-const AnimatedImageBackground =
-  Animated.createAnimatedComponent(ImageBackground);
-
-// [수정] 통합된 카드 내부의 입력 행 컴포넌트
 type InputRowProps = {
   label: string;
   value: string;
   placeholder?: string;
   icon: string;
   onPress?: () => void;
-  isLast?: boolean; // 마지막 항목인지 여부 (구분선 제거용)
+  isLast?: boolean;
 };
 
 const InputRow = ({
@@ -93,7 +78,7 @@ const InputRow = ({
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
-  const { user } = useAuth(); // [추가] 로그인한 사용자 정보 가져오기
+  const { user } = useAuth();
 
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
@@ -112,28 +97,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [departure, setDeparture] = useState('');
   const [destination, setDestination] = useState('');
 
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-
   const [isSearchModalVisible, setSearchModalVisible] = useState(false);
   const [fieldToUpdate, setFieldToUpdate] = useState<
     'departure' | 'destination'
   >('departure');
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 1500,
-        useNativeDriver: true,
-      }).start(() => {
-        setCurrentImageIndex(prevIndex => (prevIndex + 1) % IMAGE_URIS.length);
-        fadeAnim.setValue(1);
-      });
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [fadeAnim]);
 
   const formatDate = (date: Date) => {
     return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
@@ -169,8 +136,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        bounces={false}
       >
-        {/* [수정 2, 3, 4] 상단 알림 영역 및 텍스트 (이미지 위 텍스트 제거됨) */}
         <View style={styles.headerTopArea}>
           <View>
             <Text style={styles.headerSlogan}>
@@ -184,74 +151,75 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               님!
             </Text>
           </View>
-          <TouchableOpacity
-            style={styles.notificationButton}
-            onPress={() => {
-              /* 알림 화면 이동 등 */ console.log('알림 클릭');
-            }}
+
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => console.log('알림 클릭')}
+            >
+              <Text style={styles.headerIcon}>🔔</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => console.log('메뉴 클릭')}
+            >
+              <Text style={styles.headerIcon}>☰</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* 흰색 배경 섹션 */}
+        <View style={styles.whiteSection}>
+          {/* [수정] 이미지 영역 삭제됨 */}
+
+          {/* 입력 필드 카드 */}
+          <View style={styles.inputCard}>
+            <InputRow
+              label="출발지"
+              value={departure}
+              placeholder="어디서 떠나시나요?"
+              icon="📍"
+              onPress={() => openSearchModal('departure')}
+            />
+            <InputRow
+              label="여행지"
+              value={destination}
+              placeholder="어디로 갈까요?"
+              icon="🌍"
+              onPress={() => openSearchModal('destination')}
+            />
+            <InputRow
+              label="여행 기간"
+              value={`${formatDate(startDate)} ~ ${formatDate(endDate)}`}
+              placeholder="언제 떠나나요?"
+              icon="🗓️"
+              onPress={() => setCalendarVisible(true)}
+            />
+            <InputRow
+              label="인원"
+              value={getPaxText()}
+              placeholder="누구와 함께하나요?"
+              icon="👥"
+              onPress={() => setPaxModalVisible(true)}
+            />
+            <InputRow
+              label="이동수단"
+              value={transport}
+              placeholder="어떻게 이동하나요?"
+              icon="🚗"
+              onPress={() => setTransportModalVisible(true)}
+              isLast={true}
+            />
+          </View>
+
+          <Pressable
+            style={styles.submitButton}
+            onPress={handleCreateItinerary}
           >
-            <Text style={styles.notificationIcon}>🔔</Text>
-          </TouchableOpacity>
+            <Text style={styles.submitButtonText}>일정 생성하기</Text>
+          </Pressable>
         </View>
-
-        <View style={styles.headerImageContainer}>
-          <AnimatedImageBackground
-            source={{ uri: IMAGE_URIS[currentImageIndex] }}
-            style={[styles.image, { opacity: fadeAnim }]}
-          />
-          <ImageBackground
-            source={{
-              uri: IMAGE_URIS[(currentImageIndex + 1) % IMAGE_URIS.length],
-            }}
-            style={styles.image}
-          />
-          {/* [수정 3] 이미지 위 텍스트 제거됨 */}
-          <View style={styles.overlay} />
-        </View>
-
-        {/* [수정] 하나의 통합된 카드 형태 (Input Card) */}
-        <View style={styles.inputCard}>
-          <InputRow
-            label="출발지"
-            value={departure}
-            placeholder="어디서 떠나시나요?"
-            icon="📍"
-            onPress={() => openSearchModal('departure')}
-          />
-          <InputRow
-            label="여행지"
-            value={destination}
-            placeholder="어디로 갈까요?"
-            icon="🌍"
-            onPress={() => openSearchModal('destination')}
-          />
-          <InputRow
-            label="여행 기간"
-            value={`${formatDate(startDate)} ~ ${formatDate(endDate)}`}
-            placeholder="언제 떠나나요?"
-            icon="🗓️"
-            onPress={() => setCalendarVisible(true)}
-          />
-          <InputRow
-            label="인원"
-            value={getPaxText()}
-            placeholder="누구와 함께하나요?"
-            icon="👥"
-            onPress={() => setPaxModalVisible(true)}
-          />
-          <InputRow
-            label="이동수단"
-            value={transport}
-            placeholder="어떻게 이동하나요?"
-            icon="🚗"
-            onPress={() => setTransportModalVisible(true)}
-            isLast={true} // 마지막 항목 (구분선 없음)
-          />
-        </View>
-
-        <Pressable style={styles.submitButton} onPress={handleCreateItinerary}>
-          <Text style={styles.submitButtonText}>일정 생성하기</Text>
-        </Pressable>
       </ScrollView>
 
       {/* Modals ... (기존과 동일) */}
@@ -312,76 +280,78 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingHorizontal: normalize(20),
-    // [수정 1] 상단 여백을 대폭 늘려서 전체 UI를 아래로 이동
-    paddingTop: normalize(60),
-    paddingBottom: normalize(40),
+    paddingHorizontal: 0,
+    paddingTop: normalize(30),
+    paddingBottom: 0,
   },
-  // [수정 2, 4] 상단 헤더 영역 스타일 (텍스트 + 알림 버튼)
   headerTopArea: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: normalize(24),
     marginTop: normalize(10),
+    paddingHorizontal: normalize(20),
   },
   headerSlogan: {
-    fontSize: normalize(14),
+    fontSize: normalize(12),
     color: COLORS.darkGray,
     fontWeight: '500',
     marginBottom: normalize(4),
   },
   headerGreeting: {
-    fontSize: normalize(22),
+    fontSize: normalize(18),
     color: COLORS.text,
     fontWeight: 'bold',
   },
   headerNickname: {
-    color: COLORS.primary, // 닉네임 강조 색상
+    color: COLORS.primary,
   },
-  notificationButton: {
-    padding: normalize(8),
+  headerButtons: {
+    flexDirection: 'row',
+    gap: normalize(12),
+  },
+  iconButton: {
+    // [수정] 버튼 크기 축소 (40 -> 36)
+    width: normalize(36),
+    height: normalize(36),
+    padding: normalize(6),
     backgroundColor: COLORS.white,
-    borderRadius: normalize(20),
+    borderRadius: normalize(18), // width/2
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  notificationIcon: {
-    fontSize: normalize(20),
+  headerIcon: {
+    // [수정] 아이콘 폰트 크기 축소 (20 -> 18)
+    fontSize: normalize(18),
+    textAlign: 'center',
   },
-  headerImageContainer: {
-    // [수정] 높이 조정 (조금 더 시원하게)
-    height: normalize(200),
-    borderRadius: normalize(16),
-    overflow: 'hidden',
-    marginBottom: normalize(24),
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
+  whiteSection: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: normalize(32),
+    borderTopRightRadius: normalize(32),
+    paddingHorizontal: normalize(20),
+    paddingTop: normalize(32),
+    paddingBottom: normalize(40),
+    flex: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 10,
   },
-  image: {
-    ...StyleSheet.absoluteFillObject,
-    width: undefined,
-    height: undefined,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    // [수정] 텍스트가 사라졌으므로 오버레이 투명도 조절 (밝게)
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  // [삭제] headerTextContainer, title 스타일 제거 (상단으로 이동됨)
+  // [삭제] 이미지 관련 스타일 제거됨 (headerImageContainer, image, overlay)
 
-  // [수정] 통합된 입력 카드 스타일
   inputCard: {
     backgroundColor: COLORS.white,
     borderRadius: normalize(16),
     paddingVertical: normalize(8),
     paddingHorizontal: normalize(16),
+    // 그림자 효과
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
