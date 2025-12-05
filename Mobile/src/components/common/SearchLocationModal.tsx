@@ -91,7 +91,7 @@ type Props = {
 };
 
 const RECENT_SEARCHES_KEY = 'recentDepartureSearches';
-const MAX_RECENT_SEARCHES = 5;
+const MAX_RECENT_SEARCHES = 3;
 
 export default function SearchLocationModal({
   visible,
