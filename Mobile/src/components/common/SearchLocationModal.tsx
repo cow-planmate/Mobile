@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Modal,
   TextInput,
-  FlatList,
   TouchableOpacity,
   Pressable,
   KeyboardAvoidingView,
@@ -14,11 +13,16 @@ import {
   ImageBackground,
   Dimensions,
   ScrollView,
+  Animated,
+  PixelRatio,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '@env';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+const normalize = (size: number) =>
+  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
 
 // [디자인 설정]
 const COLUMN_COUNT = 3; // 3열 배치
@@ -60,6 +64,9 @@ const COLORS = {
   darkGray: '#505050',
   white: '#FFFFFF',
   overlay: 'rgba(0,0,0,0.4)',
+  lightBlue: '#e6f0ff',
+  iconBg: '#F5F7FF',
+  shadow: '#1344FF',
 };
 
 interface DepartureVO {
@@ -83,23 +90,8 @@ type Props = {
   currentValue: string;
 };
 
-// [출발지] 리스트 아이템
-function DepartureItem({
-  item,
-  onSelect,
-}: {
-  item: DepartureVO;
-  onSelect: () => void;
-}) {
-  return (
-    <TouchableOpacity style={styles.resultItem} onPress={onSelect}>
-      <View style={styles.resultInfo}>
-        <Text style={styles.resultName}>{item.departureName}</Text>
-        <Text style={styles.resultAddress}>{item.departureAddress}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-}
+const RECENT_SEARCHES_KEY = 'recentDepartureSearches';
+const MAX_RECENT_SEARCHES = 5;
 
 export default function SearchLocationModal({
   visible,
@@ -112,11 +104,52 @@ export default function SearchLocationModal({
   const [departureList, setDepartureList] = useState<DepartureVO[]>([]);
   const [destinationList, setDestinationList] = useState<TravelVO[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  // 최근 검색 불러오기
+  const loadRecentSearches = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(RECENT_SEARCHES_KEY);
+      if (stored) {
+        setRecentSearches(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error('Failed to load recent searches:', error);
+    }
+  };
+
+  // 최근 검색 저장
+  const saveRecentSearch = async (place: string) => {
+    try {
+      const updated = [place, ...recentSearches.filter(p => p !== place)].slice(
+        0,
+        MAX_RECENT_SEARCHES,
+      );
+      await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+      setRecentSearches(updated);
+    } catch (error) {
+      console.error('Failed to save recent search:', error);
+    }
+  };
+
+  // 최근 검색 삭제
+  const removeRecentSearch = async (place: string) => {
+    try {
+      const updated = recentSearches.filter(p => p !== place);
+      await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+      setRecentSearches(updated);
+    } catch (error) {
+      console.error('Failed to remove recent search:', error);
+    }
+  };
 
   useEffect(() => {
     if (visible) {
       setSearchQuery('');
       setDepartureList([]);
+      if (fieldToUpdate === 'departure') {
+        loadRecentSearches();
+      }
       if (fieldToUpdate === 'destination') {
         fetchDestinations();
       }
@@ -190,25 +223,114 @@ export default function SearchLocationModal({
   }, [searchQuery, fieldToUpdate]);
 
   const handleSelect = (name: string) => {
+    if (isDeparture) {
+      saveRecentSearch(name);
+    }
     onSelect(name);
     onClose();
   };
 
   const isDeparture = fieldToUpdate === 'departure';
   const title = isDeparture ? '출발지 검색' : '여행지 선택';
+  const subtitle = isDeparture ? '어디서 출발하시나요?' : '어디로 떠나볼까요?';
+
+  // 빈 상태 컴포넌트 (최근 검색 + 인기 장소)
+  const renderEmptyState = () => (
+    <ScrollView
+      style={styles.emptyStateContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* 최근 검색 섹션 */}
+      {recentSearches.length > 0 && (
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionIcon}>🕐</Text>
+            <Text style={styles.sectionTitle}>최근 검색</Text>
+          </View>
+          <View style={styles.tagContainer}>
+            {recentSearches.map((place, index) => (
+              <View key={index} style={styles.tagWrapper}>
+                <TouchableOpacity
+                  style={styles.tagButton}
+                  onPress={() => setSearchQuery(place)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.tagText}>{place}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.tagRemoveButton}
+                  onPress={() => removeRecentSearch(place)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.tagRemoveText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* 검색 결과 섹션 */}
+      <View style={styles.sectionContainer}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionIcon}>📍</Text>
+          <Text style={styles.sectionTitle}>검색 결과</Text>
+        </View>
+        {isLoading ? (
+          <View style={styles.inlineLoaderContainer}>
+            <ActivityIndicator size="small" color={COLORS.primary} />
+            <Text style={styles.loaderText}>검색 중...</Text>
+          </View>
+        ) : departureList.length > 0 ? (
+          departureList.map((item, index) => (
+            <TouchableOpacity
+              key={item.placeId || index}
+              style={styles.resultItem}
+              onPress={() => handleSelect(item.departureName)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.resultInfo}>
+                <Text style={styles.resultName}>{item.departureName}</Text>
+                <Text style={styles.resultAddress} numberOfLines={1}>
+                  {item.departureAddress}
+                </Text>
+              </View>
+              <Text style={styles.resultArrow}>›</Text>
+            </TouchableOpacity>
+          ))
+        ) : searchQuery.length > 1 ? (
+          <View style={styles.inlineNoResultContainer}>
+            <Text style={styles.noResultIconSmall}>🔍</Text>
+            <Text style={styles.emptyHintText}>검색 결과가 없습니다</Text>
+          </View>
+        ) : (
+          <Text style={styles.emptyHintText}>
+            검색어를 입력하면 결과가 표시됩니다
+          </Text>
+        )}
+      </View>
+    </ScrollView>
+  );
 
   return (
-    <Modal visible={visible} transparent={true} animationType="fade">
+    <Modal visible={visible} transparent={true} animationType="slide">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
         <Pressable style={styles.backdrop} onPress={onClose} />
-        <View style={styles.modalView}>
+        <Animated.View style={styles.modalView}>
           {/* 헤더 */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>{title}</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <View>
+              <Text style={styles.headerTitle}>{title}</Text>
+              <Text style={styles.headerSubtitle}>{subtitle}</Text>
+            </View>
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.closeButton}
+              activeOpacity={0.7}
+            >
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -216,47 +338,37 @@ export default function SearchLocationModal({
           {/* 출발지 검색창 (여행지 선택 시에는 숨김) */}
           {isDeparture && (
             <View style={styles.searchContainer}>
-              <Text style={styles.searchIcon}>🔍</Text>
+              <View style={styles.searchIconContainer}>
+                <Text style={styles.searchIcon}>🔍</Text>
+              </View>
               <TextInput
                 style={styles.searchInput}
-                placeholder="출발지(역, 터미널, 주소 등) 입력"
+                placeholder="역, 터미널, 주소 등을 검색해보세요"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 autoFocus={true}
                 returnKeyType="search"
                 placeholderTextColor={COLORS.placeholder}
               />
-            </View>
-          )}
-
-          {/* 로딩 표시 */}
-          {isLoading && isDeparture && (
-            <View style={styles.loaderContainer}>
-              <ActivityIndicator size="small" color={COLORS.primary} />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setSearchQuery('')}
+                  style={styles.clearButton}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.clearButtonText}>✕</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
           {/* 컨텐츠 영역 */}
           <View style={styles.contentContainer}>
             {isDeparture ? (
-              // [출발지] 검색 결과 리스트
-              <FlatList
-                data={departureList}
-                keyExtractor={(item, index) => item.placeId || index.toString()}
-                renderItem={({ item }) => (
-                  <DepartureItem
-                    item={item}
-                    onSelect={() => handleSelect(item.departureName)}
-                  />
-                )}
-                ListEmptyComponent={
-                  !isLoading && searchQuery.length > 1 ? (
-                    <Text style={styles.emptyText}>검색 결과가 없습니다.</Text>
-                  ) : null
-                }
-                keyboardShouldPersistTaps="handled"
-                contentContainerStyle={{ paddingBottom: 20 }}
-              />
+              // [출발지] 검색 결과를 포함한 통합 뷰
+              !isLoading ? (
+                renderEmptyState()
+              ) : null
             ) : (
               // [여행지] 카드형 그리드 리스트
               <ScrollView
@@ -296,7 +408,7 @@ export default function SearchLocationModal({
               </ScrollView>
             )}
           </View>
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -305,110 +417,306 @@ export default function SearchLocationModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalView: {
-    width: '90%',
-    height: 600,
-    backgroundColor: 'white',
-    borderRadius: 24,
+    width: '100%',
+    height: height * 0.85,
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: normalize(28),
+    borderTopRightRadius: normalize(28),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 10,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 20,
     overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 16,
+    alignItems: 'flex-start',
+    paddingHorizontal: normalize(24),
+    paddingTop: normalize(24),
+    paddingBottom: normalize(16),
+    backgroundColor: COLORS.white,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: normalize(22),
     fontWeight: 'bold',
     color: COLORS.text,
+    marginBottom: normalize(4),
+  },
+  headerSubtitle: {
+    fontSize: normalize(14),
+    color: COLORS.placeholder,
+    fontWeight: '400',
   },
   closeButton: {
-    padding: 4,
+    width: normalize(36),
+    height: normalize(36),
+    borderRadius: normalize(18),
+    backgroundColor: COLORS.lightGray,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   closeButtonText: {
-    fontSize: 22,
-    color: COLORS.placeholder,
+    fontSize: normalize(16),
+    color: COLORS.darkGray,
     fontWeight: '600',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.lightGray,
-    borderRadius: 12,
-    marginHorizontal: 20,
-    paddingHorizontal: 16,
-    height: 50,
-    marginBottom: 10,
+    backgroundColor: COLORS.iconBg,
+    borderRadius: normalize(16),
+    marginHorizontal: normalize(20),
+    paddingHorizontal: normalize(4),
+    height: normalize(56),
+    marginBottom: normalize(16),
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  searchIconContainer: {
+    width: normalize(44),
+    height: normalize(44),
+    borderRadius: normalize(12),
+    backgroundColor: COLORS.lightBlue,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: normalize(12),
   },
   searchIcon: {
-    fontSize: 18,
-    marginRight: 10,
-    color: COLORS.placeholder,
+    fontSize: normalize(18),
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: normalize(15),
     color: COLORS.text,
     height: '100%',
   },
+  clearButton: {
+    width: normalize(32),
+    height: normalize(32),
+    borderRadius: normalize(16),
+    backgroundColor: COLORS.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: normalize(4),
+  },
+  clearButtonText: {
+    fontSize: normalize(12),
+    color: COLORS.darkGray,
+    fontWeight: '600',
+  },
   contentContainer: {
     flex: 1,
+    backgroundColor: COLORS.white,
   },
   loaderContainer: {
-    paddingVertical: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: normalize(16),
+    gap: normalize(8),
+  },
+  loaderText: {
+    fontSize: normalize(14),
+    color: COLORS.placeholder,
+  },
+  resultListContainer: {
+    paddingBottom: normalize(20),
   },
   // 출발지 리스트 스타일
   resultItem: {
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: normalize(14),
+    paddingHorizontal: normalize(20),
+    marginHorizontal: normalize(4),
+    marginVertical: normalize(4),
+    backgroundColor: COLORS.white,
+    borderRadius: normalize(12),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  resultIconContainer: {
+    width: normalize(40),
+    height: normalize(40),
+    borderRadius: normalize(10),
+    backgroundColor: COLORS.iconBg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: normalize(12),
+  },
+  resultIcon: {
+    fontSize: normalize(18),
   },
   resultInfo: {
+    flex: 1,
     flexDirection: 'column',
   },
   resultName: {
-    fontSize: 16,
+    fontSize: normalize(15),
     fontWeight: '600',
     color: COLORS.text,
-    marginBottom: 4,
+    marginBottom: normalize(2),
   },
   resultAddress: {
-    fontSize: 14,
+    fontSize: normalize(12),
+    color: COLORS.placeholder,
+  },
+  resultArrow: {
+    fontSize: normalize(20),
+    color: COLORS.border,
+    marginLeft: normalize(8),
+  },
+  // 빈 상태 스타일
+  emptyStateContainer: {
+    flex: 1,
+    paddingHorizontal: normalize(20),
+  },
+  sectionContainer: {
+    marginBottom: normalize(24),
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: normalize(12),
+  },
+  sectionIcon: {
+    fontSize: normalize(16),
+    marginRight: normalize(8),
+  },
+  sectionTitle: {
+    fontSize: normalize(16),
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  tagContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: normalize(8),
+  },
+  tagWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.iconBg,
+    borderRadius: normalize(20),
+    borderWidth: 1,
+    borderColor: COLORS.lightBlue,
+  },
+  tagButton: {
+    paddingLeft: normalize(14),
+    paddingRight: normalize(8),
+    paddingVertical: normalize(10),
+  },
+  tagRemoveButton: {
+    paddingRight: normalize(12),
+    paddingLeft: normalize(4),
+    paddingVertical: normalize(10),
+  },
+  tagRemoveText: {
+    fontSize: normalize(12),
+    color: COLORS.placeholder,
+  },
+  tagText: {
+    fontSize: normalize(14),
+    color: COLORS.primary,
+    fontWeight: '500',
+  },
+  popularItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: normalize(16),
+    paddingHorizontal: normalize(4),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  popularTextContainer: {
+    flex: 1,
+    flexDirection: 'column',
+  },
+  popularText: {
+    fontSize: normalize(16),
+    color: COLORS.text,
+    fontWeight: '600',
+    marginBottom: normalize(4),
+  },
+  popularSubText: {
+    fontSize: normalize(14),
+    color: COLORS.placeholder,
+  },
+  popularArrow: {
+    fontSize: normalize(20),
+    color: COLORS.placeholder,
+    fontWeight: '600',
+  },
+  emptyHintText: {
+    fontSize: normalize(14),
+    color: COLORS.placeholder,
+    textAlign: 'center',
+    paddingVertical: normalize(20),
+  },
+  inlineLoaderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: normalize(20),
+    gap: normalize(8),
+  },
+  inlineNoResultContainer: {
+    alignItems: 'center',
+    paddingVertical: normalize(20),
+  },
+  noResultIconSmall: {
+    fontSize: normalize(24),
+    marginBottom: normalize(8),
+    opacity: 0.5,
+  },
+  // 검색 결과 없음 스타일
+  noResultContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: normalize(60),
+  },
+  noResultIcon: {
+    fontSize: normalize(48),
+    marginBottom: normalize(16),
+    opacity: 0.5,
+  },
+  noResultTitle: {
+    fontSize: normalize(18),
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: normalize(8),
+  },
+  noResultSubtitle: {
+    fontSize: normalize(14),
     color: COLORS.placeholder,
   },
   // 여행지 그리드 스타일
   gridScrollContainer: {
     paddingHorizontal: PADDING_HORIZONTAL,
-    paddingBottom: 20,
+    paddingBottom: normalize(20),
   },
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
-    marginTop: 4,
+    marginTop: normalize(4),
   },
   gridItem: {
     width: ITEM_WIDTH,
     height: ITEM_WIDTH * 0.8,
     marginBottom: SPACING,
-    marginRight: SPACING, // 3열 배치 시 오른쪽 여백
-    borderRadius: 12,
+    marginRight: SPACING,
+    borderRadius: normalize(12),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -425,7 +733,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.overlay,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: normalize(12),
   },
   gridPlaceholder: {
     width: '100%',
@@ -433,31 +741,31 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.lightGray,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: normalize(12),
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   gridText: {
     color: COLORS.white,
     fontWeight: 'bold',
-    fontSize: 14, // 텍스트 길이 증가에 따른 폰트 크기 조정
+    fontSize: normalize(14),
     textAlign: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
-    paddingHorizontal: 4, // 텍스트 줄바꿈 방지 여백
+    paddingHorizontal: normalize(4),
   },
   gridTextDark: {
     color: COLORS.text,
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: normalize(14),
     textAlign: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: normalize(4),
   },
   emptyText: {
     textAlign: 'center',
     color: COLORS.placeholder,
-    marginTop: 40,
-    fontSize: 16,
+    marginTop: normalize(40),
+    fontSize: normalize(16),
   },
 });
