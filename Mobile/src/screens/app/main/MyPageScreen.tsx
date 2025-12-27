@@ -1,36 +1,19 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
   Pressable,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-import { API_URL } from '@env';
-import { useAuth } from '../../../contexts/AuthContext';
 import UpdateValueModal from '../../../components/common/UpdateValueModal';
 import UpdateGenderModal from '../../../components/common/UpdateGenderModal';
 import UpdateThemeModal from '../../../components/common/UpdateThemeModal';
 import UpdatePasswordModal from '../../../components/common/UpdatePasswordModal';
-
-const COLORS = {
-  primary: '#1344FF',
-  background: '#FFFFFF',
-  card: '#FFFFFF',
-  text: '#1C1C1E',
-  placeholder: '#8E8E93',
-  border: '#E5E5EA',
-  white: '#FFFFFF',
-  error: '#FF3B30',
-  lightGray: '#F0F2F5',
-};
+import { useMyPageScreen } from './useMyPageScreen';
+import { styles, COLORS } from './MyPageScreen.styles';
 
 const InfoCard = ({
   icon,
@@ -129,159 +112,27 @@ const ItineraryCard = ({
   </TouchableOpacity>
 );
 
-interface PlanVO {
-  planId: number;
-  planName: string;
-}
-
-interface PreferredThemeVO {
-  preferredThemeId: number;
-  preferredThemeName: string;
-}
-
-export default function MyPageScreen() {
-  const { logout } = useAuth();
-
-  const [isAgeModalVisible, setAgeModalVisible] = useState(false);
-  const [isGenderModalVisible, setGenderModalVisible] = useState(false);
-  const [isThemeModalVisible, setThemeModalVisible] = useState(false);
-  const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
-
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState({
-    name: '',
-    email: '',
-    age: '',
-    gender: '',
-    preferredTheme: '',
-  });
-
-  const [myItineraries, setMyItineraries] = useState<PlanVO[]>([]);
-  const [sharedItineraries, setSharedItineraries] = useState<PlanVO[]>([]);
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchUserProfile();
-    }, []),
-  );
-
-  const fetchUserProfile = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`${API_URL}/api/user/profile`);
-      const data = response.data;
-
-      let genderStr = '미설정';
-      if (data.gender === 0) genderStr = '남성';
-      else if (data.gender === 1) genderStr = '여성';
-
-      const themes =
-        data.preferredThemes && data.preferredThemes.length > 0
-          ? data.preferredThemes
-              .map((t: PreferredThemeVO) => t.preferredThemeName)
-              .join(', ')
-          : '미설정';
-
-      setUser({
-        name: data.nickname || '이름 없음',
-        email: data.email || '',
-        age: data.age ? data.age.toString() : '미설정',
-        gender: genderStr,
-        preferredTheme: themes,
-      });
-
-      setMyItineraries(data.myPlanVOs || []);
-      setSharedItineraries(data.editablePlanVOs || []);
-    } catch (error) {
-      console.error('Failed to fetch profile:', error);
-      Alert.alert('오류', '사용자 정보를 불러오는데 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUpdateAge = async (newAge: string) => {
-    try {
-      await axios.patch(`${API_URL}/api/user/age`, {
-        age: parseInt(newAge, 10),
-      });
-      setUser(prev => ({ ...prev, age: newAge }));
-      Alert.alert('성공', '나이가 변경되었습니다.');
-    } catch (e) {
-      Alert.alert('실패', '나이 변경에 실패했습니다.');
-    }
-  };
-
-  const handleUpdateGender = async (newGender: string) => {
-    try {
-      const genderInt = newGender === 'male' ? 0 : 1;
-      await axios.patch(`${API_URL}/api/user/gender`, { gender: genderInt });
-      setUser(prev => ({
-        ...prev,
-        gender: newGender === 'male' ? '남성' : '여성',
-      }));
-      Alert.alert('성공', '성별이 변경되었습니다.');
-    } catch (e) {
-      Alert.alert('실패', '성별 변경에 실패했습니다.');
-    }
-  };
-
-  const handleUpdateTheme = async () => {
-    fetchUserProfile();
-    Alert.alert('완료', '선호 테마가 변경되었습니다.');
-  };
-
-  const handleUpdatePassword = () => {
-    Alert.alert('완료', '비밀번호가 성공적으로 변경되었습니다.');
-  };
-
-  const handleResign = () => {
-    Alert.alert(
-      '회원 탈퇴',
-      '정말로 탈퇴하시겠습니까? 탈퇴 후에는 모든 데이터가 삭제되며 복구할 수 없습니다.',
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '탈퇴하기',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const token = await AsyncStorage.getItem('accessToken');
-              if (!token) {
-                Alert.alert('오류', '로그인 정보가 유효하지 않습니다.');
-                return;
-              }
-
-              const response = await axios.delete(
-                `${API_URL}/api/user/account`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                },
-              );
-
-              if (response.status === 200) {
-                Alert.alert('탈퇴 완료', '회원 탈퇴가 완료되었습니다.', [
-                  {
-                    text: '확인',
-                    onPress: async () => {
-                      await logout();
-                    },
-                  },
-                ]);
-              }
-            } catch (error: any) {
-              console.error('Resign Error:', error);
-              const msg =
-                error.response?.data?.message || '탈퇴 처리에 실패했습니다.';
-              Alert.alert('오류', msg);
-            }
-          },
-        },
-      ],
-    );
-  };
+const MyPageScreen = () => {
+  const {
+    isAgeModalVisible,
+    isGenderModalVisible,
+    isThemeModalVisible,
+    isPasswordModalVisible,
+    loading,
+    user,
+    myItineraries,
+    sharedItineraries,
+    logout,
+    setAgeModalVisible,
+    setGenderModalVisible,
+    setThemeModalVisible,
+    setPasswordModalVisible,
+    handleUpdateAge,
+    handleUpdateGender,
+    handleUpdateTheme,
+    handleUpdatePassword,
+    handleResign,
+  } = useMyPageScreen();
 
   if (loading) {
     return (
@@ -424,203 +275,6 @@ export default function MyPageScreen() {
       />
     </SafeAreaView>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  loadingContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scrollContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 40,
-  },
-  profileSection: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  profileIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.lightGray,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  profileIconText: {
-    fontSize: 40,
-    color: COLORS.placeholder,
-  },
-  profileNameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  profileName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  editIcon: {
-    fontSize: 20,
-    color: COLORS.text,
-    marginLeft: 8,
-  },
-  infoContainer: {
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-  },
-  cardIcon: {
-    fontSize: 24,
-    color: COLORS.text,
-    marginRight: 16,
-    width: 30,
-    textAlign: 'center',
-  },
-  cardContent: {
-    flex: 1,
-  },
-  cardLabel: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-    marginBottom: 2,
-  },
-  cardValue: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: COLORS.text,
-  },
-  changeButtonText: {
-    fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginLeft: 62,
-  },
-  linksContainer: {
-    marginTop: 24,
-    paddingHorizontal: 16,
-  },
-  linkText: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-    paddingVertical: 12,
-  },
-  deleteLinkText: {
-    color: COLORS.error,
-  },
-  sectionSeparator: {
-    height: 12,
-    backgroundColor: COLORS.lightGray,
-    marginHorizontal: -20,
-    marginVertical: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 16,
-  },
-  sectionTitleContainer: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-    marginTop: 4,
-  },
-  sectionActionContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sectionCount: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-    fontWeight: '500',
-  },
-  sectionCountIcon: {
-    fontSize: 14,
-  },
-  actionButton: {
-    marginLeft: 8,
-  },
-  sectionActionText: {
-    fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  itineraryCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: 16,
-    marginBottom: 12,
-  },
-  itineraryIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: COLORS.lightGray,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  itineraryIcon: {
-    fontSize: 24,
-  },
-  itineraryContent: {
-    flex: 1,
-  },
-  itineraryTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  itinerarySubtitle: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-    marginTop: 2,
-  },
-  moreButton: {
-    padding: 8,
-  },
-  moreButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.placeholder,
-  },
-  emptyContainer: {
-    paddingVertical: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-  },
-});
+export default MyPageScreen;
