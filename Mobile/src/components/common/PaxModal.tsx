@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Modal,
@@ -104,6 +103,12 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+  closeButton: {
+    marginTop: 10,
+  },
+  closeButtonText: {
+    color: COLORS.placeholder,
+  },
 });
 
 export default function PaxModal({
@@ -144,8 +149,8 @@ export default function PaxModal({
           <Pressable style={styles.confirmButton} onPress={handleConfirm}>
             <Text style={styles.confirmButtonText}>확인</Text>
           </Pressable>
-          <Pressable style={{ marginTop: 10 }} onPress={onClose}>
-            <Text style={{ color: COLORS.placeholder }}>닫기</Text>
+          <Pressable style={styles.closeButton} onPress={onClose}>
+            <Text style={styles.closeButtonText}>닫기</Text>
           </Pressable>
         </View>
       </View>

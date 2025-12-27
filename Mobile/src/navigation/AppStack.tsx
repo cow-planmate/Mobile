@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -40,6 +39,14 @@ function MyPageStack() {
   );
 }
 
+const HomeTabIcon = ({ color, size }: { color: string; size: number }) => (
+  <Text style={{ color, fontSize: size }}>🏠</Text>
+);
+
+const MyPageTabIcon = ({ color, size }: { color: string; size: number }) => (
+  <Text style={{ color, fontSize: size }}>👤</Text>
+);
+
 export default function AppStack() {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }}>
@@ -48,9 +55,7 @@ export default function AppStack() {
         component={HomeStack}
         options={{
           title: '홈',
-          tabBarIcon: ({ color, size }) => (
-            <Text style={{ color, fontSize: size }}>🏠</Text>
-          ),
+          tabBarIcon: HomeTabIcon,
         }}
       />
       <Tab.Screen
@@ -58,9 +63,7 @@ export default function AppStack() {
         component={MyPageStack}
         options={{
           title: '마이페이지',
-          tabBarIcon: ({ color, size }) => (
-            <Text style={{ color, fontSize: size }}>👤</Text>
-          ),
+          tabBarIcon: MyPageTabIcon,
         }}
       />
     </Tab.Navigator>

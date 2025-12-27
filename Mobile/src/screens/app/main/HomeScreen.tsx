@@ -204,17 +204,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           </View>
 
           <View style={styles.headerButtons}>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => console.log('알림 클릭')}
-            >
+            <TouchableOpacity style={styles.iconButton} onPress={() => {}}>
               <Text style={styles.headerIcon}>🔔</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => console.log('메뉴 클릭')}
-            >
+            <TouchableOpacity style={styles.iconButton} onPress={() => {}}>
               <Text style={styles.headerIcon}>☰</Text>
             </TouchableOpacity>
           </View>

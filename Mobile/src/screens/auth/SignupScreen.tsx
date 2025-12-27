@@ -96,12 +96,10 @@ export default function SignupScreen() {
     useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-
   const [showVerificationInput, setShowVerificationInput] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isNicknameVerified, setIsNicknameVerified] = useState(false);
   const [emailAuthToken, setEmailAuthToken] = useState<string | null>(null);
-
 
   const [isEmailDuplicate, setIsEmailDuplicate] = useState(false);
 
@@ -115,7 +113,6 @@ export default function SignupScreen() {
   const handleChange = useCallback((name: string, value: string) => {
     setForm(prev => ({ ...prev, [name]: value }));
     if (name === 'nickname') setIsNicknameVerified(false);
-
 
     if (name === 'email') {
       setIsEmailDuplicate(false);
@@ -141,7 +138,6 @@ export default function SignupScreen() {
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
-
   const handleResetEmail = () => {
     setIsEmailVerified(false);
     setShowVerificationInput(false);
@@ -150,7 +146,6 @@ export default function SignupScreen() {
     resetTimer();
     setForm(prev => ({ ...prev, verificationCode: '' }));
   };
-
 
   const handleSendEmail = async () => {
     if (!form.email) {
@@ -183,7 +178,6 @@ export default function SignupScreen() {
       const status = error.response?.status;
       const message =
         error.response?.data?.message || '인증 번호 전송에 실패했습니다.';
-
 
       if (message.includes('exist') || status === 409) {
         setIsEmailDuplicate(true);
@@ -375,10 +369,10 @@ export default function SignupScreen() {
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
+        style={styles.flex1}
       >
         <ScrollView
-          style={{ flex: 1 }}
+          style={styles.flex1}
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled"
         >
@@ -397,7 +391,7 @@ export default function SignupScreen() {
               </Text>
               <View style={styles.inputGroup}>
                 <View style={styles.labelRow}>
-                  <Text style={[styles.label, { marginBottom: 0 }]}>
+                  <Text style={[styles.label, styles.marginBottom0]}>
                     이메일
                   </Text>
                 </View>
@@ -479,7 +473,6 @@ export default function SignupScreen() {
                         onChangeText={v => handleChange('verificationCode', v)}
                         keyboardType="number-pad"
                         maxLength={6}
-
                         editable={!isLoading && !isEmailVerified}
                         onFocus={() => setFocusedField('verificationCode')}
                         onBlur={() => setFocusedField(null)}
@@ -627,7 +620,7 @@ export default function SignupScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>나이</Text>
                 <TouchableOpacity
-                  style={[styles.input, { justifyContent: 'center' }]}
+                  style={[styles.input, styles.justifyCenter]}
                   onPress={() => setAgeModalVisible(true)}
                 >
                   <Text
@@ -1031,5 +1024,11 @@ const styles = StyleSheet.create({
     fontSize: normalize(16),
     textAlign: 'center',
     color: COLORS.text,
+  },
+  marginBottom0: {
+    marginBottom: 0,
+  },
+  justifyCenter: {
+    justifyContent: 'center',
   },
 });

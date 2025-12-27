@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   View,
@@ -48,7 +47,7 @@ type TimelineItemProps = {
   style?: object;
 };
 
-export default function TimelineItem({
+const TimelineItem = React.memo(function TimelineItem({
   item,
   onDelete,
   onEditTime,
@@ -95,7 +94,9 @@ export default function TimelineItem({
       </View>
     </View>
   );
-}
+});
+
+export default TimelineItem;
 
 const styles = StyleSheet.create({
   cardContainer: {

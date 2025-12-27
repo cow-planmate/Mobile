@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
@@ -15,7 +14,6 @@ import TimelineItem, {
   Place,
 } from '../../../components/itinerary/TimelineItem';
 import MapView, { Marker } from 'react-native-maps';
-import { Day } from '../../../contexts/ItineraryContext';
 import ShareModal from '../../../components/common/ShareModal';
 
 const COLORS = {
@@ -48,7 +46,7 @@ const formatDate = (date: Date) => {
   return `${month}.${day}`;
 };
 
-const TimeGridBackground = ({ hours }: { hours: number[] }) => {
+const TimeGridBackground = React.memo(({ hours }: { hours: number[] }) => {
   const hourStr = (h: number) => h.toString().padStart(2, '0');
 
   return (
@@ -56,7 +54,7 @@ const TimeGridBackground = ({ hours }: { hours: number[] }) => {
       {hours.map(hour => (
         <View key={hour} style={[styles.hourBlock, { height: HOUR_HEIGHT }]}>
           <View style={styles.hourLabelContainer}>
-            <Text style={[styles.timeLabelText, { top: 0 }]}>
+            <Text style={[styles.timeLabelText, styles.timeLabelTop]}>
               {`${hourStr(hour)}:00`}
             </Text>
             <Text
@@ -98,41 +96,38 @@ const TimeGridBackground = ({ hours }: { hours: number[] }) => {
       ))}
     </View>
   );
-};
+});
 
-const StaticTimelineItem = ({
-  place,
-  offsetMinutes,
-}: {
-  place: Place;
-  offsetMinutes: number;
-}) => {
-  const startMinutes = timeToMinutes(place.startTime);
-  const endMinutes = timeToMinutes(place.endTime);
-  const durationMinutes = endMinutes - startMinutes;
+const StaticTimelineItem = React.memo(
+  ({ place, offsetMinutes }: { place: Place; offsetMinutes: number }) => {
+    const startMinutes = timeToMinutes(place.startTime);
+    const endMinutes = timeToMinutes(place.endTime);
+    const durationMinutes = endMinutes - startMinutes;
 
-  const top = (startMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
-  const height = durationMinutes * MINUTE_HEIGHT;
+    const top =
+      (startMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
+    const height = durationMinutes * MINUTE_HEIGHT;
 
-  const itemStyle = {
-    position: 'absolute',
-    top: top,
-    height: Math.max(height, MIN_ITEM_HEIGHT),
-    left: 60,
-    right: 15,
-  };
+    const itemStyle = {
+      position: 'absolute',
+      top: top,
+      height: Math.max(height, MIN_ITEM_HEIGHT),
+      left: 60,
+      right: 15,
+    };
 
-  return (
-    <View style={itemStyle}>
-      <TimelineItem
-        item={place}
-        onDelete={() => {}}
-        onEditTime={() => {}}
-        style={{ flex: 1 }}
-      />
-    </View>
-  );
-};
+    return (
+      <View style={itemStyle}>
+        <TimelineItem
+          item={place}
+          onDelete={() => {}}
+          onEditTime={() => {}}
+          style={styles.flex1}
+        />
+      </View>
+    );
+  },
+);
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 
@@ -163,12 +158,12 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const { gridHours, offsetMinutes } = useMemo(() => {
     const minHour = 0;
     const maxHour = 23;
-    const gridHours = Array.from(
+    const hours = Array.from(
       { length: maxHour - minHour + 1 },
       (_, i) => i + minHour,
     );
-    const offsetMinutes = minHour * 60;
-    return { gridHours, offsetMinutes };
+    const offset = minHour * 60;
+    return { gridHours: hours, offsetMinutes: offset };
   }, []);
 
   return (
@@ -201,7 +196,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         </MapView>
       </View>
 
-      <View style={{ flex: 1 }}>
+      <View style={styles.flex1}>
         <View style={styles.dayTabsWrapper}>
           <ScrollView
             horizontal
@@ -239,7 +234,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         </View>
 
         {selectedDay && (
-          <View style={{ flex: 1 }}>
+          <View style={styles.flex1}>
             <ScrollView
               ref={scrollRef}
               contentContainerStyle={styles.timelineContentContainer}
@@ -410,5 +405,11 @@ const styles = StyleSheet.create({
   },
   confirmButtonText: {
     color: COLORS.white,
+  },
+  timeLabelTop: {
+    top: 0,
+  },
+  flex1: {
+    flex: 1,
   },
 });

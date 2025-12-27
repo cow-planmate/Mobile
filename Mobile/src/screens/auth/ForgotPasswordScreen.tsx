@@ -19,7 +19,6 @@ import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { API_URL } from '@env';
 
-
 const { width } = Dimensions.get('window');
 const normalize = (size: number) =>
   Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
@@ -46,10 +45,8 @@ const formatTime = (seconds: number) => {
 const ForgotPasswordScreen = () => {
   const navigation = useNavigation<any>();
 
-
   const [step, setStep] = useState(1);
   const totalSteps = 2;
-
 
   const [email, setEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -60,11 +57,9 @@ const ForgotPasswordScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-
   const [timeLeft, setTimeLeft] = useState(300);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
 
   useEffect(() => {
     if (isTimerActive && timeLeft > 0) {
@@ -94,9 +89,6 @@ const ForgotPasswordScreen = () => {
     setTimeLeft(300);
   };
 
-
-
-
   const handleSendVerificationEmail = async () => {
     if (!email) {
       Alert.alert('알림', '이메일을 입력해주세요.');
@@ -104,7 +96,6 @@ const ForgotPasswordScreen = () => {
     }
     setIsLoading(true);
     try {
-
       await axios.post(`${API_URL}/api/auth/email/verification`, {
         email: email,
         purpose: 'RESET_PASSWORD',
@@ -124,7 +115,6 @@ const ForgotPasswordScreen = () => {
       setIsLoading(false);
     }
   };
-
 
   const handleVerifyCode = async () => {
     if (!verificationCode) {
@@ -168,7 +158,6 @@ const ForgotPasswordScreen = () => {
     }
   };
 
-
   const handleSendTempPassword = async () => {
     if (!authToken) {
       Alert.alert(
@@ -181,9 +170,6 @@ const ForgotPasswordScreen = () => {
     setIsLoading(true);
 
     try {
-
-
-
       await axios.post(
         `${API_URL}/api/auth/password/email`,
         {},
@@ -193,7 +179,6 @@ const ForgotPasswordScreen = () => {
           },
         },
       );
-
 
       Alert.alert(
         '발송 완료',
@@ -244,10 +229,10 @@ const ForgotPasswordScreen = () => {
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
+        style={styles.flex1}
       >
         <ScrollView
-          style={{ flex: 1 }}
+          style={styles.flex1}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
@@ -280,7 +265,6 @@ const ForgotPasswordScreen = () => {
                     onChangeText={setEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
-
                     editable={
                       !showVerificationInput && !isEmailVerified && !isLoading
                     }
@@ -590,7 +574,6 @@ const styles = StyleSheet.create({
     lineHeight: normalize(20),
   },
 
-
   footer: {
     padding: normalize(24),
     backgroundColor: COLORS.lightBlue,
@@ -612,8 +595,6 @@ const styles = StyleSheet.create({
   },
   submitButtonDisabled: {
     backgroundColor: COLORS.darkGray,
-
-
   },
   submitButtonText: {
     fontSize: normalize(18),

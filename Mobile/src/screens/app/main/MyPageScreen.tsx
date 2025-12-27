@@ -32,7 +32,6 @@ const COLORS = {
   lightGray: '#F0F2F5',
 };
 
-
 const InfoCard = ({
   icon,
   label,
@@ -130,7 +129,6 @@ const ItineraryCard = ({
   </TouchableOpacity>
 );
 
-
 interface PlanVO {
   planId: number;
   planName: string;
@@ -144,12 +142,10 @@ interface PreferredThemeVO {
 export default function MyPageScreen() {
   const { logout } = useAuth();
 
-
   const [isAgeModalVisible, setAgeModalVisible] = useState(false);
   const [isGenderModalVisible, setGenderModalVisible] = useState(false);
   const [isThemeModalVisible, setThemeModalVisible] = useState(false);
   const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
-
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState({
@@ -160,10 +156,8 @@ export default function MyPageScreen() {
     preferredTheme: '',
   });
 
-
   const [myItineraries, setMyItineraries] = useState<PlanVO[]>([]);
   const [sharedItineraries, setSharedItineraries] = useState<PlanVO[]>([]);
-
 
   useFocusEffect(
     useCallback(() => {
@@ -177,13 +171,9 @@ export default function MyPageScreen() {
       const response = await axios.get(`${API_URL}/api/user/profile`);
       const data = response.data;
 
-      console.log('User Profile Data:', data);
-
-
       let genderStr = '미설정';
       if (data.gender === 0) genderStr = '남성';
       else if (data.gender === 1) genderStr = '여성';
-
 
       const themes =
         data.preferredThemes && data.preferredThemes.length > 0
@@ -210,8 +200,6 @@ export default function MyPageScreen() {
     }
   };
 
-
-
   const handleUpdateAge = async (newAge: string) => {
     try {
       await axios.patch(`${API_URL}/api/user/age`, {
@@ -225,7 +213,6 @@ export default function MyPageScreen() {
   };
 
   const handleUpdateGender = async (newGender: string) => {
-
     try {
       const genderInt = newGender === 'male' ? 0 : 1;
       await axios.patch(`${API_URL}/api/user/gender`, { gender: genderInt });
@@ -244,11 +231,9 @@ export default function MyPageScreen() {
     Alert.alert('완료', '선호 테마가 변경되었습니다.');
   };
 
-  const handleUpdatePassword = (current: string, newPass: string) => {
-    console.log('Password Update:', { current, newPass });
+  const handleUpdatePassword = () => {
     Alert.alert('완료', '비밀번호가 성공적으로 변경되었습니다.');
   };
-
 
   const handleResign = () => {
     Alert.alert(
@@ -261,13 +246,11 @@ export default function MyPageScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-
               const token = await AsyncStorage.getItem('accessToken');
               if (!token) {
                 Alert.alert('오류', '로그인 정보가 유효하지 않습니다.');
                 return;
               }
-
 
               const response = await axios.delete(
                 `${API_URL}/api/user/account`,
@@ -277,7 +260,6 @@ export default function MyPageScreen() {
                   },
                 },
               );
-
 
               if (response.status === 200) {
                 Alert.alert('탈퇴 완료', '회원 탈퇴가 완료되었습니다.', [
@@ -426,7 +408,6 @@ export default function MyPageScreen() {
         visible={isGenderModalVisible}
         onClose={() => setGenderModalVisible(false)}
         onConfirm={handleUpdateGender}
-
         initialValue={user.gender === '남성' ? 'male' : 'female'}
       />
 

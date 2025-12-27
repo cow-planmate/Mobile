@@ -107,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             headers: { Authorization: `Bearer ${accessToken}` },
           },
         );
-        console.log('서버 로그아웃 성공');
+        
       }
     } catch (error) {
       console.error('서버 로그아웃 요청 실패 (로컬 로그아웃은 진행됨):', error);

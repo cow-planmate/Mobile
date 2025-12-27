@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -30,7 +30,6 @@ const COLORS = {
   error: '#FF3B30',
 };
 
-
 interface PlaceVO {
   placeId: string;
   categoryId: number;
@@ -44,7 +43,6 @@ interface PlaceVO {
 }
 
 type Props = NativeStackScreenProps<AppStackParamList, 'AddPlace'>;
-
 
 const getCategoryType = (id: number): '관광지' | '숙소' | '식당' | '기타' => {
   if ([12, 14, 15, 28].includes(id)) return '관광지';
@@ -97,18 +95,14 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
 
   const { addPlaceToDay } = useItinerary();
 
-
   const { dayIndex, destination } = route.params || {};
-
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
 
     setIsLoading(true);
     try {
-
       const query = destination ? `${destination} ${searchQuery}` : searchQuery;
-      console.log(`Searching for: ${query}`);
 
       const response = await axios.get(
         `${API_URL}/api/plan/place/${encodeURIComponent(query)}`,
@@ -141,10 +135,8 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
     }
   };
 
-
   const filteredPlaces = searchResults.filter(place => {
     if (selectedTab === '관광지') {
-
       return place.type === '관광지' || place.type === '기타';
     }
 

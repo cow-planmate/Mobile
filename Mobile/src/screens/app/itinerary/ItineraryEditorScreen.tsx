@@ -53,7 +53,6 @@ const COLORS = {
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
-
 interface PlaceVO {
   placeId: string;
   categoryId: number;
@@ -66,7 +65,6 @@ interface PlaceVO {
   iconUrl: string;
 }
 
-
 const getCategoryType = (id: number): '관광지' | '숙소' | '식당' | '기타' => {
   if ([12, 14, 15, 28].includes(id)) return '관광지';
   if (id === 32) return '숙소';
@@ -74,35 +72,36 @@ const getCategoryType = (id: number): '관광지' | '숙소' | '식당' | '기�
   return '기타';
 };
 
-
-const PlaceSearchResultItem = ({
-  item,
-  onSelect,
-}: {
-  item: Omit<Place, 'startTime' | 'endTime'>;
-  onSelect: () => void;
-}) => (
-  <TouchableOpacity style={styles.resultItem} onPress={onSelect}>
-    {item.imageUrl ? (
-      <Image source={{ uri: item.imageUrl }} style={styles.resultImage} />
-    ) : (
-      <View style={[styles.resultImage, styles.placeholderImage]}>
-        <Text style={styles.placeholderText}>{item.type[0]}</Text>
+const PlaceSearchResultItem = React.memo(
+  ({
+    item,
+    onSelect,
+  }: {
+    item: Omit<Place, 'startTime' | 'endTime'>;
+    onSelect: () => void;
+  }) => (
+    <TouchableOpacity style={styles.resultItem} onPress={onSelect}>
+      {item.imageUrl ? (
+        <Image source={{ uri: item.imageUrl }} style={styles.resultImage} />
+      ) : (
+        <View style={[styles.resultImage, styles.placeholderImage]}>
+          <Text style={styles.placeholderText}>{item.type[0]}</Text>
+        </View>
+      )}
+      <View style={styles.resultInfo}>
+        <Text style={styles.resultName}>{item.name}</Text>
+        <Text style={styles.resultMeta}>
+          {item.type} · ⭐ {item.rating > 0 ? item.rating : '-'}
+        </Text>
+        <Text style={styles.resultAddress} numberOfLines={1}>
+          {item.address}
+        </Text>
       </View>
-    )}
-    <View style={{ flex: 1, marginLeft: 10 }}>
-      <Text style={styles.resultName}>{item.name}</Text>
-      <Text style={styles.resultMeta}>
-        {item.type} · ⭐ {item.rating > 0 ? item.rating : '-'}
-      </Text>
-      <Text style={styles.resultAddress} numberOfLines={1}>
-        {item.address}
-      </Text>
-    </View>
-    <Pressable style={styles.addButton} onPress={onSelect}>
-      <Text style={styles.addButtonText}>추가</Text>
-    </Pressable>
-  </TouchableOpacity>
+      <Pressable style={styles.addButton} onPress={onSelect}>
+        <Text style={styles.addButtonText}>추가</Text>
+      </Pressable>
+    </TouchableOpacity>
+  ),
 );
 
 const HOUR_HEIGHT = 180;
@@ -141,7 +140,7 @@ const minutesToTime = (totalMinutes: number) => {
     .padStart(2, '0')}`;
 };
 
-const TimeGridBackground = ({ hours }: { hours: number[] }) => {
+const TimeGridBackground = React.memo(({ hours }: { hours: number[] }) => {
   const hourStr = (h: number) => h.toString().padStart(2, '0');
 
   return (
@@ -149,7 +148,7 @@ const TimeGridBackground = ({ hours }: { hours: number[] }) => {
       {hours.map(hour => (
         <View key={hour} style={[styles.hourBlock, { height: HOUR_HEIGHT }]}>
           <View style={styles.hourLabelContainer}>
-            <Text style={[styles.timeLabelText, { top: 0 }]}>
+            <Text style={[styles.timeLabelText, styles.timeLabelTop]}>
               {`${hourStr(hour)}:00`}
             </Text>
             <Text
@@ -191,7 +190,7 @@ const TimeGridBackground = ({ hours }: { hours: number[] }) => {
       ))}
     </View>
   );
-};
+});
 
 const DraggableTimelineItem = ({
   place,
@@ -289,7 +288,7 @@ const DraggableTimelineItem = ({
         height.value = newHeight;
       }
     })
-    .onEnd(event => {
+    .onEnd(() => {
       const relativeTop = top.value - GRID_TOP_OFFSET;
       const snappedRelativeTop =
         Math.round(relativeTop / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
@@ -329,7 +328,7 @@ const DraggableTimelineItem = ({
         height.value = newHeight;
       }
     })
-    .onEnd(event => {
+    .onEnd(() => {
       const snappedHeight =
         Math.round(height.value / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
 
@@ -377,12 +376,12 @@ const DraggableTimelineItem = ({
   return (
     <Animated.View style={animatedStyle}>
       <GestureDetector gesture={panGestureMove}>
-        <Animated.View style={{ flex: 1 }}>
+        <Animated.View style={styles.flex1}>
           <TimelineItem
             item={place}
             onDelete={onDelete}
             onEditTime={onEditTime}
-            style={{ flex: 1 }}
+            style={styles.flex1}
           />
         </Animated.View>
       </GestureDetector>
@@ -431,12 +430,12 @@ const TimelineComponent = React.memo(
       const { gridHours, offsetMinutes } = useMemo(() => {
         const minHour = 0;
         const maxHour = 23;
-        const gridHours = Array.from(
+        const hours = Array.from(
           { length: maxHour - minHour + 1 },
           (_, i) => i + minHour,
         );
-        const offsetMinutes = minHour * 60;
-        return { gridHours, offsetMinutes };
+        const offset = minHour * 60;
+        return { gridHours: hours, offsetMinutes: offset };
       }, []);
 
       return (
@@ -471,7 +470,6 @@ const TimelineComponent = React.memo(
   ),
 );
 
-
 const AddPlaceComponent = React.memo(
   ({
     onAddPlace,
@@ -487,7 +485,6 @@ const AddPlaceComponent = React.memo(
     const [searchResults, setSearchResults] = useState<Place[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
-
     const handleSearch = async () => {
       if (!searchQuery.trim()) return;
 
@@ -496,7 +493,6 @@ const AddPlaceComponent = React.memo(
         const query = destination
           ? `${destination} ${searchQuery}`
           : searchQuery;
-        console.log(`Searching for: ${query}`);
 
         const response = await axios.get(
           `${API_URL}/api/plan/place/${encodeURIComponent(query)}`,
@@ -529,7 +525,6 @@ const AddPlaceComponent = React.memo(
         setIsLoading(false);
       }
     };
-
 
     const filteredPlaces = searchResults.filter(place => {
       if (selectedTab === '관광지') {
@@ -587,7 +582,7 @@ const AddPlaceComponent = React.memo(
             <ActivityIndicator
               size="large"
               color={COLORS.primary}
-              style={{ marginTop: 20 }}
+              style={styles.marginTop20}
             />
           ) : (
             <FlatList
@@ -670,31 +665,33 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   }, [route.params.startDate, route.params.endDate, setDays]);
 
   useLayoutEffect(() => {
-    navigation.setOptions({
-      headerTitle: () =>
-        isEditingTripName ? (
-          <TextInput
-            value={tripName}
-            onChangeText={setTripName}
-            autoFocus={true}
-            onBlur={() => setIsEditingTripName(false)}
-            style={styles.headerInput}
-          />
-        ) : (
-          <TouchableOpacity onPress={() => setIsEditingTripName(true)}>
-            <Text style={styles.headerTitle}>{tripName}</Text>
-          </TouchableOpacity>
-        ),
-      headerRight: () => (
-        <TouchableOpacity
-          onPress={() =>
-            navigation.navigate('ItineraryView', { days, tripName })
-          }
-          style={styles.headerDoneButton}
-        >
-          <Text style={styles.headerDoneButtonText}>완료</Text>
+    const renderHeaderTitle = () =>
+      isEditingTripName ? (
+        <TextInput
+          value={tripName}
+          onChangeText={setTripName}
+          autoFocus={true}
+          onBlur={() => setIsEditingTripName(false)}
+          style={styles.headerInput}
+        />
+      ) : (
+        <TouchableOpacity onPress={() => setIsEditingTripName(true)}>
+          <Text style={styles.headerTitle}>{tripName}</Text>
         </TouchableOpacity>
-      ),
+      );
+
+    const renderHeaderRight = () => (
+      <TouchableOpacity
+        onPress={() => navigation.navigate('ItineraryView', { days, tripName })}
+        style={styles.headerDoneButton}
+      >
+        <Text style={styles.headerDoneButtonText}>완료</Text>
+      </TouchableOpacity>
+    );
+
+    navigation.setOptions({
+      headerTitle: renderHeaderTitle,
+      headerRight: renderHeaderRight,
     });
   }, [navigation, tripName, days, isEditingTripName]);
 
@@ -1131,5 +1128,18 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: COLORS.placeholder,
+  },
+  resultInfo: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  timeLabelTop: {
+    top: 0,
+  },
+  flex1: {
+    flex: 1,
+  },
+  marginTop20: {
+    marginTop: 20,
   },
 });

@@ -1,5 +1,3 @@
-
-import { Place } from '../components/itinerary/TimelineItem';
 import { Day } from '../contexts/ItineraryContext';
 
 export type AppStackParamList = {
@@ -18,9 +16,6 @@ export type AppStackParamList = {
     children: number;
     transport: string;
   };
-
-
-
 
   ItineraryView: {
     days: Day[];
