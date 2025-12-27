@@ -8,11 +8,10 @@ import {
   Pressable,
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import TimelineItem, {
-  Place,
-} from '../../../components/itinerary/TimelineItem';
+import TimelineItem from '../../../components/itinerary/TimelineItem';
+import { Place } from '../../../types/models';
 import ShareModal from '../../../components/common/ShareModal';
-import { useItineraryViewScreen } from './useItineraryViewScreen';
+import { useItineraryCompletionScreen } from './useItineraryCompletionScreen';
 import {
   styles,
   COLORS,
@@ -20,7 +19,7 @@ import {
   MINUTE_HEIGHT,
   MIN_ITEM_HEIGHT,
   GRID_TOP_OFFSET,
-} from './ItineraryViewScreen.styles';
+} from './ItineraryCompletionScreen.styles';
 
 const TimeGridBackground = React.memo(({ hours }: { hours: number[] }) => {
   const hourStr = (h: number) => h.toString().padStart(2, '0');
@@ -113,7 +112,7 @@ const StaticTimelineItem = React.memo(
   },
 );
 
-const ItineraryViewScreen = () => {
+const ItineraryCompletionScreen = () => {
   const {
     days,
     selectedDayIndex,
@@ -127,7 +126,7 @@ const ItineraryViewScreen = () => {
     setShareModalVisible,
     formatDate,
     timeToMinutes,
-  } = useItineraryViewScreen();
+  } = useItineraryCompletionScreen();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -247,4 +246,4 @@ const ItineraryViewScreen = () => {
   );
 };
 
-export default ItineraryViewScreen;
+export default ItineraryCompletionScreen;

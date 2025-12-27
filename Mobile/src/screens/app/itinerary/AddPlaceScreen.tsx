@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import { Place } from '../../../components/itinerary/TimelineItem';
+import { Place } from '../../../types/models';
 import { useAddPlaceScreen } from './useAddPlaceScreen';
 import { styles, COLORS } from './AddPlaceScreen.styles';
 

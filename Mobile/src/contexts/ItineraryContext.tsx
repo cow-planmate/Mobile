@@ -1,17 +1,10 @@
-
 import React, {
   createContext,
   useState,
   useContext,
   PropsWithChildren,
 } from 'react';
-import { Place } from '../components/itinerary/TimelineItem';
-
-export interface Day {
-  date: Date;
-  dayNumber: number;
-  places: Place[];
-}
+import { Day, Place } from '../types/models';
 
 const timeToMinutes = (time: string) => {
   if (!time || typeof time !== 'string' || !time.includes(':')) {

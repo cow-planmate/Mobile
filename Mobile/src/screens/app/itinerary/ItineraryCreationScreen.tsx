@@ -8,14 +8,18 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useItineraryEditorScreen } from './useItineraryEditorScreen';
-import { styles, COLORS, MINUTE_HEIGHT } from './ItineraryEditorScreen.styles';
+import { useItineraryCreationScreen } from './useItineraryCreationScreen';
+import {
+  styles,
+  COLORS,
+  MINUTE_HEIGHT,
+} from './ItineraryCreationScreen.styles';
 import Header from '../../../components/common/Header';
 import SearchLocationModal from '../../../components/common/SearchLocationModal';
 import TimePickerModal from '../../../components/common/TimePickerModal';
 import TimelineItem from '../../../components/itinerary/TimelineItem';
 
-const ItineraryEditorScreen = () => {
+const ItineraryCreationScreen = () => {
   const {
     days,
     selectedDayIndex,
@@ -40,7 +44,7 @@ const ItineraryEditorScreen = () => {
     handleUpdatePlaceTimes,
     handleDeletePlace,
     handleAddPlace,
-  } = useItineraryEditorScreen();
+  } = useItineraryCreationScreen();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -50,7 +54,7 @@ const ItineraryEditorScreen = () => {
         rightComponent={
           <TouchableOpacity
             onPress={() =>
-              navigation.navigate('ItineraryView', {
+              navigation.navigate('ItineraryCompletion', {
                 tripName,
                 startDate: route.params.startDate,
                 endDate: route.params.endDate,
@@ -192,4 +196,4 @@ const ItineraryEditorScreen = () => {
   );
 };
 
-export default ItineraryEditorScreen;
+export default ItineraryCreationScreen;

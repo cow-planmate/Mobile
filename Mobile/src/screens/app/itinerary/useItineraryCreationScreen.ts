@@ -9,10 +9,15 @@ import { ScrollView, TextInput, TouchableOpacity, Text } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
-import { useItinerary, Day, Place } from '../../../contexts/ItineraryContext';
-import { styles, COLORS, MINUTE_HEIGHT } from './ItineraryEditorScreen.styles';
+import { useItinerary } from '../../../contexts/ItineraryContext';
+import { Day, Place } from '../../../types/models';
+import {
+  styles,
+  COLORS,
+  MINUTE_HEIGHT,
+} from './ItineraryCreationScreen.styles';
 
-export const useItineraryEditorScreen = () => {
+export const useItineraryCreationScreen = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const route = useRoute<any>();

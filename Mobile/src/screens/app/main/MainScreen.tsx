@@ -11,8 +11,8 @@ import CalendarModal from '../../../components/common/CalendarModal';
 import PaxModal from '../../../components/common/PaxModal';
 import SelectionModal from '../../../components/common/SelectionModal';
 import SearchLocationModal from '../../../components/common/SearchLocationModal';
-import { useHomeScreen } from './useHomeScreen';
-import { styles } from './HomeScreen.styles';
+import { useMainScreen } from './useMainScreen';
+import { styles } from './MainScreen.styles';
 
 type InputRowProps = {
   label: string;
@@ -78,7 +78,7 @@ const InputRow = ({
   );
 };
 
-export default function HomeScreen() {
+export default function MainScreen() {
   const {
     user,
     startDate,
@@ -112,7 +112,7 @@ export default function HomeScreen() {
     getPaxText,
     handleCreateItinerary,
     openSearchModal,
-  } = useHomeScreen();
+  } = useMainScreen();
 
   return (
     <SafeAreaView style={styles.container}>

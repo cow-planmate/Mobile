@@ -6,6 +6,7 @@ import {
   Pressable,
   TouchableOpacity,
 } from 'react-native';
+import { Place } from '../../types/models';
 
 const COLORS = {
   primary: '#1344FF',
@@ -27,18 +28,7 @@ const timeToMinutes = (time: string) => {
 
 const IS_COMPACT_VIEW_THRESHOLD_MINUTES = 30;
 
-export type Place = {
-  id: string;
-  name: string;
-  type: '관광지' | '숙소' | '식당';
-  startTime: string;
-  endTime: string;
-  address: string;
-  rating: number;
-  imageUrl: string;
-  latitude: number;
-  longitude: number;
-};
+export { Place };
 
 type TimelineItemProps = {
   item: Place;

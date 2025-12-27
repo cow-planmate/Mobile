@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { AppStackParamList } from '../../../navigation/types';
-import { Place } from '../../../components/itinerary/TimelineItem';
+import { Place } from '../../../types/models';
 import { useItinerary } from '../../../contexts/ItineraryContext';
 
 interface PlaceVO {

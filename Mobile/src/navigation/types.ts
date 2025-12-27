@@ -1,13 +1,13 @@
-import { Day } from '../contexts/ItineraryContext';
+import { Day } from '../types/models';
 
 export type AppStackParamList = {
-  Home:
+  Main:
     | {
         selectedLocation?: string;
         fieldToUpdate?: 'departure' | 'destination';
       }
     | undefined;
-  ItineraryEditor: {
+  ItineraryCreation: {
     departure: string;
     destination: string;
     startDate: string;
@@ -17,7 +17,7 @@ export type AppStackParamList = {
     transport: string;
   };
 
-  ItineraryView: {
+  ItineraryCompletion: {
     days: Day[];
     tripName: string;
   };

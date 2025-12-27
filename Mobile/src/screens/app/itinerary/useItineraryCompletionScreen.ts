@@ -3,9 +3,9 @@ import { ScrollView } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
-import { MINUTE_HEIGHT } from './ItineraryViewScreen.styles';
+import { MINUTE_HEIGHT } from './ItineraryCompletionScreen.styles';
 
-export const useItineraryViewScreen = () => {
+export const useItineraryCompletionScreen = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const route = useRoute<any>();

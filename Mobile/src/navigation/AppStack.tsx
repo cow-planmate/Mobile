@@ -1,10 +1,10 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import HomeScreen from '../screens/app/main/HomeScreen';
-import ItineraryEditorScreen from '../screens/app/itinerary/ItineraryEditorScreen';
+import MainScreen from '../screens/app/main/MainScreen';
+import ItineraryCreationScreen from '../screens/app/itinerary/ItineraryCreationScreen';
 
-import ItineraryViewScreen from '../screens/app/itinerary/ItineraryViewScreen';
+import ItineraryCompletionScreen from '../screens/app/itinerary/ItineraryCompletionScreen';
 import MyPageScreen from '../screens/app/main/MyPageScreen';
 import { AppStackParamList } from './types';
 import { Text } from 'react-native';
@@ -16,13 +16,19 @@ function HomeStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen
-        name="Home"
-        component={HomeScreen}
+        name="Main"
+        component={MainScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen name="ItineraryEditor" component={ItineraryEditorScreen} />
+      <Stack.Screen
+        name="ItineraryCreation"
+        component={ItineraryCreationScreen}
+      />
       {}
-      <Stack.Screen name="ItineraryView" component={ItineraryViewScreen} />
+      <Stack.Screen
+        name="ItineraryCompletion"
+        component={ItineraryCompletionScreen}
+      />
     </Stack.Navigator>
   );
 }

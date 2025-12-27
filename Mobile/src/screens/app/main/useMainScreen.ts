@@ -5,7 +5,7 @@ import { AppStackParamList } from '../../../navigation/types';
 import { useAuth } from '../../../contexts/AuthContext';
 import { OptionType } from '../../../components/common/SelectionModal';
 
-export const useHomeScreen = () => {
+export const useMainScreen = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const { user } = useAuth();
@@ -65,7 +65,7 @@ export const useHomeScreen = () => {
       return;
     }
     setShowErrors(false);
-    navigation.navigate('ItineraryEditor', {
+    navigation.navigate('ItineraryCreation', {
       departure,
       destination,
       startDate: startDate?.toISOString() ?? new Date().toISOString(),
