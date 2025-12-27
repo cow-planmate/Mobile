@@ -23,7 +23,7 @@ export const styles = StyleSheet.create({
   },
   scrollContainer: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 60,
     paddingBottom: 40,
   },
   profileSection: {
@@ -111,102 +111,5 @@ export const styles = StyleSheet.create({
   },
   deleteLinkText: {
     color: COLORS.error,
-  },
-  sectionSeparator: {
-    height: 12,
-    backgroundColor: COLORS.lightGray,
-    marginHorizontal: -20,
-    marginVertical: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 16,
-  },
-  sectionTitleContainer: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-    marginTop: 4,
-  },
-  sectionActionContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sectionCount: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-    fontWeight: '500',
-  },
-  sectionCountIcon: {
-    fontSize: 14,
-  },
-  actionButton: {
-    marginLeft: 8,
-  },
-  sectionActionText: {
-    fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  itineraryCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: 16,
-    marginBottom: 12,
-  },
-  itineraryIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: COLORS.lightGray,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  itineraryIcon: {
-    fontSize: 24,
-  },
-  itineraryContent: {
-    flex: 1,
-  },
-  itineraryTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  itinerarySubtitle: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-    marginTop: 2,
-  },
-  moreButton: {
-    padding: 8,
-  },
-  moreButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.placeholder,
-  },
-  emptyContainer: {
-    paddingVertical: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: {
-    fontSize: 14,
-    color: COLORS.placeholder,
   },
 });

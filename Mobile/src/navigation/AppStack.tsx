@@ -6,6 +6,7 @@ import ItineraryCreationScreen from '../screens/app/itinerary/ItineraryCreationS
 
 import ItineraryCompletionScreen from '../screens/app/itinerary/ItineraryCompletionScreen';
 import MyPageScreen from '../screens/app/main/MyPageScreen';
+import MyItineraryScreen from '../screens/app/main/MyItineraryScreen';
 import { AppStackParamList } from './types';
 import { Text } from 'react-native';
 
@@ -24,21 +25,21 @@ function HomeStack() {
         name="ItineraryCreation"
         component={ItineraryCreationScreen}
       />
-      {}
       <Stack.Screen
         name="ItineraryCompletion"
         component={ItineraryCompletionScreen}
       />
+      <Stack.Screen name="MyPage" component={MyPageScreen} />
     </Stack.Navigator>
   );
 }
 
-function MyPageStack() {
+function MyItineraryStack() {
   return (
     <Stack.Navigator>
       <Stack.Screen
-        name="MyPage"
-        component={MyPageScreen}
+        name="MyItinerary"
+        component={MyItineraryScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
@@ -49,9 +50,13 @@ const HomeTabIcon = ({ color, size }: { color: string; size: number }) => (
   <Text style={{ color, fontSize: size }}>🏠</Text>
 );
 
-const MyPageTabIcon = ({ color, size }: { color: string; size: number }) => (
-  <Text style={{ color, fontSize: size }}>👤</Text>
-);
+const MyItineraryTabIcon = ({
+  color,
+  size,
+}: {
+  color: string;
+  size: number;
+}) => <Text style={{ color, fontSize: size }}>🗓️</Text>;
 
 export default function AppStack() {
   return (
@@ -65,11 +70,11 @@ export default function AppStack() {
         }}
       />
       <Tab.Screen
-        name="MyPageTab"
-        component={MyPageStack}
+        name="MyItineraryTab"
+        component={MyItineraryStack}
         options={{
-          title: '마이페이지',
-          tabBarIcon: MyPageTabIcon,
+          title: '내 일정',
+          tabBarIcon: MyItineraryTabIcon,
         }}
       />
     </Tab.Navigator>

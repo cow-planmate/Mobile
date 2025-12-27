@@ -81,6 +81,10 @@ export const useMainScreen = () => {
     setSearchModalVisible(true);
   };
 
+  const handleNavigateToMyPage = () => {
+    navigation.navigate('MyPage');
+  };
+
   return {
     user,
     startDate,
@@ -115,5 +119,6 @@ export const useMainScreen = () => {
     getPaxText,
     handleCreateItinerary,
     openSearchModal,
+    handleNavigateToMyPage,
   };
 };

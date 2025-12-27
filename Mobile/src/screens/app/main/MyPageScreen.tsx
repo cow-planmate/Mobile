@@ -12,7 +12,7 @@ import UpdateValueModal from '../../../components/common/UpdateValueModal';
 import UpdateGenderModal from '../../../components/common/UpdateGenderModal';
 import UpdateThemeModal from '../../../components/common/UpdateThemeModal';
 import UpdatePasswordModal from '../../../components/common/UpdatePasswordModal';
-import { useMyPageScreen } from './useMyPageScreen';
+import { useProfileScreen } from './useProfileScreen';
 import { styles, COLORS } from './MyPageScreen.styles';
 
 const InfoCard = ({
@@ -56,62 +56,6 @@ const EditableCard = ({
   </View>
 );
 
-const SectionHeader = ({
-  title,
-  subtitle,
-  count,
-  actionText,
-  onActionPress,
-}: {
-  title: string;
-  subtitle: string;
-  count: number;
-  actionText?: string;
-  onActionPress?: () => void;
-}) => (
-  <View style={styles.sectionHeader}>
-    <View style={styles.sectionTitleContainer}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <Text style={styles.sectionSubtitle}>{subtitle}</Text>
-    </View>
-    <View style={styles.sectionActionContainer}>
-      <Text style={styles.sectionCount}>
-        <Text style={styles.sectionCountIcon}>🗓️</Text> {count}개의 계획
-      </Text>
-      {actionText && (
-        <TouchableOpacity onPress={onActionPress} style={styles.actionButton}>
-          <Text style={styles.sectionActionText}>{actionText}</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  </View>
-);
-
-const ItineraryCard = ({
-  title,
-  subtitle,
-  onPress,
-  onPressMore,
-}: {
-  title: string;
-  subtitle: string;
-  onPress: () => void;
-  onPressMore: () => void;
-}) => (
-  <TouchableOpacity style={styles.itineraryCard} onPress={onPress}>
-    <View style={styles.itineraryIconContainer}>
-      <Text style={styles.itineraryIcon}>🗓️</Text>
-    </View>
-    <View style={styles.itineraryContent}>
-      <Text style={styles.itineraryTitle}>{title}</Text>
-      <Text style={styles.itinerarySubtitle}>{subtitle}</Text>
-    </View>
-    <TouchableOpacity onPress={onPressMore} style={styles.moreButton}>
-      <Text style={styles.moreButtonText}>⋮</Text>
-    </TouchableOpacity>
-  </TouchableOpacity>
-);
-
 const MyPageScreen = () => {
   const {
     isAgeModalVisible,
@@ -120,8 +64,6 @@ const MyPageScreen = () => {
     isPasswordModalVisible,
     loading,
     user,
-    myItineraries,
-    sharedItineraries,
     logout,
     setAgeModalVisible,
     setGenderModalVisible,
@@ -132,7 +74,7 @@ const MyPageScreen = () => {
     handleUpdateTheme,
     handleUpdatePassword,
     handleResign,
-  } = useMyPageScreen();
+  } = useProfileScreen();
 
   if (loading) {
     return (
@@ -186,52 +128,6 @@ const MyPageScreen = () => {
             onPress={() => setPasswordModalVisible(true)}
           />
         </View>
-
-        <View style={styles.sectionSeparator} />
-
-        <SectionHeader
-          title="나의 일정"
-          subtitle="직접 생성한 일정을 관리하세요"
-          count={myItineraries.length}
-          actionText="다중삭제"
-          onActionPress={() => alert('다중삭제')}
-        />
-
-        {myItineraries.map(item => (
-          <ItineraryCard
-            key={item.planId}
-            title={item.planName}
-            subtitle="클릭하여 상세보기"
-            onPress={() => alert(`${item.planName} 상세보기`)}
-            onPressMore={() => alert(`${item.planName} 더보기`)}
-          />
-        ))}
-
-        <View style={styles.sectionSeparator} />
-
-        <SectionHeader
-          title="우리들의 일정"
-          subtitle="초대받은 일정에서 다른 멤버와 함께 편집하세요"
-          count={sharedItineraries.length}
-        />
-
-        {sharedItineraries.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              편집 권한을 받은 일정이 없습니다
-            </Text>
-          </View>
-        ) : (
-          sharedItineraries.map(item => (
-            <ItineraryCard
-              key={item.planId}
-              title={item.planName}
-              subtitle="클릭하여 상세보기"
-              onPress={() => alert(`${item.planName} 상세보기`)}
-              onPressMore={() => alert(`${item.planName} 더보기`)}
-            />
-          ))
-        )}
 
         <View style={styles.linksContainer}>
           <Pressable onPress={logout}>

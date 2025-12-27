@@ -112,6 +112,7 @@ export default function MainScreen() {
     getPaxText,
     handleCreateItinerary,
     openSearchModal,
+    handleNavigateToMyPage,
   } = useMainScreen();
 
   return (
@@ -140,7 +141,10 @@ export default function MainScreen() {
               <Text style={styles.headerIcon}>🔔</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.iconButton} onPress={() => {}}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={handleNavigateToMyPage}
+            >
               <Text style={styles.headerIcon}>☰</Text>
             </TouchableOpacity>
           </View>

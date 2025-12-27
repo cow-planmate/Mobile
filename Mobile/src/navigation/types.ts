@@ -25,4 +25,6 @@ export type AppStackParamList = {
     fieldToUpdate: 'departure' | 'destination';
     currentValue: string;
   };
+  MyPage: undefined;
+  MyItinerary: undefined;
 };
