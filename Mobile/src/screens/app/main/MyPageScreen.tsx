@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // [추가] 토큰 접근용
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -32,7 +32,7 @@ const COLORS = {
   lightGray: '#F0F2F5',
 };
 
-// --- 컴포넌트들 ---
+
 const InfoCard = ({
   icon,
   label,
@@ -130,7 +130,7 @@ const ItineraryCard = ({
   </TouchableOpacity>
 );
 
-// --- 타입 정의 ---
+
 interface PlanVO {
   planId: number;
   planName: string;
@@ -144,13 +144,13 @@ interface PreferredThemeVO {
 export default function MyPageScreen() {
   const { logout } = useAuth();
 
-  // 모달 상태
+
   const [isAgeModalVisible, setAgeModalVisible] = useState(false);
   const [isGenderModalVisible, setGenderModalVisible] = useState(false);
   const [isThemeModalVisible, setThemeModalVisible] = useState(false);
   const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
 
-  // 사용자 데이터 상태
+
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState({
     name: '',
@@ -160,11 +160,11 @@ export default function MyPageScreen() {
     preferredTheme: '',
   });
 
-  // 일정 데이터 상태
+
   const [myItineraries, setMyItineraries] = useState<PlanVO[]>([]);
   const [sharedItineraries, setSharedItineraries] = useState<PlanVO[]>([]);
 
-  // 화면이 포커스될 때마다 데이터 갱신
+
   useFocusEffect(
     useCallback(() => {
       fetchUserProfile();
@@ -179,12 +179,12 @@ export default function MyPageScreen() {
 
       console.log('User Profile Data:', data);
 
-      // [수정] 성별 변환 (0: 남성, 1: 여성)
+
       let genderStr = '미설정';
       if (data.gender === 0) genderStr = '남성';
       else if (data.gender === 1) genderStr = '여성';
 
-      // 선호 테마 변환
+
       const themes =
         data.preferredThemes && data.preferredThemes.length > 0
           ? data.preferredThemes
@@ -210,7 +210,7 @@ export default function MyPageScreen() {
     }
   };
 
-  // --- 변경 핸들러 ---
+
 
   const handleUpdateAge = async (newAge: string) => {
     try {
@@ -225,7 +225,7 @@ export default function MyPageScreen() {
   };
 
   const handleUpdateGender = async (newGender: string) => {
-    // [수정] newGender: 'male' | 'female' -> 서버: 0 | 1
+
     try {
       const genderInt = newGender === 'male' ? 0 : 1;
       await axios.patch(`${API_URL}/api/user/gender`, { gender: genderInt });
@@ -240,7 +240,7 @@ export default function MyPageScreen() {
   };
 
   const handleUpdateTheme = async () => {
-    fetchUserProfile(); // 테마 변경 후 프로필 다시 로드
+    fetchUserProfile();
     Alert.alert('완료', '선호 테마가 변경되었습니다.');
   };
 
@@ -249,7 +249,7 @@ export default function MyPageScreen() {
     Alert.alert('완료', '비밀번호가 성공적으로 변경되었습니다.');
   };
 
-  // [수정됨] 회원 탈퇴 핸들러 (강화된 로직)
+
   const handleResign = () => {
     Alert.alert(
       '회원 탈퇴',
@@ -261,14 +261,14 @@ export default function MyPageScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // 1. 토큰 가져오기 (안전한 요청을 위해 명시적으로 가져옴)
+
               const token = await AsyncStorage.getItem('accessToken');
               if (!token) {
                 Alert.alert('오류', '로그인 정보가 유효하지 않습니다.');
                 return;
               }
 
-              // 2. 탈퇴 API 호출
+
               const response = await axios.delete(
                 `${API_URL}/api/user/account`,
                 {
@@ -278,13 +278,13 @@ export default function MyPageScreen() {
                 },
               );
 
-              // 3. 성공 시 처리
+
               if (response.status === 200) {
                 Alert.alert('탈퇴 완료', '회원 탈퇴가 완료되었습니다.', [
                   {
                     text: '확인',
                     onPress: async () => {
-                      await logout(); // 로그아웃 및 초기화
+                      await logout();
                     },
                   },
                 ]);
@@ -426,7 +426,7 @@ export default function MyPageScreen() {
         visible={isGenderModalVisible}
         onClose={() => setGenderModalVisible(false)}
         onConfirm={handleUpdateGender}
-        // 초기값: 남성일 때 'male', 여성일 때 'female'
+
         initialValue={user.gender === '남성' ? 'male' : 'female'}
       />
 

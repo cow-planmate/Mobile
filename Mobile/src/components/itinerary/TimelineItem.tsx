@@ -1,4 +1,4 @@
-// src/components/itinerary/TimelineItem.tsx
+
 import React from 'react';
 import {
   View,

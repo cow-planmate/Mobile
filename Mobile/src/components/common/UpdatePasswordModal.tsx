@@ -1,4 +1,4 @@
-// src/components/common/UpdatePasswordModal.tsx
+
 import React, { useState } from 'react';
 import {
   View,

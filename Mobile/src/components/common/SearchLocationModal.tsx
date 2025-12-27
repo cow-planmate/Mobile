@@ -23,7 +23,7 @@ const { width, height } = Dimensions.get('window');
 const normalize = (size: number) =>
   Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
 
-// 상위 지역 목록
+
 const TARGET_REGIONS = [
   '서울특별시',
   '부산광역시',
@@ -44,7 +44,7 @@ const TARGET_REGIONS = [
   '제주특별자치도',
 ];
 
-// 하위 지역 매핑
+
 const SUB_REGIONS: { [key: string]: string[] } = {
   서울특별시: [
     '강남구',
@@ -336,7 +336,7 @@ export default function SearchLocationModal({
     string | null
   >(null);
 
-  // 최근 검색 불러오기
+
   const loadRecentSearches = async () => {
     try {
       const stored = await AsyncStorage.getItem(RECENT_SEARCHES_KEY);
@@ -348,7 +348,7 @@ export default function SearchLocationModal({
     }
   };
 
-  // 최근 검색 저장
+
   const saveRecentSearch = async (place: string) => {
     try {
       const updated = [place, ...recentSearches.filter(p => p !== place)].slice(
@@ -362,7 +362,7 @@ export default function SearchLocationModal({
     }
   };
 
-  // 최근 검색 삭제
+
   const removeRecentSearch = async (place: string) => {
     try {
       const updated = recentSearches.filter(p => p !== place);
@@ -387,7 +387,7 @@ export default function SearchLocationModal({
     }
   }, [visible, fieldToUpdate]);
 
-  // 여행지 목록 매핑 및 로드
+
   const fetchDestinations = async () => {
     setIsLoading(true);
     try {
@@ -395,14 +395,14 @@ export default function SearchLocationModal({
       const serverData: TravelVO[] = response.data.travels || [];
 
       const formattedList = TARGET_REGIONS.map((regionName, index) => {
-        // 서버 데이터에서 해당 지역 이름이 포함된 항목 찾기
+
         const matched = serverData.find(item =>
           item.travelName.includes(regionName),
         );
 
         return {
           travelId: matched ? matched.travelId : index,
-          travelName: regionName, // 전체 이름으로 표시
+          travelName: regionName,
           travelImg: matched?.travelImg,
         };
       });
@@ -410,7 +410,7 @@ export default function SearchLocationModal({
       setDestinationList(formattedList);
     } catch (error) {
       console.error('Failed to fetch destinations:', error);
-      // 실패 시 기본 목록 생성
+
       const fallbackList = TARGET_REGIONS.map((name, index) => ({
         travelId: index,
         travelName: name,
@@ -461,19 +461,19 @@ export default function SearchLocationModal({
     onClose();
   };
 
-  // 상위 지역 클릭 핸들러
+
   const handleParentRegionClick = (regionName: string) => {
     setSelectedParentRegion(regionName);
   };
 
-  // 하위 지역 선택 핸들러
+
   const handleSubRegionSelect = (parentRegion: string, subRegion: string) => {
     const fullLocation = `${parentRegion} ${subRegion}`;
     onSelect(fullLocation);
     onClose();
   };
 
-  // 뒤로가기 (하위 지역 -> 상위 지역)
+
   const handleBackToParentRegions = () => {
     setSelectedParentRegion(null);
   };
@@ -482,13 +482,13 @@ export default function SearchLocationModal({
   const title = isDeparture ? '출발지 검색' : '여행지 선택';
   const subtitle = isDeparture ? '어디서 출발하시나요?' : '어디로 떠나볼까요?';
 
-  // 빈 상태 컴포넌트 (최근 검색 + 인기 장소)
+
   const renderEmptyState = () => (
     <ScrollView
       style={styles.emptyStateContainer}
       showsVerticalScrollIndicator={false}
     >
-      {/* 최근 검색 섹션 */}
+      {}
       {recentSearches.length > 0 && (
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
@@ -518,7 +518,7 @@ export default function SearchLocationModal({
         </View>
       )}
 
-      {/* 검색 결과 섹션 */}
+      {}
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionIcon}>📍</Text>
@@ -568,7 +568,7 @@ export default function SearchLocationModal({
       >
         <Pressable style={styles.backdrop} onPress={onClose} />
         <Animated.View style={styles.modalView}>
-          {/* 헤더 */}
+          {}
           <View style={styles.header}>
             <View>
               <Text style={styles.headerTitle}>{title}</Text>
@@ -583,7 +583,7 @@ export default function SearchLocationModal({
             </TouchableOpacity>
           </View>
 
-          {/* 출발지 검색창 (여행지 선택 시에는 숨김) */}
+          {}
           {isDeparture && (
             <View style={styles.searchContainer}>
               <View style={styles.searchIconContainer}>
@@ -610,21 +610,21 @@ export default function SearchLocationModal({
             </View>
           )}
 
-          {/* 컨텐츠 영역 */}
+          {}
           <View style={styles.contentContainer}>
             {isDeparture ? (
-              // [출발지] 검색 결과를 포함한 통합 뷰
+
               !isLoading ? (
                 renderEmptyState()
               ) : null
             ) : (
-              // [여행지] 상위/하위 지역 리스트
+
               <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.destinationScrollContainer}
               >
                 <View style={styles.destinationSectionContainer}>
-                  {/* 헤더: 하위 지역 선택 시 뒤로가기 버튼 표시 */}
+                  {}
                   <View style={styles.sectionHeader}>
                     {selectedParentRegion ? (
                       <TouchableOpacity
@@ -649,7 +649,7 @@ export default function SearchLocationModal({
                       <Text style={styles.loaderText}>불러오는 중...</Text>
                     </View>
                   ) : selectedParentRegion ? (
-                    // 하위 지역 리스트
+
                     <View style={styles.destinationListContainer}>
                       {(SUB_REGIONS[selectedParentRegion] || []).map(
                         (subRegion, index, arr) => (
@@ -679,7 +679,7 @@ export default function SearchLocationModal({
                       )}
                     </View>
                   ) : (
-                    // 상위 지역 리스트
+
                     <View style={styles.destinationListContainer}>
                       {destinationList.map((item, index) => (
                         <TouchableOpacity
@@ -831,7 +831,7 @@ const styles = StyleSheet.create({
   resultListContainer: {
     paddingBottom: normalize(20),
   },
-  // 출발지 리스트 스타일
+
   resultItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -875,7 +875,7 @@ const styles = StyleSheet.create({
     color: COLORS.border,
     marginLeft: normalize(8),
   },
-  // 빈 상태 스타일
+
   emptyStateContainer: {
     flex: 1,
     paddingHorizontal: normalize(20),
@@ -988,7 +988,7 @@ const styles = StyleSheet.create({
     marginBottom: normalize(8),
     opacity: 0.5,
   },
-  // 검색 결과 없음 스타일
+
   noResultContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -1010,7 +1010,7 @@ const styles = StyleSheet.create({
     fontSize: normalize(14),
     color: COLORS.placeholder,
   },
-  // 여행지 리스트 스타일
+
   destinationScrollContainer: {
     paddingHorizontal: normalize(20),
     paddingBottom: normalize(20),

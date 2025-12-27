@@ -1,4 +1,4 @@
-// src/components/common/PaxModal.tsx
+
 import React, { useState } from 'react';
 import {
   Modal,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 const COLORS = {
-  primary: '#1344FF', // ⭐️ 수정: #007AFF -> #1344FF
+  primary: '#1344FF',
   text: '#1C1C1E',
   placeholder: '#8E8E93',
   white: '#FFFFFF',
@@ -133,13 +133,13 @@ export default function PaxModal({
             label="성인"
             count={adults}
             onIncrease={() => setAdults(adults + 1)}
-            onDecrease={() => setAdults(Math.max(1, adults - 1))} // 성인은 최소 1명
+            onDecrease={() => setAdults(Math.max(1, adults - 1))}
           />
           <PaxCounter
             label="어린이 (만 17세 이하)"
             count={children}
             onIncrease={() => setChildren(children + 1)}
-            onDecrease={() => setChildren(Math.max(0, children - 1))} // 어린이는 최소 0명
+            onDecrease={() => setChildren(Math.max(0, children - 1))}
           />
           <Pressable style={styles.confirmButton} onPress={handleConfirm}>
             <Text style={styles.confirmButtonText}>확인</Text>

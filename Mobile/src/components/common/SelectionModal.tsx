@@ -1,4 +1,4 @@
-// src/components/common/SelectionModal.tsx
+
 import React from 'react';
 import {
   Modal,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 const COLORS = {
-  primary: '#1344FF', // ⭐️ 수정: #007AFF -> #1344FF
+  primary: '#1344FF',
   text: '#1C1C1E',
   white: '#FFFFFF',
   border: '#E5E5EA',
@@ -18,7 +18,7 @@ const COLORS = {
   placeholder: '#8E8E93',
 };
 
-// 옵션이 아이콘을 포함하도록 타입 정의
+
 export type OptionType = {
   label: string;
   icon: string;
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     flex: 1,
-    marginLeft: 24, // X 버튼 너비만큼 왼쪽으로 밀어 중앙 정렬
+    marginLeft: 24,
   },
   closeButton: {
     fontSize: 24,

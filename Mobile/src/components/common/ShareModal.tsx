@@ -1,4 +1,4 @@
-// src/components/common/ShareModal.tsx
+
 import React, { useState } from 'react';
 import {
   View,

@@ -21,8 +21,8 @@ import {
   Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import axios from 'axios'; // [추가]
-import { API_URL } from '@env'; // [추가]
+import axios from 'axios';
+import { API_URL } from '@env';
 import { AppStackParamList } from '../../../navigation/types';
 import TimelineItem, {
   Place,
@@ -53,7 +53,7 @@ const COLORS = {
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
-// [추가] 백엔드 데이터 구조
+
 interface PlaceVO {
   placeId: string;
   categoryId: number;
@@ -66,7 +66,7 @@ interface PlaceVO {
   iconUrl: string;
 }
 
-// [추가] 카테고리 매핑 함수
+
 const getCategoryType = (id: number): '관광지' | '숙소' | '식당' | '기타' => {
   if ([12, 14, 15, 28].includes(id)) return '관광지';
   if (id === 32) return '숙소';
@@ -74,7 +74,7 @@ const getCategoryType = (id: number): '관광지' | '숙소' | '식당' | '기�
   return '기타';
 };
 
-// [수정] 검색 결과 아이템 컴포넌트
+
 const PlaceSearchResultItem = ({
   item,
   onSelect,
@@ -471,7 +471,7 @@ const TimelineComponent = React.memo(
   ),
 );
 
-// [수정] AddPlaceComponent: API 연동 및 실제 검색 구현
+
 const AddPlaceComponent = React.memo(
   ({
     onAddPlace,
@@ -487,7 +487,7 @@ const AddPlaceComponent = React.memo(
     const [searchResults, setSearchResults] = useState<Place[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    // API 검색 핸들러
+
     const handleSearch = async () => {
       if (!searchQuery.trim()) return;
 
@@ -511,9 +511,9 @@ const AddPlaceComponent = React.memo(
               address: p.formatted_address,
               rating: p.rating,
               imageUrl: p.iconUrl,
-              latitude: p.ylocation, // y -> lat
-              longitude: p.xlocation, // x -> lng
-              time: '10:00', // 임시 값
+              latitude: p.ylocation,
+              longitude: p.xlocation,
+              time: '10:00',
               startTime: '10:00',
               endTime: '11:00',
             }),
@@ -530,7 +530,7 @@ const AddPlaceComponent = React.memo(
       }
     };
 
-    // 탭 필터링
+
     const filteredPlaces = searchResults.filter(place => {
       if (selectedTab === '관광지') {
         return place.type === '관광지' || place.type === '기타';
@@ -813,7 +813,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           {() => (
             <AddPlaceComponent
               onAddPlace={handleAddPlace}
-              destination={route.params.destination} // [추가] 여행지 정보 전달
+              destination={route.params.destination}
             />
           )}
         </Tab.Screen>

@@ -1,10 +1,10 @@
-// src/navigation/AppStack.tsx
+
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/app/main/HomeScreen';
 import ItineraryEditorScreen from '../screens/app/itinerary/ItineraryEditorScreen';
-// import AddPlaceScreen from '../screens/app/itinerary/AddPlaceScreen'; // 제거
+
 import ItineraryViewScreen from '../screens/app/itinerary/ItineraryViewScreen';
 import MyPageScreen from '../screens/app/main/MyPageScreen';
 import { AppStackParamList } from './types';
@@ -22,13 +22,7 @@ function HomeStack() {
         options={{ headerShown: false }}
       />
       <Stack.Screen name="ItineraryEditor" component={ItineraryEditorScreen} />
-      {/* AddPlaceScreen 스크린 등록 부분을 제거합니다.
-      <Stack.Screen
-        name="AddPlace"
-        component={AddPlaceScreen}
-        options={{ presentation: 'modal' }}
-      /> 
-      */}
+      {}
       <Stack.Screen name="ItineraryView" component={ItineraryViewScreen} />
     </Stack.Navigator>
   );

@@ -54,7 +54,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     try {
       await login(form.email, form.password);
     } catch (e: any) {
-      // [수정] 로그인 실패 시 오류 문구를 한글로 고정
+
       const msg = '이메일 또는 비밀번호가 올바르지 않습니다.';
       setError(msg);
       Alert.alert('로그인 실패', msg);
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   inputFocused: {
     borderColor: COLORS.primary,
-    borderWidth: 2, // [수정] 회원가입 화면과 동일하게 2로 변경
+    borderWidth: 2,
   },
   submitButton: {
     width: '100%',

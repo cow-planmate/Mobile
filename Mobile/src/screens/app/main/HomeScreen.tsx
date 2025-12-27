@@ -134,7 +134,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   >('departure');
   const [showErrors, setShowErrors] = useState(false);
 
-  // 폼 유효성 검사
   const isFormValid =
     departure !== '' &&
     destination !== '' &&
@@ -221,11 +220,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           </View>
         </View>
 
-        {/* 흰색 배경 섹션 */}
         <View style={styles.whiteSection}>
-          {/* [수정] 이미지 영역 삭제됨 */}
-
-          {/* 입력 필드 카드 */}
           <View style={styles.inputCard}>
             <InputRow
               label="출발지"
@@ -289,7 +284,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         </View>
       </ScrollView>
 
-      {/* Modals ... (기존과 동일) */}
       <SearchLocationModal
         visible={isSearchModalVisible}
         onClose={() => setSearchModalVisible(false)}
@@ -379,12 +373,11 @@ const styles = StyleSheet.create({
     gap: normalize(12),
   },
   iconButton: {
-    // [수정] 버튼 크기 축소 (40 -> 36)
     width: normalize(36),
     height: normalize(36),
     padding: normalize(6),
     backgroundColor: COLORS.white,
-    borderRadius: normalize(18), // width/2
+    borderRadius: normalize(18),
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -394,7 +387,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerIcon: {
-    // [수정] 아이콘 폰트 크기 축소 (20 -> 18)
     fontSize: normalize(18),
     textAlign: 'center',
   },
@@ -412,14 +404,13 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 10,
   },
-  // [삭제] 이미지 관련 스타일 제거됨 (headerImageContainer, image, overlay)
 
   inputCard: {
     backgroundColor: COLORS.white,
     borderRadius: normalize(20),
     paddingVertical: normalize(16),
     paddingHorizontal: normalize(16),
-    // 더 부드러운 그림자 효과
+
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -528,7 +519,7 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     opacity: 0.8,
   },
-  // Error styles
+
   iconContainerError: {
     backgroundColor: COLORS.errorLight,
   },

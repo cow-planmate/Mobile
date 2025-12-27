@@ -96,13 +96,13 @@ export default function SignupScreen() {
     useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 인증 상태
+
   const [showVerificationInput, setShowVerificationInput] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isNicknameVerified, setIsNicknameVerified] = useState(false);
   const [emailAuthToken, setEmailAuthToken] = useState<string | null>(null);
 
-  // 이메일 중복 상태
+
   const [isEmailDuplicate, setIsEmailDuplicate] = useState(false);
 
   const [isAgeModalVisible, setAgeModalVisible] = useState(false);
@@ -116,7 +116,7 @@ export default function SignupScreen() {
     setForm(prev => ({ ...prev, [name]: value }));
     if (name === 'nickname') setIsNicknameVerified(false);
 
-    // 이메일 입력 시 중복 상태 초기화
+
     if (name === 'email') {
       setIsEmailDuplicate(false);
     }
@@ -141,7 +141,7 @@ export default function SignupScreen() {
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
-  // 이메일 재입력 핸들러
+
   const handleResetEmail = () => {
     setIsEmailVerified(false);
     setShowVerificationInput(false);
@@ -151,7 +151,7 @@ export default function SignupScreen() {
     setForm(prev => ({ ...prev, verificationCode: '' }));
   };
 
-  // --- API 핸들러 ---
+
   const handleSendEmail = async () => {
     if (!form.email) {
       Alert.alert('알림', '이메일을 입력해주세요.');
@@ -164,7 +164,7 @@ export default function SignupScreen() {
     }
 
     setIsLoading(true);
-    setIsEmailDuplicate(false); // 요청 시작 전 상태 초기화
+    setIsEmailDuplicate(false);
 
     try {
       await axios.post(`${API_URL}/api/auth/email/verification`, {
@@ -184,7 +184,7 @@ export default function SignupScreen() {
       const message =
         error.response?.data?.message || '인증 번호 전송에 실패했습니다.';
 
-      // 중복 이메일 처리
+
       if (message.includes('exist') || status === 409) {
         setIsEmailDuplicate(true);
       } else {
@@ -389,7 +389,7 @@ export default function SignupScreen() {
             {step === 4 && '내 정보 입력'}
           </Text>
 
-          {/* STEP 1: 이메일 */}
+          {}
           {step === 1 && (
             <>
               <Text style={styles.description}>
@@ -451,7 +451,7 @@ export default function SignupScreen() {
                 )}
               </View>
 
-              {/* [수정 사항 1, 2] 인증번호 필드: showVerificationInput이 true면 항상 표시 */}
+              {}
               {showVerificationInput && (
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>인증번호</Text>
@@ -463,14 +463,14 @@ export default function SignupScreen() {
                         styles.codeInputWrapper,
                         focusedField === 'verificationCode' &&
                           styles.inputFocused,
-                        // [수정 사항 2] 인증 완료 시 비활성화 스타일
+
                         isEmailVerified && styles.inputDisabled,
                       ]}
                     >
                       <TextInput
                         style={[
                           styles.codeInput,
-                          // [수정 사항 2] 인증 완료 시 텍스트 색상 변경
+
                           isEmailVerified && { color: COLORS.darkGray },
                         ]}
                         placeholder="123456"
@@ -479,7 +479,7 @@ export default function SignupScreen() {
                         onChangeText={v => handleChange('verificationCode', v)}
                         keyboardType="number-pad"
                         maxLength={6}
-                        // [수정 사항 2] 인증 완료 시 입력 불가
+
                         editable={!isLoading && !isEmailVerified}
                         onFocus={() => setFocusedField('verificationCode')}
                         onBlur={() => setFocusedField(null)}
@@ -506,7 +506,7 @@ export default function SignupScreen() {
             </>
           )}
 
-          {/* STEP 2: 비밀번호 */}
+          {}
           {step === 2 && (
             <>
               <Text style={styles.description}>
@@ -584,7 +584,7 @@ export default function SignupScreen() {
             </>
           )}
 
-          {/* STEP 3: 닉네임 */}
+          {}
           {step === 3 && (
             <>
               <Text style={styles.description}>
@@ -618,7 +618,7 @@ export default function SignupScreen() {
             </>
           )}
 
-          {/* STEP 4: 내 정보 */}
+          {}
           {step === 4 && (
             <>
               <Text style={styles.description}>
@@ -685,7 +685,7 @@ export default function SignupScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* 3. Footer */}
+      {}
       <View style={styles.footer}>
         {step < 4 ? (
           <>
@@ -731,7 +731,7 @@ export default function SignupScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 나이 선택 모달 */}
+      {}
       <Modal
         visible={isAgeModalVisible}
         transparent={true}

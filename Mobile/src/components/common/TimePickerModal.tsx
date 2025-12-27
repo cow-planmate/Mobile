@@ -1,4 +1,4 @@
-// src/components/common/TimePickerModal.tsx
+
 import React from 'react';
 import DatePicker from 'react-native-date-picker';
 
@@ -20,7 +20,7 @@ export default function TimePickerModal({
       modal
       open={visible}
       date={initialDate}
-      mode="time" // ⭐️ 시간을 선택하는 모드로 설정
+      mode="time"
       onConfirm={date => {
         onClose();
         onConfirm(date);

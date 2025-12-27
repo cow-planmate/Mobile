@@ -19,7 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { API_URL } from '@env';
 
-// 스타일 변수 및 normalize 함수
+
 const { width } = Dimensions.get('window');
 const normalize = (size: number) =>
   Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
@@ -46,26 +46,26 @@ const formatTime = (seconds: number) => {
 const ForgotPasswordScreen = () => {
   const navigation = useNavigation<any>();
 
-  // 단계 관리 (1: 이메일 인증, 2: 임시 비밀번호 발급)
+
   const [step, setStep] = useState(1);
   const totalSteps = 2;
 
-  // Step 1 상태 (이메일 인증)
+
   const [email, setEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [showVerificationInput, setShowVerificationInput] = useState(false);
-  const [isEmailVerified, setIsEmailVerified] = useState(false); // 이메일 인증 완료 여부
-  const [authToken, setAuthToken] = useState<string | null>(null); // 서버에서 받은 토큰
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [authToken, setAuthToken] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  // 타이머 상태
+
   const [timeLeft, setTimeLeft] = useState(300);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // 타이머 로직
+
   useEffect(() => {
     if (isTimerActive && timeLeft > 0) {
       timerRef.current = setInterval(() => {
@@ -74,7 +74,7 @@ const ForgotPasswordScreen = () => {
     } else if (timeLeft === 0) {
       if (timerRef.current) clearInterval(timerRef.current);
       setIsTimerActive(false);
-      resetVerification(); // 시간 초과 시 초기화
+      resetVerification();
       Alert.alert(
         '시간 초과',
         '인증 시간이 만료되었습니다. 다시 시도해주세요.',
@@ -94,9 +94,9 @@ const ForgotPasswordScreen = () => {
     setTimeLeft(300);
   };
 
-  // --- 핸들러 ---
 
-  // 1. 인증 메일 발송 (API 연동)
+
+
   const handleSendVerificationEmail = async () => {
     if (!email) {
       Alert.alert('알림', '이메일을 입력해주세요.');
@@ -104,7 +104,7 @@ const ForgotPasswordScreen = () => {
     }
     setIsLoading(true);
     try {
-      // Backend: EmailVerificationPurpose.RESET_PASSWORD 사용
+
       await axios.post(`${API_URL}/api/auth/email/verification`, {
         email: email,
         purpose: 'RESET_PASSWORD',
@@ -113,7 +113,7 @@ const ForgotPasswordScreen = () => {
       setShowVerificationInput(true);
       setIsTimerActive(true);
       setTimeLeft(300);
-      setIsEmailVerified(false); // 재요청 시 인증 초기화
+      setIsEmailVerified(false);
     } catch (error: any) {
       console.error('Email Send Error:', error);
       Alert.alert(
@@ -125,7 +125,7 @@ const ForgotPasswordScreen = () => {
     }
   };
 
-  // 2. 인증 번호 확인 (API 연동)
+
   const handleVerifyCode = async () => {
     if (!verificationCode) {
       Alert.alert('알림', '인증번호를 입력해주세요.');
@@ -144,7 +144,7 @@ const ForgotPasswordScreen = () => {
 
       if (response.data.emailVerified) {
         Alert.alert('성공', '이메일 인증이 완료되었습니다.');
-        setAuthToken(response.data.token); // 다음 단계에서 사용할 토큰 저장
+        setAuthToken(response.data.token);
         setIsEmailVerified(true);
         setIsTimerActive(false);
         if (timerRef.current) clearInterval(timerRef.current);
@@ -168,7 +168,7 @@ const ForgotPasswordScreen = () => {
     }
   };
 
-  // 3. 임시 비밀번호 발송 요청 (API 연동)
+
   const handleSendTempPassword = async () => {
     if (!authToken) {
       Alert.alert(
@@ -181,12 +181,12 @@ const ForgotPasswordScreen = () => {
     setIsLoading(true);
 
     try {
-      // [API 연동] 임시 비밀번호 발송 요청
-      // POST /api/auth/password/email
-      // 헤더에 인증 토큰 포함 (백엔드가 Authentication 객체를 요구하므로)
+
+
+
       await axios.post(
         `${API_URL}/api/auth/password/email`,
-        {}, // Body 없음
+        {},
         {
           headers: {
             Authorization: `Bearer ${authToken}`,
@@ -194,7 +194,7 @@ const ForgotPasswordScreen = () => {
         },
       );
 
-      // 성공 시 안내 및 로그인 화면 이동
+
       Alert.alert(
         '발송 완료',
         '이메일로 임시 비밀번호가 발송되었습니다.\n\n로그인 후 마이페이지에서 비밀번호를 꼭 변경해주세요.',
@@ -233,7 +233,7 @@ const ForgotPasswordScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 상단 헤더 & 단계 표시 */}
+      {}
       <View style={styles.header}>
         <View style={styles.stepIndicator}>
           <Text style={styles.stepText}>
@@ -260,7 +260,7 @@ const ForgotPasswordScreen = () => {
               : '아래 버튼을 누르면 이메일로 임시 비밀번호가 발송됩니다.'}
           </Text>
 
-          {/* === STEP 1: 이메일 인증 === */}
+          {}
           {step === 1 && (
             <>
               <View style={styles.inputGroup}>
@@ -280,7 +280,7 @@ const ForgotPasswordScreen = () => {
                     onChangeText={setEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
-                    // 인증 시작되면 이메일 수정 불가
+
                     editable={
                       !showVerificationInput && !isEmailVerified && !isLoading
                     }
@@ -316,14 +316,14 @@ const ForgotPasswordScreen = () => {
                         styles.codeInputWrapper,
                         focusedField === 'verificationCode' &&
                           styles.inputFocused,
-                        // [수정] 인증 완료 시 비활성화 스타일 적용 (회색 배경)
+
                         isEmailVerified && styles.inputDisabled,
                       ]}
                     >
                       <TextInput
                         style={[
                           styles.innerInput,
-                          // [수정] 인증 완료 시 텍스트 색상도 비활성화 처리
+
                           isEmailVerified && { color: COLORS.darkGray },
                         ]}
                         placeholder="123456"
@@ -358,7 +358,7 @@ const ForgotPasswordScreen = () => {
             </>
           )}
 
-          {/* === STEP 2: 임시 비밀번호 발송 === */}
+          {}
           {step === 2 && (
             <View style={styles.tempPasswordContainer}>
               <View style={styles.infoBox}>
@@ -374,7 +374,7 @@ const ForgotPasswordScreen = () => {
           )}
         </ScrollView>
 
-        {/* === 하단 버튼 영역 (Footer) === */}
+        {}
         <View style={styles.footer}>
           {step === 1 ? (
             <>
@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: normalize(14),
   },
-  // Step 2 관련 스타일
+
   tempPasswordContainer: {
     marginTop: normalize(20),
     alignItems: 'center',
@@ -590,7 +590,7 @@ const styles = StyleSheet.create({
     lineHeight: normalize(20),
   },
 
-  // Footer
+
   footer: {
     padding: normalize(24),
     backgroundColor: COLORS.lightBlue,
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
-    // 그림자 스타일 (활성화/비활성화 모두 적용됨)
+
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -612,8 +612,8 @@ const styles = StyleSheet.create({
   },
   submitButtonDisabled: {
     backgroundColor: COLORS.darkGray,
-    // shadowOpacity: 0, // 그림자 유지
-    // elevation: 0,
+
+
   },
   submitButtonText: {
     fontSize: normalize(18),

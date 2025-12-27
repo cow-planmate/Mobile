@@ -30,7 +30,7 @@ const COLORS = {
   error: '#FF3B30',
 };
 
-// 백엔드 PlaceVO 구조
+
 interface PlaceVO {
   placeId: string;
   categoryId: number;
@@ -38,19 +38,19 @@ interface PlaceVO {
   name: string;
   formatted_address: string;
   rating: number;
-  xlocation: number; // longitude
-  ylocation: number; // latitude
+  xlocation: number;
+  ylocation: number;
   iconUrl: string;
 }
 
 type Props = NativeStackScreenProps<AppStackParamList, 'AddPlace'>;
 
-// 카테고리 ID 매핑 함수
+
 const getCategoryType = (id: number): '관광지' | '숙소' | '식당' | '기타' => {
   if ([12, 14, 15, 28].includes(id)) return '관광지';
   if (id === 32) return '숙소';
   if (id === 39) return '식당';
-  return '기타'; // 38(쇼핑) 등
+  return '기타';
 };
 
 const PlaceSearchResultItem = ({
@@ -96,17 +96,17 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
   const [isLoading, setIsLoading] = useState(false);
 
   const { addPlaceToDay } = useItinerary();
-  // route.params에서 여행지 정보 등을 가져올 수 있다고 가정 (없으면 빈 문자열)
-  // @ts-ignore (params 타입 정의가 안 되어 있을 수 있어서 임시 처리)
+
+
   const { dayIndex, destination } = route.params || {};
 
-  // 검색 함수
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
 
     setIsLoading(true);
     try {
-      // 여행지와 검색어를 조합하여 검색 (예: "제주 스타벅스")
+
       const query = destination ? `${destination} ${searchQuery}` : searchQuery;
       console.log(`Searching for: ${query}`);
 
@@ -123,9 +123,9 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
             address: p.formatted_address,
             rating: p.rating,
             imageUrl: p.iconUrl,
-            latitude: p.ylocation, // y -> lat
-            longitude: p.xlocation, // x -> lng
-            time: '10:00', // 기본 시간
+            latitude: p.ylocation,
+            longitude: p.xlocation,
+            time: '10:00',
           }),
         );
 
@@ -141,13 +141,13 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
     }
   };
 
-  // 탭에 따라 결과 필터링
+
   const filteredPlaces = searchResults.filter(place => {
     if (selectedTab === '관광지') {
-      // 관광지 탭에서는 '기타' 카테고리도 포함해서 보여줄 수 있음
+
       return place.type === '관광지' || place.type === '기타';
     }
-    // '숙소' 또는 '식당' 탭에서는 정확히 일치하는 것만 필터
+
     return place.type === selectedTab;
   });
 
@@ -158,7 +158,7 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 헤더 & 검색창 */}
+      {}
       <View style={styles.header}>
         <View style={styles.searchBar}>
           <TextInput
@@ -168,7 +168,7 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
             }
             value={searchQuery}
             onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch} // 엔터 키 누르면 검색
+            onSubmitEditing={handleSearch}
             returnKeyType="search"
             autoFocus
           />
@@ -184,7 +184,7 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
         </TouchableOpacity>
       </View>
 
-      {/* 탭 버튼 */}
+      {}
       <View style={styles.tabContainer}>
         {(['관광지', '숙소', '식당'] as const).map(tab => (
           <TouchableOpacity
@@ -204,7 +204,7 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
         ))}
       </View>
 
-      {/* 검색 결과 리스트 */}
+      {}
       {isLoading ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />

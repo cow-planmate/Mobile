@@ -1,9 +1,9 @@
-// src/components/common/CalendarModal.tsx
+
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, StyleSheet, Pressable } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 
-// ... (LocaleConfig 부분은 그대로 유지)
+
 LocaleConfig.locales.kr = {
   monthNames: [
     '1월',
@@ -52,7 +52,7 @@ const COLORS = {
   white: '#FFFFFF',
   lightGray: '#F0F0F0',
   text: '#1C1C1E',
-  placeholder: '#8E8E93', // ⭐️ placeholder 색상 추가
+  placeholder: '#8E8E93',
 };
 
 type CalendarModalProps = {
@@ -163,7 +163,7 @@ export default function CalendarModal({
   };
 
   return (
-    // ⭐️ 'slide'를 'fade'로 변경하여 다른 모달과 동일한 애니메이션 효과를 적용합니다.
+
     <Modal visible={visible} animationType="fade" transparent={true}>
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
@@ -171,7 +171,7 @@ export default function CalendarModal({
             onDayPress={onDayPress}
             markingType={'custom'}
             markedDates={getMarkedDates()}
-            // ⭐️ 수정: 테마 색상 적용
+
             theme={{
               todayTextColor: COLORS.primary,
               arrowColor: COLORS.primary,
