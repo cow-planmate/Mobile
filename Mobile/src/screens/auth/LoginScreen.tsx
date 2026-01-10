@@ -2,33 +2,15 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
   SafeAreaView,
   Pressable,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Dimensions,
-  PixelRatio,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-
-const { width } = Dimensions.get('window');
-const normalize = (size: number) =>
-  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
-
-const COLORS = {
-  primary: '#1344FF',
-  secondary: '#5AC8FA',
-  lightGray: '#F0F0F0',
-  gray: '#E5E5EA',
-  darkGray: '#8E8E93',
-  text: '#1C1C1E',
-  white: '#FFFFFF',
-  error: '#FF3B30',
-  lightBlue: '#e6f0ff',
-};
+import { styles, COLORS } from './LoginScreen.styles';
 
 type LoginScreenProps = {
   navigation: { navigate: (screen: string) => void };
@@ -38,6 +20,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [focused, setFocused] = useState<string | null>(null);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const { login, isLoading } = useAuth();
 
   const handleChange = (key: 'email' | 'password', value: string) => {
@@ -47,15 +30,18 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   const handleLogin = async () => {
     setError('');
-    if (!form.email || !form.password) {
+    const email = form.email.trim();
+    if (!email || !form.password) {
       setError('이메일과 비밀번호를 모두 입력해주세요.');
       return;
     }
     try {
-      await login(form.email, form.password);
+      await login(email, form.password);
     } catch (e: any) {
-
-      const msg = '이메일 또는 비밀번호가 올바르지 않습니다.';
+      const msg =
+        e.response?.data?.message ||
+        e.message ||
+        '이메일 또는 비밀번호가 올바르지 않습니다.';
       setError(msg);
       Alert.alert('로그인 실패', msg);
     }
@@ -86,17 +72,34 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       </View>
       <View style={styles.inputGroup}>
         <Text style={styles.label}>비밀번호</Text>
-        <TextInput
-          style={[styles.input, focused === 'password' && styles.inputFocused]}
-          placeholder="비밀번호를 입력하세요"
-          value={form.password}
-          onChangeText={text => handleChange('password', text)}
-          secureTextEntry
-          onFocus={() => setFocused('password')}
-          onBlur={() => setFocused(null)}
-          editable={!isLoading}
-          placeholderTextColor={COLORS.darkGray}
-        />
+        <View
+          style={[
+            styles.passwordContainer,
+            focused === 'password' && styles.inputFocused,
+          ]}
+        >
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="비밀번호를 입력하세요"
+            value={form.password}
+            onChangeText={text => handleChange('password', text)}
+            secureTextEntry={!isPasswordVisible}
+            autoCapitalize="none"
+            autoCorrect={false}
+            onFocus={() => setFocused('password')}
+            onBlur={() => setFocused(null)}
+            editable={!isLoading}
+            placeholderTextColor={COLORS.darkGray}
+          />
+          <TouchableOpacity
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={styles.passwordToggleText}>
+              {isPasswordVisible ? '숨김' : '보기'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
       <Pressable
         style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
@@ -131,120 +134,3 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: normalize(24),
-    backgroundColor: COLORS.lightBlue,
-  },
-  title: {
-    fontSize: normalize(32),
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: normalize(32),
-    color: COLORS.text,
-    letterSpacing: 1,
-  },
-  errorContainer: {
-    width: '100%',
-    backgroundColor: '#FFD2D2',
-    padding: normalize(12),
-    borderRadius: normalize(8),
-    marginBottom: normalize(18),
-    alignItems: 'center',
-    shadowColor: COLORS.error,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  errorText: {
-    color: COLORS.error,
-    fontWeight: 'bold',
-    fontSize: normalize(14),
-  },
-  inputGroup: {
-    width: '100%',
-    marginBottom: normalize(14),
-  },
-  label: {
-    fontSize: normalize(14),
-    color: COLORS.text,
-    marginBottom: normalize(8),
-    fontWeight: 'bold',
-    marginLeft: normalize(4),
-  },
-  input: {
-    width: '100%',
-    height: normalize(52),
-    borderWidth: 1,
-    borderColor: COLORS.gray,
-    borderRadius: normalize(8),
-    paddingHorizontal: normalize(16),
-    fontSize: normalize(16),
-    backgroundColor: COLORS.white,
-    color: COLORS.text,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  inputFocused: {
-    borderColor: COLORS.primary,
-    borderWidth: 2,
-  },
-  submitButton: {
-    width: '100%',
-    height: normalize(52),
-    borderRadius: normalize(26),
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    marginTop: normalize(24),
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  submitButtonDisabled: {
-    backgroundColor: COLORS.darkGray,
-  },
-  submitButtonText: {
-    fontSize: normalize(17),
-    fontWeight: 'bold',
-    color: COLORS.white,
-    letterSpacing: 0.5,
-  },
-  linksContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-    marginTop: normalize(28),
-    gap: normalize(24),
-  },
-  separatorWrapper: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-  },
-  separator: {
-    color: COLORS.primary,
-    fontSize: normalize(14),
-    fontWeight: '500',
-  },
-  linkButton: {
-    paddingVertical: normalize(6),
-    paddingHorizontal: normalize(12),
-    borderRadius: normalize(8),
-  },
-  linkText: {
-    color: COLORS.primary,
-    fontSize: normalize(15),
-    fontWeight: '500',
-  },
-});

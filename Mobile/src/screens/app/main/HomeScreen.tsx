@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   SafeAreaView,
   Pressable,
   TouchableOpacity,
   ScrollView,
-  Dimensions,
-  PixelRatio,
+  Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import axios from 'axios';
+import { API_URL } from '@env';
 import { AppStackParamList } from '../../../navigation/types';
 import { useAuth } from '../../../contexts/AuthContext';
 
@@ -21,26 +21,7 @@ import SelectionModal, {
 } from '../../../components/common/SelectionModal';
 import SearchLocationModal from '../../../components/common/SearchLocationModal';
 
-const { width } = Dimensions.get('window');
-const normalize = (size: number) =>
-  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
-
-const COLORS = {
-  primary: '#1344FF',
-  lightGray: '#F0F0F0',
-  gray: '#E5E5EA',
-  darkGray: '#8E8E93',
-  text: '#1C1C1E',
-  white: '#FFFFFF',
-  lightBlue: '#e6f0ff',
-  shadow: '#1344FF',
-  iconBg: '#F5F7FF',
-  success: '#34C759',
-  placeholderLight: '#C7C7CC',
-  error: '#FF3B30',
-  errorLight: '#FFE5E5',
-  disabled: '#A8B5D1',
-};
+import { styles } from './HomeScreen.styles';
 
 type InputRowProps = {
   label: string;
@@ -127,12 +108,97 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const [departure, setDeparture] = useState('');
   const [destination, setDestination] = useState('');
+  const [travelId, setTravelId] = useState<number>(0);
 
   const [isSearchModalVisible, setSearchModalVisible] = useState(false);
   const [fieldToUpdate, setFieldToUpdate] = useState<
     'departure' | 'destination'
   >('departure');
   const [showErrors, setShowErrors] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+
+  // DTO Interfaces for Invitations
+  // interface PendingRequestVO {
+  //   requestId: number;
+  //   senderId: number;
+  //   senderNickname: string;
+  //   planId: number;
+  //   planName: string;
+  //   type: string; // 'INVITE', etc.
+  // }
+
+  const fetchPendingRequests = async () => {
+    try {
+      // GET /api/collaboration-requests/pending
+      // axiosConfig에 의해 baseURL이 설정되어 있으므로 상대 경로 사용
+      const response = await axios.get('/api/collaboration-requests/pending');
+      
+      const { pendingRequests } = response.data;
+      if (pendingRequests) {
+        setPendingRequests(pendingRequests);
+        if (pendingRequests.length > 0) {
+          Alert.alert(
+            '알림',
+            `${pendingRequests.length}개의 초대 요청이 있습니다.`,
+          );
+        }
+      }
+    } catch (error) {
+      // 에러 로그는 axiosConfig에서 찍히므로 여기서는 조용히 처리하거나 필요시 추가 로깅
+      console.log('초대 요청 목록 조회 실패:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPendingRequests();
+  }, []);
+
+  const handleNotificationPress = () => {
+    if (pendingRequests.length === 0) {
+      Alert.alert('알림', '새로운 알림이 없습니다.');
+      return;
+    }
+
+    // Simple handling: Loop alerts or show first one. For better UX, use a Modal.
+    // Here we show the first one for demonstration or list them.
+    // Ideally, navigate to a 'NotificationsScreen'.
+    // For now, let's just show an alert with actions for the first request.
+    const req = pendingRequests[0];
+    Alert.alert(
+      '초대 요청',
+      `${req.senderNickname}님이 '${req.planName}' 일정에 초대했습니다.`,
+      [
+        {
+          text: '거절',
+          onPress: () => handleReject(req.requestId),
+          style: 'destructive',
+        },
+        { text: '수락', onPress: () => handleAccept(req.requestId) },
+        { text: '닫기', style: 'cancel' },
+      ],
+    );
+  };
+
+  const handleAccept = async (requestId: number) => {
+    try {
+      await axios.post(`${API_URL}/api/invite/${requestId}/accept`);
+      Alert.alert('수락 완료', '일정에 참여했습니다.');
+      setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
+    } catch (e) {
+      Alert.alert('오류', '수락 처리에 실패했습니다.');
+    }
+  };
+
+  const handleReject = async (requestId: number) => {
+    try {
+      await axios.post(`${API_URL}/api/invite/${requestId}/reject`);
+      Alert.alert('거절 완료', '초대를 거절했습니다.');
+      setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
+    } catch (e) {
+      Alert.alert('오류', '거절 처리에 실패했습니다.');
+    }
+  };
 
   const isFormValid =
     departure !== '' &&
@@ -160,21 +226,64 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     return `${formatDate(startDate)} ~ ${formatDate(endDate)}`;
   };
 
-  const handleCreateItinerary = () => {
+  const handleCreateItinerary = async () => {
     if (!isFormValid) {
       setShowErrors(true);
       return;
     }
+
+    if (travelId === undefined || travelId <= 0) {
+      Alert.alert(
+        '알림',
+        '여행지가 올바르게 선택되지 않았습니다.\n목록에서 다시 선택해주세요.',
+      );
+      return;
+    }
+
     setShowErrors(false);
-    navigation.navigate('ItineraryEditor', {
-      departure,
-      destination,
-      startDate: startDate?.toISOString() ?? new Date().toISOString(),
-      endDate: endDate?.toISOString() ?? new Date().toISOString(),
-      adults: adults ?? 1,
-      children: children ?? 0,
-      transport: transport || '대중교통',
-    });
+
+    try {
+      setLoading(true);
+
+      const dates = [];
+      let currentDate = new Date(startDate!);
+      const end = new Date(endDate!);
+
+      while (currentDate <= end) {
+        dates.push(currentDate.toISOString().split('T')[0]);
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      const payload = {
+        departure,
+        travelId: travelId || 0,
+        dates,
+        adultCount: adults || 1,
+        childCount: children || 0,
+        transportation: transport === '자동차' ? 2 : 1, // 1: Public, 2: Car
+      };
+
+      const response = await axios.post(`${API_URL}/api/plan`, payload);
+      const { planId } = response.data;
+      // const { message } = response.data;
+
+      navigation.navigate('ItineraryEditor', {
+        planId,
+        departure,
+        destination,
+        travelId: travelId || 0,
+        startDate: startDate?.toISOString() ?? new Date().toISOString(),
+        endDate: endDate?.toISOString() ?? new Date().toISOString(),
+        adults: adults ?? 1,
+        children: children ?? 0,
+        transport: transport || '대중교통',
+      });
+    } catch (error: any) {
+      console.error('Plan creation failed:', error);
+      Alert.alert('오류', '일정 생성에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const openSearchModal = (field: 'departure' | 'destination') => {
@@ -204,11 +313,30 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           </View>
 
           <View style={styles.headerButtons}>
-            <TouchableOpacity style={styles.iconButton} onPress={() => {}}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={handleNotificationPress}
+            >
               <Text style={styles.headerIcon}>🔔</Text>
+              {pendingRequests.length > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 5,
+                    right: 5,
+                    width: 10,
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: 'red',
+                  }}
+                />
+              )}
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.iconButton} onPress={() => {}}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => navigation.navigate('Profile')}
+            >
               <Text style={styles.headerIcon}>☰</Text>
             </TouchableOpacity>
           </View>
@@ -283,11 +411,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         onClose={() => setSearchModalVisible(false)}
         fieldToUpdate={fieldToUpdate}
         currentValue={fieldToUpdate === 'departure' ? departure : destination}
-        onSelect={location => {
+        onSelect={(location, id) => {
           if (fieldToUpdate === 'departure') {
             setDeparture(location);
           } else {
             setDestination(location);
+            if (id !== undefined) setTravelId(id);
           }
         }}
       />
@@ -327,197 +456,3 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.lightBlue,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 0,
-    paddingTop: normalize(30),
-    paddingBottom: 0,
-  },
-  headerTopArea: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: normalize(24),
-    marginTop: normalize(10),
-    paddingHorizontal: normalize(20),
-  },
-  headerSlogan: {
-    fontSize: normalize(12),
-    color: COLORS.darkGray,
-    fontWeight: '500',
-    marginTop: normalize(20),
-    marginBottom: normalize(4),
-  },
-  headerGreeting: {
-    fontSize: normalize(18),
-    color: COLORS.text,
-    fontWeight: 'bold',
-  },
-  headerNickname: {
-    color: COLORS.primary,
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    gap: normalize(12),
-  },
-  iconButton: {
-    width: normalize(36),
-    height: normalize(36),
-    padding: normalize(6),
-    backgroundColor: COLORS.white,
-    borderRadius: normalize(18),
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerIcon: {
-    fontSize: normalize(18),
-    textAlign: 'center',
-  },
-  whiteSection: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: normalize(32),
-    borderTopRightRadius: normalize(32),
-    paddingHorizontal: normalize(20),
-    paddingTop: normalize(32),
-    paddingBottom: normalize(40),
-    flex: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-
-  inputCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: normalize(20),
-    paddingVertical: normalize(16),
-    paddingHorizontal: normalize(16),
-
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
-    marginBottom: normalize(24),
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: normalize(78),
-    paddingVertical: normalize(4),
-  },
-  inputRowLast: {
-    paddingBottom: normalize(4),
-  },
-  rowContent: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: '100%',
-  },
-  iconContainer: {
-    width: normalize(44),
-    height: normalize(44),
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: normalize(12),
-    backgroundColor: COLORS.iconBg,
-    borderRadius: normalize(12),
-  },
-  iconContainerFilled: {
-    backgroundColor: COLORS.lightBlue,
-  },
-  icon: {
-    fontSize: normalize(22),
-  },
-  textContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    height: '100%',
-  },
-  textContainerBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
-  },
-  label: {
-    fontSize: normalize(12),
-    color: COLORS.darkGray,
-    fontWeight: '600',
-    marginBottom: normalize(4),
-  },
-  valueText: {
-    fontSize: normalize(15),
-    color: COLORS.text,
-    fontWeight: '700',
-    lineHeight: normalize(20),
-  },
-  placeholderText: {
-    fontSize: normalize(15),
-    color: COLORS.placeholderLight,
-    fontWeight: '400',
-    lineHeight: normalize(20),
-  },
-  arrowContainer: {
-    height: '100%',
-    paddingLeft: normalize(8),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  arrow: {
-    fontSize: normalize(22),
-    color: COLORS.gray,
-    fontWeight: '300',
-  },
-  checkIcon: {
-    fontSize: normalize(16),
-    color: COLORS.success,
-    fontWeight: 'bold',
-  },
-  submitButton: {
-    width: '100%',
-    height: normalize(56),
-    borderRadius: normalize(28),
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  submitButtonDisabled: {
-    backgroundColor: COLORS.disabled,
-    shadowOpacity: 0.1,
-    elevation: 2,
-  },
-  submitButtonText: {
-    fontSize: normalize(18),
-    fontWeight: 'bold',
-    color: COLORS.white,
-    letterSpacing: 0.5,
-  },
-  submitButtonTextDisabled: {
-    color: COLORS.white,
-    opacity: 0.8,
-  },
-
-  iconContainerError: {
-    backgroundColor: COLORS.errorLight,
-  },
-  labelError: {
-    color: COLORS.error,
-  },
-});

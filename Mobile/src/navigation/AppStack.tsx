@@ -6,6 +6,7 @@ import ItineraryEditorScreen from '../screens/app/itinerary/ItineraryEditorScree
 
 import ItineraryViewScreen from '../screens/app/itinerary/ItineraryViewScreen';
 import MyPageScreen from '../screens/app/main/MyPageScreen';
+import ProfileScreen from '../screens/app/main/ProfileScreen';
 import { AppStackParamList } from './types';
 import { Text } from 'react-native';
 
@@ -20,6 +21,7 @@ function HomeStack() {
         component={HomeScreen}
         options={{ headerShown: false }}
       />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="ItineraryEditor" component={ItineraryEditorScreen} />
       {}
       <Stack.Screen name="ItineraryView" component={ItineraryViewScreen} />
@@ -35,6 +37,8 @@ function MyPageStack() {
         component={MyPageScreen}
         options={{ headerShown: false }}
       />
+      <Stack.Screen name="ItineraryEditor" component={ItineraryEditorScreen} />
+      <Stack.Screen name="ItineraryView" component={ItineraryViewScreen} />
     </Stack.Navigator>
   );
 }

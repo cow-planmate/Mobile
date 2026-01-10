@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   Modal,
   TextInput,
   TouchableOpacity,
@@ -10,19 +9,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Dimensions,
   ScrollView,
   Animated,
-  PixelRatio,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '@env';
 
-const { width, height } = Dimensions.get('window');
-const normalize = (size: number) =>
-  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
-
+import { styles, COLORS } from './SearchLocationModal.styles';
 
 const TARGET_REGIONS = [
   '서울특별시',
@@ -43,7 +37,6 @@ const TARGET_REGIONS = [
   '경상남도',
   '제주특별자치도',
 ];
-
 
 const SUB_REGIONS: { [key: string]: string[] } = {
   서울특별시: [
@@ -282,21 +275,6 @@ const SUB_REGIONS: { [key: string]: string[] } = {
   제주특별자치도: ['제주시', '서귀포시'],
 };
 
-const COLORS = {
-  primary: '#1344FF',
-  background: '#FFFFFF',
-  text: '#1C1C1E',
-  placeholder: '#8E8E93',
-  border: '#E5E5EA',
-  lightGray: '#F7F8FA',
-  darkGray: '#505050',
-  white: '#FFFFFF',
-  overlay: 'rgba(0,0,0,0.4)',
-  lightBlue: '#e6f0ff',
-  iconBg: '#F5F7FF',
-  shadow: '#1344FF',
-};
-
 interface DepartureVO {
   placeId: string;
   url: string;
@@ -307,13 +285,16 @@ interface DepartureVO {
 interface TravelVO {
   travelId: number;
   travelName: string;
+  travelCategoryId: number;
+  travelCategoryName: string;
+  // travelImg is not in the current spec but kept optional in case of future use or client-side mapping
   travelImg?: string;
 }
 
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onSelect: (location: string) => void;
+  onSelect: (location: string, id?: number) => void;
   fieldToUpdate: 'departure' | 'destination';
   currentValue?: string;
 };
@@ -330,12 +311,12 @@ export default function SearchLocationModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [departureList, setDepartureList] = useState<DepartureVO[]>([]);
   const [destinationList, setDestinationList] = useState<TravelVO[]>([]);
+  const [rawDestinations, setRawDestinations] = useState<TravelVO[]>([]); // To store raw server data
   const [isLoading, setIsLoading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [selectedParentRegion, setSelectedParentRegion] = useState<
     string | null
   >(null);
-
 
   const loadRecentSearches = async () => {
     try {
@@ -347,7 +328,6 @@ export default function SearchLocationModal({
       console.error('Failed to load recent searches:', error);
     }
   };
-
 
   const saveRecentSearch = async (place: string) => {
     try {
@@ -361,7 +341,6 @@ export default function SearchLocationModal({
       console.error('Failed to save recent search:', error);
     }
   };
-
 
   const removeRecentSearch = async (place: string) => {
     try {
@@ -387,25 +366,42 @@ export default function SearchLocationModal({
     }
   }, [visible, fieldToUpdate]);
 
-
   const fetchDestinations = async () => {
     setIsLoading(true);
     try {
       const response = await axios.get(`${API_URL}/api/travel`);
       const serverData: TravelVO[] = response.data.travels || [];
 
-      const formattedList = TARGET_REGIONS.map((regionName, index) => {
+      // 서버 데이터 확인용 로그
+      if (__DEV__) {
+        console.log('Fetched Travels:', serverData);
+      }
+      
+      setRawDestinations(serverData);
 
-        const matched = serverData.find(item =>
-          item.travelName.includes(regionName),
-        );
+      const formattedList = TARGET_REGIONS.map((regionName, index) => {
+        // 서버 데이터에서 매칭되는 지역 찾기 (양방향 포함 관계 확인 및 공백 제거 비교)
+        const matched = serverData.find(item => {
+          const sName = item.travelName.replace(/\s+/g, '');
+          const rName = regionName.replace(/\s+/g, '');
+          return sName.includes(rName) || rName.includes(sName);
+        });
+
+        if (__DEV__ && !matched) {
+          console.log(`Region unmatched: ${regionName}`);
+        }
 
         return {
-          travelId: matched ? matched.travelId : index,
+          travelId: matched ? matched.travelId : -1, // 매칭 안되면 -1
           travelName: regionName,
           travelImg: matched?.travelImg,
         };
       });
+      
+      // -1인 항목이 선택되면 문제가 될 수 있으므로 로깅
+      if (__DEV__) {
+        console.log('Mapped Destinations:', formattedList.map(d => `${d.travelName}:${d.travelId}`));
+      }
 
       setDestinationList(formattedList);
     } catch (error) {
@@ -456,23 +452,63 @@ export default function SearchLocationModal({
   const handleSelect = (name: string) => {
     if (isDeparture) {
       saveRecentSearch(name);
+      onSelect(name, undefined);
+    } else {
+      // 여행지 선택인 경우 destinationList에서 ID 찾기
+      const matched = destinationList.find(d => d.travelName === name);
+      if (matched && matched.travelId !== -1) {
+        onSelect(name, matched.travelId);
+      } else {
+        // 매칭된 ID가 없거나 -1인 경우
+        console.warn('Selected region has no valid ID:', name);
+        // 필요시 에러 알림? 또는 일단 진행 (ID 0/undefined)
+        onSelect(name, undefined);
+      }
     }
-    onSelect(name);
     onClose();
   };
-
 
   const handleParentRegionClick = (regionName: string) => {
     setSelectedParentRegion(regionName);
   };
 
-
   const handleSubRegionSelect = (parentRegion: string, subRegion: string) => {
     const fullLocation = `${parentRegion} ${subRegion}`;
-    onSelect(fullLocation);
+    
+    // 1. Try to find match using subRegion name in rawDestinations
+    let matched = rawDestinations.find(d => {
+      const sName = d.travelName.replace(/\s+/g, '');
+      const target = subRegion.replace(/\s+/g, '');
+      return sName === target;
+    });
+
+    // 2. Fuzzy match subRegion
+    if (!matched) {
+      matched = rawDestinations.find(d => {
+        const sName = d.travelName.replace(/\s+/g, '');
+        const target = subRegion.replace(/\s+/g, '');
+        return sName.includes(target) || target.includes(sName);
+      });
+    }
+
+    // 3. Fallback: try to match parentRegion (e.g. for special cities like Sejong)
+    if (!matched) {
+      matched = rawDestinations.find(d => {
+        const sName = d.travelName.replace(/\s+/g, '');
+        const target = parentRegion.replace(/\s+/g, '');
+        return sName.includes(target) || target.includes(sName);
+      });
+    }
+
+    const travelId = matched ? matched.travelId : -1;
+
+    if (__DEV__) {
+       console.log(`Selection: ${fullLocation}, Mapped ID: ${travelId}, Matched Name: ${matched?.travelName}`);
+    }
+    
+    onSelect(fullLocation, travelId);
     onClose();
   };
-
 
   const handleBackToParentRegions = () => {
     setSelectedParentRegion(null);
@@ -481,7 +517,6 @@ export default function SearchLocationModal({
   const isDeparture = fieldToUpdate === 'departure';
   const title = isDeparture ? '출발지 검색' : '여행지 선택';
   const subtitle = isDeparture ? '어디서 출발하시나요?' : '어디로 떠나볼까요?';
-
 
   const renderEmptyState = () => (
     <ScrollView
@@ -613,12 +648,10 @@ export default function SearchLocationModal({
           {}
           <View style={styles.contentContainer}>
             {isDeparture ? (
-
               !isLoading ? (
                 renderEmptyState()
               ) : null
             ) : (
-
               <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.destinationScrollContainer}
@@ -649,7 +682,6 @@ export default function SearchLocationModal({
                       <Text style={styles.loaderText}>불러오는 중...</Text>
                     </View>
                   ) : selectedParentRegion ? (
-
                     <View style={styles.destinationListContainer}>
                       {(SUB_REGIONS[selectedParentRegion] || []).map(
                         (subRegion, index, arr) => (
@@ -679,11 +711,10 @@ export default function SearchLocationModal({
                       )}
                     </View>
                   ) : (
-
                     <View style={styles.destinationListContainer}>
                       {destinationList.map((item, index) => (
                         <TouchableOpacity
-                          key={item.travelId}
+                          key={`${item.travelName}-${index}`}
                           style={[
                             styles.destinationItem,
                             index === destinationList.length - 1 &&
@@ -713,348 +744,3 @@ export default function SearchLocationModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalView: {
-    width: '100%',
-    height: height * 0.85,
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: normalize(28),
-    borderTopRightRadius: normalize(28),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 20,
-    overflow: 'hidden',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: normalize(24),
-    paddingTop: normalize(24),
-    paddingBottom: normalize(16),
-    backgroundColor: COLORS.white,
-  },
-  headerTitle: {
-    fontSize: normalize(22),
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: normalize(4),
-  },
-  headerSubtitle: {
-    fontSize: normalize(14),
-    color: COLORS.placeholder,
-    fontWeight: '400',
-  },
-  closeButton: {
-    width: normalize(36),
-    height: normalize(36),
-    borderRadius: normalize(18),
-    backgroundColor: COLORS.lightGray,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    fontSize: normalize(16),
-    color: COLORS.darkGray,
-    fontWeight: '600',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.iconBg,
-    borderRadius: normalize(16),
-    marginHorizontal: normalize(20),
-    paddingHorizontal: normalize(4),
-    height: normalize(56),
-    marginBottom: normalize(16),
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  searchIconContainer: {
-    width: normalize(44),
-    height: normalize(44),
-    borderRadius: normalize(12),
-    backgroundColor: COLORS.lightBlue,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: normalize(12),
-  },
-  searchIcon: {
-    fontSize: normalize(18),
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: normalize(15),
-    color: COLORS.text,
-    height: '100%',
-  },
-  clearButton: {
-    width: normalize(32),
-    height: normalize(32),
-    borderRadius: normalize(16),
-    backgroundColor: COLORS.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: normalize(4),
-  },
-  clearButtonText: {
-    fontSize: normalize(12),
-    color: COLORS.darkGray,
-    fontWeight: '600',
-  },
-  contentContainer: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-  },
-  loaderContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: normalize(16),
-    gap: normalize(8),
-  },
-  loaderText: {
-    fontSize: normalize(14),
-    color: COLORS.placeholder,
-  },
-  resultListContainer: {
-    paddingBottom: normalize(20),
-  },
-
-  resultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: normalize(14),
-    paddingHorizontal: normalize(20),
-    marginHorizontal: normalize(4),
-    marginVertical: normalize(4),
-    backgroundColor: COLORS.white,
-    borderRadius: normalize(12),
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  resultIconContainer: {
-    width: normalize(40),
-    height: normalize(40),
-    borderRadius: normalize(10),
-    backgroundColor: COLORS.iconBg,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: normalize(12),
-  },
-  resultIcon: {
-    fontSize: normalize(18),
-  },
-  resultInfo: {
-    flex: 1,
-    flexDirection: 'column',
-  },
-  resultName: {
-    fontSize: normalize(15),
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: normalize(2),
-  },
-  resultAddress: {
-    fontSize: normalize(12),
-    color: COLORS.placeholder,
-  },
-  resultArrow: {
-    fontSize: normalize(20),
-    color: COLORS.border,
-    marginLeft: normalize(8),
-  },
-
-  emptyStateContainer: {
-    flex: 1,
-    paddingHorizontal: normalize(20),
-  },
-  sectionContainer: {
-    marginBottom: normalize(24),
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: normalize(12),
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButtonText: {
-    fontSize: normalize(24),
-    color: COLORS.primary,
-    fontWeight: '600',
-    marginRight: normalize(8),
-  },
-  sectionIcon: {
-    fontSize: normalize(16),
-    marginRight: normalize(8),
-  },
-  sectionTitle: {
-    fontSize: normalize(16),
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  tagContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: normalize(8),
-  },
-  tagWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.iconBg,
-    borderRadius: normalize(20),
-    borderWidth: 1,
-    borderColor: COLORS.lightBlue,
-  },
-  tagButton: {
-    paddingLeft: normalize(14),
-    paddingRight: normalize(8),
-    paddingVertical: normalize(10),
-  },
-  tagRemoveButton: {
-    paddingRight: normalize(12),
-    paddingLeft: normalize(4),
-    paddingVertical: normalize(10),
-  },
-  tagRemoveText: {
-    fontSize: normalize(12),
-    color: COLORS.placeholder,
-  },
-  tagText: {
-    fontSize: normalize(14),
-    color: COLORS.primary,
-    fontWeight: '500',
-  },
-  popularItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: normalize(16),
-    paddingHorizontal: normalize(4),
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  popularTextContainer: {
-    flex: 1,
-    flexDirection: 'column',
-  },
-  popularText: {
-    fontSize: normalize(16),
-    color: COLORS.text,
-    fontWeight: '600',
-    marginBottom: normalize(4),
-  },
-  popularSubText: {
-    fontSize: normalize(14),
-    color: COLORS.placeholder,
-  },
-  popularArrow: {
-    fontSize: normalize(20),
-    color: COLORS.placeholder,
-    fontWeight: '600',
-  },
-  emptyHintText: {
-    fontSize: normalize(14),
-    color: COLORS.placeholder,
-    textAlign: 'center',
-    paddingVertical: normalize(20),
-  },
-  inlineLoaderContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: normalize(20),
-    gap: normalize(8),
-  },
-  inlineNoResultContainer: {
-    alignItems: 'center',
-    paddingVertical: normalize(20),
-  },
-  noResultIconSmall: {
-    fontSize: normalize(24),
-    marginBottom: normalize(8),
-    opacity: 0.5,
-  },
-
-  noResultContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: normalize(60),
-  },
-  noResultIcon: {
-    fontSize: normalize(48),
-    marginBottom: normalize(16),
-    opacity: 0.5,
-  },
-  noResultTitle: {
-    fontSize: normalize(18),
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: normalize(8),
-  },
-  noResultSubtitle: {
-    fontSize: normalize(14),
-    color: COLORS.placeholder,
-  },
-
-  destinationScrollContainer: {
-    paddingHorizontal: normalize(20),
-    paddingBottom: normalize(20),
-  },
-  destinationSectionContainer: {
-    marginTop: normalize(4),
-  },
-  destinationListContainer: {
-    backgroundColor: COLORS.white,
-    borderRadius: normalize(16),
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: 'hidden',
-  },
-  destinationItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: normalize(14),
-    paddingHorizontal: normalize(16),
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  destinationItemLast: {
-    borderBottomWidth: 0,
-  },
-  destinationInfo: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  destinationName: {
-    fontSize: normalize(15),
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  destinationArrow: {
-    fontSize: normalize(22),
-    color: COLORS.border,
-    marginLeft: normalize(8),
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: COLORS.placeholder,
-    marginTop: normalize(40),
-    fontSize: normalize(16),
-  },
-});

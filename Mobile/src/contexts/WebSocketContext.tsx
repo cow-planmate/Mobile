@@ -1,0 +1,258 @@
+import React, {
+  createContext,
+  useContext,
+  useRef,
+  useState,
+  useEffect,
+} from 'react';
+import { Client, IMessage } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+import { API_URL } from '@env';
+import { useAuth } from './AuthContext';
+
+declare var global: any;
+
+// React Native Polyfills for StompJS
+const TextEncoding = require('text-encoding');
+Object.assign(global as any, {
+  TextEncoder: TextEncoding.TextEncoder,
+  TextDecoder: TextEncoding.TextDecoder,
+});
+
+interface UserPresence {
+  uid: string;
+  userNickname: string;
+}
+
+interface PresenceMessage {
+  action: 'create' | 'delete';
+  uid: string;
+  userNickname: string;
+  users: UserPresence[];
+}
+
+// Defined ActionData structure
+interface ActionData<T = any> {
+  action: string;
+  targetName: string;
+  target: T;
+}
+
+interface WebSocketContextType {
+  isConnected: boolean;
+  onlineUsers: UserPresence[];
+  connect: (planId: number) => void;
+  disconnect: () => void;
+  sendMessage: (
+    action: string,
+    targetName: string,
+    target: any,
+    eventId?: string,
+  ) => void;
+  subscribeToMessages: (callback: (msg: any) => void) => void;
+  unsubscribeFromMessages: (callback: (msg: any) => void) => void;
+}
+
+const WebSocketContext = createContext<WebSocketContextType>(
+  {} as WebSocketContextType,
+);
+
+export const useWebSocket = () => useContext(WebSocketContext);
+
+export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  // const { user } = useAuth();
+  const [isConnected, setIsConnected] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<UserPresence[]>([]);
+  const stompClient = useRef<Client | null>(null);
+  const currentPlanId = useRef<number | null>(null);
+  const messageListeners = useRef<Set<(msg: any) => void>>(new Set());
+
+  const subscribeToMessages = (callback: (msg: any) => void) => {
+    messageListeners.current.add(callback);
+  };
+
+  const unsubscribeFromMessages = (callback: (msg: any) => void) => {
+    messageListeners.current.delete(callback);
+  };
+
+  const notifyListeners = (message: any) => {
+    messageListeners.current.forEach(listener => listener(message));
+  };
+
+  const connect = (planId: number) => {
+    if (stompClient.current && stompClient.current.active) {
+      if (currentPlanId.current === planId) return; // 이미 같은 방에 연결됨
+      disconnect();
+    }
+
+    currentPlanId.current = planId;
+
+    const client = new Client({
+      // SockJS 지원을 위해 factory 사용
+      webSocketFactory: () => new SockJS(`${API_URL}/ws`),
+      connectHeaders: {
+        // 인증 토큰이 필요하다면 여기서 추가 (AuthContext 등 활용)
+      },
+      debug: str => {
+        console.log('[WS Debug]', str);
+      },
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+      onConnect: frame => {
+        console.log('WebSocket Connected:', frame);
+        setIsConnected(true);
+
+        const topics = [
+          `/topic/plan/${planId}/update/plan`,
+          `/topic/plan/${planId}/create/timetable`,
+          `/topic/plan/${planId}/update/timetable`,
+          `/topic/plan/${planId}/delete/timetable`,
+          `/topic/plan/${planId}/create/timetableplaceblock`,
+          `/topic/plan/${planId}/update/timetableplaceblock`,
+          `/topic/plan/${planId}/delete/timetableplaceblock`,
+        ];
+
+        topics.forEach(topic => {
+          client.subscribe(topic, (message: IMessage) => {
+            try {
+              const body = JSON.parse(message.body);
+              console.log(`[Data Recv] ${topic}:`, body);
+              // Extract action/type from topic to help listeners
+              // topic format: /topic/plan/{planId}/{action}/{target}
+              const parts = topic.split('/');
+              const action = parts[4];
+              const target = parts[5];
+
+              notifyListeners({
+                type: action,
+                target: target,
+                data: body,
+                eventId: body.eventId,
+              });
+            } catch (e) {
+              console.error('Failed to parse message:', e);
+            }
+          });
+        });
+
+        // 2. Presence(접속자) 채널 구독 (/topic/plan-presence/{planId})
+        client.subscribe(
+          `/topic/plan-presence/${planId}`,
+          (message: IMessage) => {
+            try {
+              const payload: PresenceMessage = JSON.parse(message.body);
+              console.log('[Presence]:', payload);
+
+              // "users": [ ... ] 배열로 현재 접속자 목록을 덮어씌움
+              if (payload.users) {
+                setOnlineUsers(payload.users);
+              }
+            } catch (e) {
+              console.error('Failed to parse presence message:', e);
+            }
+          },
+        );
+      },
+      onStompError: frame => {
+        console.error('Broker reported error: ' + frame.headers.message);
+        console.error('Additional details: ' + frame.body);
+      },
+      onWebSocketClose: () => {
+        console.log('WebSocket Connection Closed');
+        setIsConnected(false);
+      },
+    });
+
+    client.activate();
+    stompClient.current = client;
+  };
+
+  const disconnect = () => {
+    if (stompClient.current) {
+      stompClient.current.deactivate();
+      stompClient.current = null;
+    }
+    setIsConnected(false);
+    setOnlineUsers([]);
+    currentPlanId.current = null;
+  };
+
+  /**
+   * 공통 요청 구조에 맞춘 메시지 전송
+   * 발행 경로: /app/plan/{planId}/{action}/{entity} (예상 경로)
+   * ※ 백엔드 Controller의 @MessageMapping 경로와 정확히 일치해야 합니다.
+   * 명세서에는 "/app/{roomId}"라고 되어 있으나, 보통 Spring에서는 세분화된 경로를 사용합니다.
+   * 여기서는 명세서의 "Request Example" 구조를 따르되, 경로는 백엔드 컨트롤러 구조를 따릅니다.
+   */
+
+  const sendMessage = (
+    action: string,
+    targetName: string,
+    target: any,
+    eventId?: string,
+  ) => {
+    if (!stompClient.current || !isConnected || !currentPlanId.current) {
+      console.warn('Cannot send message: WebSocket not connected');
+      return;
+    }
+
+    let payload: any = {};
+    const destination = `/app/plan/${currentPlanId.current}/${action}/${targetName}`;
+
+    // Map target data to the structure expected by Backend WRequest/DTOs
+    switch (targetName) {
+      case 'timetableplaceblock':
+        payload = { timetablePlaceBlockVO: target };
+        break;
+      case 'timetable':
+        // WTimetableRequest expects 'timetableVOs' as a list
+        payload = { timetableVOs: Array.isArray(target) ? target : [target] };
+        break;
+      case 'presence':
+        payload = { userDayIndexVO: Array.isArray(target) ? target : [target] };
+        break;
+      case 'plan':
+        payload = target;
+        break;
+      default:
+        payload = { target };
+    }
+
+    if (eventId) {
+      payload.eventId = eventId;
+    }
+
+    console.log(`[WS Send] Dest: ${destination}`, JSON.stringify(payload));
+
+    stompClient.current.publish({
+      destination: destination,
+      body: JSON.stringify(payload),
+    });
+  };
+
+  useEffect(() => {
+    // 컴포넌트 언마운트 시 연결 해제
+    return () => {
+      disconnect();
+    };
+  }, []);
+
+  return (
+    <WebSocketContext.Provider
+      value={{
+        isConnected,
+        onlineUsers,
+        connect,
+        disconnect,
+        sendMessage,
+        subscribeToMessages,
+        unsubscribeFromMessages,
+      }}
+    >
+      {children}
+    </WebSocketContext.Provider>
+  );
+};

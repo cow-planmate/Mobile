@@ -2,76 +2,30 @@ import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
-  Pressable,
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import axios from 'axios';
 import { API_URL } from '@env';
-import { useAuth } from '../../../contexts/AuthContext';
 import UpdateValueModal from '../../../components/common/UpdateValueModal';
-import UpdateGenderModal from '../../../components/common/UpdateGenderModal';
-import UpdateThemeModal from '../../../components/common/UpdateThemeModal';
-import UpdatePasswordModal from '../../../components/common/UpdatePasswordModal';
+import ShareModal from '../../../components/common/ShareModal';
+import MenuModal from '../../../components/common/MenuModal'; // Updated
+import { SimplePlanVO } from '../../../types/env';
+import { AppStackParamList } from '../../../navigation/types';
 
-const COLORS = {
-  primary: '#1344FF',
-  background: '#FFFFFF',
-  card: '#FFFFFF',
-  text: '#1C1C1E',
-  placeholder: '#8E8E93',
-  border: '#E5E5EA',
-  white: '#FFFFFF',
-  error: '#FF3B30',
-  lightGray: '#F0F2F5',
-};
+import { styles, COLORS } from './MyPageScreen.styles';
 
-const InfoCard = ({
-  icon,
-  label,
-  value,
-}: {
-  icon: string;
-  label: string;
-  value: string;
-}) => (
-  <View style={styles.card}>
-    <Text style={styles.cardIcon}>{icon}</Text>
-    <View style={styles.cardContent}>
-      <Text style={styles.cardLabel}>{label}</Text>
-      <Text style={styles.cardValue}>{value}</Text>
-    </View>
-  </View>
-);
-
-const EditableCard = ({
-  icon,
-  label,
-  value,
-  onPress,
-}: {
-  icon: string;
-  label: string;
-  value: string;
-  onPress: () => void;
-}) => (
-  <View style={styles.card}>
-    <Text style={styles.cardIcon}>{icon}</Text>
-    <View style={styles.cardContent}>
-      <Text style={styles.cardLabel}>{label}</Text>
-      <Text style={styles.cardValue}>{value}</Text>
-    </View>
-    <TouchableOpacity onPress={onPress}>
-      <Text style={styles.changeButtonText}>변경하기</Text>
-    </TouchableOpacity>
-  </View>
-);
+const MENU_OPTIONS = [
+  { label: '제목 바꾸기', action: 'rename' },
+  { label: '수정하기', action: 'edit' },
+  { label: '공유 및 초대', action: 'share' },
+  { label: '삭제하기', action: 'delete', isDestructive: true },
+];
 
 const SectionHeader = ({
   title,
@@ -129,158 +83,106 @@ const ItineraryCard = ({
   </TouchableOpacity>
 );
 
-interface PlanVO {
-  planId: number;
-  planName: string;
-}
-
-interface PreferredThemeVO {
-  preferredThemeId: number;
-  preferredThemeName: string;
-}
-
 export default function MyPageScreen() {
-  const { logout } = useAuth();
-
-  const [isAgeModalVisible, setAgeModalVisible] = useState(false);
-  const [isGenderModalVisible, setGenderModalVisible] = useState(false);
-  const [isThemeModalVisible, setThemeModalVisible] = useState(false);
-  const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
-
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState({
-    name: '',
-    email: '',
-    age: '',
-    gender: '',
-    preferredTheme: '',
-  });
-
-  const [myItineraries, setMyItineraries] = useState<PlanVO[]>([]);
-  const [sharedItineraries, setSharedItineraries] = useState<PlanVO[]>([]);
+  const [myItineraries, setMyItineraries] = useState<SimplePlanVO[]>([]);
+  const [sharedItineraries, setSharedItineraries] = useState<SimplePlanVO[]>([]);
+  
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<SimplePlanVO | null>(null);
+  const [renameModalVisible, setRenameModalVisible] = useState(false);
+  const [shareModalVisible, setShareModalVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      fetchUserProfile();
+      fetchPlans();
     }, []),
   );
 
-  const fetchUserProfile = async () => {
+  const fetchPlans = async () => {
     try {
       setLoading(true);
       const response = await axios.get(`${API_URL}/api/user/profile`);
       const data = response.data;
-
-      let genderStr = '미설정';
-      if (data.gender === 0) genderStr = '남성';
-      else if (data.gender === 1) genderStr = '여성';
-
-      const themes =
-        data.preferredThemes && data.preferredThemes.length > 0
-          ? data.preferredThemes
-              .map((t: PreferredThemeVO) => t.preferredThemeName)
-              .join(', ')
-          : '미설정';
-
-      setUser({
-        name: data.nickname || '이름 없음',
-        email: data.email || '',
-        age: data.age ? data.age.toString() : '미설정',
-        gender: genderStr,
-        preferredTheme: themes,
-      });
-
       setMyItineraries(data.myPlanVOs || []);
       setSharedItineraries(data.editablePlanVOs || []);
     } catch (error) {
-      console.error('Failed to fetch profile:', error);
-      Alert.alert('오류', '사용자 정보를 불러오는데 실패했습니다.');
+      console.error('Failed to fetch plans:', error);
+      Alert.alert('오류', '일정을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdateAge = async (newAge: string) => {
+  const handleMenuPress = (plan: SimplePlanVO) => {
+    setSelectedPlan(plan);
+    setMenuVisible(true);
+  };
+
+  const handleMenuSelect = (action: string) => {
+    setMenuVisible(false);
+    if (!selectedPlan) return;
+
+    switch (action) {
+      case 'rename':
+        setRenameModalVisible(true);
+        break;
+      case 'edit':
+        navigation.navigate('ItineraryEditor', { planId: selectedPlan.planId });
+        break;
+      case 'delete':
+        handleDeletePlan(selectedPlan.planId);
+        break;
+      case 'share':
+        setShareModalVisible(true);
+        break;
+    }
+  };
+
+  const handleRenameTitle = async (newTitle: string) => {
+    if (!selectedPlan) return;
     try {
-      await axios.patch(`${API_URL}/api/user/age`, {
-        age: parseInt(newAge, 10),
+      await axios.patch(`${API_URL}/api/plan/${selectedPlan.planId}`, {
+        title: newTitle,
       });
-      setUser(prev => ({ ...prev, age: newAge }));
-      Alert.alert('성공', '나이가 변경되었습니다.');
+      setMyItineraries(prev =>
+        prev.map(p =>
+            p.planId === selectedPlan.planId ? { ...p, planName: newTitle } : p,
+        ),
+      );
+      setSharedItineraries(prev =>
+        prev.map(p =>
+            p.planId === selectedPlan.planId ? { ...p, planName: newTitle } : p,
+        ),
+      );
+      Alert.alert('성공', '일정 제목이 변경되었습니다.');
+      setRenameModalVisible(false);
     } catch (e) {
-      Alert.alert('실패', '나이 변경에 실패했습니다.');
+      console.error(e);
+      Alert.alert('실패', '제목 변경에 실패했습니다.');
     }
   };
 
-  const handleUpdateGender = async (newGender: string) => {
-    try {
-      const genderInt = newGender === 'male' ? 0 : 1;
-      await axios.patch(`${API_URL}/api/user/gender`, { gender: genderInt });
-      setUser(prev => ({
-        ...prev,
-        gender: newGender === 'male' ? '남성' : '여성',
-      }));
-      Alert.alert('성공', '성별이 변경되었습니다.');
-    } catch (e) {
-      Alert.alert('실패', '성별 변경에 실패했습니다.');
-    }
-  };
-
-  const handleUpdateTheme = async () => {
-    fetchUserProfile();
-    Alert.alert('완료', '선호 테마가 변경되었습니다.');
-  };
-
-  const handleUpdatePassword = () => {
-    Alert.alert('완료', '비밀번호가 성공적으로 변경되었습니다.');
-  };
-
-  const handleResign = () => {
-    Alert.alert(
-      '회원 탈퇴',
-      '정말로 탈퇴하시겠습니까? 탈퇴 후에는 모든 데이터가 삭제되며 복구할 수 없습니다.',
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '탈퇴하기',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const token = await AsyncStorage.getItem('accessToken');
-              if (!token) {
-                Alert.alert('오류', '로그인 정보가 유효하지 않습니다.');
-                return;
-              }
-
-              const response = await axios.delete(
-                `${API_URL}/api/user/account`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                },
-              );
-
-              if (response.status === 200) {
-                Alert.alert('탈퇴 완료', '회원 탈퇴가 완료되었습니다.', [
-                  {
-                    text: '확인',
-                    onPress: async () => {
-                      await logout();
-                    },
-                  },
-                ]);
-              }
-            } catch (error: any) {
-              console.error('Resign Error:', error);
-              const msg =
-                error.response?.data?.message || '탈퇴 처리에 실패했습니다.';
-              Alert.alert('오류', msg);
-            }
-          },
+  const handleDeletePlan = async (planId: number) => {
+    Alert.alert('일정 삭제', '정말로 이 일정을 삭제하시겠습니까?', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '삭제',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await axios.delete(`${API_URL}/api/plan/${planId}`);
+            setMyItineraries(prev => prev.filter(p => p.planId !== planId));
+            Alert.alert('성공', '일정이 삭제되었습니다.');
+          } catch (e) {
+            console.error('Delete plan failed:', e);
+            Alert.alert('실패', '일정 삭제에 실패했습니다.');
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   if (loading) {
@@ -294,65 +196,31 @@ export default function MyPageScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.profileSection}>
-          <View style={styles.profileIconContainer}>
-            <Text style={styles.profileIconText}>👤</Text>
-          </View>
-          <TouchableOpacity style={styles.profileNameContainer}>
-            <Text style={styles.profileName}>{user.name}</Text>
-            <Text style={styles.editIcon}>✎</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.infoContainer}>
-          <InfoCard icon="✉️" label="이메일" value={user.email} />
-          <View style={styles.separator} />
-          <EditableCard
-            icon="🗓️"
-            label="나이"
-            value={user.age}
-            onPress={() => setAgeModalVisible(true)}
-          />
-          <View style={styles.separator} />
-          <EditableCard
-            icon="♂"
-            label="성별"
-            value={user.gender}
-            onPress={() => setGenderModalVisible(true)}
-          />
-          <View style={styles.separator} />
-          <EditableCard
-            icon="❤️"
-            label="선호테마"
-            value={user.preferredTheme}
-            onPress={() => setThemeModalVisible(true)}
-          />
-          <View style={styles.separator} />
-          <EditableCard
-            icon="🔒"
-            label="비밀번호"
-            value="••••••••"
-            onPress={() => setPasswordModalVisible(true)}
-          />
-        </View>
-
-        <View style={styles.sectionSeparator} />
-
         <SectionHeader
           title="나의 일정"
           subtitle="직접 생성한 일정을 관리하세요"
           count={myItineraries.length}
           actionText="다중삭제"
-          onActionPress={() => alert('다중삭제')}
+          onActionPress={() => alert('다중삭제 미구현')}
         />
 
         {myItineraries.map(item => (
           <ItineraryCard
             key={item.planId}
             title={item.planName}
-            subtitle="클릭하여 상세보기"
-            onPress={() => alert(`${item.planName} 상세보기`)}
-            onPressMore={() => alert(`${item.planName} 더보기`)}
+            subtitle={
+              item.startDate && item.endDate
+                ? `${item.startDate}~${item.endDate}`
+                : '클릭하여 상세보기'
+            }
+            onPress={() =>
+              navigation.navigate('ItineraryView', {
+                days: [],
+                tripName: item.planName,
+                planId: item.planId,
+              })
+            }
+            onPressMore={() => handleMenuPress(item)}
           />
         ))}
 
@@ -375,252 +243,44 @@ export default function MyPageScreen() {
             <ItineraryCard
               key={item.planId}
               title={item.planName}
-              subtitle="클릭하여 상세보기"
-              onPress={() => alert(`${item.planName} 상세보기`)}
-              onPressMore={() => alert(`${item.planName} 더보기`)}
+              subtitle={
+                item.startDate && item.endDate
+                  ? `${item.startDate}~${item.endDate}`
+                  : '초대된 일정'
+              }
+              onPress={() =>
+                navigation.navigate('ItineraryEditor', {
+                  planId: item.planId,
+                })
+              }
+              onPressMore={() => handleMenuPress(item)}
             />
           ))
         )}
-
-        <View style={styles.linksContainer}>
-          <Pressable onPress={logout}>
-            <Text style={styles.linkText}>로그아웃</Text>
-          </Pressable>
-          <Pressable onPress={handleResign}>
-            <Text style={[styles.linkText, styles.deleteLinkText]}>
-              탈퇴하기
-            </Text>
-          </Pressable>
-        </View>
       </ScrollView>
 
+      <MenuModal
+        visible={menuVisible}
+        title="일정 관리"
+        options={MENU_OPTIONS}
+        onClose={() => setMenuVisible(false)}
+        onSelect={handleMenuSelect}
+      />
+
       <UpdateValueModal
-        visible={isAgeModalVisible}
-        onClose={() => setAgeModalVisible(false)}
-        onConfirm={handleUpdateAge}
-        title="나이 변경"
-        label="나이 입력"
-        initialValue={user.age === '미설정' ? '' : user.age}
-        keyboardType="number-pad"
+        visible={renameModalVisible}
+        onClose={() => setRenameModalVisible(false)}
+        onConfirm={handleRenameTitle}
+        title="제목 바꾸기"
+        label="새로운 제목"
+        initialValue={selectedPlan?.planName || ''}
       />
 
-      <UpdateGenderModal
-        visible={isGenderModalVisible}
-        onClose={() => setGenderModalVisible(false)}
-        onConfirm={handleUpdateGender}
-        initialValue={user.gender === '남성' ? 'male' : 'female'}
-      />
-
-      <UpdateThemeModal
-        visible={isThemeModalVisible}
-        onClose={() => setThemeModalVisible(false)}
-        onConfirm={handleUpdateTheme}
-      />
-
-      <UpdatePasswordModal
-        visible={isPasswordModalVisible}
-        onClose={() => setPasswordModalVisible(false)}
-        onConfirm={handleUpdatePassword}
+      <ShareModal
+        visible={shareModalVisible}
+        onClose={() => setShareModalVisible(false)}
+        planId={selectedPlan?.planId}
       />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  loadingContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scrollContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 40,
-  },
-  profileSection: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  profileIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.lightGray,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  profileIconText: {
-    fontSize: 40,
-    color: COLORS.placeholder,
-  },
-  profileNameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  profileName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  editIcon: {
-    fontSize: 20,
-    color: COLORS.text,
-    marginLeft: 8,
-  },
-  infoContainer: {
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-  },
-  cardIcon: {
-    fontSize: 24,
-    color: COLORS.text,
-    marginRight: 16,
-    width: 30,
-    textAlign: 'center',
-  },
-  cardContent: {
-    flex: 1,
-  },
-  cardLabel: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-    marginBottom: 2,
-  },
-  cardValue: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: COLORS.text,
-  },
-  changeButtonText: {
-    fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginLeft: 62,
-  },
-  linksContainer: {
-    marginTop: 24,
-    paddingHorizontal: 16,
-  },
-  linkText: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-    paddingVertical: 12,
-  },
-  deleteLinkText: {
-    color: COLORS.error,
-  },
-  sectionSeparator: {
-    height: 12,
-    backgroundColor: COLORS.lightGray,
-    marginHorizontal: -20,
-    marginVertical: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 16,
-  },
-  sectionTitleContainer: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-    marginTop: 4,
-  },
-  sectionActionContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sectionCount: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-    fontWeight: '500',
-  },
-  sectionCountIcon: {
-    fontSize: 14,
-  },
-  actionButton: {
-    marginLeft: 8,
-  },
-  sectionActionText: {
-    fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  itineraryCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: 16,
-    marginBottom: 12,
-  },
-  itineraryIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: COLORS.lightGray,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  itineraryIcon: {
-    fontSize: 24,
-  },
-  itineraryContent: {
-    flex: 1,
-  },
-  itineraryTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  itinerarySubtitle: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-    marginTop: 2,
-  },
-  moreButton: {
-    padding: 8,
-  },
-  moreButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.placeholder,
-  },
-  emptyContainer: {
-    paddingVertical: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-  },
-});

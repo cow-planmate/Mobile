@@ -1,21 +1,18 @@
 import React, {
   useState,
-  useEffect,
-  useLayoutEffect,
   useMemo,
+  useEffect,
   useCallback,
-  useRef,
+  useLayoutEffect,
 } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
   FlatList,
   TextInput,
-  Pressable,
   Image,
   ActivityIndicator,
   Alert,
@@ -27,8 +24,9 @@ import { AppStackParamList } from '../../../navigation/types';
 import TimelineItem, {
   Place,
 } from '../../../components/itinerary/TimelineItem';
-import { useItinerary, Day } from '../../../contexts/ItineraryContext';
+import { Day } from '../../../contexts/ItineraryContext';
 import TimePickerModal from '../../../components/common/TimePickerModal';
+import ScheduleEditModal from '../../../components/common/ScheduleEditModal';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -37,19 +35,23 @@ import Animated, {
   withSpring,
   runOnJS,
 } from 'react-native-reanimated';
+import {
+  styles,
+  COLORS,
+  HOUR_HEIGHT,
+  MINUTE_HEIGHT,
+  MIN_ITEM_HEIGHT,
+  GRID_SNAP_HEIGHT,
+} from './ItineraryEditorScreen.styles';
+import { useWebSocket } from '../../../contexts/WebSocketContext';
+import { useItineraryEditor } from '../../../hooks/useItineraryEditor';
+import {
+  timeToMinutes,
+  timeToDate,
+  dateToTime,
+} from '../../../utils/timeUtils';
 
 const Tab = createMaterialTopTabNavigator();
-
-const COLORS = {
-  primary: '#1344FF',
-  background: '#FFFFFF',
-  card: '#FFFFFF',
-  text: '#1C1C1E',
-  placeholder: '#8E8E93',
-  border: '#E5E5EA',
-  white: '#FFFFFF',
-  lightGray: '#F5F5F7',
-};
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
@@ -97,48 +99,9 @@ const PlaceSearchResultItem = React.memo(
           {item.address}
         </Text>
       </View>
-      <Pressable style={styles.addButton} onPress={onSelect}>
-        <Text style={styles.addButtonText}>추가</Text>
-      </Pressable>
     </TouchableOpacity>
   ),
 );
-
-const HOUR_HEIGHT = 180;
-const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
-const MIN_ITEM_HEIGHT = 45;
-const GRID_SNAP_HEIGHT = HOUR_HEIGHT / 4;
-
-const timeToMinutes = (time: string) => {
-  if (!time || typeof time !== 'string' || !time.includes(':')) {
-    return 0;
-  }
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + minutes;
-};
-
-const timeToDate = (time: string) => {
-  const [hours, minutes] = time.split(':').map(Number);
-  const date = new Date();
-  date.setHours(hours, minutes, 0, 0);
-  return date;
-};
-
-const dateToTime = (date: Date) => {
-  return date.toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
-const minutesToTime = (totalMinutes: number) => {
-  const snappedMinutes = Math.round(totalMinutes / 15) * 15;
-  const hours = Math.floor(snappedMinutes / 60) % 24;
-  const minutes = snappedMinutes % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes
-    .toString()
-    .padStart(2, '0')}`;
-};
 
 const TimeGridBackground = React.memo(({ hours }: { hours: number[] }) => {
   const hourStr = (h: number) => h.toString().padStart(2, '0');
@@ -227,6 +190,7 @@ const DraggableTimelineItem = ({
   const top = useSharedValue(initialTop);
   const height = useSharedValue(initialHeight);
 
+  // Re-sync shared values when props change
   useEffect(() => {
     const newStartMinutes = timeToMinutes(place.startTime);
     const newEndMinutes = timeToMinutes(place.endTime);
@@ -237,9 +201,16 @@ const DraggableTimelineItem = ({
     const newCalculatedHeight = newDurationMinutes * MINUTE_HEIGHT;
     const newHeight = Math.max(newCalculatedHeight, MIN_ITEM_HEIGHT);
 
-    top.value = withSpring(newTop);
-    height.value = withSpring(newHeight);
+    // Only update if significantly different to avoid loops/jitters
+    if (top.value !== newTop) {
+      top.value = withSpring(newTop);
+    }
+    if (height.value !== newHeight) {
+      height.value = withSpring(newHeight);
+    }
   }, [place.startTime, place.endTime, offsetMinutes, top, height]);
+
+  // ... rest of the component
 
   const startY = useSharedValue(0);
   const startHeight = useSharedValue(0);
@@ -485,51 +456,79 @@ const AddPlaceComponent = React.memo(
     const [searchResults, setSearchResults] = useState<Place[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSearch = async () => {
-      if (!searchQuery.trim()) return;
+    const fetchPlaces = useCallback(
+      async (
+        queryTerm: string,
+        categoryOverride?: '관광지' | '숙소' | '식당',
+      ) => {
+        setIsLoading(true);
+        try {
+          let query = queryTerm;
 
-      setIsLoading(true);
-      try {
-        const query = destination
-          ? `${destination} ${searchQuery}`
-          : searchQuery;
+          if (!queryTerm && destination && categoryOverride) {
+            const keyword =
+              categoryOverride === '식당' ? '맛집' : categoryOverride;
+            query = `${destination} ${keyword}`.trim();
+          } else if (destination) {
+            query = `${destination} ${queryTerm}`.trim();
+          }
 
-        const response = await axios.get(
-          `${API_URL}/api/plan/place/${encodeURIComponent(query)}`,
-        );
+          if (!query) {
+            setIsLoading(false);
+            return;
+          }
 
-        if (response.data && response.data.places) {
-          const mappedPlaces: Place[] = response.data.places.map(
-            (p: PlaceVO) => ({
-              id: p.placeId,
-              name: p.name,
-              type: getCategoryType(p.categoryId),
-              address: p.formatted_address,
-              rating: p.rating,
-              imageUrl: p.iconUrl,
-              latitude: p.ylocation,
-              longitude: p.xlocation,
-              time: '10:00',
-              startTime: '10:00',
-              endTime: '11:00',
-            }),
-          );
-          setSearchResults(mappedPlaces);
-        } else {
-          setSearchResults([]);
+          const url = `${API_URL}/api/plan/place/${encodeURIComponent(query)}`;
+          console.log('Fetching places from:', url);
+
+          const response = await axios.get(url);
+
+          if (response.data && response.data.places) {
+            const mappedPlaces: Place[] = response.data.places.map(
+              (p: PlaceVO) => ({
+                id: p.placeId,
+                categoryId: p.categoryId,
+                name: p.name,
+                type: categoryOverride || getCategoryType(p.categoryId),
+                address: p.formatted_address,
+                rating: p.rating,
+                imageUrl: p.iconUrl,
+                latitude: p.ylocation,
+                longitude: p.xlocation,
+                time: '10:00',
+                startTime: '10:00',
+                endTime: '11:00',
+              }),
+            );
+            setSearchResults(mappedPlaces);
+          } else {
+            setSearchResults([]);
+          }
+        } catch (error) {
+          console.error('Search failed:', error);
+          Alert.alert('오류', '장소 검색에 실패했습니다.');
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error('Search failed:', error);
-        Alert.alert('오류', '장소 검색에 실패했습니다.');
-      } finally {
-        setIsLoading(false);
+      },
+      [destination],
+    );
+
+    useEffect(() => {
+      if (destination && !searchQuery) {
+        fetchPlaces('', selectedTab);
       }
+    }, [destination, selectedTab, searchQuery, fetchPlaces]);
+
+    const handleSearch = () => {
+      fetchPlaces(searchQuery);
     };
 
     const filteredPlaces = searchResults.filter(place => {
       if (selectedTab === '관광지') {
         return place.type === '관광지' || place.type === '기타';
       }
+      // '숙소' | '식당' have no overlap with '기타'
       return place.type === selectedTab;
     });
 
@@ -614,130 +613,111 @@ const AddPlaceComponent = React.memo(
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const {
     days,
-    setDays,
-    deletePlaceFromDay,
-    addPlaceToDay,
-    updatePlaceTimes,
-    lastAddedPlaceId,
-    setLastAddedPlaceId,
-  } = useItinerary();
-  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-  const [tripName, setTripName] = useState('나의 일정1');
-  const [isEditingTripName, setIsEditingTripName] = useState(false);
+    selectedDayIndex,
+    setSelectedDayIndex,
+    tripName,
+    setTripName,
+    isEditingTripName,
+    setIsEditingTripName,
+    isTimePickerVisible,
+    setTimePickerVisible,
+    editingTime,
+    setEditingTime,
+    timelineScrollRef,
+    formatDate,
+    handleEditTime,
+    handleUpdatePlaceTimes,
+    handleDeletePlace,
+    handleAddPlace,
+    selectedDay,
+  } = useItineraryEditor(route, navigation);
 
-  const [isTimePickerVisible, setTimePickerVisible] = useState(false);
-  const [editingTime, setEditingTime] = useState<{
-    placeId: string;
-    type: 'startTime' | 'endTime';
-    time: string;
-  } | null>(null);
+  // WebSocket Integration
+  const { connect, onlineUsers, sendMessage } = useWebSocket();
+  const planId = route.params.planId;
 
-  const timelineScrollRef = useRef<ScrollView>(null);
+  const [isScheduleEditVisible, setScheduleEditVisible] = useState(false);
 
-  const formatDate = (date: Date) => {
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${month}.${day}`;
-  };
-
+  // Connection
   useEffect(() => {
-    const start = new Date(route.params.startDate);
-    const end = new Date(route.params.endDate);
-
-    start.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
-
-    const tripDays: Day[] = [];
-    let currentDate = new Date(start);
-    let dayCounter = 1;
-
-    while (currentDate.getTime() <= end.getTime()) {
-      tripDays.push({
-        date: new Date(currentDate),
-        dayNumber: dayCounter,
-        places: [],
-      });
-
-      currentDate.setDate(currentDate.getDate() + 1);
-      dayCounter++;
+    if (planId) {
+      connect(planId);
     }
-    setDays(tripDays);
-  }, [route.params.startDate, route.params.endDate, setDays]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planId]);
 
   useLayoutEffect(() => {
-    const renderHeaderTitle = () =>
-      isEditingTripName ? (
-        <TextInput
-          value={tripName}
-          onChangeText={setTripName}
-          autoFocus={true}
-          onBlur={() => setIsEditingTripName(false)}
-          style={styles.headerInput}
-        />
-      ) : (
-        <TouchableOpacity onPress={() => setIsEditingTripName(true)}>
-          <Text style={styles.headerTitle}>{tripName}</Text>
-        </TouchableOpacity>
-      );
-
-    const renderHeaderRight = () => (
-      <TouchableOpacity
-        onPress={() => navigation.navigate('ItineraryView', { days, tripName })}
-        style={styles.headerDoneButton}
-      >
-        <Text style={styles.headerDoneButtonText}>완료</Text>
-      </TouchableOpacity>
-    );
+    const handleTitleSave = () => {
+      setIsEditingTripName(false);
+      if (tripName) {
+        sendMessage('update', 'plan', { planId, title: tripName });
+      }
+    };
 
     navigation.setOptions({
-      headerTitle: renderHeaderTitle,
-      headerRight: renderHeaderRight,
+      headerTitle: () =>
+        isEditingTripName ? (
+          <TextInput
+            value={tripName}
+            onChangeText={setTripName}
+            autoFocus={true}
+            onBlur={handleTitleSave}
+            onSubmitEditing={handleTitleSave}
+            style={styles.headerInput}
+          />
+        ) : (
+          <TouchableOpacity onPress={() => setIsEditingTripName(true)}>
+            <Text style={styles.headerTitle}>{tripName}</Text>
+          </TouchableOpacity>
+        ),
+      headerRight: () => (
+        <View style={styles.onlineUsersContainer}>
+          {onlineUsers.length > 0 && (
+            <View style={styles.onlineUsersWrapper}>
+              {onlineUsers.slice(0, 3).map((u, i) => (
+                <View
+                  key={u.uid}
+                  style={[
+                    styles.onlineUserAvatar,
+                    {
+                      marginLeft: i > 0 ? -10 : 0,
+                    },
+                  ]}
+                >
+                  <Text style={styles.onlineUserInitials}>
+                    {u.userNickname?.charAt(0) || '?'}
+                  </Text>
+                </View>
+              ))}
+              {onlineUsers.length > 3 && (
+                <View
+                  style={[
+                    styles.onlineUserAvatar,
+                    styles.moreUsersAvatar,
+                    { marginLeft: -10 },
+                  ]}
+                >
+                  <Text style={styles.moreUsersText}>
+                    +{onlineUsers.length - 3}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+      ),
     });
-  }, [navigation, tripName, days, isEditingTripName]);
-
-  const selectedDay = days[selectedDayIndex];
-
-  useEffect(() => {
-    if (lastAddedPlaceId && selectedDay && timelineScrollRef.current) {
-      const newPlace = selectedDay.places.find(p => p.id === lastAddedPlaceId);
-      if (newPlace) {
-        const yOffset = timeToMinutes(newPlace.startTime) * MINUTE_HEIGHT;
-        timelineScrollRef.current.scrollTo({ y: yOffset, animated: true });
-        setLastAddedPlaceId(null);
-      }
-    }
-  }, [lastAddedPlaceId, selectedDay, setLastAddedPlaceId]);
-
-  const handleEditTime = useCallback(
-    (placeId: string, type: 'startTime' | 'endTime', time: string) => {
-      setEditingTime({ placeId, type, time });
-      setTimePickerVisible(true);
-    },
-    [],
-  );
-
-  const handleUpdatePlaceTimes = useCallback(
-    (placeId: string, newStartMinutes: number, newEndMinutes: number) => {
-      const newStartTime = minutesToTime(newStartMinutes);
-      const newEndTime = minutesToTime(newEndMinutes);
-      updatePlaceTimes(selectedDayIndex, placeId, newStartTime, newEndTime);
-    },
-    [selectedDayIndex, updatePlaceTimes],
-  );
-
-  const handleDeletePlace = useCallback(
-    (placeId: string) => {
-      deletePlaceFromDay(selectedDayIndex, placeId);
-    },
-    [selectedDayIndex, deletePlaceFromDay],
-  );
-
-  const handleAddPlace = useCallback(
-    (place: Omit<Place, 'startTime' | 'endTime'>) => {
-      addPlaceToDay(selectedDayIndex, place);
-    },
-    [selectedDayIndex, addPlaceToDay],
-  );
+  }, [
+    navigation,
+    tripName,
+    days,
+    isEditingTripName,
+    setIsEditingTripName,
+    setTripName,
+    onlineUsers,
+    planId,
+    sendMessage,
+  ]);
 
   if (!selectedDay) {
     return (
@@ -756,6 +736,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.dayTabsContainer}
+          style={styles.dayTabsScroll}
         >
           {days.map((day, index) => (
             <TouchableOpacity
@@ -784,6 +765,13 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
               </Text>
             </TouchableOpacity>
           ))}
+          <TouchableOpacity
+            style={styles.dayTab}
+            onPress={() => setScheduleEditVisible(true)}
+          >
+            <Text style={styles.dayTabText}>+</Text>
+            <Text style={styles.dayTabDateText}>수정</Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
 
@@ -815,6 +803,26 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           )}
         </Tab.Screen>
       </Tab.Navigator>
+
+      <TouchableOpacity
+        style={styles.completeButton}
+        onPress={() =>
+          navigation.navigate('ItineraryView', {
+            days,
+            tripName,
+            planId: route.params.planId,
+            departure: route.params.departure,
+            travelId: route.params.travelId,
+            transport: route.params.transport,
+            adults: route.params.adults,
+            children: route.params.children,
+            startDate: route.params.startDate,
+            endDate: route.params.endDate,
+          })
+        }
+      >
+        <Text style={styles.completeButtonText}>일정 생성 완료</Text>
+      </TouchableOpacity>
 
       {editingTime && (
         <TimePickerModal
@@ -871,275 +879,70 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           }}
         />
       )}
+
+      <ScheduleEditModal
+        visible={isScheduleEditVisible}
+        initialDays={days.map(d => ({
+          date: d.date,
+          startTime: d.startTime,
+          endTime: d.endTime,
+        }))}
+        onClose={() => setScheduleEditVisible(false)}
+        onConfirm={updatedDays => {
+          if (updatedDays.length > 0) {
+            // Calculate added/removed days and notify backend via WebSocket
+            const oldDates = new Set(
+              days.map(d => d.date.toISOString().split('T')[0]),
+            );
+            const newDates = new Set(
+              updatedDays.map(d => d.date.toISOString().split('T')[0]),
+            );
+
+            const addedDates = [...newDates].filter(d => !oldDates.has(d));
+            const removedDates = [...oldDates].filter(d => !newDates.has(d));
+
+            if (addedDates.length > 0) {
+              const newTimetables = addedDates.map(dateStr => ({
+                timetableId: 0, // Backend will assign ID
+                date: dateStr,
+                startTime: '09:00:00',
+                endTime: '20:00:00',
+              }));
+              sendMessage('create', 'timetable', newTimetables);
+            }
+
+            if (removedDates.length > 0) {
+              const removedTimetables = days
+                .filter(d =>
+                  removedDates.includes(d.date.toISOString().split('T')[0]),
+                )
+                .map(d => ({
+                  timetableId: d.timetableId, // Valid ID required for delete
+                  date: d.date.toISOString().split('T')[0],
+                  startTime: '09:00:00',
+                  endTime: '20:00:00',
+                }));
+              
+              if (removedTimetables.length > 0) {
+                 sendMessage('delete', 'timetable', removedTimetables);
+              }
+            }
+
+            const firstDay = updatedDays[0].date;
+            const lastDay = updatedDays[updatedDays.length - 1].date;
+
+            setScheduleEditVisible(false);
+            
+            // Delay buffer to allow WS processing before re-fetching
+            setTimeout(() => {
+                navigation.setParams({
+                  startDate: firstDay.toISOString(),
+                  endDate: lastDay.toISOString(),
+                });
+            }, 300);
+          }
+        }}
+      />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  headerInput: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: COLORS.text,
-    borderBottomWidth: 1,
-    borderColor: COLORS.placeholder,
-    padding: 0,
-    minWidth: 150,
-  },
-  headerDoneButton: {
-    marginRight: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: COLORS.primary,
-  },
-  headerDoneButtonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  dayTabsWrapper: {
-    backgroundColor: COLORS.card,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  dayTabsContainer: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-  },
-  dayTab: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginRight: 10,
-    backgroundColor: COLORS.lightGray,
-    alignItems: 'center',
-    minWidth: 60,
-  },
-  dayTabSelected: {
-    backgroundColor: COLORS.primary,
-  },
-  dayTabText: {
-    color: COLORS.text,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  dayTabTextSelected: {
-    color: COLORS.white,
-  },
-  dayTabDateText: {
-    color: COLORS.placeholder,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  dayTabDateTextSelected: {
-    color: COLORS.white,
-    opacity: 0.8,
-  },
-  tabContentContainer: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  timelineContentContainer: {
-    paddingBottom: 20,
-  },
-  timelineWrapper: {
-    position: 'relative',
-    paddingVertical: 20,
-  },
-  gridContainer: {
-    paddingVertical: 20,
-  },
-  hourBlock: {
-    flexDirection: 'row',
-  },
-  hourLabelContainer: {
-    width: 60,
-    height: HOUR_HEIGHT,
-    position: 'relative',
-    alignItems: 'center',
-  },
-  timeLabelText: {
-    position: 'absolute',
-    marginTop: -8,
-    color: COLORS.placeholder,
-    fontSize: 12,
-    fontWeight: '500',
-    width: '100%',
-    textAlign: 'center',
-  },
-  minuteLabel: {},
-  hourContent: {
-    flex: 1,
-    marginLeft: 0,
-    height: HOUR_HEIGHT,
-    flexDirection: 'column',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    paddingLeft: 60,
-  },
-  quarterBlock: {
-    height: HOUR_HEIGHT / 4,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  firstQuarterBlock: {
-    borderTopColor: COLORS.border,
-  },
-  addPlaceListContainer: {
-    flex: 1,
-  },
-  searchHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    backgroundColor: COLORS.card,
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    backgroundColor: COLORS.lightGray,
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginRight: 10,
-  },
-  searchButton: {
-    padding: 10,
-  },
-  searchButtonIcon: {
-    fontSize: 20,
-  },
-  placeTypeTabContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 15,
-    paddingTop: 10,
-    paddingBottom: 5,
-    backgroundColor: COLORS.card,
-  },
-  placeTypeTab: {
-    marginRight: 15,
-    paddingVertical: 10,
-  },
-  placeTypeTabSelected: {
-    borderBottomWidth: 2,
-    borderBottomColor: COLORS.primary,
-  },
-  placeTypeTabText: {
-    fontSize: 16,
-    color: COLORS.placeholder,
-    fontWeight: '600',
-  },
-  placeTypeTabTextSelected: {
-    color: COLORS.primary,
-  },
-  resultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.card,
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  resultImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-  },
-  placeholderImage: {
-    backgroundColor: COLORS.lightGray,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.placeholder,
-  },
-  resultName: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  resultMeta: {
-    fontSize: 12,
-    color: COLORS.placeholder,
-    marginTop: 2,
-  },
-  resultAddress: {
-    fontSize: 12,
-    color: COLORS.placeholder,
-    marginTop: 2,
-  },
-  addButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    backgroundColor: COLORS.lightGray,
-    borderRadius: 20,
-  },
-  addButtonText: {
-    color: COLORS.primary,
-    fontWeight: 'bold',
-  },
-  resizeHandleTop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 24,
-    zIndex: 10,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: 4,
-  },
-  resizeHandleBottom: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 24,
-    zIndex: 10,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingBottom: 4,
-  },
-  resizeHandleIndicator: {
-    width: 30,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: COLORS.primary,
-    opacity: 0.8,
-  },
-  emptyContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: COLORS.placeholder,
-  },
-  resultInfo: {
-    flex: 1,
-    marginLeft: 10,
-  },
-  timeLabelTop: {
-    top: 0,
-  },
-  flex1: {
-    flex: 1,
-  },
-  marginTop20: {
-    marginTop: 20,
-  },
-});

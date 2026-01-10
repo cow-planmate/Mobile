@@ -1,47 +1,92 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   Modal,
   Pressable,
   TouchableOpacity,
   TextInput,
   Alert,
+  FlatList,
 } from 'react-native';
+import axios from 'axios';
+import { API_URL } from '@env';
 
-const COLORS = {
-  primary: '#1344FF',
-  text: '#1C1C1E',
-  placeholder: '#8E8E93',
-  white: '#FFFFFF',
-  border: '#E5E5EA',
-  lightGray: '#F0F2F5',
-  gray: '#E5E5EA',
-};
+import { styles, COLORS } from './ShareModal.styles';
 
 type ShareModalProps = {
   visible: boolean;
   onClose: () => void;
+  planId?: number;
 };
 
-export default function ShareModal({ visible, onClose }: ShareModalProps) {
+interface SimpleEditorVO {
+  userId: number;
+  nickName: string;
+}
+
+export default function ShareModal({
+  visible,
+  onClose,
+  planId,
+}: ShareModalProps) {
   const [nickname, setNickname] = useState('');
-  const shareUrl = 'https://www.planmate.site/';
+  const [editors, setEditors] = useState<SimpleEditorVO[]>([]);
+  const shareUrl = `https://www.planmate.site/plan/${planId}`;
+
+  const fetchEditors = useCallback(async () => {
+    try {
+      // Assuming GET /api/plan/{planId}/member returns GetEditorsResponse
+      const response = await axios.get(`${API_URL}/api/plan/${planId}/member`);
+      if (response.data && response.data.simpleEditorVOs) {
+        setEditors(response.data.simpleEditorVOs);
+      }
+    } catch (error) {
+      console.error('Failed to fetch editors:', error);
+    }
+  }, [planId]);
+
+  useEffect(() => {
+    if (visible && planId) {
+      fetchEditors();
+    }
+  }, [visible, planId, fetchEditors]);
 
   const handleCopy = () => {
     Alert.alert('복사 완료', '공유 URL이 클립보드에 복사되었습니다.');
   };
 
-  const handleInvite = () => {
+  const handleInvite = async () => {
     if (!nickname) {
       Alert.alert('오류', '닉네임을 입력해주세요.');
       return;
     }
-    Alert.alert('초대 완료', `${nickname}님을 일정에 초대했습니다.`);
-    setNickname('');
-    onClose();
+    if (!planId) return;
+
+    try {
+      await axios.post(`${API_URL}/api/plan/${planId}/invite`, {
+        receiverNickname: nickname,
+      });
+      Alert.alert('초대 완료', `${nickname}님을 일정에 초대했습니다.`);
+      setNickname('');
+    } catch (error: any) {
+      console.error('Invite error:', error);
+      Alert.alert(
+        '오류',
+        error.response?.data?.message || '초대에 실패했습니다.',
+      );
+    }
+  };
+
+  const handleRemoveEditor = async (userId: number) => {
+    if (!planId) return;
+    try {
+      await axios.delete(`${API_URL}/api/plan/${planId}/member/${userId}`);
+      Alert.alert('성공', '편집 권한이 회수되었습니다.');
+      fetchEditors();
+    } catch (error: any) {
+      Alert.alert('오류', '편집 권한 회수에 실패했습니다.');
+    }
   };
 
   return (
@@ -79,9 +124,38 @@ export default function ShareModal({ visible, onClose }: ShareModalProps) {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>편집 권한이 있는 사용자</Text>
-            <Text style={styles.emptyUserText}>
-              편집 권한을 가진 사용자가 없습니다
-            </Text>
+            {editors.length === 0 ? (
+              <Text style={styles.emptyUserText}>
+                편집 권한을 가진 사용자가 없습니다
+              </Text>
+            ) : (
+              <FlatList
+                data={editors}
+                keyExtractor={item => String(item.userId)}
+                renderItem={({ item }) => (
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Text style={{ color: COLORS.text, fontSize: 14 }}>
+                      {item.nickName}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => handleRemoveEditor(item.userId)}
+                    >
+                      <Text style={{ color: COLORS.error, fontSize: 12 }}>
+                        내보내기
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                scrollEnabled={false}
+              />
+            )}
           </View>
 
           <View style={styles.section}>
@@ -107,100 +181,3 @@ export default function ShareModal({ visible, onClose }: ShareModalProps) {
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalView: {
-    width: '90%',
-    maxWidth: 400,
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  closeButton: {
-    padding: 4,
-  },
-  closeButtonText: {
-    fontSize: 20,
-    color: COLORS.placeholder,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 12,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  input: {
-    flex: 1,
-    height: 44,
-    borderWidth: 1,
-    borderColor: COLORS.gray,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 14,
-    backgroundColor: COLORS.white,
-    color: COLORS.text,
-  },
-  disabledInput: {
-    backgroundColor: COLORS.lightGray,
-    color: COLORS.placeholder,
-  },
-  button: {
-    height: 44,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-  },
-  copyButton: {
-    backgroundColor: COLORS.lightGray,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  copyButtonText: {
-    color: COLORS.text,
-    fontWeight: '500',
-    fontSize: 14,
-  },
-  inviteButton: {
-    backgroundColor: COLORS.primary,
-  },
-  inviteButtonText: {
-    color: COLORS.white,
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  emptyUserText: {
-    fontSize: 14,
-    color: COLORS.placeholder,
-  },
-});

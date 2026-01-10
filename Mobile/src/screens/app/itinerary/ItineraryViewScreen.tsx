@@ -1,13 +1,21 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Pressable,
+  Alert,
 } from 'react-native';
+import axios from 'axios';
+import { API_URL } from '@env';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
 import TimelineItem, {
@@ -15,22 +23,53 @@ import TimelineItem, {
 } from '../../../components/itinerary/TimelineItem';
 import MapView, { Marker } from 'react-native-maps';
 import ShareModal from '../../../components/common/ShareModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const COLORS = {
-  primary: '#1344FF',
-  background: '#FFFFFF',
-  card: '#FFFFFF',
-  text: '#1C1C1E',
-  placeholder: '#8E8E93',
-  border: '#E5E5EA',
-  white: '#FFFFFF',
-  lightGray: '#F5F5F7',
-};
+import {
+  styles,
+  COLORS,
+  HOUR_HEIGHT,
+  MINUTE_HEIGHT,
+  MIN_ITEM_HEIGHT,
+  GRID_TOP_OFFSET,
+} from './ItineraryViewScreen.styles';
+import { Day } from '../../../contexts/ItineraryContext';
 
-const HOUR_HEIGHT = 180;
-const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
-const MIN_ITEM_HEIGHT = 45;
-const GRID_TOP_OFFSET = 40;
+// DTO Interfaces
+interface PlaceBlockVO {
+  blockId?: number;
+  timeTableId: number;
+  placeCategory: number;
+  placeName: string;
+  placeTheme: string;
+  placeRating: number;
+  placeAddress: string;
+  placeLink?: string;
+  placeId: string;
+  startTime: string; // ISO Time 'HH:mm:ss'
+  endTime: string;
+  xlocation: number;
+  ylocation: number;
+}
+
+interface PlanFrameVO {
+  planId: number;
+  planName: string;
+  departure: string;
+  travelCategoryName: string;
+  travelId: number;
+  travelName: string;
+  adultCount: number;
+  childCount: number;
+  transportationCategoryId: number;
+}
+
+interface GetCompletePlanResponse {
+  message: string;
+  planFrame: PlanFrameVO;
+  placeBlocks: PlaceBlockVO[];
+  timetables: { timetableId: number; date: string }[];
+}
 
 const timeToMinutes = (time: string) => {
   if (!time || typeof time !== 'string' || !time.includes(':')) {
@@ -132,10 +171,88 @@ const StaticTimelineItem = React.memo(
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 
 export default function ItineraryViewScreen({ route, navigation }: Props) {
-  const { days = [], tripName = '완성된 일정' } = route.params || {};
+  const {
+    days: initialDays = [],
+    tripName: initialTripName = '완성된 일정',
+    departure,
+    travelId,
+    transport,
+    adults,
+    children,
+    planId,
+  } = route.params || {};
+
+  const [days, setDays] = useState<Day[]>(initialDays);
+  const [tripName, setTripName] = useState(initialTripName);
+  // const [isLoading, setIsLoading] = useState(false);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [isShareModalVisible, setShareModalVisible] = useState(false);
+  const [isMapVisible, setMapVisible] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+
+  const fetchCompletePlan = useCallback(async () => {
+    if (!planId) return;
+    // setIsLoading(true);
+    try {
+      // Assuming GET /api/plan/{planId} returns GetCompletePlanResponse structure
+      const response = await axios.get<GetCompletePlanResponse>(
+        `${API_URL}/api/plan/${planId}`,
+      );
+      const { planFrame, placeBlocks, timetables } = response.data;
+
+      setTripName(planFrame.planName || '나의 일정');
+
+      const categoryMapping = (
+        id: number,
+      ): '관광지' | '숙소' | '식당' | '기타' => {
+        if ([12, 14, 15, 28].includes(id)) return '관광지';
+        if (id === 32) return '숙소';
+        if (id === 39) return '식당';
+        return '기타';
+      };
+
+      if (timetables && timetables.length > 0) {
+        const fetchedDays: Day[] = timetables.map((tt, index) => {
+          const blocks = placeBlocks.filter(
+            pb => pb.timeTableId === tt.timetableId,
+          );
+          const places: Place[] = blocks.map(pb => ({
+            id: String(pb.blockId), // Use blockId as internal ID
+            categoryId: pb.placeCategory,
+            placeRefId: pb.placeId,
+            name: pb.placeName,
+            address: pb.placeAddress,
+            type: categoryMapping(pb.placeCategory),
+            rating: pb.placeRating,
+            startTime: pb.startTime.substring(0, 5),
+            endTime: pb.endTime.substring(0, 5),
+            latitude: pb.ylocation,
+            longitude: pb.xlocation,
+            imageUrl: '', // Optional in PlaceBlockVO
+            place_url: pb.placeLink,
+          }));
+
+          return {
+            date: new Date(tt.date),
+            dayNumber: index + 1,
+            places: places,
+          };
+        });
+        setDays(fetchedDays);
+      }
+    } catch (error) {
+      console.error('Failed to fetch plan:', error);
+      Alert.alert('오류', '일정을 불러오는데 실패했습니다.');
+    } finally {
+      // setIsLoading(false);
+    }
+  }, [planId]);
+
+  useEffect(() => {
+    if (initialDays.length === 0 && planId) {
+      fetchCompletePlan();
+    }
+  }, [planId, fetchCompletePlan, initialDays.length]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -166,35 +283,132 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     return { gridHours: hours, offsetMinutes: offset };
   }, []);
 
+  const handleConfirm = async () => {
+    if (planId) {
+      Alert.alert('완료', '일정이 확인되었습니다.', [
+        { text: '확인', onPress: () => navigation.popToTop() },
+      ]);
+      return;
+    }
+
+    try {
+      const timetableVOs = days.map(day => ({
+        timetableId: 0,
+        date: day.date.toISOString().split('T')[0],
+        startTime: '09:00:00',
+        endTime: '20:00:00',
+      }));
+
+      const placeMapping = (type: string) => {
+        switch (type) {
+          case '관광지':
+            return 12; // Fallback for tourist spots
+          case '숙소':
+            return 32; // Fallback for accommodation
+          case '식당':
+            return 39; // Fallback for restaurants
+          default:
+            return 12; // Default fallback
+        }
+      };
+
+      const timetablePlaceBlocks = days.map(day =>
+        day.places.map(place => ({
+          timetableId: 0,
+          timetablePlaceBlockId: !isNaN(Number(place.id))
+            ? Number(place.id)
+            : 0,
+          placeCategoryId:
+            place.categoryId && ![12, 14].includes(place.categoryId)
+              ? place.categoryId
+              : (placeMapping(place.type) === 12 ? 4 : placeMapping(place.type) === 32 ? 1 : 39), // Remap invalid/missing IDs to known safe ones (4=Park?, 1=Hotel?)
+          placeName: place.name,
+          placeRating: place.rating || 0,
+          placeAddress: place.address || '',
+          placeLink: '',
+          placeId: place.placeRefId || String(Math.random()),
+          date: day.date.toISOString().split('T')[0],
+          startTime:
+            place.startTime.length === 5
+              ? place.startTime + ':00'
+              : place.startTime,
+          endTime:
+            place.endTime.length === 5 ? place.endTime + ':00' : place.endTime,
+          xLocation: place.longitude || 0,
+          yLocation: place.latitude || 0,
+        })),
+      );
+
+      // Flatten the list of lists for logging, but backend expects List<List<...>>?
+      // Wait, java: List<List<TimetablePlaceBlockVO>> timetablePlaceBlockVOLists
+      // Yes, parallel to timetables list.
+
+      const payload = {
+        departure: departure || 'SEOUL',
+        transportationCategoryId: transport === '자동차' ? 2 : 1,
+        travelId: travelId || 1,
+        adultCount: adults || 1,
+        childCount: children || 0,
+        timetables: timetableVOs,
+        timetablePlaceBlocks: timetablePlaceBlocks,
+      };
+
+      console.log('Using API URL:', API_URL);
+      console.log('Sending Save Payload:', JSON.stringify(payload, null, 2));
+
+      // Explicitly attach token if available, to ensure auth
+      const token = await AsyncStorage.getItem('accessToken');
+      const config = token
+        ? { headers: { Authorization: `Bearer ${token}` } }
+        : {};
+
+      await axios.patch(`${API_URL}/api/plan/save`, payload, config);
+
+      Alert.alert('성공', '일정이 저장되었습니다.', [
+        { text: '확인', onPress: () => navigation.popToTop() },
+      ]);
+    } catch (error: any) {
+      console.error('Failed to save plan:', error);
+
+      if (error.response) {
+        console.error('Error Status:', error.response.status);
+        console.error('Error Data:', error.response.data);
+      }
+      Alert.alert('오류', '일정 저장에 실패했습니다.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.mapContainer}>
-        <MapView
-          style={styles.map}
-          region={
-            selectedDay && selectedDay.places.length > 0
-              ? {
-                  latitude: selectedDay.places[0].latitude,
-                  longitude: selectedDay.places[0].longitude,
-                  latitudeDelta: 0.0922,
-                  longitudeDelta: 0.0421,
-                }
-              : undefined
-          }
-        >
-          {selectedDay?.places.map(place => (
-            <Marker
-              key={place.id}
-              coordinate={{
-                latitude: place.latitude,
-                longitude: place.longitude,
-              }}
-              title={place.name}
-              description={place.address}
-            />
-          ))}
-        </MapView>
-      </View>
+      {isMapVisible && (
+        <View style={styles.mapContainer}>
+          <MapView
+            style={styles.map}
+            region={
+              selectedDay && selectedDay.places.length > 0
+                ? {
+                    latitude: selectedDay.places[0].latitude,
+                    longitude: selectedDay.places[0].longitude,
+                    latitudeDelta: 0.0922,
+                    longitudeDelta: 0.0421,
+                  }
+                : undefined
+            }
+          >
+            {selectedDay?.places.map(place => (
+              <Marker
+                key={place.id}
+                coordinate={{
+                  latitude: place.latitude,
+                  longitude: place.longitude,
+                }}
+                title={place.name}
+                description={place.address}
+              />
+            ))}
+          </MapView>
+        </View>
+      )}
 
       <View style={styles.flex1}>
         <View style={styles.dayTabsWrapper}>
@@ -231,6 +445,14 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
               </TouchableOpacity>
             ))}
           </ScrollView>
+          <TouchableOpacity
+            style={styles.mapToggleButton}
+            onPress={() => setMapVisible(!isMapVisible)}
+          >
+            <Text style={styles.mapToggleButtonText}>
+              {isMapVisible ? '지도 숨기기' : '지도 보기'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {selectedDay && (
@@ -269,7 +491,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         </Pressable>
         <Pressable
           style={[styles.footerButton, styles.confirmButton]}
-          onPress={() => navigation.popToTop()}
+          onPress={handleConfirm}
         >
           <Text style={styles.confirmButtonText}>확인</Text>
         </Pressable>
@@ -278,138 +500,8 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       <ShareModal
         visible={isShareModalVisible}
         onClose={() => setShareModalVisible(false)}
+        planId={planId}
       />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  mapContainer: {
-    height: '40%',
-  },
-  map: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  dayTabsWrapper: {
-    backgroundColor: COLORS.card,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  dayTabsContainer: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-  },
-  dayTab: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginRight: 10,
-    backgroundColor: COLORS.lightGray,
-    alignItems: 'center',
-    minWidth: 60,
-  },
-  dayTabSelected: {
-    backgroundColor: COLORS.primary,
-  },
-  dayTabText: {
-    color: COLORS.text,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  dayTabTextSelected: {
-    color: COLORS.white,
-  },
-  dayTabDateText: {
-    color: COLORS.placeholder,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  dayTabDateTextSelected: {
-    color: COLORS.white,
-    opacity: 0.8,
-  },
-  timelineContentContainer: {
-    paddingBottom: 20,
-  },
-  timelineWrapper: {
-    position: 'relative',
-    paddingVertical: 20,
-  },
-  gridContainer: {
-    paddingVertical: 20,
-  },
-  hourBlock: {
-    flexDirection: 'row',
-  },
-  hourLabelContainer: {
-    width: 60,
-    height: HOUR_HEIGHT,
-    position: 'relative',
-    alignItems: 'center',
-  },
-  timeLabelText: {
-    position: 'absolute',
-    marginTop: -8,
-    color: COLORS.placeholder,
-    fontSize: 12,
-    fontWeight: '500',
-    width: '100%',
-    textAlign: 'center',
-  },
-  minuteLabel: {},
-  hourContent: {
-    flex: 1,
-    marginLeft: 0,
-    height: HOUR_HEIGHT,
-    flexDirection: 'column',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    paddingLeft: 60,
-  },
-  quarterBlock: {
-    height: HOUR_HEIGHT / 4,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  firstQuarterBlock: {
-    borderTopColor: COLORS.border,
-  },
-  footer: {
-    flexDirection: 'row',
-    padding: 20,
-    backgroundColor: COLORS.card,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  footerButton: {
-    flex: 1,
-    height: 50,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.lightGray,
-    marginHorizontal: 5,
-  },
-  footerButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  confirmButton: {
-    backgroundColor: COLORS.primary,
-  },
-  confirmButtonText: {
-    color: COLORS.white,
-  },
-  timeLabelTop: {
-    top: 0,
-  },
-  flex1: {
-    flex: 1,
-  },
-});

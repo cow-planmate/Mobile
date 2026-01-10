@@ -8,13 +8,10 @@ import React, {
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
   SafeAreaView,
   TouchableOpacity,
   Pressable,
-  Dimensions,
-  PixelRatio,
   Alert,
   ActivityIndicator,
   Platform,
@@ -26,23 +23,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { API_URL } from '@env';
-
-const { width, height } = Dimensions.get('window');
-const normalize = (size: number) =>
-  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
-
-const COLORS = {
-  primary: '#1344FF',
-  lightGray: '#F0F0F0',
-  gray: '#E5E5EA',
-  darkGray: '#8E8E93',
-  text: '#1C1C1E',
-  white: '#FFFFFF',
-  success: '#34C759',
-  error: '#FF3B30',
-  lightBlue: '#e6f0ff',
-  modalBackground: 'rgba(0, 0, 0, 0.5)',
-};
+import { styles, COLORS, normalize } from './SignupScreen.styles';
 
 const PasswordRequirement = React.memo(
   ({ met, label }: { met: boolean; label: string }) => (
@@ -162,17 +143,23 @@ export default function SignupScreen() {
     setIsEmailDuplicate(false);
 
     try {
-      await axios.post(`${API_URL}/api/auth/email/verification`, {
-        email: form.email,
-        purpose: 'SIGN_UP',
-      });
-      Alert.alert(
-        '성공',
-        '인증 번호가 이메일로 전송되었습니다.\n(스팸 메일함도 확인해주세요)',
+      const response = await axios.post(
+        `${API_URL}/api/auth/email/verification`,
+        {
+          email: form.email,
+          purpose: 'SIGN_UP',
+        },
       );
-      setShowVerificationInput(true);
-      setIsTimerActive(true);
-      setTimeLeft(300);
+
+      if (response.data.verificationSent) {
+        Alert.alert(
+          '성공',
+          '인증 번호가 이메일로 전송되었습니다.\n(스팸 메일함도 확인해주세요)',
+        );
+        setShowVerificationInput(true);
+        setIsTimerActive(true);
+        setTimeLeft(300);
+      }
     } catch (error: any) {
       console.error('Email Send Error:', error);
       const status = error.response?.status;
@@ -206,9 +193,13 @@ export default function SignupScreen() {
         },
       );
 
-      if (response.data.emailVerified) {
+      const isVerified =
+        response.data.emailVerified || response.data.verifySuccess;
+      const token = response.data.token || response.data.verificationToken;
+
+      if (isVerified) {
         Alert.alert('성공', '이메일 인증이 완료되었습니다.');
-        setEmailAuthToken(response.data.token);
+        setEmailAuthToken(token);
         setIsEmailVerified(true);
         setIsTimerActive(false);
       } else {
@@ -264,6 +255,11 @@ export default function SignupScreen() {
       !form.gender
     ) {
       Alert.alert('알림', '모든 정보를 입력하고 인증을 완료해주세요.');
+      return;
+    }
+
+    if (!emailAuthToken) {
+      Alert.alert('오류', '이메일 인증 토큰이 없습니다. 다시 인증해주세요.');
       return;
     }
 
@@ -757,278 +753,3 @@ export default function SignupScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.lightBlue },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    paddingHorizontal: normalize(20),
-    paddingTop: normalize(20),
-    paddingBottom: normalize(10),
-    marginTop: normalize(10),
-  },
-  stepIndicator: {
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  stepText: {
-    fontSize: normalize(14),
-    fontWeight: 'bold',
-    color: COLORS.primary,
-  },
-  scrollContainer: { padding: normalize(24), paddingBottom: normalize(100) },
-  title: {
-    fontSize: normalize(28),
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: normalize(8),
-  },
-  description: {
-    fontSize: normalize(15),
-    color: COLORS.darkGray,
-    marginBottom: normalize(32),
-  },
-  inputGroup: { marginBottom: normalize(24) },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: normalize(8),
-  },
-  label: {
-    fontSize: normalize(14),
-    color: COLORS.text,
-    fontWeight: 'bold',
-    marginLeft: normalize(4),
-    marginBottom: normalize(8),
-  },
-  changeEmailText: {
-    fontSize: normalize(12),
-    color: COLORS.primary,
-    textDecorationLine: 'underline',
-    marginRight: normalize(4),
-  },
-  input: {
-    height: normalize(52),
-    borderWidth: 1,
-    borderColor: COLORS.gray,
-    borderRadius: normalize(12),
-    paddingHorizontal: normalize(16),
-    fontSize: normalize(16),
-    backgroundColor: COLORS.white,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 8,
-    color: COLORS.text,
-  },
-  inputFocused: {
-    borderColor: COLORS.primary,
-    borderWidth: 2,
-  },
-  inputDisabled: {
-    backgroundColor: COLORS.lightGray,
-    color: COLORS.darkGray,
-  },
-  errorText: {
-    color: COLORS.error,
-    fontSize: normalize(13),
-    marginTop: normalize(8),
-    marginLeft: normalize(4),
-  },
-  inlineInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(8),
-  },
-  flex1: { flex: 1 },
-  inlineButton: {
-    height: normalize(52),
-    paddingHorizontal: normalize(20),
-    borderRadius: normalize(12),
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    minWidth: normalize(80),
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  buttonDisabled: { backgroundColor: COLORS.darkGray },
-  inlineButtonText: {
-    color: COLORS.white,
-    fontWeight: 'bold',
-    fontSize: normalize(14),
-  },
-  codeInputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  codeInput: {
-    flex: 1,
-    fontSize: normalize(16),
-    padding: 0,
-    color: COLORS.text,
-  },
-  timerText: {
-    color: COLORS.error,
-    fontWeight: 'bold',
-    fontSize: normalize(14),
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.gray,
-    borderRadius: normalize(12),
-    height: normalize(52),
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  passwordInput: {
-    flex: 1,
-    height: '100%',
-    paddingHorizontal: normalize(16),
-    fontSize: normalize(16),
-    color: COLORS.text,
-  },
-  eyeIcon: { padding: normalize(16) },
-  requirementsContainer: {
-    marginTop: normalize(12),
-    marginLeft: normalize(10),
-  },
-  requirementRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: normalize(4),
-  },
-  requirementIcon: {
-    marginRight: normalize(8),
-    fontWeight: 'bold',
-    fontSize: normalize(14),
-  },
-  requirementText: { fontSize: normalize(13) },
-  genderContainer: { flexDirection: 'row', gap: normalize(12) },
-  genderButton: {
-    flex: 1,
-    height: normalize(52),
-    borderRadius: normalize(12),
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.gray,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  genderButtonSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  genderButtonText: {
-    fontSize: normalize(16),
-    fontWeight: 'bold',
-    color: COLORS.darkGray,
-  },
-  genderButtonTextSelected: { color: COLORS.white },
-  footer: { padding: normalize(24), backgroundColor: COLORS.lightBlue },
-  submitButton: {
-    width: '100%',
-    height: normalize(56),
-    borderRadius: normalize(28),
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  submitButtonText: {
-    fontSize: normalize(18),
-    fontWeight: 'bold',
-    color: COLORS.white,
-  },
-  retryButton: {
-    alignItems: 'center',
-    padding: normalize(12),
-    marginTop: normalize(8),
-  },
-  retryButtonText: {
-    fontSize: normalize(14),
-    color: COLORS.darkGray,
-    textDecorationLine: 'underline',
-  },
-  bottomBackButton: {
-    alignItems: 'center',
-    padding: normalize(12),
-    marginTop: normalize(12),
-  },
-  bottomBackButtonText: {
-    fontSize: normalize(14),
-    color: COLORS.darkGray,
-    textDecorationLine: 'underline',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: COLORS.modalBackground,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: COLORS.white,
-    width: width * 0.8,
-    maxHeight: height * 0.6,
-    borderRadius: normalize(16),
-    padding: normalize(20),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: normalize(20),
-    fontWeight: 'bold',
-    marginBottom: normalize(16),
-    textAlign: 'center',
-    color: COLORS.text,
-  },
-  ageOption: {
-    paddingVertical: normalize(12),
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
-  },
-  ageOptionText: {
-    fontSize: normalize(16),
-    textAlign: 'center',
-    color: COLORS.text,
-  },
-  marginBottom0: {
-    marginBottom: 0,
-  },
-  justifyCenter: {
-    justifyContent: 'center',
-  },
-});

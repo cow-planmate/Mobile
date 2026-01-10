@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   SafeAreaView,
   TextInput,
   FlatList,
@@ -19,16 +18,7 @@ import { AppStackParamList } from '../../../navigation/types';
 import { Place } from '../../../components/itinerary/TimelineItem';
 import { useItinerary } from '../../../contexts/ItineraryContext';
 
-const COLORS = {
-  primary: '#1344FF',
-  background: '#FFFFFF',
-  card: '#FFFFFF',
-  text: '#1C1C1E',
-  placeholder: '#8E8E93',
-  border: '#E5E5EA',
-  lightGray: '#F0F2F5',
-  error: '#FF3B30',
-};
+import { styles, COLORS } from './AddPlaceScreen.styles';
 
 interface PlaceVO {
   placeId: string;
@@ -97,16 +87,54 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
 
   const { dayIndex, destination } = route.params || {};
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-
+  const handleSearch = useCallback(async () => {
     setIsLoading(true);
     try {
-      const query = destination ? `${destination} ${searchQuery}` : searchQuery;
+      let url = '';
+      if (!searchQuery.trim()) {
+        const categoryMap: { [key: string]: string } = {
+          관광지: 'tour',
+          숙소: 'lodging',
+          식당: 'restaurant',
+        };
+        // const endpoint = categoryMap[selectedTab];
 
-      const response = await axios.get(
-        `${API_URL}/api/plan/place/${encodeURIComponent(query)}`,
-      );
+        // Use generic travel name if no destination specified, or implement logic to get travelName from context
+        // Assuming destination is provided like "Busan", and matching logic exists.
+        // For now, if no destination, we can't search by category/travelName easily without extra context.
+        // But if destination exists, we try to use the category endpoint.
+
+        // NOTE: The backend requires travelCategoryName/travelName.
+        // We will default to generic query search if we don't have enough info,
+        // OR we can't implement category-only browsing effectively without known travelName.
+        // However, the spec provides: /api/plan/{type}/{travelCategoryName}/{travelName}
+
+        if (destination) {
+          // We need to know the category name (e.g. 'CityName'). Assuming destination IS the travelName.
+          // We might need a hardcoded 'area' or similar if backend requires it.
+          // Let's assume 'default' or similar if not known, or just use the query endpoint with the category name as query.
+
+          // BUT, to strictly follow spec for "Listing" without query:
+          // url = `${API_URL}/api/plan/${endpoint}/전체/${destination}`;
+          // (This is risky if '전체' isn't valid. Using query search is safer if user hasn't typed anything yet but we want results.)
+
+          // Fallback to query search with destination name to get general results
+          url = `${API_URL}/api/plan/place/${encodeURIComponent(
+            destination + ' ' + selectedTab,
+          )}`;
+        } else {
+          // user must type something
+          setIsLoading(false);
+          return;
+        }
+      } else {
+        const query = destination
+          ? `${destination} ${searchQuery}`
+          : searchQuery;
+        url = `${API_URL}/api/plan/place/${encodeURIComponent(query)}`;
+      }
+
+      const response = await axios.get(url);
 
       if (response.data && response.data.places) {
         const mappedPlaces: Place[] = response.data.places.map(
@@ -134,6 +162,13 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
       setIsLoading(false);
     }
   };
+
+  // Re-trigger search when tab changes if query is empty (browsing mode)
+  React.useEffect(() => {
+    if (!searchQuery.trim() && destination) {
+      handleSearch();
+    }
+  }, [selectedTab, handleSearch, destination, searchQuery]);
 
   const filteredPlaces = searchResults.filter(place => {
     if (selectedTab === '관광지') {
@@ -226,142 +261,3 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.card,
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.lightGray,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginRight: 12,
-    height: 40,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: COLORS.text,
-  },
-  searchButton: {
-    padding: 4,
-  },
-  searchButtonIcon: {
-    fontSize: 18,
-  },
-  cancelButton: {
-    padding: 4,
-  },
-  cancelText: {
-    fontSize: 16,
-    color: COLORS.text,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.card,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 14,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabSelected: {
-    borderBottomColor: COLORS.primary,
-  },
-  tabText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: COLORS.placeholder,
-  },
-  tabTextSelected: {
-    color: COLORS.primary,
-    fontWeight: 'bold',
-  },
-  listContent: {
-    flexGrow: 1,
-  },
-  resultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.card,
-  },
-  imageContainer: {
-    marginRight: 12,
-  },
-  placeImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    backgroundColor: COLORS.lightGray,
-  },
-  placeholderImage: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    fontSize: 12,
-    color: COLORS.placeholder,
-  },
-  infoContainer: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  resultName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 2,
-  },
-  resultMeta: {
-    fontSize: 12,
-    color: COLORS.placeholder,
-    marginBottom: 2,
-  },
-  addressText: {
-    fontSize: 12,
-    color: COLORS.placeholder,
-  },
-  addButton: {
-    marginLeft: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: COLORS.lightGray,
-    borderRadius: 16,
-  },
-  addButtonText: {
-    color: COLORS.primary,
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: COLORS.placeholder,
-  },
-});
