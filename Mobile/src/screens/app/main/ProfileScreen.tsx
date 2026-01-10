@@ -120,7 +120,7 @@ export default function ProfileScreen() {
       await axios.patch(`${API_URL}/api/user/nickname`, {
         nickname: newNickname,
       });
-      setUser((prev) => ({ ...prev, name: newNickname }));
+      setUser(prev => ({ ...prev, name: newNickname }));
       Alert.alert('성공', '닉네임이 변경되었습니다.');
     } catch (e) {
       Alert.alert('실패', '닉네임 변경에 실패했습니다.');
@@ -132,7 +132,7 @@ export default function ProfileScreen() {
       await axios.patch(`${API_URL}/api/user/age`, {
         age: parseInt(newAge, 10),
       });
-      setUser((prev) => ({ ...prev, age: newAge }));
+      setUser(prev => ({ ...prev, age: newAge }));
       Alert.alert('성공', '나이가 변경되었습니다.');
     } catch (e) {
       Alert.alert('실패', '나이 변경에 실패했습니다.');
@@ -143,7 +143,7 @@ export default function ProfileScreen() {
     try {
       const genderInt = newGender === 'male' ? 0 : 1;
       await axios.patch(`${API_URL}/api/user/gender`, { gender: genderInt });
-      setUser((prev) => ({
+      setUser(prev => ({
         ...prev,
         gender: newGender === 'male' ? '남성' : '여성',
       }));

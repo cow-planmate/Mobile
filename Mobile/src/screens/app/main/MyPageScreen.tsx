@@ -84,12 +84,15 @@ const ItineraryCard = ({
 );
 
 export default function MyPageScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
-  
+  const navigation =
+    useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+
   const [loading, setLoading] = useState(true);
   const [myItineraries, setMyItineraries] = useState<SimplePlanVO[]>([]);
-  const [sharedItineraries, setSharedItineraries] = useState<SimplePlanVO[]>([]);
-  
+  const [sharedItineraries, setSharedItineraries] = useState<SimplePlanVO[]>(
+    [],
+  );
+
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SimplePlanVO | null>(null);
   const [renameModalVisible, setRenameModalVisible] = useState(false);
@@ -149,12 +152,12 @@ export default function MyPageScreen() {
       });
       setMyItineraries(prev =>
         prev.map(p =>
-            p.planId === selectedPlan.planId ? { ...p, planName: newTitle } : p,
+          p.planId === selectedPlan.planId ? { ...p, planName: newTitle } : p,
         ),
       );
       setSharedItineraries(prev =>
         prev.map(p =>
-            p.planId === selectedPlan.planId ? { ...p, planName: newTitle } : p,
+          p.planId === selectedPlan.planId ? { ...p, planName: newTitle } : p,
         ),
       );
       Alert.alert('성공', '일정 제목이 변경되었습니다.');

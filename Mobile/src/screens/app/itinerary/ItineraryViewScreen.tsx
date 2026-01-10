@@ -321,7 +321,11 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
           placeCategoryId:
             place.categoryId && ![12, 14].includes(place.categoryId)
               ? place.categoryId
-              : (placeMapping(place.type) === 12 ? 4 : placeMapping(place.type) === 32 ? 1 : 39), // Remap invalid/missing IDs to known safe ones (4=Park?, 1=Hotel?)
+              : placeMapping(place.type) === 12
+              ? 4
+              : placeMapping(place.type) === 32
+              ? 1
+              : 39, // Remap invalid/missing IDs to known safe ones (4=Park?, 1=Hotel?)
           placeName: place.name,
           placeRating: place.rating || 0,
           placeAddress: place.address || '',

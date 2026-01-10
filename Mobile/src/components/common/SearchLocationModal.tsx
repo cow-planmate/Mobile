@@ -376,7 +376,7 @@ export default function SearchLocationModal({
       if (__DEV__) {
         console.log('Fetched Travels:', serverData);
       }
-      
+
       setRawDestinations(serverData);
 
       const formattedList = TARGET_REGIONS.map((regionName, index) => {
@@ -397,10 +397,13 @@ export default function SearchLocationModal({
           travelImg: matched?.travelImg,
         };
       });
-      
+
       // -1인 항목이 선택되면 문제가 될 수 있으므로 로깅
       if (__DEV__) {
-        console.log('Mapped Destinations:', formattedList.map(d => `${d.travelName}:${d.travelId}`));
+        console.log(
+          'Mapped Destinations:',
+          formattedList.map(d => `${d.travelName}:${d.travelId}`),
+        );
       }
 
       setDestinationList(formattedList);
@@ -474,7 +477,7 @@ export default function SearchLocationModal({
 
   const handleSubRegionSelect = (parentRegion: string, subRegion: string) => {
     const fullLocation = `${parentRegion} ${subRegion}`;
-    
+
     // 1. Try to find match using subRegion name in rawDestinations
     let matched = rawDestinations.find(d => {
       const sName = d.travelName.replace(/\s+/g, '');
@@ -503,9 +506,11 @@ export default function SearchLocationModal({
     const travelId = matched ? matched.travelId : -1;
 
     if (__DEV__) {
-       console.log(`Selection: ${fullLocation}, Mapped ID: ${travelId}, Matched Name: ${matched?.travelName}`);
+      console.log(
+        `Selection: ${fullLocation}, Mapped ID: ${travelId}, Matched Name: ${matched?.travelName}`,
+      );
     }
-    
+
     onSelect(fullLocation, travelId);
     onClose();
   };

@@ -28,14 +28,18 @@ axios.interceptors.request.use(
 
     // 개발 환경에서 요청 로깅
     if (__DEV__) {
-      const fullUrl = config.baseURL && !config.url?.startsWith('http')
-        ? `${config.baseURL}${config.url}`
-        : config.url;
-        
-      console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${fullUrl}`, {
-        headers: config.headers,
-        data: JSON.stringify(config.data),
-      });
+      const fullUrl =
+        config.baseURL && !config.url?.startsWith('http')
+          ? `${config.baseURL}${config.url}`
+          : config.url;
+
+      console.log(
+        `🚀 API Request: ${config.method?.toUpperCase()} ${fullUrl}`,
+        {
+          headers: config.headers,
+          data: JSON.stringify(config.data),
+        },
+      );
     }
 
     return config;

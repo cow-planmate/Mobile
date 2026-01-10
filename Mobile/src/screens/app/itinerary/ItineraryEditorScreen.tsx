@@ -922,9 +922,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
                   startTime: '09:00:00',
                   endTime: '20:00:00',
                 }));
-              
+
               if (removedTimetables.length > 0) {
-                 sendMessage('delete', 'timetable', removedTimetables);
+                sendMessage('delete', 'timetable', removedTimetables);
               }
             }
 
@@ -932,13 +932,13 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
             const lastDay = updatedDays[updatedDays.length - 1].date;
 
             setScheduleEditVisible(false);
-            
+
             // Delay buffer to allow WS processing before re-fetching
             setTimeout(() => {
-                navigation.setParams({
-                  startDate: firstDay.toISOString(),
-                  endDate: lastDay.toISOString(),
-                });
+              navigation.setParams({
+                startDate: firstDay.toISOString(),
+                endDate: lastDay.toISOString(),
+              });
             }, 300);
           }
         }}

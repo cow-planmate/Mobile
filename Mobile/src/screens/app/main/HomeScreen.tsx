@@ -133,7 +133,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       // GET /api/collaboration-requests/pending
       // axiosConfig에 의해 baseURL이 설정되어 있으므로 상대 경로 사용
       const response = await axios.get('/api/collaboration-requests/pending');
-      
+
       const { pendingRequests } = response.data;
       if (pendingRequests) {
         setPendingRequests(pendingRequests);
