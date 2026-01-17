@@ -1,216 +1,142 @@
-import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
+import { StyleSheet, Dimensions, PixelRatio, Platform } from 'react-native';
+import { theme } from '../../../theme/theme';
 
 const { width } = Dimensions.get('window');
 export const normalize = (size: number) =>
   Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
 
-export const COLORS = {
-  primary: '#1344FF',
-  lightGray: '#F0F0F0',
-  gray: '#E5E5EA',
-  darkGray: '#8E8E93',
-  text: '#1C1C1E',
-  white: '#FFFFFF',
-  lightBlue: '#e6f0ff',
-  shadow: '#1344FF',
-  iconBg: '#F5F7FF',
-  success: '#34C759',
-  placeholderLight: '#C7C7CC',
-  error: '#FF3B30',
-  errorLight: '#FFE5E5',
-  disabled: '#A8B5D1',
-};
+export const COLORS = theme.colors;
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.lightBlue,
+    backgroundColor: theme.colors.background,
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingHorizontal: 0,
-    paddingTop: normalize(30),
-    paddingBottom: 0,
+    paddingTop: Platform.OS === 'android' ? normalize(40) : normalize(20),
+    paddingBottom: normalize(40),
   },
   headerTopArea: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: normalize(24),
-    marginTop: normalize(10),
-    paddingHorizontal: normalize(20),
+    marginTop: normalize(12),
+    marginBottom: normalize(40),
+    paddingHorizontal: normalize(24),
   },
-  headerSlogan: {
-    fontSize: normalize(12),
-    color: COLORS.darkGray,
-    fontWeight: '500',
-    marginTop: normalize(20),
-    marginBottom: normalize(4),
+  headerTextContainer: {
+    flex: 1,
+    paddingRight: normalize(24),
   },
   headerGreeting: {
-    fontSize: normalize(18),
-    color: COLORS.text,
-    fontWeight: 'bold',
+    fontSize: normalize(28),
+    color: theme.colors.text,
+    fontWeight: theme.typography.weight.bold,
+    letterSpacing: -0.5,
+    lineHeight: normalize(34),
   },
   headerNickname: {
-    color: COLORS.primary,
+    color: theme.colors.primary,
   },
   headerButtons: {
     flexDirection: 'row',
     gap: normalize(12),
+    marginTop: normalize(4), // visual alignment with text cap height
   },
   iconButton: {
-    width: normalize(36),
-    height: normalize(36),
-    padding: normalize(6),
-    backgroundColor: COLORS.white,
-    borderRadius: normalize(18),
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    width: normalize(40),
+    height: normalize(40),
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerIcon: {
-    fontSize: normalize(18),
-    textAlign: 'center',
-  },
+  // Removed old headerSlogan and headerIcon styles
   whiteSection: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: normalize(32),
-    borderTopRightRadius: normalize(32),
-    paddingHorizontal: normalize(20),
-    paddingTop: normalize(32),
-    paddingBottom: normalize(40),
     flex: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 10,
+    paddingHorizontal: normalize(24),
+    backgroundColor: theme.colors.background,
   },
-
   inputCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: normalize(20),
-    paddingVertical: normalize(16),
-    paddingHorizontal: normalize(16),
-
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
-    marginBottom: normalize(24),
+    backgroundColor: theme.colors.background,
+    marginBottom: normalize(40),
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: normalize(78),
-    paddingVertical: normalize(4),
+    height: normalize(72), // Adjusted for better spacing
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#E0E0E0',
   },
   inputRowLast: {
-    paddingBottom: normalize(4),
+    borderBottomWidth: 0,
   },
   rowContent: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    height: '100%',
+    justifyContent: 'space-between',
   },
+
   iconContainer: {
-    width: normalize(44),
-    height: normalize(44),
+    width: normalize(24),
+    height: normalize(24),
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: normalize(12),
-    backgroundColor: COLORS.iconBg,
-    borderRadius: normalize(12),
+    marginRight: normalize(16),
   },
-  iconContainerFilled: {
-    backgroundColor: COLORS.lightBlue,
-  },
-  icon: {
-    fontSize: normalize(22),
-  },
+  iconContainerFilled: {},
+  iconContainerError: {},
+
   textContainer: {
     flex: 1,
     justifyContent: 'center',
-    height: '100%',
   },
-  textContainerBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
-  },
+
   label: {
-    fontSize: normalize(12),
-    color: COLORS.darkGray,
-    fontWeight: '600',
+    fontSize: normalize(11), // 11pt Semi-bold as requested
+    color: theme.colors.textSecondary,
+    fontWeight: theme.typography.weight.semibold,
     marginBottom: normalize(4),
+    letterSpacing: -0.2,
   },
   valueText: {
-    fontSize: normalize(15),
-    color: COLORS.text,
-    fontWeight: '700',
-    lineHeight: normalize(20),
+    fontSize: normalize(16), // 16pt Medium #1C1C1E
+    color: theme.colors.text,
+    fontWeight: theme.typography.weight.medium,
+    letterSpacing: -0.5,
   },
   placeholderText: {
-    fontSize: normalize(15),
-    color: COLORS.placeholderLight,
-    fontWeight: '400',
-    lineHeight: normalize(20),
+    fontSize: normalize(16), // 16pt Regular #C7C7CC
+    color: theme.colors.textTertiary,
+    fontWeight: theme.typography.weight.regular,
+    letterSpacing: -0.5,
   },
+
   arrowContainer: {
-    height: '100%',
-    paddingLeft: normalize(8),
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginLeft: normalize(8),
   },
-  arrow: {
-    fontSize: normalize(22),
-    color: COLORS.gray,
-    fontWeight: '300',
-  },
-  checkIcon: {
-    fontSize: normalize(16),
-    color: COLORS.success,
-    fontWeight: 'bold',
-  },
+
   submitButton: {
     width: '100%',
     height: normalize(56),
-    borderRadius: normalize(28),
+    borderRadius: 16, // More rounded as requested
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 8,
+    backgroundColor: '#1344FF', // Fixed color
   },
   submitButtonDisabled: {
-    backgroundColor: COLORS.disabled,
-    shadowOpacity: 0.1,
-    elevation: 2,
+    backgroundColor: theme.colors.disabled,
   },
   submitButtonText: {
-    fontSize: normalize(18),
-    fontWeight: 'bold',
-    color: COLORS.white,
-    letterSpacing: 0.5,
+    fontSize: theme.typography.size.m,
+    fontWeight: theme.typography.weight.semibold,
+    color: theme.colors.white,
   },
   submitButtonTextDisabled: {
-    color: COLORS.white,
-    opacity: 0.8,
+    color: theme.colors.textSecondary,
   },
 
-  iconContainerError: {
-    backgroundColor: COLORS.errorLight,
-  },
   labelError: {
-    color: COLORS.error,
+    color: theme.colors.danger,
   },
 });
