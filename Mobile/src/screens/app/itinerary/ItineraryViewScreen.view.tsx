@@ -9,7 +9,9 @@ import {
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import ShareModal from '../../../components/common/ShareModal';
-import TimelineItem, { Place } from '../../../components/itinerary/TimelineItem';
+import TimelineItem, {
+  Place,
+} from '../../../components/itinerary/TimelineItem';
 import { Day } from '../../../contexts/ItineraryContext';
 import {
   styles,
@@ -183,47 +185,47 @@ export default function ItineraryViewScreenView({
 
       <View style={styles.flex1}>
         <View style={styles.dayTabsWrapper}>
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.dayTabsContainer}
-            >
-                {days.map((day, index) => (
-                <TouchableOpacity
-                    key={index}
-                    style={[
-                    styles.dayTab,
-                    selectedDayIndex === index && styles.dayTabSelected,
-                    ]}
-                    onPress={() => setSelectedDayIndex(index)}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.dayTabsContainer}
+          >
+            {days.map((day, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.dayTab,
+                  selectedDayIndex === index && styles.dayTabSelected,
+                ]}
+                onPress={() => setSelectedDayIndex(index)}
+              >
+                <Text
+                  style={[
+                    styles.dayTabText,
+                    selectedDayIndex === index && styles.dayTabTextSelected,
+                  ]}
                 >
-                    <Text
-                    style={[
-                        styles.dayTabText,
-                        selectedDayIndex === index && styles.dayTabTextSelected,
-                    ]}
-                    >
-                    {day.dayNumber}일차
-                    </Text>
-                    <Text
-                    style={[
-                        styles.dayTabDateText,
-                        selectedDayIndex === index && styles.dayTabDateTextSelected,
-                    ]}
-                    >
-                    {formatDate(day.date)}
-                    </Text>
-                </TouchableOpacity>
-                ))}
-            </ScrollView>
-            <TouchableOpacity
-                style={styles.mapToggleButton}
-                onPress={() => setMapVisible(!isMapVisible)}
-            >
-                <Text style={styles.mapToggleButtonText}>
-                {isMapVisible ? '지도 숨기기' : '지도 보기'}
+                  {day.dayNumber}일차
                 </Text>
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    styles.dayTabDateText,
+                    selectedDayIndex === index && styles.dayTabDateTextSelected,
+                  ]}
+                >
+                  {formatDate(day.date)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <TouchableOpacity
+            style={styles.mapToggleButton}
+            onPress={() => setMapVisible(!isMapVisible)}
+          >
+            <Text style={styles.mapToggleButtonText}>
+              {isMapVisible ? '지도 숨기기' : '지도 보기'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {selectedDay && (

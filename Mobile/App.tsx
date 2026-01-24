@@ -16,7 +16,7 @@ const SHOW_STORYBOOK = false;
 
 function App() {
   if (SHOW_STORYBOOK) {
-      // getStorybookUI()의 결과는 컴포넌트입니다.
+    // getStorybookUI()의 결과는 컴포넌트입니다.
     return <StorybookUIRoot />;
   }
 

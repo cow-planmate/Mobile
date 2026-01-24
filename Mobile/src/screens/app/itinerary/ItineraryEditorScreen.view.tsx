@@ -18,7 +18,9 @@ import Animated, {
   withSpring,
   runOnJS,
 } from 'react-native-reanimated';
-import TimelineItem, { Place } from '../../../components/itinerary/TimelineItem';
+import TimelineItem, {
+  Place,
+} from '../../../components/itinerary/TimelineItem';
 import TimePickerModal from '../../../components/common/TimePickerModal';
 import ScheduleEditModal from '../../../components/common/ScheduleEditModal';
 import { Day } from '../../../contexts/ItineraryContext';
@@ -30,7 +32,11 @@ import {
   MIN_ITEM_HEIGHT,
   GRID_SNAP_HEIGHT,
 } from './ItineraryEditorScreen.styles';
-import { timeToMinutes, timeToDate, dateToTime } from '../../../utils/timeUtils';
+import {
+  timeToMinutes,
+  timeToDate,
+  dateToTime,
+} from '../../../utils/timeUtils';
 
 const Tab = createMaterialTopTabNavigator();
 
