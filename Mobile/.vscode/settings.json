@@ -1,0 +1,8 @@
+{
+  "chat.tools.terminal.autoApprove": {
+    "/^Move-Item -Path \"c:\\\\Users\\\\min30\\\\dev\\\\planMate\\\\Mobile\\\\src\\\\screens\\\\app\\\\itinerary\\\\AddPlaceScreen\\.tmp\\.tsx\" -Destination \"c:\\\\Users\\\\min30\\\\dev\\\\planMate\\\\Mobile\\\\src\\\\screens\\\\app\\\\itinerary\\\\AddPlaceScreen\\.tsx\" -Force$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
+  }
+}

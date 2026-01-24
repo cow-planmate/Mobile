@@ -26,6 +26,7 @@ import SelectionModal, {
 import SearchLocationModal from '../../../components/common/SearchLocationModal';
 import { styles, COLORS } from './HomeScreen.styles';
 
+// InputRow 컴포넌트는 기존과 동일하게 유지하거나 필요 시 분리 가능
 type InputRowProps = {
   label: string;
   value: string;
@@ -62,9 +63,7 @@ const InputRow = ({
         {icon}
       </View>
       <View style={styles.rowContent}>
-        <View
-          style={[styles.textContainer]} // Removed border from here, handling in styles.inputRow
-        >
+        <View style={[styles.textContainer]}>
           <Text style={[styles.label, hasError && styles.labelError]}>
             {label}
           </Text>
@@ -91,59 +90,43 @@ const InputRow = ({
 export interface HomeScreenViewProps {
   nickname?: string;
   pendingRequestsCount: number;
-
-  // Data State
   departure: string;
   destination: string;
   transport: string;
   dateText: string;
   paxText: string;
-
-  // Validation
   showErrors: boolean;
   isFormValid: boolean;
-
-  // Modal Visibility
   isSearchModalVisible: boolean;
   isCalendarVisible: boolean;
   isPaxModalVisible: boolean;
   isTransportModalVisible: boolean;
-
-  // Modal Data
   fieldToUpdate: 'departure' | 'destination';
   startDate?: Date | null;
   endDate?: Date | null;
   adults?: number | null;
   children?: number | null;
   transportOptions: OptionType[];
-
-  // Actions
   onNotificationPress: () => void;
   onNavigateProfile: () => void;
-
-  // Form Actions
   onOpenSearchModal: (field: 'departure' | 'destination') => void;
   onCloseSearchModal: () => void;
   onSelectLocation: (location: string, id?: number) => void;
-
   onOpenCalendar: () => void;
   onCloseCalendar: () => void;
   onConfirmCalendar: (dates: { startDate: Date; endDate: Date }) => void;
-
   onOpenPaxModal: () => void;
   onClosePaxModal: () => void;
   onConfirmPax: (pax: { adults: number; children: number }) => void;
-
   onOpenTransportModal: () => void;
   onCloseTransportModal: () => void;
   onSelectTransport: (option: string) => void;
-
   onCreateItinerary: () => void;
 }
 
 export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   nickname,
-  pendingRequestsCount,
+  pendingRequestsCount, // 알림 뱃지 등에 활용 가능
   departure,
   destination,
   transport,
@@ -184,18 +167,8 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         showsVerticalScrollIndicator={false}
         bounces={false}
       >
-        <View style={styles.headerTopArea}>
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.headerGreeting}>안녕하세요,</Text>
-            <Text
-              style={[styles.headerGreeting, styles.headerNickname]}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {nickname || '여행자'}님!
-            </Text>
-          </View>
-
+        {/* [변경] 상단 네비게이션 영역 (버튼만 배치하여 겹침 방지) */}
+        <View style={styles.topNavigation}>
           <View style={styles.headerButtons}>
             <TouchableOpacity
               style={styles.iconButton}
@@ -211,6 +184,18 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               <Settings size={24} color="#000000" strokeWidth={2} />
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* [변경] 인사말 영역 (버튼 아래 독립적으로 배치) */}
+        <View style={styles.greetingSection}>
+          <Text style={styles.headerGreeting}>안녕하세요,</Text>
+          <Text
+            style={[styles.headerGreeting, styles.headerNickname]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {nickname || '여행자'}님!
+          </Text>
         </View>
 
         <View style={styles.whiteSection}>
@@ -283,6 +268,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         </View>
       </ScrollView>
 
+      {/* Modals - 기존 유지 */}
       <SearchLocationModal
         visible={isSearchModalVisible}
         onClose={onCloseSearchModal}

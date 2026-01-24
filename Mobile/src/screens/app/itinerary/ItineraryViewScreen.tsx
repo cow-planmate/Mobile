@@ -5,35 +5,16 @@ import React, {
   useRef,
   useCallback,
 } from 'react';
-import {
-  View,
-  Text,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  Pressable,
-  Alert,
-} from 'react-native';
+import { ScrollView, Alert } from 'react-native';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
-import TimelineItem, {
-  Place,
-} from '../../../components/itinerary/TimelineItem';
-import MapView, { Marker } from 'react-native-maps';
-import ShareModal from '../../../components/common/ShareModal';
+import { Place } from '../../../components/itinerary/TimelineItem';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-import {
-  styles,
-  COLORS,
-  HOUR_HEIGHT,
-  MINUTE_HEIGHT,
-  MIN_ITEM_HEIGHT,
-  GRID_TOP_OFFSET,
-} from './ItineraryViewScreen.styles';
+import { MINUTE_HEIGHT } from './ItineraryViewScreen.styles';
 import { Day } from '../../../contexts/ItineraryContext';
+import ItineraryViewScreenView from './ItineraryViewScreen.view';
 
 // DTO Interfaces
 interface PlaceBlockVO {
@@ -79,95 +60,6 @@ const timeToMinutes = (time: string) => {
   return hours * 60 + minutes;
 };
 
-const formatDate = (date: Date) => {
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  return `${month}.${day}`;
-};
-
-const TimeGridBackground = React.memo(({ hours }: { hours: number[] }) => {
-  const hourStr = (h: number) => h.toString().padStart(2, '0');
-
-  return (
-    <View style={styles.gridContainer}>
-      {hours.map(hour => (
-        <View key={hour} style={[styles.hourBlock, { height: HOUR_HEIGHT }]}>
-          <View style={styles.hourLabelContainer}>
-            <Text style={[styles.timeLabelText, styles.timeLabelTop]}>
-              {`${hourStr(hour)}:00`}
-            </Text>
-            <Text
-              style={[
-                styles.timeLabelText,
-                styles.minuteLabel,
-                { top: HOUR_HEIGHT / 4 },
-              ]}
-            >
-              {`${hourStr(hour)}:15`}
-            </Text>
-            <Text
-              style={[
-                styles.timeLabelText,
-                styles.minuteLabel,
-                { top: HOUR_HEIGHT / 2 },
-              ]}
-            >
-              {`${hourStr(hour)}:30`}
-            </Text>
-            <Text
-              style={[
-                styles.timeLabelText,
-                styles.minuteLabel,
-                { top: (HOUR_HEIGHT * 3) / 4 },
-              ]}
-            >
-              {`${hourStr(hour)}:45`}
-            </Text>
-          </View>
-
-          <View style={styles.hourContent}>
-            <View style={[styles.quarterBlock, styles.firstQuarterBlock]} />
-            <View style={styles.quarterBlock} />
-            <View style={styles.quarterBlock} />
-            <View style={styles.quarterBlock} />
-          </View>
-        </View>
-      ))}
-    </View>
-  );
-});
-
-const StaticTimelineItem = React.memo(
-  ({ place, offsetMinutes }: { place: Place; offsetMinutes: number }) => {
-    const startMinutes = timeToMinutes(place.startTime);
-    const endMinutes = timeToMinutes(place.endTime);
-    const durationMinutes = endMinutes - startMinutes;
-
-    const top =
-      (startMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
-    const height = durationMinutes * MINUTE_HEIGHT;
-
-    const itemStyle = {
-      position: 'absolute',
-      top: top,
-      height: Math.max(height, MIN_ITEM_HEIGHT),
-      left: 60,
-      right: 15,
-    };
-
-    return (
-      <View style={itemStyle}>
-        <TimelineItem
-          item={place}
-          onDelete={() => {}}
-          onEditTime={() => {}}
-          style={styles.flex1}
-        />
-      </View>
-    );
-  },
-);
-
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 
 export default function ItineraryViewScreen({ route, navigation }: Props) {
@@ -184,7 +76,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
 
   const [days, setDays] = useState<Day[]>(initialDays);
   const [tripName, setTripName] = useState(initialTripName);
-  // const [isLoading, setIsLoading] = useState(false);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [isShareModalVisible, setShareModalVisible] = useState(false);
   const [isMapVisible, setMapVisible] = useState(false);
@@ -192,9 +83,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
 
   const fetchCompletePlan = useCallback(async () => {
     if (!planId) return;
-    // setIsLoading(true);
     try {
-      // Assuming GET /api/plan/{planId} returns GetCompletePlanResponse structure
       const response = await axios.get<GetCompletePlanResponse>(
         `${API_URL}/api/plan/${planId}`,
       );
@@ -217,7 +106,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
             pb => pb.timeTableId === tt.timetableId,
           );
           const places: Place[] = blocks.map(pb => ({
-            id: String(pb.blockId), // Use blockId as internal ID
+            id: String(pb.blockId),
             categoryId: pb.placeCategory,
             placeRefId: pb.placeId,
             name: pb.placeName,
@@ -228,7 +117,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
             endTime: pb.endTime.substring(0, 5),
             latitude: pb.ylocation,
             longitude: pb.xlocation,
-            imageUrl: '', // Optional in PlaceBlockVO
+            imageUrl: '',
             place_url: pb.placeLink,
           }));
 
@@ -243,8 +132,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     } catch (error) {
       console.error('Failed to fetch plan:', error);
       Alert.alert('오류', '일정을 불러오는데 실패했습니다.');
-    } finally {
-      // setIsLoading(false);
     }
   }, [planId]);
 
@@ -301,51 +188,33 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
 
       const placeMapping = (type: string) => {
         switch (type) {
-          case '관광지':
-            return 12; // Fallback for tourist spots
-          case '숙소':
-            return 32; // Fallback for accommodation
-          case '식당':
-            return 39; // Fallback for restaurants
-          default:
-            return 12; // Default fallback
+          case '관광지': return 12;
+          case '숙소': return 32;
+          case '식당': return 39;
+          default: return 12;
         }
       };
 
       const timetablePlaceBlocks = days.map(day =>
         day.places.map(place => ({
           timetableId: 0,
-          timetablePlaceBlockId: !isNaN(Number(place.id))
-            ? Number(place.id)
-            : 0,
+          timetablePlaceBlockId: !isNaN(Number(place.id)) ? Number(place.id) : 0,
           placeCategoryId:
             place.categoryId && ![12, 14].includes(place.categoryId)
               ? place.categoryId
-              : placeMapping(place.type) === 12
-              ? 4
-              : placeMapping(place.type) === 32
-              ? 1
-              : 39, // Remap invalid/missing IDs to known safe ones (4=Park?, 1=Hotel?)
+              : placeMapping(place.type) === 12 ? 4 : placeMapping(place.type) === 32 ? 1 : 39,
           placeName: place.name,
           placeRating: place.rating || 0,
           placeAddress: place.address || '',
           placeLink: '',
           placeId: place.placeRefId || String(Math.random()),
           date: day.date.toISOString().split('T')[0],
-          startTime:
-            place.startTime.length === 5
-              ? place.startTime + ':00'
-              : place.startTime,
-          endTime:
-            place.endTime.length === 5 ? place.endTime + ':00' : place.endTime,
+          startTime: place.startTime.length === 5 ? place.startTime + ':00' : place.startTime,
+          endTime: place.endTime.length === 5 ? place.endTime + ':00' : place.endTime,
           xLocation: place.longitude || 0,
           yLocation: place.latitude || 0,
         })),
       );
-
-      // Flatten the list of lists for logging, but backend expects List<List<...>>?
-      // Wait, java: List<List<TimetablePlaceBlockVO>> timetablePlaceBlockVOLists
-      // Yes, parallel to timetables list.
 
       const payload = {
         departure: departure || 'SEOUL',
@@ -357,14 +226,8 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         timetablePlaceBlocks: timetablePlaceBlocks,
       };
 
-      console.log('Using API URL:', API_URL);
-      console.log('Sending Save Payload:', JSON.stringify(payload, null, 2));
-
-      // Explicitly attach token if available, to ensure auth
       const token = await AsyncStorage.getItem('accessToken');
-      const config = token
-        ? { headers: { Authorization: `Bearer ${token}` } }
-        : {};
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 
       await axios.patch(`${API_URL}/api/plan/save`, payload, config);
 
@@ -373,139 +236,25 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       ]);
     } catch (error: any) {
       console.error('Failed to save plan:', error);
-
-      if (error.response) {
-        console.error('Error Status:', error.response.status);
-        console.error('Error Data:', error.response.data);
-      }
       Alert.alert('오류', '일정 저장에 실패했습니다.');
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {isMapVisible && (
-        <View style={styles.mapContainer}>
-          <MapView
-            style={styles.map}
-            region={
-              selectedDay && selectedDay.places.length > 0
-                ? {
-                    latitude: selectedDay.places[0].latitude,
-                    longitude: selectedDay.places[0].longitude,
-                    latitudeDelta: 0.0922,
-                    longitudeDelta: 0.0421,
-                  }
-                : undefined
-            }
-          >
-            {selectedDay?.places.map(place => (
-              <Marker
-                key={place.id}
-                coordinate={{
-                  latitude: place.latitude,
-                  longitude: place.longitude,
-                }}
-                title={place.name}
-                description={place.address}
-              />
-            ))}
-          </MapView>
-        </View>
-      )}
-
-      <View style={styles.flex1}>
-        <View style={styles.dayTabsWrapper}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.dayTabsContainer}
-          >
-            {days.map((day, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.dayTab,
-                  selectedDayIndex === index && styles.dayTabSelected,
-                ]}
-                onPress={() => setSelectedDayIndex(index)}
-              >
-                <Text
-                  style={[
-                    styles.dayTabText,
-                    selectedDayIndex === index && styles.dayTabTextSelected,
-                  ]}
-                >
-                  {day.dayNumber}일차
-                </Text>
-                <Text
-                  style={[
-                    styles.dayTabDateText,
-                    selectedDayIndex === index && styles.dayTabDateTextSelected,
-                  ]}
-                >
-                  {formatDate(day.date)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-          <TouchableOpacity
-            style={styles.mapToggleButton}
-            onPress={() => setMapVisible(!isMapVisible)}
-          >
-            <Text style={styles.mapToggleButtonText}>
-              {isMapVisible ? '지도 숨기기' : '지도 보기'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {selectedDay && (
-          <View style={styles.flex1}>
-            <ScrollView
-              ref={scrollRef}
-              contentContainerStyle={styles.timelineContentContainer}
-            >
-              <View style={styles.timelineWrapper}>
-                <TimeGridBackground hours={gridHours} />
-                {selectedDay.places.map(place => (
-                  <StaticTimelineItem
-                    key={place.id}
-                    place={place}
-                    offsetMinutes={offsetMinutes}
-                  />
-                ))}
-              </View>
-            </ScrollView>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.footer}>
-        <Pressable
-          style={styles.footerButton}
-          onPress={() => setShareModalVisible(true)}
-        >
-          <Text style={styles.footerButtonText}>공유</Text>
-        </Pressable>
-        <Pressable
-          style={styles.footerButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.footerButtonText}>수정</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.footerButton, styles.confirmButton]}
-          onPress={handleConfirm}
-        >
-          <Text style={styles.confirmButtonText}>확인</Text>
-        </Pressable>
-      </View>
-
-      <ShareModal
-        visible={isShareModalVisible}
-        onClose={() => setShareModalVisible(false)}
-        planId={planId}
-      />
-    </SafeAreaView>
+    <ItineraryViewScreenView
+      days={days}
+      selectedDayIndex={selectedDayIndex}
+      setSelectedDayIndex={setSelectedDayIndex}
+      isMapVisible={isMapVisible}
+      setMapVisible={setMapVisible}
+      isShareModalVisible={isShareModalVisible}
+      setShareModalVisible={setShareModalVisible}
+      scrollRef={scrollRef}
+      gridHours={gridHours}
+      offsetMinutes={offsetMinutes}
+      handleConfirm={handleConfirm}
+      goBack={() => navigation.goBack()}
+      planId={planId}
+    />
   );
 }
