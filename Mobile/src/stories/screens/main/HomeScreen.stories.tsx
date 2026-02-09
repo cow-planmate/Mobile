@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-native';
 import { HomeScreenView } from '../../../screens/app/main/HomeScreen.view';
 
 const meta = {
-  title: 'Screens/HomeScreen',
+  title: 'Screens/Main/HomeScreen',
   component: HomeScreenView,
   decorators: [
     Story => (
