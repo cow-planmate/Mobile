@@ -50,7 +50,8 @@
     "sockjs-client": "^1.6.1",
     "storybook": "^10.1.11",
     "styled-components": "^6.3.8",
-    "text-encoding": "^0.7.0"
+    "text-encoding": "^0.7.0",
+    "webfontloader": "^1.6.28"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
