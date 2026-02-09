@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import type { Meta, StoryObj } from '@storybook/react-native';
-import { HomeScreenView } from './HomeScreen.view';
+import { HomeScreenView } from '../../../screens/app/main/HomeScreen.view';
 
 const meta = {
   title: 'Screens/HomeScreen',
