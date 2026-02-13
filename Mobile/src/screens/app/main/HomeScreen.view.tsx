@@ -90,7 +90,6 @@ const InputRow = ({
 export interface HomeScreenViewProps {
   nickname?: string;
   pendingRequestsCount: number;
-  departure: string;
   destination: string;
   transport: string;
   dateText: string;
@@ -127,7 +126,6 @@ export interface HomeScreenViewProps {
 export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   nickname,
   pendingRequestsCount, // 알림 뱃지 등에 활용 가능
-  departure,
   destination,
   transport,
   dateText,
@@ -201,16 +199,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         <View style={styles.whiteSection}>
           <View style={styles.inputCard}>
             <InputRow
-              label="출발지"
-              value={departure}
-              placeholder="어디서 떠나시나요?"
-              icon={
-                <MapPin size={24} color={COLORS.primary} strokeWidth={1.5} />
-              }
-              onPress={() => onOpenSearchModal('departure')}
-              hasError={showErrors && !departure}
-            />
-            <InputRow
               label="여행지"
               value={destination}
               placeholder="어디로 갈까요?"
@@ -273,7 +261,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         visible={isSearchModalVisible}
         onClose={onCloseSearchModal}
         fieldToUpdate={fieldToUpdate}
-        currentValue={fieldToUpdate === 'departure' ? departure : destination}
+        currentValue={destination}
         onSelect={onSelectLocation}
       />
       <CalendarModal

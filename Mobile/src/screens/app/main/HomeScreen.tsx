@@ -16,8 +16,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [isCalendarVisible, setCalendarVisible] = useState(false);
-  const [adults, setAdults] = useState<number | null>(null);
-  const [children, setChildren] = useState<number | null>(null);
+  const [adults, setAdults] = useState<number | null>(1);
+  const [children, setChildren] = useState<number | null>(0);
   const [isPaxModalVisible, setPaxModalVisible] = useState(false);
   const [transport, setTransport] = useState('');
   const [isTransportModalVisible, setTransportModalVisible] = useState(false);
@@ -104,7 +104,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   };
 
   const isFormValid =
-    departure !== '' &&
     destination !== '' &&
     startDate !== null &&
     endDate !== null &&
@@ -206,7 +205,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     <HomeScreenView
       nickname={user?.nickname}
       pendingRequestsCount={pendingRequests.length}
-      departure={departure}
       destination={destination}
       transport={transport}
       dateText={getDateText()}
