@@ -78,6 +78,16 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
                 };
 
                 const categoryId = pb.placeCategoryId ?? pb.placeCategory ?? 4;
+
+                // Normalize categoryId to 0-4 range
+                const normalizedCategoryId = (() => {
+                  if ([0, 1, 2, 3, 4].includes(categoryId)) return categoryId;
+                  if ([12, 14, 15, 28].includes(categoryId)) return 0;
+                  if (categoryId === 32) return 1;
+                  if (categoryId === 39) return 2;
+                  return 4;
+                })();
+
                 const categoryMapping = (
                   id: number,
                 ):
@@ -107,7 +117,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
                   latitude: pb.yLocation ?? pb.ylocation ?? 0,
                   longitude: pb.xLocation ?? pb.xlocation ?? 0,
                   imageUrl: pb.photoUrl || pb.placeLink || '',
-                  categoryId: categoryId,
+                  categoryId: normalizedCategoryId,
                 };
               });
 

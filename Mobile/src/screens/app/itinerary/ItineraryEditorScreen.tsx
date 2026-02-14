@@ -15,6 +15,7 @@ import { useItinerary } from '../../../contexts/ItineraryContext';
 import { usePlaces } from '../../../contexts/PlacesContext';
 import { useItineraryEditor } from '../../../hooks/useItineraryEditor';
 import { timeToMinutes, dateToTime } from '../../../utils/timeUtils';
+import { removeDraftPlan } from '../../../utils/draftPlanStorage';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { styles } from './ItineraryEditorScreen.styles';
 
@@ -38,6 +39,30 @@ const getCategoryType = (id: number): '관광지' | '숙소' | '식당' | '기�
   if (id === 1 || id === 32) return '숙소';
   if (id === 2 || id === 39) return '식당';
   return '기타';
+};
+
+/**
+ * Normalize raw categoryId to 0-4 range used by the app's display components.
+ */
+const normalizeCategoryId = (
+  rawId: number | undefined,
+  type?: string,
+): number => {
+  const id = rawId ?? 4;
+  if ([0, 1, 2, 3, 4].includes(id)) return id;
+  if ([12, 14, 15, 28].includes(id)) return 0;
+  if (id === 32) return 1;
+  if (id === 39) return 2;
+  switch (type) {
+    case '관광지':
+      return 0;
+    case '숙소':
+      return 1;
+    case '식당':
+      return 2;
+    default:
+      return 4;
+  }
 };
 
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
@@ -64,10 +89,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   const { updatePlaceMemo } = useItinerary();
   const { connect, onlineUsers, sendMessage } = useWebSocket();
-  const {
-    fetchAllRecommendations,
-    resetPlaces,
-  } = usePlaces();
+  const { fetchAllRecommendations, resetPlaces } = usePlaces();
   const planId = route.params.planId;
   const destination = route.params.destination;
 
@@ -131,12 +153,57 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     ) => {
       setIsSearching(true);
       try {
+        // When no query and a category tab is selected, use the category-specific
+        // recommendation API (aligned with Frontend's approach)
+        if (!queryTerm && planId && categoryOverride) {
+          let endpoint = '';
+          let forcedCategoryId = 4;
+          switch (categoryOverride) {
+            case '관광지':
+              endpoint = `${API_URL}/api/plan/${planId}/tour`;
+              forcedCategoryId = 0;
+              break;
+            case '숙소':
+              endpoint = `${API_URL}/api/plan/${planId}/lodging`;
+              forcedCategoryId = 1;
+              break;
+            case '식당':
+              endpoint = `${API_URL}/api/plan/${planId}/restaurant`;
+              forcedCategoryId = 2;
+              break;
+          }
+
+          if (endpoint) {
+            const response = await axios.get(endpoint);
+            if (response.data && response.data.places) {
+              const mappedPlaces: Place[] = response.data.places.map(
+                (p: PlaceVO) => ({
+                  id: p.placeId,
+                  placeRefId: p.placeId,
+                  categoryId: forcedCategoryId,
+                  name: p.name,
+                  type: categoryOverride,
+                  address: p.formatted_address,
+                  rating: p.rating,
+                  imageUrl: p.photoUrl || p.iconUrl,
+                  latitude: p.yLocation ?? 0,
+                  longitude: p.xLocation ?? 0,
+                  startTime: '10:00',
+                  endTime: '11:00',
+                }),
+              );
+              setSearchResults(mappedPlaces);
+            } else {
+              setSearchResults([]);
+            }
+            setIsSearching(false);
+            return;
+          }
+        }
+
+        // For search queries: use the general search API
         let query = queryTerm;
-        if (!queryTerm && destination && categoryOverride) {
-          const keyword =
-            categoryOverride === '식당' ? '맛집' : categoryOverride;
-          query = `${destination} ${keyword}`.trim();
-        } else if (destination) {
+        if (destination) {
           query = `${destination} ${queryTerm}`.trim();
         }
 
@@ -152,20 +219,32 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
         if (response.data && response.data.places) {
           const mappedPlaces: Place[] = response.data.places.map(
-            (p: PlaceVO) => ({
-              id: p.placeId,
-              placeRefId: p.placeId,
-              categoryId: p.categoryId,
-              name: p.name,
-              type: categoryOverride || getCategoryType(p.categoryId),
-              address: p.formatted_address,
-              rating: p.rating,
-              imageUrl: p.photoUrl || p.iconUrl,
-              latitude: p.yLocation,
-              longitude: p.xLocation,
-              startTime: '10:00',
-              endTime: '11:00',
-            }),
+            (p: PlaceVO) => {
+              // Use categoryOverride to force the correct category (matching Frontend)
+              // categoryId: 0=관광지, 1=숙소, 2=식당, 3=직접추가, 4=검색
+              const type = categoryOverride || getCategoryType(p.categoryId);
+              const catId = categoryOverride
+                ? categoryOverride === '관광지'
+                  ? 0
+                  : categoryOverride === '숙소'
+                  ? 1
+                  : 2
+                : normalizeCategoryId(p.categoryId, type);
+              return {
+                id: p.placeId,
+                placeRefId: p.placeId,
+                categoryId: catId,
+                name: p.name,
+                type,
+                address: p.formatted_address,
+                rating: p.rating,
+                imageUrl: p.photoUrl || p.iconUrl,
+                latitude: p.yLocation ?? 0,
+                longitude: p.xLocation ?? 0,
+                startTime: '10:00',
+                endTime: '11:00',
+              };
+            },
           );
           setSearchResults(mappedPlaces);
         } else {
@@ -178,7 +257,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         setIsSearching(false);
       }
     },
-    [destination],
+    [destination, planId],
   );
 
   useEffect(() => {
@@ -188,14 +267,21 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   }, [destination, selectedTab, searchQuery, fetchPlaces]);
 
   const handleSearch = () => {
-    fetchPlaces(searchQuery);
+    fetchPlaces(searchQuery, selectedTab);
   };
 
   const filteredPlaces = searchResults.filter(place => {
+    const catId = place.categoryId ?? 4;
     if (selectedTab === '관광지') {
-      return place.type === '관광지' || place.type === '기타';
+      return catId === 0;
     }
-    return place.type === selectedTab;
+    if (selectedTab === '숙소') {
+      return catId === 1;
+    }
+    if (selectedTab === '식당') {
+      return catId === 2;
+    }
+    return true;
   });
 
   useLayoutEffect(() => {
@@ -362,6 +448,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   };
 
   const onComplete = () => {
+    // Remove draft status — plan will now appear in MyPage
+    if (route.params.planId) {
+      removeDraftPlan(route.params.planId);
+    }
+
     navigation.navigate('ItineraryView', {
       days,
       tripName,
@@ -397,7 +488,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       setScheduleEditVisible={setScheduleEditVisible}
       onConfirmScheduleEdit={onConfirmScheduleEdit}
       onConfirmTimePicker={onConfirmTimePicker}
-      destination={destination}
+      destination={destination || ''}
       onComplete={onComplete}
       searchQuery={searchQuery}
       setSearchQuery={setSearchQuery}

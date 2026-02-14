@@ -7,6 +7,7 @@ import { AppStackParamList } from '../../../navigation/types';
 import { useAuth } from '../../../contexts/AuthContext';
 import { OptionType } from '../../../components/common/SelectionModal';
 import { HomeScreenView } from './HomeScreen.view';
+import { addDraftPlan } from '../../../utils/draftPlanStorage';
 
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
@@ -167,6 +168,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
       const response = await axios.post(`${API_URL}/api/plan`, payload);
       const { planId } = response.data;
+
+      // Mark as draft — plan won't appear in MyPage until "일정 생성 완료" is clicked
+      await addDraftPlan(planId);
 
       navigation.navigate('ItineraryEditor', {
         planId,

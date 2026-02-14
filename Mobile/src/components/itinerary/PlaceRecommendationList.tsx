@@ -43,6 +43,26 @@ type PlaceTab = '관광지' | '숙소' | '식당' | '검색';
 // Convert PlaceVO to Place (for TimelineItem compat)
 // ────────────────────────────────────────────────
 
+/**
+ * Normalize raw categoryId to 0-4 range used by the app's display components.
+ */
+const normalizeCategoryId = (
+  rawId: number | undefined,
+  type?: string,
+): number => {
+  const id = rawId ?? 4;
+  if ([0, 1, 2, 3, 4].includes(id)) return id;
+  if ([12, 14, 15, 28].includes(id)) return 0;
+  if (id === 32) return 1;
+  if (id === 39) return 2;
+  switch (type) {
+    case '관광지': return 0;
+    case '숙소': return 1;
+    case '식당': return 2;
+    default: return 4;
+  }
+};
+
 function placeVOToPlace(p: PlaceVO, tabOverride?: string): Omit<Place, 'startTime' | 'endTime'> {
   const type = tabOverride
     ? (tabOverride as Place['type'])
@@ -50,7 +70,7 @@ function placeVOToPlace(p: PlaceVO, tabOverride?: string): Omit<Place, 'startTim
   return {
     id: p.placeId,
     placeRefId: p.placeId,
-    categoryId: p.categoryId,
+    categoryId: normalizeCategoryId(p.categoryId, type),
     name: p.name,
     type,
     address: p.formatted_address,

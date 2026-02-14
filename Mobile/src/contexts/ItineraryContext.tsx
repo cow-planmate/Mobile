@@ -139,6 +139,27 @@ const categoryMapping = (
   return '기타';
 };
 
+/**
+ * Normalize raw categoryId (e.g. Google API IDs) to 0-4 range used by the app.
+ */
+const normalizeCategoryId = (
+  rawId: number | undefined,
+  type?: string,
+): number => {
+  const id = rawId ?? 4;
+  if ([0, 1, 2, 3, 4].includes(id)) return id;
+  if ([12, 14, 15, 28].includes(id)) return 0; // 관광지
+  if (id === 32) return 1; // 숙소
+  if (id === 39) return 2; // 식당
+  switch (type) {
+    case '관광지': return 0;
+    case '숙소': return 1;
+    case '식당': return 2;
+    case '직접 추가': return 3;
+    default: return 4;
+  }
+};
+
 const mapToTimetablePlaceBlockDto = (
   place: Place,
   timetableId?: number,
@@ -275,13 +296,13 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                     realId &&
                     !dayToUpdate.places.some(p => p.id === realId)
                   ) {
+                    const rawCategoryId =
+                      respVO.placeCategoryId ?? respVO.placeCategory ?? 4;
                     const newPlace: Place = {
                       id: realId,
                       placeRefId: respVO.placeId,
                       name: respVO.placeName,
-                      type: categoryMapping(
-                        respVO.placeCategoryId ?? respVO.placeCategory ?? 4,
-                      ),
+                      type: categoryMapping(rawCategoryId),
                       startTime: parseTime(
                         respVO.startTime ?? respVO.blockStartTime,
                       ),
@@ -291,8 +312,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                       latitude: respVO.yLocation ?? respVO.ylocation ?? 0,
                       longitude: respVO.xLocation ?? respVO.xlocation ?? 0,
                       imageUrl: respVO.photoUrl || respVO.placeLink,
-                      categoryId:
-                        respVO.placeCategoryId ?? respVO.placeCategory,
+                      categoryId: normalizeCategoryId(rawCategoryId),
                     };
                     dayToUpdate.places = resolveConflictsAndSort([
                       ...dayToUpdate.places,
@@ -380,6 +400,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       ...placeData,
       id: newId,
       placeRefId: placeData.id,
+      categoryId: normalizeCategoryId(placeData.categoryId, placeData.type),
       startTime: '12:00',
       endTime: '13:00',
       latitude: placeData.latitude ?? 0,

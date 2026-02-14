@@ -14,6 +14,7 @@ import { Place } from '../../../components/itinerary/TimelineItem';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MINUTE_HEIGHT } from './ItineraryViewScreen.styles';
 import { Day } from '../../../contexts/ItineraryContext';
+import { removeDraftPlan } from '../../../utils/draftPlanStorage';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
 
 // DTO Interfaces
@@ -135,9 +136,19 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
             const categoryId = (pb.placeCategoryId ??
               pb.placeCategory ??
               4) as number;
+
+            // Normalize categoryId to 0-4 range
+            const normalizedCategoryId = (() => {
+              if ([0, 1, 2, 3, 4].includes(categoryId)) return categoryId;
+              if ([12, 14, 15, 28].includes(categoryId)) return 0;
+              if (categoryId === 32) return 1;
+              if (categoryId === 39) return 2;
+              return 4;
+            })();
+
             return {
               id: String(pb.blockId ?? pb.timetablePlaceBlockId),
-              categoryId: categoryId,
+              categoryId: normalizedCategoryId,
               placeRefId: pb.placeId,
               name: pb.placeName,
               address: pb.placeAddress,
@@ -203,87 +214,137 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     return { gridHours: hours, offsetMinutes: offset };
   }, []);
 
+  const normalizeCategoryId = (
+    rawId: number | undefined,
+    type?: string,
+  ): number => {
+    const id = rawId ?? 4;
+    if ([0, 1, 2, 3, 4].includes(id)) return id;
+    if ([12, 14, 15, 28].includes(id)) return 0;
+    if (id === 32) return 1;
+    if (id === 39) return 2;
+    switch (type) {
+      case '관광지':
+        return 0;
+      case '숙소':
+        return 1;
+      case '식당':
+        return 2;
+      case '직접 추가':
+        return 3;
+      default:
+        return 4;
+    }
+  };
+
+  const buildPlaceBlockPayload = (daysData: Day[]) => {
+    const timetableVOs = daysData.map(day => ({
+      timetableId: day.timetableId || 0,
+      date: day.date.toISOString().split('T')[0],
+      timeTableStartTime: '09:00:00',
+      timeTableEndTime: '22:00:00',
+    }));
+
+    const allPlaces = daysData.flatMap(day => {
+      const dateStr = day.date.toISOString().split('T')[0];
+      return day.places.map(place => {
+        const categoryId = normalizeCategoryId(place.categoryId, place.type);
+
+        const startTime =
+          place.startTime.length === 5
+            ? place.startTime + ':00'
+            : place.startTime;
+        const endTime =
+          place.endTime.length === 5 ? place.endTime + ':00' : place.endTime;
+
+        return {
+          blockId: !isNaN(Number(place.id)) ? Number(place.id) : null,
+          timetablePlaceBlockId: !isNaN(Number(place.id))
+            ? Number(place.id)
+            : null,
+          timeTableId: day.timetableId || 0,
+          timetableId: day.timetableId || 0,
+          date: dateStr,
+          placeCategoryId: categoryId,
+          placeCategory: categoryId,
+          placeName: place.name || '',
+          placeRating: place.rating || 0,
+          placeAddress: place.address || '',
+          placeLink: place.place_url || '',
+          placeId: place.placeRefId || place.id || '',
+          photoUrl: place.imageUrl || null,
+          memo: place.memo || '',
+          startTime: startTime,
+          endTime: endTime,
+          blockStartTime: startTime,
+          blockEndTime: endTime,
+          xLocation: place.longitude || 0,
+          yLocation: place.latitude || 0,
+          xlocation: place.longitude || 0,
+          ylocation: place.latitude || 0,
+        };
+      });
+    });
+
+    return { timetableVOs, allPlaces };
+  };
+
   const handleConfirm = async () => {
-    // If we have a planId, it means the plan is already being synced via WebSocket.
-    // Redundant POST /api/plan/create causes duplicate plans in the DB.
+    // Ensure plan is no longer marked as draft
     if (planId) {
+      await removeDraftPlan(planId);
+    }
+
+    if (planId) {
+      // Check if any places have temporary IDs (not yet synced to server)
+      const hasUnsyncedPlaces = days.some(day =>
+        day.places.some(
+          place =>
+            typeof place.id === 'string' && place.id.startsWith('place_'),
+        ),
+      );
+
+      if (hasUnsyncedPlaces && days.some(d => d.places.length > 0)) {
+        // Some places haven't been confirmed by the server — do a full REST save
+        try {
+          const { timetableVOs, allPlaces } = buildPlaceBlockPayload(days);
+
+          const payload = {
+            planFrame: {
+              planId: planId,
+              departure: departure || 'SEOUL',
+              transportationCategoryId: transport === '자동차' ? 1 : 0,
+              travelId: travelId || 1,
+              adultCount: adults || 1,
+              childCount: children || 0,
+            },
+            timetables: timetableVOs,
+            timetablePlaceBlocks: allPlaces,
+          };
+
+          const token = await AsyncStorage.getItem('accessToken');
+          const config = token
+            ? { headers: { Authorization: `Bearer ${token}` } }
+            : {};
+
+          await axios.post(`${API_URL}/api/plan/create`, payload, config);
+        } catch (error) {
+          console.warn(
+            'Fallback save failed, but WebSocket may have synced:',
+            error,
+          );
+        }
+      }
+
       Alert.alert('성공', '일정이 저장되었습니다.', [
         { text: '확인', onPress: () => navigation.popToTop() },
       ]);
       return;
     }
 
-    // Fallback for cases where planId might be missing (should rarely happen with current flow)
+    // No planId: create a brand new plan via REST
     try {
-      const timetableVOs = days.map(day => ({
-        timetableId: day.timetableId || 0,
-        date: day.date.toISOString().split('T')[0],
-        timeTableStartTime: '09:00:00',
-        timeTableEndTime: '22:00:00',
-      }));
-
-      const allPlaces = days.flatMap(day => {
-        const dateStr = day.date.toISOString().split('T')[0];
-        return day.places.map(place => {
-          let categoryId = place.categoryId ?? 4;
-          if (![0, 1, 2, 3, 4].includes(categoryId)) {
-            if ([12, 14, 15, 28].includes(categoryId)) {
-              categoryId = 0;
-            } else if (categoryId === 32) {
-              categoryId = 1;
-            } else if (categoryId === 39) {
-              categoryId = 2;
-            } else {
-              switch (place.type) {
-                case '관광지':
-                  categoryId = 0;
-                  break;
-                case '숙소':
-                  categoryId = 1;
-                  break;
-                case '식당':
-                  categoryId = 2;
-                  break;
-                default:
-                  categoryId = 4;
-              }
-            }
-          }
-
-          const startTime =
-            place.startTime.length === 5
-              ? place.startTime + ':00'
-              : place.startTime;
-          const endTime =
-            place.endTime.length === 5 ? place.endTime + ':00' : place.endTime;
-
-          return {
-            blockId: !isNaN(Number(place.id)) ? Number(place.id) : null,
-            timetablePlaceBlockId: !isNaN(Number(place.id))
-              ? Number(place.id)
-              : null,
-            timeTableId: day.timetableId || 0,
-            timetableId: day.timetableId || 0,
-            date: dateStr,
-            placeCategoryId: categoryId,
-            placeCategory: categoryId,
-            placeName: place.name || '',
-            placeRating: place.rating || 0,
-            placeAddress: place.address || '',
-            placeLink: place.place_url || '',
-            photoUrl: place.imageUrl || null,
-            memo: place.memo || '',
-            startTime: startTime,
-            endTime: endTime,
-            blockStartTime: startTime,
-            blockEndTime: endTime,
-            xLocation: place.longitude || 0,
-            yLocation: place.latitude || 0,
-            xlocation: place.longitude || 0,
-            ylocation: place.latitude || 0,
-          };
-        });
-      });
+      const { timetableVOs, allPlaces } = buildPlaceBlockPayload(days);
 
       const payload = {
         planFrame: {

@@ -6,6 +6,7 @@ import axios from 'axios';
 import { API_URL } from '@env';
 import { SimplePlanVO } from '../../../types/env';
 import { AppStackParamList } from '../../../navigation/types';
+import { getDraftPlanIds } from '../../../utils/draftPlanStorage';
 import MyPageScreenView from './MyPageScreen.view';
 
 export default function MyPageScreen() {
@@ -32,10 +33,18 @@ export default function MyPageScreen() {
   const fetchPlans = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/api/user/profile`);
+      const [response, draftIds] = await Promise.all([
+        axios.get(`${API_URL}/api/user/profile`),
+        getDraftPlanIds(),
+      ]);
       const data = response.data;
-      setMyItineraries(data.myPlanVOs || []);
-      setSharedItineraries(data.editablePlanVOs || []);
+
+      // Filter out draft plans (plans that haven't been completed yet)
+      const filterDrafts = (plans: SimplePlanVO[]) =>
+        plans.filter(p => !draftIds.includes(p.planId));
+
+      setMyItineraries(filterDrafts(data.myPlanVOs || []));
+      setSharedItineraries(filterDrafts(data.editablePlanVOs || []));
     } catch (error) {
       console.error('Failed to fetch plans:', error);
       Alert.alert('오류', '일정을 불러오는데 실패했습니다.');

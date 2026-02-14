@@ -68,6 +68,14 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const stompClient = useRef<Client | null>(null);
   const currentPlanId = useRef<number | null>(null);
   const messageListeners = useRef<Set<(msg: any) => void>>(new Set());
+  const messageQueue = useRef<
+    Array<{
+      action: string;
+      targetName: string;
+      target: any;
+      eventId?: string;
+    }>
+  >([]);
 
   const subscribeToMessages = (callback: (msg: any) => void) => {
     messageListeners.current.add(callback);
@@ -104,6 +112,28 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       onConnect: frame => {
         console.log('WebSocket Connected:', frame);
         setIsConnected(true);
+
+        // Flush queued messages that were sent before connection was established
+        if (messageQueue.current.length > 0) {
+          console.log(
+            `[WS] Flushing ${messageQueue.current.length} queued messages`,
+          );
+          const queuedMessages = [...messageQueue.current];
+          messageQueue.current = [];
+          queuedMessages.forEach(msg => {
+            // Use setTimeout to ensure subscriptions are set up first
+            setTimeout(() => {
+              sendMessageInternal(
+                client,
+                planId,
+                msg.action,
+                msg.targetName,
+                msg.target,
+                msg.eventId,
+              );
+            }, 100);
+          });
+        }
 
         const topics = [`/topic/${planId}`];
 
@@ -168,31 +198,23 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsConnected(false);
     setOnlineUsers([]);
     currentPlanId.current = null;
+    messageQueue.current = [];
   };
 
   /**
-   * 공통 요청 구조에 맞춘 메시지 전송
-   * 발행 경로: /app/plan/{planId}/{action}/{entity} (예상 경로)
-   * ※ 백엔드 Controller의 @MessageMapping 경로와 정확히 일치해야 합니다.
-   * 명세서에는 "/app/{roomId}"라고 되어 있으나, 보통 Spring에서는 세분화된 경로를 사용합니다.
-   * 여기서는 명세서의 "Request Example" 구조를 따르되, 경로는 백엔드 컨트롤러 구조를 따릅니다.
+   * Internal message sending logic (used by sendMessage and queue flush)
    */
-
-  const sendMessage = (
+  const sendMessageInternal = (
+    client: Client,
+    planId: number,
     action: string,
     targetName: string,
     target: any,
     eventId?: string,
   ) => {
-    if (!stompClient.current || !isConnected || !currentPlanId.current) {
-      console.warn('Cannot send message: WebSocket not connected');
-      return;
-    }
-
     let payload: any = {};
-    const destination = `/app/${currentPlanId.current}`;
+    const destination = `/app/${planId}`;
 
-    // Web uses "entity" and "timeTablePlaceBlockDtos" (list)
     switch (targetName) {
       case 'timetableplaceblock':
         payload = {
@@ -229,10 +251,40 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
     console.log(`[WS Send] Dest: ${destination}`, JSON.stringify(payload));
 
-    stompClient.current.publish({
+    client.publish({
       destination: destination,
       body: JSON.stringify(payload),
     });
+  };
+
+  /**
+   * 공통 요청 구조에 맞춘 메시지 전송
+   * WebSocket이 아직 연결되지 않았으면 큐에 추가하고 연결 후 자동 전송
+   */
+  const sendMessage = (
+    action: string,
+    targetName: string,
+    target: any,
+    eventId?: string,
+  ) => {
+    if (!stompClient.current || !isConnected || !currentPlanId.current) {
+      console.warn(
+        '[WS] Not connected yet — queuing message:',
+        action,
+        targetName,
+      );
+      messageQueue.current.push({ action, targetName, target, eventId });
+      return;
+    }
+
+    sendMessageInternal(
+      stompClient.current,
+      currentPlanId.current,
+      action,
+      targetName,
+      target,
+      eventId,
+    );
   };
 
   useEffect(() => {
