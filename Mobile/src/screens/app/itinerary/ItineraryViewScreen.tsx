@@ -354,18 +354,13 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       const allBlocks = days.flatMap(day => {
         const dateStr = day.date.toISOString().split('T')[0];
         return day.places.map(place => {
-          const categoryId = normalizeCategoryId(
-            place.categoryId,
-            place.type,
-          );
+          const categoryId = normalizeCategoryId(place.categoryId, place.type);
           const startTime =
             place.startTime.length === 5
               ? place.startTime + ':00'
               : place.startTime;
           const endTime =
-            place.endTime.length === 5
-              ? place.endTime + ':00'
-              : place.endTime;
+            place.endTime.length === 5 ? place.endTime + ':00' : place.endTime;
           return {
             blockId: null,
             timeTableId: 0,
