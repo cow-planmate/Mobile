@@ -19,18 +19,27 @@ import ItineraryViewScreenView from './ItineraryViewScreen.view';
 // DTO Interfaces
 interface PlaceBlockVO {
   blockId?: number;
+  timetablePlaceBlockId?: number;
   timeTableId: number;
-  placeCategory: number;
+  timetableId?: number;
+  placeCategoryId: number;
+  placeCategory?: number;
   placeName: string;
   placeTheme: string;
   placeRating: number;
   placeAddress: string;
   placeLink?: string;
+  photoUrl?: string;
   placeId: string;
-  startTime: string; // ISO Time 'HH:mm:ss'
-  endTime: string;
-  xlocation: number;
-  ylocation: number;
+  startTime: any;
+  endTime: any;
+  blockStartTime?: any;
+  blockEndTime?: any;
+  xLocation?: number;
+  yLocation?: number;
+  xlocation?: number;
+  ylocation?: number;
+  memo?: string;
 }
 
 interface PlanFrameVO {
@@ -49,7 +58,7 @@ interface GetCompletePlanResponse {
   message: string;
   planFrame: PlanFrameVO;
   placeBlocks: PlaceBlockVO[];
-  timetables: { timetableId: number; date: string }[];
+  timetables: { timetableId?: number; timeTableId?: number; date: string }[];
 }
 
 const timeToMinutes = (time: string) => {
@@ -89,42 +98,66 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       );
       const { planFrame, placeBlocks, timetables } = response.data;
 
-      setTripName(planFrame.planName || '나의 일정');
+      // Update trip name from API if available
+      if (planFrame?.planName) {
+        setTripName(planFrame.planName);
+      }
 
       const categoryMapping = (
-        id: number,
-      ): '관광지' | '숙소' | '식당' | '기타' => {
-        if ([12, 14, 15, 28].includes(id)) return '관광지';
-        if (id === 32) return '숙소';
-        if (id === 39) return '식당';
+        id: number | undefined,
+      ): '관광지' | '숙소' | '식당' | '직접 추가' | '검색' | '기타' => {
+        if ([0, 12, 14, 15, 28].includes(id ?? -1)) return '관광지';
+        if (id === 1 || id === 32) return '숙소';
+        if (id === 2 || id === 39) return '식당';
+        if (id === 3) return '직접 추가';
+        if (id === 4) return '검색';
         return '기타';
       };
 
       if (timetables && timetables.length > 0) {
         const fetchedDays: Day[] = timetables.map((tt, index) => {
+          const ttId = tt.timetableId ?? tt.timeTableId;
           const blocks = placeBlocks.filter(
-            pb => pb.timeTableId === tt.timetableId,
+            pb => (pb.timeTableId ?? pb.timetableId) === ttId,
           );
-          const places: Place[] = blocks.map(pb => ({
-            id: String(pb.blockId),
-            categoryId: pb.placeCategory,
-            placeRefId: pb.placeId,
-            name: pb.placeName,
-            address: pb.placeAddress,
-            type: categoryMapping(pb.placeCategory),
-            rating: pb.placeRating,
-            startTime: pb.startTime.substring(0, 5),
-            endTime: pb.endTime.substring(0, 5),
-            latitude: pb.ylocation,
-            longitude: pb.xlocation,
-            imageUrl: '',
-            place_url: pb.placeLink,
-          }));
+
+          const parseTime = (time: any) => {
+            if (typeof time === 'string') return time.substring(0, 5);
+            if (time && typeof time.hour === 'number') {
+              return `${String(time.hour).padStart(2, '0')}:${String(
+                time.minute,
+              ).padStart(2, '0')}`;
+            }
+            return '12:00';
+          };
+
+          const places: Place[] = blocks.map(pb => {
+            const categoryId = (pb.placeCategoryId ??
+              pb.placeCategory ??
+              4) as number;
+            return {
+              id: String(pb.blockId ?? pb.timetablePlaceBlockId),
+              categoryId: categoryId,
+              placeRefId: pb.placeId,
+              name: pb.placeName,
+              address: pb.placeAddress,
+              type: categoryMapping(categoryId) as any,
+              rating: pb.placeRating || 0,
+              startTime: parseTime(pb.startTime ?? pb.blockStartTime),
+              endTime: parseTime(pb.endTime ?? pb.blockEndTime),
+              latitude: pb.yLocation ?? pb.ylocation ?? 0,
+              longitude: pb.xLocation ?? pb.xlocation ?? 0,
+              imageUrl: pb.photoUrl || pb.placeLink || '',
+              memo: pb.memo || '',
+              place_url: pb.placeLink || '',
+            };
+          });
 
           return {
             date: new Date(tt.date),
             dayNumber: index + 1,
             places: places,
+            timetableId: ttId,
           };
         });
         setDays(fetchedDays);
@@ -171,71 +204,112 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   }, []);
 
   const handleConfirm = async () => {
+    // If we have a planId, it means the plan is already being synced via WebSocket.
+    // Redundant POST /api/plan/create causes duplicate plans in the DB.
     if (planId) {
-      Alert.alert('완료', '일정이 확인되었습니다.', [
+      Alert.alert('성공', '일정이 저장되었습니다.', [
         { text: '확인', onPress: () => navigation.popToTop() },
       ]);
       return;
     }
 
+    // Fallback for cases where planId might be missing (should rarely happen with current flow)
     try {
       const timetableVOs = days.map(day => ({
-        timetableId: 0,
+        timetableId: day.timetableId || 0,
         date: day.date.toISOString().split('T')[0],
-        startTime: '09:00:00',
-        endTime: '20:00:00',
+        timeTableStartTime: '09:00:00',
+        timeTableEndTime: '22:00:00',
       }));
 
-      const placeMapping = (type: string) => {
-        switch (type) {
-          case '관광지': return 12;
-          case '숙소': return 32;
-          case '식당': return 39;
-          default: return 12;
-        }
-      };
+      const allPlaces = days.flatMap(day => {
+        const dateStr = day.date.toISOString().split('T')[0];
+        return day.places.map(place => {
+          let categoryId = place.categoryId ?? 4;
+          if (![0, 1, 2, 3, 4].includes(categoryId)) {
+            if ([12, 14, 15, 28].includes(categoryId)) {
+              categoryId = 0;
+            } else if (categoryId === 32) {
+              categoryId = 1;
+            } else if (categoryId === 39) {
+              categoryId = 2;
+            } else {
+              switch (place.type) {
+                case '관광지':
+                  categoryId = 0;
+                  break;
+                case '숙소':
+                  categoryId = 1;
+                  break;
+                case '식당':
+                  categoryId = 2;
+                  break;
+                default:
+                  categoryId = 4;
+              }
+            }
+          }
 
-      const timetablePlaceBlocks = days.map(day =>
-        day.places.map(place => ({
-          timetableId: 0,
-          timetablePlaceBlockId: !isNaN(Number(place.id)) ? Number(place.id) : 0,
-          placeCategoryId:
-            place.categoryId && ![12, 14].includes(place.categoryId)
-              ? place.categoryId
-              : placeMapping(place.type) === 12 ? 4 : placeMapping(place.type) === 32 ? 1 : 39,
-          placeName: place.name,
-          placeRating: place.rating || 0,
-          placeAddress: place.address || '',
-          placeLink: '',
-          placeId: place.placeRefId || String(Math.random()),
-          date: day.date.toISOString().split('T')[0],
-          startTime: place.startTime.length === 5 ? place.startTime + ':00' : place.startTime,
-          endTime: place.endTime.length === 5 ? place.endTime + ':00' : place.endTime,
-          xLocation: place.longitude || 0,
-          yLocation: place.latitude || 0,
-        })),
-      );
+          const startTime =
+            place.startTime.length === 5
+              ? place.startTime + ':00'
+              : place.startTime;
+          const endTime =
+            place.endTime.length === 5 ? place.endTime + ':00' : place.endTime;
+
+          return {
+            blockId: !isNaN(Number(place.id)) ? Number(place.id) : null,
+            timetablePlaceBlockId: !isNaN(Number(place.id))
+              ? Number(place.id)
+              : null,
+            timeTableId: day.timetableId || 0,
+            timetableId: day.timetableId || 0,
+            date: dateStr,
+            placeCategoryId: categoryId,
+            placeCategory: categoryId,
+            placeName: place.name || '',
+            placeRating: place.rating || 0,
+            placeAddress: place.address || '',
+            placeLink: place.place_url || '',
+            photoUrl: place.imageUrl || null,
+            memo: place.memo || '',
+            startTime: startTime,
+            endTime: endTime,
+            blockStartTime: startTime,
+            blockEndTime: endTime,
+            xLocation: place.longitude || 0,
+            yLocation: place.latitude || 0,
+            xlocation: place.longitude || 0,
+            ylocation: place.latitude || 0,
+          };
+        });
+      });
 
       const payload = {
-        departure: departure || 'SEOUL',
-        transportationCategoryId: transport === '자동차' ? 2 : 1,
-        travelId: travelId || 1,
-        adultCount: adults || 1,
-        childCount: children || 0,
+        planFrame: {
+          planId: 0,
+          departure: departure || 'SEOUL',
+          transportationCategoryId: transport === '자동차' ? 1 : 0,
+          travelId: travelId || 1,
+          adultCount: adults || 1,
+          childCount: children || 0,
+        },
         timetables: timetableVOs,
-        timetablePlaceBlocks: timetablePlaceBlocks,
+        timetablePlaceBlocks: allPlaces,
       };
 
       const token = await AsyncStorage.getItem('accessToken');
-      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      const config = token
+        ? { headers: { Authorization: `Bearer ${token}` } }
+        : {};
 
-      await axios.patch(`${API_URL}/api/plan/save`, payload, config);
+      await axios.post(`${API_URL}/api/plan/create`, payload, config);
 
       Alert.alert('성공', '일정이 저장되었습니다.', [
         { text: '확인', onPress: () => navigation.popToTop() },
       ]);
     } catch (error: any) {
-      console.error('Failed to save plan:', error);
+      console.error('Failed to create plan:', error);
       Alert.alert('오류', '일정 저장에 실패했습니다.');
     }
   };

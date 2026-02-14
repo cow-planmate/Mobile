@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, TouchableOpacity } from 'react-native';
 
-import { styles } from './TimelineItem.styles';
+import { styles, CATEGORY_COLORS } from './TimelineItem.styles';
 
 const timeToMinutes = (time: string) => {
   if (!time || typeof time !== 'string' || !time.includes(':')) {
@@ -17,7 +17,7 @@ export type Place = {
   id: string; // Internal Block ID (or temp ID)
   placeRefId?: string; // External Reference ID (e.g., Google Place ID)
   name: string;
-  type: '관광지' | '숙소' | '식당';
+  type: '관광지' | '숙소' | '식당' | '직접 추가' | '검색' | '기타';
   categoryId?: number;
   startTime: string;
   endTime: string;
@@ -26,28 +26,54 @@ export type Place = {
   imageUrl: string;
   latitude: number;
   longitude: number;
+  memo?: string;
+  place_url?: string;
 };
 
 type TimelineItemProps = {
   item: Place;
   onDelete: () => void;
   onEditTime: (type: 'startTime' | 'endTime') => void;
+  onPress?: () => void;
   style?: object;
+};
+
+const CATEGORY_NAMES: { [key: number]: string } = {
+  0: '관광지',
+  1: '숙소',
+  2: '식당',
+  3: '직접 추가',
+  4: '검색',
 };
 
 const TimelineItem = React.memo(function TimelineItem({
   item,
   onDelete,
   onEditTime,
+  onPress,
   style,
 }: TimelineItemProps) {
   const durationMinutes =
     timeToMinutes(item.endTime) - timeToMinutes(item.startTime);
   const isCompact = durationMinutes < IS_COMPACT_VIEW_THRESHOLD_MINUTES;
 
+  const categoryId = item.categoryId ?? 4;
+  const categoryColor =
+    CATEGORY_COLORS[categoryId as keyof typeof CATEGORY_COLORS] ||
+    CATEGORY_COLORS[4];
+  const categoryName = CATEGORY_NAMES[categoryId] || item.type || '기타';
+
   return (
-    <View style={[styles.cardContainer, style]}>
-      <View style={styles.card}>
+    <Pressable style={[styles.cardContainer, style]} onPress={onPress}>
+      <View
+        style={[
+          styles.card,
+          {
+            borderLeftColor: categoryColor.border,
+            backgroundColor: categoryColor.bg,
+          },
+        ]}
+      >
         <View style={styles.infoContainer}>
           {!isCompact && (
             <View style={styles.timeRow}>
@@ -68,11 +94,17 @@ const TimelineItem = React.memo(function TimelineItem({
           {!isCompact && (
             <>
               <Text style={styles.metaText} numberOfLines={1}>
-                ⭐️ {item.rating} · {item.type}
+                ⭐️ {item.rating} · {categoryName}
               </Text>
-              <Text style={styles.metaText} numberOfLines={1}>
-                {item.address}
-              </Text>
+              {item.memo ? (
+                <Text style={styles.memoText} numberOfLines={2}>
+                  "{item.memo}"
+                </Text>
+              ) : (
+                <Text style={styles.metaText} numberOfLines={1}>
+                  {item.address}
+                </Text>
+              )}
             </>
           )}
         </View>
@@ -80,7 +112,7 @@ const TimelineItem = React.memo(function TimelineItem({
           <Text style={styles.deleteButtonText}>x</Text>
         </Pressable>
       </View>
-    </View>
+    </Pressable>
   );
 });
 

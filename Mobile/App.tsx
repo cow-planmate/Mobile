@@ -4,6 +4,7 @@ import { AuthProvider } from './src/contexts/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { ItineraryProvider } from './src/contexts/ItineraryContext';
 import { WebSocketProvider } from './src/contexts/WebSocketContext';
+import { PlacesProvider } from './src/contexts/PlacesContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import StorybookUIRoot from './.storybook';
 
@@ -24,11 +25,13 @@ function App() {
     <GestureHandlerRootView style={styles.container}>
       <AuthProvider>
         <WebSocketProvider>
-          <ItineraryProvider>
-            <NavigationContainer>
-              <AppNavigator />
-            </NavigationContainer>
-          </ItineraryProvider>
+          <PlacesProvider>
+            <ItineraryProvider>
+              <NavigationContainer>
+                <AppNavigator />
+              </NavigationContainer>
+            </ItineraryProvider>
+          </PlacesProvider>
         </WebSocketProvider>
       </AuthProvider>
     </GestureHandlerRootView>

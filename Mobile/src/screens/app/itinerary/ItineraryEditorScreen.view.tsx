@@ -23,6 +23,8 @@ import TimelineItem, {
 } from '../../../components/itinerary/TimelineItem';
 import TimePickerModal from '../../../components/common/TimePickerModal';
 import ScheduleEditModal from '../../../components/common/ScheduleEditModal';
+import DetailPopup from '../../../components/itinerary/DetailPopup';
+import PlaceRecommendationList from '../../../components/itinerary/PlaceRecommendationList';
 import { Day } from '../../../contexts/ItineraryContext';
 import {
   styles,
@@ -127,6 +129,7 @@ const DraggableTimelineItem = ({
   onDelete,
   onEditTime,
   onDragEnd,
+  onPress,
 }: {
   place: Place;
   offsetMinutes: number;
@@ -137,6 +140,7 @@ const DraggableTimelineItem = ({
     newStartMinutes: number,
     newEndMinutes: number,
   ) => void;
+  onPress?: () => void;
 }) => {
   const GRID_TOP_OFFSET = 40;
   const MIN_TOP_PX = GRID_TOP_OFFSET;
@@ -304,6 +308,7 @@ const DraggableTimelineItem = ({
             item={place}
             onDelete={onDelete}
             onEditTime={onEditTime}
+            onPress={onPress}
             style={styles.flex1}
           />
         </Animated.View>
@@ -344,10 +349,11 @@ const TimelineComponent = React.memo(
         newStartMinutes: number,
         newEndMinutes: number,
       ) => void;
+      onPressPlace?: (place: Place) => void;
     }
   >(
     (
-      { selectedDay, onDeletePlace, onEditPlaceTime, onUpdatePlaceTimes },
+      { selectedDay, onDeletePlace, onEditPlaceTime, onUpdatePlaceTimes, onPressPlace },
       ref,
     ) => {
       const { gridHours, offsetMinutes } = React.useMemo(() => {
@@ -383,6 +389,7 @@ const TimelineComponent = React.memo(
                     )
                   }
                   onDragEnd={onUpdatePlaceTimes}
+                  onPress={() => onPressPlace?.(place)}
                 />
               ))}
             </View>
@@ -503,7 +510,7 @@ export interface ItineraryEditorScreenViewProps {
     type: 'startTime' | 'endTime';
     time: string;
   } | null;
-  timelineScrollRef: React.RefObject<ScrollView>;
+  timelineScrollRef: React.RefObject<ScrollView | null>;
   formatDate: (date: Date) => string;
   handleEditTime: (
     placeId: string,
@@ -534,6 +541,14 @@ export interface ItineraryEditorScreenViewProps {
   isSearching: boolean;
   handleSearch: () => void;
   filteredPlaces: Place[];
+  // New props for detail popup & recommendations
+  planId: number | null;
+  detailPlace: Place | null;
+  isDetailVisible: boolean;
+  onOpenDetail: (place: Place) => void;
+  onCloseDetail: () => void;
+  onUpdateMemo: (memo: string) => void;
+  onDeleteFromDetail: () => void;
 }
 
 export default function ItineraryEditorScreenView({
@@ -566,6 +581,13 @@ export default function ItineraryEditorScreenView({
   isSearching,
   handleSearch,
   filteredPlaces,
+  planId,
+  detailPlace,
+  isDetailVisible,
+  onOpenDetail,
+  onCloseDetail,
+  onUpdateMemo,
+  onDeleteFromDetail,
 }: ItineraryEditorScreenViewProps) {
   if (!selectedDay) {
     return (
@@ -639,6 +661,7 @@ export default function ItineraryEditorScreenView({
               onDeletePlace={handleDeletePlace}
               onEditPlaceTime={handleEditTime}
               onUpdatePlaceTimes={handleUpdatePlaceTimes}
+              onPressPlace={onOpenDetail}
             />
           )}
         </Tab.Screen>
@@ -655,6 +678,14 @@ export default function ItineraryEditorScreenView({
               isLoading={isSearching}
               handleSearch={handleSearch}
               filteredPlaces={filteredPlaces}
+            />
+          )}
+        </Tab.Screen>
+        <Tab.Screen name="추천장소">
+          {() => (
+            <PlaceRecommendationList
+              onAddPlace={handleAddPlace}
+              planId={planId ?? undefined}
             />
           )}
         </Tab.Screen>
@@ -683,6 +714,16 @@ export default function ItineraryEditorScreenView({
         onClose={() => setScheduleEditVisible(false)}
         onConfirm={onConfirmScheduleEdit}
       />
+
+      {detailPlace && (
+        <DetailPopup
+          visible={isDetailVisible}
+          place={detailPlace}
+          onClose={onCloseDetail}
+          onUpdateMemo={onUpdateMemo}
+          onDelete={onDeleteFromDetail}
+        />
+      )}
     </SafeAreaView>
   );
 }

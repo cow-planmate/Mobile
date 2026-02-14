@@ -157,12 +157,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       }
 
       const payload = {
-        departure,
+        departure: departure || 'SEOUL',
         travelId: travelId || 0,
         dates,
         adultCount: adults || 1,
         childCount: children || 0,
-        transportation: transport === '자동차' ? 2 : 1,
+        transportation: transport === '자동차' ? 1 : 0,
       };
 
       const response = await axios.post(`${API_URL}/api/plan`, payload);
@@ -170,7 +170,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
       navigation.navigate('ItineraryEditor', {
         planId,
-        departure,
+        departure: departure || 'SEOUL',
         destination,
         travelId: travelId || 0,
         startDate: startDate?.toISOString() ?? new Date().toISOString(),

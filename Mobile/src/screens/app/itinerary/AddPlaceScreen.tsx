@@ -68,6 +68,7 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
             id: p.placeId,
             name: p.name,
             type: getCategoryType(p.categoryId),
+            categoryId: p.categoryId,
             address: p.formatted_address,
             rating: p.rating,
             imageUrl: p.iconUrl,

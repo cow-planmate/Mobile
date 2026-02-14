@@ -10,29 +10,35 @@ export type AppStackParamList = {
   Profile: undefined;
   ItineraryEditor: {
     planId?: number;
-    departure: string;
-    destination: string;
-    travelId: number;
-    startDate: string;
-    endDate: string;
-    adults: number;
-    children: number;
-    transport: string;
+    departure?: string;
+    destination?: string;
+    travelId?: number;
+    startDate?: string;
+    endDate?: string;
+    adults?: number;
+    children?: number;
+    transport?: string;
   };
 
   ItineraryView: {
     days: Day[];
     tripName: string;
-    departure: string;
-    travelId: number;
-    transport: string;
-    adults: number;
-    children: number;
-    startDate: string;
-    endDate: string;
+    planId?: number;
+    departure?: string;
+    travelId?: number;
+    transport?: string;
+    adults?: number;
+    children?: number;
+    startDate?: string;
+    endDate?: string;
   };
   SearchLocation: {
     fieldToUpdate: 'departure' | 'destination';
     currentValue: string;
+  };
+  AddPlace: {
+    dayIndex: number;
+    destination?: string;
+    planId?: number;
   };
 };

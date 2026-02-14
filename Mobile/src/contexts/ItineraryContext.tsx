@@ -117,44 +117,93 @@ interface ItineraryContextType {
     newStartTime: string,
     newEndTime: string,
   ) => void;
+  updatePlaceMemo: (
+    dayIndex: number,
+    placeId: string,
+    memo: string,
+  ) => void;
 }
 
 const ItineraryContext = createContext<ItineraryContextType | undefined>(
   undefined,
 );
 
-const mapToTimetablePlaceBlockDto = (place: Place, timetableId?: number) => {
-  // Remap invalid category IDs to valid ones (Foreign Key Constraint Fix)
-  // 12 (Tourist), 14 (Cafe?), 15, 28 -> 4 (Valid Tourist/Etc)
-  // 32 (Accommodation) -> 1 (Valid Accommodation)
-  // 39 (Restaurant) -> 39 (Valid Restaurant)
-  let categoryId = place.categoryId || 4;
-  if ([12, 14, 15, 28].includes(categoryId)) {
-    categoryId = 4;
-  } else if (categoryId === 32) {
-    categoryId = 1;
+const categoryMapping = (
+  id: number,
+): '관광지' | '숙소' | '식당' | '직접 추가' | '검색' | '기타' => {
+  if ([0, 12, 14, 15, 28].includes(id)) return '관광지';
+  if (id === 1 || id === 32) return '숙소';
+  if (id === 2 || id === 39) return '식당';
+  if (id === 3) return '직접 추가';
+  if (id === 4) return '검색';
+  return '기타';
+};
+
+const mapToTimetablePlaceBlockDto = (
+  place: Place,
+  timetableId?: number,
+  date?: string,
+) => {
+  // Remap category IDs to backend table IDs (0:관광지, 1:숙소, 2:식당, 3:직접추가, 4:검색)
+  let categoryId = place.categoryId ?? 4;
+
+  // If the category is already 0, 1, 2, 3, 4, we keep it.
+  // Otherwise, we map based on the raw ID from various sources or the type string.
+  if (![0, 1, 2, 3, 4].includes(categoryId)) {
+    if ([12, 14, 15, 28].includes(categoryId)) {
+      categoryId = 0; // 관광지
+    } else if (categoryId === 32) {
+      categoryId = 1; // 숙소
+    } else if (categoryId === 39) {
+      categoryId = 2; // 식당
+    } else {
+      // Final fallback to the type string provided by the Search API / Editor
+      switch (place.type) {
+        case '관광지':
+          categoryId = 0;
+          break;
+        case '숙소':
+          categoryId = 1;
+          break;
+        case '식당':
+          categoryId = 2;
+          break;
+        default:
+          categoryId = 4; // 검색
+      }
+    }
   }
 
+  // Formatting time to "HH:mm:00" for LocalTime compatibility
+  const startTime =
+    place.startTime.length === 5 ? place.startTime + ':00' : place.startTime;
+  const endTime =
+    place.endTime.length === 5 ? place.endTime + ':00' : place.endTime;
+
   return {
-    timetableId: timetableId,
-    // External Place ID (e.g. from Google Maps), used for reference
+    blockId: !isNaN(Number(place.id)) ? Number(place.id) : null,
+    timetablePlaceBlockId: !isNaN(Number(place.id)) ? Number(place.id) : null, // Added for Web compat
+    timeTableId: timetableId,
+    timetableId: timetableId, // Added for Web compat
+    date: date, // Added date for Backend mapping
     placeId: place.placeRefId,
-
-    // Internal Database ID for the block (if available and numeric)
-    timetablePlaceBlockId: !isNaN(Number(place.id)) ? Number(place.id) : null,
-
     placeCategoryId: categoryId,
+    placeCategory: categoryId, // Added for Web compat
     placeName: place.name,
     placeAddress: place.address,
     placeRating: place.rating,
-
+    placeLink: place.place_url || '',
     xLocation: place.longitude,
     yLocation: place.latitude,
-
-    // Formatting time to "HH:mm:00" for LocalTime compatibility
-    startTime:
-      place.startTime.length === 5 ? place.startTime + ':00' : place.startTime,
-    endTime: place.endTime.length === 5 ? place.endTime + ':00' : place.endTime,
+    xlocation: place.longitude, // Added for Web compat
+    ylocation: place.latitude, // Added for Web compat
+    photoUrl: place.imageUrl,
+    memo: place.memo || '',
+    // Aligned field names for both REST and WebSocket DTOs
+    startTime: startTime,
+    endTime: endTime,
+    blockStartTime: startTime,
+    blockEndTime: endTime,
   };
 };
 
@@ -170,121 +219,136 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       const { type, target, data, eventId } = msg;
 
       if (target === 'timetableplaceblock') {
-        const respVO = data.timetablePlaceBlockVO;
-        if (!respVO) return;
+        const dataList =
+          data.timeTablePlaceBlockDtos || data.timetableplaceblocks;
+        if (!dataList || !Array.isArray(dataList)) return;
 
-        const timetableId = respVO.timetableId;
-        const realId = respVO.timetablePlaceBlockId
-          ? String(respVO.timetablePlaceBlockId)
-          : null;
+        dataList.forEach((respVO: any) => {
+          const timetableId = respVO.timeTableId || respVO.timetableId;
+          const realId =
+            respVO.blockId || respVO.timetablePlaceBlockId
+              ? String(respVO.blockId || respVO.timetablePlaceBlockId)
+              : null;
 
-        setDays(prevDays => {
-          const dayIndex = prevDays.findIndex(
-            d => d.timetableId === timetableId,
-          );
-          if (dayIndex === -1) return prevDays;
+          setDays(prevDays => {
+            const dayIndex = prevDays.findIndex(
+              d => d.timetableId === timetableId,
+            );
+            if (dayIndex === -1) return prevDays;
 
-          const updatedDays = [...prevDays];
-          const dayToUpdate = { ...updatedDays[dayIndex] };
+            const updatedDays = [...prevDays];
+            const dayToUpdate = { ...updatedDays[dayIndex] };
 
-          if (type === 'create') {
-            // If we have an eventId (tempId), try to find the placeholder
-            if (eventId) {
-              const tempIndex = dayToUpdate.places.findIndex(
-                p => p.id === eventId,
-              );
-              if (tempIndex !== -1) {
-                // Update the placeholder with real ID and potentially server data
-                const existingPlaces = [...dayToUpdate.places];
+            if (type === 'create') {
+              // If we have an eventId (tempId), try to find the placeholder
+              if (eventId) {
+                const tempIndex = dayToUpdate.places.findIndex(
+                  p => p.id === eventId,
+                );
+                if (tempIndex !== -1) {
+                  // Update the placeholder with real ID and potentially server data
+                  const existingPlaces = [...dayToUpdate.places];
 
-                // We should probably trust server data for consistency if available,
-                // but we want to keep local state if user is editing.
-                // Ideally update ID is the most critical part.
-                if (realId) {
-                  existingPlaces[tempIndex] = {
-                    ...existingPlaces[tempIndex],
-                    id: realId,
+                  if (realId) {
+                    existingPlaces[tempIndex] = {
+                      ...existingPlaces[tempIndex],
+                      id: realId,
+                    };
+
+                    setLastAddedPlaceId(prev =>
+                      prev === eventId ? realId : prev,
+                    );
+                  }
+                  dayToUpdate.places = existingPlaces;
+                } else {
+                  const parseTime = (time: any) => {
+                    if (typeof time === 'string') return time.substring(0, 5);
+                    if (time && typeof time.hour === 'number') {
+                      return `${String(time.hour).padStart(2, '0')}:${String(
+                        time.minute,
+                      ).padStart(2, '0')}`;
+                    }
+                    return '12:00';
                   };
 
-                  // Update lastAddedPlaceId if it matches the tempId (eventId)
-                  // This ensures scrolling to the new place works even if ID changes
-                  setLastAddedPlaceId(prev =>
-                    prev === eventId ? realId : prev,
+                  if (
+                    realId &&
+                    !dayToUpdate.places.some(p => p.id === realId)
+                  ) {
+                    const newPlace: Place = {
+                      id: realId,
+                      placeRefId: respVO.placeId,
+                      name: respVO.placeName,
+                      type: categoryMapping(
+                        respVO.placeCategoryId ?? respVO.placeCategory ?? 4,
+                      ),
+                      startTime: parseTime(
+                        respVO.startTime ?? respVO.blockStartTime,
+                      ),
+                      endTime: parseTime(respVO.endTime ?? respVO.blockEndTime),
+                      address: respVO.placeAddress,
+                      rating: respVO.placeRating,
+                      latitude: respVO.yLocation ?? respVO.ylocation ?? 0,
+                      longitude: respVO.xLocation ?? respVO.xlocation ?? 0,
+                      imageUrl: respVO.photoUrl || respVO.placeLink,
+                      categoryId:
+                        respVO.placeCategoryId ?? respVO.placeCategory,
+                    };
+                    dayToUpdate.places = resolveConflictsAndSort([
+                      ...dayToUpdate.places,
+                      newPlace,
+                    ]);
+                  }
+                }
+              }
+            } else if (type === 'update') {
+              if (realId) {
+                const placeIndex = dayToUpdate.places.findIndex(
+                  p => p.id === realId,
+                );
+                if (placeIndex !== -1) {
+                  const parseTime = (time: any) => {
+                    if (typeof time === 'string') return time.substring(0, 5);
+                    if (time && typeof time.hour === 'number') {
+                      return `${String(time.hour).padStart(2, '0')}:${String(
+                        time.minute,
+                      ).padStart(2, '0')}`;
+                    }
+                    return '12:00';
+                  };
+
+                  const existingPlaces = [...dayToUpdate.places];
+                  const newStartTime =
+                    respVO.startTime ?? respVO.blockStartTime;
+                  const newEndTime = respVO.endTime ?? respVO.blockEndTime;
+
+                  existingPlaces[placeIndex] = {
+                    ...existingPlaces[placeIndex],
+                    startTime: newStartTime
+                      ? parseTime(newStartTime)
+                      : existingPlaces[placeIndex].startTime,
+                    endTime: newEndTime
+                      ? parseTime(newEndTime)
+                      : existingPlaces[placeIndex].endTime,
+                    memo: respVO.memo !== undefined ? respVO.memo : existingPlaces[placeIndex].memo,
+                  };
+                  dayToUpdate.places = resolveConflictsAndSort(
+                    existingPlaces,
+                    realId,
                   );
                 }
-                dayToUpdate.places = existingPlaces;
-              } else {
-                // If not found by eventId, maybe it came from another user?
-                // Or maybe we lost the temp ID.
-                // If it's another user's creation, we should see if we already have it (by realId)?
-                // But realId is new. So we add it.
-
-                // Check if place with realId already exists (duplicate check)
-                if (realId && !dayToUpdate.places.some(p => p.id === realId)) {
-                  // Construct Place from VO
-                  const newPlace: Place = {
-                    id: realId,
-                    placeRefId: respVO.placeId,
-                    name: respVO.placeName,
-                    type: respVO.placeTheme || '기타',
-                    startTime: respVO.startTime
-                      ? respVO.startTime.substring(0, 5)
-                      : '12:00',
-                    endTime: respVO.endTime
-                      ? respVO.endTime.substring(0, 5)
-                      : '13:00',
-                    address: respVO.placeAddress,
-                    rating: respVO.placeRating,
-                    latitude: respVO.yLocation || respVO.ylocation, // Check case sensitivity
-                    longitude: respVO.xLocation || respVO.xlocation,
-                    imageUrl: respVO.placeLink,
-                    categoryId: respVO.placeCategoryId,
-                  };
-                  dayToUpdate.places = resolveConflictsAndSort([
-                    ...dayToUpdate.places,
-                    newPlace,
-                  ]);
-                }
               }
-            }
-          } else if (type === 'update') {
-            if (realId) {
-              const placeIndex = dayToUpdate.places.findIndex(
-                p => p.id === realId,
-              );
-              if (placeIndex !== -1) {
-                // Update existing place
-                const existingPlaces = [...dayToUpdate.places];
-                existingPlaces[placeIndex] = {
-                  ...existingPlaces[placeIndex],
-                  startTime: respVO.startTime
-                    ? respVO.startTime.substring(0, 5)
-                    : existingPlaces[placeIndex].startTime,
-                  endTime: respVO.endTime
-                    ? respVO.endTime.substring(0, 5)
-                    : existingPlaces[placeIndex].endTime,
-                  // Potential other updates? For now focus on time.
-                };
-                // Re-sort/resolve not strictly needed if we trust the update, but good to keep consistency
-                dayToUpdate.places = resolveConflictsAndSort(
-                  existingPlaces,
-                  realId,
+            } else if (type === 'delete') {
+              if (realId) {
+                dayToUpdate.places = dayToUpdate.places.filter(
+                  p => p.id !== realId,
                 );
-              } else {
-                // Maybe added by someone else and we missed create?
-                // For now, ignore or fetch?
               }
             }
-          } else if (type === 'delete') {
-            if (realId) {
-              dayToUpdate.places = dayToUpdate.places.filter(
-                p => p.id !== realId,
-              );
-            }
-          }
 
-          updatedDays[dayIndex] = dayToUpdate;
-          return updatedDays;
+            updatedDays[dayIndex] = dayToUpdate;
+            return updatedDays;
+          });
         });
       }
     },
@@ -340,7 +404,11 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       sendMessage(
         'create',
         'timetableplaceblock',
-        mapToTimetablePlaceBlockDto(finalPlace, dayToUpdate.timetableId),
+        mapToTimetablePlaceBlockDto(
+          finalPlace,
+          dayToUpdate.timetableId,
+          dayToUpdate.date.toISOString().split('T')[0],
+        ),
         newId, // Pass eventId
       );
     }
@@ -368,7 +436,11 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       sendMessage(
         'delete',
         'timetableplaceblock',
-        mapToTimetablePlaceBlockDto(placeToDelete, dayToUpdate.timetableId),
+        mapToTimetablePlaceBlockDto(
+          placeToDelete,
+          dayToUpdate.timetableId,
+          dayToUpdate.date.toISOString().split('T')[0],
+        ),
       );
     }
   };
@@ -402,7 +474,43 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       sendMessage(
         'update',
         'timetableplaceblock',
-        mapToTimetablePlaceBlockDto(finalPlace, dayToUpdate.timetableId),
+        mapToTimetablePlaceBlockDto(
+          finalPlace,
+          dayToUpdate.timetableId,
+          dayToUpdate.date.toISOString().split('T')[0],
+        ),
+      );
+    }
+  };
+
+  const updatePlaceMemo = (
+    dayIndex: number,
+    placeId: string,
+    memo: string,
+  ) => {
+    if (days.length === 0 || !days[dayIndex]) {
+      return;
+    }
+    const updatedDays = [...days];
+    const dayToUpdate = {...updatedDays[dayIndex]};
+
+    dayToUpdate.places = dayToUpdate.places.map(p =>
+      p.id === placeId ? {...p, memo} : {...p},
+    );
+    updatedDays[dayIndex] = dayToUpdate;
+
+    setDays(updatedDays);
+
+    const finalPlace = dayToUpdate.places.find(p => p.id === placeId);
+    if (finalPlace) {
+      sendMessage(
+        'update',
+        'timetableplaceblock',
+        mapToTimetablePlaceBlockDto(
+          finalPlace,
+          dayToUpdate.timetableId,
+          dayToUpdate.date.toISOString().split('T')[0],
+        ),
       );
     }
   };
@@ -417,6 +525,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         addPlaceToDay,
         deletePlaceFromDay,
         updatePlaceTimes,
+        updatePlaceMemo,
       }}
     >
       {children}

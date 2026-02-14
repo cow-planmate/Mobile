@@ -105,30 +105,20 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         console.log('WebSocket Connected:', frame);
         setIsConnected(true);
 
-        const topics = [
-          `/topic/plan/${planId}/update/plan`,
-          `/topic/plan/${planId}/create/timetable`,
-          `/topic/plan/${planId}/update/timetable`,
-          `/topic/plan/${planId}/delete/timetable`,
-          `/topic/plan/${planId}/create/timetableplaceblock`,
-          `/topic/plan/${planId}/update/timetableplaceblock`,
-          `/topic/plan/${planId}/delete/timetableplaceblock`,
-        ];
+        const topics = [`/topic/${planId}`];
 
         topics.forEach(topic => {
           client.subscribe(topic, (message: IMessage) => {
             try {
               const body = JSON.parse(message.body);
               console.log(`[Data Recv] ${topic}:`, body);
-              // Extract action/type from topic to help listeners
-              // topic format: /topic/plan/{planId}/{action}/{target}
-              const parts = topic.split('/');
-              const action = parts[4];
-              const target = parts[5];
+              // Web format: { entity: "...", action: "...", ... }
+              const entity = body.entity;
+              const action = body.action;
 
               notifyListeners({
                 type: action,
-                target: target,
+                target: entity,
                 data: body,
                 eventId: body.eventId,
               });
@@ -200,25 +190,37 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     let payload: any = {};
-    const destination = `/app/plan/${currentPlanId.current}/${action}/${targetName}`;
+    const destination = `/app/${currentPlanId.current}`;
 
-    // Map target data to the structure expected by Backend WRequest/DTOs
+    // Web uses "entity" and "timeTablePlaceBlockDtos" (list)
     switch (targetName) {
       case 'timetableplaceblock':
-        payload = { timetablePlaceBlockVO: target };
+        payload = {
+          entity: 'timetableplaceblock',
+          action: action,
+          timeTablePlaceBlockDtos: Array.isArray(target) ? target : [target],
+        };
         break;
       case 'timetable':
-        // WTimetableRequest expects 'timetableVOs' as a list
-        payload = { timetableVOs: Array.isArray(target) ? target : [target] };
-        break;
-      case 'presence':
-        payload = { userDayIndexVO: Array.isArray(target) ? target : [target] };
+        payload = {
+          entity: 'timetable',
+          action: action,
+          timeTableDtos: Array.isArray(target) ? target : [target],
+        };
         break;
       case 'plan':
-        payload = target;
+        payload = {
+          entity: 'plan',
+          action: action,
+          planDtos: Array.isArray(target) ? target : [target],
+        };
         break;
       default:
-        payload = { target };
+        payload = {
+          entity: targetName,
+          action: action,
+          target,
+        };
     }
 
     if (eventId) {

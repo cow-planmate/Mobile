@@ -11,11 +11,10 @@ import { API_URL } from '@env';
 import { AppStackParamList } from '../../../navigation/types';
 import { Place } from '../../../components/itinerary/TimelineItem';
 import { useWebSocket } from '../../../contexts/WebSocketContext';
+import { useItinerary } from '../../../contexts/ItineraryContext';
+import { usePlaces } from '../../../contexts/PlacesContext';
 import { useItineraryEditor } from '../../../hooks/useItineraryEditor';
-import {
-  timeToMinutes,
-  dateToTime,
-} from '../../../utils/timeUtils';
+import { timeToMinutes, dateToTime } from '../../../utils/timeUtils';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { styles } from './ItineraryEditorScreen.styles';
 
@@ -28,15 +27,16 @@ interface PlaceVO {
   name: string;
   formatted_address: string;
   rating: number;
-  xlocation: number;
-  ylocation: number;
+  xLocation: number;
+  yLocation: number;
+  photoUrl: string;
   iconUrl: string;
 }
 
 const getCategoryType = (id: number): '관광지' | '숙소' | '식당' | '기타' => {
-  if ([12, 14, 15, 28].includes(id)) return '관광지';
-  if (id === 32) return '숙소';
-  if (id === 39) return '식당';
+  if ([0, 12, 14, 15, 28].includes(id)) return '관광지';
+  if (id === 1 || id === 32) return '숙소';
+  if (id === 2 || id === 39) return '식당';
   return '기타';
 };
 
@@ -62,11 +62,20 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     selectedDay,
   } = useItineraryEditor(route, navigation);
 
+  const { updatePlaceMemo } = useItinerary();
   const { connect, onlineUsers, sendMessage } = useWebSocket();
+  const {
+    fetchAllRecommendations,
+    resetPlaces,
+  } = usePlaces();
   const planId = route.params.planId;
   const destination = route.params.destination;
 
   const [isScheduleEditVisible, setScheduleEditVisible] = useState(false);
+
+  // Detail popup state
+  const [detailPlace, setDetailPlace] = useState<Place | null>(null);
+  const [isDetailVisible, setDetailVisible] = useState(false);
 
   // AddPlace logic state
   const [searchQuery, setSearchQuery] = useState('');
@@ -81,6 +90,39 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       connect(planId);
     }
   }, [planId, connect]);
+
+  // Fetch place recommendations via PlacesContext
+  useEffect(() => {
+    if (planId) {
+      fetchAllRecommendations(planId);
+    }
+    return () => {
+      resetPlaces();
+    };
+  }, [planId]);
+
+  // Detail popup handlers
+  const handleOpenDetail = useCallback((place: Place) => {
+    setDetailPlace(place);
+    setDetailVisible(true);
+  }, []);
+
+  const handleUpdateMemo = useCallback(
+    (memo: string) => {
+      if (detailPlace) {
+        updatePlaceMemo(selectedDayIndex, detailPlace.id, memo);
+      }
+    },
+    [detailPlace, selectedDayIndex, updatePlaceMemo],
+  );
+
+  const handleDeleteFromDetail = useCallback(() => {
+    if (detailPlace) {
+      handleDeletePlace(detailPlace.id);
+      setDetailVisible(false);
+      setDetailPlace(null);
+    }
+  }, [detailPlace, handleDeletePlace]);
 
   const fetchPlaces = useCallback(
     async (
@@ -103,22 +145,24 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           return;
         }
 
-        const url = `${API_URL}/api/plan/place/${encodeURIComponent(query)}`;
+        const url = `${API_URL}/api/plan/${planId}/place/${encodeURIComponent(
+          query,
+        )}`;
         const response = await axios.get(url);
 
         if (response.data && response.data.places) {
           const mappedPlaces: Place[] = response.data.places.map(
             (p: PlaceVO) => ({
               id: p.placeId,
+              placeRefId: p.placeId,
               categoryId: p.categoryId,
               name: p.name,
               type: categoryOverride || getCategoryType(p.categoryId),
               address: p.formatted_address,
               rating: p.rating,
-              imageUrl: p.iconUrl,
-              latitude: p.ylocation,
-              longitude: p.xlocation,
-              time: '10:00',
+              imageUrl: p.photoUrl || p.iconUrl,
+              latitude: p.yLocation,
+              longitude: p.xLocation,
               startTime: '10:00',
               endTime: '11:00',
             }),
@@ -363,6 +407,16 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       isSearching={isSearching}
       handleSearch={handleSearch}
       filteredPlaces={filteredPlaces}
+      planId={planId ?? null}
+      detailPlace={detailPlace}
+      isDetailVisible={isDetailVisible}
+      onOpenDetail={handleOpenDetail}
+      onCloseDetail={() => {
+        setDetailVisible(false);
+        setDetailPlace(null);
+      }}
+      onUpdateMemo={handleUpdateMemo}
+      onDeleteFromDetail={handleDeleteFromDetail}
     />
   );
 }

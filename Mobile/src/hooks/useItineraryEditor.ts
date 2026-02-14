@@ -63,39 +63,56 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
           const newDays: Day[] = timetables.map((tt: any, index: number) => {
             const date = new Date(tt.date);
 
+            const ttId = tt.timetableId ?? tt.timeTableId;
             const dayPlaces = placeBlocks
-              .filter((pb: any) => pb.timeTableId === tt.timetableId)
-              .map((pb: any) => ({
-                id: pb.blockId?.toString() || pb.placeId, // Prefer blockId as internal ID
-                placeRefId: pb.placeId,
-                name: pb.placeName,
-                type: pb.placeTheme || '기타', // Mapping might need adjustment based on category ID
-                startTime:
-                  typeof pb.startTime === 'string'
-                    ? pb.startTime.substring(0, 5)
-                    : pb.startTime && pb.startTime.hour !== undefined
-                    ? `${String(pb.startTime.hour).padStart(2, '0')}:${String(
-                        pb.startTime.minute,
-                      ).padStart(2, '0')}`
-                    : '12:00',
-                endTime:
-                  typeof pb.endTime === 'string'
-                    ? pb.endTime.substring(0, 5)
-                    : pb.endTime && pb.endTime.hour !== undefined
-                    ? `${String(pb.endTime.hour).padStart(2, '0')}:${String(
-                        pb.endTime.minute,
-                      ).padStart(2, '0')}`
-                    : '13:00',
-                address: pb.placeAddress,
-                rating: pb.placeRating,
-                latitude: pb.ylocation,
-                longitude: pb.xlocation,
-                imageUrl: pb.placeLink, // Check if image url is here or separate
-                categoryId: pb.placeCategory,
-              }));
+              .filter((pb: any) => (pb.timeTableId ?? pb.timetableId) === ttId)
+              .map((pb: any) => {
+                const parseTime = (time: any) => {
+                  if (typeof time === 'string') return time.substring(0, 5);
+                  if (time && typeof time.hour === 'number') {
+                    return `${String(time.hour).padStart(2, '0')}:${String(
+                      time.minute,
+                    ).padStart(2, '0')}`;
+                  }
+                  return '12:00';
+                };
+
+                const categoryId = pb.placeCategoryId ?? pb.placeCategory ?? 4;
+                const categoryMapping = (
+                  id: number,
+                ):
+                  | '관광지'
+                  | '숙소'
+                  | '식당'
+                  | '직접 추가'
+                  | '검색'
+                  | '기타' => {
+                  if ([0, 12, 14, 15, 28].includes(id)) return '관광지';
+                  if (id === 1 || id === 32) return '숙소';
+                  if (id === 2 || id === 39) return '식당';
+                  if (id === 3) return '직접 추가';
+                  if (id === 4) return '검색';
+                  return '기타';
+                };
+
+                return {
+                  id: pb.blockId?.toString() || pb.placeId,
+                  placeRefId: pb.placeId,
+                  name: pb.placeName,
+                  type: categoryMapping(categoryId),
+                  startTime: parseTime(pb.startTime ?? pb.blockStartTime),
+                  endTime: parseTime(pb.endTime ?? pb.blockEndTime),
+                  address: pb.placeAddress,
+                  rating: pb.placeRating,
+                  latitude: pb.yLocation ?? pb.ylocation ?? 0,
+                  longitude: pb.xLocation ?? pb.xlocation ?? 0,
+                  imageUrl: pb.photoUrl || pb.placeLink || '',
+                  categoryId: categoryId,
+                };
+              });
 
             return {
-              timetableId: tt.timetableId,
+              timetableId: ttId,
               date: date,
               dayNumber: index + 1,
               places: dayPlaces,
