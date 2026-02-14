@@ -117,11 +117,7 @@ interface ItineraryContextType {
     newStartTime: string,
     newEndTime: string,
   ) => void;
-  updatePlaceMemo: (
-    dayIndex: number,
-    placeId: string,
-    memo: string,
-  ) => void;
+  updatePlaceMemo: (dayIndex: number, placeId: string, memo: string) => void;
 }
 
 const ItineraryContext = createContext<ItineraryContextType | undefined>(
@@ -152,11 +148,16 @@ const normalizeCategoryId = (
   if (id === 32) return 1; // 숙소
   if (id === 39) return 2; // 식당
   switch (type) {
-    case '관광지': return 0;
-    case '숙소': return 1;
-    case '식당': return 2;
-    case '직접 추가': return 3;
-    default: return 4;
+    case '관광지':
+      return 0;
+    case '숙소':
+      return 1;
+    case '식당':
+      return 2;
+    case '직접 추가':
+      return 3;
+    default:
+      return 4;
   }
 };
 
@@ -350,7 +351,10 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                     endTime: newEndTime
                       ? parseTime(newEndTime)
                       : existingPlaces[placeIndex].endTime,
-                    memo: respVO.memo !== undefined ? respVO.memo : existingPlaces[placeIndex].memo,
+                    memo:
+                      respVO.memo !== undefined
+                        ? respVO.memo
+                        : existingPlaces[placeIndex].memo,
                   };
                   dayToUpdate.places = resolveConflictsAndSort(
                     existingPlaces,
@@ -504,19 +508,15 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     }
   };
 
-  const updatePlaceMemo = (
-    dayIndex: number,
-    placeId: string,
-    memo: string,
-  ) => {
+  const updatePlaceMemo = (dayIndex: number, placeId: string, memo: string) => {
     if (days.length === 0 || !days[dayIndex]) {
       return;
     }
     const updatedDays = [...days];
-    const dayToUpdate = {...updatedDays[dayIndex]};
+    const dayToUpdate = { ...updatedDays[dayIndex] };
 
     dayToUpdate.places = dayToUpdate.places.map(p =>
-      p.id === placeId ? {...p, memo} : {...p},
+      p.id === placeId ? { ...p, memo } : { ...p },
     );
     updatedDays[dayIndex] = dayToUpdate;
 

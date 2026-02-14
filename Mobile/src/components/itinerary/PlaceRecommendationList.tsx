@@ -1,4 +1,4 @@
-import React, {useState, useCallback, useEffect, useRef} from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,9 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-import {Place} from './TimelineItem';
-import {usePlaces} from '../../contexts/PlacesContext';
-import {PlaceVO} from '../../api/trips';
+import { Place } from './TimelineItem';
+import { usePlaces } from '../../contexts/PlacesContext';
+import { PlaceVO } from '../../api/trips';
 
 // ────────────────────────────────────────────────
 // Category helpers (matching Frontend)
@@ -28,7 +28,7 @@ const getCategoryType = (
   return '기타';
 };
 
-const CATEGORY_COLORS: {[key: string]: string} = {
+const CATEGORY_COLORS: { [key: string]: string } = {
   관광지: '#84cc16',
   숙소: '#f97316',
   식당: '#3b82f6',
@@ -56,14 +56,21 @@ const normalizeCategoryId = (
   if (id === 32) return 1;
   if (id === 39) return 2;
   switch (type) {
-    case '관광지': return 0;
-    case '숙소': return 1;
-    case '식당': return 2;
-    default: return 4;
+    case '관광지':
+      return 0;
+    case '숙소':
+      return 1;
+    case '식당':
+      return 2;
+    default:
+      return 4;
   }
 };
 
-function placeVOToPlace(p: PlaceVO, tabOverride?: string): Omit<Place, 'startTime' | 'endTime'> {
+function placeVOToPlace(
+  p: PlaceVO,
+  tabOverride?: string,
+): Omit<Place, 'startTime' | 'endTime'> {
   const type = tabOverride
     ? (tabOverride as Place['type'])
     : getCategoryType(p.categoryId);
@@ -191,7 +198,9 @@ export default function PlaceRecommendationList({
 
   const handleLoadMore = () => {
     if (!hasMoreData || isLoading) return;
-    const fieldMap: {[key: string]: 'tour' | 'lodging' | 'restaurant' | 'search'} = {
+    const fieldMap: {
+      [key: string]: 'tour' | 'lodging' | 'restaurant' | 'search';
+    } = {
       관광지: 'tour',
       숙소: 'lodging',
       식당: 'restaurant',
@@ -201,7 +210,7 @@ export default function PlaceRecommendationList({
   };
 
   // ─── Render ───
-  const renderPlaceItem = ({item}: {item: PlaceVO}) => {
+  const renderPlaceItem = ({ item }: { item: PlaceVO }) => {
     const type = getCategoryType(item.categoryId);
     const color = CATEGORY_COLORS[type] || CATEGORY_COLORS['기타'];
 
@@ -210,7 +219,7 @@ export default function PlaceRecommendationList({
         {/* Image */}
         {item.photoUrl || item.iconUrl ? (
           <Image
-            source={{uri: item.photoUrl || item.iconUrl}}
+            source={{ uri: item.photoUrl || item.iconUrl }}
             style={plStyles.placeImage}
             resizeMode="cover"
           />
@@ -229,8 +238,9 @@ export default function PlaceRecommendationList({
           </Text>
           <View style={plStyles.metaRow}>
             <View
-              style={[plStyles.typeBadge, {backgroundColor: color + '20'}]}>
-              <Text style={[plStyles.typeBadgeText, {color}]}>{type}</Text>
+              style={[plStyles.typeBadge, { backgroundColor: color + '20' }]}
+            >
+              <Text style={[plStyles.typeBadgeText, { color }]}>{type}</Text>
             </View>
             {item.rating > 0 && (
               <Text style={plStyles.ratingText}>⭐ {item.rating}</Text>
@@ -244,7 +254,8 @@ export default function PlaceRecommendationList({
         {/* Add Button */}
         <TouchableOpacity
           style={plStyles.addButton}
-          onPress={() => onAddPlace(placeVOToPlace(item, type))}>
+          onPress={() => onAddPlace(placeVOToPlace(item, type))}
+        >
           <Text style={plStyles.addButtonText}>추가</Text>
         </TouchableOpacity>
       </View>
@@ -263,7 +274,8 @@ export default function PlaceRecommendationList({
       return (
         <TouchableOpacity
           style={plStyles.loadMoreButton}
-          onPress={handleLoadMore}>
+          onPress={handleLoadMore}
+        >
           <Text style={plStyles.loadMoreText}>더 불러오기</Text>
         </TouchableOpacity>
       );
@@ -292,9 +304,7 @@ export default function PlaceRecommendationList({
         <TextInput
           style={plStyles.searchInput}
           placeholder={
-            destination
-              ? `${destination} 근처 장소 검색`
-              : '장소를 검색하세요'
+            destination ? `${destination} 근처 장소 검색` : '장소를 검색하세요'
           }
           placeholderTextColor="#8E8E93"
           value={searchQuery}
@@ -304,7 +314,8 @@ export default function PlaceRecommendationList({
         />
         <TouchableOpacity
           onPress={handleSearchSubmit}
-          style={plStyles.searchButton}>
+          style={plStyles.searchButton}
+        >
           <Text style={plStyles.searchButtonIcon}>🔍</Text>
         </TouchableOpacity>
       </View>
@@ -315,15 +326,14 @@ export default function PlaceRecommendationList({
           <TouchableOpacity
             key={tab}
             onPress={() => setSelectedTab(tab)}
-            style={[
-              plStyles.tab,
-              selectedTab === tab && plStyles.tabSelected,
-            ]}>
+            style={[plStyles.tab, selectedTab === tab && plStyles.tabSelected]}
+          >
             <Text
               style={[
                 plStyles.tabText,
                 selectedTab === tab && plStyles.tabTextSelected,
-              ]}>
+              ]}
+            >
               {tab}
             </Text>
           </TouchableOpacity>
