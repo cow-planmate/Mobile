@@ -425,7 +425,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setLastAddedPlaceId(newId);
 
     const finalPlace = dayToUpdate.places.find(p => p.id === newId);
-    if (finalPlace) {
+    if (finalPlace && dayToUpdate.timetableId) {
       sendMessage(
         'create',
         'timetableplaceblock',
@@ -457,7 +457,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setDays(updatedDays);
     setLastAddedPlaceId(null);
 
-    if (placeToDelete) {
+    if (placeToDelete && dayToUpdate.timetableId) {
       sendMessage(
         'delete',
         'timetableplaceblock',
@@ -495,7 +495,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setLastAddedPlaceId(null);
 
     const finalPlace = dayToUpdate.places.find(p => p.id === placeId);
-    if (finalPlace) {
+    if (finalPlace && dayToUpdate.timetableId) {
       sendMessage(
         'update',
         'timetableplaceblock',
@@ -523,7 +523,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setDays(updatedDays);
 
     const finalPlace = dayToUpdate.places.find(p => p.id === placeId);
-    if (finalPlace) {
+    if (finalPlace && dayToUpdate.timetableId) {
       sendMessage(
         'update',
         'timetableplaceblock',

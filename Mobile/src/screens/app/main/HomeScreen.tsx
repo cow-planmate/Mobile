@@ -7,7 +7,6 @@ import { AppStackParamList } from '../../../navigation/types';
 import { useAuth } from '../../../contexts/AuthContext';
 import { OptionType } from '../../../components/common/SelectionModal';
 import { HomeScreenView } from './HomeScreen.view';
-import { addDraftPlan } from '../../../utils/draftPlanStorage';
 
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
@@ -129,7 +128,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     return `${formatDate(startDate)} ~ ${formatDate(endDate)}`;
   };
 
-  const handleCreateItinerary = async () => {
+  const handleCreateItinerary = () => {
     if (!isFormValid) {
       setShowErrors(true);
       return;
@@ -145,50 +144,18 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
     setShowErrors(false);
 
-    try {
-      setLoading(true);
-
-      const dates = [];
-      let currentDate = new Date(startDate!);
-      const end = new Date(endDate!);
-
-      while (currentDate <= end) {
-        dates.push(currentDate.toISOString().split('T')[0]);
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-
-      const payload = {
-        departure: departure || 'SEOUL',
-        travelId: travelId || 0,
-        dates,
-        adultCount: adults || 1,
-        childCount: children || 0,
-        transportation: transport === '자동차' ? 1 : 0,
-      };
-
-      const response = await axios.post(`${API_URL}/api/plan`, payload);
-      const { planId } = response.data;
-
-      // Mark as draft — plan won't appear in MyPage until "일정 생성 완료" is clicked
-      await addDraftPlan(planId);
-
-      navigation.navigate('ItineraryEditor', {
-        planId,
-        departure: departure || 'SEOUL',
-        destination,
-        travelId: travelId || 0,
-        startDate: startDate?.toISOString() ?? new Date().toISOString(),
-        endDate: endDate?.toISOString() ?? new Date().toISOString(),
-        adults: adults ?? 1,
-        children: children ?? 0,
-        transport: transport || '대중교통',
-      });
-    } catch (error: any) {
-      console.error('Plan creation failed:', error);
-      Alert.alert('오류', '일정 생성에 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
+    // Navigate to editor without creating plan on server.
+    // Plan will only be created when "일정 생성 완료" is clicked.
+    navigation.navigate('ItineraryEditor', {
+      departure: departure || 'SEOUL',
+      destination,
+      travelId: travelId || 0,
+      startDate: startDate?.toISOString() ?? new Date().toISOString(),
+      endDate: endDate?.toISOString() ?? new Date().toISOString(),
+      adults: adults ?? 1,
+      children: children ?? 0,
+      transport: transport || '대중교통',
+    });
   };
 
   const openSearchModal = (field: 'departure' | 'destination') => {

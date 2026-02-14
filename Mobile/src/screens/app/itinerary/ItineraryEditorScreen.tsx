@@ -15,7 +15,6 @@ import { useItinerary } from '../../../contexts/ItineraryContext';
 import { usePlaces } from '../../../contexts/PlacesContext';
 import { useItineraryEditor } from '../../../hooks/useItineraryEditor';
 import { timeToMinutes, dateToTime } from '../../../utils/timeUtils';
-import { removeDraftPlan } from '../../../utils/draftPlanStorage';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { styles } from './ItineraryEditorScreen.styles';
 
@@ -89,7 +88,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   const { updatePlaceMemo } = useItinerary();
   const { connect, onlineUsers, sendMessage } = useWebSocket();
-  const { fetchAllRecommendations, resetPlaces } = usePlaces();
+  const {
+    fetchAllRecommendations,
+    fetchAllRecommendationsNoAuth,
+    resetPlaces,
+  } = usePlaces();
   const planId = route.params.planId;
   const destination = route.params.destination;
 
@@ -117,11 +120,14 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   useEffect(() => {
     if (planId) {
       fetchAllRecommendations(planId);
+    } else if (destination) {
+      // No planId yet — use NoAuth API with destination name
+      fetchAllRecommendationsNoAuth(destination, destination);
     }
     return () => {
       resetPlaces();
     };
-  }, [planId]);
+  }, [planId, destination]);
 
   // Detail popup handlers
   const handleOpenDetail = useCallback((place: Place) => {
@@ -155,22 +161,43 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       try {
         // When no query and a category tab is selected, use the category-specific
         // recommendation API (aligned with Frontend's approach)
-        if (!queryTerm && planId && categoryOverride) {
+        if (!queryTerm && categoryOverride) {
           let endpoint = '';
           let forcedCategoryId = 4;
-          switch (categoryOverride) {
-            case '관광지':
-              endpoint = `${API_URL}/api/plan/${planId}/tour`;
-              forcedCategoryId = 0;
-              break;
-            case '숙소':
-              endpoint = `${API_URL}/api/plan/${planId}/lodging`;
-              forcedCategoryId = 1;
-              break;
-            case '식당':
-              endpoint = `${API_URL}/api/plan/${planId}/restaurant`;
-              forcedCategoryId = 2;
-              break;
+
+          if (planId) {
+            // Authenticated endpoint
+            switch (categoryOverride) {
+              case '관광지':
+                endpoint = `${API_URL}/api/plan/${planId}/tour`;
+                forcedCategoryId = 0;
+                break;
+              case '숙소':
+                endpoint = `${API_URL}/api/plan/${planId}/lodging`;
+                forcedCategoryId = 1;
+                break;
+              case '식당':
+                endpoint = `${API_URL}/api/plan/${planId}/restaurant`;
+                forcedCategoryId = 2;
+                break;
+            }
+          } else if (destination) {
+            // NoAuth endpoint — plan not yet created on server
+            const encodedDest = encodeURIComponent(destination);
+            switch (categoryOverride) {
+              case '관광지':
+                endpoint = `${API_URL}/api/plan/tour/${encodedDest}/${encodedDest}`;
+                forcedCategoryId = 0;
+                break;
+              case '숙소':
+                endpoint = `${API_URL}/api/plan/lodging/${encodedDest}/${encodedDest}`;
+                forcedCategoryId = 1;
+                break;
+              case '식당':
+                endpoint = `${API_URL}/api/plan/restaurant/${encodedDest}/${encodedDest}`;
+                forcedCategoryId = 2;
+                break;
+            }
           }
 
           if (endpoint) {
@@ -212,9 +239,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           return;
         }
 
-        const url = `${API_URL}/api/plan/${planId}/place/${encodeURIComponent(
-          query,
-        )}`;
+        // Use planId-based or NoAuth search endpoint
+        const url = planId
+          ? `${API_URL}/api/plan/${planId}/place/${encodeURIComponent(query)}`
+          : `${API_URL}/api/plan/place/${encodeURIComponent(query)}`;
         const response = await axios.get(url);
 
         if (response.data && response.data.places) {
@@ -448,11 +476,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   };
 
   const onComplete = () => {
-    // Remove draft status — plan will now appear in MyPage
-    if (route.params.planId) {
-      removeDraftPlan(route.params.planId);
-    }
-
     navigation.navigate('ItineraryView', {
       days,
       tripName,

@@ -14,7 +14,6 @@ import { Place } from '../../../components/itinerary/TimelineItem';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MINUTE_HEIGHT } from './ItineraryViewScreen.styles';
 import { Day } from '../../../contexts/ItineraryContext';
-import { removeDraftPlan } from '../../../utils/draftPlanStorage';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
 
 // DTO Interfaces
@@ -290,13 +289,13 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   };
 
   const handleConfirm = async () => {
-    // Ensure plan is no longer marked as draft
-    if (planId) {
-      await removeDraftPlan(planId);
-    }
+    const token = await AsyncStorage.getItem('accessToken');
+    const config = token
+      ? { headers: { Authorization: `Bearer ${token}` } }
+      : {};
 
     if (planId) {
-      // Check if any places have temporary IDs (not yet synced to server)
+      // Existing plan — sync any unsynced places as a fallback
       const hasUnsyncedPlaces = days.some(day =>
         day.places.some(
           place =>
@@ -305,7 +304,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       );
 
       if (hasUnsyncedPlaces && days.some(d => d.places.length > 0)) {
-        // Some places haven't been confirmed by the server — do a full REST save
         try {
           const { timetableVOs, allPlaces } = buildPlaceBlockPayload(days);
 
@@ -322,11 +320,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
             timetablePlaceBlocks: allPlaces,
           };
 
-          const token = await AsyncStorage.getItem('accessToken');
-          const config = token
-            ? { headers: { Authorization: `Bearer ${token}` } }
-            : {};
-
           await axios.post(`${API_URL}/api/plan/create`, payload, config);
         } catch (error) {
           console.warn(
@@ -342,29 +335,75 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       return;
     }
 
-    // No planId: create a brand new plan via REST
+    // No planId: create plan with all data in a single call (matches Frontend NoLoginSave)
     try {
-      const { timetableVOs, allPlaces } = buildPlaceBlockPayload(days);
+      const dates = days.map(d => d.date.toISOString().split('T')[0]);
+      if (dates.length === 0) {
+        Alert.alert('오류', '저장할 일정이 없습니다.');
+        return;
+      }
 
-      const payload = {
-        planFrame: {
-          planId: 0,
-          departure: departure || 'SEOUL',
-          transportationCategoryId: transport === '자동차' ? 1 : 0,
-          travelId: travelId || 1,
-          adultCount: adults || 1,
-          childCount: children || 0,
+      // Build timetables from local days
+      const timetableVOs = days.map(day => ({
+        date: day.date.toISOString().split('T')[0],
+        timeTableStartTime: '09:00:00',
+        timeTableEndTime: '22:00:00',
+      }));
+
+      // Build place blocks with date field for backend matching
+      const allBlocks = days.flatMap(day => {
+        const dateStr = day.date.toISOString().split('T')[0];
+        return day.places.map(place => {
+          const categoryId = normalizeCategoryId(
+            place.categoryId,
+            place.type,
+          );
+          const startTime =
+            place.startTime.length === 5
+              ? place.startTime + ':00'
+              : place.startTime;
+          const endTime =
+            place.endTime.length === 5
+              ? place.endTime + ':00'
+              : place.endTime;
+          return {
+            blockId: null,
+            timeTableId: 0,
+            date: dateStr,
+            placeCategoryId: categoryId,
+            placeName: place.name || '',
+            placeRating: place.rating || 0,
+            placeAddress: place.address || '',
+            placeLink: place.place_url || '',
+            placeId: place.placeRefId || '',
+            photoUrl: place.imageUrl || null,
+            memo: place.memo || '',
+            startTime,
+            endTime,
+            blockStartTime: startTime,
+            blockEndTime: endTime,
+            xLocation: place.longitude || 0,
+            yLocation: place.latitude || 0,
+          };
+        });
+      });
+
+      await axios.post(
+        `${API_URL}/api/plan/create`,
+        {
+          planFrame: {
+            planName: tripName || '나의 일정',
+            departure: departure || 'SEOUL',
+            transportationCategoryId: transport === '자동차' ? 1 : 0,
+            travelId: travelId || 1,
+            adultCount: adults || 1,
+            childCount: children || 0,
+          },
+          timetables: timetableVOs,
+          timetablePlaceBlocks: allBlocks,
         },
-        timetables: timetableVOs,
-        timetablePlaceBlocks: allPlaces,
-      };
-
-      const token = await AsyncStorage.getItem('accessToken');
-      const config = token
-        ? { headers: { Authorization: `Bearer ${token}` } }
-        : {};
-
-      await axios.post(`${API_URL}/api/plan/create`, payload, config);
+        config,
+      );
 
       Alert.alert('성공', '일정이 저장되었습니다.', [
         { text: '확인', onPress: () => navigation.popToTop() },
