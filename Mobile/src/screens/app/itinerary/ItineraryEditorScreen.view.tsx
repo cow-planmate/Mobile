@@ -353,7 +353,13 @@ const TimelineComponent = React.memo(
     }
   >(
     (
-      { selectedDay, onDeletePlace, onEditPlaceTime, onUpdatePlaceTimes, onPressPlace },
+      {
+        selectedDay,
+        onDeletePlace,
+        onEditPlaceTime,
+        onUpdatePlaceTimes,
+        onPressPlace,
+      },
       ref,
     ) => {
       const { gridHours, offsetMinutes } = React.useMemo(() => {
@@ -547,8 +553,8 @@ export interface ItineraryEditorScreenViewProps {
   isDetailVisible: boolean;
   onOpenDetail: (place: Place) => void;
   onCloseDetail: () => void;
-  onUpdateMemo: (memo: string) => void;
-  onDeleteFromDetail: () => void;
+  // onUpdateMemo: (memo: string) => void;
+  // onDeleteFromDetail: () => void;
 }
 
 export default function ItineraryEditorScreenView({
@@ -586,9 +592,9 @@ export default function ItineraryEditorScreenView({
   isDetailVisible,
   onOpenDetail,
   onCloseDetail,
-  onUpdateMemo,
-  onDeleteFromDetail,
-}: ItineraryEditorScreenViewProps) {
+}: // onUpdateMemo,
+// onDeleteFromDetail,
+ItineraryEditorScreenViewProps) {
   if (!selectedDay) {
     return (
       <SafeAreaView style={styles.container}>
@@ -715,7 +721,7 @@ export default function ItineraryEditorScreenView({
         onConfirm={onConfirmScheduleEdit}
       />
 
-      {detailPlace && (
+      {/* {detailPlace && (
         <DetailPopup
           visible={isDetailVisible}
           place={detailPlace}
@@ -723,7 +729,7 @@ export default function ItineraryEditorScreenView({
           onUpdateMemo={onUpdateMemo}
           onDelete={onDeleteFromDetail}
         />
-      )}
+      )} */}
     </SafeAreaView>
   );
 }

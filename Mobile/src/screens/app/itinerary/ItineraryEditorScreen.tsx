@@ -17,6 +17,9 @@ import { useItineraryEditor } from '../../../hooks/useItineraryEditor';
 import { timeToMinutes, dateToTime } from '../../../utils/timeUtils';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { styles } from './ItineraryEditorScreen.styles';
+import ShareModal from '../../../components/itinerary/ShareModal';
+import PlaceEditModal from '../../../components/itinerary/PlaceEditModal';
+import { Calendar, Share as ShareIcon } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
@@ -97,6 +100,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const destination = route.params.destination;
 
   const [isScheduleEditVisible, setScheduleEditVisible] = useState(false);
+  const [isShareModalVisible, setShareModalVisible] = useState(false);
+  const [isPlaceEditModalVisible, setPlaceEditModalVisible] = useState(false);
+  const [editingPlace, setEditingPlace] = useState<any>(null);
 
   // Detail popup state
   const [detailPlace, setDetailPlace] = useState<Place | null>(null);
@@ -132,16 +138,31 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   // Detail popup handlers
   const handleOpenDetail = useCallback((place: Place) => {
     setDetailPlace(place);
-    setDetailVisible(true);
+    setEditingPlace(place);
+    setPlaceEditModalVisible(true);
   }, []);
 
-  const handleUpdateMemo = useCallback(
-    (memo: string) => {
-      if (detailPlace) {
-        updatePlaceMemo(selectedDayIndex, detailPlace.id, memo);
-      }
+  const handlePlaceSave = useCallback(
+    (updatedPlace: any) => {
+      // Ensure times are formatted HH:mm:ss
+      const formatTime = (t: string) => (t.length === 5 ? `${t}:00` : t);
+
+      sendMessage('update', 'timetableplaceblock', {
+        blockId: updatedPlace.id, // Assuming id holds the blockId
+        startTime: formatTime(updatedPlace.startTime),
+        endTime: formatTime(updatedPlace.endTime),
+        memo: updatedPlace.memo,
+        xLocation: updatedPlace.latitude || updatedPlace.xLocation,
+        yLocation: updatedPlace.longitude || updatedPlace.yLocation,
+        placeName: updatedPlace.name,
+        placeAddress: updatedPlace.address,
+        placeCategoryId: updatedPlace.categoryId || 0, // Fallback
+      });
+      setPlaceEditModalVisible(false);
+      setEditingPlace(null);
+      setDetailPlace(null);
     },
-    [detailPlace, selectedDayIndex, updatePlaceMemo],
+    [sendMessage],
   );
 
   const handleDeleteFromDetail = useCallback(() => {
@@ -149,6 +170,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       handleDeletePlace(detailPlace.id);
       setDetailVisible(false);
       setDetailPlace(null);
+      setPlaceEditModalVisible(false); // Also close our new modal if open
+      setEditingPlace(null);
     }
   }, [detailPlace, handleDeletePlace]);
 
@@ -337,37 +360,45 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           </TouchableOpacity>
         ),
       headerRight: () => (
-        <View style={styles.onlineUsersContainer}>
-          {onlineUsers.length > 0 && (
-            <View style={styles.onlineUsersWrapper}>
-              {onlineUsers.slice(0, 3).map((u, i) => (
-                <View
-                  key={u.uid}
-                  style={[
-                    styles.onlineUserAvatar,
-                    { marginLeft: i > 0 ? -10 : 0 },
-                  ]}
-                >
-                  <Text style={styles.onlineUserInitials}>
-                    {u.userNickname?.charAt(0) || '?'}
-                  </Text>
-                </View>
-              ))}
-              {onlineUsers.length > 3 && (
-                <View
-                  style={[
-                    styles.onlineUserAvatar,
-                    styles.moreUsersAvatar,
-                    { marginLeft: -10 },
-                  ]}
-                >
-                  <Text style={styles.moreUsersText}>
-                    +{onlineUsers.length - 3}
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => setShareModalVisible(true)}
+            style={{ marginRight: 10 }}
+          >
+            <ShareIcon size={24} color="#333" />
+          </TouchableOpacity>
+          <View style={styles.onlineUsersContainer}>
+            {onlineUsers.length > 0 && (
+              <View style={styles.onlineUsersWrapper}>
+                {onlineUsers.slice(0, 3).map((u, i) => (
+                  <View
+                    key={u.uid}
+                    style={[
+                      styles.onlineUserAvatar,
+                      { marginLeft: i > 0 ? -10 : 0 },
+                    ]}
+                  >
+                    <Text style={styles.onlineUserInitials}>
+                      {u.userNickname?.charAt(0) || '?'}
+                    </Text>
+                  </View>
+                ))}
+                {onlineUsers.length > 3 && (
+                  <View
+                    style={[
+                      styles.onlineUserAvatar,
+                      styles.moreUsersAvatar,
+                      { marginLeft: -10 },
+                    ]}
+                  >
+                    <Text style={styles.moreUsersText}>
+                      +{onlineUsers.length - 3}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
         </View>
       ),
     });
@@ -491,46 +522,63 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   };
 
   return (
-    <ItineraryEditorScreenView
-      days={days}
-      selectedDayIndex={selectedDayIndex}
-      setSelectedDayIndex={setSelectedDayIndex}
-      tripName={tripName}
-      isTimePickerVisible={isTimePickerVisible}
-      setTimePickerVisible={setTimePickerVisible}
-      editingTime={editingTime}
-      timelineScrollRef={timelineScrollRef}
-      formatDate={formatDate}
-      handleEditTime={handleEditTime}
-      handleUpdatePlaceTimes={handleUpdatePlaceTimes}
-      handleDeletePlace={handleDeletePlace}
-      handleAddPlace={handleAddPlace}
-      selectedDay={selectedDay}
-      onlineUsers={onlineUsers}
-      isScheduleEditVisible={isScheduleEditVisible}
-      setScheduleEditVisible={setScheduleEditVisible}
-      onConfirmScheduleEdit={onConfirmScheduleEdit}
-      onConfirmTimePicker={onConfirmTimePicker}
-      destination={destination || ''}
-      onComplete={onComplete}
-      searchQuery={searchQuery}
-      setSearchQuery={setSearchQuery}
-      selectedTab={selectedTab}
-      setSelectedTab={setSelectedTab}
-      searchResults={searchResults}
-      isSearching={isSearching}
-      handleSearch={handleSearch}
-      filteredPlaces={filteredPlaces}
-      planId={planId ?? null}
-      detailPlace={detailPlace}
-      isDetailVisible={isDetailVisible}
-      onOpenDetail={handleOpenDetail}
-      onCloseDetail={() => {
-        setDetailVisible(false);
-        setDetailPlace(null);
-      }}
-      onUpdateMemo={handleUpdateMemo}
-      onDeleteFromDetail={handleDeleteFromDetail}
-    />
+    <>
+      <ItineraryEditorScreenView
+        days={days}
+        selectedDayIndex={selectedDayIndex}
+        setSelectedDayIndex={setSelectedDayIndex}
+        tripName={tripName}
+        isTimePickerVisible={isTimePickerVisible}
+        setTimePickerVisible={setTimePickerVisible}
+        editingTime={editingTime}
+        timelineScrollRef={timelineScrollRef}
+        formatDate={formatDate}
+        handleEditTime={handleEditTime}
+        handleUpdatePlaceTimes={handleUpdatePlaceTimes}
+        handleDeletePlace={handleDeletePlace}
+        handleAddPlace={handleAddPlace}
+        selectedDay={selectedDay}
+        onlineUsers={onlineUsers}
+        isScheduleEditVisible={isScheduleEditVisible}
+        setScheduleEditVisible={setScheduleEditVisible}
+        onConfirmScheduleEdit={onConfirmScheduleEdit}
+        onConfirmTimePicker={onConfirmTimePicker}
+        destination={destination || ''}
+        onComplete={onComplete}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        selectedTab={selectedTab}
+        setSelectedTab={setSelectedTab}
+        searchResults={searchResults}
+        isSearching={isSearching}
+        handleSearch={handleSearch}
+        filteredPlaces={filteredPlaces}
+        planId={planId ?? null}
+        detailPlace={detailPlace}
+        isDetailVisible={isDetailVisible}
+        onOpenDetail={handleOpenDetail}
+        onCloseDetail={() => {
+          setDetailVisible(false);
+          setDetailPlace(null);
+        }}
+      />
+      <ShareModal
+        visible={isShareModalVisible}
+        onClose={() => setShareModalVisible(false)}
+        planId={planId as number}
+      />
+      {editingPlace && (
+        <PlaceEditModal
+          visible={isPlaceEditModalVisible}
+          place={editingPlace}
+          onClose={() => {
+            setPlaceEditModalVisible(false);
+            setEditingPlace(null);
+          }}
+          onSave={handlePlaceSave}
+          onDelete={handleDeletePlace}
+        />
+      )}
+    </>
   );
 }
