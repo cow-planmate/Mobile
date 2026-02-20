@@ -20,6 +20,9 @@ import {
 } from 'lucide-react-native';
 import CalendarModal from '../../../components/common/CalendarModal';
 import PaxModal from '../../../components/common/PaxModal';
+import NotificationModal, {
+  Invitation,
+} from '../../../components/common/NotificationModal';
 import SelectionModal, {
   OptionType,
 } from '../../../components/common/SelectionModal';
@@ -100,6 +103,11 @@ export interface HomeScreenViewProps {
   isCalendarVisible: boolean;
   isPaxModalVisible: boolean;
   isTransportModalVisible: boolean;
+  isNotificationModalVisible: boolean;
+  pendingRequestList: Invitation[];
+  onCloseNotificationModal: () => void;
+  onAcceptNotification: (requestId: number) => void;
+  onRejectNotification: (requestId: number) => void;
   fieldToUpdate: 'departure' | 'destination';
   startDate?: Date | null;
   endDate?: Date | null;
@@ -157,6 +165,11 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   onCloseTransportModal,
   onSelectTransport,
   onCreateItinerary,
+  isNotificationModalVisible,
+  pendingRequestList,
+  onCloseNotificationModal,
+  onAcceptNotification,
+  onRejectNotification,
 }) => {
   return (
     <SafeAreaView style={styles.container}>
@@ -173,6 +186,19 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               onPress={onNotificationPress}
             >
               <Bell size={24} color="#000000" strokeWidth={2} />
+              {pendingRequestsCount > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: 'red',
+                  }}
+                />
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -285,6 +311,14 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         currentValue={transport}
         onClose={onCloseTransportModal}
         onSelect={onSelectTransport}
+      />
+
+      <NotificationModal
+        visible={isNotificationModalVisible}
+        onClose={onCloseNotificationModal}
+        invitations={pendingRequestList}
+        onAccept={onAcceptNotification}
+        onReject={onRejectNotification}
       />
     </SafeAreaView>
   );

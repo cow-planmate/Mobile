@@ -292,6 +292,22 @@ export async function leaveAsEditor(planId: number): Promise<void> {
   await axios.delete(`${API_URL}/api/plan/${planId}/editor/me`);
 }
 
+/** Get pending invitations */
+export async function getPendingInvitations(): Promise<any[]> {
+  const response = await axios.get(`${API_URL}/api/collaboration-requests/pending`);
+  return response.data.pendingRequests || [];
+}
+
+/** Accept invitation */
+export async function acceptInvitation(requestId: number): Promise<void> {
+  await axios.post(`${API_URL}/api/collaboration-requests/${requestId}/accept`);
+}
+
+/** Reject invitation */
+export async function rejectInvitation(requestId: number): Promise<void> {
+  await axios.post(`${API_URL}/api/collaboration-requests/${requestId}/reject`);
+}
+
 // ────────────────────────────────────────────────
 // Travel Destinations API
 // ────────────────────────────────────────────────

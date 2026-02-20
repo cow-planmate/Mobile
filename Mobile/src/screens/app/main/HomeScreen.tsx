@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import axios from 'axios';
-import { API_URL } from '@env';
 import { AppStackParamList } from '../../../navigation/types';
 import { useAuth } from '../../../contexts/AuthContext';
 import { OptionType } from '../../../components/common/SelectionModal';
 import { HomeScreenView } from './HomeScreen.view';
+import {
+  getPendingInvitations,
+  acceptInvitation,
+  rejectInvitation,
+} from '../../../api/trips';
 
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
@@ -38,19 +41,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [showErrors, setShowErrors] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [isNotificationModalVisible, setNotificationModalVisible] =
+    useState(false);
 
   const fetchPendingRequests = async () => {
     try {
-      const response = await axios.get('/api/collaboration-requests/pending');
-      const { pendingRequests } = response.data;
-      if (pendingRequests) {
-        setPendingRequests(pendingRequests);
-        if (pendingRequests.length > 0) {
-          Alert.alert(
-            '알림',
-            `${pendingRequests.length}개의 초대 요청이 있습니다.`,
-          );
-        }
+      const requests = await getPendingInvitations();
+      if (requests) {
+        setPendingRequests(requests);
       }
     } catch (error) {
       console.log('초대 요청 목록 조회 실패:', error);
@@ -63,9 +61,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const handleAccept = async (requestId: number) => {
     try {
-      await axios.post(`${API_URL}/api/invite/${requestId}/accept`);
+      await acceptInvitation(requestId);
       Alert.alert('수락 완료', '일정에 참여했습니다.');
       setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
+      if (pendingRequests.length <= 1) {
+        setNotificationModalVisible(false);
+      }
     } catch (e) {
       Alert.alert('오류', '수락 처리에 실패했습니다.');
     }
@@ -73,9 +74,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const handleReject = async (requestId: number) => {
     try {
-      await axios.post(`${API_URL}/api/invite/${requestId}/reject`);
+      await rejectInvitation(requestId);
       Alert.alert('거절 완료', '초대를 거절했습니다.');
       setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
+      if (pendingRequests.length <= 1) {
+        setNotificationModalVisible(false);
+      }
     } catch (e) {
       Alert.alert('오류', '거절 처리에 실패했습니다.');
     }
@@ -86,21 +90,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       Alert.alert('알림', '새로운 알림이 없습니다.');
       return;
     }
-
-    const req = pendingRequests[0];
-    Alert.alert(
-      '초대 요청',
-      `${req.senderNickname}님이 '${req.planName}' 일정에 초대했습니다.`,
-      [
-        {
-          text: '거절',
-          onPress: () => handleReject(req.requestId),
-          style: 'destructive',
-        },
-        { text: '수락', onPress: () => handleAccept(req.requestId) },
-        { text: '닫기', style: 'cancel' },
-      ],
-    );
+    setNotificationModalVisible(true);
   };
 
   const isFormValid =
@@ -193,6 +183,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       children={children}
       transportOptions={transportOptions}
       onNotificationPress={handleNotificationPress}
+      isNotificationModalVisible={isNotificationModalVisible}
+      pendingRequestList={pendingRequests}
+      onCloseNotificationModal={() => setNotificationModalVisible(false)}
+      onAcceptNotification={handleAccept}
+      onRejectNotification={handleReject}
       onNavigateProfile={() => navigation.navigate('Profile')}
       onOpenSearchModal={openSearchModal}
       onCloseSearchModal={() => setSearchModalVisible(false)}
