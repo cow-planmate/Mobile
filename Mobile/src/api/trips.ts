@@ -1,5 +1,5 @@
 import axios from 'axios';
-import {API_URL} from '@env';
+import { API_URL } from '@env';
 
 // ────────────────────────────────────────────────
 // Types
@@ -117,7 +117,7 @@ export async function fetchPlan(planId: number): Promise<PlanResponse> {
 /** Create a new plan and return planId */
 export async function createPlan(
   payload: CreatePlanPayload,
-): Promise<{planId: number}> {
+): Promise<{ planId: number }> {
   const response = await axios.post(`${API_URL}/api/plan`, payload);
   return response.data;
 }
@@ -125,7 +125,7 @@ export async function createPlan(
 /** Create full plan (non-login save) */
 export async function createFullPlan(
   payload: FullPlanPayload,
-): Promise<{planId: number}> {
+): Promise<{ planId: number }> {
   const response = await axios.post(`${API_URL}/api/plan/create`, payload);
   return response.data;
 }
@@ -140,9 +140,7 @@ export async function requestEditAccess(planId: number): Promise<void> {
 // ────────────────────────────────────────────────
 
 /** Fetch recommended tour places for a plan */
-export async function fetchTourPlaces(
-  planId: number,
-): Promise<PlacesResponse> {
+export async function fetchTourPlaces(planId: number): Promise<PlacesResponse> {
   const response = await axios.get(`${API_URL}/api/plan/${planId}/tour`);
   return response.data;
 }
@@ -169,7 +167,9 @@ export async function fetchTourPlacesNoAuth(
   name: string,
 ): Promise<PlacesResponse> {
   const response = await axios.get(
-    `${API_URL}/api/plan/tour/${encodeURIComponent(category)}/${encodeURIComponent(name)}`,
+    `${API_URL}/api/plan/tour/${encodeURIComponent(
+      category,
+    )}/${encodeURIComponent(name)}`,
   );
   return response.data;
 }
@@ -180,7 +180,9 @@ export async function fetchLodgingPlacesNoAuth(
   name: string,
 ): Promise<PlacesResponse> {
   const response = await axios.get(
-    `${API_URL}/api/plan/lodging/${encodeURIComponent(category)}/${encodeURIComponent(name)}`,
+    `${API_URL}/api/plan/lodging/${encodeURIComponent(
+      category,
+    )}/${encodeURIComponent(name)}`,
   );
   return response.data;
 }
@@ -191,7 +193,9 @@ export async function fetchRestaurantPlacesNoAuth(
   name: string,
 ): Promise<PlacesResponse> {
   const response = await axios.get(
-    `${API_URL}/api/plan/restaurant/${encodeURIComponent(category)}/${encodeURIComponent(name)}`,
+    `${API_URL}/api/plan/restaurant/${encodeURIComponent(
+      category,
+    )}/${encodeURIComponent(name)}`,
   );
   return response.data;
 }
@@ -246,10 +250,10 @@ export async function fetchWeather(
   travelId: number,
   date: string,
 ): Promise<WeatherData[]> {
-  const response = await axios.post(
-    `${API_URL}/api/weather/recommendations`,
-    {travelId, date},
-  );
+  const response = await axios.post(`${API_URL}/api/weather/recommendations`, {
+    travelId,
+    date,
+  });
   return response.data;
 }
 
@@ -260,7 +264,7 @@ export async function fetchWeather(
 /** Get share URL */
 export async function getShareUrl(
   planId: number,
-): Promise<{shareUrl: string}> {
+): Promise<{ shareUrl: string }> {
   const response = await axios.get(`${API_URL}/api/plan/${planId}/share`);
   return response.data;
 }
@@ -276,7 +280,7 @@ export async function inviteEditor(
   planId: number,
   nickname: string,
 ): Promise<void> {
-  await axios.post(`${API_URL}/api/plan/${planId}/invite`, {nickname});
+  await axios.post(`${API_URL}/api/plan/${planId}/invite`, { nickname });
 }
 
 /** Remove an editor */
@@ -294,7 +298,9 @@ export async function leaveAsEditor(planId: number): Promise<void> {
 
 /** Get pending invitations */
 export async function getPendingInvitations(): Promise<any[]> {
-  const response = await axios.get(`${API_URL}/api/collaboration-requests/pending`);
+  const response = await axios.get(
+    `${API_URL}/api/collaboration-requests/pending`,
+  );
   return response.data.pendingRequests || [];
 }
 

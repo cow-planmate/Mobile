@@ -55,14 +55,16 @@ export default function NotificationModal({
             </View>
           ) : (
             <ScrollView style={styles.listContainer}>
-              {invitations.map((invite) => (
+              {invitations.map(invite => (
                 <View key={invite.requestId} style={styles.itemContainer}>
                   <View style={styles.textContainer}>
                     <Text style={styles.inviteText}>
-                      <Text style={styles.highlight}>{invite.senderNickname}</Text>
+                      <Text style={styles.highlight}>
+                        {invite.senderNickname}
+                      </Text>
                       님이{' '}
-                      <Text style={styles.highlight}>{invite.planName}</Text>
-                      {' '}일정에 초대했습니다.
+                      <Text style={styles.highlight}>{invite.planName}</Text>{' '}
+                      일정에 초대했습니다.
                     </Text>
                   </View>
                   <View style={styles.buttonContainer}>
