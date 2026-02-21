@@ -29,7 +29,7 @@ const COLORS = theme.colors;
 export default function NotificationModal({
   visible,
   onClose,
-  invitations,
+  invitations = [],
   onAccept,
   onReject,
 }: NotificationModalProps) {

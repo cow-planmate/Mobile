@@ -27,6 +27,8 @@ const meta = {
     isCalendarVisible: false,
     isPaxModalVisible: false,
     isTransportModalVisible: false,
+    isNotificationModalVisible: false,
+    pendingRequestList: [],
     fieldToUpdate: 'departure',
     transportOptions: [
       { label: '대중교통', icon: '🚌' },
@@ -47,6 +49,9 @@ const meta = {
     onCloseTransportModal: () => console.log('Close Transport Modal'),
     onSelectTransport: t => console.log(`Selected Transport: ${t}`),
     onCreateItinerary: () => console.log('Create Itinerary'),
+    onCloseNotificationModal: () => console.log('Close Notification Modal'),
+    onAcceptNotification: id => console.log(`Accept Notification: ${id}`),
+    onRejectNotification: id => console.log(`Reject Notification: ${id}`),
   },
 } satisfies Meta<typeof HomeScreenView>;
 
