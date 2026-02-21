@@ -89,7 +89,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     selectedDay,
   } = useItineraryEditor(route, navigation);
 
-  const { updatePlaceMemo } = useItinerary();
+  const { updatePlaceMemo, updatePlaceDetails } = useItinerary();
   const { connect, onlineUsers, sendMessage } = useWebSocket();
   const {
     fetchAllRecommendations,
@@ -144,25 +144,24 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   const handlePlaceSave = useCallback(
     (updatedPlace: any) => {
-      // Ensure times are formatted HH:mm:ss
-      const formatTime = (t: string) => (t.length === 5 ? `${t}:00` : t);
+      // Normalize time to "HH:mm" format for local state
+      const normalizeTime = (t: string) =>
+        t && t.length >= 5 ? t.substring(0, 5) : t;
 
-      sendMessage('update', 'timetableplaceblock', {
-        blockId: updatedPlace.id, // Assuming id holds the blockId
-        startTime: formatTime(updatedPlace.startTime),
-        endTime: formatTime(updatedPlace.endTime),
+      // Update local state + send WebSocket via context (matches Frontend flow)
+      updatePlaceDetails(selectedDayIndex, updatedPlace.id, {
+        startTime: normalizeTime(updatedPlace.startTime),
+        endTime: normalizeTime(updatedPlace.endTime),
         memo: updatedPlace.memo,
-        xLocation: updatedPlace.latitude || updatedPlace.xLocation,
-        yLocation: updatedPlace.longitude || updatedPlace.yLocation,
-        placeName: updatedPlace.name,
-        placeAddress: updatedPlace.address,
-        placeCategoryId: updatedPlace.categoryId || 0, // Fallback
+        name: updatedPlace.name,
+        address: updatedPlace.address,
       });
+
       setPlaceEditModalVisible(false);
       setEditingPlace(null);
       setDetailPlace(null);
     },
-    [sendMessage],
+    [updatePlaceDetails, selectedDayIndex],
   );
 
   const handleDeleteFromDetail = useCallback(() => {

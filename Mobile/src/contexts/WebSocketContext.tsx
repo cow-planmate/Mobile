@@ -8,6 +8,7 @@ import React, {
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { API_URL } from '@env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from './AuthContext';
 
 declare var global: any;
@@ -89,7 +90,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     messageListeners.current.forEach(listener => listener(message));
   };
 
-  const connect = (planId: number) => {
+  const connect = async (planId: number) => {
     if (stompClient.current && stompClient.current.active) {
       if (currentPlanId.current === planId) return; // 이미 같은 방에 연결됨
       disconnect();
@@ -97,12 +98,18 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
     currentPlanId.current = planId;
 
+    // Frontend와 동일하게 SockJS URL에 토큰 포함 (JwtHandshakeInterceptor 인증)
+    const token = await AsyncStorage.getItem('accessToken');
+    const wsUrl = token
+      ? `${API_URL}/ws?token=${encodeURIComponent(token)}`
+      : `${API_URL}/ws`;
+
     const client = new Client({
       // SockJS 지원을 위해 factory 사용
-      webSocketFactory: () => new SockJS(`${API_URL}/ws`),
-      connectHeaders: {
-        // 인증 토큰이 필요하다면 여기서 추가 (AuthContext 등 활용)
-      },
+      webSocketFactory: () => new SockJS(wsUrl),
+      connectHeaders: token
+        ? { Authorization: `Bearer ${token}` }
+        : {},
       debug: str => {
         console.log('[WS Debug]', str);
       },

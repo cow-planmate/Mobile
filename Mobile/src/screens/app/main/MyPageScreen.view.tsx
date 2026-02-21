@@ -168,7 +168,7 @@ export default function MyPageScreenView({
                   ? `${item.startDate}~${item.endDate}`
                   : '초대된 일정'
               }
-              onPress={() => navigateToEditor(item)}
+              onPress={() => navigateToView(item)}
               onPressMore={() => handleMenuPress(item)}
             />
           ))

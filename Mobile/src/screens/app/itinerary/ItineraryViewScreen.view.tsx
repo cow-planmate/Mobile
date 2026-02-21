@@ -131,6 +131,7 @@ export interface ItineraryViewScreenViewProps {
   offsetMinutes: number;
   handleConfirm: () => void;
   goBack: () => void;
+  handleEdit: () => void;
   planId?: number;
 }
 
@@ -147,6 +148,7 @@ export default function ItineraryViewScreenView({
   offsetMinutes,
   handleConfirm,
   goBack,
+  handleEdit,
   planId,
 }: ItineraryViewScreenViewProps) {
   const selectedDay = days[selectedDayIndex];
@@ -256,7 +258,7 @@ export default function ItineraryViewScreenView({
         >
           <Text style={styles.footerButtonText}>공유</Text>
         </Pressable>
-        <Pressable style={styles.footerButton} onPress={goBack}>
+        <Pressable style={styles.footerButton} onPress={handleEdit}>
           <Text style={styles.footerButtonText}>수정</Text>
         </Pressable>
         <Pressable

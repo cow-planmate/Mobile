@@ -423,6 +423,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       offsetMinutes={offsetMinutes}
       handleConfirm={handleConfirm}
       goBack={() => navigation.goBack()}
+      handleEdit={() => navigation.navigate('ItineraryEditor', { planId })}
       planId={planId}
     />
   );

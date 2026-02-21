@@ -118,6 +118,13 @@ interface ItineraryContextType {
     newEndTime: string,
   ) => void;
   updatePlaceMemo: (dayIndex: number, placeId: string, memo: string) => void;
+  updatePlaceDetails: (
+    dayIndex: number,
+    placeId: string,
+    updates: Partial<
+      Pick<Place, 'startTime' | 'endTime' | 'memo' | 'name' | 'address'>
+    >,
+  ) => void;
 }
 
 const ItineraryContext = createContext<ItineraryContextType | undefined>(
@@ -536,6 +543,55 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     }
   };
 
+  /**
+   * Combined update for time, memo, and other place fields.
+   * Updates local state first, then sends a single WebSocket message
+   * with the complete DTO (matching Frontend behavior).
+   */
+  const updatePlaceDetails = (
+    dayIndex: number,
+    placeId: string,
+    updates: Partial<
+      Pick<Place, 'startTime' | 'endTime' | 'memo' | 'name' | 'address'>
+    >,
+  ) => {
+    if (days.length === 0 || !days[dayIndex]) {
+      return;
+    }
+    const updatedDays = [...days];
+    const dayToUpdate = { ...updatedDays[dayIndex] };
+
+    // Apply all updates to the target place
+    const newPlacesList = dayToUpdate.places.map(p =>
+      p.id === placeId ? { ...p, ...updates } : { ...p },
+    );
+
+    // Resolve time conflicts if times were changed
+    if (updates.startTime !== undefined || updates.endTime !== undefined) {
+      dayToUpdate.places = resolveConflictsAndSort(newPlacesList, placeId);
+    } else {
+      dayToUpdate.places = newPlacesList;
+    }
+
+    updatedDays[dayIndex] = dayToUpdate;
+    setDays(updatedDays);
+    setLastAddedPlaceId(null);
+
+    // Send a single WebSocket message with the complete DTO
+    const finalPlace = dayToUpdate.places.find(p => p.id === placeId);
+    if (finalPlace && dayToUpdate.timetableId) {
+      sendMessage(
+        'update',
+        'timetableplaceblock',
+        mapToTimetablePlaceBlockDto(
+          finalPlace,
+          dayToUpdate.timetableId,
+          dayToUpdate.date.toISOString().split('T')[0],
+        ),
+      );
+    }
+  };
+
   return (
     <ItineraryContext.Provider
       value={{
@@ -547,6 +603,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         deletePlaceFromDay,
         updatePlaceTimes,
         updatePlaceMemo,
+        updatePlaceDetails,
       }}
     >
       {children}
