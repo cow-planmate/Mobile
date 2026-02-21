@@ -107,9 +107,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     const client = new Client({
       // SockJS 지원을 위해 factory 사용
       webSocketFactory: () => new SockJS(wsUrl),
-      connectHeaders: token
-        ? { Authorization: `Bearer ${token}` }
-        : {},
+      connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
       debug: str => {
         console.log('[WS Debug]', str);
       },
