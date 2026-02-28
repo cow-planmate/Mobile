@@ -363,8 +363,8 @@ const TimelineComponent = React.memo(
       ref,
     ) => {
       const { gridHours, offsetMinutes } = React.useMemo(() => {
-        const minHour = 0;
-        const maxHour = 23;
+        const minHour = 9;
+        const maxHour = 20;
         const hours = Array.from(
           { length: maxHour - minHour + 1 },
           (_, i) => i + minHour,

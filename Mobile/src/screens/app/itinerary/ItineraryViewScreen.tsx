@@ -203,8 +203,8 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   }, [selectedDay]);
 
   const { gridHours, offsetMinutes } = useMemo(() => {
-    const minHour = 0;
-    const maxHour = 23;
+    const minHour = 9;
+    const maxHour = 20;
     const hours = Array.from(
       { length: maxHour - minHour + 1 },
       (_, i) => i + minHour,
@@ -241,7 +241,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       timetableId: day.timetableId || 0,
       date: day.date.toISOString().split('T')[0],
       timeTableStartTime: '09:00:00',
-      timeTableEndTime: '22:00:00',
+      timeTableEndTime: '20:00:00',
     }));
 
     const allPlaces = daysData.flatMap(day => {
@@ -347,7 +347,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       const timetableVOs = days.map(day => ({
         date: day.date.toISOString().split('T')[0],
         timeTableStartTime: '09:00:00',
-        timeTableEndTime: '22:00:00',
+        timeTableEndTime: '20:00:00',
       }));
 
       // Build place blocks with date field for backend matching
