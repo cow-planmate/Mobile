@@ -3,15 +3,18 @@ import { View } from 'react-native';
 import type { Meta, StoryObj } from '@storybook/react-native';
 import ItineraryEditorScreenView from '../../../screens/app/itinerary/ItineraryEditorScreen.view';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { PlacesProvider } from '../../../contexts/PlacesContext';
 
 const meta = {
   title: 'Screens/Itinerary/ItineraryEditorScreen',
   component: ItineraryEditorScreenView,
   decorators: [
     Story => (
-      <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-        <Story />
-      </GestureHandlerRootView>
+      <PlacesProvider>
+        <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+          <Story />
+        </GestureHandlerRootView>
+      </PlacesProvider>
     ),
   ],
   args: {
