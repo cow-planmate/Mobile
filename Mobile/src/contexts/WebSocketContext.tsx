@@ -252,6 +252,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (eventId) {
       payload.eventId = eventId;
+    } else {
+      payload.eventId = `app-auto-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     }
 
     console.log(`[WS Send] Dest: ${destination}`, JSON.stringify(payload));

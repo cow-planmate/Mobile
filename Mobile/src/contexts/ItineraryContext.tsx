@@ -443,6 +443,22 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         ),
         newId, // Pass eventId
       );
+
+      // If other places were shifted during conflict resolution, sync their new times
+      const otherPlaces = dayToUpdate.places.filter(p => p.id !== newId);
+      if (otherPlaces.length > 0) {
+        otherPlaces.forEach(p => {
+          sendMessage(
+            'update',
+            'timetableplaceblock',
+            mapToTimetablePlaceBlockDto(
+              p,
+              dayToUpdate.timetableId!,
+              dayToUpdate.date.toISOString().split('T')[0],
+            ),
+          );
+        });
+      }
     }
   };
 
@@ -501,17 +517,19 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setDays(updatedDays);
     setLastAddedPlaceId(null);
 
-    const finalPlace = dayToUpdate.places.find(p => p.id === placeId);
-    if (finalPlace && dayToUpdate.timetableId) {
-      sendMessage(
-        'update',
-        'timetableplaceblock',
-        mapToTimetablePlaceBlockDto(
-          finalPlace,
-          dayToUpdate.timetableId,
-          dayToUpdate.date.toISOString().split('T')[0],
-        ),
-      );
+    // Send individual updates to ensure the web client processes them correctly
+    if (dayToUpdate.timetableId) {
+      dayToUpdate.places.forEach(p => {
+        sendMessage(
+          'update',
+          'timetableplaceblock',
+          mapToTimetablePlaceBlockDto(
+            p,
+            dayToUpdate.timetableId!,
+            dayToUpdate.date.toISOString().split('T')[0],
+          ),
+        );
+      });
     }
   };
 
@@ -577,18 +595,35 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setDays(updatedDays);
     setLastAddedPlaceId(null);
 
-    // Send a single WebSocket message with the complete DTO
-    const finalPlace = dayToUpdate.places.find(p => p.id === placeId);
-    if (finalPlace && dayToUpdate.timetableId) {
-      sendMessage(
-        'update',
-        'timetableplaceblock',
-        mapToTimetablePlaceBlockDto(
-          finalPlace,
-          dayToUpdate.timetableId,
-          dayToUpdate.date.toISOString().split('T')[0],
-        ),
-      );
+    // Send individual WebSocket messages
+    if (dayToUpdate.timetableId) {
+      if (updates.startTime !== undefined || updates.endTime !== undefined) {
+        // If time changed, other places might have been shifted, so send all individually
+        dayToUpdate.places.forEach(p => {
+          sendMessage(
+            'update',
+            'timetableplaceblock',
+            mapToTimetablePlaceBlockDto(
+              p,
+              dayToUpdate.timetableId!,
+              dayToUpdate.date.toISOString().split('T')[0],
+            ),
+          );
+        });
+      } else {
+        const finalPlace = dayToUpdate.places.find(p => p.id === placeId);
+        if (finalPlace) {
+          sendMessage(
+            'update',
+            'timetableplaceblock',
+            mapToTimetablePlaceBlockDto(
+              finalPlace,
+              dayToUpdate.timetableId,
+              dayToUpdate.date.toISOString().split('T')[0],
+            ),
+          );
+        }
+      }
     }
   };
 
