@@ -182,8 +182,18 @@ export const ForgotPasswordScreenView = ({
           {step === 2 && (
             <View style={styles.tempPasswordContainer}>
               <View style={styles.infoBox}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                  <Info size={18} color={COLORS.primary} style={{ marginRight: 6 }} />
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginBottom: 8,
+                  }}
+                >
+                  <Info
+                    size={18}
+                    color={COLORS.primary}
+                    style={{ marginRight: 6 }}
+                  />
                   <Text style={styles.infoBoxText}>
                     이메일 확인이 완료되었습니다.
                   </Text>
