@@ -14,6 +14,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  needsThemeSelection: boolean;
+  setNeedsThemeSelection: (val: boolean) => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   oauthLogin: (code: string) => Promise<void>;
@@ -37,6 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [needsThemeSelection, setNeedsThemeSelection] = useState(false);
 
   useEffect(() => {
     const loadStorageData = async () => {
@@ -239,7 +242,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, login, logout, oauthLogin, oauthComplete }}
+      value={{
+        user,
+        isLoading,
+        needsThemeSelection,
+        setNeedsThemeSelection,
+        login,
+        logout,
+        oauthLogin,
+        oauthComplete,
+      }}
     >
       {children}
     </AuthContext.Provider>

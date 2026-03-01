@@ -11,10 +11,6 @@ import axios from 'axios';
 import { API_URL } from '@env';
 import { SignupScreenView } from './SignupScreen.view';
 import { useAuth } from '../../contexts/AuthContext';
-import { savePreferredThemes } from '../../api/themes';
-import ThemeSelector, {
-  ThemeSelectorResult,
-} from '../../components/common/ThemeSelector';
 
 const formatTime = (seconds: number) => {
   const minutes = Math.floor(seconds / 60);
@@ -24,11 +20,10 @@ const formatTime = (seconds: number) => {
 
 export default function SignupScreen() {
   const navigation = useNavigation<any>();
-  const { login } = useAuth();
+  const { login, setNeedsThemeSelection } = useAuth();
 
   const [step, setStep] = useState(1);
   const totalSteps = 4;
-  const [isThemeSelectorVisible, setThemeSelectorVisible] = useState(false);
 
   const [form, setForm] = useState({
     email: '',
@@ -258,9 +253,11 @@ export default function SignupScreen() {
 
       // 회원가입 성공 → 자동 로그인 후 테마 선택
       try {
+        setNeedsThemeSelection(true);
         await login(form.email, form.password);
-        setThemeSelectorVisible(true);
+        // login 성공 시 AppNavigator가 AppStack으로 전환 + ThemeSelector 표시
       } catch (loginError) {
+        setNeedsThemeSelection(false);
         // 자동 로그인 실패 시 로그인 화면으로
         Alert.alert(
           '환영합니다!',
@@ -327,30 +324,8 @@ export default function SignupScreen() {
     setAgeModalVisible(false);
   };
 
-  const handleThemeComplete = async (selections: ThemeSelectorResult) => {
-    try {
-      const allThemeIds: number[] = [];
-      Object.values(selections).forEach(themes => {
-        themes.forEach(t => allThemeIds.push(t.preferredThemeId));
-      });
-      if (allThemeIds.length > 0) {
-        await savePreferredThemes(allThemeIds);
-      }
-    } catch (error) {
-      console.error('Failed to save preferred themes:', error);
-    }
-    setThemeSelectorVisible(false);
-    // 로그인 완료 상태이므로 AppNavigator가 자동으로 AppStack으로 전환
-  };
-
-  const handleThemeClose = () => {
-    setThemeSelectorVisible(false);
-    // 테마 선택을 건너뛰어도 로그인 상태 유지 → 앱 진입
-  };
-
   return (
-    <>
-      <SignupScreenView
+    <SignupScreenView
         step={step}
         totalSteps={totalSteps}
         form={form}
@@ -382,11 +357,6 @@ export default function SignupScreen() {
         setIsConfirmPasswordVisible={setIsConfirmPasswordVisible}
         formatTime={formatTime}
       />
-      <ThemeSelector
-        visible={isThemeSelectorVisible}
-        onClose={handleThemeClose}
-        onComplete={handleThemeComplete}
-      />
-    </>
   );
 }
+
