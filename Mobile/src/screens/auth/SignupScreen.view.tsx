@@ -13,19 +13,17 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
+import { Eye, EyeOff, Check } from 'lucide-react-native';
 import { styles, COLORS, normalize } from './SignupScreen.styles';
 
 export const PasswordRequirement = React.memo(
   ({ met, label }: { met: boolean; label: string }) => (
     <View style={styles.requirementRow}>
-      <Text
-        style={[
-          styles.requirementIcon,
-          { color: met ? COLORS.success : COLORS.darkGray },
-        ]}
-      >
-        ✓
-      </Text>
+      <Check
+        size={normalize(14)}
+        color={met ? COLORS.success : COLORS.darkGray}
+        style={{ marginRight: normalize(8) }}
+      />
       <Text
         style={[
           styles.requirementText,
@@ -272,7 +270,11 @@ export const SignupScreenView = ({
                     style={styles.eyeIcon}
                     onPress={() => setIsPasswordVisible(v => !v)}
                   >
-                    <Text>{isPasswordVisible ? '🙈' : '👁️'}</Text>
+                    {isPasswordVisible ? (
+                      <EyeOff size={20} color={COLORS.textSecondary} />
+                    ) : (
+                      <Eye size={20} color={COLORS.textSecondary} />
+                    )}
                   </TouchableOpacity>
                 </View>
                 <View style={styles.requirementsContainer}>
@@ -309,7 +311,11 @@ export const SignupScreenView = ({
                     style={styles.eyeIcon}
                     onPress={() => setIsConfirmPasswordVisible(v => !v)}
                   >
-                    <Text>{isConfirmPasswordVisible ? '🙈' : '👁️'}</Text>
+                    {isConfirmPasswordVisible ? (
+                      <EyeOff size={20} color={COLORS.textSecondary} />
+                    ) : (
+                      <Eye size={20} color={COLORS.textSecondary} />
+                    )}
                   </TouchableOpacity>
                 </View>
                 <View style={styles.requirementsContainer}>

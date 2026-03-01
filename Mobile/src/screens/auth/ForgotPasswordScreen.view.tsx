@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   Pressable,
 } from 'react-native';
+import { Info } from 'lucide-react-native';
 import { styles, COLORS } from './ForgotPasswordScreen.styles';
 
 export interface ForgotPasswordScreenViewProps {
@@ -181,9 +182,12 @@ export const ForgotPasswordScreenView = ({
           {step === 2 && (
             <View style={styles.tempPasswordContainer}>
               <View style={styles.infoBox}>
-                <Text style={styles.infoBoxText}>
-                  💡 이메일 확인이 완료되었습니다.
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                  <Info size={18} color={COLORS.primary} style={{ marginRight: 6 }} />
+                  <Text style={styles.infoBoxText}>
+                    이메일 확인이 완료되었습니다.
+                  </Text>
+                </View>
                 <Text style={styles.infoBoxSubText}>
                   '임시 비밀번호 발송' 버튼을 누르면{'\n'}
                   가입하신 이메일로 비밀번호가 전송됩니다.
