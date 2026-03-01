@@ -17,6 +17,13 @@ export const COLORS = {
   border: '#E5E7EB',
 };
 
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+};
+
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -26,7 +33,7 @@ export const styles = StyleSheet.create({
   },
   title: {
     fontSize: normalize(32),
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     textAlign: 'center',
     marginBottom: normalize(32),
     color: COLORS.text,
@@ -44,7 +51,7 @@ export const styles = StyleSheet.create({
   },
   errorText: {
     color: COLORS.error,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     fontSize: normalize(14),
   },
   inputGroup: {
@@ -55,7 +62,7 @@ export const styles = StyleSheet.create({
     fontSize: normalize(14),
     color: COLORS.text,
     marginBottom: normalize(8),
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     marginLeft: normalize(4),
   },
   input: {
@@ -66,6 +73,7 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: normalize(16),
     fontSize: normalize(16),
+    fontFamily: FONTS.regular,
     backgroundColor: COLORS.white,
     color: COLORS.text,
   },
@@ -84,12 +92,13 @@ export const styles = StyleSheet.create({
     flex: 1,
     height: '100%',
     fontSize: normalize(16),
+    fontFamily: FONTS.regular,
     color: COLORS.text,
   },
   passwordToggleText: {
     color: COLORS.textSecondary,
     fontSize: normalize(14),
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
   inputFocused: {
     borderColor: COLORS.primary,
@@ -109,7 +118,7 @@ export const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: normalize(17),
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     color: COLORS.white,
     letterSpacing: 0.3,
   },
@@ -129,7 +138,7 @@ export const styles = StyleSheet.create({
   separator: {
     color: COLORS.darkGray,
     fontSize: normalize(14),
-    fontWeight: '400',
+    fontFamily: FONTS.regular,
   },
   linkButton: {
     paddingVertical: normalize(6),
@@ -139,6 +148,6 @@ export const styles = StyleSheet.create({
   linkText: {
     color: COLORS.primary,
     fontSize: normalize(15),
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
   },
 });

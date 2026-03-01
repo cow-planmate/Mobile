@@ -19,6 +19,13 @@ export const COLORS = {
   border: '#E5E7EB',
 };
 
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+};
+
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -43,7 +50,7 @@ export const styles = StyleSheet.create({
   },
   stepText: {
     fontSize: normalize(14),
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     color: COLORS.primary,
   },
   scrollContent: {
@@ -52,13 +59,14 @@ export const styles = StyleSheet.create({
   },
   title: {
     fontSize: normalize(28),
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     color: COLORS.text,
     marginBottom: normalize(8),
     textAlign: 'left',
   },
   description: {
     fontSize: normalize(15),
+    fontFamily: FONTS.regular,
     color: COLORS.textSecondary,
     marginBottom: normalize(32),
     textAlign: 'left',
@@ -72,7 +80,7 @@ export const styles = StyleSheet.create({
     fontSize: normalize(14),
     color: COLORS.text,
     marginBottom: normalize(8),
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     marginLeft: normalize(4),
   },
   inlineInputContainer: {
@@ -88,6 +96,7 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: normalize(16),
     fontSize: normalize(16),
+    fontFamily: FONTS.regular,
     backgroundColor: COLORS.white,
     color: COLORS.text,
     marginBottom: 0,
@@ -112,7 +121,7 @@ export const styles = StyleSheet.create({
   buttonDisabled: { backgroundColor: COLORS.darkGray },
   inlineButtonText: {
     color: COLORS.white,
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     fontSize: normalize(14),
   },
   codeInputWrapper: {
@@ -123,13 +132,14 @@ export const styles = StyleSheet.create({
   innerInput: {
     flex: 1,
     fontSize: normalize(16),
+    fontFamily: FONTS.regular,
     color: COLORS.text,
     height: '100%',
     padding: 0,
   },
   timerText: {
     color: COLORS.error,
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     fontSize: normalize(14),
   },
 
@@ -148,11 +158,12 @@ export const styles = StyleSheet.create({
   },
   infoBoxText: {
     fontSize: normalize(16),
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     color: COLORS.text,
   },
   infoBoxSubText: {
     fontSize: normalize(14),
+    fontFamily: FONTS.regular,
     color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: normalize(20),
@@ -176,7 +187,7 @@ export const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: normalize(18),
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     color: COLORS.white,
   },
   retryButton: {
@@ -186,6 +197,7 @@ export const styles = StyleSheet.create({
   },
   retryButtonText: {
     fontSize: normalize(14),
+    fontFamily: FONTS.regular,
     color: COLORS.textSecondary,
     textDecorationLine: 'underline',
   },
@@ -196,6 +208,7 @@ export const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: normalize(14),
+    fontFamily: FONTS.regular,
     color: COLORS.textSecondary,
     textDecorationLine: 'underline',
   },

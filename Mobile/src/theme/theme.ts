@@ -48,9 +48,10 @@ export const theme = {
   },
   typography: {
     fontFamily: {
-      regular: 'System',
-      medium: 'System',
-      bold: 'System',
+      regular: 'Inter_400Regular',
+      medium: 'Inter_500Medium',
+      semibold: 'Inter_600SemiBold',
+      bold: 'Inter_700Bold',
     },
     weight: {
       thin: '300' as const,

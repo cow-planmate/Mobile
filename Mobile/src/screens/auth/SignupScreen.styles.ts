@@ -20,6 +20,13 @@ export const COLORS = {
   modalBackground: 'rgba(0, 0, 0, 0.5)',
 };
 
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+};
+
 export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.white },
   header: {
@@ -41,18 +48,19 @@ export const styles = StyleSheet.create({
   },
   stepText: {
     fontSize: normalize(14),
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     color: COLORS.primary,
   },
   scrollContainer: { padding: normalize(24), paddingBottom: normalize(100) },
   title: {
     fontSize: normalize(28),
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     color: COLORS.text,
     marginBottom: normalize(8),
   },
   description: {
     fontSize: normalize(15),
+    fontFamily: FONTS.regular,
     color: COLORS.textSecondary,
     marginBottom: normalize(32),
   },
@@ -66,7 +74,7 @@ export const styles = StyleSheet.create({
   label: {
     fontSize: normalize(14),
     color: COLORS.text,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     marginLeft: normalize(4),
     marginBottom: normalize(8),
   },
@@ -83,6 +91,7 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: normalize(16),
     fontSize: normalize(16),
+    fontFamily: FONTS.regular,
     backgroundColor: COLORS.white,
     color: COLORS.text,
   },
@@ -97,6 +106,7 @@ export const styles = StyleSheet.create({
   errorText: {
     color: COLORS.error,
     fontSize: normalize(13),
+    fontFamily: FONTS.regular,
     marginTop: normalize(8),
     marginLeft: normalize(4),
   },
@@ -118,7 +128,7 @@ export const styles = StyleSheet.create({
   buttonDisabled: { backgroundColor: COLORS.darkGray },
   inlineButtonText: {
     color: COLORS.white,
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     fontSize: normalize(14),
   },
   codeInputWrapper: {
@@ -129,12 +139,13 @@ export const styles = StyleSheet.create({
   codeInput: {
     flex: 1,
     fontSize: normalize(16),
+    fontFamily: FONTS.regular,
     padding: 0,
     color: COLORS.text,
   },
   timerText: {
     color: COLORS.error,
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     fontSize: normalize(14),
   },
   passwordContainer: {
@@ -151,6 +162,7 @@ export const styles = StyleSheet.create({
     height: '100%',
     paddingHorizontal: normalize(16),
     fontSize: normalize(16),
+    fontFamily: FONTS.regular,
     color: COLORS.text,
   },
   eyeIcon: { padding: normalize(16) },
@@ -165,10 +177,10 @@ export const styles = StyleSheet.create({
   },
   requirementIcon: {
     marginRight: normalize(8),
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     fontSize: normalize(14),
   },
-  requirementText: { fontSize: normalize(13) },
+  requirementText: { fontSize: normalize(13), fontFamily: FONTS.regular },
   genderContainer: { flexDirection: 'row', gap: normalize(12) },
   genderButton: {
     flex: 1,
@@ -186,7 +198,7 @@ export const styles = StyleSheet.create({
   },
   genderButtonText: {
     fontSize: normalize(16),
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     color: COLORS.textSecondary,
   },
   genderButtonTextSelected: { color: COLORS.white },
@@ -201,7 +213,7 @@ export const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: normalize(18),
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     color: COLORS.white,
   },
   retryButton: {
@@ -211,6 +223,7 @@ export const styles = StyleSheet.create({
   },
   retryButtonText: {
     fontSize: normalize(14),
+    fontFamily: FONTS.regular,
     color: COLORS.textSecondary,
     textDecorationLine: 'underline',
   },
@@ -221,6 +234,7 @@ export const styles = StyleSheet.create({
   },
   bottomBackButtonText: {
     fontSize: normalize(14),
+    fontFamily: FONTS.regular,
     color: COLORS.textSecondary,
     textDecorationLine: 'underline',
   },
@@ -241,7 +255,7 @@ export const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: normalize(20),
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     marginBottom: normalize(16),
     textAlign: 'center',
     color: COLORS.text,
@@ -253,6 +267,7 @@ export const styles = StyleSheet.create({
   },
   ageOptionText: {
     fontSize: normalize(16),
+    fontFamily: FONTS.regular,
     textAlign: 'center',
     color: COLORS.text,
   },
