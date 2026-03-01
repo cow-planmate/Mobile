@@ -373,8 +373,6 @@ const TimelineComponent = React.memo(
   ),
 );
 
-
-
 export interface ItineraryEditorScreenViewProps {
   days: Day[];
   selectedDayIndex: number;

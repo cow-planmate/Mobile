@@ -96,7 +96,15 @@ function placeVOToPlace(
 // ────────────────────────────────────────────────
 
 const PlaceImage = React.memo(
-  ({ placeId, iconUrl, name }: { placeId: string; iconUrl?: string; name: string }) => {
+  ({
+    placeId,
+    iconUrl,
+    name,
+  }: {
+    placeId: string;
+    iconUrl?: string;
+    name: string;
+  }) => {
     const [hasError, setHasError] = useState(false);
 
     const primaryUrl = placeId
@@ -108,9 +116,7 @@ const PlaceImage = React.memo(
     if (!currentUrl) {
       return (
         <View style={[plStyles.placeImage, plStyles.placeholderImage]}>
-          <Text style={plStyles.placeholderText}>
-            {name?.charAt(0) || '?'}
-          </Text>
+          <Text style={plStyles.placeholderText}>{name?.charAt(0) || '?'}</Text>
         </View>
       );
     }
@@ -360,7 +366,7 @@ export default function PlaceRecommendationList({
         {/* Map Button */}
         <TouchableOpacity
           style={plStyles.mapButton}
-          onPress={(e) => {
+          onPress={e => {
             e.stopPropagation?.();
             handleOpenMap(item);
           }}
