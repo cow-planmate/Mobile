@@ -8,3 +8,10 @@ export interface SimplePlanVO {
   startDate?: string;
   endDate?: string;
 }
+
+export interface PreferredThemeVO {
+  preferredThemeId: number;
+  preferredThemeName: string;
+  preferredThemeCategoryId: number;
+  preferredThemeCategoryName: string;
+}
