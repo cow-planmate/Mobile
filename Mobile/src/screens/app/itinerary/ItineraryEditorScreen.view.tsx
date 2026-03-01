@@ -5,10 +5,6 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  FlatList,
-  TextInput,
-  Image,
-  ActivityIndicator,
 } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
@@ -41,35 +37,6 @@ import {
 } from '../../../utils/timeUtils';
 
 const Tab = createMaterialTopTabNavigator();
-
-const PlaceSearchResultItem = React.memo(
-  ({
-    item,
-    onSelect,
-  }: {
-    item: Omit<Place, 'startTime' | 'endTime'>;
-    onSelect: () => void;
-  }) => (
-    <TouchableOpacity style={styles.resultItem} onPress={onSelect}>
-      {item.imageUrl ? (
-        <Image source={{ uri: item.imageUrl }} style={styles.resultImage} />
-      ) : (
-        <View style={[styles.resultImage, styles.placeholderImage]}>
-          <Text style={styles.placeholderText}>{item.type[0]}</Text>
-        </View>
-      )}
-      <View style={styles.resultInfo}>
-        <Text style={styles.resultName}>{item.name}</Text>
-        <Text style={styles.resultMeta}>
-          {item.type} · ⭐ {item.rating > 0 ? item.rating : '-'}
-        </Text>
-        <Text style={styles.resultAddress} numberOfLines={1}>
-          {item.resultAddress || item.address}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  ),
-);
 
 const TimeGridBackground = React.memo(({ hours }: { hours: number[] }) => {
   const hourStr = (h: number) => h.toString().padStart(2, '0');
@@ -406,103 +373,7 @@ const TimelineComponent = React.memo(
   ),
 );
 
-const AddPlaceComponent = React.memo(
-  ({
-    onAddPlace,
-    destination,
-    searchQuery,
-    setSearchQuery,
-    selectedTab,
-    setSelectedTab,
-    searchResults,
-    isLoading,
-    handleSearch,
-    filteredPlaces,
-  }: {
-    onAddPlace: (place: Omit<Place, 'startTime' | 'endTime'>) => void;
-    destination: string;
-    searchQuery: string;
-    setSearchQuery: (val: string) => void;
-    selectedTab: '관광지' | '숙소' | '식당';
-    setSelectedTab: (tab: '관광지' | '숙소' | '식당') => void;
-    searchResults: Place[];
-    isLoading: boolean;
-    handleSearch: () => void;
-    filteredPlaces: Place[];
-  }) => {
-    return (
-      <View style={styles.tabContentContainer}>
-        <View style={styles.searchHeader}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder={
-              destination ? `${destination} 근처 장소 검색` : '장소 검색'
-            }
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
-          />
-          <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
-            <Text style={styles.searchButtonIcon}>🔍</Text>
-          </TouchableOpacity>
-        </View>
 
-        <View style={styles.placeTypeTabContainer}>
-          {['관광지', '숙소', '식당'].map(tab => (
-            <TouchableOpacity
-              key={tab}
-              onPress={() => setSelectedTab(tab as any)}
-              style={[
-                styles.placeTypeTab,
-                selectedTab === tab && styles.placeTypeTabSelected,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.placeTypeTabText,
-                  selectedTab === tab && styles.placeTypeTabTextSelected,
-                ]}
-              >
-                {tab}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.addPlaceListContainer}>
-          {isLoading ? (
-            <ActivityIndicator
-              size="large"
-              color={COLORS.primary}
-              style={styles.marginTop20}
-            />
-          ) : (
-            <FlatList
-              data={filteredPlaces}
-              keyExtractor={item => item.id}
-              renderItem={({ item }) => (
-                <PlaceSearchResultItem
-                  item={item}
-                  onSelect={() => onAddPlace(item)}
-                />
-              )}
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyText}>
-                    {searchResults.length === 0
-                      ? '검색 결과가 없습니다.'
-                      : `${selectedTab}에 해당하는 장소가 없습니다.`}
-                  </Text>
-                </View>
-              }
-            />
-          )}
-        </View>
-      </View>
-    );
-  },
-);
 
 export interface ItineraryEditorScreenViewProps {
   days: Day[];
@@ -538,15 +409,6 @@ export interface ItineraryEditorScreenViewProps {
   onConfirmTimePicker: (date: Date) => void;
   destination: string;
   onComplete: () => void;
-  // State for AddPlaceComponent
-  searchQuery: string;
-  setSearchQuery: (v: string) => void;
-  selectedTab: '관광지' | '숙소' | '식당';
-  setSelectedTab: (t: '관광지' | '숙소' | '식당') => void;
-  searchResults: Place[];
-  isSearching: boolean;
-  handleSearch: () => void;
-  filteredPlaces: Place[];
   // New props for detail popup & recommendations
   planId: number | null;
   detailPlace: Place | null;
@@ -579,14 +441,6 @@ export default function ItineraryEditorScreenView({
   onConfirmTimePicker,
   destination,
   onComplete,
-  searchQuery,
-  setSearchQuery,
-  selectedTab,
-  setSelectedTab,
-  searchResults,
-  isSearching,
-  handleSearch,
-  filteredPlaces,
   planId,
   detailPlace,
   isDetailVisible,
@@ -673,25 +527,10 @@ ItineraryEditorScreenViewProps) {
         </Tab.Screen>
         <Tab.Screen name="장소추가">
           {() => (
-            <AddPlaceComponent
-              onAddPlace={handleAddPlace}
-              destination={destination}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              selectedTab={selectedTab}
-              setSelectedTab={setSelectedTab}
-              searchResults={searchResults}
-              isLoading={isSearching}
-              handleSearch={handleSearch}
-              filteredPlaces={filteredPlaces}
-            />
-          )}
-        </Tab.Screen>
-        <Tab.Screen name="추천장소">
-          {() => (
             <PlaceRecommendationList
               onAddPlace={handleAddPlace}
-              planId={planId ?? undefined}
+              planId={planId}
+              destination={destination}
             />
           )}
         </Tab.Screen>

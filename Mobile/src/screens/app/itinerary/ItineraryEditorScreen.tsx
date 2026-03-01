@@ -8,6 +8,7 @@ import { View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import axios from 'axios';
 import { API_URL } from '@env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppStackParamList } from '../../../navigation/types';
 import { Place } from '../../../components/itinerary/TimelineItem';
 import { useWebSocket } from '../../../contexts/WebSocketContext';
@@ -22,50 +23,6 @@ import PlaceEditModal from '../../../components/itinerary/PlaceEditModal';
 import { Calendar, Share as ShareIcon } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
-
-interface PlaceVO {
-  placeId: string;
-  categoryId: number;
-  url: string;
-  name: string;
-  formatted_address: string;
-  rating: number;
-  xLocation: number;
-  yLocation: number;
-  photoUrl: string;
-  iconUrl: string;
-}
-
-const getCategoryType = (id: number): '관광지' | '숙소' | '식당' | '기타' => {
-  if ([0, 12, 14, 15, 28].includes(id)) return '관광지';
-  if (id === 1 || id === 32) return '숙소';
-  if (id === 2 || id === 39) return '식당';
-  return '기타';
-};
-
-/**
- * Normalize raw categoryId to 0-4 range used by the app's display components.
- */
-const normalizeCategoryId = (
-  rawId: number | undefined,
-  type?: string,
-): number => {
-  const id = rawId ?? 4;
-  if ([0, 1, 2, 3, 4].includes(id)) return id;
-  if ([12, 14, 15, 28].includes(id)) return 0;
-  if (id === 32) return 1;
-  if (id === 39) return 2;
-  switch (type) {
-    case '관광지':
-      return 0;
-    case '숙소':
-      return 1;
-    case '식당':
-      return 2;
-    default:
-      return 4;
-  }
-};
 
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const {
@@ -107,14 +64,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   // Detail popup state
   const [detailPlace, setDetailPlace] = useState<Place | null>(null);
   const [isDetailVisible, setDetailVisible] = useState(false);
-
-  // AddPlace logic state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTab, setSelectedTab] = useState<'관광지' | '숙소' | '식당'>(
-    '관광지',
-  );
-  const [searchResults, setSearchResults] = useState<Place[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     if (planId) {
@@ -173,166 +122,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       setEditingPlace(null);
     }
   }, [detailPlace, handleDeletePlace]);
-
-  const fetchPlaces = useCallback(
-    async (
-      queryTerm: string,
-      categoryOverride?: '관광지' | '숙소' | '식당',
-    ) => {
-      setIsSearching(true);
-      try {
-        // When no query and a category tab is selected, use the category-specific
-        // recommendation API (aligned with Frontend's approach)
-        if (!queryTerm && categoryOverride) {
-          let endpoint = '';
-          let forcedCategoryId = 4;
-
-          if (planId) {
-            // Authenticated endpoint
-            switch (categoryOverride) {
-              case '관광지':
-                endpoint = `${API_URL}/api/plan/${planId}/tour`;
-                forcedCategoryId = 0;
-                break;
-              case '숙소':
-                endpoint = `${API_URL}/api/plan/${planId}/lodging`;
-                forcedCategoryId = 1;
-                break;
-              case '식당':
-                endpoint = `${API_URL}/api/plan/${planId}/restaurant`;
-                forcedCategoryId = 2;
-                break;
-            }
-          } else if (destination) {
-            // NoAuth endpoint — plan not yet created on server
-            const encodedDest = encodeURIComponent(destination);
-            switch (categoryOverride) {
-              case '관광지':
-                endpoint = `${API_URL}/api/plan/tour/${encodedDest}/${encodedDest}`;
-                forcedCategoryId = 0;
-                break;
-              case '숙소':
-                endpoint = `${API_URL}/api/plan/lodging/${encodedDest}/${encodedDest}`;
-                forcedCategoryId = 1;
-                break;
-              case '식당':
-                endpoint = `${API_URL}/api/plan/restaurant/${encodedDest}/${encodedDest}`;
-                forcedCategoryId = 2;
-                break;
-            }
-          }
-
-          if (endpoint) {
-            const response = await axios.get(endpoint);
-            if (response.data && response.data.places) {
-              const mappedPlaces: Place[] = response.data.places.map(
-                (p: PlaceVO) => ({
-                  id: p.placeId,
-                  placeRefId: p.placeId,
-                  categoryId: forcedCategoryId,
-                  name: p.name,
-                  type: categoryOverride,
-                  address: p.formatted_address,
-                  rating: p.rating,
-                  imageUrl: p.photoUrl || p.iconUrl,
-                  latitude: p.yLocation ?? 0,
-                  longitude: p.xLocation ?? 0,
-                  startTime: '10:00',
-                  endTime: '11:00',
-                }),
-              );
-              setSearchResults(mappedPlaces);
-            } else {
-              setSearchResults([]);
-            }
-            setIsSearching(false);
-            return;
-          }
-        }
-
-        // For search queries: use the general search API
-        let query = queryTerm;
-        if (destination) {
-          query = `${destination} ${queryTerm}`.trim();
-        }
-
-        if (!query) {
-          setIsSearching(false);
-          return;
-        }
-
-        // Use planId-based or NoAuth search endpoint
-        const url = planId
-          ? `${API_URL}/api/plan/${planId}/place/${encodeURIComponent(query)}`
-          : `${API_URL}/api/plan/place/${encodeURIComponent(query)}`;
-        const response = await axios.get(url);
-
-        if (response.data && response.data.places) {
-          const mappedPlaces: Place[] = response.data.places.map(
-            (p: PlaceVO) => {
-              // Use categoryOverride to force the correct category (matching Frontend)
-              // categoryId: 0=관광지, 1=숙소, 2=식당, 3=직접추가, 4=검색
-              const type = categoryOverride || getCategoryType(p.categoryId);
-              const catId = categoryOverride
-                ? categoryOverride === '관광지'
-                  ? 0
-                  : categoryOverride === '숙소'
-                  ? 1
-                  : 2
-                : normalizeCategoryId(p.categoryId, type);
-              return {
-                id: p.placeId,
-                placeRefId: p.placeId,
-                categoryId: catId,
-                name: p.name,
-                type,
-                address: p.formatted_address,
-                rating: p.rating,
-                imageUrl: p.photoUrl || p.iconUrl,
-                latitude: p.yLocation ?? 0,
-                longitude: p.xLocation ?? 0,
-                startTime: '10:00',
-                endTime: '11:00',
-              };
-            },
-          );
-          setSearchResults(mappedPlaces);
-        } else {
-          setSearchResults([]);
-        }
-      } catch (error) {
-        console.error('Search failed:', error);
-        Alert.alert('오류', '장소 검색에 실패했습니다.');
-      } finally {
-        setIsSearching(false);
-      }
-    },
-    [destination, planId],
-  );
-
-  useEffect(() => {
-    if (destination && !searchQuery) {
-      fetchPlaces('', selectedTab);
-    }
-  }, [destination, selectedTab, searchQuery, fetchPlaces]);
-
-  const handleSearch = () => {
-    fetchPlaces(searchQuery, selectedTab);
-  };
-
-  const filteredPlaces = searchResults.filter(place => {
-    const catId = place.categoryId ?? 4;
-    if (selectedTab === '관광지') {
-      return catId === 0;
-    }
-    if (selectedTab === '숙소') {
-      return catId === 1;
-    }
-    if (selectedTab === '식당') {
-      return catId === 2;
-    }
-    return true;
-  });
 
   useLayoutEffect(() => {
     const handleTitleSave = () => {
@@ -505,19 +294,141 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setEditingTime(null);
   };
 
-  const onComplete = () => {
-    navigation.navigate('ItineraryView', {
-      days,
-      tripName,
-      planId: route.params.planId,
-      departure: route.params.departure,
-      travelId: route.params.travelId,
-      transport: route.params.transport,
-      adults: route.params.adults,
-      children: route.params.children,
-      startDate: route.params.startDate,
-      endDate: route.params.endDate,
-    });
+  const [isSaving, setIsSaving] = useState(false);
+
+  /**
+   * Normalize raw categoryId to 0-4 range used by backend.
+   */
+  const normalizeCategoryId = (
+    rawId: number | undefined,
+    type?: string,
+  ): number => {
+    const id = rawId ?? 4;
+    if ([0, 1, 2, 3, 4].includes(id)) return id;
+    if ([12, 14, 15, 28].includes(id)) return 0;
+    if (id === 32) return 1;
+    if (id === 39) return 2;
+    switch (type) {
+      case '관광지':
+        return 0;
+      case '숙소':
+        return 1;
+      case '식당':
+        return 2;
+      default:
+        return 4;
+    }
+  };
+
+  const onComplete = async () => {
+    // If plan already exists (editing from MyPage), just navigate to view
+    if (route.params.planId) {
+      navigation.navigate('ItineraryView', {
+        days,
+        tripName,
+        planId: route.params.planId,
+        departure: route.params.departure,
+        travelId: route.params.travelId,
+        transport: route.params.transport,
+        adults: route.params.adults,
+        children: route.params.children,
+        startDate: route.params.startDate,
+        endDate: route.params.endDate,
+      });
+      return;
+    }
+
+    // New plan: create on server, then navigate to view with planId
+    if (isSaving) return;
+    setIsSaving(true);
+
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      const config = token
+        ? { headers: { Authorization: `Bearer ${token}` } }
+        : {};
+
+      const timetableVOs = days.map(day => ({
+        date: day.date.toISOString().split('T')[0],
+        timeTableStartTime: '09:00:00',
+        timeTableEndTime: '20:00:00',
+      }));
+
+      const allBlocks = days.flatMap(day => {
+        const dateStr = day.date.toISOString().split('T')[0];
+        return day.places.map(place => {
+          const categoryId = normalizeCategoryId(
+            place.categoryId,
+            place.type,
+          );
+          const startTime =
+            place.startTime.length === 5
+              ? place.startTime + ':00'
+              : place.startTime;
+          const endTime =
+            place.endTime.length === 5
+              ? place.endTime + ':00'
+              : place.endTime;
+          return {
+            blockId: null,
+            timeTableId: 0,
+            date: dateStr,
+            placeCategoryId: categoryId,
+            placeName: place.name || '',
+            placeRating: place.rating || 0,
+            placeAddress: place.address || '',
+            placeLink: place.place_url || '',
+            placeId: place.placeRefId || '',
+            photoUrl: place.imageUrl || null,
+            memo: place.memo || '',
+            startTime,
+            endTime,
+            blockStartTime: startTime,
+            blockEndTime: endTime,
+            xLocation: place.longitude || 0,
+            yLocation: place.latitude || 0,
+          };
+        });
+      });
+
+      const response = await axios.post(
+        `${API_URL}/api/plan/create`,
+        {
+          planFrame: {
+            planName: tripName || '나의 일정',
+            departure: route.params.departure || 'SEOUL',
+            transportationCategoryId:
+              route.params.transport === '자동차' ? 1 : 0,
+            travelId: route.params.travelId || 1,
+            adultCount: route.params.adults || 1,
+            childCount: route.params.children || 0,
+          },
+          timetables: timetableVOs,
+          timetablePlaceBlocks: allBlocks,
+        },
+        config,
+      );
+
+      const newPlanId = response.data?.planId;
+
+      navigation.navigate('ItineraryView', {
+        days,
+        tripName,
+        planId: newPlanId,
+        departure: route.params.departure,
+        travelId: route.params.travelId,
+        transport: route.params.transport,
+        adults: route.params.adults,
+        children: route.params.children,
+        startDate: route.params.startDate,
+        endDate: route.params.endDate,
+      });
+    } catch (error: any) {
+      console.error('Failed to create plan:', error);
+      Alert.alert('오류', '일정 저장에 실패했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -544,14 +455,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         onConfirmTimePicker={onConfirmTimePicker}
         destination={destination || ''}
         onComplete={onComplete}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        selectedTab={selectedTab}
-        setSelectedTab={setSelectedTab}
-        searchResults={searchResults}
-        isSearching={isSearching}
-        handleSearch={handleSearch}
-        filteredPlaces={filteredPlaces}
         planId={planId ?? null}
         detailPlace={detailPlace}
         isDetailVisible={isDetailVisible}

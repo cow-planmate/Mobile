@@ -8,8 +8,11 @@ import {
   Image,
   ActivityIndicator,
   StyleSheet,
+  Modal,
 } from 'react-native';
+import { API_URL } from '@env';
 import { Place } from './TimelineItem';
+import KakaoMapView from './KakaoMapView';
 import { usePlaces } from '../../contexts/PlacesContext';
 import { PlaceVO } from '../../api/trips';
 
@@ -87,6 +90,99 @@ function placeVOToPlace(
     longitude: p.xLocation ?? p.xlocation ?? 0,
   };
 }
+
+// ────────────────────────────────────────────────
+// PlaceImage with fallback (matching Frontend pattern)
+// ────────────────────────────────────────────────
+
+const PlaceImage = React.memo(
+  ({ placeId, iconUrl, name }: { placeId: string; iconUrl?: string; name: string }) => {
+    const [hasError, setHasError] = useState(false);
+
+    const primaryUrl = placeId
+      ? `${API_URL}/image/place/${encodeURIComponent(placeId)}`
+      : '';
+    const fallbackUrl = iconUrl || '';
+    const currentUrl = hasError ? fallbackUrl : primaryUrl;
+
+    if (!currentUrl) {
+      return (
+        <View style={[plStyles.placeImage, plStyles.placeholderImage]}>
+          <Text style={plStyles.placeholderText}>
+            {name?.charAt(0) || '?'}
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <Image
+        source={{ uri: currentUrl }}
+        style={plStyles.placeImage}
+        resizeMode="cover"
+        onError={() => {
+          if (!hasError) {
+            setHasError(true);
+          }
+        }}
+      />
+    );
+  },
+);
+
+// ────────────────────────────────────────────────
+// PlaceMapModal — shows single place on Kakao Map
+// ────────────────────────────────────────────────
+
+const PlaceMapModal = React.memo(
+  ({
+    visible,
+    place,
+    onClose,
+  }: {
+    visible: boolean;
+    place: PlaceVO | null;
+    onClose: () => void;
+  }) => {
+    if (!place) return null;
+
+    const lat = place.yLocation ?? place.ylocation ?? 0;
+    const lng = place.xLocation ?? place.xlocation ?? 0;
+
+    if (lat === 0 && lng === 0) return null;
+
+    const mapPlaces = [
+      {
+        id: place.placeId,
+        name: place.name,
+        address: place.formatted_address,
+        latitude: lat,
+        longitude: lng,
+      },
+    ];
+
+    return (
+      <Modal
+        visible={visible}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={onClose}
+      >
+        <View style={plStyles.mapModalContainer}>
+          <View style={plStyles.mapModalHeader}>
+            <Text style={plStyles.mapModalTitle} numberOfLines={1}>
+              {place.name}
+            </Text>
+            <TouchableOpacity onPress={onClose} style={plStyles.mapModalClose}>
+              <Text style={plStyles.mapModalCloseText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <KakaoMapView places={mapPlaces} style={plStyles.mapModalMap} />
+        </View>
+      </Modal>
+    );
+  },
+);
 
 // ────────────────────────────────────────────────
 // Component
@@ -209,27 +305,37 @@ export default function PlaceRecommendationList({
     loadMorePlaces(fieldMap[selectedTab]);
   };
 
+  // ─── Map modal state ───
+  const [mapPlace, setMapPlace] = useState<PlaceVO | null>(null);
+  const [isMapVisible, setMapVisible] = useState(false);
+
+  const handleOpenMap = useCallback((item: PlaceVO) => {
+    setMapPlace(item);
+    setMapVisible(true);
+  }, []);
+
+  const handleCloseMap = useCallback(() => {
+    setMapVisible(false);
+    setMapPlace(null);
+  }, []);
+
   // ─── Render ───
   const renderPlaceItem = ({ item }: { item: PlaceVO }) => {
     const type = getCategoryType(item.categoryId);
     const color = CATEGORY_COLORS[type] || CATEGORY_COLORS['기타'];
 
     return (
-      <View style={plStyles.placeCard}>
+      <TouchableOpacity
+        style={plStyles.placeCard}
+        activeOpacity={0.7}
+        onPress={() => onAddPlace(placeVOToPlace(item, type))}
+      >
         {/* Image */}
-        {item.photoUrl || item.iconUrl ? (
-          <Image
-            source={{ uri: item.photoUrl || item.iconUrl }}
-            style={plStyles.placeImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={[plStyles.placeImage, plStyles.placeholderImage]}>
-            <Text style={plStyles.placeholderText}>
-              {item.name?.charAt(0) || '?'}
-            </Text>
-          </View>
-        )}
+        <PlaceImage
+          placeId={item.placeId}
+          iconUrl={item.iconUrl}
+          name={item.name}
+        />
 
         {/* Info */}
         <View style={plStyles.placeInfo}>
@@ -251,14 +357,18 @@ export default function PlaceRecommendationList({
           </Text>
         </View>
 
-        {/* Add Button */}
+        {/* Map Button */}
         <TouchableOpacity
-          style={plStyles.addButton}
-          onPress={() => onAddPlace(placeVOToPlace(item, type))}
+          style={plStyles.mapButton}
+          onPress={(e) => {
+            e.stopPropagation?.();
+            handleOpenMap(item);
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={plStyles.addButtonText}>추가</Text>
+          <Text style={plStyles.mapButtonIcon}>🗺️</Text>
         </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -350,6 +460,13 @@ export default function PlaceRecommendationList({
         contentContainerStyle={plStyles.listContent}
         showsVerticalScrollIndicator={false}
       />
+
+      {/* Map Modal */}
+      <PlaceMapModal
+        visible={isMapVisible}
+        place={mapPlace}
+        onClose={handleCloseMap}
+      />
     </View>
   );
 }
@@ -429,8 +546,8 @@ const plStyles = StyleSheet.create({
     borderBottomColor: '#F0F0F5',
   },
   placeImage: {
-    width: 56,
-    height: 56,
+    width: 64,
+    height: 64,
     borderRadius: 10,
     backgroundColor: '#F0F0F5',
   },
@@ -477,17 +594,55 @@ const plStyles = StyleSheet.create({
     fontSize: 12,
     color: '#8E8E93',
   },
-  addButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#EEF2FF',
-    borderRadius: 16,
+  mapButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F0F4FF',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: 8,
   },
-  addButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#1344FF',
+  mapButtonIcon: {
+    fontSize: 20,
+  },
+  mapModalContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  mapModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: 50,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+    backgroundColor: '#FFFFFF',
+  },
+  mapModalTitle: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    marginRight: 12,
+  },
+  mapModalClose: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F0F0F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mapModalCloseText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#8E8E93',
+  },
+  mapModalMap: {
+    flex: 1,
   },
   footerLoading: {
     paddingVertical: 20,
