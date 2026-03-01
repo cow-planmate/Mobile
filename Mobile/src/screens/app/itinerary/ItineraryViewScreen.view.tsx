@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Pressable,
 } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import KakaoMapView from '../../../components/itinerary/KakaoMapView';
 import ShareModal from '../../../components/common/ShareModal';
 import TimelineItem, {
   Place,
@@ -157,31 +157,18 @@ export default function ItineraryViewScreenView({
     <SafeAreaView style={styles.container}>
       {isMapVisible && (
         <View style={styles.mapContainer}>
-          <MapView
-            style={styles.map}
-            region={
-              selectedDay && selectedDay.places.length > 0
-                ? {
-                    latitude: selectedDay.places[0].latitude,
-                    longitude: selectedDay.places[0].longitude,
-                    latitudeDelta: 0.0922,
-                    longitudeDelta: 0.0421,
-                  }
-                : undefined
+          <KakaoMapView
+            places={
+              selectedDay?.places.map(place => ({
+                id: place.id,
+                name: place.name,
+                address: place.address,
+                latitude: place.latitude,
+                longitude: place.longitude,
+                place_url: place.place_url,
+              })) || []
             }
-          >
-            {selectedDay?.places.map(place => (
-              <Marker
-                key={place.id}
-                coordinate={{
-                  latitude: place.latitude,
-                  longitude: place.longitude,
-                }}
-                title={place.name}
-                description={place.address}
-              />
-            ))}
-          </MapView>
+          />
         </View>
       )}
 

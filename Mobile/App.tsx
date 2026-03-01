@@ -13,7 +13,7 @@ import './src/api/axiosConfig';
 
 import { StyleSheet } from 'react-native';
 
-const SHOW_STORYBOOK = true;
+const SHOW_STORYBOOK = false;
 
 function App() {
   if (SHOW_STORYBOOK) {
