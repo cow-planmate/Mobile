@@ -305,25 +305,26 @@ export const styles = StyleSheet.create({
     marginRight: 10,
   },
   onlineUserAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: COLORS.primary,
     borderWidth: 2,
     borderColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   moreUsersAvatar: {
     backgroundColor: '#ccc',
   },
   onlineUserInitials: {
     color: 'white',
-    fontSize: 10,
+    fontSize: 13,
     fontWeight: 'bold',
   },
   moreUsersText: {
     color: 'white',
-    fontSize: 10,
+    fontSize: 11,
   },
 });

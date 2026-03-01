@@ -4,12 +4,15 @@ import React, {
   useRef,
   useState,
   useEffect,
+  useCallback,
 } from 'react';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { Image } from 'react-native';
 import { API_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from './AuthContext';
+import gravatarUrl from '../utils/gravatarUrl';
 
 declare var global: any;
 
@@ -23,6 +26,11 @@ Object.assign(global as any, {
 interface UserPresence {
   uid: string;
   userNickname: string;
+  avatarUrl?: string;
+  userInfo?: {
+    email?: string;
+    nickname?: string;
+  };
 }
 
 interface PresenceMessage {
@@ -90,7 +98,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     messageListeners.current.forEach(listener => listener(message));
   };
 
-  const connect = async (planId: number) => {
+  const connect = useCallback(async (planId: number) => {
     if (stompClient.current && stompClient.current.active) {
       if (currentPlanId.current === planId) return; // 이미 같은 방에 연결됨
       disconnect();
@@ -173,7 +181,23 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
               // "users": [ ... ] 배열로 현재 접속자 목록을 덮어씌움
               if (payload.users) {
-                setOnlineUsers(payload.users);
+                // Normalize: ensure uid/userNickname are present at top level
+                const normalized = payload.users.map(u => {
+                  const email = u.userInfo?.email;
+                  const url = email ? gravatarUrl(email) : undefined;
+                  // Prefetch the avatar image for instant display
+                  if (url) {
+                    Image.prefetch(url).catch(() => {});
+                  }
+                  return {
+                    ...u,
+                    uid: u.uid || '',
+                    userNickname: u.userNickname || u.userInfo?.nickname || '',
+                    avatarUrl: url,
+                    userInfo: u.userInfo || { nickname: u.userNickname },
+                  };
+                });
+                setOnlineUsers(normalized);
               }
             } catch (e) {
               console.error('Failed to parse presence message:', e);
@@ -193,10 +217,12 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
     client.activate();
     stompClient.current = client;
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const disconnect = () => {
+  const disconnect = useCallback(() => {
     if (stompClient.current) {
+      // deactivate() sends STOMP DISCONNECT frame and closes the connection
       stompClient.current.deactivate();
       stompClient.current = null;
     }
@@ -204,7 +230,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     setOnlineUsers([]);
     currentPlanId.current = null;
     messageQueue.current = [];
-  };
+  }, []);
 
   /**
    * Internal message sending logic (used by sendMessage and queue flush)
@@ -253,7 +279,9 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     if (eventId) {
       payload.eventId = eventId;
     } else {
-      payload.eventId = `app-auto-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      payload.eventId = `app-auto-${Date.now()}-${Math.floor(
+        Math.random() * 1000,
+      )}`;
     }
 
     console.log(`[WS Send] Dest: ${destination}`, JSON.stringify(payload));

@@ -36,8 +36,7 @@ export default function ShareModal({
 
   const fetchEditors = useCallback(async () => {
     try {
-      // Assuming GET /api/plan/{planId}/member returns GetEditorsResponse
-      const response = await axios.get(`${API_URL}/api/plan/${planId}/member`);
+      const response = await axios.get(`${API_URL}/api/plan/${planId}/editors`);
       if (response.data && response.data.simpleEditorVOs) {
         setEditors(response.data.simpleEditorVOs);
       }
@@ -81,7 +80,7 @@ export default function ShareModal({
   const handleRemoveEditor = async (userId: number) => {
     if (!planId) return;
     try {
-      await axios.delete(`${API_URL}/api/plan/${planId}/member/${userId}`);
+      await axios.delete(`${API_URL}/api/plan/${planId}/editors/${userId}`);
       Alert.alert('성공', '편집 권한이 회수되었습니다.');
       fetchEditors();
     } catch (error: any) {

@@ -4,7 +4,14 @@ import React, {
   useCallback,
   useLayoutEffect,
 } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  Image,
+} from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import axios from 'axios';
 import { API_URL } from '@env';
@@ -47,7 +54,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   } = useItineraryEditor(route, navigation);
 
   const { updatePlaceMemo, updatePlaceDetails } = useItinerary();
-  const { connect, onlineUsers, sendMessage } = useWebSocket();
+  const { connect, disconnect, onlineUsers, sendMessage } = useWebSocket();
   const {
     fetchAllRecommendations,
     fetchAllRecommendationsNoAuth,
@@ -69,7 +76,18 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     if (planId) {
       connect(planId);
     }
-  }, [planId, connect]);
+    return () => {
+      disconnect();
+    };
+  }, [planId, connect, disconnect]); // connect/disconnect are stable (useCallback)
+
+  // Disconnect WebSocket when navigating away (back or forward)
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', () => {
+      disconnect();
+    });
+    return unsubscribe;
+  }, [navigation, disconnect]);
 
   // Fetch place recommendations via PlacesContext
   useEffect(() => {
@@ -158,19 +176,34 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           <View style={styles.onlineUsersContainer}>
             {onlineUsers.length > 0 && (
               <View style={styles.onlineUsersWrapper}>
-                {onlineUsers.slice(0, 3).map((u, i) => (
-                  <View
-                    key={u.uid}
-                    style={[
-                      styles.onlineUserAvatar,
-                      { marginLeft: i > 0 ? -10 : 0 },
-                    ]}
-                  >
-                    <Text style={styles.onlineUserInitials}>
-                      {u.userNickname?.charAt(0) || '?'}
-                    </Text>
-                  </View>
-                ))}
+                {onlineUsers.slice(0, 3).map((u, i) => {
+                  const nickname = u.userNickname || u.userInfo?.nickname || '';
+                  const avatarUri = u.avatarUrl || null;
+                  return (
+                    <View
+                      key={u.uid || `user-${i}`}
+                      style={[
+                        styles.onlineUserAvatar,
+                        { marginLeft: i > 0 ? -10 : 0 },
+                      ]}
+                    >
+                      {avatarUri ? (
+                        <Image
+                          source={{ uri: avatarUri }}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 16,
+                          }}
+                        />
+                      ) : (
+                        <Text style={styles.onlineUserInitials}>
+                          {nickname.charAt(0) || '?'}
+                        </Text>
+                      )}
+                    </View>
+                  );
+                })}
                 {onlineUsers.length > 3 && (
                   <View
                     style={[
@@ -321,6 +354,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   };
 
   const onComplete = async () => {
+    // Disconnect WebSocket immediately when completing
+    disconnect();
+
     // If plan already exists (editing from MyPage), just navigate to view
     if (route.params.planId) {
       navigation.navigate('ItineraryView', {

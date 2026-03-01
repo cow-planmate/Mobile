@@ -280,7 +280,9 @@ export async function inviteEditor(
   planId: number,
   nickname: string,
 ): Promise<void> {
-  await axios.post(`${API_URL}/api/plan/${planId}/invite`, { nickname });
+  await axios.post(`${API_URL}/api/plan/${planId}/invite`, {
+    receiverNickname: nickname,
+  });
 }
 
 /** Remove an editor */
