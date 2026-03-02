@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import type { Meta, StoryObj } from '@storybook/react-native';
-import { ProfileScreenView } from '../../../screens/app/main/ProfileScreen.view';
+import ProfileScreenView from '../../../screens/app/main/ProfileScreen.view';
 
 const meta = {
   title: 'Screens/Main/ProfileScreen',

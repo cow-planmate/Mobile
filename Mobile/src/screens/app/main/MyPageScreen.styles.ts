@@ -4,12 +4,21 @@ export const COLORS = {
   primary: '#1344FF',
   background: '#FFFFFF',
   card: '#FFFFFF',
-  text: '#1C1C1E',
-  placeholder: '#8E8E93',
-  border: '#E5E5EA',
+  text: '#111827',
+  textSecondary: '#6B7280',
+  placeholder: '#9CA3AF',
+  border: '#E5E7EB',
+  borderLight: '#F3F4F6',
   white: '#FFFFFF',
   error: '#FF3B30',
-  lightGray: '#F0F2F5',
+  surface: '#F9FAFB',
+};
+
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
 };
 
 export const styles = StyleSheet.create({
@@ -34,10 +43,12 @@ export const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   profileIconText: {
     fontSize: 40,
@@ -50,7 +61,7 @@ export const styles = StyleSheet.create({
   },
   profileName: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
     color: COLORS.text,
   },
   editIcon: {
@@ -71,33 +82,33 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   cardIcon: {
-    fontSize: 24,
-    color: COLORS.text,
-    marginRight: 16,
     width: 30,
-    textAlign: 'center',
+    marginRight: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardContent: {
     flex: 1,
   },
   cardLabel: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: COLORS.placeholder,
     marginBottom: 2,
   },
   cardValue: {
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
     color: COLORS.text,
   },
   changeButtonText: {
     fontSize: 14,
     color: COLORS.primary,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
   separator: {
     height: 1,
-    backgroundColor: COLORS.border,
+    backgroundColor: COLORS.borderLight,
     marginLeft: 62,
   },
   linksContainer: {
@@ -106,6 +117,7 @@ export const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: COLORS.placeholder,
     paddingVertical: 12,
   },
@@ -113,8 +125,8 @@ export const styles = StyleSheet.create({
     color: COLORS.error,
   },
   sectionSeparator: {
-    height: 12,
-    backgroundColor: COLORS.lightGray,
+    height: 1,
+    backgroundColor: COLORS.border,
     marginHorizontal: -20,
     marginVertical: 32,
   },
@@ -129,11 +141,12 @@ export const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
     color: COLORS.text,
   },
   sectionSubtitle: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: COLORS.placeholder,
     marginTop: 4,
   },
@@ -143,8 +156,8 @@ export const styles = StyleSheet.create({
   },
   sectionCount: {
     fontSize: 14,
-    color: COLORS.placeholder,
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
+    color: COLORS.textSecondary,
   },
   sectionCountIcon: {
     fontSize: 14,
@@ -155,7 +168,7 @@ export const styles = StyleSheet.create({
   sectionActionText: {
     fontSize: 14,
     color: COLORS.primary,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
   itineraryCard: {
     flexDirection: 'row',
@@ -171,24 +184,25 @@ export const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 8,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
   itineraryIcon: {
-    fontSize: 24,
+    // placeholder for lucide icon — no text styles needed
   },
   itineraryContent: {
     flex: 1,
   },
   itineraryTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     color: COLORS.text,
   },
   itinerarySubtitle: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: COLORS.placeholder,
     marginTop: 2,
   },
@@ -197,7 +211,7 @@ export const styles = StyleSheet.create({
   },
   moreButtonText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
     color: COLORS.placeholder,
   },
   emptyContainer: {
@@ -207,6 +221,7 @@ export const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: COLORS.placeholder,
   },
 });

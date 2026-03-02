@@ -7,6 +7,13 @@ export const normalize = (size: number) =>
 
 export const COLORS = theme.colors;
 
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+};
+
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -49,9 +56,9 @@ export const styles = StyleSheet.create({
   headerGreeting: {
     fontSize: normalize(28),
     color: theme.colors.text,
-    fontWeight: theme.typography.weight.bold,
+    fontFamily: FONTS.bold,
     letterSpacing: -0.5,
-    lineHeight: normalize(36), // 줄간격 살짝 여유 있게
+    lineHeight: normalize(36),
   },
   headerNickname: {
     color: theme.colors.primary,
@@ -69,9 +76,9 @@ export const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: normalize(68), // 높이를 살짝 줄여서(72->68) 밀도감 조정
-    borderBottomWidth: 3, // 테두리 두께
-    borderBottomColor: theme.colors.border, // 더 연한 색상 사용
+    height: normalize(68),
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   inputRowLast: {
     borderBottomWidth: 0,
@@ -101,20 +108,20 @@ export const styles = StyleSheet.create({
   label: {
     fontSize: normalize(11),
     color: theme.colors.textSecondary,
-    fontWeight: theme.typography.weight.semibold,
+    fontFamily: FONTS.semibold,
     marginBottom: normalize(4),
     letterSpacing: -0.2,
   },
   valueText: {
     fontSize: normalize(16),
     color: theme.colors.text,
-    fontWeight: theme.typography.weight.medium,
+    fontFamily: FONTS.medium,
     letterSpacing: -0.5,
   },
   placeholderText: {
     fontSize: normalize(16),
     color: theme.colors.textTertiary,
-    fontWeight: theme.typography.weight.regular,
+    fontFamily: FONTS.regular,
     letterSpacing: -0.5,
   },
 
@@ -125,7 +132,7 @@ export const styles = StyleSheet.create({
   submitButton: {
     width: '100%',
     height: normalize(56),
-    borderRadius: 12, // [변경] 16 -> 12 (조금 더 단정한 느낌)
+    borderRadius: theme.borderRadius.m,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
@@ -135,7 +142,7 @@ export const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: theme.typography.size.m,
-    fontWeight: theme.typography.weight.semibold,
+    fontFamily: FONTS.semibold,
     color: theme.colors.white,
   },
   submitButtonTextDisabled: {

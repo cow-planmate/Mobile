@@ -4,12 +4,21 @@ export const COLORS = {
   primary: '#1344FF',
   background: '#FFFFFF',
   card: '#FFFFFF',
-  text: '#1C1C1E',
-  placeholder: '#8E8E93',
-  border: '#E5E5EA',
+  text: '#111827',
+  textSecondary: '#6B7280',
+  placeholder: '#9CA3AF',
+  border: '#E5E7EB',
+  borderLight: '#F3F4F6',
   white: '#FFFFFF',
   error: '#FF3B30',
-  lightGray: '#F0F2F5',
+  surface: '#F9FAFB',
+};
+
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
 };
 
 export const styles = StyleSheet.create({
@@ -35,14 +44,12 @@ export const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-  },
-  profileIconText: {
-    fontSize: 40,
-    color: COLORS.placeholder,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   profileNameContainer: {
     flexDirection: 'row',
@@ -51,12 +58,10 @@ export const styles = StyleSheet.create({
   },
   profileName: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
     color: COLORS.text,
   },
-  editIcon: {
-    fontSize: 18,
-    color: COLORS.primary,
+  editIconContainer: {
     marginLeft: 6,
   },
   infoContainer: {
@@ -73,32 +78,33 @@ export const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   cardIcon: {
-    fontSize: 20,
     width: 32,
-    textAlign: 'center',
     marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardContent: {
     flex: 1,
   },
   cardLabel: {
     fontSize: 12,
+    fontFamily: FONTS.regular,
     color: COLORS.placeholder,
     marginBottom: 4,
   },
   cardValue: {
     fontSize: 16,
+    fontFamily: FONTS.medium,
     color: COLORS.text,
-    fontWeight: '500',
   },
   changeButtonText: {
     fontSize: 14,
     color: COLORS.primary,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
   separator: {
     height: 1,
-    backgroundColor: COLORS.border,
+    backgroundColor: COLORS.borderLight,
     marginVertical: 4,
   },
   linksContainer: {
@@ -108,6 +114,7 @@ export const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: COLORS.placeholder,
     textDecorationLine: 'underline',
   },

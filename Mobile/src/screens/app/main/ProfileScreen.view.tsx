@@ -8,6 +8,7 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
+import { User, Mail, Calendar, Heart, Lock, Pencil } from 'lucide-react-native';
 import UpdateValueModal from '../../../components/common/UpdateValueModal';
 import UpdateGenderModal from '../../../components/common/UpdateGenderModal';
 import UpdateThemeModal from '../../../components/common/UpdateThemeModal';
@@ -19,12 +20,12 @@ const InfoCard = ({
   label,
   value,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   value: string;
 }) => (
   <View style={styles.card}>
-    <Text style={styles.cardIcon}>{icon}</Text>
+    <View style={styles.cardIcon}>{icon}</View>
     <View style={styles.cardContent}>
       <Text style={styles.cardLabel}>{label}</Text>
       <Text style={styles.cardValue}>{value}</Text>
@@ -38,13 +39,13 @@ const EditableCard = ({
   value,
   onPress,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   value: string;
   onPress: () => void;
 }) => (
   <View style={styles.card}>
-    <Text style={styles.cardIcon}>{icon}</Text>
+    <View style={styles.cardIcon}>{icon}</View>
     <View style={styles.cardContent}>
       <Text style={styles.cardLabel}>{label}</Text>
       <Text style={styles.cardValue}>{value}</Text>
@@ -117,43 +118,63 @@ export default function ProfileScreenView({
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.profileSection}>
           <View style={styles.profileIconContainer}>
-            <Text style={styles.profileIconText}>👤</Text>
+            <User size={36} color={COLORS.placeholder} strokeWidth={1.5} />
           </View>
           <TouchableOpacity
             style={styles.profileNameContainer}
             onPress={() => setNicknameModalVisible(true)}
           >
             <Text style={styles.profileName}>{user.name}</Text>
-            <Text style={styles.editIcon}>✎</Text>
+            <View style={styles.editIconContainer}>
+              <Pencil size={16} color={COLORS.primary} strokeWidth={1.5} />
+            </View>
           </TouchableOpacity>
         </View>
 
         <View style={styles.infoContainer}>
-          <InfoCard icon="✉️" label="이메일" value={user.email} />
+          <InfoCard
+            icon={
+              <Mail size={20} color={COLORS.textSecondary} strokeWidth={1.5} />
+            }
+            label="이메일"
+            value={user.email}
+          />
           <View style={styles.separator} />
           <EditableCard
-            icon="🗓️"
+            icon={
+              <Calendar
+                size={20}
+                color={COLORS.textSecondary}
+                strokeWidth={1.5}
+              />
+            }
             label="나이"
             value={user.age}
             onPress={() => setAgeModalVisible(true)}
           />
           <View style={styles.separator} />
           <EditableCard
-            icon="♂"
+            icon={
+              <User size={20} color={COLORS.textSecondary} strokeWidth={1.5} />
+            }
             label="성별"
             value={user.gender}
             onPress={() => setGenderModalVisible(true)}
           />
           <View style={styles.separator} />
           <EditableCard
-            icon="❤️"
+            icon={
+              <Heart size={20} color={COLORS.textSecondary} strokeWidth={1.5} />
+            }
             label="선호테마"
             value={user.preferredTheme}
             onPress={() => setThemeModalVisible(true)}
           />
           <View style={styles.separator} />
           <EditableCard
-            icon="🔒"
+            icon={
+              <Lock size={20} color={COLORS.textSecondary} strokeWidth={1.5} />
+            }
             label="비밀번호"
             value="••••••••"
             onPress={() => setPasswordModalVisible(true)}

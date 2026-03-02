@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { Calendar, MoreVertical } from 'lucide-react-native';
 import UpdateValueModal from '../../../components/common/UpdateValueModal';
 import ShareModal from '../../../components/common/ShareModal';
 import MenuModal from '../../../components/common/MenuModal';
@@ -39,9 +40,7 @@ const SectionHeader = ({
       <Text style={styles.sectionSubtitle}>{subtitle}</Text>
     </View>
     <View style={styles.sectionActionContainer}>
-      <Text style={styles.sectionCount}>
-        <Text style={styles.sectionCountIcon}>🗓️</Text> {count}개의 계획
-      </Text>
+      <Text style={styles.sectionCount}>{count}개의 계획</Text>
       {actionText && (
         <TouchableOpacity onPress={onActionPress} style={styles.actionButton}>
           <Text style={styles.sectionActionText}>{actionText}</Text>
@@ -64,14 +63,14 @@ const ItineraryCard = ({
 }) => (
   <TouchableOpacity style={styles.itineraryCard} onPress={onPress}>
     <View style={styles.itineraryIconContainer}>
-      <Text style={styles.itineraryIcon}>🗓️</Text>
+      <Calendar size={20} color={COLORS.primary} strokeWidth={1.5} />
     </View>
     <View style={styles.itineraryContent}>
       <Text style={styles.itineraryTitle}>{title}</Text>
       <Text style={styles.itinerarySubtitle}>{subtitle}</Text>
     </View>
     <TouchableOpacity onPress={onPressMore} style={styles.moreButton}>
-      <Text style={styles.moreButtonText}>⋮</Text>
+      <MoreVertical size={18} color={COLORS.placeholder} />
     </TouchableOpacity>
   </TouchableOpacity>
 );
