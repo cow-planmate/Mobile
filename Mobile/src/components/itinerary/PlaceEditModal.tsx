@@ -9,9 +9,16 @@ import {
   Pressable,
 } from 'react-native';
 import DatePicker from 'react-native-date-picker';
+import { X } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 
 const COLORS = theme.colors;
+const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+};
 
 interface PlaceEditModalProps {
   visible: boolean;
@@ -88,7 +95,7 @@ export default function PlaceEditModal({
           <View style={styles.header}>
             <Text style={styles.title}>장소 수정</Text>
             <TouchableOpacity onPress={onClose}>
-              <Text style={styles.closeButton}>✕</Text>
+              <X size={20} color="#9CA3AF" strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
 
@@ -197,14 +204,11 @@ const styles = StyleSheet.create({
   },
   container: {
     width: '85%',
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   header: {
     flexDirection: 'row',
@@ -214,21 +218,16 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  closeButton: {
-    fontSize: 20,
-    color: '#999',
-    padding: 4,
+    fontFamily: FONTS.bold,
+    color: '#111827',
   },
   content: {
     gap: 16,
   },
   placeName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontFamily: FONTS.semibold,
+    color: '#111827',
     marginBottom: 8,
   },
   row: {
@@ -241,30 +240,36 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    color: '#666',
+    color: '#6B7280',
     marginBottom: 4,
+    fontFamily: FONTS.regular,
   },
   timeButton: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F3F4F6',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   timeText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
+    fontFamily: FONTS.medium,
+    color: '#111827',
   },
   inputContainer: {
     marginTop: 8,
   },
   input: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F3F4F6',
     borderRadius: 8,
     padding: 12,
     fontSize: 14,
+    fontFamily: FONTS.regular,
     minHeight: 80,
     textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   buttonRow: {
     flexDirection: 'row',
@@ -278,17 +283,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   deleteButton: {
-    backgroundColor: '#FFEBEE',
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
   },
   saveButton: {
-    backgroundColor: COLORS.primary || '#007AFF', // Fallback color
+    backgroundColor: COLORS.primary,
   },
   buttonText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
+    fontFamily: FONTS.semibold,
+    color: '#FFFFFF',
   },
   deleteText: {
-    color: '#D32F2F',
+    color: '#EF4444',
   },
 });

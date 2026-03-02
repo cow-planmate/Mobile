@@ -3,11 +3,18 @@ import { StyleSheet } from 'react-native';
 export const COLORS = {
   primary: '#1344FF',
   card: '#FFFFFF',
-  text: '#1C1C1E',
-  placeholder: '#8E8E93',
-  border: '#E5E5EA',
+  text: '#111827',
+  placeholder: '#9CA3AF',
+  border: '#E5E7EB',
   error: '#FF3B30',
-  lightGray: '#F0F0F5',
+  surface: '#F3F4F6',
+};
+
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
 };
 
 export const CATEGORY_COLORS = {
@@ -29,16 +36,13 @@ export const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     backgroundColor: COLORS.card,
-    borderRadius: 10,
+    borderRadius: 8,
     padding: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 3,
     alignItems: 'center',
     overflow: 'hidden',
     borderLeftWidth: 4,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   infoContainer: {
     flex: 1,
@@ -53,21 +57,22 @@ export const styles = StyleSheet.create({
   timeText: {
     fontSize: 12,
     color: COLORS.placeholder,
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
   },
   timeTextEditable: {
     fontSize: 12,
     color: COLORS.primary,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     textDecorationLine: 'underline',
   },
   nameText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
     color: COLORS.text,
   },
   metaText: {
     fontSize: 12,
+    fontFamily: FONTS.regular,
     color: COLORS.placeholder,
     marginTop: 2,
   },
@@ -76,6 +81,7 @@ export const styles = StyleSheet.create({
     color: '#4B5563',
     marginTop: 4,
     fontStyle: 'italic',
+    fontFamily: FONTS.regular,
   },
   deleteButton: {
     width: 24,
@@ -90,7 +96,7 @@ export const styles = StyleSheet.create({
   deleteButtonText: {
     color: COLORS.error,
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
     lineHeight: 22,
   },
 });

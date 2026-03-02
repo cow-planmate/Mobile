@@ -2,11 +2,18 @@ import { StyleSheet } from 'react-native';
 
 export const COLORS = {
   primary: '#1344FF',
-  text: '#1C1C1E',
+  text: '#111827',
   white: '#FFFFFF',
-  border: '#E5E5EA',
-  lightGray: '#F0F0F0',
-  placeholder: '#8E8E93',
+  border: '#E5E7EB',
+  surface: '#F3F4F6',
+  placeholder: '#9CA3AF',
+};
+
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
 };
 
 export const styles = StyleSheet.create({
@@ -18,15 +25,12 @@ export const styles = StyleSheet.create({
   },
   modalView: {
     margin: 20,
-    backgroundColor: 'white',
-    borderRadius: 20,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
     padding: 20,
     width: '90%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   header: {
     flexDirection: 'row',
@@ -37,8 +41,9 @@ export const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
     textAlign: 'center',
+    color: COLORS.text,
     flex: 1,
     marginLeft: 24,
   },
@@ -53,7 +58,7 @@ export const styles = StyleSheet.create({
   },
   optionCard: {
     flex: 1,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: 12,
     paddingVertical: 20,
@@ -72,11 +77,11 @@ export const styles = StyleSheet.create({
   },
   optionLabel: {
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
     color: COLORS.text,
   },
   optionLabelSelected: {
     color: COLORS.primary,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
   },
 });

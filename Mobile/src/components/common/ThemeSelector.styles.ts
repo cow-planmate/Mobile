@@ -2,16 +2,23 @@ import { StyleSheet } from 'react-native';
 
 export const COLORS = {
   primary: '#1344FF',
-  text: '#1C1C1E',
+  text: '#111827',
   textSecondary: '#6B7280',
-  placeholder: '#8E8E93',
+  placeholder: '#9CA3AF',
   white: '#FFFFFF',
-  border: '#E5E5EA',
-  lightGray: '#F3F4F6',
+  border: '#E5E7EB',
+  surface: '#F3F4F6',
   selectedBg: '#1344FF',
   selectedText: '#FFFFFF',
   unselectedBg: '#F3F4F6',
   unselectedText: '#374151',
+};
+
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
 };
 
 export const styles = StyleSheet.create({
@@ -28,15 +35,12 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: 16,
     padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   title: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     color: COLORS.text,
     textAlign: 'center',
     marginBottom: 16,
@@ -51,16 +55,19 @@ export const styles = StyleSheet.create({
   keywordButton: {
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 8,
     backgroundColor: COLORS.unselectedBg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   keywordButtonSelected: {
     backgroundColor: COLORS.selectedBg,
+    borderColor: COLORS.selectedBg,
   },
   keywordText: {
     fontSize: 14,
     color: COLORS.unselectedText,
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
   },
   keywordTextSelected: {
     color: COLORS.selectedText,
@@ -68,6 +75,7 @@ export const styles = StyleSheet.create({
   counter: {
     textAlign: 'center',
     fontSize: 13,
+    fontFamily: FONTS.regular,
     color: COLORS.textSecondary,
     marginBottom: 20,
   },
@@ -82,6 +90,7 @@ export const styles = StyleSheet.create({
   },
   skipButtonText: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: COLORS.textSecondary,
   },
   navButtons: {
@@ -91,23 +100,25 @@ export const styles = StyleSheet.create({
   prevButton: {
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.lightGray,
+    borderRadius: 8,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   prevButtonText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     color: COLORS.text,
   },
   nextButton: {
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 10,
+    borderRadius: 8,
     backgroundColor: COLORS.primary,
   },
   nextButtonText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     color: COLORS.white,
   },
   loadingContainer: {

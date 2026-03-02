@@ -15,6 +15,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '@env';
+import { X, Search, MapPin, Clock } from 'lucide-react-native';
 
 import { styles, COLORS } from './SearchLocationModal.styles';
 
@@ -532,7 +533,7 @@ export default function SearchLocationModal({
       {recentSearches.length > 0 && (
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionIcon}>🕐</Text>
+            <Clock size={16} color={COLORS.subtext} strokeWidth={1.5} />
             <Text style={styles.sectionTitle}>최근 검색</Text>
           </View>
           <View style={styles.tagContainer}>
@@ -550,7 +551,7 @@ export default function SearchLocationModal({
                   onPress={() => removeRecentSearch(place)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.tagRemoveText}>✕</Text>
+                  <X size={12} color={COLORS.subtext} strokeWidth={1.5} />
                 </TouchableOpacity>
               </View>
             ))}
@@ -561,7 +562,7 @@ export default function SearchLocationModal({
       {}
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionIcon}>📍</Text>
+          <MapPin size={16} color={COLORS.primary} strokeWidth={1.5} />
           <Text style={styles.sectionTitle}>검색 결과</Text>
         </View>
         {isLoading ? (
@@ -588,7 +589,7 @@ export default function SearchLocationModal({
           ))
         ) : searchQuery.length > 1 ? (
           <View style={styles.inlineNoResultContainer}>
-            <Text style={styles.noResultIconSmall}>🔍</Text>
+            <Search size={20} color={COLORS.subtext} strokeWidth={1.5} />
             <Text style={styles.emptyHintText}>검색 결과가 없습니다</Text>
           </View>
         ) : (
@@ -619,7 +620,7 @@ export default function SearchLocationModal({
               style={styles.closeButton}
               activeOpacity={0.7}
             >
-              <Text style={styles.closeButtonText}>✕</Text>
+              <X size={20} color={COLORS.subtext} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
 
@@ -627,7 +628,7 @@ export default function SearchLocationModal({
           {isDeparture && (
             <View style={styles.searchContainer}>
               <View style={styles.searchIconContainer}>
-                <Text style={styles.searchIcon}>🔍</Text>
+                <Search size={18} color={COLORS.subtext} strokeWidth={1.5} />
               </View>
               <TextInput
                 style={styles.searchInput}
@@ -644,7 +645,7 @@ export default function SearchLocationModal({
                   style={styles.clearButton}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.clearButtonText}>✕</Text>
+                  <X size={16} color={COLORS.subtext} strokeWidth={1.5} />
                 </TouchableOpacity>
               )}
             </View>

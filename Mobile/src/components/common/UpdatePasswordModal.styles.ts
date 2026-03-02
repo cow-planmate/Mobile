@@ -2,11 +2,18 @@ import { StyleSheet } from 'react-native';
 
 export const COLORS = {
   primary: '#1344FF',
-  text: '#1C1C1E',
-  placeholder: '#8E8E93',
+  text: '#111827',
+  placeholder: '#9CA3AF',
   white: '#FFFFFF',
-  border: '#E5E5EA',
-  lightGray: '#F0F2F5',
+  border: '#E5E7EB',
+  surface: '#F3F4F6',
+};
+
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
 };
 
 export const styles = StyleSheet.create({
@@ -19,18 +26,15 @@ export const styles = StyleSheet.create({
   modalView: {
     width: '90%',
     maxWidth: 400,
-    backgroundColor: 'white',
+    backgroundColor: COLORS.white,
     borderRadius: 16,
     padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
     color: COLORS.text,
     marginBottom: 24,
   },
@@ -40,6 +44,7 @@ export const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: COLORS.text,
     marginBottom: 8,
   },
@@ -55,6 +60,7 @@ export const styles = StyleSheet.create({
     height: 48,
     paddingHorizontal: 12,
     fontSize: 16,
+    fontFamily: FONTS.regular,
     color: COLORS.text,
   },
   eyeIcon: {
@@ -75,11 +81,13 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButton: {
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   cancelButtonText: {
     color: COLORS.text,
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
     fontSize: 16,
   },
   confirmButton: {
@@ -87,7 +95,7 @@ export const styles = StyleSheet.create({
   },
   confirmButtonText: {
     color: COLORS.white,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
     fontSize: 16,
   },
 });

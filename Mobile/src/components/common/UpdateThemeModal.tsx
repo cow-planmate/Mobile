@@ -11,14 +11,15 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { API_URL } from '@env';
+import { Map, Bed, UtensilsCrossed } from 'lucide-react-native';
 import { PreferredThemeVO, changePreferredThemes } from '../../api/themes';
 import ThemeSelector, { ThemeSelectorResult } from './ThemeSelector';
 import { styles, COLORS } from './UpdateThemeModal.styles';
 
-const CATEGORY_ICONS: Record<number, string> = {
-  0: '🗺️',
-  1: '🛏️',
-  2: '🍽️',
+const CATEGORY_ICONS: Record<number, React.ReactNode> = {
+  0: <Map size={16} color="#6B7280" strokeWidth={1.5} />,
+  1: <Bed size={16} color="#6B7280" strokeWidth={1.5} />,
+  2: <UtensilsCrossed size={16} color="#6B7280" strokeWidth={1.5} />,
 };
 
 const CATEGORY_NAMES: Record<number, string> = {
@@ -145,9 +146,7 @@ export default function UpdateThemeModal({
                       {groupedForDisplay.map(group => (
                         <View key={group.catId} style={styles.categoryGroup}>
                           <View style={styles.categoryHeader}>
-                            <Text style={styles.categoryIcon}>
-                              {group.icon}
-                            </Text>
+                            {group.icon}
                             <Text style={styles.categoryName}>
                               {group.name}
                             </Text>

@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Pressable,
 } from 'react-native';
+import { X } from 'lucide-react-native';
 import {
   getShareUrl,
   inviteEditor,
@@ -19,6 +20,12 @@ import {
 import { theme } from '../../theme/theme';
 
 const COLORS = theme.colors;
+const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+};
 
 interface ShareModalProps {
   visible: boolean;
@@ -122,7 +129,7 @@ export default function ShareModal({
           <View style={styles.header}>
             <Text style={styles.title}>일정 공유 및 초대</Text>
             <TouchableOpacity onPress={onClose}>
-              <Text style={styles.closeButton}>✕</Text>
+              <X size={22} color="#9CA3AF" strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
 
@@ -209,10 +216,12 @@ const styles = StyleSheet.create({
   },
   container: {
     width: '90%',
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 24,
     maxHeight: '80%',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   header: {
     flexDirection: 'row',
@@ -222,43 +231,42 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  closeButton: {
-    fontSize: 24,
-    color: '#999',
-    padding: 4,
+    fontFamily: FONTS.bold,
+    color: '#111827',
   },
   section: {
     marginBottom: 24,
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
+    fontFamily: FONTS.semibold,
+    color: '#6B7280',
     marginBottom: 8,
   },
   linkContainer: {
     flexDirection: 'row',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F3F4F6',
     borderRadius: 8,
     padding: 4,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   linkInput: {
     flex: 1,
     padding: 12,
     fontSize: 14,
-    color: '#333',
+    color: '#111827',
+    fontFamily: FONTS.regular,
   },
   helperText: {
     fontSize: 12,
-    color: '#999',
+    color: '#9CA3AF',
     marginTop: 6,
+    fontFamily: FONTS.regular,
   },
   divider: {
     height: 1,
-    backgroundColor: '#EEEEEE',
+    backgroundColor: '#E5E7EB',
     marginBottom: 24,
   },
   inviteContainer: {
@@ -267,14 +275,17 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F3F4F6',
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 14,
+    fontFamily: FONTS.regular,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   inviteButton: {
-    backgroundColor: COLORS.primary || '#007AFF', // Fallback color
+    backgroundColor: COLORS.primary,
     borderRadius: 8,
     paddingHorizontal: 20,
     justifyContent: 'center',
@@ -284,8 +295,8 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   inviteButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: FONTS.semibold,
     fontSize: 14,
   },
   editorRow: {
@@ -303,36 +314,40 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: '#E5E7EB',
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
+    fontFamily: FONTS.semibold,
+    color: '#6B7280',
   },
   editorName: {
     fontSize: 14,
-    color: '#333',
+    color: '#111827',
+    fontFamily: FONTS.regular,
   },
   removeButton: {
     padding: 8,
   },
   removeButtonText: {
     fontSize: 12,
-    color: '#FF3B30',
+    color: '#EF4444',
+    fontFamily: FONTS.medium,
   },
   confirmButton: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F3F4F6',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   confirmButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontFamily: FONTS.semibold,
+    color: '#111827',
   },
 });

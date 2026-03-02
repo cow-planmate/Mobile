@@ -7,16 +7,23 @@ export const normalize = (size: number) =>
 export const COLORS = {
   primary: '#1344FF',
   background: '#FFFFFF',
-  text: '#1C1C1E',
-  placeholder: '#8E8E93',
-  border: '#E5E5EA',
-  lightGray: '#F7F8FA',
+  text: '#111827',
+  placeholder: '#9CA3AF',
+  border: '#E5E7EB',
+  lightGray: '#F9FAFB',
   darkGray: '#505050',
   white: '#FFFFFF',
   overlay: 'rgba(0,0,0,0.4)',
   lightBlue: '#e6f0ff',
   iconBg: '#F5F7FF',
-  shadow: '#1344FF',
+  surface: '#F3F4F6',
+};
+
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
 };
 
 export const styles = StyleSheet.create({
@@ -34,11 +41,8 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderTopLeftRadius: normalize(28),
     borderTopRightRadius: normalize(28),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     overflow: 'hidden',
   },
   header: {
@@ -52,14 +56,14 @@ export const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: normalize(22),
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
     color: COLORS.text,
     marginBottom: normalize(4),
   },
   headerSubtitle: {
     fontSize: normalize(14),
     color: COLORS.placeholder,
-    fontWeight: '400',
+    fontFamily: FONTS.regular,
   },
   closeButton: {
     width: normalize(36),
@@ -72,7 +76,7 @@ export const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: normalize(16),
     color: COLORS.darkGray,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -116,7 +120,7 @@ export const styles = StyleSheet.create({
   clearButtonText: {
     fontSize: normalize(12),
     color: COLORS.darkGray,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
   contentContainer: {
     flex: 1,
@@ -167,7 +171,7 @@ export const styles = StyleSheet.create({
   },
   resultName: {
     fontSize: normalize(15),
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     color: COLORS.text,
     marginBottom: normalize(2),
   },
@@ -200,7 +204,7 @@ export const styles = StyleSheet.create({
   backButtonText: {
     fontSize: normalize(24),
     color: COLORS.primary,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     marginRight: normalize(8),
   },
   sectionIcon: {
@@ -209,7 +213,7 @@ export const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: normalize(16),
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     color: COLORS.text,
   },
   tagContainer: {
@@ -242,7 +246,7 @@ export const styles = StyleSheet.create({
   tagText: {
     fontSize: normalize(14),
     color: COLORS.primary,
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
   },
   popularItem: {
     flexDirection: 'row',
@@ -259,7 +263,7 @@ export const styles = StyleSheet.create({
   popularText: {
     fontSize: normalize(16),
     color: COLORS.text,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     marginBottom: normalize(4),
   },
   popularSubText: {
@@ -269,7 +273,7 @@ export const styles = StyleSheet.create({
   popularArrow: {
     fontSize: normalize(20),
     color: COLORS.placeholder,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
   emptyHintText: {
     fontSize: normalize(14),
@@ -307,7 +311,7 @@ export const styles = StyleSheet.create({
   },
   noResultTitle: {
     fontSize: normalize(18),
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     color: COLORS.text,
     marginBottom: normalize(8),
   },
@@ -348,7 +352,7 @@ export const styles = StyleSheet.create({
   },
   destinationName: {
     fontSize: normalize(15),
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     color: COLORS.text,
   },
   destinationArrow: {

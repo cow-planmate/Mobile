@@ -3,9 +3,17 @@ import { StyleSheet } from 'react-native';
 export const COLORS = {
   primary: '#1344FF',
   white: '#FFFFFF',
-  lightGray: '#F0F0F0',
-  text: '#1C1C1E',
-  placeholder: '#8E8E93',
+  surface: '#F3F4F6',
+  text: '#111827',
+  placeholder: '#9CA3AF',
+  border: '#E5E7EB',
+};
+
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
 };
 
 export const styles = StyleSheet.create({
@@ -18,14 +26,11 @@ export const styles = StyleSheet.create({
   modalView: {
     margin: 20,
     backgroundColor: COLORS.white,
-    borderRadius: 20,
+    borderRadius: 16,
     padding: 20,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     width: '90%',
   },
   buttonRow: {
@@ -36,21 +41,24 @@ export const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    borderRadius: 10,
+    borderRadius: 8,
     padding: 12,
-    elevation: 2,
     marginHorizontal: 5,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   buttonText: {
     color: COLORS.text,
+    fontFamily: FONTS.medium,
   },
   confirmButton: {
     backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   confirmButtonText: {
     color: COLORS.white,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
   },
 });

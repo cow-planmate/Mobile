@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
+import { Eye, EyeOff } from 'lucide-react-native';
 import { styles, COLORS } from './UpdatePasswordModal.styles';
 
 type UpdatePasswordModalProps = {
@@ -44,7 +45,11 @@ const PasswordInput = ({
           style={styles.eyeIcon}
           onPress={() => setIsPasswordVisible(!isPasswordVisible)}
         >
-          <Text>👁️</Text>
+          {isPasswordVisible ? (
+            <EyeOff size={20} color={COLORS.placeholder} strokeWidth={1.5} />
+          ) : (
+            <Eye size={20} color={COLORS.placeholder} strokeWidth={1.5} />
+          )}
         </TouchableOpacity>
       </View>
     </View>

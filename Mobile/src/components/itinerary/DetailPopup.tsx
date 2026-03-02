@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Modal,
   View,
@@ -11,11 +11,18 @@ import {
   Linking,
   Dimensions,
 } from 'react-native';
-import {Place} from './TimelineItem';
-import {CATEGORY_COLORS} from './TimelineItem.styles';
-import {StyleSheet} from 'react-native';
+import { X, Map as MapIcon } from 'lucide-react-native';
+import { Place } from './TimelineItem';
+import { CATEGORY_COLORS } from './TimelineItem.styles';
+import { StyleSheet } from 'react-native';
 
-const {width: SCREEN_WIDTH} = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+};
 
 interface DetailPopupProps {
   visible: boolean;
@@ -25,7 +32,7 @@ interface DetailPopupProps {
   onDelete: () => void;
 }
 
-const CATEGORY_NAMES: {[key: number]: string} = {
+const CATEGORY_NAMES: { [key: number]: string } = {
   0: '관광지',
   1: '숙소',
   2: '식당',
@@ -93,34 +100,30 @@ export default function DetailPopup({
       visible={visible}
       animationType="slide"
       transparent={true}
-      onRequestClose={onClose}>
+      onRequestClose={onClose}
+    >
       <Pressable style={popupStyles.overlay} onPress={onClose}>
         <Pressable style={popupStyles.container} onPress={() => {}}>
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            bounces={false}>
+          <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
             {/* Header */}
             <View style={popupStyles.header}>
               <TouchableOpacity
                 onPress={onClose}
-                style={popupStyles.closeButton}>
-                <Text style={popupStyles.closeButtonText}>✕</Text>
+                style={popupStyles.closeButton}
+              >
+                <X size={16} color="#111827" strokeWidth={1.5} />
               </TouchableOpacity>
             </View>
 
             {/* Photo */}
             {place.imageUrl ? (
               <Image
-                source={{uri: place.imageUrl}}
+                source={{ uri: place.imageUrl }}
                 style={popupStyles.photo}
                 resizeMode="cover"
               />
             ) : (
-              <View
-                style={[
-                  popupStyles.photo,
-                  popupStyles.placeholderPhoto,
-                ]}>
+              <View style={[popupStyles.photo, popupStyles.placeholderPhoto]}>
                 <Text style={popupStyles.placeholderPhotoText}>
                   {place.name.charAt(0)}
                 </Text>
@@ -135,20 +138,23 @@ export default function DetailPopup({
                 <View
                   style={[
                     popupStyles.categoryBadge,
-                    {backgroundColor: categoryColor.bg, borderColor: categoryColor.border},
-                  ]}>
+                    {
+                      backgroundColor: categoryColor.bg,
+                      borderColor: categoryColor.border,
+                    },
+                  ]}
+                >
                   <Text
                     style={[
                       popupStyles.categoryBadgeText,
-                      {color: categoryColor.border},
-                    ]}>
+                      { color: categoryColor.border },
+                    ]}
+                  >
                     {categoryName}
                   </Text>
                 </View>
                 {place.rating > 0 && (
-                  <Text style={popupStyles.ratingText}>
-                    ⭐ {place.rating}
-                  </Text>
+                  <Text style={popupStyles.ratingText}>⭐ {place.rating}</Text>
                 )}
               </View>
 
@@ -164,8 +170,10 @@ export default function DetailPopup({
               {/* Map Link */}
               <TouchableOpacity
                 style={popupStyles.mapButton}
-                onPress={handleOpenMap}>
-                <Text style={popupStyles.mapButtonText}>🗺️ 지도에서 보기</Text>
+                onPress={handleOpenMap}
+              >
+                <MapIcon size={16} color="#111827" strokeWidth={1.5} />
+                <Text style={popupStyles.mapButtonText}> 지도에서 보기</Text>
               </TouchableOpacity>
             </View>
 
@@ -177,7 +185,7 @@ export default function DetailPopup({
                 value={memo}
                 onChangeText={handleMemoChange}
                 placeholder="메모를 입력하세요..."
-                placeholderTextColor="#8E8E93"
+                placeholderTextColor="#9CA3AF"
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
@@ -190,7 +198,8 @@ export default function DetailPopup({
               onPress={() => {
                 onDelete();
                 onClose();
-              }}>
+              }}
+            >
               <Text style={popupStyles.deleteButtonText}>일정에서 삭제</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -224,14 +233,9 @@ const popupStyles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F0F0F5',
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: '#1C1C1E',
-    fontWeight: '600',
   },
   photo: {
     width: SCREEN_WIDTH - 32,
@@ -241,14 +245,14 @@ const popupStyles = StyleSheet.create({
     marginBottom: 16,
   },
   placeholderPhoto: {
-    backgroundColor: '#F0F0F5',
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
   placeholderPhotoText: {
     fontSize: 48,
-    color: '#8E8E93',
-    fontWeight: 'bold',
+    color: '#9CA3AF',
+    fontFamily: FONTS.bold,
   },
   infoSection: {
     paddingHorizontal: 16,
@@ -256,8 +260,8 @@ const popupStyles = StyleSheet.create({
   },
   placeName: {
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#1C1C1E',
+    fontFamily: FONTS.bold,
+    color: '#111827',
     marginBottom: 8,
   },
   badgeRow: {
@@ -274,17 +278,19 @@ const popupStyles = StyleSheet.create({
   },
   categoryBadgeText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
   ratingText: {
     fontSize: 14,
-    color: '#1C1C1E',
+    color: '#111827',
+    fontFamily: FONTS.regular,
   },
   addressText: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: '#9CA3AF',
     marginBottom: 12,
     lineHeight: 20,
+    fontFamily: FONTS.regular,
   },
   timeInfo: {
     flexDirection: 'row',
@@ -293,28 +299,30 @@ const popupStyles = StyleSheet.create({
   },
   timeLabel: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1C1C1E',
+    fontFamily: FONTS.semibold,
+    color: '#111827',
     marginRight: 8,
   },
   timeValue: {
     fontSize: 14,
     color: '#1344FF',
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
   },
   mapButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 16,
-    backgroundColor: '#F0F0F5',
+    backgroundColor: '#F3F4F6',
     borderRadius: 8,
     alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   mapButtonText: {
     fontSize: 14,
-    color: '#1C1C1E',
-    fontWeight: '500',
+    color: '#111827',
+    fontFamily: FONTS.medium,
   },
   memoSection: {
     paddingHorizontal: 16,
@@ -322,32 +330,33 @@ const popupStyles = StyleSheet.create({
   },
   memoLabel: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1C1C1E',
+    fontFamily: FONTS.semibold,
+    color: '#111827',
     marginBottom: 8,
   },
   memoInput: {
-    backgroundColor: '#F5F5F7',
+    backgroundColor: '#F9FAFB',
     borderRadius: 10,
     padding: 12,
     fontSize: 14,
-    color: '#1C1C1E',
+    fontFamily: FONTS.regular,
+    color: '#111827',
     minHeight: 100,
     borderWidth: 1,
-    borderColor: '#E5E5EA',
+    borderColor: '#E5E7EB',
   },
   deleteButton: {
     marginHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 10,
-    backgroundColor: '#FFF0F0',
+    backgroundColor: '#FEF2F2',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#FF3B30',
+    borderColor: '#EF4444',
   },
   deleteButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FF3B30',
+    fontFamily: FONTS.semibold,
+    color: '#EF4444',
   },
 });

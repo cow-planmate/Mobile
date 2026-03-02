@@ -1,8 +1,9 @@
 import { StyleSheet } from 'react-native';
 
 export const COLORS = {
-  primary: '#007AFF',
+  primary: '#1344FF',
   white: '#FFFFFF',
+  border: '#E5E7EB',
 };
 
 export const styles = StyleSheet.create({
@@ -16,11 +17,8 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
   },
   icon: {
     color: COLORS.white,

@@ -2,12 +2,19 @@ import { StyleSheet } from 'react-native';
 
 export const COLORS = {
   primary: '#1344FF',
-  text: '#1C1C1E',
-  border: '#E5E5EA',
+  text: '#111827',
+  border: '#E5E7EB',
   white: '#FFFFFF',
-  placeholder: '#8E8E93',
+  placeholder: '#9CA3AF',
   background: 'rgba(0,0,0,0.5)',
-  lightGray: '#F5F5F7',
+  surface: '#F3F4F6',
+};
+
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
 };
 
 export const styles = StyleSheet.create({
@@ -23,18 +30,12 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: 16,
     padding: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
     color: COLORS.text,
     marginBottom: 24,
     textAlign: 'left',
@@ -48,6 +49,7 @@ export const styles = StyleSheet.create({
   },
   headerText: {
     fontSize: 12,
+    fontFamily: FONTS.regular,
     color: COLORS.placeholder,
     flex: 1,
     textAlign: 'center',
@@ -62,7 +64,7 @@ export const styles = StyleSheet.create({
     flex: 0.8,
     fontSize: 16,
     color: COLORS.text,
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
     textAlign: 'center',
   },
   dateInput: {
@@ -78,6 +80,7 @@ export const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: COLORS.text,
   },
   timeInput: {
@@ -93,6 +96,7 @@ export const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: COLORS.text,
   },
   controlRow: {
@@ -105,14 +109,16 @@ export const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 4,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   controlButtonText: {
     fontSize: 20,
     color: COLORS.text,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
   footer: {
     flexDirection: 'row',
@@ -128,18 +134,20 @@ export const styles = StyleSheet.create({
     minWidth: 80,
   },
   cancelButton: {
-    backgroundColor: '#F2F2F7',
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   cancelButtonText: {
     color: COLORS.text,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
   confirmButton: {
     backgroundColor: COLORS.primary,
   },
   confirmButtonText: {
     color: COLORS.white,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
   icon: {
     fontSize: 12,

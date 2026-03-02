@@ -11,10 +11,18 @@ import {
   Modal,
 } from 'react-native';
 import { API_URL } from '@env';
+import { X, Search, Map, Palmtree } from 'lucide-react-native';
 import { Place } from './TimelineItem';
 import KakaoMapView from './KakaoMapView';
 import { usePlaces } from '../../contexts/PlacesContext';
 import { PlaceVO } from '../../api/trips';
+
+const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+};
 
 // ────────────────────────────────────────────────
 // Category helpers (matching Frontend)
@@ -180,7 +188,7 @@ const PlaceMapModal = React.memo(
               {place.name}
             </Text>
             <TouchableOpacity onPress={onClose} style={plStyles.mapModalClose}>
-              <Text style={plStyles.mapModalCloseText}>✕</Text>
+              <X size={16} color="#9CA3AF" strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
           <KakaoMapView places={mapPlaces} style={plStyles.mapModalMap} />
@@ -372,7 +380,7 @@ export default function PlaceRecommendationList({
           }}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={plStyles.mapButtonIcon}>🗺️</Text>
+          <Map size={20} color="#1344FF" strokeWidth={1.5} />
         </TouchableOpacity>
       </TouchableOpacity>
     );
@@ -403,7 +411,7 @@ export default function PlaceRecommendationList({
     if (isLoading) return null;
     return (
       <View style={plStyles.emptyContainer}>
-        <Text style={plStyles.emptyIcon}>🏖️</Text>
+        <Palmtree size={40} color="#9CA3AF" strokeWidth={1.5} />
         <Text style={plStyles.emptyText}>
           {selectedTab === '검색'
             ? '검색 결과가 없습니다.'
@@ -422,7 +430,7 @@ export default function PlaceRecommendationList({
           placeholder={
             destination ? `${destination} 근처 장소 검색` : '장소를 검색하세요'
           }
-          placeholderTextColor="#8E8E93"
+          placeholderTextColor="#9CA3AF"
           value={searchQuery}
           onChangeText={handleSearchTextChange}
           onSubmitEditing={handleSearchSubmit}
@@ -432,7 +440,7 @@ export default function PlaceRecommendationList({
           onPress={handleSearchSubmit}
           style={plStyles.searchButton}
         >
-          <Text style={plStyles.searchButtonIcon}>🔍</Text>
+          <Search size={20} color="#9CA3AF" strokeWidth={1.5} />
         </TouchableOpacity>
       </View>
 
@@ -493,23 +501,23 @@ const plStyles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: '#E5E7EB',
   },
   searchInput: {
     flex: 1,
     height: 40,
-    backgroundColor: '#F5F5F7',
+    backgroundColor: '#F3F4F6',
     borderRadius: 8,
     paddingHorizontal: 14,
     fontSize: 15,
-    color: '#1C1C1E',
+    color: '#111827',
+    fontFamily: FONTS.regular,
     marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   searchButton: {
     padding: 8,
-  },
-  searchButtonIcon: {
-    fontSize: 20,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -518,7 +526,7 @@ const plStyles = StyleSheet.create({
     paddingBottom: 4,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: '#E5E7EB',
   },
   tab: {
     flex: 1,
@@ -532,12 +540,12 @@ const plStyles = StyleSheet.create({
   },
   tabText: {
     fontSize: 15,
-    fontWeight: '500',
-    color: '#8E8E93',
+    fontFamily: FONTS.medium,
+    color: '#9CA3AF',
   },
   tabTextSelected: {
     color: '#1344FF',
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
   },
   listContent: {
     paddingBottom: 20,
@@ -549,13 +557,13 @@ const plStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F5',
+    borderBottomColor: '#E5E7EB',
   },
   placeImage: {
     width: 64,
     height: 64,
     borderRadius: 10,
-    backgroundColor: '#F0F0F5',
+    backgroundColor: '#F3F4F6',
   },
   placeholderImage: {
     justifyContent: 'center',
@@ -563,8 +571,8 @@ const plStyles = StyleSheet.create({
   },
   placeholderText: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#8E8E93',
+    fontFamily: FONTS.bold,
+    color: '#9CA3AF',
   },
   placeInfo: {
     flex: 1,
@@ -573,8 +581,8 @@ const plStyles = StyleSheet.create({
   },
   placeName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1C1C1E',
+    fontFamily: FONTS.semibold,
+    color: '#111827',
     marginBottom: 3,
   },
   metaRow: {
@@ -590,27 +598,28 @@ const plStyles = StyleSheet.create({
   },
   typeBadgeText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
   ratingText: {
     fontSize: 12,
-    color: '#1C1C1E',
+    color: '#111827',
+    fontFamily: FONTS.regular,
   },
   addressText: {
     fontSize: 12,
-    color: '#8E8E93',
+    color: '#9CA3AF',
+    fontFamily: FONTS.regular,
   },
   mapButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F0F4FF',
+    backgroundColor: '#EEF2FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
-  },
-  mapButtonIcon: {
-    fontSize: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   mapModalContainer: {
     flex: 1,
@@ -624,28 +633,23 @@ const plStyles = StyleSheet.create({
     paddingVertical: 14,
     paddingTop: 50,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: '#E5E7EB',
     backgroundColor: '#FFFFFF',
   },
   mapModalTitle: {
     flex: 1,
     fontSize: 17,
-    fontWeight: '600',
-    color: '#1C1C1E',
+    fontFamily: FONTS.semibold,
+    color: '#111827',
     marginRight: 12,
   },
   mapModalClose: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F0F0F5',
+    backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  mapModalCloseText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#8E8E93',
   },
   mapModalMap: {
     flex: 1,
@@ -659,14 +663,14 @@ const plStyles = StyleSheet.create({
     marginVertical: 12,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: '#F5F5F7',
+    backgroundColor: '#F9FAFB',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E5EA',
+    borderColor: '#E5E7EB',
   },
   loadMoreText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     color: '#1344FF',
   },
   emptyContainer: {
@@ -674,12 +678,10 @@ const plStyles = StyleSheet.create({
     paddingTop: 60,
     alignItems: 'center',
   },
-  emptyIcon: {
-    fontSize: 40,
-    marginBottom: 12,
-  },
   emptyText: {
     fontSize: 15,
-    color: '#8E8E93',
+    color: '#9CA3AF',
+    fontFamily: FONTS.regular,
+    marginTop: 12,
   },
 });

@@ -1,5 +1,22 @@
 import { StyleSheet } from 'react-native';
 
+export const COLORS = {
+  primary: '#1344FF',
+  text: '#111827',
+  placeholder: '#9CA3AF',
+  white: '#FFFFFF',
+  border: '#E5E7EB',
+  surface: '#F3F4F6',
+  error: '#FF3B30',
+};
+
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+};
+
 export const styles = StyleSheet.create({
   centeredView: {
     flex: 1,
@@ -9,15 +26,12 @@ export const styles = StyleSheet.create({
   },
   modalView: {
     width: '80%',
-    backgroundColor: 'white',
-    borderRadius: 20,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
     padding: 20,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   header: {
     marginBottom: 20,
@@ -26,8 +40,8 @@ export const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1C1C1E',
+    fontFamily: FONTS.bold,
+    color: COLORS.text,
   },
   optionsContainer: {
     width: '100%',
@@ -40,15 +54,16 @@ export const styles = StyleSheet.create({
   },
   borderBottom: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: COLORS.surface,
   },
   optionText: {
     fontSize: 16,
-    color: '#1C1C1E',
+    fontFamily: FONTS.medium,
+    color: COLORS.text,
   },
   destructiveText: {
-    color: '#FF3B30',
-    fontWeight: '600',
+    color: COLORS.error,
+    fontFamily: FONTS.semibold,
   },
   cancelButton: {
     marginTop: 10,
@@ -58,6 +73,7 @@ export const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 16,
-    color: '#8E8E93',
+    fontFamily: FONTS.regular,
+    color: COLORS.placeholder,
   },
 });

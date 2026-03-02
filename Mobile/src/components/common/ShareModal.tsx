@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { API_URL } from '@env';
+import { X } from 'lucide-react-native';
 
 import { styles, COLORS } from './ShareModal.styles';
 
@@ -100,7 +101,7 @@ export default function ShareModal({
           <View style={styles.header}>
             <Text style={styles.title}>공유 및 초대</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
+              <X size={20} color={COLORS.subtext} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
 

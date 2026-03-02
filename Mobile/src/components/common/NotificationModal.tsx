@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Pressable,
 } from 'react-native';
+import { X } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 
 export interface Invitation {
@@ -25,6 +26,12 @@ interface NotificationModalProps {
 }
 
 const COLORS = theme.colors;
+const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+};
 
 export default function NotificationModal({
   visible,
@@ -45,7 +52,7 @@ export default function NotificationModal({
           <View style={styles.header}>
             <Text style={styles.title}>알림</Text>
             <TouchableOpacity onPress={onClose}>
-              <Text style={styles.closeButton}>✕</Text>
+              <X size={20} color="#9CA3AF" strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
 
@@ -100,15 +107,12 @@ const styles = StyleSheet.create({
   },
   container: {
     width: '85%',
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 24,
     maxHeight: '70%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   header: {
     flexDirection: 'row',
@@ -118,13 +122,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  closeButton: {
-    fontSize: 20,
-    color: '#999',
-    padding: 4,
+    fontFamily: FONTS.bold,
+    color: '#111827',
   },
   listContainer: {
     marginTop: 8,
@@ -134,26 +133,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    color: '#999',
+    color: '#9CA3AF',
     fontSize: 14,
+    fontFamily: FONTS.regular,
   },
   itemContainer: {
     marginBottom: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#E5E7EB',
   },
   textContainer: {
     marginBottom: 12,
   },
   inviteText: {
     fontSize: 14,
-    color: '#333',
+    color: '#111827',
     lineHeight: 20,
+    fontFamily: FONTS.regular,
   },
   highlight: {
-    fontWeight: 'bold',
-    color: COLORS.primary || '#007AFF',
+    fontFamily: FONTS.bold,
+    color: COLORS.primary,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -168,19 +169,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   acceptButton: {
-    backgroundColor: COLORS.primary || '#007AFF',
+    backgroundColor: COLORS.primary,
   },
   acceptButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
   rejectButton: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   rejectButtonText: {
-    color: '#666',
+    color: '#6B7280',
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
 });
