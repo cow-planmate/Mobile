@@ -110,6 +110,16 @@ export const styles = StyleSheet.create({
     color: COLORS.white,
     opacity: 0.8,
   },
+  dayTabMetaText: {
+    color: COLORS.placeholder,
+    fontFamily: FONTS.regular,
+    fontSize: 10,
+    marginTop: 2,
+  },
+  dayTabMetaTextSelected: {
+    color: COLORS.white,
+    opacity: 0.7,
+  },
   tabContentContainer: {
     flex: 1,
     backgroundColor: COLORS.background,

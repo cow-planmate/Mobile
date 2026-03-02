@@ -331,14 +331,26 @@ const TimelineComponent = React.memo(
     ) => {
       const { gridHours, offsetMinutes } = React.useMemo(() => {
         const minHour = 9;
-        const maxHour = 20;
+        let maxHour = 20;
+
+        // Extend grid if any place goes beyond maxHour
+        if (selectedDay?.places) {
+          for (const p of selectedDay.places) {
+            const endMin = timeToMinutes(p.endTime);
+            const endHour = Math.ceil(endMin / 60);
+            if (endHour > maxHour) {
+              maxHour = endHour;
+            }
+          }
+        }
+
         const hours = Array.from(
           { length: maxHour - minHour + 1 },
           (_, i) => i + minHour,
         );
         const offset = minHour * 60;
         return { gridHours: hours, offsetMinutes: offset };
-      }, []);
+      }, [selectedDay?.places]);
 
       return (
         <View style={styles.tabContentContainer}>
@@ -466,33 +478,59 @@ ItineraryEditorScreenViewProps) {
           contentContainerStyle={styles.dayTabsContainer}
           style={styles.dayTabsScroll}
         >
-          {days.map((day, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.dayTab,
-                selectedDayIndex === index && styles.dayTabSelected,
-              ]}
-              onPress={() => setSelectedDayIndex(index)}
-            >
-              <Text
+          {days.map((day, index) => {
+            const totalMin = day.places.reduce((sum, p) => {
+              return (
+                sum + (timeToMinutes(p.endTime) - timeToMinutes(p.startTime))
+              );
+            }, 0);
+            const totalHours = Math.floor(totalMin / 60);
+            const totalMins = totalMin % 60;
+            const timeLabel =
+              totalHours > 0
+                ? `${totalHours}h ${totalMins > 0 ? `${totalMins}m` : ''}`
+                : totalMins > 0
+                ? `${totalMins}m`
+                : '';
+            return (
+              <TouchableOpacity
+                key={index}
                 style={[
-                  styles.dayTabText,
-                  selectedDayIndex === index && styles.dayTabTextSelected,
+                  styles.dayTab,
+                  selectedDayIndex === index && styles.dayTabSelected,
                 ]}
+                onPress={() => setSelectedDayIndex(index)}
               >
-                {day.dayNumber}일차
-              </Text>
-              <Text
-                style={[
-                  styles.dayTabDateText,
-                  selectedDayIndex === index && styles.dayTabDateTextSelected,
-                ]}
-              >
-                {formatDate(day.date)}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.dayTabText,
+                    selectedDayIndex === index && styles.dayTabTextSelected,
+                  ]}
+                >
+                  {day.dayNumber}일차
+                </Text>
+                <Text
+                  style={[
+                    styles.dayTabDateText,
+                    selectedDayIndex === index && styles.dayTabDateTextSelected,
+                  ]}
+                >
+                  {formatDate(day.date)}
+                </Text>
+                {day.places.length > 0 && (
+                  <Text
+                    style={[
+                      styles.dayTabMetaText,
+                      selectedDayIndex === index &&
+                        styles.dayTabMetaTextSelected,
+                    ]}
+                  >
+                    {day.places.length}개소 {timeLabel}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            );
+          })}
           <TouchableOpacity
             style={styles.dayTab}
             onPress={() => setScheduleEditVisible(true)}

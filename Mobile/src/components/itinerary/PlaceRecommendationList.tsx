@@ -48,6 +48,13 @@ const CATEGORY_COLORS: { [key: string]: string } = {
   기타: '#6b7280',
 };
 
+const TAB_COLORS: { [key in PlaceTab]: string } = {
+  관광지: '#84cc16',
+  숙소: '#f97316',
+  식당: '#3b82f6',
+  검색: '#6b7280',
+};
+
 type PlaceTab = '관광지' | '숙소' | '식당' | '검색';
 
 // ────────────────────────────────────────────────
@@ -449,22 +456,37 @@ export default function PlaceRecommendationList({
 
       {/* Category Tabs */}
       <View style={plStyles.tabContainer}>
-        {(['관광지', '숙소', '식당', '검색'] as PlaceTab[]).map(tab => (
-          <TouchableOpacity
-            key={tab}
-            onPress={() => setSelectedTab(tab)}
-            style={[plStyles.tab, selectedTab === tab && plStyles.tabSelected]}
-          >
-            <Text
+        {(['관광지', '숙소', '식당', '검색'] as PlaceTab[]).map(tab => {
+          const isSelected = selectedTab === tab;
+          const tabColor = TAB_COLORS[tab];
+          return (
+            <TouchableOpacity
+              key={tab}
+              onPress={() => setSelectedTab(tab)}
               style={[
-                plStyles.tabText,
-                selectedTab === tab && plStyles.tabTextSelected,
+                plStyles.tab,
+                isSelected && { borderBottomColor: tabColor },
               ]}
             >
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <View style={plStyles.tabInner}>
+                <View
+                  style={[
+                    plStyles.tabDot,
+                    { backgroundColor: isSelected ? tabColor : '#D1D5DB' },
+                  ]}
+                />
+                <Text
+                  style={[
+                    plStyles.tabText,
+                    isSelected && { color: tabColor, fontFamily: FONTS.bold },
+                  ]}
+                >
+                  {tab}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {/* Place List */}
@@ -540,6 +562,16 @@ const plStyles = StyleSheet.create({
   },
   tabSelected: {
     borderBottomColor: '#1344FF',
+  },
+  tabInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  tabDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   tabText: {
     fontSize: 15,

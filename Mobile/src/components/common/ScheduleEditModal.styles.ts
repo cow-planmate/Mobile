@@ -149,6 +149,9 @@ export const styles = StyleSheet.create({
     color: COLORS.white,
     fontFamily: FONTS.semibold,
   },
+  disabledButton: {
+    opacity: 0.5,
+  },
   icon: {
     fontSize: 12,
     color: COLORS.text,

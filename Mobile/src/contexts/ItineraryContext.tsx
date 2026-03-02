@@ -39,6 +39,8 @@ const resolveConflictsAndSort = (
   places: Place[],
   anchorItemId: string | null = null,
 ): Place[] => {
+  const MAX_END_MINUTES = 23 * 60 + 45; // 23:45 hard cap
+
   const sortedPlaces = [...places].sort(
     (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
   );
@@ -57,8 +59,10 @@ const resolveConflictsAndSort = (
       if (currStartTime < prevEndTime) {
         const currDuration =
           timeToMinutes(curr.endTime) - timeToMinutes(curr.startTime);
-        curr.startTime = minutesToTime(prevEndTime);
-        curr.endTime = minutesToTime(prevEndTime + currDuration);
+        const newStart = Math.min(prevEndTime, MAX_END_MINUTES - 15);
+        const newEnd = Math.min(newStart + currDuration, MAX_END_MINUTES);
+        curr.startTime = minutesToTime(newStart);
+        curr.endTime = minutesToTime(Math.max(newEnd, newStart + 15));
       }
     }
     return sortedPlaces;
@@ -75,9 +79,11 @@ const resolveConflictsAndSort = (
 
     if (currStart < lastEndTime) {
       const currDuration = timeToMinutes(curr.endTime) - currStart;
-      curr.startTime = minutesToTime(lastEndTime);
-      curr.endTime = minutesToTime(lastEndTime + currDuration);
-      lastEndTime = timeToMinutes(curr.endTime);
+      const newStart = Math.min(lastEndTime, MAX_END_MINUTES - 15);
+      const newEnd = Math.min(newStart + currDuration, MAX_END_MINUTES);
+      curr.startTime = minutesToTime(newStart);
+      curr.endTime = minutesToTime(Math.max(newEnd, newStart + 15));
+      lastEndTime = Math.max(newEnd, newStart + 15);
     } else {
       lastEndTime = timeToMinutes(curr.endTime);
     }
