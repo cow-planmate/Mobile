@@ -51,7 +51,7 @@ export const styles = StyleSheet.create({
   // [변경] 인사말 영역 (단독 배치)
   greetingSection: {
     paddingHorizontal: normalize(24),
-    marginBottom: normalize(32), // 입력 카드와의 간격 확장 (시원한 느낌)
+    marginBottom: normalize(8),
   },
   headerGreeting: {
     fontSize: normalize(28),
@@ -63,20 +63,39 @@ export const styles = StyleSheet.create({
   headerNickname: {
     color: theme.colors.primary,
   },
+  headerSubtitle: {
+    fontSize: normalize(15),
+    color: theme.colors.textSecondary,
+    fontFamily: FONTS.regular,
+    marginTop: normalize(8),
+    lineHeight: normalize(22),
+  },
 
   whiteSection: {
     flex: 1,
     paddingHorizontal: normalize(24),
     backgroundColor: theme.colors.background,
+    marginTop: normalize(28),
+  },
+  sectionTitle: {
+    fontSize: normalize(17),
+    fontFamily: FONTS.bold,
+    color: theme.colors.text,
+    marginBottom: normalize(16),
+    letterSpacing: -0.3,
   },
   inputCard: {
-    backgroundColor: theme.colors.background,
-    marginBottom: normalize(40),
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.l,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: normalize(20),
+    marginBottom: normalize(24),
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: normalize(68),
+    height: normalize(72),
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
@@ -91,14 +110,20 @@ export const styles = StyleSheet.create({
   },
 
   iconContainer: {
-    width: normalize(24),
-    height: normalize(24),
+    width: normalize(40),
+    height: normalize(40),
+    borderRadius: theme.borderRadius.m,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: normalize(16),
+    marginRight: normalize(14),
+    backgroundColor: theme.colors.sub,
   },
-  iconContainerFilled: {},
-  iconContainerError: {},
+  iconContainerFilled: {
+    backgroundColor: '#E0E7FF',
+  },
+  iconContainerError: {
+    backgroundColor: '#FEF2F2',
+  },
 
   textContainer: {
     flex: 1,

@@ -220,9 +220,13 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
           >
             {nickname || '여행자'}님!
           </Text>
+          <Text style={styles.headerSubtitle}>
+            새로운 여행을 계획해 보세요 ✈️
+          </Text>
         </View>
 
         <View style={styles.whiteSection}>
+          <Text style={styles.sectionTitle}>새로운 여행 만들기</Text>
           <View style={styles.inputCard}>
             <InputRow
               label="여행지"

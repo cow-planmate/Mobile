@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { AppStackParamList } from '../../../navigation/types';
 import { useAuth } from '../../../contexts/AuthContext';
 import { OptionType } from '../../../components/common/SelectionModal';
@@ -58,6 +59,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   useEffect(() => {
     fetchPendingRequests();
   }, []);
+
+  // 화면 포커스 시 알림 자동 갱신
+  useFocusEffect(
+    useCallback(() => {
+      fetchPendingRequests();
+    }, []),
+  );
 
   const handleAccept = async (requestId: number) => {
     try {
