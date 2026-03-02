@@ -2,6 +2,7 @@ import { StyleSheet } from 'react-native';
 
 export const COLORS = {
   primary: '#1344FF',
+  sub: '#E8EDFF',
   background: '#FFFFFF',
   card: '#FFFFFF',
   text: '#111827',
@@ -10,7 +11,7 @@ export const COLORS = {
   border: '#E5E7EB',
   borderLight: '#F3F4F6',
   white: '#FFFFFF',
-  error: '#FF3B30',
+  error: '#EF4444',
   surface: '#F9FAFB',
 };
 
@@ -24,101 +25,161 @@ export const FONTS = {
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.surface,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.surface,
   },
   scrollContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
     paddingBottom: 40,
   },
-  profileSection: {
+
+  /* ── Profile Header ── */
+  profileHeader: {
+    backgroundColor: COLORS.white,
+    paddingTop: 48,
+    paddingBottom: 28,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    marginBottom: 32,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
-  profileIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.surface,
+  avatarContainer: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: COLORS.sub,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    marginBottom: 14,
   },
-  profileNameContainer: {
+  profileNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 6,
   },
   profileName: {
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: FONTS.bold,
     color: COLORS.text,
   },
-  editIconContainer: {
-    marginLeft: 6,
-  },
-  infoContainer: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 16,
+  editBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,
-    marginBottom: 24,
   },
-  card: {
+  profileEmail: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: COLORS.placeholder,
+    marginTop: 4,
+  },
+
+  /* ── Sections ── */
+  sectionContainer: {
+    marginTop: 12,
+    marginHorizontal: 16,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontFamily: FONTS.semibold,
+    color: COLORS.placeholder,
+    marginTop: 20,
+    marginBottom: 8,
+    marginLeft: 20,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+
+  /* ── Info Row ── */
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
-  cardIcon: {
-    width: 32,
-    marginRight: 12,
-    alignItems: 'center',
+  infoIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
-  cardContent: {
+  infoBody: {
     flex: 1,
   },
-  cardLabel: {
+  infoLabel: {
     fontSize: 12,
     fontFamily: FONTS.regular,
     color: COLORS.placeholder,
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  cardValue: {
-    fontSize: 16,
+  infoValue: {
+    fontSize: 15,
     fontFamily: FONTS.medium,
     color: COLORS.text,
   },
-  changeButtonText: {
-    fontSize: 14,
+  infoAction: {
+    paddingHorizontal: 4,
+  },
+  infoActionText: {
+    fontSize: 13,
     color: COLORS.primary,
     fontFamily: FONTS.semibold,
   },
-  separator: {
+  rowSeparator: {
     height: 1,
     backgroundColor: COLORS.borderLight,
-    marginVertical: 4,
+    marginLeft: 64,
   },
-  linksContainer: {
-    marginTop: 20,
+
+  /* ── Danger Zone ── */
+  dangerSection: {
+    marginTop: 12,
+    marginHorizontal: 16,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+  },
+  dangerRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
-  linkText: {
-    fontSize: 14,
-    fontFamily: FONTS.regular,
-    color: COLORS.placeholder,
-    textDecorationLine: 'underline',
+  dangerIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
-  deleteLinkText: {
+  dangerText: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: FONTS.medium,
+    color: COLORS.text,
+  },
+  dangerTextRed: {
     color: COLORS.error,
   },
 });

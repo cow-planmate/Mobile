@@ -7,7 +7,14 @@ import {
   TouchableOpacity,
   Pressable,
 } from 'react-native';
-import { MapPin, ChevronUp, ChevronDown, Share2, Pencil, Check } from 'lucide-react-native';
+import {
+  MapPin,
+  ChevronUp,
+  ChevronDown,
+  Share2,
+  Pencil,
+  Check,
+} from 'lucide-react-native';
 import KakaoMapView from '../../../components/itinerary/KakaoMapView';
 import ShareModal from '../../../components/common/ShareModal';
 import TimelineItem, {
@@ -227,7 +234,8 @@ export default function ItineraryViewScreenView({
                   <Text
                     style={[
                       styles.dayTabMetaText,
-                      selectedDayIndex === index && styles.dayTabMetaTextSelected,
+                      selectedDayIndex === index &&
+                        styles.dayTabMetaTextSelected,
                     ]}
                   >
                     {getDayMeta(day.places)}
@@ -288,21 +296,31 @@ export default function ItineraryViewScreenView({
 
       <View style={styles.footer}>
         <Pressable
-          style={({pressed}) => [styles.footerButton, pressed && {opacity: 0.7}]}
+          style={({ pressed }) => [
+            styles.footerButton,
+            pressed && { opacity: 0.7 },
+          ]}
           onPress={() => setShareModalVisible(true)}
         >
           <Share2 size={18} color={COLORS.text} strokeWidth={2} />
           <Text style={styles.footerButtonText}>공유</Text>
         </Pressable>
         <Pressable
-          style={({pressed}) => [styles.footerButton, pressed && {opacity: 0.7}]}
+          style={({ pressed }) => [
+            styles.footerButton,
+            pressed && { opacity: 0.7 },
+          ]}
           onPress={handleEdit}
         >
           <Pencil size={18} color={COLORS.text} strokeWidth={2} />
           <Text style={styles.footerButtonText}>수정</Text>
         </Pressable>
         <Pressable
-          style={({pressed}) => [styles.footerButton, styles.confirmButton, pressed && {opacity: 0.7}]}
+          style={({ pressed }) => [
+            styles.footerButton,
+            styles.confirmButton,
+            pressed && { opacity: 0.7 },
+          ]}
           onPress={handleConfirm}
         >
           <Check size={18} color={COLORS.white} strokeWidth={2.5} />

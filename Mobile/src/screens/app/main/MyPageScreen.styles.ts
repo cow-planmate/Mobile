@@ -2,6 +2,7 @@ import { StyleSheet } from 'react-native';
 
 export const COLORS = {
   primary: '#1344FF',
+  sub: '#E8EDFF',
   background: '#FFFFFF',
   card: '#FFFFFF',
   text: '#111827',
@@ -10,7 +11,7 @@ export const COLORS = {
   border: '#E5E7EB',
   borderLight: '#F3F4F6',
   white: '#FFFFFF',
-  error: '#FF3B30',
+  error: '#EF4444',
   surface: '#F9FAFB',
 };
 
@@ -24,131 +25,84 @@ export const FONTS = {
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.surface,
   },
   loadingContainer: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   scrollContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
     paddingBottom: 40,
   },
-  profileSection: {
-    alignItems: 'center',
-    marginBottom: 32,
+
+  /* ── Page Header ── */
+  pageHeader: {
+    backgroundColor: COLORS.white,
+    paddingTop: 52,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
-  profileIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  profileIconText: {
-    fontSize: 40,
-    color: COLORS.placeholder,
-  },
-  profileNameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  profileName: {
-    fontSize: 22,
+  pageTitle: {
+    fontSize: 26,
     fontFamily: FONTS.bold,
     color: COLORS.text,
   },
-  editIcon: {
-    fontSize: 20,
-    color: COLORS.text,
-    marginLeft: 8,
-  },
-  infoContainer: {
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-  },
-  cardIcon: {
-    width: 30,
-    marginRight: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardContent: {
-    flex: 1,
-  },
-  cardLabel: {
-    fontSize: 14,
-    fontFamily: FONTS.regular,
-    color: COLORS.placeholder,
-    marginBottom: 2,
-  },
-  cardValue: {
-    fontSize: 16,
-    fontFamily: FONTS.medium,
-    color: COLORS.text,
-  },
-  changeButtonText: {
-    fontSize: 14,
-    color: COLORS.primary,
-    fontFamily: FONTS.semibold,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: COLORS.borderLight,
-    marginLeft: 62,
-  },
-  linksContainer: {
-    marginTop: 24,
-    paddingHorizontal: 16,
-  },
-  linkText: {
-    fontSize: 14,
-    fontFamily: FONTS.regular,
-    color: COLORS.placeholder,
-    paddingVertical: 12,
-  },
-  deleteLinkText: {
-    color: COLORS.error,
-  },
-  sectionSeparator: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginHorizontal: -20,
-    marginVertical: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 16,
-  },
-  sectionTitleContainer: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontFamily: FONTS.bold,
-    color: COLORS.text,
-  },
-  sectionSubtitle: {
+  pageSubtitle: {
     fontSize: 14,
     fontFamily: FONTS.regular,
     color: COLORS.placeholder,
     marginTop: 4,
+  },
+
+  /* ── Section ── */
+  sectionWrapper: {
+    marginTop: 16,
+    paddingHorizontal: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitleContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  sectionIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: COLORS.sub,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontFamily: FONTS.bold,
+    color: COLORS.text,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    fontFamily: FONTS.regular,
+    color: COLORS.placeholder,
+    marginTop: 2,
+    marginLeft: 40,
+  },
+  sectionBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: COLORS.sub,
+  },
+  sectionBadgeText: {
+    fontSize: 12,
+    fontFamily: FONTS.bold,
+    color: COLORS.primary,
   },
   sectionActionContainer: {
     flexDirection: 'row',
@@ -159,9 +113,6 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     color: COLORS.textSecondary,
   },
-  sectionCountIcon: {
-    fontSize: 14,
-  },
   actionButton: {
     marginLeft: 8,
   },
@@ -170,58 +121,72 @@ export const styles = StyleSheet.create({
     color: COLORS.primary,
     fontFamily: FONTS.semibold,
   },
+
+  /* ── Itinerary Card ── */
   itineraryCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.card,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.border,
-    padding: 16,
-    marginBottom: 12,
+    padding: 14,
+    marginBottom: 10,
   },
   itineraryIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
-  },
-  itineraryIcon: {
-    // placeholder for lucide icon — no text styles needed
+    marginRight: 14,
   },
   itineraryContent: {
     flex: 1,
   },
   itineraryTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: FONTS.semibold,
     color: COLORS.text,
+    marginBottom: 3,
+  },
+  itineraryDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   itinerarySubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: FONTS.regular,
     color: COLORS.placeholder,
-    marginTop: 2,
   },
   moreButton: {
-    padding: 8,
-  },
-  moreButtonText: {
-    fontSize: 18,
-    fontFamily: FONTS.bold,
-    color: COLORS.placeholder,
-  },
-  emptyContainer: {
-    paddingVertical: 40,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  /* ── Empty ── */
+  emptyContainer: {
+    paddingVertical: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
   },
   emptyText: {
     fontSize: 14,
     fontFamily: FONTS.regular,
     color: COLORS.placeholder,
+  },
+
+  /* ── Separator ── */
+  sectionSeparator: {
+    height: 8,
+    backgroundColor: COLORS.surface,
+    marginTop: 8,
   },
 });

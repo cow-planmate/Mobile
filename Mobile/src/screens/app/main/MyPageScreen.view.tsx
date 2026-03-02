@@ -5,9 +5,16 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
+  Pressable,
   ActivityIndicator,
 } from 'react-native';
-import { Calendar, MoreVertical } from 'lucide-react-native';
+import {
+  Calendar,
+  MoreVertical,
+  MapPin,
+  Users,
+  FolderOpen,
+} from 'lucide-react-native';
 import UpdateValueModal from '../../../components/common/UpdateValueModal';
 import ShareModal from '../../../components/common/ShareModal';
 import MenuModal from '../../../components/common/MenuModal';
@@ -21,35 +28,6 @@ export const MENU_OPTIONS = [
   { label: '삭제하기', action: 'delete', isDestructive: true },
 ];
 
-const SectionHeader = ({
-  title,
-  subtitle,
-  count,
-  actionText,
-  onActionPress,
-}: {
-  title: string;
-  subtitle: string;
-  count: number;
-  actionText?: string;
-  onActionPress?: () => void;
-}) => (
-  <View style={styles.sectionHeader}>
-    <View style={styles.sectionTitleContainer}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <Text style={styles.sectionSubtitle}>{subtitle}</Text>
-    </View>
-    <View style={styles.sectionActionContainer}>
-      <Text style={styles.sectionCount}>{count}개의 계획</Text>
-      {actionText && (
-        <TouchableOpacity onPress={onActionPress} style={styles.actionButton}>
-          <Text style={styles.sectionActionText}>{actionText}</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  </View>
-);
-
 const ItineraryCard = ({
   title,
   subtitle,
@@ -61,18 +39,28 @@ const ItineraryCard = ({
   onPress: () => void;
   onPressMore: () => void;
 }) => (
-  <TouchableOpacity style={styles.itineraryCard} onPress={onPress}>
+  <Pressable
+    style={({ pressed }) => [styles.itineraryCard, pressed && { opacity: 0.7 }]}
+    onPress={onPress}
+  >
     <View style={styles.itineraryIconContainer}>
       <Calendar size={20} color={COLORS.primary} strokeWidth={1.5} />
     </View>
     <View style={styles.itineraryContent}>
-      <Text style={styles.itineraryTitle}>{title}</Text>
-      <Text style={styles.itinerarySubtitle}>{subtitle}</Text>
+      <Text style={styles.itineraryTitle} numberOfLines={1}>
+        {title}
+      </Text>
+      <View style={styles.itineraryDateRow}>
+        <MapPin size={12} color={COLORS.placeholder} strokeWidth={1.5} />
+        <Text style={styles.itinerarySubtitle} numberOfLines={1}>
+          {subtitle}
+        </Text>
+      </View>
     </View>
     <TouchableOpacity onPress={onPressMore} style={styles.moreButton}>
-      <MoreVertical size={18} color={COLORS.placeholder} />
+      <MoreVertical size={16} color={COLORS.placeholder} strokeWidth={2} />
     </TouchableOpacity>
-  </TouchableOpacity>
+  </Pressable>
 );
 
 export interface MyPageScreenViewProps {
@@ -108,7 +96,6 @@ export default function MyPageScreenView({
   handleMenuSelect,
   handleRenameTitle,
   navigateToView,
-  navigateToEditor,
 }: MyPageScreenViewProps) {
   if (loading) {
     return (
@@ -121,57 +108,96 @@ export default function MyPageScreenView({
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <SectionHeader
-          title="나의 일정"
-          subtitle="직접 생성한 일정을 관리하세요"
-          count={myItineraries.length}
-          actionText="다중삭제"
-          onActionPress={() => alert('다중삭제 미구현')}
-        />
+        {/* ── Page Header ── */}
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>마이페이지</Text>
+          <Text style={styles.pageSubtitle}>나의 여행 일정을 관리하세요</Text>
+        </View>
 
-        {myItineraries.map(item => (
-          <ItineraryCard
-            key={item.planId}
-            title={item.planName}
-            subtitle={
-              item.startDate && item.endDate
-                ? `${item.startDate}~${item.endDate}`
-                : '클릭하여 상세보기'
-            }
-            onPress={() => navigateToView(item)}
-            onPressMore={() => handleMenuPress(item)}
-          />
-        ))}
+        {/* ── My Itineraries ── */}
+        <View style={styles.sectionWrapper}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleContainer}>
+              <View style={styles.sectionIconWrap}>
+                <FolderOpen size={16} color={COLORS.primary} strokeWidth={2} />
+              </View>
+              <Text style={styles.sectionTitle}>나의 일정</Text>
+            </View>
+            <View style={styles.sectionBadge}>
+              <Text style={styles.sectionBadgeText}>
+                {myItineraries.length}
+              </Text>
+            </View>
+          </View>
+
+          {myItineraries.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Calendar size={36} color="#D1D5DB" strokeWidth={1.5} />
+              <Text style={styles.emptyText}>생성된 일정이 없습니다</Text>
+            </View>
+          ) : (
+            myItineraries.map(item => (
+              <ItineraryCard
+                key={item.planId}
+                title={item.planName}
+                subtitle={
+                  item.startDate && item.endDate
+                    ? `${item.startDate} ~ ${item.endDate}`
+                    : '클릭하여 상세보기'
+                }
+                onPress={() => navigateToView(item)}
+                onPressMore={() => handleMenuPress(item)}
+              />
+            ))
+          )}
+        </View>
 
         <View style={styles.sectionSeparator} />
 
-        <SectionHeader
-          title="우리들의 일정"
-          subtitle="초대받은 일정에서 다른 멤버와 함께 편집하세요"
-          count={sharedItineraries.length}
-        />
-
-        {sharedItineraries.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              편집 권한을 받은 일정이 없습니다
-            </Text>
+        {/* ── Shared Itineraries ── */}
+        <View style={styles.sectionWrapper}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleContainer}>
+              <View
+                style={[styles.sectionIconWrap, { backgroundColor: '#FEF3C7' }]}
+              >
+                <Users size={16} color="#F59E0B" strokeWidth={2} />
+              </View>
+              <Text style={styles.sectionTitle}>공유된 일정</Text>
+            </View>
+            <View style={[styles.sectionBadge, { backgroundColor: '#FEF3C7' }]}>
+              <Text style={[styles.sectionBadgeText, { color: '#F59E0B' }]}>
+                {sharedItineraries.length}
+              </Text>
+            </View>
           </View>
-        ) : (
-          sharedItineraries.map(item => (
-            <ItineraryCard
-              key={item.planId}
-              title={item.planName}
-              subtitle={
-                item.startDate && item.endDate
-                  ? `${item.startDate}~${item.endDate}`
-                  : '초대된 일정'
-              }
-              onPress={() => navigateToView(item)}
-              onPressMore={() => handleMenuPress(item)}
-            />
-          ))
-        )}
+          <Text style={styles.sectionSubtitle}>
+            초대받은 일정에서 다른 멤버와 함께 편집하세요
+          </Text>
+
+          {sharedItineraries.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Users size={36} color="#D1D5DB" strokeWidth={1.5} />
+              <Text style={styles.emptyText}>
+                편집 권한을 받은 일정이 없습니다
+              </Text>
+            </View>
+          ) : (
+            sharedItineraries.map(item => (
+              <ItineraryCard
+                key={item.planId}
+                title={item.planName}
+                subtitle={
+                  item.startDate && item.endDate
+                    ? `${item.startDate} ~ ${item.endDate}`
+                    : '초대된 일정'
+                }
+                onPress={() => navigateToView(item)}
+                onPressMore={() => handleMenuPress(item)}
+              />
+            ))
+          )}
+        </View>
       </ScrollView>
 
       <MenuModal

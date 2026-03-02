@@ -8,32 +8,26 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
-import { User, Mail, Calendar, Heart, Lock, Pencil } from 'lucide-react-native';
+import {
+  User,
+  Mail,
+  Calendar,
+  Heart,
+  Lock,
+  Pencil,
+  ChevronRight,
+  LogOut,
+  UserX,
+} from 'lucide-react-native';
 import UpdateValueModal from '../../../components/common/UpdateValueModal';
 import UpdateGenderModal from '../../../components/common/UpdateGenderModal';
 import UpdateThemeModal from '../../../components/common/UpdateThemeModal';
 import UpdatePasswordModal from '../../../components/common/UpdatePasswordModal';
 import { styles, COLORS } from './ProfileScreen.styles';
 
-const InfoCard = ({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) => (
-  <View style={styles.card}>
-    <View style={styles.cardIcon}>{icon}</View>
-    <View style={styles.cardContent}>
-      <Text style={styles.cardLabel}>{label}</Text>
-      <Text style={styles.cardValue}>{value}</Text>
-    </View>
-  </View>
-);
+/* ── Reusable row components ── */
 
-const EditableCard = ({
+const InfoRow = ({
   icon,
   label,
   value,
@@ -42,19 +36,37 @@ const EditableCard = ({
   icon: React.ReactNode;
   label: string;
   value: string;
-  onPress: () => void;
-}) => (
-  <View style={styles.card}>
-    <View style={styles.cardIcon}>{icon}</View>
-    <View style={styles.cardContent}>
-      <Text style={styles.cardLabel}>{label}</Text>
-      <Text style={styles.cardValue}>{value}</Text>
+  onPress?: () => void;
+}) => {
+  const content = (
+    <View style={styles.infoRow}>
+      <View style={styles.infoIconWrap}>{icon}</View>
+      <View style={styles.infoBody}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue} numberOfLines={1}>
+          {value}
+        </Text>
+      </View>
+      {onPress && (
+        <View style={styles.infoAction}>
+          <ChevronRight size={16} color={COLORS.placeholder} strokeWidth={2} />
+        </View>
+      )}
     </View>
-    <TouchableOpacity onPress={onPress}>
-      <Text style={styles.changeButtonText}>변경하기</Text>
-    </TouchableOpacity>
-  </View>
-);
+  );
+
+  if (onPress) {
+    return (
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => (pressed ? { opacity: 0.7 } : undefined)}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+  return content;
+};
 
 export interface ProfileScreenViewProps {
   loading: boolean;
@@ -116,34 +128,38 @@ export default function ProfileScreenView({
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.profileSection}>
-          <View style={styles.profileIconContainer}>
-            <User size={36} color={COLORS.placeholder} strokeWidth={1.5} />
+        {/* ── Profile Header ── */}
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarContainer}>
+            <User size={40} color={COLORS.primary} strokeWidth={1.5} />
           </View>
-          <TouchableOpacity
-            style={styles.profileNameContainer}
+          <Pressable
+            style={styles.profileNameRow}
             onPress={() => setNicknameModalVisible(true)}
           >
             <Text style={styles.profileName}>{user.name}</Text>
-            <View style={styles.editIconContainer}>
-              <Pencil size={16} color={COLORS.primary} strokeWidth={1.5} />
+            <View style={styles.editBadge}>
+              <Pencil size={14} color={COLORS.primary} strokeWidth={2} />
             </View>
-          </TouchableOpacity>
+          </Pressable>
+          <Text style={styles.profileEmail}>{user.email}</Text>
         </View>
 
-        <View style={styles.infoContainer}>
-          <InfoCard
+        {/* ── Account Info ── */}
+        <Text style={styles.sectionLabel}>계정 정보</Text>
+        <View style={styles.sectionContainer}>
+          <InfoRow
             icon={
-              <Mail size={20} color={COLORS.textSecondary} strokeWidth={1.5} />
+              <Mail size={18} color={COLORS.textSecondary} strokeWidth={1.5} />
             }
             label="이메일"
             value={user.email}
           />
-          <View style={styles.separator} />
-          <EditableCard
+          <View style={styles.rowSeparator} />
+          <InfoRow
             icon={
               <Calendar
-                size={20}
+                size={18}
                 color={COLORS.textSecondary}
                 strokeWidth={1.5}
               />
@@ -152,28 +168,32 @@ export default function ProfileScreenView({
             value={user.age}
             onPress={() => setAgeModalVisible(true)}
           />
-          <View style={styles.separator} />
-          <EditableCard
+          <View style={styles.rowSeparator} />
+          <InfoRow
             icon={
-              <User size={20} color={COLORS.textSecondary} strokeWidth={1.5} />
+              <User size={18} color={COLORS.textSecondary} strokeWidth={1.5} />
             }
             label="성별"
             value={user.gender}
             onPress={() => setGenderModalVisible(true)}
           />
-          <View style={styles.separator} />
-          <EditableCard
+        </View>
+
+        {/* ── Preferences ── */}
+        <Text style={styles.sectionLabel}>여행 설정</Text>
+        <View style={styles.sectionContainer}>
+          <InfoRow
             icon={
-              <Heart size={20} color={COLORS.textSecondary} strokeWidth={1.5} />
+              <Heart size={18} color={COLORS.textSecondary} strokeWidth={1.5} />
             }
-            label="선호테마"
+            label="선호 테마"
             value={user.preferredTheme}
             onPress={() => setThemeModalVisible(true)}
           />
-          <View style={styles.separator} />
-          <EditableCard
+          <View style={styles.rowSeparator} />
+          <InfoRow
             icon={
-              <Lock size={20} color={COLORS.textSecondary} strokeWidth={1.5} />
+              <Lock size={18} color={COLORS.textSecondary} strokeWidth={1.5} />
             }
             label="비밀번호"
             value="••••••••"
@@ -181,18 +201,52 @@ export default function ProfileScreenView({
           />
         </View>
 
-        <View style={styles.linksContainer}>
-          <Pressable onPress={logout}>
-            <Text style={styles.linkText}>로그아웃</Text>
+        {/* ── Danger Zone ── */}
+        <Text style={styles.sectionLabel}>기타</Text>
+        <View style={styles.dangerSection}>
+          <Pressable
+            onPress={logout}
+            style={({ pressed }) => [
+              styles.dangerRow,
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <View style={styles.dangerIconWrap}>
+              <LogOut
+                size={18}
+                color={COLORS.textSecondary}
+                strokeWidth={1.5}
+              />
+            </View>
+            <Text style={styles.dangerText}>로그아웃</Text>
+            <ChevronRight
+              size={16}
+              color={COLORS.placeholder}
+              strokeWidth={2}
+            />
           </Pressable>
-          <Pressable onPress={handleResign}>
-            <Text style={[styles.linkText, styles.deleteLinkText]}>
-              탈퇴하기
+          <View style={styles.rowSeparator} />
+          <Pressable
+            onPress={handleResign}
+            style={({ pressed }) => [
+              styles.dangerRow,
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <View
+              style={[styles.dangerIconWrap, { backgroundColor: '#FEF2F2' }]}
+            >
+              <UserX size={18} color={COLORS.error} strokeWidth={1.5} />
+            </View>
+            <Text style={[styles.dangerText, styles.dangerTextRed]}>
+              회원 탈퇴
             </Text>
+            <ChevronRight size={16} color={COLORS.error} strokeWidth={2} />
           </Pressable>
         </View>
       </ScrollView>
 
+      {/* ── Modals ── */}
       <UpdateValueModal
         visible={isNicknameModalVisible}
         onClose={() => setNicknameModalVisible(false)}
@@ -201,7 +255,6 @@ export default function ProfileScreenView({
         label="새로운 닉네임"
         initialValue={user.name}
       />
-
       <UpdateValueModal
         visible={isAgeModalVisible}
         onClose={() => setAgeModalVisible(false)}
@@ -211,20 +264,17 @@ export default function ProfileScreenView({
         keyboardType="numeric"
         initialValue={user.age === '미설정' ? '' : user.age}
       />
-
       <UpdateGenderModal
         visible={isGenderModalVisible}
         onClose={() => setGenderModalVisible(false)}
         onConfirm={handleUpdateGender}
         initialGender={user.gender === '남성' ? 'male' : 'female'}
       />
-
       <UpdateThemeModal
         visible={isThemeModalVisible}
         onClose={() => setThemeModalVisible(false)}
         onConfirm={handleUpdateTheme}
       />
-
       <UpdatePasswordModal
         visible={isPasswordModalVisible}
         onClose={() => setPasswordModalVisible(false)}
