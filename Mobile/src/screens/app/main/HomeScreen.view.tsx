@@ -264,9 +264,11 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
           </View>
 
           <Pressable
-            style={[
+            style={({ pressed }) => [
               styles.submitButton,
               !isFormValid && styles.submitButtonDisabled,
+              pressed &&
+                isFormValid && { opacity: 0.85, transform: [{ scale: 0.98 }] },
             ]}
             onPress={onCreateItinerary}
           >

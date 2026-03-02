@@ -111,10 +111,16 @@ export const ForgotPasswordScreenView = ({
                     onBlur={() => setFocusedField(null)}
                   />
                   <Pressable
-                    style={[
+                    style={({ pressed }) => [
                       styles.inlineButton,
                       (showVerificationInput || isEmailVerified) &&
                         styles.buttonDisabled,
+                      pressed &&
+                        !(
+                          showVerificationInput ||
+                          isEmailVerified ||
+                          isLoading
+                        ) && { opacity: 0.7 },
                     ]}
                     onPress={onSendVerificationEmail}
                     disabled={
@@ -162,9 +168,11 @@ export const ForgotPasswordScreenView = ({
                       </Text>
                     </View>
                     <Pressable
-                      style={[
+                      style={({ pressed }) => [
                         styles.inlineButton,
                         (isEmailVerified || isLoading) && styles.buttonDisabled,
+                        pressed &&
+                          !(isEmailVerified || isLoading) && { opacity: 0.7 },
                       ]}
                       onPress={onVerifyCode}
                       disabled={isEmailVerified || isLoading}

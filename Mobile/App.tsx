@@ -11,7 +11,7 @@ import StorybookUIRoot from './.storybook';
 // axios 인터셉터 설정 초기화
 import './src/api/axiosConfig';
 
-import { StyleSheet } from 'react-native';
+import { StyleSheet, StatusBar } from 'react-native';
 
 const SHOW_STORYBOOK = false;
 
@@ -23,6 +23,7 @@ function App() {
 
   return (
     <GestureHandlerRootView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <AuthProvider>
         <WebSocketProvider>
           <PlacesProvider>

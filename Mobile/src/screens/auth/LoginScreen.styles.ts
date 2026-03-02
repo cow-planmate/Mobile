@@ -72,10 +72,13 @@ export const styles = StyleSheet.create({
     borderColor: COLORS.border,
     borderRadius: 8,
     paddingHorizontal: normalize(16),
+    paddingVertical: 0,
     fontSize: normalize(16),
     fontFamily: FONTS.regular,
     backgroundColor: COLORS.white,
     color: COLORS.text,
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   passwordContainer: {
     width: '100%',

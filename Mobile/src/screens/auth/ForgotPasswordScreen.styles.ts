@@ -111,12 +111,13 @@ export const styles = StyleSheet.create({
   },
   inlineButton: {
     height: normalize(52),
-    paddingHorizontal: normalize(20),
+    paddingHorizontal: normalize(14),
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
-    minWidth: normalize(80),
+    minWidth: normalize(72),
+    flexShrink: 0,
   },
   buttonDisabled: { backgroundColor: COLORS.darkGray },
   inlineButtonText: {

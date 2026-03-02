@@ -8,7 +8,8 @@ import ItineraryViewScreen from '../screens/app/itinerary/ItineraryViewScreen';
 import MyPageScreen from '../screens/app/main/MyPageScreen';
 import ProfileScreen from '../screens/app/main/ProfileScreen';
 import { AppStackParamList } from './types';
-import { Text } from 'react-native';
+import { View, Platform } from 'react-native';
+import { Home, User } from 'lucide-react-native';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -44,16 +45,39 @@ function MyPageStack() {
 }
 
 const HomeTabIcon = ({ color, size }: { color: string; size: number }) => (
-  <Text style={{ color, fontSize: size }}>🏠</Text>
+  <Home size={size} color={color} strokeWidth={1.8} />
 );
 
 const MyPageTabIcon = ({ color, size }: { color: string; size: number }) => (
-  <Text style={{ color, fontSize: size }}>👤</Text>
+  <User size={size} color={color} strokeWidth={1.8} />
 );
 
 export default function AppStack() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}>
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: '#1344FF',
+        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarLabelStyle: {
+          fontFamily: 'Inter_600SemiBold',
+          fontSize: 11,
+          marginTop: -2,
+        },
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: '#E5E7EB',
+          height: Platform.OS === 'ios' ? 85 : 60,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          paddingTop: 8,
+          elevation: 0,
+        },
+        tabBarIconStyle: {
+          marginBottom: -2,
+        },
+      }}
+    >
       <Tab.Screen
         name="HomeTab"
         component={HomeStack}

@@ -435,6 +435,9 @@ export default function PlaceRecommendationList({
           onChangeText={handleSearchTextChange}
           onSubmitEditing={handleSearchSubmit}
           returnKeyType="search"
+          multiline={false}
+          scrollEnabled={false}
+          numberOfLines={1}
         />
         <TouchableOpacity
           onPress={handleSearchSubmit}

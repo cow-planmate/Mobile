@@ -41,7 +41,10 @@ const PlaceSearchResultItem = ({
         {item.address}
       </Text>
     </View>
-    <Pressable style={styles.addButton} onPress={onSelect}>
+    <Pressable
+      style={({ pressed }) => [styles.addButton, pressed && { opacity: 0.7 }]}
+      onPress={onSelect}
+    >
       <Text style={styles.addButtonText}>추가</Text>
     </Pressable>
   </TouchableOpacity>

@@ -164,12 +164,18 @@ export const SignupScreenView = ({
                     onBlur={() => setFocusedField(null)}
                   />
                   <Pressable
-                    style={[
+                    style={({ pressed }) => [
                       styles.inlineButton,
                       (isEmailVerified ||
                         showVerificationInput ||
                         isEmailDuplicate) &&
                         styles.buttonDisabled,
+                      pressed &&
+                        !(
+                          isEmailVerified ||
+                          showVerificationInput ||
+                          isLoading
+                        ) && { opacity: 0.7 },
                     ]}
                     onPress={onSendEmail}
                     disabled={
@@ -226,9 +232,11 @@ export const SignupScreenView = ({
                       </Text>
                     </View>
                     <Pressable
-                      style={[
+                      style={({ pressed }) => [
                         styles.inlineButton,
                         (isLoading || isEmailVerified) && styles.buttonDisabled,
+                        pressed &&
+                          !(isLoading || isEmailVerified) && { opacity: 0.7 },
                       ]}
                       onPress={onVerifyCode}
                       disabled={isLoading || isEmailVerified}
@@ -351,7 +359,10 @@ export const SignupScreenView = ({
                     onBlur={() => setFocusedField(null)}
                   />
                   <Pressable
-                    style={styles.inlineButton}
+                    style={({ pressed }) => [
+                      styles.inlineButton,
+                      pressed && { opacity: 0.7 },
+                    ]}
                     onPress={onCheckNickname}
                   >
                     <Text style={styles.inlineButtonText}>중복확인</Text>
@@ -387,9 +398,10 @@ export const SignupScreenView = ({
                 <Text style={styles.label}>성별</Text>
                 <View style={styles.genderContainer}>
                   <Pressable
-                    style={[
+                    style={({ pressed }) => [
                       styles.genderButton,
                       form.gender === 'male' && styles.genderButtonSelected,
+                      pressed && { opacity: 0.7 },
                     ]}
                     onPress={() => onChange('gender', 'male')}
                   >
@@ -404,9 +416,10 @@ export const SignupScreenView = ({
                     </Text>
                   </Pressable>
                   <Pressable
-                    style={[
+                    style={({ pressed }) => [
                       styles.genderButton,
                       form.gender === 'female' && styles.genderButtonSelected,
+                      pressed && { opacity: 0.7 },
                     ]}
                     onPress={() => onChange('gender', 'female')}
                   >
@@ -431,9 +444,14 @@ export const SignupScreenView = ({
         {step < 4 ? (
           <>
             <Pressable
-              style={[
+              style={({ pressed }) => [
                 styles.submitButton,
                 !isNextButtonEnabled && styles.buttonDisabled,
+                pressed &&
+                  isNextButtonEnabled && {
+                    opacity: 0.85,
+                    transform: [{ scale: 0.98 }],
+                  },
               ]}
               onPress={onNextStep}
               disabled={!isNextButtonEnabled}
@@ -452,7 +470,14 @@ export const SignupScreenView = ({
             )}
           </>
         ) : (
-          <Pressable style={styles.submitButton} onPress={onSignup}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.submitButton,
+              pressed &&
+                !isLoading && { opacity: 0.85, transform: [{ scale: 0.98 }] },
+            ]}
+            onPress={onSignup}
+          >
             {isLoading ? (
               <ActivityIndicator color={COLORS.white} />
             ) : (
