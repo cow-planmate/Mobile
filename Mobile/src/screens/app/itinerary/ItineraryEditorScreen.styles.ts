@@ -4,11 +4,20 @@ export const COLORS = {
   primary: '#1344FF',
   background: '#FFFFFF',
   card: '#FFFFFF',
-  text: '#1C1C1E',
-  placeholder: '#8E8E93',
-  border: '#E5E5EA',
+  text: '#111827',
+  textSecondary: '#6B7280',
+  placeholder: '#9CA3AF',
+  border: '#E5E7EB',
+  borderLight: '#F3F4F6',
   white: '#FFFFFF',
-  lightGray: '#F5F5F7',
+  surface: '#F9FAFB',
+};
+
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
 };
 
 export const HOUR_HEIGHT = 180;
@@ -29,12 +38,12 @@ export const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     color: COLORS.text,
   },
   headerInput: {
     fontSize: 17,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     color: COLORS.text,
     borderBottomWidth: 1,
     borderColor: COLORS.placeholder,
@@ -51,7 +60,7 @@ export const styles = StyleSheet.create({
   headerDoneButtonText: {
     color: COLORS.white,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
   dayTabsWrapper: {
     backgroundColor: COLORS.card,
@@ -73,16 +82,19 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     marginRight: 10,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     minWidth: 60,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   dayTabSelected: {
     backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   dayTabText: {
     color: COLORS.text,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     fontSize: 14,
   },
   dayTabTextSelected: {
@@ -90,6 +102,7 @@ export const styles = StyleSheet.create({
   },
   dayTabDateText: {
     color: COLORS.placeholder,
+    fontFamily: FONTS.regular,
     fontSize: 12,
     marginTop: 2,
   },
@@ -125,7 +138,7 @@ export const styles = StyleSheet.create({
     marginTop: -8,
     color: COLORS.placeholder,
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
     width: '100%',
     textAlign: 'center',
   },
@@ -143,7 +156,7 @@ export const styles = StyleSheet.create({
   quarterBlock: {
     height: HOUR_HEIGHT / 4,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: COLORS.borderLight,
   },
   firstQuarterBlock: {
     borderTopColor: COLORS.border,
@@ -160,10 +173,13 @@ export const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 40,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.surface,
     borderRadius: 8,
     paddingHorizontal: 15,
     marginRight: 10,
+    fontFamily: FONTS.regular,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   searchButton: {
     padding: 10,
@@ -189,7 +205,7 @@ export const styles = StyleSheet.create({
   placeTypeTabText: {
     fontSize: 16,
     color: COLORS.placeholder,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
   },
   placeTypeTabTextSelected: {
     color: COLORS.primary,
@@ -200,7 +216,7 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: COLORS.borderLight,
   },
   resultImage: {
     width: 40,
@@ -208,26 +224,31 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
   },
   placeholderImage: {
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   placeholderText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
     color: COLORS.placeholder,
   },
   resultName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
+    color: COLORS.text,
   },
   resultMeta: {
     fontSize: 12,
+    fontFamily: FONTS.regular,
     color: COLORS.placeholder,
     marginTop: 2,
   },
   resultAddress: {
     fontSize: 12,
+    fontFamily: FONTS.regular,
     color: COLORS.placeholder,
     marginTop: 2,
   },
@@ -267,6 +288,7 @@ export const styles = StyleSheet.create({
   },
   emptyText: {
     color: COLORS.placeholder,
+    fontFamily: FONTS.regular,
   },
   resultInfo: {
     flex: 1,
@@ -285,14 +307,14 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     margin: 16,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   completeButtonText: {
     color: COLORS.white,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
   },
 
   // Online Users Styles
@@ -316,15 +338,16 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   moreUsersAvatar: {
-    backgroundColor: '#ccc',
+    backgroundColor: COLORS.placeholder,
   },
   onlineUserInitials: {
     color: 'white',
     fontSize: 13,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
   },
   moreUsersText: {
     color: 'white',
     fontSize: 11,
+    fontFamily: FONTS.medium,
   },
 });

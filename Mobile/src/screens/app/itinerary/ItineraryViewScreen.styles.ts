@@ -4,11 +4,20 @@ export const COLORS = {
   primary: '#1344FF',
   background: '#FFFFFF',
   card: '#FFFFFF',
-  text: '#1C1C1E',
-  placeholder: '#8E8E93',
-  border: '#E5E5EA',
+  text: '#111827',
+  textSecondary: '#6B7280',
+  placeholder: '#9CA3AF',
+  border: '#E5E7EB',
+  borderLight: '#F3F4F6',
   white: '#FFFFFF',
-  lightGray: '#F5F5F7',
+  surface: '#F9FAFB',
+};
+
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
 };
 
 export const HOUR_HEIGHT = 180;
@@ -32,7 +41,7 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    flexDirection: 'row', // Align tablist and toggle button horizontally
+    flexDirection: 'row',
     alignItems: 'center',
     paddingRight: 15,
   },
@@ -43,13 +52,15 @@ export const styles = StyleSheet.create({
   mapToggleButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.surface,
     borderRadius: 8,
     marginLeft: 5,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   mapToggleButtonText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     color: COLORS.primary,
   },
   dayTab: {
@@ -57,16 +68,19 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     marginRight: 10,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     minWidth: 60,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   dayTabSelected: {
     backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   dayTabText: {
     color: COLORS.text,
-    fontWeight: '600',
+    fontFamily: FONTS.semibold,
     fontSize: 14,
   },
   dayTabTextSelected: {
@@ -74,6 +88,7 @@ export const styles = StyleSheet.create({
   },
   dayTabDateText: {
     color: COLORS.placeholder,
+    fontFamily: FONTS.regular,
     fontSize: 12,
     marginTop: 2,
   },
@@ -105,7 +120,7 @@ export const styles = StyleSheet.create({
     marginTop: -8,
     color: COLORS.placeholder,
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
     width: '100%',
     textAlign: 'center',
   },
@@ -123,7 +138,7 @@ export const styles = StyleSheet.create({
   quarterBlock: {
     height: HOUR_HEIGHT / 4,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: COLORS.borderLight,
   },
   firstQuarterBlock: {
     borderTopColor: COLORS.border,
@@ -138,22 +153,26 @@ export const styles = StyleSheet.create({
   footerButton: {
     flex: 1,
     height: 50,
-    borderRadius: 10,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.surface,
     marginHorizontal: 5,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   footerButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: FONTS.bold,
     color: COLORS.text,
   },
   confirmButton: {
     backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   confirmButtonText: {
     color: COLORS.white,
+    fontFamily: FONTS.bold,
   },
   timeLabelTop: {
     top: 0,

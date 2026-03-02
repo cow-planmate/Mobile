@@ -508,7 +508,7 @@ ItineraryEditorScreenViewProps) {
           tabBarActiveTintColor: COLORS.primary,
           tabBarInactiveTintColor: COLORS.placeholder,
           tabBarIndicatorStyle: { backgroundColor: COLORS.primary },
-          tabBarLabelStyle: { fontWeight: 'bold' },
+          tabBarLabelStyle: { fontFamily: 'Inter_700Bold' },
         }}
       >
         <Tab.Screen name="타임라인">
