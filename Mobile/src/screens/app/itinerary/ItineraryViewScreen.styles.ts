@@ -33,6 +33,17 @@ export const styles = StyleSheet.create({
   },
   mapContainer: {
     height: '40%',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+    backgroundColor: COLORS.background,
+  },
+  mapInner: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   map: {
     ...StyleSheet.absoluteFillObject,
@@ -50,18 +61,25 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   mapToggleButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: COLORS.surface,
-    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    backgroundColor: '#E8EDFF',
+    borderRadius: 20,
     marginLeft: 5,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+  },
+  mapToggleButtonActive: {
+    backgroundColor: COLORS.primary,
   },
   mapToggleButtonText: {
     fontSize: 12,
     fontFamily: FONTS.semibold,
     color: COLORS.primary,
+  },
+  mapToggleButtonTextActive: {
+    color: COLORS.white,
   },
   dayTab: {
     paddingVertical: 10,
@@ -95,6 +113,16 @@ export const styles = StyleSheet.create({
   dayTabDateTextSelected: {
     color: COLORS.white,
     opacity: 0.8,
+  },
+  dayTabMetaText: {
+    color: COLORS.placeholder,
+    fontFamily: FONTS.regular,
+    fontSize: 10,
+    marginTop: 2,
+  },
+  dayTabMetaTextSelected: {
+    color: COLORS.white,
+    opacity: 0.7,
   },
   timelineContentContainer: {
     paddingBottom: 20,
@@ -153,7 +181,9 @@ export const styles = StyleSheet.create({
   footerButton: {
     flex: 1,
     height: 50,
-    borderRadius: 8,
+    borderRadius: 12,
+    flexDirection: 'row',
+    gap: 6,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.surface,

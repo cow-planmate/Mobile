@@ -9,9 +9,10 @@ import {
   ActivityIndicator,
   StyleSheet,
   Modal,
+  RefreshControl,
 } from 'react-native';
 import { API_URL } from '@env';
-import { X, Search, Map, Palmtree } from 'lucide-react-native';
+import { X, Search, Map, Palmtree, RotateCw } from 'lucide-react-native';
 import { Place } from './TimelineItem';
 import KakaoMapView from './KakaoMapView';
 import { usePlaces } from '../../contexts/PlacesContext';
@@ -232,11 +233,24 @@ export default function PlaceRecommendationList({
     isLoading,
     doSearchPlaces,
     loadMorePlaces,
+    fetchAllRecommendations,
   } = usePlaces();
 
   const [selectedTab, setSelectedTab] = useState<PlaceTab>('관광지');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ─── Pull-to-refresh ───
+  const handleRefresh = useCallback(async () => {
+    if (!planId || isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await fetchAllRecommendations(planId);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [planId, isRefreshing, fetchAllRecommendations]);
 
   // ─── Debounced search ───
   const handleSearchSubmit = useCallback(() => {
@@ -452,6 +466,13 @@ export default function PlaceRecommendationList({
         >
           <Search size={20} color="#9CA3AF" strokeWidth={1.5} />
         </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleRefresh}
+          style={plStyles.refreshButton}
+          activeOpacity={0.7}
+        >
+          <RotateCw size={18} color="#1344FF" strokeWidth={2} />
+        </TouchableOpacity>
       </View>
 
       {/* Category Tabs */}
@@ -498,6 +519,14 @@ export default function PlaceRecommendationList({
         ListFooterComponent={renderFooter}
         contentContainerStyle={plStyles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={['#1344FF']}
+            tintColor="#1344FF"
+          />
+        }
       />
 
       {/* Map Modal */}
@@ -543,6 +572,15 @@ const plStyles = StyleSheet.create({
   },
   searchButton: {
     padding: 8,
+  },
+  refreshButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: '#E8EDFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
   },
   tabContainer: {
     flexDirection: 'row',

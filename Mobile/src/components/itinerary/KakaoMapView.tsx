@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { MapPin } from 'lucide-react-native';
 
 export interface MapPlace {
   id: string;
@@ -47,67 +48,101 @@ export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; }
     #map { width: 100%; height: 100%; }
-    .marker-label {
+
+    /* ── Marker: pill with number + pin tail ── */
+    .marker-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.18));
+    }
+    .marker-pill {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
+      min-width: 26px;
+      height: 26px;
+      padding: 0 7px;
       background: #1344FF;
       color: #fff;
-      border-radius: 50%;
-      font-size: 14px;
+      border-radius: 13px;
+      font-size: 12px;
       font-weight: 700;
+      letter-spacing: 0.2px;
       border: 2px solid #fff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
-    .info-window {
-      padding: 8px 12px;
-      min-width: 140px;
-      max-width: 200px;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    .marker-tail {
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid #1344FF;
+      margin-top: -1px;
     }
-    .info-window .place-name {
+
+    /* ── Info Window ── */
+    .info-card {
+      padding: 10px 14px;
+      min-width: 160px;
+      max-width: 220px;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .info-card .place-name {
       font-size: 14px;
       font-weight: 600;
-      color: #1C1C1E;
+      color: #111827;
       margin-bottom: 4px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .info-window .place-info {
+    .info-card .place-addr {
+      font-size: 11px;
+      color: #9CA3AF;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .info-card .place-footer {
       display: flex;
       align-items: center;
       gap: 6px;
     }
-    .info-window .order-badge {
+    .info-card .order-badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       width: 20px;
       height: 20px;
-      border: 1.5px solid #1344FF;
+      background: #E8EDFF;
       color: #1344FF;
       border-radius: 50%;
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 700;
       flex-shrink: 0;
     }
-    .info-window .place-link {
+    .info-card .place-link {
       font-size: 12px;
       color: #1344FF;
       text-decoration: none;
+      font-weight: 500;
     }
+
     .empty-msg {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       width: 100%;
       height: 100%;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      color: #8E8E93;
+      color: #9CA3AF;
       font-size: 15px;
+      background: #F9FAFB;
     }
   </style>
 </head>
@@ -130,36 +165,45 @@ export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
 
         var bounds = new kakao.maps.LatLngBounds();
         var linePath = [];
+        var openInfowindow = null;
 
         places.forEach(function(place) {
           var position = new kakao.maps.LatLng(place.lat, place.lng);
           bounds.extend(position);
           linePath.push(position);
 
-          // 커스텀 오버레이 마커 (번호 표시)
-          var markerContent = '<div class="marker-label">' + place.order + '</div>';
+          // 커스텀 마커 (pill + tail)
+          var markerContent =
+            '<div class="marker-wrap">' +
+              '<div class="marker-pill">' + place.order + '</div>' +
+              '<div class="marker-tail"></div>' +
+            '</div>';
           var customOverlay = new kakao.maps.CustomOverlay({
             position: position,
             content: markerContent,
-            yAnchor: 1.2
+            yAnchor: 1.3
           });
           customOverlay.setMap(map);
 
-          // 인포윈도우 내용
-          var infoContent = '<div class="info-window">' +
-            '<div class="place-name">' + place.name + '</div>' +
-            '<div class="place-info">' +
-              '<span class="order-badge">' + place.order + '</span>' +
-              (place.placeUrl ? '<a class="place-link" href="' + place.placeUrl + '" target="_blank">장소 정보 보기</a>' : '') +
-            '</div>' +
-          '</div>';
+          // 인포윈도우
+          var infoContent =
+            '<div class="info-card">' +
+              '<div class="place-name">' + place.name + '</div>' +
+              '<div class="place-addr">' + (place.address || '') + '</div>' +
+              '<div class="place-footer">' +
+                '<span class="order-badge">' + place.order + '</span>' +
+                (place.placeUrl
+                  ? '<a class="place-link" href="' + place.placeUrl + '" target="_blank">장소 정보 →</a>'
+                  : '') +
+              '</div>' +
+            '</div>';
 
           var infowindow = new kakao.maps.InfoWindow({
             content: infoContent,
             removable: true
           });
 
-          // 실제 마커 (클릭 이벤트용, 투명)
+          // 투명 마커 (클릭 이벤트용)
           var marker = new kakao.maps.Marker({
             position: position,
             map: map,
@@ -167,23 +211,25 @@ export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
           });
 
           kakao.maps.event.addListener(marker, 'click', function() {
+            if (openInfowindow) openInfowindow.close();
             infowindow.open(map, marker);
+            openInfowindow = infowindow;
           });
         });
 
-        // 폴리라인 (경로 표시)
+        // 경로 폴리라인 (실선, 반투명)
         if (linePath.length > 1) {
           var polyline = new kakao.maps.Polyline({
             path: linePath,
-            strokeWeight: 4,
+            strokeWeight: 3,
             strokeColor: '#1344FF',
-            strokeOpacity: 0.5,
-            strokeStyle: 'dash'
+            strokeOpacity: 0.35,
+            strokeStyle: 'solid'
           });
           polyline.setMap(map);
         }
 
-        // 모든 마커가 보이도록 영역 조절
+        // 영역 조절
         if (places.length > 1) {
           map.setBounds(bounds);
         } else {
@@ -199,19 +245,20 @@ export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
 
   if (validPlaces.length === 0) {
     return (
-      <View style={[styles.container, style]}>
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>표시할 장소가 없습니다</Text>
+      <View style={[mapStyles.container, style]}>
+        <View style={mapStyles.emptyContainer}>
+          <MapPin size={32} color="#D1D5DB" strokeWidth={1.5} />
+          <Text style={mapStyles.emptyText}>표시할 장소가 없습니다</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, style]}>
+    <View style={[mapStyles.container, style]}>
       <WebView
         source={{ html }}
-        style={styles.webview}
+        style={mapStyles.webview}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         originWhitelist={['*']}
@@ -224,10 +271,11 @@ export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const mapStyles = StyleSheet.create({
   container: {
     flex: 1,
     overflow: 'hidden',
+    borderRadius: 12,
   },
   webview: {
     flex: 1,
@@ -237,10 +285,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F5F5F7',
+    backgroundColor: '#F9FAFB',
+    gap: 8,
   },
   emptyText: {
-    fontSize: 15,
-    color: '#8E8E93',
+    fontSize: 14,
+    color: '#9CA3AF',
+    fontFamily: 'Inter_500Medium',
   },
 });

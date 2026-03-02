@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Pressable,
 } from 'react-native';
+import { MapPin, ChevronUp, ChevronDown, Share2, Pencil, Check } from 'lucide-react-native';
 import KakaoMapView from '../../../components/itinerary/KakaoMapView';
 import ShareModal from '../../../components/common/ShareModal';
 import TimelineItem, {
@@ -15,6 +16,7 @@ import TimelineItem, {
 import { Day } from '../../../contexts/ItineraryContext';
 import {
   styles,
+  COLORS,
   HOUR_HEIGHT,
   MINUTE_HEIGHT,
   MIN_ITEM_HEIGHT,
@@ -33,6 +35,21 @@ const formatDate = (date: Date) => {
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
   return `${month}.${day}`;
+};
+
+const getDayMeta = (places: Place[]) => {
+  if (!places || places.length === 0) return '';
+  const count = places.length;
+  let totalMin = 0;
+  places.forEach(p => {
+    const s = timeToMinutes(p.startTime);
+    const e = timeToMinutes(p.endTime);
+    if (e > s) totalMin += e - s;
+  });
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  const timeStr = h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+  return `${count}개소 ${timeStr}`;
 };
 
 const TimeGridBackground = React.memo(({ hours }: { hours: number[] }) => {
@@ -157,18 +174,20 @@ export default function ItineraryViewScreenView({
     <SafeAreaView style={styles.container}>
       {isMapVisible && (
         <View style={styles.mapContainer}>
-          <KakaoMapView
-            places={
-              selectedDay?.places.map(place => ({
-                id: place.id,
-                name: place.name,
-                address: place.address,
-                latitude: place.latitude,
-                longitude: place.longitude,
-                place_url: place.place_url,
-              })) || []
-            }
-          />
+          <View style={styles.mapInner}>
+            <KakaoMapView
+              places={
+                selectedDay?.places.map(place => ({
+                  id: place.id,
+                  name: place.name,
+                  address: place.address,
+                  latitude: place.latitude,
+                  longitude: place.longitude,
+                  place_url: place.place_url,
+                })) || []
+              }
+            />
+          </View>
         </View>
       )}
 
@@ -204,16 +223,45 @@ export default function ItineraryViewScreenView({
                 >
                   {formatDate(day.date)}
                 </Text>
+                {day.places.length > 0 && (
+                  <Text
+                    style={[
+                      styles.dayTabMetaText,
+                      selectedDayIndex === index && styles.dayTabMetaTextSelected,
+                    ]}
+                  >
+                    {getDayMeta(day.places)}
+                  </Text>
+                )}
               </TouchableOpacity>
             ))}
           </ScrollView>
           <TouchableOpacity
-            style={styles.mapToggleButton}
+            style={[
+              styles.mapToggleButton,
+              isMapVisible && styles.mapToggleButtonActive,
+            ]}
             onPress={() => setMapVisible(!isMapVisible)}
+            activeOpacity={0.7}
           >
-            <Text style={styles.mapToggleButtonText}>
-              {isMapVisible ? '지도 숨기기' : '지도 보기'}
+            <MapPin
+              size={14}
+              color={isMapVisible ? '#FFFFFF' : COLORS.primary}
+              strokeWidth={2}
+            />
+            <Text
+              style={[
+                styles.mapToggleButtonText,
+                isMapVisible && styles.mapToggleButtonTextActive,
+              ]}
+            >
+              {isMapVisible ? '숨기기' : '지도'}
             </Text>
+            {isMapVisible ? (
+              <ChevronUp size={12} color="#FFFFFF" strokeWidth={2.5} />
+            ) : (
+              <ChevronDown size={12} color={COLORS.primary} strokeWidth={2.5} />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -240,18 +288,24 @@ export default function ItineraryViewScreenView({
 
       <View style={styles.footer}>
         <Pressable
-          style={styles.footerButton}
+          style={({pressed}) => [styles.footerButton, pressed && {opacity: 0.7}]}
           onPress={() => setShareModalVisible(true)}
         >
+          <Share2 size={18} color={COLORS.text} strokeWidth={2} />
           <Text style={styles.footerButtonText}>공유</Text>
         </Pressable>
-        <Pressable style={styles.footerButton} onPress={handleEdit}>
+        <Pressable
+          style={({pressed}) => [styles.footerButton, pressed && {opacity: 0.7}]}
+          onPress={handleEdit}
+        >
+          <Pencil size={18} color={COLORS.text} strokeWidth={2} />
           <Text style={styles.footerButtonText}>수정</Text>
         </Pressable>
         <Pressable
-          style={[styles.footerButton, styles.confirmButton]}
+          style={({pressed}) => [styles.footerButton, styles.confirmButton, pressed && {opacity: 0.7}]}
           onPress={handleConfirm}
         >
+          <Check size={18} color={COLORS.white} strokeWidth={2.5} />
           <Text style={styles.confirmButtonText}>확인</Text>
         </Pressable>
       </View>
