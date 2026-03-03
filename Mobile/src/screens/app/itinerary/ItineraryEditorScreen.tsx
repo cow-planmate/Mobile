@@ -23,6 +23,10 @@ import { useItinerary } from '../../../contexts/ItineraryContext';
 import { usePlaces } from '../../../contexts/PlacesContext';
 import { useItineraryEditor } from '../../../hooks/useItineraryEditor';
 import { timeToMinutes, dateToTime } from '../../../utils/timeUtils';
+import {
+  SimpleWeatherInfo,
+  fetchWeatherRecommendations,
+} from '../../../api/trips';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { styles } from './ItineraryEditorScreen.styles';
 import ShareModal from '../../../components/itinerary/ShareModal';
@@ -71,6 +75,28 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   // Detail popup state
   const [detailPlace, setDetailPlace] = useState<Place | null>(null);
   const [isDetailVisible, setDetailVisible] = useState(false);
+
+  // ── Weather state ──
+  const [weatherMap, setWeatherMap] = useState<
+    Record<string, SimpleWeatherInfo>
+  >({});
+
+  useEffect(() => {
+    if (!destination || days.length === 0) return;
+    const startDate = days[0].date.toISOString().split('T')[0];
+    const endDate = days[days.length - 1].date.toISOString().split('T')[0];
+    fetchWeatherRecommendations(destination, startDate, endDate)
+      .then(res => {
+        const map: Record<string, SimpleWeatherInfo> = {};
+        res.weather.forEach(w => {
+          map[w.date] = w;
+        });
+        setWeatherMap(map);
+      })
+      .catch(() => {
+        // weather is non-critical – silently ignore
+      });
+  }, [destination, days.length]);
 
   useEffect(() => {
     if (planId) {
@@ -364,6 +390,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         tripName,
         planId: route.params.planId,
         departure: route.params.departure,
+        destination: route.params.destination,
         travelId: route.params.travelId,
         transport: route.params.transport,
         adults: route.params.adults,
@@ -447,6 +474,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         tripName,
         planId: newPlanId,
         departure: route.params.departure,
+        destination: route.params.destination,
         travelId: route.params.travelId,
         transport: route.params.transport,
         adults: route.params.adults,
@@ -494,6 +522,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           setDetailVisible(false);
           setDetailPlace(null);
         }}
+        weatherMap={weatherMap}
       />
       <ShareModal
         visible={isShareModalVisible}

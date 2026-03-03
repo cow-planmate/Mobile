@@ -25,6 +25,7 @@ export type AppStackParamList = {
     tripName: string;
     planId?: number;
     departure?: string;
+    destination?: string;
     travelId?: number;
     transport?: string;
     adults?: number;

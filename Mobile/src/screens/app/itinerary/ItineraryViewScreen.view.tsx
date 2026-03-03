@@ -21,6 +21,8 @@ import TimelineItem, {
   Place,
 } from '../../../components/itinerary/TimelineItem';
 import { Day } from '../../../contexts/ItineraryContext';
+import { SimpleWeatherInfo } from '../../../api/trips';
+import WeatherBadge from '../../../components/weather/WeatherBadge';
 import {
   styles,
   COLORS,
@@ -157,6 +159,7 @@ export interface ItineraryViewScreenViewProps {
   goBack: () => void;
   handleEdit: () => void;
   planId?: number;
+  weatherMap: Record<string, SimpleWeatherInfo>;
 }
 
 export default function ItineraryViewScreenView({
@@ -174,6 +177,7 @@ export default function ItineraryViewScreenView({
   goBack,
   handleEdit,
   planId,
+  weatherMap,
 }: ItineraryViewScreenViewProps) {
   const selectedDay = days[selectedDayIndex];
 
@@ -205,44 +209,53 @@ export default function ItineraryViewScreenView({
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.dayTabsContainer}
           >
-            {days.map((day, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.dayTab,
-                  selectedDayIndex === index && styles.dayTabSelected,
-                ]}
-                onPress={() => setSelectedDayIndex(index)}
-              >
-                <Text
-                  style={[
-                    styles.dayTabText,
-                    selectedDayIndex === index && styles.dayTabTextSelected,
-                  ]}
+            {days.map((day, index) => {
+              const dateKey = day.date.toISOString().split('T')[0];
+              const weather = weatherMap[dateKey];
+              const isSelected = selectedDayIndex === index;
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={[styles.dayTab, isSelected && styles.dayTabSelected]}
+                  onPress={() => setSelectedDayIndex(index)}
                 >
-                  {day.dayNumber}일차
-                </Text>
-                <Text
-                  style={[
-                    styles.dayTabDateText,
-                    selectedDayIndex === index && styles.dayTabDateTextSelected,
-                  ]}
-                >
-                  {formatDate(day.date)}
-                </Text>
-                {day.places.length > 0 && (
                   <Text
                     style={[
-                      styles.dayTabMetaText,
-                      selectedDayIndex === index &&
-                        styles.dayTabMetaTextSelected,
+                      styles.dayTabText,
+                      isSelected && styles.dayTabTextSelected,
                     ]}
                   >
-                    {getDayMeta(day.places)}
+                    {day.dayNumber}일차
                   </Text>
-                )}
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.dayTabDateText,
+                      isSelected && styles.dayTabDateTextSelected,
+                    ]}
+                  >
+                    {formatDate(day.date)}
+                  </Text>
+                  {weather && (
+                    <WeatherBadge
+                      description={weather.description}
+                      tempMin={weather.temp_min}
+                      tempMax={weather.temp_max}
+                      light={isSelected}
+                    />
+                  )}
+                  {day.places.length > 0 && (
+                    <Text
+                      style={[
+                        styles.dayTabMetaText,
+                        isSelected && styles.dayTabMetaTextSelected,
+                      ]}
+                    >
+                      {getDayMeta(day.places)}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
           <TouchableOpacity
             style={[

@@ -239,20 +239,29 @@ export async function fetchNextPlaces(
 // Weather API
 // ────────────────────────────────────────────────
 
-export interface WeatherData {
-  temperature: number;
+export interface SimpleWeatherInfo {
+  date: string;
   description: string;
-  iconUrl: string;
+  temp_min: number;
+  temp_max: number;
+  feels_like: number;
 }
 
-/** Fetch weather recommendations */
-export async function fetchWeather(
-  travelId: number,
-  date: string,
-): Promise<WeatherData[]> {
+export interface WeatherResponse {
+  weather: SimpleWeatherInfo[];
+  recommendation: string;
+}
+
+/** Fetch weather recommendations for a city and date range */
+export async function fetchWeatherRecommendations(
+  city: string,
+  startDate: string,
+  endDate: string,
+): Promise<WeatherResponse> {
   const response = await axios.post(`${API_URL}/api/weather/recommendations`, {
-    travelId,
-    date,
+    city,
+    start_date: startDate,
+    end_date: endDate,
   });
   return response.data;
 }

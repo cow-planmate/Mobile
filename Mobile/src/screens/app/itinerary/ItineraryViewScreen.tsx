@@ -14,6 +14,10 @@ import { Place } from '../../../components/itinerary/TimelineItem';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MINUTE_HEIGHT } from './ItineraryViewScreen.styles';
 import { Day } from '../../../contexts/ItineraryContext';
+import {
+  SimpleWeatherInfo,
+  fetchWeatherRecommendations,
+} from '../../../api/trips';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
 
 // DTO Interfaces
@@ -76,6 +80,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     days: initialDays = [],
     tripName: initialTripName = '완성된 일정',
     departure,
+    destination: routeDestination,
     travelId,
     transport,
     adults,
@@ -90,6 +95,14 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const [isMapVisible, setMapVisible] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
+  // Weather
+  const [weatherMap, setWeatherMap] = useState<
+    Record<string, SimpleWeatherInfo>
+  >({});
+  const [destinationCity, setDestinationCity] = useState(
+    routeDestination || '',
+  );
+
   const fetchCompletePlan = useCallback(async () => {
     if (!planId) return;
     try {
@@ -98,9 +111,11 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       );
       const { planFrame, placeBlocks, timetables } = response.data;
 
-      // Update trip name from API if available
       if (planFrame?.planName) {
         setTripName(planFrame.planName);
+      }
+      if (planFrame?.travelName) {
+        setDestinationCity(planFrame.travelName);
       }
 
       const categoryMapping = (
@@ -184,6 +199,22 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     }
   }, [planId, fetchCompletePlan, initialDays.length]);
 
+  // Fetch weather when destination and days are available
+  useEffect(() => {
+    if (!destinationCity || days.length === 0) return;
+    const startDate = days[0].date.toISOString().split('T')[0];
+    const endDate = days[days.length - 1].date.toISOString().split('T')[0];
+    fetchWeatherRecommendations(destinationCity, startDate, endDate)
+      .then(res => {
+        const map: Record<string, SimpleWeatherInfo> = {};
+        res.weather.forEach(w => {
+          map[w.date] = w;
+        });
+        setWeatherMap(map);
+      })
+      .catch(() => {});
+  }, [destinationCity, days.length]);
+
   useEffect(() => {
     navigation.setOptions({
       title: tripName,
@@ -237,6 +268,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       goBack={() => navigation.goBack()}
       handleEdit={() => navigation.navigate('ItineraryEditor', { planId })}
       planId={planId}
+      weatherMap={weatherMap}
     />
   );
 }

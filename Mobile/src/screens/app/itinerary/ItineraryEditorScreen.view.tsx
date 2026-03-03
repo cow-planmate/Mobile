@@ -22,6 +22,8 @@ import ScheduleEditModal from '../../../components/common/ScheduleEditModal';
 import DetailPopup from '../../../components/itinerary/DetailPopup';
 import PlaceRecommendationList from '../../../components/itinerary/PlaceRecommendationList';
 import { Day } from '../../../contexts/ItineraryContext';
+import { SimpleWeatherInfo } from '../../../api/trips';
+import WeatherBadge from '../../../components/weather/WeatherBadge';
 import {
   styles,
   COLORS,
@@ -425,8 +427,7 @@ export interface ItineraryEditorScreenViewProps {
   isDetailVisible: boolean;
   onOpenDetail: (place: Place) => void;
   onCloseDetail: () => void;
-  // onUpdateMemo: (memo: string) => void;
-  // onDeleteFromDetail: () => void;
+  weatherMap: Record<string, SimpleWeatherInfo>;
 }
 
 export default function ItineraryEditorScreenView({
@@ -456,9 +457,8 @@ export default function ItineraryEditorScreenView({
   isDetailVisible,
   onOpenDetail,
   onCloseDetail,
-}: // onUpdateMemo,
-// onDeleteFromDetail,
-ItineraryEditorScreenViewProps) {
+  weatherMap,
+}: ItineraryEditorScreenViewProps) {
   if (!selectedDay) {
     return (
       <SafeAreaView style={styles.container}>
@@ -492,19 +492,19 @@ ItineraryEditorScreenViewProps) {
                 : totalMins > 0
                 ? `${totalMins}m`
                 : '';
+            const dateKey = day.date.toISOString().split('T')[0];
+            const weather = weatherMap[dateKey];
+            const isSelected = selectedDayIndex === index;
             return (
               <TouchableOpacity
                 key={index}
-                style={[
-                  styles.dayTab,
-                  selectedDayIndex === index && styles.dayTabSelected,
-                ]}
+                style={[styles.dayTab, isSelected && styles.dayTabSelected]}
                 onPress={() => setSelectedDayIndex(index)}
               >
                 <Text
                   style={[
                     styles.dayTabText,
-                    selectedDayIndex === index && styles.dayTabTextSelected,
+                    isSelected && styles.dayTabTextSelected,
                   ]}
                 >
                   {day.dayNumber}일차
@@ -512,17 +512,24 @@ ItineraryEditorScreenViewProps) {
                 <Text
                   style={[
                     styles.dayTabDateText,
-                    selectedDayIndex === index && styles.dayTabDateTextSelected,
+                    isSelected && styles.dayTabDateTextSelected,
                   ]}
                 >
                   {formatDate(day.date)}
                 </Text>
+                {weather && (
+                  <WeatherBadge
+                    description={weather.description}
+                    tempMin={weather.temp_min}
+                    tempMax={weather.temp_max}
+                    light={isSelected}
+                  />
+                )}
                 {day.places.length > 0 && (
                   <Text
                     style={[
                       styles.dayTabMetaText,
-                      selectedDayIndex === index &&
-                        styles.dayTabMetaTextSelected,
+                      isSelected && styles.dayTabMetaTextSelected,
                     ]}
                   >
                     {day.places.length}개소 {timeLabel}
