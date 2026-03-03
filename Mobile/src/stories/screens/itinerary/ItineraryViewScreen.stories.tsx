@@ -16,6 +16,7 @@ const mockDays = [
         type: '관광지',
         address: '인천광역시 중구 공항로 272',
         rating: 4.5,
+        imageUrl: '',
         latitude: 37.4602,
         longitude: 126.4407,
       },
@@ -27,6 +28,7 @@ const mockDays = [
         type: '관광지',
         address: '제주특별자치도 제주시 공항로 2',
         rating: 4.3,
+        imageUrl: '',
         latitude: 33.5113,
         longitude: 126.493,
       },
@@ -62,7 +64,9 @@ const meta = {
     offsetMinutes: 0,
     handleConfirm: () => console.log('Confirm'),
     goBack: () => console.log('Go back'),
+    handleEdit: () => console.log('Edit'),
     planId: 1,
+    weatherMap: {},
   },
 } satisfies Meta<typeof ItineraryViewScreenView>;
 

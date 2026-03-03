@@ -41,10 +41,10 @@ const meta = {
     onSelectLocation: loc => console.log(`Selected Location: ${loc}`),
     onOpenCalendar: () => console.log('Open Calendar'),
     onCloseCalendar: () => console.log('Close Calendar'),
-    onConfirmCalendar: () => console.log('Confirm Calendar'),
+    onConfirmCalendar: dates => console.log('Confirm Calendar', dates),
     onOpenPaxModal: () => console.log('Open Pax Modal'),
     onClosePaxModal: () => console.log('Close Pax Modal'),
-    onConfirmPax: () => console.log('Confirm Pax'),
+    onConfirmPax: pax => console.log('Confirm Pax', pax),
     onOpenTransportModal: () => console.log('Open Transport Modal'),
     onCloseTransportModal: () => console.log('Close Transport Modal'),
     onSelectTransport: t => console.log(`Selected Transport: ${t}`),
@@ -65,7 +65,6 @@ export const Default: Story = {
 
 export const Filled: Story = {
   args: {
-    departure: '서울',
     destination: '부산',
     dateText: '2024. 04. 01. ~ 2024. 04. 03.',
     paxText: '성인 2명, 어린이 1명',

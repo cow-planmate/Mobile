@@ -20,7 +20,7 @@ const meta = {
   args: {
     days: [
       {
-        id: 'day1',
+        dayNumber: 1,
         date: new Date('2024-03-01'),
         places: [
           {
@@ -31,6 +31,9 @@ const meta = {
             type: '관광지',
             address: '인천광역시 중구 공항로 272',
             rating: 4.5,
+            imageUrl: '',
+            latitude: 37.4602,
+            longitude: 126.4407,
           },
           {
             id: 'p2',
@@ -40,11 +43,14 @@ const meta = {
             type: '관광지',
             address: '제주특별자치도 제주시 공항로 2',
             rating: 4.3,
+            imageUrl: '',
+            latitude: 33.5113,
+            longitude: 126.493,
           },
         ],
       },
       {
-        id: 'day2',
+        dayNumber: 2,
         date: new Date('2024-03-02'),
         places: [],
       },
@@ -64,7 +70,7 @@ const meta = {
     handleDeletePlace: id => console.log(`Delete ${id}`),
     handleAddPlace: place => console.log('Add place', place),
     selectedDay: {
-      id: 'day1',
+      dayNumber: 1,
       date: new Date('2024-03-01'),
       places: [
         {
@@ -75,6 +81,9 @@ const meta = {
           type: '관광지',
           address: '인천광역시 중구 공항로 272',
           rating: 4.5,
+          imageUrl: '',
+          latitude: 37.4602,
+          longitude: 126.4407,
         },
         {
           id: 'p2',
@@ -84,6 +93,9 @@ const meta = {
           type: '관광지',
           address: '제주특별자치도 제주시 공항로 2',
           rating: 4.3,
+          imageUrl: '',
+          latitude: 33.5113,
+          longitude: 126.493,
         },
       ],
     },
@@ -95,14 +107,12 @@ const meta = {
     onConfirmTimePicker: date => console.log('Confirm time picker', date),
     destination: '제주',
     onComplete: () => console.log('Complete'),
-    searchQuery: '',
-    setSearchQuery: v => console.log(`Search query: ${v}`),
-    selectedTab: '관광지',
-    setSelectedTab: t => console.log(`Selected tab: ${t}`),
-    searchResults: [],
-    isSearching: false,
-    handleSearch: () => console.log('Handle search'),
-    filteredPlaces: [],
+    planId: null,
+    detailPlace: null,
+    isDetailVisible: false,
+    onOpenDetail: place => console.log('Open detail', place),
+    onCloseDetail: () => console.log('Close detail'),
+    weatherMap: {},
   },
 } satisfies Meta<typeof ItineraryEditorScreenView>;
 
@@ -116,7 +126,7 @@ export const EmptyDay: Story = {
   args: {
     selectedDayIndex: 1,
     selectedDay: {
-      id: 'day2',
+      dayNumber: 2,
       date: new Date('2024-03-02'),
       places: [],
     },

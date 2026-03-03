@@ -6,23 +6,15 @@ import MyPageScreenView from '../../../screens/app/main/MyPageScreen.view';
 const mockPlans = [
   {
     planId: 1,
-    title: '제주도 여행',
-    departure: '서울',
-    destination: '제주',
-    departureTime: '2024-03-01',
-    arrivalTime: '2024-03-05',
-    pax: 2,
-    transport: 'Airplane',
+    planName: '제주도 여행',
+    startDate: '2024-03-01',
+    endDate: '2024-03-05',
   },
   {
     planId: 2,
-    title: '부산 먹방 여행',
-    departure: '서울',
-    destination: '부산',
-    departureTime: '2024-04-10',
-    arrivalTime: '2024-04-12',
-    pax: 4,
-    transport: 'Train',
+    planName: '부산 먹방 여행',
+    startDate: '2024-04-10',
+    endDate: '2024-04-12',
   },
 ];
 
