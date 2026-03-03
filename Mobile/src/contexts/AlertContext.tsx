@@ -18,7 +18,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
   runOnJS,
   Easing,
 } from 'react-native-reanimated';
@@ -79,41 +78,64 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
   const [visible, setVisible] = useState(false);
   const [options, setOptions] = useState<AlertOptions | null>(null);
   const queueRef = useRef<AlertOptions[]>([]);
+  const pendingCallbackRef = useRef<(() => void) | undefined>(undefined);
 
   // Animation values
   const backdrop = useSharedValue(0);
-  const scale = useSharedValue(0.85);
+  const scale = useSharedValue(0.92);
   const opacity = useSharedValue(0);
+
+  // Stable JS callback invoked via runOnJS after animate-out finishes
+  const onAnimateOutDone = useCallback(() => {
+    setVisible(false);
+    setOptions(null);
+    const cb = pendingCallbackRef.current;
+    pendingCallbackRef.current = undefined;
+    cb?.();
+    // Process queue
+    if (queueRef.current.length > 0) {
+      const next = queueRef.current.shift()!;
+      setTimeout(() => showAlertInternal(next), 120);
+    }
+  }, []);
 
   const animateIn = useCallback(() => {
     backdrop.value = withTiming(1, {
-      duration: 200,
-      easing: Easing.out(Easing.quad),
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
     });
-    scale.value = withSpring(1, { damping: 18, stiffness: 300 });
-    opacity.value = withTiming(1, { duration: 180 });
+    scale.value = withTiming(1, {
+      duration: 250,
+      easing: Easing.out(Easing.cubic),
+    });
+    opacity.value = withTiming(1, {
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+    });
   }, [backdrop, scale, opacity]);
 
   const animateOut = useCallback(
     (cb?: () => void) => {
-      backdrop.value = withTiming(0, { duration: 180 });
-      scale.value = withTiming(0.9, { duration: 150 });
-      opacity.value = withTiming(0, { duration: 150 }, finished => {
-        if (finished) {
-          runOnJS(() => {
-            setVisible(false);
-            setOptions(null);
-            cb?.();
-            // Process queue
-            if (queueRef.current.length > 0) {
-              const next = queueRef.current.shift()!;
-              setTimeout(() => showAlertInternal(next), 100);
-            }
-          })();
-        }
+      pendingCallbackRef.current = cb;
+      backdrop.value = withTiming(0, {
+        duration: 180,
+        easing: Easing.in(Easing.cubic),
       });
+      scale.value = withTiming(0.92, {
+        duration: 160,
+        easing: Easing.in(Easing.cubic),
+      });
+      opacity.value = withTiming(
+        0,
+        { duration: 160, easing: Easing.in(Easing.cubic) },
+        finished => {
+          if (finished) {
+            runOnJS(onAnimateOutDone)();
+          }
+        },
+      );
     },
-    [backdrop, scale, opacity],
+    [backdrop, scale, opacity, onAnimateOutDone],
   );
 
   const showAlertInternal = useCallback((opts: AlertOptions) => {
@@ -123,11 +145,15 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (visible && options) {
+      // Reset to initial values before animating in
+      backdrop.value = 0;
+      scale.value = 0.92;
+      opacity.value = 0;
       // Small delay to let Modal mount
-      const t = setTimeout(animateIn, 30);
+      const t = setTimeout(animateIn, 50);
       return () => clearTimeout(t);
     }
-  }, [visible, options, animateIn]);
+  }, [visible, options, animateIn, backdrop, scale, opacity]);
 
   const showAlert = useCallback(
     (opts: AlertOptions) => {
