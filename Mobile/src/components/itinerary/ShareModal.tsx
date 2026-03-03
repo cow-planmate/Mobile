@@ -111,7 +111,10 @@ export default function ShareModal({
               fetchEditors();
             } catch (error) {
               console.error('Remove editor failed:', error);
-              showAlert({ title: '오류', message: '편집자 삭제에 실패했습니다.' });
+              showAlert({
+                title: '오류',
+                message: '편집자 삭제에 실패했습니다.',
+              });
             }
           },
         },

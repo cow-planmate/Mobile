@@ -86,7 +86,10 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
   const opacity = useSharedValue(0);
 
   const animateIn = useCallback(() => {
-    backdrop.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) });
+    backdrop.value = withTiming(1, {
+      duration: 200,
+      easing: Easing.out(Easing.quad),
+    });
     scale.value = withSpring(1, { damping: 18, stiffness: 300 });
     opacity.value = withTiming(1, { duration: 180 });
   }, [backdrop, scale, opacity]);
@@ -113,13 +116,10 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
     [backdrop, scale, opacity],
   );
 
-  const showAlertInternal = useCallback(
-    (opts: AlertOptions) => {
-      setOptions(opts);
-      setVisible(true);
-    },
-    [],
-  );
+  const showAlertInternal = useCallback((opts: AlertOptions) => {
+    setOptions(opts);
+    setVisible(true);
+  }, []);
 
   useEffect(() => {
     if (visible && options) {
@@ -173,7 +173,9 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
         transparent
         animationType="none"
         statusBarTranslucent
-        onRequestClose={() => handlePress(buttons.find(b => b.style === 'cancel') ?? buttons[0])}
+        onRequestClose={() =>
+          handlePress(buttons.find(b => b.style === 'cancel') ?? buttons[0])
+        }
       >
         <View style={s.overlay}>
           <Animated.View style={[s.backdrop, backdropStyle]} />
@@ -192,12 +194,16 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
             ) : null}
 
             {/* Buttons */}
-            <View style={[s.buttonRow, buttons.length === 1 && s.buttonRowSingle]}>
+            <View
+              style={[s.buttonRow, buttons.length === 1 && s.buttonRowSingle]}
+            >
               {buttons.map((btn, i) => {
                 const isDestructive = btn.style === 'destructive';
                 const isCancel = btn.style === 'cancel';
                 const isPrimary =
-                  !isDestructive && !isCancel && (buttons.length === 1 || i === buttons.length - 1);
+                  !isDestructive &&
+                  !isCancel &&
+                  (buttons.length === 1 || i === buttons.length - 1);
 
                 return (
                   <Pressable

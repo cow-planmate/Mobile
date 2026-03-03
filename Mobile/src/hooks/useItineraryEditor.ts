@@ -136,7 +136,10 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
         }
       } catch (error) {
         console.error('Failed to fetch plan:', error);
-        showAlert({ title: '오류', message: '일정 정보를 불러오는데 실패했습니다.' });
+        showAlert({
+          title: '오류',
+          message: '일정 정보를 불러오는데 실패했습니다.',
+        });
         initDaysFromDates();
       }
     };

@@ -51,7 +51,10 @@ export default function ProfileScreen() {
       });
     } catch (error) {
       console.error('Failed to fetch profile:', error);
-      showAlert({ title: '오류', message: '사용자 정보를 불러오는데 실패했습니다.' });
+      showAlert({
+        title: '오류',
+        message: '사용자 정보를 불러오는데 실패했습니다.',
+      });
     } finally {
       setLoading(false);
     }
@@ -118,7 +121,10 @@ export default function ProfileScreen() {
       );
 
       if (!verifyResponse.data.passwordVerified) {
-        showAlert({ title: '오류', message: '현재 비밀번호가 일치하지 않습니다.' });
+        showAlert({
+          title: '오류',
+          message: '현재 비밀번호가 일치하지 않습니다.',
+        });
         return;
       }
 
@@ -127,7 +133,10 @@ export default function ProfileScreen() {
         confirmPassword: newPass,
       });
 
-      showAlert({ title: '완료', message: '비밀번호가 성공적으로 변경되었습니다.' });
+      showAlert({
+        title: '완료',
+        message: '비밀번호가 성공적으로 변경되었습니다.',
+      });
       setPasswordModalVisible(false);
     } catch (e: any) {
       console.error('Password Update Error:', e);
@@ -139,7 +148,8 @@ export default function ProfileScreen() {
   const handleResign = () => {
     showAlert({
       title: '회원 탈퇴',
-      message: '정말로 탈퇴하시겠습니까? 탈퇴 후에는 모든 데이터가 삭제되며 복구할 수 없습니다.',
+      message:
+        '정말로 탈퇴하시겠습니까? 탈퇴 후에는 모든 데이터가 삭제되며 복구할 수 없습니다.',
       type: 'confirm',
       buttons: [
         { text: '취소', style: 'cancel' },
@@ -150,7 +160,10 @@ export default function ProfileScreen() {
             try {
               const token = await AsyncStorage.getItem('accessToken');
               if (!token) {
-                showAlert({ title: '오류', message: '로그인 정보가 유효하지 않습니다.' });
+                showAlert({
+                  title: '오류',
+                  message: '로그인 정보가 유효하지 않습니다.',
+                });
                 return;
               }
 
@@ -180,7 +193,10 @@ export default function ProfileScreen() {
               }
             } catch (error) {
               console.error('Resign Error:', error);
-              showAlert({ title: '오류', message: '회원 탈퇴 처리 중 오류가 발생했습니다.' });
+              showAlert({
+                title: '오류',
+                message: '회원 탈퇴 처리 중 오류가 발생했습니다.',
+              });
             }
           },
         },

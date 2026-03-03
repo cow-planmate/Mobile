@@ -21,7 +21,8 @@ function HomeStack() {
         headerShown: false,
         animation: 'slide_from_right',
         animationDuration: 250,
-      }}>
+      }}
+    >
       <Stack.Screen
         name="Home"
         component={HomeScreen}
@@ -42,7 +43,8 @@ function MyPageStack() {
         headerShown: false,
         animation: 'slide_from_right',
         animationDuration: 250,
-      }}>
+      }}
+    >
       <Stack.Screen
         name="MyPage"
         component={MyPageScreen}

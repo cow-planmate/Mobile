@@ -75,7 +75,10 @@ const ForgotPasswordScreen = () => {
       );
 
       if (response.data.verificationSent) {
-        showAlert({ title: '발송 완료', message: '인증번호가 이메일로 전송되었습니다.' });
+        showAlert({
+          title: '발송 완료',
+          message: '인증번호가 이메일로 전송되었습니다.',
+        });
         setShowVerificationInput(true);
         setIsTimerActive(true);
         setTimeLeft(300);
@@ -85,7 +88,8 @@ const ForgotPasswordScreen = () => {
       console.error('Email Send Error:', error);
       showAlert({
         title: '오류',
-        message: error.response?.data?.message || '인증 메일 발송에 실패했습니다.',
+        message:
+          error.response?.data?.message || '인증 메일 발송에 실패했습니다.',
       });
     } finally {
       setIsLoading(false);
@@ -125,7 +129,8 @@ const ForgotPasswordScreen = () => {
       console.error('Verify Code Error:', error);
       showAlert({
         title: '오류',
-        message: error.response?.data?.message || '인증 확인 중 오류가 발생했습니다.',
+        message:
+          error.response?.data?.message || '인증 확인 중 오류가 발생했습니다.',
       });
     } finally {
       setIsLoading(false);
@@ -162,7 +167,8 @@ const ForgotPasswordScreen = () => {
 
       showAlert({
         title: '발송 완료',
-        message: '이메일로 임시 비밀번호가 발송되었습니다.\n\n로그인 후 마이페이지에서 비밀번호를 꼭 변경해주세요.',
+        message:
+          '이메일로 임시 비밀번호가 발송되었습니다.\n\n로그인 후 마이페이지에서 비밀번호를 꼭 변경해주세요.',
         type: 'success',
         buttons: [
           {
@@ -179,10 +185,14 @@ const ForgotPasswordScreen = () => {
       if (status === 403) {
         showAlert({
           title: '권한 오류',
-          message: '임시 비밀번호 발급 권한이 없습니다.\n(서버 설정을 확인해주세요.)',
+          message:
+            '임시 비밀번호 발급 권한이 없습니다.\n(서버 설정을 확인해주세요.)',
         });
       } else {
-        showAlert({ title: '오류', message: message || '임시 비밀번호 발송에 실패했습니다.' });
+        showAlert({
+          title: '오류',
+          message: message || '임시 비밀번호 발송에 실패했습니다.',
+        });
       }
     } finally {
       setIsLoading(false);

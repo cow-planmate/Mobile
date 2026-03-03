@@ -111,7 +111,10 @@ export default function MyPageScreen() {
               showAlert({ title: '성공', message: '일정이 삭제되었습니다.' });
             } catch (e) {
               console.error('Delete plan failed:', e);
-              showAlert({ title: '실패', message: '일정 삭제에 실패했습니다.' });
+              showAlert({
+                title: '실패',
+                message: '일정 삭제에 실패했습니다.',
+              });
             }
           },
         },

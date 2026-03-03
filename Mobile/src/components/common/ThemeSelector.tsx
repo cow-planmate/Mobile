@@ -95,7 +95,10 @@ export default function ThemeSelector({
       setSelectedIds(initSets);
     } catch (error) {
       console.error('Failed to fetch themes:', error);
-      showAlert({ title: '오류', message: '테마 목록을 불러오는데 실패했습니다.' });
+      showAlert({
+        title: '오류',
+        message: '테마 목록을 불러오는데 실패했습니다.',
+      });
     } finally {
       setLoading(false);
     }

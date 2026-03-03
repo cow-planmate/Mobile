@@ -54,7 +54,10 @@ export default function ShareModal({
   }, [visible, planId, fetchEditors]);
 
   const handleCopy = () => {
-    showAlert({ title: '복사 완료', message: '공유 URL이 클립보드에 복사되었습니다.' });
+    showAlert({
+      title: '복사 완료',
+      message: '공유 URL이 클립보드에 복사되었습니다.',
+    });
   };
 
   const handleInvite = async () => {
@@ -68,7 +71,10 @@ export default function ShareModal({
       await axios.post(`${API_URL}/api/plan/${planId}/invite`, {
         receiverNickname: nickname,
       });
-      showAlert({ title: '초대 완료', message: `${nickname}님을 일정에 초대했습니다.` });
+      showAlert({
+        title: '초대 완료',
+        message: `${nickname}님을 일정에 초대했습니다.`,
+      });
       setNickname('');
     } catch (error: any) {
       console.error('Invite error:', error);

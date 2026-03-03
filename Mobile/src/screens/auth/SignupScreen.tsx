@@ -118,7 +118,8 @@ export default function SignupScreen() {
       if (response.data.verificationSent) {
         showAlert({
           title: '성공',
-          message: '인증 번호가 이메일로 전송되었습니다.\n(스팸 메일함도 확인해주세요)',
+          message:
+            '인증 번호가 이메일로 전송되었습니다.\n(스팸 메일함도 확인해주세요)',
         });
         setShowVerificationInput(true);
         setIsTimerActive(true);
@@ -173,7 +174,8 @@ export default function SignupScreen() {
       console.error('Verify Code Error:', error);
       showAlert({
         title: '오류',
-        message: error.response?.data?.message || '인증 확인 중 오류가 발생했습니다.',
+        message:
+          error.response?.data?.message || '인증 확인 중 오류가 발생했습니다.',
       });
     } finally {
       setIsLoading(false);
@@ -198,7 +200,10 @@ export default function SignupScreen() {
         showAlert({ title: '사용 가능', message: '사용 가능한 닉네임입니다.' });
       } else {
         setIsNicknameVerified(false);
-        showAlert({ title: '사용 불가', message: '이미 사용 중인 닉네임입니다.' });
+        showAlert({
+          title: '사용 불가',
+          message: '이미 사용 중인 닉네임입니다.',
+        });
       }
     } catch (error: any) {
       console.error('Nickname Check Error:', error);
@@ -218,12 +223,18 @@ export default function SignupScreen() {
       !form.age ||
       !form.gender
     ) {
-      showAlert({ title: '알림', message: '모든 정보를 입력하고 인증을 완료해주세요.' });
+      showAlert({
+        title: '알림',
+        message: '모든 정보를 입력하고 인증을 완료해주세요.',
+      });
       return;
     }
 
     if (!emailAuthToken) {
-      showAlert({ title: '오류', message: '이메일 인증 토큰이 없습니다. 다시 인증해주세요.' });
+      showAlert({
+        title: '오류',
+        message: '이메일 인증 토큰이 없습니다. 다시 인증해주세요.',
+      });
       return;
     }
 
@@ -264,7 +275,9 @@ export default function SignupScreen() {
           title: '환영합니다!',
           message: '회원가입이 완료되었습니다. 로그인 해주세요.',
           type: 'success',
-          buttons: [{ text: '확인', onPress: () => navigation.navigate('Login') }],
+          buttons: [
+            { text: '확인', onPress: () => navigation.navigate('Login') },
+          ],
         });
       }
     } catch (error: any) {

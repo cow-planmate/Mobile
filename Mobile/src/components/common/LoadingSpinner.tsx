@@ -84,7 +84,8 @@ export default function LoadingSpinner({
       style={[
         styles.container,
         size === 'large' ? styles.fullScreen : styles.inline,
-      ]}>
+      ]}
+    >
       <View style={styles.dotRow}>
         {Array.from({ length: DOT_COUNT }).map((_, i) => (
           <BounceDot key={i} index={i} color={color} dotSize={dotSize} />

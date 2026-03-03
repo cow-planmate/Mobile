@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -14,7 +13,8 @@ export default function AuthStack() {
         headerShown: false,
         animation: 'slide_from_right',
         animationDuration: 250,
-      }}>
+      }}
+    >
       <Stack.Screen
         name="Login"
         component={LoginScreen}

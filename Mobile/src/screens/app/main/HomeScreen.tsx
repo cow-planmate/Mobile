@@ -136,7 +136,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     if (travelId === undefined || travelId <= 0) {
       showAlert({
         title: '알림',
-        message: '여행지가 올바르게 선택되지 않았습니다.\n목록에서 다시 선택해주세요.',
+        message:
+          '여행지가 올바르게 선택되지 않았습니다.\n목록에서 다시 선택해주세요.',
       });
       return;
     }
