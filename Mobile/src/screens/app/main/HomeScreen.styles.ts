@@ -95,7 +95,8 @@ export const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: normalize(72),
+    minHeight: normalize(72),
+    paddingVertical: normalize(12),
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
@@ -138,16 +139,16 @@ export const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   valueText: {
-    fontSize: normalize(16),
+    fontSize: normalize(14),
     color: theme.colors.text,
     fontFamily: FONTS.medium,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
   placeholderText: {
-    fontSize: normalize(16),
+    fontSize: normalize(14),
     color: theme.colors.textTertiary,
     fontFamily: FONTS.regular,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
 
   arrowContainer: {

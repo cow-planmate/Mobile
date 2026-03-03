@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, Pressable } from 'react-native';
+import { Modal, View, Text, Pressable, TouchableOpacity } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
+import { X } from 'lucide-react-native';
 
 LocaleConfig.locales.kr = {
   monthNames: [
@@ -45,7 +46,7 @@ LocaleConfig.locales.kr = {
 };
 LocaleConfig.defaultLocale = 'kr';
 
-import { styles, COLORS } from './CalendarModal.styles';
+import { styles, COLORS, FONTS } from './CalendarModal.styles';
 
 type CalendarModalProps = {
   visible: boolean;
@@ -154,10 +155,36 @@ export default function CalendarModal({
     }
   };
 
+  const formatSelectedRange = () => {
+    if (!startDate) return '날짜를 선택하세요';
+    const fmt = (d: Date) => {
+      const m = d.getMonth() + 1;
+      const day = d.getDate();
+      return `${m}월 ${day}일`;
+    };
+    if (!endDate || startDate.getTime() === endDate.getTime()) {
+      return fmt(startDate);
+    }
+    return `${fmt(startDate)} ~ ${fmt(endDate)}`;
+  };
+
   return (
     <Modal visible={visible} animationType="fade" transparent={true}>
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.headerTitle}>여행 기간 선택</Text>
+              <Text style={styles.headerSubtitle}>{formatSelectedRange()}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.closeButtonContainer}
+              onPress={onClose}
+              activeOpacity={0.7}
+            >
+              <X size={20} color={COLORS.placeholder} strokeWidth={1.5} />
+            </TouchableOpacity>
+          </View>
           <Calendar
             onDayPress={onDayPress}
             markingType={'custom'}
@@ -166,6 +193,12 @@ export default function CalendarModal({
               todayTextColor: COLORS.primary,
               arrowColor: COLORS.primary,
               monthTextColor: COLORS.text,
+              textMonthFontFamily: FONTS.bold,
+              textMonthFontSize: 18,
+              textDayHeaderFontFamily: FONTS.semibold,
+              textDayHeaderFontSize: 14,
+              textDayFontFamily: FONTS.medium,
+              textDayFontSize: 15,
               textSectionTitleColor: COLORS.placeholder,
             }}
           />

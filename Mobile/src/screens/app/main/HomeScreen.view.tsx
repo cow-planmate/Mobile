@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   ScrollView,
 } from 'react-native';
 import {
-  MapPin,
   Map,
   Calendar,
   Users,
@@ -18,6 +17,13 @@ import {
   Bell,
   Settings,
 } from 'lucide-react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+  runOnJS,
+} from 'react-native-reanimated';
 import CalendarModal from '../../../components/common/CalendarModal';
 import PaxModal from '../../../components/common/PaxModal';
 import NotificationModal, {
@@ -28,6 +34,73 @@ import SelectionModal, {
 } from '../../../components/common/SelectionModal';
 import SearchLocationModal from '../../../components/common/SearchLocationModal';
 import { styles, COLORS } from './HomeScreen.styles';
+
+/* ── Sliding subtitle carousel ── */
+
+const SUBTITLE_MESSAGES = [
+  '새로운 여행을 계획해 보세요.',
+  '함께 떠나는 여행, 함께 만드는 일정.',
+  '완벽한 여행은 좋은 계획에서 시작돼요.',
+  '오늘, 어디로 떠나볼까요?',
+  '설레는 여행 계획을 시작해 보세요.',
+];
+
+const SlidingSubtitle = () => {
+  const [index, setIndex] = useState(0);
+  const opacity = useSharedValue(1);
+  const translateX = useSharedValue(0);
+
+  const goNext = () => {
+    setIndex(prev => (prev + 1) % SUBTITLE_MESSAGES.length);
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Fade out + slide left
+      opacity.value = withTiming(0, {
+        duration: 300,
+        easing: Easing.in(Easing.cubic),
+      });
+      translateX.value = withTiming(
+        -20,
+        { duration: 300, easing: Easing.in(Easing.cubic) },
+        finished => {
+          if (finished) {
+            runOnJS(goNext)();
+          }
+        },
+      );
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [opacity, translateX]);
+
+  useEffect(() => {
+    // Reset position and fade in
+    translateX.value = 20;
+    opacity.value = 0;
+    setTimeout(() => {
+      translateX.value = withTiming(0, {
+        duration: 350,
+        easing: Easing.out(Easing.cubic),
+      });
+      opacity.value = withTiming(1, {
+        duration: 350,
+        easing: Easing.out(Easing.cubic),
+      });
+    }, 30);
+  }, [index, opacity, translateX]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  return (
+    <Animated.Text style={[styles.headerSubtitle, animStyle]}>
+      {SUBTITLE_MESSAGES[index]}
+    </Animated.Text>
+  );
+};
 
 // InputRow 컴포넌트는 기존과 동일하게 유지하거나 필요 시 분리 가능
 type InputRowProps = {
@@ -220,9 +293,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
           >
             {nickname || '여행자'}님!
           </Text>
-          <Text style={styles.headerSubtitle}>
-            새로운 여행을 계획해 보세요 ✈️
-          </Text>
+          <SlidingSubtitle />
         </View>
 
         <View style={styles.whiteSection}>
@@ -259,7 +330,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
             <InputRow
               label="이동수단"
               value={transport}
-              placeholder="어떤 교통수단을 이용하시나요?"
+              placeholder="교통수단을 선택하세요"
               icon={<Car size={24} color={COLORS.primary} strokeWidth={1.5} />}
               onPress={onOpenTransportModal}
               isLast={true}

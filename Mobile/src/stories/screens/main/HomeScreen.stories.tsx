@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import type { Meta, StoryObj } from '@storybook/react-native';
+import { Bus, Car } from 'lucide-react-native';
 import { HomeScreenView } from '../../../screens/app/main/HomeScreen.view';
 
 const meta = {
@@ -31,8 +32,14 @@ const meta = {
     pendingRequestList: [],
     fieldToUpdate: 'departure',
     transportOptions: [
-      { label: '대중교통', icon: '🚌' },
-      { label: '자동차', icon: '🚗' },
+      {
+        label: '대중교통',
+        icon: <Bus size={28} color="#1344FF" strokeWidth={1.5} />,
+      },
+      {
+        label: '자동차',
+        icon: <Car size={28} color="#1344FF" strokeWidth={1.5} />,
+      },
     ],
     onNotificationPress: () => console.log('Notification Pressed'),
     onNavigateProfile: () => console.log('Profile Pressed'),

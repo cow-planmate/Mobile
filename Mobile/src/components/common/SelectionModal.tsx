@@ -1,11 +1,12 @@
 import React from 'react';
 import { Modal, View, Text, Pressable, TouchableOpacity } from 'react-native';
+import { X, Check } from 'lucide-react-native';
 
-import { styles } from './SelectionModal.styles';
+import { styles, COLORS } from './SelectionModal.styles';
 
 export type OptionType = {
   label: string;
-  icon: string;
+  icon: React.ReactNode;
 };
 
 type SelectionModalProps = {
@@ -36,8 +37,12 @@ export default function SelectionModal({
         <Pressable style={styles.modalView}>
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Text style={styles.closeButton}>X</Text>
+            <TouchableOpacity
+              style={styles.closeButtonContainer}
+              onPress={onClose}
+              activeOpacity={0.7}
+            >
+              <X size={20} color={COLORS.placeholder} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
 
@@ -52,8 +57,16 @@ export default function SelectionModal({
                     isSelected && styles.optionCardSelected,
                   ]}
                   onPress={() => onSelect(option.label)}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.optionIcon}>{option.icon}</Text>
+                  <View
+                    style={[
+                      styles.optionIconContainer,
+                      isSelected && styles.optionIconContainerSelected,
+                    ]}
+                  >
+                    {option.icon}
+                  </View>
                   <Text
                     style={[
                       styles.optionLabel,
@@ -62,6 +75,11 @@ export default function SelectionModal({
                   >
                     {option.label}
                   </Text>
+                  {isSelected && (
+                    <View style={styles.checkBadge}>
+                      <Check size={14} color={COLORS.white} strokeWidth={2.5} />
+                    </View>
+                  )}
                 </TouchableOpacity>
               );
             })}

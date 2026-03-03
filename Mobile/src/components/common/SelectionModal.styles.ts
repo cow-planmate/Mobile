@@ -1,4 +1,8 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
+
+const { width } = Dimensions.get('window');
+const normalize = (size: number) =>
+  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
 
 export const COLORS = {
   primary: '#1344FF',
@@ -7,6 +11,8 @@ export const COLORS = {
   border: '#E5E7EB',
   surface: '#F3F4F6',
   placeholder: '#9CA3AF',
+  lightBlue: '#E0E7FF',
+  iconBg: '#F5F7FF',
 };
 
 export const FONTS = {
@@ -24,64 +30,88 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalView: {
-    margin: 20,
+    margin: normalize(20),
     backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 20,
-    width: '90%',
+    borderRadius: normalize(20),
+    paddingHorizontal: normalize(24),
+    paddingTop: normalize(24),
+    paddingBottom: normalize(28),
+    width: '85%',
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    marginBottom: 20,
+    marginBottom: normalize(24),
   },
   title: {
-    fontSize: 20,
+    fontSize: normalize(20),
     fontFamily: FONTS.bold,
-    textAlign: 'center',
     color: COLORS.text,
-    flex: 1,
-    marginLeft: 24,
+    letterSpacing: -0.3,
   },
-  closeButton: {
-    fontSize: 24,
-    color: COLORS.placeholder,
+  closeButtonContainer: {
+    width: normalize(36),
+    height: normalize(36),
+    borderRadius: normalize(18),
+    backgroundColor: COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   optionsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     width: '100%',
+    gap: normalize(12),
   },
   optionCard: {
     flex: 1,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: COLORS.border,
-    borderRadius: 12,
-    paddingVertical: 20,
-    marginHorizontal: 10,
+    borderRadius: normalize(16),
+    paddingVertical: normalize(24),
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.white,
+    position: 'relative',
   },
   optionCardSelected: {
     borderColor: COLORS.primary,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.iconBg,
   },
-  optionIcon: {
-    fontSize: 48,
-    marginBottom: 10,
+  optionIconContainer: {
+    width: normalize(56),
+    height: normalize(56),
+    borderRadius: normalize(16),
+    backgroundColor: COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: normalize(12),
+  },
+  optionIconContainerSelected: {
+    backgroundColor: COLORS.lightBlue,
   },
   optionLabel: {
-    fontSize: 16,
+    fontSize: normalize(15),
     fontFamily: FONTS.medium,
     color: COLORS.text,
   },
   optionLabelSelected: {
     color: COLORS.primary,
     fontFamily: FONTS.bold,
+  },
+  checkBadge: {
+    position: 'absolute',
+    top: normalize(8),
+    right: normalize(8),
+    width: normalize(22),
+    height: normalize(22),
+    borderRadius: normalize(11),
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

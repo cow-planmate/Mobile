@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,31 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
-  Animated,
+  StyleSheet,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '@env';
-import { X, Search, MapPin, Clock } from 'lucide-react-native';
+import {
+  X,
+  Search,
+  MapPin,
+  Clock,
+  ChevronRight,
+  ChevronLeft,
+  Navigation,
+  Map,
+} from 'lucide-react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  Easing,
+  runOnJS,
+} from 'react-native-reanimated';
 
-import { styles, COLORS } from './SearchLocationModal.styles';
+import { styles, COLORS, normalize } from './SearchLocationModal.styles';
 
 const TARGET_REGIONS = [
   '서울특별시',
@@ -312,12 +329,46 @@ export default function SearchLocationModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [departureList, setDepartureList] = useState<DepartureVO[]>([]);
   const [destinationList, setDestinationList] = useState<TravelVO[]>([]);
-  const [rawDestinations, setRawDestinations] = useState<TravelVO[]>([]); // To store raw server data
+  const [rawDestinations, setRawDestinations] = useState<TravelVO[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [selectedParentRegion, setSelectedParentRegion] = useState<
     string | null
   >(null);
+  const [selectedSubRegion, setSelectedSubRegion] = useState<string | null>(
+    null,
+  );
+
+  /* ── Animation ── */
+  const translateY = useSharedValue(800);
+  const backdropOpacity = useSharedValue(0);
+
+  const animateIn = useCallback(() => {
+    translateY.value = withTiming(0, {
+      duration: 340,
+      easing: Easing.out(Easing.cubic),
+    });
+    backdropOpacity.value = withTiming(1, { duration: 280 });
+  }, [translateY, backdropOpacity]);
+
+  const animateOut = useCallback(() => {
+    backdropOpacity.value = withTiming(0, { duration: 220 });
+    translateY.value = withTiming(
+      800,
+      { duration: 260, easing: Easing.in(Easing.cubic) },
+      finished => {
+        if (finished) runOnJS(onClose)();
+      },
+    );
+  }, [translateY, backdropOpacity, onClose]);
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
 
   const loadRecentSearches = async () => {
     try {
@@ -358,12 +409,18 @@ export default function SearchLocationModal({
       setSearchQuery('');
       setDepartureList([]);
       setSelectedParentRegion(null);
+      setSelectedSubRegion(null);
       if (fieldToUpdate === 'departure') {
         loadRecentSearches();
       }
       if (fieldToUpdate === 'destination') {
         fetchDestinations();
       }
+      // Trigger entrance animation
+      requestAnimationFrame(() => animateIn());
+    } else {
+      translateY.value = 800;
+      backdropOpacity.value = 0;
     }
   }, [visible, fieldToUpdate]);
 
@@ -473,33 +530,42 @@ export default function SearchLocationModal({
   };
 
   const handleParentRegionClick = (regionName: string) => {
-    setSelectedParentRegion(regionName);
+    if (selectedParentRegion === regionName) {
+      setSelectedParentRegion(null);
+      setSelectedSubRegion(null);
+    } else {
+      setSelectedParentRegion(regionName);
+      setSelectedSubRegion(null);
+    }
   };
 
   const handleSubRegionSelect = (parentRegion: string, subRegion: string) => {
-    const fullLocation = `${parentRegion} ${subRegion}`;
+    setSelectedSubRegion(subRegion);
+  };
 
-    // 1. Try to find match using subRegion name in rawDestinations
+  const handleConfirmDestination = () => {
+    if (!selectedParentRegion || !selectedSubRegion) return;
+
+    const fullLocation = `${selectedParentRegion} ${selectedSubRegion}`;
+
     let matched = rawDestinations.find(d => {
       const sName = d.travelName.replace(/\s+/g, '');
-      const target = subRegion.replace(/\s+/g, '');
+      const target = selectedSubRegion.replace(/\s+/g, '');
       return sName === target;
     });
 
-    // 2. Fuzzy match subRegion
     if (!matched) {
       matched = rawDestinations.find(d => {
         const sName = d.travelName.replace(/\s+/g, '');
-        const target = subRegion.replace(/\s+/g, '');
+        const target = selectedSubRegion.replace(/\s+/g, '');
         return sName.includes(target) || target.includes(sName);
       });
     }
 
-    // 3. Fallback: try to match parentRegion (e.g. for special cities like Sejong)
     if (!matched) {
       matched = rawDestinations.find(d => {
         const sName = d.travelName.replace(/\s+/g, '');
-        const target = parentRegion.replace(/\s+/g, '');
+        const target = selectedParentRegion.replace(/\s+/g, '');
         return sName.includes(target) || target.includes(sName);
       });
     }
@@ -516,20 +582,19 @@ export default function SearchLocationModal({
     onClose();
   };
 
-  const handleBackToParentRegions = () => {
-    setSelectedParentRegion(null);
-  };
-
   const isDeparture = fieldToUpdate === 'departure';
   const title = isDeparture ? '출발지 검색' : '여행지 선택';
-  const subtitle = isDeparture ? '어디서 출발하시나요?' : '어디로 떠나볼까요?';
+  const subtitle = isDeparture
+    ? '어디서 출발하시나요?'
+    : '여행할 지역을 선택해주세요';
 
-  const renderEmptyState = () => (
+  const renderDepartureContent = () => (
     <ScrollView
       style={styles.emptyStateContainer}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
     >
-      {}
+      {/* 최근 검색 */}
       {recentSearches.length > 0 && (
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
@@ -559,64 +624,204 @@ export default function SearchLocationModal({
         </View>
       )}
 
-      {}
-      <View style={styles.sectionContainer}>
-        <View style={styles.sectionHeader}>
-          <MapPin size={16} color={COLORS.primary} strokeWidth={1.5} />
-          <Text style={styles.sectionTitle}>검색 결과</Text>
+      {/* 검색 결과 */}
+      {isLoading ? (
+        <View style={styles.inlineLoaderContainer}>
+          <ActivityIndicator size="small" color={COLORS.primary} />
+          <Text style={styles.loaderText}>검색 중...</Text>
         </View>
-        {isLoading ? (
-          <View style={styles.inlineLoaderContainer}>
-            <ActivityIndicator size="small" color={COLORS.primary} />
-            <Text style={styles.loaderText}>검색 중...</Text>
+      ) : departureList.length > 0 ? (
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeader}>
+            <MapPin size={16} color={COLORS.primary} strokeWidth={1.5} />
+            <Text style={styles.sectionTitle}>검색 결과</Text>
           </View>
-        ) : departureList.length > 0 ? (
-          departureList.map((item, index) => (
+          {departureList.map((item, index) => (
             <TouchableOpacity
               key={item.placeId || index}
               style={styles.resultItem}
               onPress={() => handleSelect(item.departureName)}
               activeOpacity={0.7}
             >
+              <View style={styles.resultIconContainer}>
+                <MapPin size={18} color={COLORS.primary} strokeWidth={1.5} />
+              </View>
               <View style={styles.resultInfo}>
                 <Text style={styles.resultName}>{item.departureName}</Text>
                 <Text style={styles.resultAddress} numberOfLines={1}>
                   {item.departureAddress}
                 </Text>
               </View>
-              <Text style={styles.resultArrow}>›</Text>
+              <ChevronRight
+                size={18}
+                color={COLORS.placeholder}
+                strokeWidth={1.5}
+              />
             </TouchableOpacity>
-          ))
-        ) : searchQuery.length > 1 ? (
-          <View style={styles.inlineNoResultContainer}>
-            <Search size={20} color={COLORS.subtext} strokeWidth={1.5} />
-            <Text style={styles.emptyHintText}>검색 결과가 없습니다</Text>
+          ))}
+        </View>
+      ) : searchQuery.length > 1 ? (
+        <View style={styles.emptyResultContainer}>
+          <View style={styles.emptyIconCircle}>
+            <Search size={24} color={COLORS.placeholder} strokeWidth={1.5} />
           </View>
-        ) : (
-          <Text style={styles.emptyHintText}>
-            검색어를 입력하면 결과가 표시됩니다
+          <Text style={styles.emptyResultTitle}>검색 결과가 없습니다</Text>
+          <Text style={styles.emptyResultSubtitle}>
+            다른 검색어를 입력해보세요
           </Text>
-        )}
-      </View>
+        </View>
+      ) : (
+        <View style={styles.emptyResultContainer}>
+          <View style={styles.emptyIconCircle}>
+            <Navigation
+              size={24}
+              color={COLORS.placeholder}
+              strokeWidth={1.5}
+            />
+          </View>
+          <Text style={styles.emptyResultTitle}>출발지를 검색해보세요</Text>
+          <Text style={styles.emptyResultSubtitle}>
+            역, 터미널, 주소 등을 입력할 수 있어요
+          </Text>
+        </View>
+      )}
     </ScrollView>
   );
 
+  /* ── Destination chip-based render ── */
+  const renderDestinationContent = () => (
+    <View style={styles.destinationWrapper}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.destinationScrollContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        {isLoading ? (
+          <View style={styles.inlineLoaderContainer}>
+            <ActivityIndicator size="small" color={COLORS.primary} />
+            <Text style={styles.loaderText}>불러오는 중...</Text>
+          </View>
+        ) : (
+          <>
+            {/* 상위 지역 칩 */}
+            <View style={styles.chipSectionContainer}>
+              <View style={styles.sectionHeader}>
+                <Map size={16} color={COLORS.primary} strokeWidth={1.5} />
+                <Text style={styles.sectionTitle}>지역 선택</Text>
+              </View>
+              <View style={styles.chipContainer}>
+                {destinationList.map(item => {
+                  const isSelected = selectedParentRegion === item.travelName;
+                  return (
+                    <TouchableOpacity
+                      key={item.travelName}
+                      style={[styles.chip, isSelected && styles.chipSelected]}
+                      onPress={() => handleParentRegionClick(item.travelName)}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.chipText,
+                          isSelected && styles.chipTextSelected,
+                        ]}
+                      >
+                        {item.travelName}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* 하위 지역 칩 */}
+            {selectedParentRegion && (
+              <View style={styles.chipSectionContainer}>
+                <View style={styles.sectionHeader}>
+                  <MapPin size={16} color={COLORS.primary} strokeWidth={1.5} />
+                  <Text style={styles.sectionTitle}>
+                    {selectedParentRegion}
+                  </Text>
+                </View>
+                <View style={styles.chipContainer}>
+                  {(SUB_REGIONS[selectedParentRegion] || []).map(subRegion => {
+                    const isSelected = selectedSubRegion === subRegion;
+                    return (
+                      <TouchableOpacity
+                        key={subRegion}
+                        style={[styles.chip, isSelected && styles.chipSelected]}
+                        onPress={() =>
+                          handleSubRegionSelect(selectedParentRegion, subRegion)
+                        }
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.chipText,
+                            isSelected && styles.chipTextSelected,
+                          ]}
+                        >
+                          {subRegion}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+          </>
+        )}
+      </ScrollView>
+
+      {/* 확인 버튼 */}
+      <View style={styles.confirmFooter}>
+        <Pressable
+          style={[
+            styles.confirmButton,
+            !(selectedParentRegion && selectedSubRegion) &&
+              styles.confirmButtonDisabled,
+          ]}
+          onPress={handleConfirmDestination}
+          disabled={!(selectedParentRegion && selectedSubRegion)}
+        >
+          <Text
+            style={[
+              styles.confirmButtonText,
+              !(selectedParentRegion && selectedSubRegion) &&
+                styles.confirmButtonTextDisabled,
+            ]}
+          >
+            {selectedSubRegion
+              ? `${selectedParentRegion} ${selectedSubRegion} 선택`
+              : '지역을 선택해주세요'}
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+
   return (
-    <Modal visible={visible} transparent={true} animationType="slide">
+    <Modal visible={visible} transparent={true} animationType="none">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        <Pressable style={styles.backdrop} onPress={onClose} />
-        <Animated.View style={styles.modalView}>
-          {}
+        <Animated.View style={[styles.backdrop, backdropStyle]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={animateOut} />
+        </Animated.View>
+        <Animated.View style={[styles.modalView, sheetStyle]}>
+          {/* Drag handle */}
+          <View style={styles.handleContainer}>
+            <View style={styles.handle} />
+          </View>
+
+          {/* Header */}
           <View style={styles.header}>
-            <View>
+            <View style={styles.headerTextContainer}>
               <Text style={styles.headerTitle}>{title}</Text>
               <Text style={styles.headerSubtitle}>{subtitle}</Text>
             </View>
             <TouchableOpacity
-              onPress={onClose}
+              onPress={animateOut}
               style={styles.closeButton}
               activeOpacity={0.7}
             >
@@ -624,11 +829,11 @@ export default function SearchLocationModal({
             </TouchableOpacity>
           </View>
 
-          {}
+          {/* Search bar (departure only) */}
           {isDeparture && (
             <View style={styles.searchContainer}>
               <View style={styles.searchIconContainer}>
-                <Search size={18} color={COLORS.subtext} strokeWidth={1.5} />
+                <Search size={18} color={COLORS.primary} strokeWidth={1.5} />
               </View>
               <TextInput
                 style={styles.searchInput}
@@ -651,99 +856,11 @@ export default function SearchLocationModal({
             </View>
           )}
 
-          {}
+          {/* Content */}
           <View style={styles.contentContainer}>
-            {isDeparture ? (
-              !isLoading ? (
-                renderEmptyState()
-              ) : null
-            ) : (
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.destinationScrollContainer}
-              >
-                <View style={styles.destinationSectionContainer}>
-                  {}
-                  <View style={styles.sectionHeader}>
-                    {selectedParentRegion ? (
-                      <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={handleBackToParentRegions}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={styles.backButtonText}>‹</Text>
-                        <Text style={styles.sectionTitle}>
-                          {selectedParentRegion}
-                        </Text>
-                      </TouchableOpacity>
-                    ) : (
-                      <Text style={styles.sectionTitle}>
-                        여행지를 선택해주세요
-                      </Text>
-                    )}
-                  </View>
-                  {isLoading ? (
-                    <View style={styles.inlineLoaderContainer}>
-                      <ActivityIndicator size="small" color={COLORS.primary} />
-                      <Text style={styles.loaderText}>불러오는 중...</Text>
-                    </View>
-                  ) : selectedParentRegion ? (
-                    <View style={styles.destinationListContainer}>
-                      {(SUB_REGIONS[selectedParentRegion] || []).map(
-                        (subRegion, index, arr) => (
-                          <TouchableOpacity
-                            key={subRegion}
-                            style={[
-                              styles.destinationItem,
-                              index === arr.length - 1 &&
-                                styles.destinationItemLast,
-                            ]}
-                            onPress={() =>
-                              handleSubRegionSelect(
-                                selectedParentRegion,
-                                subRegion,
-                              )
-                            }
-                            activeOpacity={0.7}
-                          >
-                            <View style={styles.destinationInfo}>
-                              <Text style={styles.destinationName}>
-                                {subRegion}
-                              </Text>
-                            </View>
-                            <Text style={styles.destinationArrow}>›</Text>
-                          </TouchableOpacity>
-                        ),
-                      )}
-                    </View>
-                  ) : (
-                    <View style={styles.destinationListContainer}>
-                      {destinationList.map((item, index) => (
-                        <TouchableOpacity
-                          key={`${item.travelName}-${index}`}
-                          style={[
-                            styles.destinationItem,
-                            index === destinationList.length - 1 &&
-                              styles.destinationItemLast,
-                          ]}
-                          onPress={() =>
-                            handleParentRegionClick(item.travelName)
-                          }
-                          activeOpacity={0.7}
-                        >
-                          <View style={styles.destinationInfo}>
-                            <Text style={styles.destinationName}>
-                              {item.travelName}
-                            </Text>
-                          </View>
-                          <Text style={styles.destinationArrow}>›</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              </ScrollView>
-            )}
+            {isDeparture
+              ? renderDepartureContent()
+              : renderDestinationContent()}
           </View>
         </Animated.View>
       </KeyboardAvoidingView>

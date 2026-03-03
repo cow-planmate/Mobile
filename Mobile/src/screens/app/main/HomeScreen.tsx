@@ -11,6 +11,7 @@ import {
   rejectInvitation,
 } from '../../../api/trips';
 import { useAlert } from '../../../contexts/AlertContext';
+import { Bus, Car } from 'lucide-react-native';
 
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
@@ -18,18 +19,24 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const { user } = useAuth();
   const { showAlert } = useAlert();
 
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [startDate, setStartDate] = useState<Date | null>(new Date());
+  const [endDate, setEndDate] = useState<Date | null>(new Date());
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const [adults, setAdults] = useState<number | null>(1);
   const [children, setChildren] = useState<number | null>(0);
   const [isPaxModalVisible, setPaxModalVisible] = useState(false);
-  const [transport, setTransport] = useState('');
+  const [transport, setTransport] = useState('대중교통');
   const [isTransportModalVisible, setTransportModalVisible] = useState(false);
 
   const transportOptions: OptionType[] = [
-    { label: '대중교통', icon: '🚌' },
-    { label: '자동차', icon: '🚗' },
+    {
+      label: '대중교통',
+      icon: <Bus size={28} color="#1344FF" strokeWidth={1.5} />,
+    },
+    {
+      label: '자동차',
+      icon: <Car size={28} color="#1344FF" strokeWidth={1.5} />,
+    },
   ];
 
   const [departure, setDeparture] = useState('');
@@ -110,7 +117,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     transport !== '';
 
   const formatDate = (date: Date) => {
-    return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}.${m}.${d}`;
   };
 
   const getPaxText = () => {
