@@ -27,6 +27,8 @@ const meta = {
     onNavigateToSignup: () => console.log('Navigate to Signup'),
     onNavigateToForgotPassword: () =>
       console.log('Navigate to Forgot Password'),
+    onGoogleLogin: () => console.log('Google Login'),
+    onNaverLogin: () => console.log('Naver Login'),
   },
 } satisfies Meta<typeof LoginScreenView>;
 

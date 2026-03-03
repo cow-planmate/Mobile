@@ -39,6 +39,14 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     }
   };
 
+  const handleGoogleLogin = () => {
+    showAlert({ title: '소셜 로그인', message: '구글 로그인', type: 'info' });
+  };
+
+  const handleNaverLogin = () => {
+    showAlert({ title: '소셜 로그인', message: '네이버 로그인', type: 'info' });
+  };
+
   return (
     <LoginScreenView
       form={form as any}
@@ -53,6 +61,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       onTogglePassword={() => setIsPasswordVisible(!isPasswordVisible)}
       onNavigateToSignup={() => navigation.navigate('Signup')}
       onNavigateToForgotPassword={() => navigation.navigate('ForgotPassword')}
+      onGoogleLogin={handleGoogleLogin}
+      onNaverLogin={handleNaverLogin}
     />
   );
 }
