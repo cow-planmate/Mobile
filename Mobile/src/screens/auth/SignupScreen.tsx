@@ -5,12 +5,12 @@ import React, {
   useRef,
   useEffect,
 } from 'react';
-import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { SignupScreenView } from './SignupScreen.view';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAlert } from '../../contexts/AlertContext';
 
 const formatTime = (seconds: number) => {
   const minutes = Math.floor(seconds / 60);
@@ -21,6 +21,7 @@ const formatTime = (seconds: number) => {
 export default function SignupScreen() {
   const navigation = useNavigation<any>();
   const { login, setNeedsThemeSelection } = useAuth();
+  const { showAlert } = useAlert();
 
   const [step, setStep] = useState(1);
   const totalSteps = 4;
@@ -93,12 +94,12 @@ export default function SignupScreen() {
 
   const handleSendEmail = async () => {
     if (!form.email) {
-      Alert.alert('알림', '이메일을 입력해주세요.');
+      showAlert({ title: '알림', message: '이메일을 입력해주세요.' });
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email)) {
-      Alert.alert('오류', '올바른 이메일 형식이 아닙니다.');
+      showAlert({ title: '오류', message: '올바른 이메일 형식이 아닙니다.' });
       return;
     }
 
@@ -115,10 +116,10 @@ export default function SignupScreen() {
       );
 
       if (response.data.verificationSent) {
-        Alert.alert(
-          '성공',
-          '인증 번호가 이메일로 전송되었습니다.\n(스팸 메일함도 확인해주세요)',
-        );
+        showAlert({
+          title: '성공',
+          message: '인증 번호가 이메일로 전송되었습니다.\n(스팸 메일함도 확인해주세요)',
+        });
         setShowVerificationInput(true);
         setIsTimerActive(true);
         setTimeLeft(300);
@@ -132,7 +133,7 @@ export default function SignupScreen() {
       if (message.includes('exist') || status === 409) {
         setIsEmailDuplicate(true);
       } else {
-        Alert.alert('오류', message);
+        showAlert({ title: '오류', message });
       }
     } finally {
       setIsLoading(false);
@@ -141,7 +142,7 @@ export default function SignupScreen() {
 
   const handleVerifyCode = async () => {
     if (!form.verificationCode) {
-      Alert.alert('알림', '인증 번호를 입력해주세요.');
+      showAlert({ title: '알림', message: '인증 번호를 입력해주세요.' });
       return;
     }
 
@@ -161,19 +162,19 @@ export default function SignupScreen() {
       const token = response.data.token || response.data.verificationToken;
 
       if (isVerified) {
-        Alert.alert('성공', '이메일 인증이 완료되었습니다.');
+        showAlert({ title: '성공', message: '이메일 인증이 완료되었습니다.' });
         setEmailAuthToken(token);
         setIsEmailVerified(true);
         setIsTimerActive(false);
       } else {
-        Alert.alert('실패', '인증 번호가 올바르지 않습니다.');
+        showAlert({ title: '실패', message: '인증 번호가 올바르지 않습니다.' });
       }
     } catch (error: any) {
       console.error('Verify Code Error:', error);
-      Alert.alert(
-        '오류',
-        error.response?.data?.message || '인증 확인 중 오류가 발생했습니다.',
-      );
+      showAlert({
+        title: '오류',
+        message: error.response?.data?.message || '인증 확인 중 오류가 발생했습니다.',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -181,7 +182,7 @@ export default function SignupScreen() {
 
   const handleCheckNickname = async () => {
     if (!form.nickname) {
-      Alert.alert('알림', '닉네임을 입력해주세요.');
+      showAlert({ title: '알림', message: '닉네임을 입력해주세요.' });
       return;
     }
     try {
@@ -194,17 +195,17 @@ export default function SignupScreen() {
 
       if (response.data.nicknameAvailable) {
         setIsNicknameVerified(true);
-        Alert.alert('사용 가능', '사용 가능한 닉네임입니다.');
+        showAlert({ title: '사용 가능', message: '사용 가능한 닉네임입니다.' });
       } else {
         setIsNicknameVerified(false);
-        Alert.alert('사용 불가', '이미 사용 중인 닉네임입니다.');
+        showAlert({ title: '사용 불가', message: '이미 사용 중인 닉네임입니다.' });
       }
     } catch (error: any) {
       console.error('Nickname Check Error:', error);
-      Alert.alert(
-        '오류',
-        error.response?.data?.message || '닉네임 확인에 실패했습니다.',
-      );
+      showAlert({
+        title: '오류',
+        message: error.response?.data?.message || '닉네임 확인에 실패했습니다.',
+      });
     }
   };
 
@@ -217,18 +218,18 @@ export default function SignupScreen() {
       !form.age ||
       !form.gender
     ) {
-      Alert.alert('알림', '모든 정보를 입력하고 인증을 완료해주세요.');
+      showAlert({ title: '알림', message: '모든 정보를 입력하고 인증을 완료해주세요.' });
       return;
     }
 
     if (!emailAuthToken) {
-      Alert.alert('오류', '이메일 인증 토큰이 없습니다. 다시 인증해주세요.');
+      showAlert({ title: '오류', message: '이메일 인증 토큰이 없습니다. 다시 인증해주세요.' });
       return;
     }
 
     const ageNum = parseInt(form.age, 10);
     if (isNaN(ageNum) || ageNum <= 0 || ageNum > 120) {
-      Alert.alert('오류', '올바른 나이를 선택해주세요.');
+      showAlert({ title: '오류', message: '올바른 나이를 선택해주세요.' });
       return;
     }
 
@@ -259,18 +260,19 @@ export default function SignupScreen() {
       } catch (loginError) {
         setNeedsThemeSelection(false);
         // 자동 로그인 실패 시 로그인 화면으로
-        Alert.alert(
-          '환영합니다!',
-          '회원가입이 완료되었습니다. 로그인 해주세요.',
-          [{ text: '확인', onPress: () => navigation.navigate('Login') }],
-        );
+        showAlert({
+          title: '환영합니다!',
+          message: '회원가입이 완료되었습니다. 로그인 해주세요.',
+          type: 'success',
+          buttons: [{ text: '확인', onPress: () => navigation.navigate('Login') }],
+        });
       }
     } catch (error: any) {
       console.error('Signup Error:', error);
-      Alert.alert(
-        '오류',
-        error.response?.data?.message || '회원가입에 실패했습니다.',
-      );
+      showAlert({
+        title: '오류',
+        message: error.response?.data?.message || '회원가입에 실패했습니다.',
+      });
     } finally {
       setIsLoading(false);
     }

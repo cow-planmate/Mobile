@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { Alert } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import axios from 'axios';
@@ -7,10 +6,12 @@ import { API_URL } from '@env';
 import { SimplePlanVO } from '../../../types/env';
 import { AppStackParamList } from '../../../navigation/types';
 import MyPageScreenView from './MyPageScreen.view';
+import { useAlert } from '../../../contexts/AlertContext';
 
 export default function MyPageScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const { showAlert } = useAlert();
 
   const [loading, setLoading] = useState(true);
   const [myItineraries, setMyItineraries] = useState<SimplePlanVO[]>([]);
@@ -38,7 +39,7 @@ export default function MyPageScreen() {
       setSharedItineraries(data.editablePlanVOs || []);
     } catch (error) {
       console.error('Failed to fetch plans:', error);
-      Alert.alert('오류', '일정을 불러오는데 실패했습니다.');
+      showAlert({ title: '오류', message: '일정을 불러오는데 실패했습니다.' });
     } finally {
       setLoading(false);
     }
@@ -85,32 +86,37 @@ export default function MyPageScreen() {
           p.planId === selectedPlan.planId ? { ...p, planName: newTitle } : p,
         ),
       );
-      Alert.alert('성공', '일정 제목이 변경되었습니다.');
+      showAlert({ title: '성공', message: '일정 제목이 변경되었습니다.' });
       setRenameModalVisible(false);
     } catch (e) {
       console.error(e);
-      Alert.alert('실패', '제목 변경에 실패했습니다.');
+      showAlert({ title: '실패', message: '제목 변경에 실패했습니다.' });
     }
   };
 
   const handleDeletePlan = async (planId: number) => {
-    Alert.alert('일정 삭제', '정말로 이 일정을 삭제하시겠습니까?', [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '삭제',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await axios.delete(`${API_URL}/api/plan/${planId}`);
-            setMyItineraries(prev => prev.filter(p => p.planId !== planId));
-            Alert.alert('성공', '일정이 삭제되었습니다.');
-          } catch (e) {
-            console.error('Delete plan failed:', e);
-            Alert.alert('실패', '일정 삭제에 실패했습니다.');
-          }
+    showAlert({
+      title: '일정 삭제',
+      message: '정말로 이 일정을 삭제하시겠습니까?',
+      type: 'confirm',
+      buttons: [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await axios.delete(`${API_URL}/api/plan/${planId}`);
+              setMyItineraries(prev => prev.filter(p => p.planId !== planId));
+              showAlert({ title: '성공', message: '일정이 삭제되었습니다.' });
+            } catch (e) {
+              console.error('Delete plan failed:', e);
+              showAlert({ title: '실패', message: '일정 삭제에 실패했습니다.' });
+            }
+          },
         },
-      },
-    ]);
+      ],
+    });
   };
 
   const navigateToView = (plan: SimplePlanVO) => {

@@ -6,7 +6,6 @@ import {
   Pressable,
   TouchableOpacity,
   TextInput,
-  Alert,
   FlatList,
 } from 'react-native';
 import axios from 'axios';
@@ -14,6 +13,7 @@ import { API_URL } from '@env';
 import { X } from 'lucide-react-native';
 
 import { styles, COLORS } from './ShareModal.styles';
+import { useAlert } from '../../contexts/AlertContext';
 
 type ShareModalProps = {
   visible: boolean;
@@ -31,6 +31,7 @@ export default function ShareModal({
   onClose,
   planId,
 }: ShareModalProps) {
+  const { showAlert } = useAlert();
   const [nickname, setNickname] = useState('');
   const [editors, setEditors] = useState<SimpleEditorVO[]>([]);
   const shareUrl = `https://www.planmate.site/plan/${planId}`;
@@ -53,12 +54,12 @@ export default function ShareModal({
   }, [visible, planId, fetchEditors]);
 
   const handleCopy = () => {
-    Alert.alert('복사 완료', '공유 URL이 클립보드에 복사되었습니다.');
+    showAlert({ title: '복사 완료', message: '공유 URL이 클립보드에 복사되었습니다.' });
   };
 
   const handleInvite = async () => {
     if (!nickname) {
-      Alert.alert('오류', '닉네임을 입력해주세요.');
+      showAlert({ title: '오류', message: '닉네임을 입력해주세요.' });
       return;
     }
     if (!planId) return;
@@ -67,14 +68,14 @@ export default function ShareModal({
       await axios.post(`${API_URL}/api/plan/${planId}/invite`, {
         receiverNickname: nickname,
       });
-      Alert.alert('초대 완료', `${nickname}님을 일정에 초대했습니다.`);
+      showAlert({ title: '초대 완료', message: `${nickname}님을 일정에 초대했습니다.` });
       setNickname('');
     } catch (error: any) {
       console.error('Invite error:', error);
-      Alert.alert(
-        '오류',
-        error.response?.data?.message || '초대에 실패했습니다.',
-      );
+      showAlert({
+        title: '오류',
+        message: error.response?.data?.message || '초대에 실패했습니다.',
+      });
     }
   };
 
@@ -82,10 +83,10 @@ export default function ShareModal({
     if (!planId) return;
     try {
       await axios.delete(`${API_URL}/api/plan/${planId}/editors/${userId}`);
-      Alert.alert('성공', '편집 권한이 회수되었습니다.');
+      showAlert({ title: '성공', message: '편집 권한이 회수되었습니다.' });
       fetchEditors();
     } catch (error: any) {
-      Alert.alert('오류', '편집 권한 회수에 실패했습니다.');
+      showAlert({ title: '오류', message: '편집 권한 회수에 실패했습니다.' });
     }
   };
 

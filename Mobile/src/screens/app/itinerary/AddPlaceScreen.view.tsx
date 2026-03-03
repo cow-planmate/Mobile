@@ -7,9 +7,9 @@ import {
   FlatList,
   TouchableOpacity,
   Pressable,
-  ActivityIndicator,
   Image,
 } from 'react-native';
+import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import { Place } from '../../../components/itinerary/TimelineItem';
 import { styles, COLORS } from './AddPlaceScreen.styles';
 
@@ -122,7 +122,7 @@ export default function AddPlaceScreenView({
 
       {isLoading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <LoadingSpinner color={COLORS.primary} />
         </View>
       ) : (
         <FlatList

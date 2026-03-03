@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
-  ActivityIndicator,
 } from 'react-native';
+import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import {
   Calendar,
   MoreVertical,
@@ -100,7 +100,7 @@ export default function MyPageScreenView({
   if (loading) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <LoadingSpinner color={COLORS.primary} />
       </View>
     );
   }

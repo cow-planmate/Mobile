@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { AppStackParamList } from '../../../navigation/types';
@@ -11,11 +10,13 @@ import {
   acceptInvitation,
   rejectInvitation,
 } from '../../../api/trips';
+import { useAlert } from '../../../contexts/AlertContext';
 
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const { user } = useAuth();
+  const { showAlert } = useAlert();
 
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
@@ -70,32 +71,32 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const handleAccept = async (requestId: number) => {
     try {
       await acceptInvitation(requestId);
-      Alert.alert('수락 완료', '일정에 참여했습니다.');
+      showAlert({ title: '수락 완료', message: '일정에 참여했습니다.' });
       setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
       }
     } catch (e) {
-      Alert.alert('오류', '수락 처리에 실패했습니다.');
+      showAlert({ title: '오류', message: '수락 처리에 실패했습니다.' });
     }
   };
 
   const handleReject = async (requestId: number) => {
     try {
       await rejectInvitation(requestId);
-      Alert.alert('거절 완료', '초대를 거절했습니다.');
+      showAlert({ title: '거절 완료', message: '초대를 거절했습니다.' });
       setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
       }
     } catch (e) {
-      Alert.alert('오류', '거절 처리에 실패했습니다.');
+      showAlert({ title: '오류', message: '거절 처리에 실패했습니다.' });
     }
   };
 
   const handleNotificationPress = () => {
     if (pendingRequests.length === 0) {
-      Alert.alert('알림', '새로운 알림이 없습니다.');
+      showAlert({ title: '알림', message: '새로운 알림이 없습니다.' });
       return;
     }
     setNotificationModalVisible(true);
@@ -133,10 +134,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     }
 
     if (travelId === undefined || travelId <= 0) {
-      Alert.alert(
-        '알림',
-        '여행지가 올바르게 선택되지 않았습니다.\n목록에서 다시 선택해주세요.',
-      );
+      showAlert({
+        title: '알림',
+        message: '여행지가 올바르게 선택되지 않았습니다.\n목록에서 다시 선택해주세요.',
+      });
       return;
     }
 

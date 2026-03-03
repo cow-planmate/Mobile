@@ -6,7 +6,6 @@ import {
   Pressable,
   TouchableOpacity,
   ScrollView,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import axios from 'axios';
@@ -15,6 +14,7 @@ import { Map, Bed, UtensilsCrossed } from 'lucide-react-native';
 import { PreferredThemeVO, changePreferredThemes } from '../../api/themes';
 import ThemeSelector, { ThemeSelectorResult } from './ThemeSelector';
 import { styles, COLORS } from './UpdateThemeModal.styles';
+import { useAlert } from '../../contexts/AlertContext';
 
 const CATEGORY_ICONS: Record<number, React.ReactNode> = {
   0: <Map size={16} color="#6B7280" strokeWidth={1.5} />,
@@ -39,6 +39,7 @@ export default function UpdateThemeModal({
   onClose,
   onConfirm,
 }: UpdateThemeModalProps) {
+  const { showAlert } = useAlert();
   const [currentThemes, setCurrentThemes] = useState<PreferredThemeVO[]>([]);
   const [selectedThemes, setSelectedThemes] = useState<ThemeSelectorResult>({});
   const [isSelectorVisible, setSelectorVisible] = useState(false);
@@ -100,7 +101,7 @@ export default function UpdateThemeModal({
       onConfirm();
     } catch (error) {
       console.error('Failed to save themes:', error);
-      Alert.alert('오류', '선호 테마 저장에 실패했습니다.');
+      showAlert({ title: '오류', message: '선호 테마 저장에 실패했습니다.' });
     } finally {
       setSaving(false);
     }

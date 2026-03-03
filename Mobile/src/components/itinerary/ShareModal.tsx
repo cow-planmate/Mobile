@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
   StyleSheet,
   Pressable,
 } from 'react-native';
@@ -18,6 +17,7 @@ import {
   removeEditor,
 } from '../../api/trips';
 import { theme } from '../../theme/theme';
+import { useAlert } from '../../contexts/AlertContext';
 
 const COLORS = theme.colors;
 const FONTS = {
@@ -38,6 +38,7 @@ export default function ShareModal({
   onClose,
   planId,
 }: ShareModalProps) {
+  const { showAlert } = useAlert();
   const [shareLink, setShareLink] = useState('');
   const [nickname, setNickname] = useState('');
   const [loading, setLoading] = useState(false);
@@ -74,31 +75,32 @@ export default function ShareModal({
 
   const handleInvite = async () => {
     if (!nickname.trim()) {
-      Alert.alert('오류', '닉네임을 입력해주세요.');
+      showAlert({ title: '오류', message: '닉네임을 입력해주세요.' });
       return;
     }
     setLoading(true);
     try {
       await inviteEditor(planId, nickname);
-      Alert.alert('성공', `${nickname}님을 초대했습니다.`);
+      showAlert({ title: '성공', message: `${nickname}님을 초대했습니다.` });
       setNickname('');
-      fetchEditors(); // Refresh list
+      fetchEditors();
     } catch (error) {
       console.error('Invite failed:', error);
-      Alert.alert(
-        '오류',
-        '사용자를 초대하지 못했습니다. 닉네임을 확인해주세요.',
-      );
+      showAlert({
+        title: '오류',
+        message: '사용자를 초대하지 못했습니다. 닉네임을 확인해주세요.',
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleRemoveEditor = async (userId: number) => {
-    Alert.alert(
-      '편집자 삭제',
-      '정말 이 사용자의 편집 권한을 삭제하시겠습니까?',
-      [
+    showAlert({
+      title: '편집자 삭제',
+      message: '정말 이 사용자의 편집 권한을 삭제하시겠습니까?',
+      type: 'confirm',
+      buttons: [
         { text: '취소', style: 'cancel' },
         {
           text: '삭제',
@@ -109,12 +111,12 @@ export default function ShareModal({
               fetchEditors();
             } catch (error) {
               console.error('Remove editor failed:', error);
-              Alert.alert('오류', '편집자 삭제에 실패했습니다.');
+              showAlert({ title: '오류', message: '편집자 삭제에 실패했습니다.' });
             }
           },
         },
       ],
-    );
+    });
   };
 
   return (

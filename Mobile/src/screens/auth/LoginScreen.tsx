@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Alert } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAlert } from '../../contexts/AlertContext';
 import { LoginScreenView } from './LoginScreen.view';
 
 type LoginScreenProps = {
@@ -13,6 +13,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [focused, setFocused] = useState<string | null>(null);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const { login, isLoading } = useAuth();
+  const { showAlert } = useAlert();
 
   const handleChange = (key: 'email' | 'password', value: string) => {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -34,7 +35,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         e.message ||
         '이메일 또는 비밀번호가 올바르지 않습니다.';
       setError(msg);
-      Alert.alert('로그인 실패', msg);
+      showAlert({ title: '로그인 실패', message: msg });
     }
   };
 

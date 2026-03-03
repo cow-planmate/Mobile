@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import axios from 'axios';
 import { API_URL } from '@env';
@@ -7,6 +6,7 @@ import { AppStackParamList } from '../../../navigation/types';
 import { Place } from '../../../components/itinerary/TimelineItem';
 import { useItinerary } from '../../../contexts/ItineraryContext';
 import AddPlaceScreenView from './AddPlaceScreen.view';
+import { useAlert } from '../../../contexts/AlertContext';
 
 interface PlaceVO {
   placeId: string;
@@ -30,6 +30,7 @@ const getCategoryType = (id: number): '관광지' | '숙소' | '식당' | '기�
 };
 
 export default function AddPlaceScreen({ route, navigation }: Props) {
+  const { showAlert } = useAlert();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState<'관광지' | '숙소' | '식당'>(
     '관광지',
@@ -84,7 +85,7 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
       }
     } catch (error) {
       console.error('Search failed:', error);
-      Alert.alert('오류', '장소 검색에 실패했습니다.');
+      showAlert({ title: '오류', message: '장소 검색에 실패했습니다.' });
     } finally {
       setIsLoading(false);
     }

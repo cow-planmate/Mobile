@@ -7,10 +7,10 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { PreferredThemeVO, getPreferredThemes } from '../../api/themes';
 import { styles, COLORS } from './ThemeSelector.styles';
+import { useAlert } from '../../contexts/AlertContext';
 
 const MAX_PER_CATEGORY = 5;
 
@@ -37,6 +37,7 @@ export default function ThemeSelector({
   onComplete,
   initialSelections,
 }: ThemeSelectorProps) {
+  const { showAlert } = useAlert();
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<{ id: number; name: string }[]>(
     [],
@@ -94,7 +95,7 @@ export default function ThemeSelector({
       setSelectedIds(initSets);
     } catch (error) {
       console.error('Failed to fetch themes:', error);
-      Alert.alert('오류', '테마 목록을 불러오는데 실패했습니다.');
+      showAlert({ title: '오류', message: '테마 목록을 불러오는데 실패했습니다.' });
     } finally {
       setLoading(false);
     }
@@ -116,10 +117,10 @@ export default function ThemeSelector({
         currentSet.delete(themeId);
       } else {
         if (currentSet.size >= MAX_PER_CATEGORY) {
-          Alert.alert(
-            '알림',
-            `최대 ${MAX_PER_CATEGORY}개까지 선택할 수 있습니다.`,
-          );
+          showAlert({
+            title: '알림',
+            message: `최대 ${MAX_PER_CATEGORY}개까지 선택할 수 있습니다.`,
+          });
           return prev;
         }
         currentSet.add(themeId);

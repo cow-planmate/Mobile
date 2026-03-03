@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider } from './src/contexts/AuthContext';
+import { AlertProvider } from './src/contexts/AlertContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { ItineraryProvider } from './src/contexts/ItineraryContext';
 import { WebSocketProvider } from './src/contexts/WebSocketContext';
@@ -25,15 +26,17 @@ function App() {
     <GestureHandlerRootView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <AuthProvider>
-        <WebSocketProvider>
-          <PlacesProvider>
-            <ItineraryProvider>
-              <NavigationContainer>
-                <AppNavigator />
-              </NavigationContainer>
-            </ItineraryProvider>
-          </PlacesProvider>
-        </WebSocketProvider>
+        <AlertProvider>
+          <WebSocketProvider>
+            <PlacesProvider>
+              <ItineraryProvider>
+                <NavigationContainer>
+                  <AppNavigator />
+                </NavigationContainer>
+              </ItineraryProvider>
+            </PlacesProvider>
+          </WebSocketProvider>
+        </AlertProvider>
       </AuthProvider>
     </GestureHandlerRootView>
   );

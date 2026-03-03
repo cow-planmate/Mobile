@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ScrollView, Alert } from 'react-native';
+import { ScrollView } from 'react-native';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { useItinerary, Day, Place } from '../contexts/ItineraryContext';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { timeToMinutes, minutesToTime } from '../utils/timeUtils';
 import { MINUTE_HEIGHT } from '../screens/app/itinerary/ItineraryEditorScreen.styles';
+import { useAlert } from '../contexts/AlertContext';
 
 export const useItineraryEditor = (route: any, _navigation: any) => {
   const { sendMessage, isConnected } = useWebSocket();
+  const { showAlert } = useAlert();
   const {
     days,
     setDays,
@@ -134,7 +136,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
         }
       } catch (error) {
         console.error('Failed to fetch plan:', error);
-        Alert.alert('오류', '일정 정보를 불러오는데 실패했습니다.');
+        showAlert({ title: '오류', message: '일정 정보를 불러오는데 실패했습니다.' });
         initDaysFromDates();
       }
     };

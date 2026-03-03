@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
-  ActivityIndicator,
 } from 'react-native';
+import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import {
   User,
   Mail,
@@ -120,7 +120,7 @@ export default function ProfileScreenView({
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <LoadingSpinner color={COLORS.primary} />
       </View>
     );
   }

@@ -6,10 +6,10 @@ import {
   Pressable,
   TouchableOpacity,
   TextInput,
-  Alert,
 } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { styles, COLORS } from './UpdatePasswordModal.styles';
+import { useAlert } from '../../contexts/AlertContext';
 
 type UpdatePasswordModalProps = {
   visible: boolean;
@@ -61,17 +61,18 @@ export default function UpdatePasswordModal({
   onClose,
   onConfirm,
 }: UpdatePasswordModalProps) {
+  const { showAlert } = useAlert();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleConfirm = () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert('오류', '모든 필드를 입력해주세요.');
+      showAlert({ title: '오류', message: '모든 필드를 입력해주세요.' });
       return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert('오류', '새 비밀번호가 일치하지 않습니다.');
+      showAlert({ title: '오류', message: '새 비밀번호가 일치하지 않습니다.' });
       return;
     }
     onConfirm(currentPassword, newPassword);

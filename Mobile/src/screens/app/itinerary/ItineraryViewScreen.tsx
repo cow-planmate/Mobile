@@ -5,7 +5,7 @@ import React, {
   useRef,
   useCallback,
 } from 'react';
-import { ScrollView, Alert } from 'react-native';
+import { ScrollView } from 'react-native';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -18,6 +18,7 @@ import {
   SimpleWeatherInfo,
   fetchWeatherRecommendations,
 } from '../../../api/trips';
+import { useAlert } from '../../../contexts/AlertContext';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
 
 // DTO Interfaces
@@ -76,6 +77,7 @@ const timeToMinutes = (time: string) => {
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 
 export default function ItineraryViewScreen({ route, navigation }: Props) {
+  const { showAlert } = useAlert();
   const {
     days: initialDays = [],
     tripName: initialTripName = '완성된 일정',
@@ -189,7 +191,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       }
     } catch (error) {
       console.error('Failed to fetch plan:', error);
-      Alert.alert('오류', '일정을 불러오는데 실패했습니다.');
+      showAlert({ title: '오류', message: '일정을 불러오는데 실패했습니다.' });
     }
   }, [planId]);
 
@@ -247,9 +249,12 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const handleConfirm = async () => {
     // Plan is already created/saved in ItineraryEditorScreen.
     // Just navigate back to home.
-    Alert.alert('성공', '일정이 저장되었습니다.', [
-      { text: '확인', onPress: () => navigation.popToTop() },
-    ]);
+    showAlert({
+      title: '성공',
+      message: '일정이 저장되었습니다.',
+      type: 'success',
+      buttons: [{ text: '확인', onPress: () => navigation.popToTop() }],
+    });
   };
 
   return (

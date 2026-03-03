@@ -9,10 +9,10 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
-  Alert,
   Image,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useAlert } from '../../../contexts/AlertContext';
 import axios from 'axios';
 import { API_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -36,6 +36,7 @@ import { Calendar, Share as ShareIcon } from 'lucide-react-native';
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
+  const { showAlert } = useAlert();
   const {
     days,
     selectedDayIndex,
@@ -484,7 +485,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       });
     } catch (error: any) {
       console.error('Failed to create plan:', error);
-      Alert.alert('오류', '일정 저장에 실패했습니다.');
+      showAlert({ title: '오류', message: '일정 저장에 실패했습니다.' });
     } finally {
       setIsSaving(false);
     }
