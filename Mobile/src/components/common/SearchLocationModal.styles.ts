@@ -32,37 +32,24 @@ export const styles = StyleSheet.create({
   /* ── Layout ── */
   container: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
   },
   modalView: {
-    width: '100%',
-    height: height * 0.95,
+    width: '90%',
+    height: height * 0.82,
     backgroundColor: COLORS.white,
-    borderTopLeftRadius: normalize(24),
-    borderTopRightRadius: normalize(24),
+    borderRadius: normalize(20),
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 16,
-  },
-
-  /* ── Drag Handle ── */
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: normalize(12),
-    paddingBottom: normalize(4),
-  },
-  handle: {
-    width: normalize(40),
-    height: normalize(4),
-    borderRadius: normalize(2),
-    backgroundColor: COLORS.border,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 20,
   },
 
   /* ── Header ── */
@@ -287,12 +274,12 @@ export const styles = StyleSheet.create({
   chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: normalize(6),
+    gap: normalize(5),
   },
   chip: {
-    paddingHorizontal: normalize(12),
-    paddingVertical: normalize(7),
-    borderRadius: normalize(16),
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(5),
+    borderRadius: normalize(14),
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -302,7 +289,7 @@ export const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   chipText: {
-    fontSize: normalize(12),
+    fontSize: normalize(11),
     fontFamily: FONTS.medium,
     color: COLORS.text,
   },

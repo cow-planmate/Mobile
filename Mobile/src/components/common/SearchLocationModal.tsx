@@ -10,7 +10,6 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
-  StyleSheet,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -25,14 +24,6 @@ import {
   Navigation,
   Map,
 } from 'lucide-react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  Easing,
-  runOnJS,
-} from 'react-native-reanimated';
 
 import { styles, COLORS, normalize } from './SearchLocationModal.styles';
 
@@ -339,37 +330,6 @@ export default function SearchLocationModal({
     null,
   );
 
-  /* ── Animation ── */
-  const translateY = useSharedValue(800);
-  const backdropOpacity = useSharedValue(0);
-
-  const animateIn = useCallback(() => {
-    translateY.value = withTiming(0, {
-      duration: 340,
-      easing: Easing.out(Easing.cubic),
-    });
-    backdropOpacity.value = withTiming(1, { duration: 280 });
-  }, [translateY, backdropOpacity]);
-
-  const animateOut = useCallback(() => {
-    backdropOpacity.value = withTiming(0, { duration: 220 });
-    translateY.value = withTiming(
-      800,
-      { duration: 260, easing: Easing.in(Easing.cubic) },
-      finished => {
-        if (finished) runOnJS(onClose)();
-      },
-    );
-  }, [translateY, backdropOpacity, onClose]);
-
-  const sheetStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  const backdropStyle = useAnimatedStyle(() => ({
-    opacity: backdropOpacity.value,
-  }));
-
   const loadRecentSearches = async () => {
     try {
       const stored = await AsyncStorage.getItem(RECENT_SEARCHES_KEY);
@@ -416,11 +376,6 @@ export default function SearchLocationModal({
       if (fieldToUpdate === 'destination') {
         fetchDestinations();
       }
-      // Trigger entrance animation
-      requestAnimationFrame(() => animateIn());
-    } else {
-      translateY.value = 800;
-      backdropOpacity.value = 0;
     }
   }, [visible, fieldToUpdate]);
 
@@ -800,20 +755,13 @@ export default function SearchLocationModal({
   );
 
   return (
-    <Modal visible={visible} transparent={true} animationType="none">
+    <Modal visible={visible} transparent={true} animationType="fade">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        <Animated.View style={[styles.backdrop, backdropStyle]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={animateOut} />
-        </Animated.View>
-        <Animated.View style={[styles.modalView, sheetStyle]}>
-          {/* Drag handle */}
-          <View style={styles.handleContainer}>
-            <View style={styles.handle} />
-          </View>
-
+        <Pressable style={styles.backdrop} onPress={onClose} />
+        <View style={styles.modalView}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerTextContainer}>
@@ -821,7 +769,7 @@ export default function SearchLocationModal({
               <Text style={styles.headerSubtitle}>{subtitle}</Text>
             </View>
             <TouchableOpacity
-              onPress={animateOut}
+              onPress={onClose}
               style={styles.closeButton}
               activeOpacity={0.7}
             >
@@ -862,7 +810,7 @@ export default function SearchLocationModal({
               ? renderDepartureContent()
               : renderDestinationContent()}
           </View>
-        </Animated.View>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
