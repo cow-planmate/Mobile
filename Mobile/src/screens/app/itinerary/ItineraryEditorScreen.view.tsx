@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
@@ -12,6 +14,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withTiming,
+  withSequence,
+  Easing,
   runOnJS,
 } from 'react-native-reanimated';
 import TimelineItem, {
@@ -40,68 +45,88 @@ import {
 
 const Tab = createMaterialTopTabNavigator();
 
-const TimeGridBackground = React.memo(({ hours }: { hours: number[] }) => {
-  const hourStr = (h: number) => h.toString().padStart(2, '0');
+const TimeGridBackground = React.memo(
+  ({ hours, endHour }: { hours: number[]; endHour: number }) => {
+    const hourStr = (h: number) => h.toString().padStart(2, '0');
 
-  return (
-    <View style={styles.gridContainer}>
-      {hours.map(hour => (
-        <View key={hour} style={[styles.hourBlock, { height: HOUR_HEIGHT }]}>
-          <View style={styles.hourLabelContainer}>
-            <Text style={[styles.timeLabelText, styles.timeLabelTop]}>
-              {`${hourStr(hour)}:00`}
-            </Text>
-            <Text
-              style={[
-                styles.timeLabelText,
-                styles.minuteLabel,
-                { top: HOUR_HEIGHT / 4 },
-              ]}
+    return (
+      <View style={styles.gridContainer}>
+        {hours.map(hour => {
+          const isLastHour = hour === endHour;
+          return (
+            <View
+              key={hour}
+              style={[styles.hourBlock, { height: HOUR_HEIGHT }]}
             >
-              {`${hourStr(hour)}:15`}
-            </Text>
-            <Text
-              style={[
-                styles.timeLabelText,
-                styles.minuteLabel,
-                { top: HOUR_HEIGHT / 2 },
-              ]}
-            >
-              {`${hourStr(hour)}:30`}
-            </Text>
-            <Text
-              style={[
-                styles.timeLabelText,
-                styles.minuteLabel,
-                { top: (HOUR_HEIGHT * 3) / 4 },
-              ]}
-            >
-              {`${hourStr(hour)}:45`}
-            </Text>
-          </View>
+              <View style={styles.hourLabelContainer}>
+                <Text style={[styles.timeLabelText, styles.timeLabelTop]}>
+                  {`${hourStr(hour)}:00`}
+                </Text>
+                {!isLastHour && (
+                  <>
+                    <Text
+                      style={[
+                        styles.timeLabelText,
+                        styles.minuteLabel,
+                        { top: HOUR_HEIGHT / 4 },
+                      ]}
+                    >
+                      {`${hourStr(hour)}:15`}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.timeLabelText,
+                        styles.minuteLabel,
+                        { top: HOUR_HEIGHT / 2 },
+                      ]}
+                    >
+                      {`${hourStr(hour)}:30`}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.timeLabelText,
+                        styles.minuteLabel,
+                        { top: (HOUR_HEIGHT * 3) / 4 },
+                      ]}
+                    >
+                      {`${hourStr(hour)}:45`}
+                    </Text>
+                  </>
+                )}
+              </View>
 
-          <View style={styles.hourContent}>
-            <View style={[styles.quarterBlock, styles.firstQuarterBlock]} />
-            <View style={styles.quarterBlock} />
-            <View style={styles.quarterBlock} />
-            <View style={styles.quarterBlock} />
-          </View>
-        </View>
-      ))}
-    </View>
-  );
-});
+              <View style={styles.hourContent}>
+                <View style={[styles.quarterBlock, styles.firstQuarterBlock]} />
+                {!isLastHour && (
+                  <>
+                    <View style={styles.quarterBlock} />
+                    <View style={styles.quarterBlock} />
+                    <View style={styles.quarterBlock} />
+                  </>
+                )}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    );
+  },
+);
 
 const DraggableTimelineItem = ({
   place,
   offsetMinutes,
+  maxEndMinutes,
   onDelete,
   onEditTime,
   onDragEnd,
   onPress,
+  onOverflow,
+  scrollRef,
 }: {
   place: Place;
   offsetMinutes: number;
+  maxEndMinutes: number;
   onDelete: () => void;
   onEditTime: (type: 'startTime' | 'endTime') => void;
   onDragEnd: (
@@ -110,12 +135,13 @@ const DraggableTimelineItem = ({
     newEndMinutes: number,
   ) => void;
   onPress?: () => void;
+  onOverflow?: () => void;
+  scrollRef?: React.RefObject<ScrollView | null>;
 }) => {
   const GRID_TOP_OFFSET = 40;
   const MIN_TOP_PX = GRID_TOP_OFFSET;
-  const TOTAL_TIMELINE_MINS = 24 * 60;
-  const TOTAL_TIMELINE_PX = TOTAL_TIMELINE_MINS * MINUTE_HEIGHT;
-  const MAX_BOTTOM_PX = GRID_TOP_OFFSET + TOTAL_TIMELINE_PX;
+  const MAX_BOTTOM_PX =
+    GRID_TOP_OFFSET + (maxEndMinutes - offsetMinutes) * MINUTE_HEIGHT;
 
   const startMinutes = timeToMinutes(place.startTime);
   const endMinutes = timeToMinutes(place.endTime);
@@ -152,6 +178,17 @@ const DraggableTimelineItem = ({
   const isResizingTop = useSharedValue(0);
   const isResizingBottom = useSharedValue(0);
 
+  // Auto-scroll helper
+  const scrollIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
+  const clearScrollInterval = () => {
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
+  };
+
   const panGestureMove = Gesture.Pan()
     .onBegin(() => {
       startY.value = top.value;
@@ -161,17 +198,46 @@ const DraggableTimelineItem = ({
       const maxTop = MAX_BOTTOM_PX - height.value;
       const clampedTop = Math.max(MIN_TOP_PX, Math.min(newTop, maxTop));
       top.value = clampedTop;
+
+      // Auto-scroll when near bottom edge
+      if (scrollRef?.current) {
+        const bottomEdge = clampedTop + height.value;
+        const totalHeight =
+          (maxEndMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET * 2;
+        if (bottomEdge > totalHeight - 100 && !scrollIntervalRef.current) {
+          // Trigger scroll down
+          scrollIntervalRef.current = setInterval(() => {
+            scrollRef.current?.scrollTo({
+              y: bottomEdge - 200,
+              animated: true,
+            });
+          }, 100);
+        } else if (bottomEdge <= totalHeight - 100) {
+          clearScrollInterval();
+        }
+      }
     })
     .onEnd(event => {
+      clearScrollInterval();
       const snappedTop =
         Math.round((top.value - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
           GRID_SNAP_HEIGHT +
         GRID_TOP_OFFSET;
-      top.value = withSpring(snappedTop);
 
-      const newStartMinutes =
+      let newStartMinutes =
         (snappedTop - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
-      const newEndMinutes = newStartMinutes + durationMinutes;
+      let newEndMinutes = newStartMinutes + durationMinutes;
+
+      // Clamp to max time
+      if (newEndMinutes > maxEndMinutes) {
+        newEndMinutes = maxEndMinutes;
+        newStartMinutes = maxEndMinutes - durationMinutes;
+        if (onOverflow) runOnJS(onOverflow)();
+      }
+
+      const finalTop =
+        (newStartMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
+      top.value = withSpring(finalTop);
 
       runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
     });
@@ -237,6 +303,7 @@ const DraggableTimelineItem = ({
       let finalHeight = Math.max(snappedHeight, MIN_ITEM_HEIGHT);
       if (top.value + finalHeight > MAX_BOTTOM_PX) {
         finalHeight = MAX_BOTTOM_PX - top.value;
+        if (onOverflow) runOnJS(onOverflow)();
       }
 
       height.value = withSpring(finalHeight);
@@ -331,28 +398,47 @@ const TimelineComponent = React.memo(
       },
       ref,
     ) => {
-      const { gridHours, offsetMinutes } = React.useMemo(() => {
-        const minHour = 9;
-        let maxHour = 20;
+      // Overflow warning banner animation
+      const bannerOpacity = useSharedValue(0);
+      const bannerTranslateY = useSharedValue(20);
+      const bannerAnimStyle = useAnimatedStyle(() => ({
+        opacity: bannerOpacity.value,
+        transform: [{ translateY: bannerTranslateY.value }],
+      }));
 
-        // Extend grid if any place goes beyond maxHour
-        if (selectedDay?.places) {
-          for (const p of selectedDay.places) {
-            const endMin = timeToMinutes(p.endTime);
-            const endHour = Math.ceil(endMin / 60);
-            if (endHour > maxHour) {
-              maxHour = endHour;
-            }
-          }
-        }
-
-        const hours = Array.from(
-          { length: maxHour - minHour + 1 },
-          (_, i) => i + minHour,
+      const showOverflowBanner = useCallback(() => {
+        bannerOpacity.value = withSequence(
+          withTiming(1, { duration: 200 }),
+          withTiming(1, { duration: 1800 }),
+          withTiming(0, { duration: 400 }),
         );
-        const offset = minHour * 60;
-        return { gridHours: hours, offsetMinutes: offset };
-      }, [selectedDay?.places]);
+        bannerTranslateY.value = withSequence(
+          withTiming(0, { duration: 200, easing: Easing.out(Easing.cubic) }),
+          withTiming(0, { duration: 1800 }),
+          withTiming(20, { duration: 400 }),
+        );
+      }, [bannerOpacity, bannerTranslateY]);
+
+      const { gridHours, offsetMinutes, maxEndMinutes, endHour } =
+        React.useMemo(() => {
+          const startTimeStr = selectedDay?.startTime || '09:00:00';
+          const endTimeStr = selectedDay?.endTime || '20:00:00';
+          const minHour = Math.floor(timeToMinutes(startTimeStr) / 60);
+          const endMin = timeToMinutes(endTimeStr);
+          const maxHour = Math.ceil(endMin / 60);
+
+          const hours = Array.from(
+            { length: maxHour - minHour + 1 },
+            (_, i) => i + minHour,
+          );
+          const offset = minHour * 60;
+          return {
+            gridHours: hours,
+            offsetMinutes: offset,
+            maxEndMinutes: endMin,
+            endHour: maxHour,
+          };
+        }, [selectedDay?.startTime, selectedDay?.endTime]);
 
       return (
         <View style={styles.tabContentContainer}>
@@ -361,12 +447,13 @@ const TimelineComponent = React.memo(
             contentContainerStyle={styles.timelineContentContainer}
           >
             <View style={styles.timelineWrapper}>
-              <TimeGridBackground hours={gridHours} />
+              <TimeGridBackground hours={gridHours} endHour={endHour} />
               {selectedDay?.places.map(place => (
                 <DraggableTimelineItem
                   key={place.id}
                   place={place}
                   offsetMinutes={offsetMinutes}
+                  maxEndMinutes={maxEndMinutes}
                   onDelete={() => onDeletePlace(place.id)}
                   onEditTime={type =>
                     onEditPlaceTime(
@@ -377,10 +464,19 @@ const TimelineComponent = React.memo(
                   }
                   onDragEnd={onUpdatePlaceTimes}
                   onPress={() => onPressPlace?.(place)}
+                  onOverflow={showOverflowBanner}
+                  scrollRef={ref as React.RefObject<ScrollView | null>}
                 />
               ))}
             </View>
           </ScrollView>
+
+          {/* Overflow warning banner */}
+          <Animated.View style={[styles.overflowBanner, bannerAnimStyle]}>
+            <Text style={styles.overflowBannerText}>
+              설정된 타임라인 시간을 초과할 수 없습니다
+            </Text>
+          </Animated.View>
         </View>
       );
     },
@@ -484,14 +580,7 @@ export default function ItineraryEditorScreenView({
                 sum + (timeToMinutes(p.endTime) - timeToMinutes(p.startTime))
               );
             }, 0);
-            const totalHours = Math.floor(totalMin / 60);
-            const totalMins = totalMin % 60;
-            const timeLabel =
-              totalHours > 0
-                ? `${totalHours}h ${totalMins > 0 ? `${totalMins}m` : ''}`
-                : totalMins > 0
-                ? `${totalMins}m`
-                : '';
+            const timeLabel = totalMin > 0 ? `${totalMin}분` : '';
             const dateKey = day.date.toISOString().split('T')[0];
             const weather = weatherMap[dateKey];
             const isSelected = selectedDayIndex === index;

@@ -1,13 +1,21 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
+
+const { width } = Dimensions.get('window');
+const normalize = (size: number) =>
+  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
 
 export const COLORS = {
   primary: '#1344FF',
   text: '#111827',
+  subtext: '#6B7280',
   border: '#E5E7EB',
   white: '#FFFFFF',
   placeholder: '#9CA3AF',
-  background: 'rgba(0,0,0,0.5)',
+  overlay: 'rgba(0,0,0,0.45)',
   surface: '#F3F4F6',
+  lightBlue: '#E0E7FF',
+  iconBg: '#F5F7FF',
+  disabled: '#D1D5DB',
 };
 
 export const FONTS = {
@@ -18,142 +26,210 @@ export const FONTS = {
 };
 
 export const styles = StyleSheet.create({
-  centeredView: {
+  /* ── Overlay & Modal ── */
+  overlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.overlay,
   },
-  modalView: {
-    width: '90%',
-    maxWidth: 600,
+  modal: {
+    width: '88%',
+    maxHeight: '80%',
     backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    borderRadius: normalize(20),
+    paddingBottom: normalize(20),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 20,
+  },
+
+  /* ── Header ── */
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: normalize(22),
+    paddingTop: normalize(22),
+    paddingBottom: normalize(12),
+  },
+  headerTextArea: {
+    flex: 1,
+    marginRight: normalize(12),
   },
   title: {
-    fontSize: 20,
+    fontSize: normalize(20),
     fontFamily: FONTS.bold,
     color: COLORS.text,
-    marginBottom: 24,
-    textAlign: 'left',
+    letterSpacing: -0.3,
+    marginBottom: normalize(3),
   },
-  tableHeader: {
-    flexDirection: 'row',
-    marginBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    paddingBottom: 8,
-  },
-  headerText: {
-    fontSize: 12,
+  subtitle: {
+    fontSize: normalize(13),
     fontFamily: FONTS.regular,
-    color: COLORS.placeholder,
-    flex: 1,
-    textAlign: 'center',
+    color: COLORS.subtext,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
-  },
-  dayText: {
-    flex: 0.8,
-    fontSize: 16,
-    color: COLORS.text,
-    fontFamily: FONTS.medium,
-    textAlign: 'center',
-  },
-  dateInput: {
-    flex: 1.5,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    justifyContent: 'space-between',
-  },
-  dateText: {
-    fontSize: 14,
-    fontFamily: FONTS.regular,
-    color: COLORS.text,
-  },
-  timeInput: {
-    flex: 1.2,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  timeText: {
-    fontSize: 14,
-    fontFamily: FONTS.regular,
-    color: COLORS.text,
-  },
-  controlRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: 24,
-    gap: 8,
-  },
-  controlButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 4,
+  closeButton: {
+    width: normalize(34),
+    height: normalize(34),
+    borderRadius: normalize(17),
     backgroundColor: COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  /* ── Day Counter ── */
+  counterSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: normalize(22),
+    backgroundColor: COLORS.surface,
+    borderRadius: normalize(14),
+    paddingHorizontal: normalize(16),
+    paddingVertical: normalize(12),
+  },
+  counterLabel: {
+    fontSize: normalize(14),
+    fontFamily: FONTS.semibold,
+    color: COLORS.text,
+  },
+  counterControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(14),
+  },
+  counterBtn: {
+    width: normalize(32),
+    height: normalize(32),
+    borderRadius: normalize(10),
+    backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  controlButtonText: {
-    fontSize: 20,
-    color: COLORS.text,
-    fontFamily: FONTS.semibold,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-  },
-  button: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minWidth: 80,
-  },
-  cancelButton: {
+  counterBtnDisabled: {
     backgroundColor: COLORS.surface,
-    borderWidth: 1,
     borderColor: COLORS.border,
-  },
-  cancelButtonText: {
-    color: COLORS.text,
-    fontFamily: FONTS.semibold,
-  },
-  confirmButton: {
-    backgroundColor: COLORS.primary,
-  },
-  confirmButtonText: {
-    color: COLORS.white,
-    fontFamily: FONTS.semibold,
-  },
-  disabledButton: {
     opacity: 0.5,
   },
-  icon: {
-    fontSize: 12,
+  counterValue: {
+    fontSize: normalize(16),
+    fontFamily: FONTS.bold,
+    color: COLORS.primary,
+    minWidth: normalize(36),
+    textAlign: 'center',
+  },
+
+  /* ── Divider ── */
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginHorizontal: normalize(22),
+    marginVertical: normalize(14),
+  },
+
+  /* ── Scroll ── */
+  scrollArea: {
+    maxHeight: normalize(300),
+    paddingHorizontal: normalize(22),
+  },
+
+  /* ── Day Card ── */
+  dayCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: normalize(14),
+    paddingHorizontal: normalize(14),
+    paddingVertical: normalize(12),
+    marginBottom: normalize(10),
+  },
+  dayCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: normalize(8),
+    gap: normalize(10),
+  },
+  dayBadge: {
+    backgroundColor: COLORS.primary,
+    borderRadius: normalize(8),
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(4),
+  },
+  dayBadgeText: {
+    fontSize: normalize(12),
+    fontFamily: FONTS.bold,
+    color: COLORS.white,
+  },
+  dateChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: normalize(10),
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(6),
+    gap: normalize(5),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  dateChipText: {
+    fontSize: normalize(13),
+    fontFamily: FONTS.semibold,
     color: COLORS.text,
+  },
+  dayOfWeek: {
+    fontSize: normalize(12),
+    fontFamily: FONTS.regular,
+    color: COLORS.subtext,
+  },
+
+  /* ── Time Row ── */
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(8),
+  },
+  timeChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: normalize(10),
+    paddingVertical: normalize(8),
+    gap: normalize(6),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  timeChipText: {
+    fontSize: normalize(13),
+    fontFamily: FONTS.medium,
+    color: COLORS.text,
+  },
+  timeDash: {
+    fontSize: normalize(14),
+    fontFamily: FONTS.medium,
+    color: COLORS.subtext,
+  },
+
+  /* ── Footer ── */
+  footer: {
+    paddingHorizontal: normalize(22),
+    paddingTop: normalize(14),
+  },
+  confirmBtn: {
+    width: '100%',
+    height: normalize(48),
+    borderRadius: normalize(14),
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+  },
+  confirmBtnText: {
+    fontSize: normalize(15),
+    fontFamily: FONTS.bold,
+    color: COLORS.white,
   },
 });

@@ -38,8 +38,9 @@ const minutesToTime = (totalMinutes: number) => {
 const resolveConflictsAndSort = (
   places: Place[],
   anchorItemId: string | null = null,
+  maxEndMinutesOverride?: number,
 ): Place[] => {
-  const MAX_END_MINUTES = 23 * 60 + 45; // 23:45 hard cap
+  const MAX_END_MINUTES = maxEndMinutesOverride ?? 23 * 60 + 45; // respect day endTime or 23:45 hard cap
 
   const sortedPlaces = [...places].sort(
     (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
@@ -431,7 +432,11 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       placeToAdd,
     ];
 
-    dayToUpdate.places = resolveConflictsAndSort(newPlacesList, placeToAdd.id);
+    dayToUpdate.places = resolveConflictsAndSort(
+      newPlacesList,
+      placeToAdd.id,
+      dayToUpdate.endTime ? timeToMinutes(dayToUpdate.endTime) : undefined,
+    );
     updatedDays[dayIndex] = dayToUpdate;
 
     setDays(updatedDays);
@@ -517,7 +522,11 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         : { ...p },
     );
 
-    dayToUpdate.places = resolveConflictsAndSort(newPlacesList, placeId);
+    dayToUpdate.places = resolveConflictsAndSort(
+      newPlacesList,
+      placeId,
+      dayToUpdate.endTime ? timeToMinutes(dayToUpdate.endTime) : undefined,
+    );
     updatedDays[dayIndex] = dayToUpdate;
 
     setDays(updatedDays);

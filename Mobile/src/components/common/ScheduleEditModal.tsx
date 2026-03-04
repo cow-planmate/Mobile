@@ -7,8 +7,16 @@ import {
   ScrollView,
   Pressable,
 } from 'react-native';
-import { styles } from './ScheduleEditModal.styles';
+import { styles, COLORS } from './ScheduleEditModal.styles';
 import DatePicker from 'react-native-date-picker';
+import {
+  X,
+  Plus,
+  Minus,
+  CalendarDays,
+  Clock,
+  ChevronDown,
+} from 'lucide-react-native';
 
 type DayConfig = {
   dayNumber: number;
@@ -23,6 +31,8 @@ type ScheduleEditModalProps = {
   onClose: () => void;
   onConfirm: (days: DayConfig[]) => void;
 };
+
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 export default function ScheduleEditModal({
   visible,
@@ -87,7 +97,6 @@ export default function ScheduleEditModal({
     setTargetIndex(index);
     setPickerType(type);
 
-    // Parse time string 'HH:mm:ss' to Date
     const timeStr =
       type === 'start' ? days[index].startTime : days[index].endTime;
     const [hours, minutes, seconds] = timeStr.split(':').map(Number);
@@ -107,7 +116,6 @@ export default function ScheduleEditModal({
 
     if (pickerType === 'date') {
       newDays[targetIndex].date = date;
-      // Adjust subsequent dates
       for (let i = targetIndex + 1; i < newDays.length; i++) {
         const prevDate = new Date(newDays[i - 1].date);
         prevDate.setDate(prevDate.getDate() + 1);
@@ -116,8 +124,7 @@ export default function ScheduleEditModal({
     } else {
       const hours = date.getHours().toString().padStart(2, '0');
       const minutes = date.getMinutes().toString().padStart(2, '0');
-      const seconds = '00'; // Simply use 00 for seconds as per image
-      const timeStr = `${hours}:${minutes}:${seconds}`;
+      const timeStr = `${hours}:${minutes}:00`;
 
       if (pickerType === 'start') {
         newDays[targetIndex].startTime = timeStr;
@@ -131,89 +138,149 @@ export default function ScheduleEditModal({
     setTimePickerOpen(false);
   };
 
-  const formatDate = (date: Date) => {
-    const yyyy = date.getFullYear();
-    const mm = (date.getMonth() + 1).toString().padStart(2, '0');
-    const dd = date.getDate().toString().padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
+  const formatCompactDate = (date: Date) => {
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+    const w = WEEKDAYS[date.getDay()];
+    return { dateStr: `${m}.${d}`, dayOfWeek: w };
   };
+
+  const formatTime = (time: string) => time.substring(0, 5);
 
   return (
     <Modal visible={visible} animationType="fade" transparent={true}>
-      <Pressable style={styles.centeredView} onPress={onClose}>
-        <Pressable style={styles.modalView} onPress={() => {}}>
-          <Text style={styles.title}>일정 변경</Text>
-
-          <View style={styles.tableHeader}>
-            <Text style={[styles.headerText, { flex: 0.8 }]}>일차</Text>
-            <Text style={[styles.headerText, { flex: 1.5 }]}>날짜</Text>
-            <Text style={[styles.headerText, { flex: 1.2 }]}>시작 시간</Text>
-            <Text style={[styles.headerText, { flex: 1.2 }]}>종료 시간</Text>
+      <Pressable style={styles.overlay} onPress={onClose}>
+        <Pressable style={styles.modal} onPress={() => {}}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.headerTextArea}>
+              <Text style={styles.title}>일정 변경</Text>
+              <Text style={styles.subtitle}>
+                날짜와 시간을 조정할 수 있어요
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={onClose}
+              activeOpacity={0.7}
+            >
+              <X size={18} color={COLORS.subtext} strokeWidth={1.5} />
+            </TouchableOpacity>
           </View>
 
-          <ScrollView style={{ maxHeight: 300 }}>
-            {days.map((day, index) => (
-              <View key={index} style={styles.row}>
-                <Text style={styles.dayText}>{day.dayNumber}일차</Text>
+          {/* Day Counter */}
+          <View style={styles.counterSection}>
+            <Text style={styles.counterLabel}>여행 일수</Text>
+            <View style={styles.counterControls}>
+              <TouchableOpacity
+                style={[
+                  styles.counterBtn,
+                  days.length <= 1 && styles.counterBtnDisabled,
+                ]}
+                onPress={handleRemoveDay}
+                disabled={days.length <= 1}
+                activeOpacity={0.7}
+              >
+                <Minus
+                  size={16}
+                  color={days.length <= 1 ? COLORS.disabled : COLORS.text}
+                  strokeWidth={2}
+                />
+              </TouchableOpacity>
+              <Text style={styles.counterValue}>{days.length}일</Text>
+              <TouchableOpacity
+                style={styles.counterBtn}
+                onPress={handleAddDay}
+                activeOpacity={0.7}
+              >
+                <Plus size={16} color={COLORS.text} strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+          </View>
 
-                <TouchableOpacity
-                  style={styles.dateInput}
-                  onPress={() => openDatePicker(index)}
-                >
-                  <Text style={styles.dateText}>{formatDate(day.date)}</Text>
-                  <Text>📅</Text>
-                </TouchableOpacity>
+          <View style={styles.divider} />
 
-                <TouchableOpacity
-                  style={styles.timeInput}
-                  onPress={() => openTimePicker(index, 'start')}
-                >
-                  <Text style={styles.timeText}>
-                    {day.startTime.substring(0, 5)}
-                  </Text>
-                  <Text>⌄</Text>
-                </TouchableOpacity>
+          {/* Day Cards */}
+          <ScrollView
+            style={styles.scrollArea}
+            showsVerticalScrollIndicator={false}
+          >
+            {days.map((day, index) => {
+              const { dateStr, dayOfWeek } = formatCompactDate(day.date);
+              return (
+                <View key={index} style={styles.dayCard}>
+                  {/* Day badge + date */}
+                  <View style={styles.dayCardTop}>
+                    <View style={styles.dayBadge}>
+                      <Text style={styles.dayBadgeText}>
+                        {day.dayNumber}일차
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.dateChip}
+                      onPress={() => openDatePicker(index)}
+                      activeOpacity={0.7}
+                    >
+                      <CalendarDays
+                        size={14}
+                        color={COLORS.primary}
+                        strokeWidth={1.5}
+                      />
+                      <Text style={styles.dateChipText}>{dateStr}</Text>
+                      <Text style={styles.dayOfWeek}>({dayOfWeek})</Text>
+                      <ChevronDown
+                        size={12}
+                        color={COLORS.subtext}
+                        strokeWidth={1.5}
+                      />
+                    </TouchableOpacity>
+                  </View>
 
-                <TouchableOpacity
-                  style={styles.timeInput}
-                  onPress={() => openTimePicker(index, 'end')}
-                >
-                  <Text style={styles.timeText}>
-                    {day.endTime.substring(0, 5)}
-                  </Text>
-                  <Text>⌄</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+                  {/* Time row */}
+                  <View style={styles.timeRow}>
+                    <TouchableOpacity
+                      style={styles.timeChip}
+                      onPress={() => openTimePicker(index, 'start')}
+                      activeOpacity={0.7}
+                    >
+                      <Clock
+                        size={13}
+                        color={COLORS.primary}
+                        strokeWidth={1.5}
+                      />
+                      <Text style={styles.timeChipText}>
+                        {formatTime(day.startTime)}
+                      </Text>
+                    </TouchableOpacity>
+                    <Text style={styles.timeDash}>~</Text>
+                    <TouchableOpacity
+                      style={styles.timeChip}
+                      onPress={() => openTimePicker(index, 'end')}
+                      activeOpacity={0.7}
+                    >
+                      <Clock
+                        size={13}
+                        color={COLORS.subtext}
+                        strokeWidth={1.5}
+                      />
+                      <Text style={styles.timeChipText}>
+                        {formatTime(day.endTime)}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })}
           </ScrollView>
 
-          <View style={styles.controlRow}>
-            <TouchableOpacity
-              style={styles.controlButton}
-              onPress={handleRemoveDay}
-            >
-              <Text style={styles.controlButtonText}>-</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.controlButton}
-              onPress={handleAddDay}
-            >
-              <Text style={styles.controlButtonText}>+</Text>
-            </TouchableOpacity>
-          </View>
-
+          {/* Footer */}
           <View style={styles.footer}>
             <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={onClose}
-            >
-              <Text style={styles.cancelButtonText}>취소</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.confirmButton]}
+              style={styles.confirmBtn}
               onPress={() => onConfirm(days)}
+              activeOpacity={0.7}
             >
-              <Text style={styles.confirmButtonText}>확인</Text>
+              <Text style={styles.confirmBtnText}>확인</Text>
             </TouchableOpacity>
           </View>
 

@@ -52,7 +52,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     selectedDay,
   } = useItineraryEditor(route, navigation);
 
-  const { updatePlaceMemo, updatePlaceDetails } = useItinerary();
+  const { updatePlaceMemo, updatePlaceDetails, setDays } = useItinerary();
   const { connect, disconnect, onlineUsers, sendMessage } = useWebSocket();
   const {
     fetchAllRecommendations,
@@ -268,12 +268,17 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       const removedDates = [...oldDates].filter(d => !newDates.has(d));
 
       if (addedDates.length > 0) {
-        const newTimetables = addedDates.map(dateStr => ({
-          timetableId: 0,
-          date: dateStr,
-          startTime: '09:00:00',
-          endTime: '20:00:00',
-        }));
+        const newTimetables = addedDates.map(dateStr => {
+          const matched = updatedDays.find(
+            ud => ud.date.toISOString().split('T')[0] === dateStr,
+          );
+          return {
+            timetableId: 0,
+            date: dateStr,
+            startTime: matched?.startTime || '09:00:00',
+            endTime: matched?.endTime || '20:00:00',
+          };
+        });
         sendMessage('create', 'timetable', newTimetables);
       }
 
@@ -285,14 +290,32 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           .map(d => ({
             timetableId: d.timetableId,
             date: d.date.toISOString().split('T')[0],
-            startTime: '09:00:00',
-            endTime: '20:00:00',
+            startTime: d.startTime || '09:00:00',
+            endTime: d.endTime || '20:00:00',
           }));
 
         if (removedTimetables.length > 0) {
           sendMessage('delete', 'timetable', removedTimetables);
         }
       }
+
+      // Update startTime/endTime on existing days (sync with schedule edit changes)
+      setDays(prevDays => {
+        return prevDays.map(day => {
+          const dateStr = day.date.toISOString().split('T')[0];
+          const matched = updatedDays.find(
+            ud => ud.date.toISOString().split('T')[0] === dateStr,
+          );
+          if (matched) {
+            return {
+              ...day,
+              startTime: matched.startTime,
+              endTime: matched.endTime,
+            };
+          }
+          return day;
+        });
+      });
 
       const firstDay = updatedDays[0].date;
       const lastDay = updatedDays[updatedDays.length - 1].date;

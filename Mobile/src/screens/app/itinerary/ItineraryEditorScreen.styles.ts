@@ -360,4 +360,27 @@ export const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: FONTS.medium,
   },
+
+  // Overflow warning banner
+  overflowBanner: {
+    position: 'absolute',
+    bottom: 16,
+    left: 20,
+    right: 20,
+    backgroundColor: '#1F2937',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  overflowBannerText: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontFamily: FONTS.semibold,
+  },
 });
