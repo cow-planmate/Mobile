@@ -122,7 +122,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         );
       }
     } catch (error: any) {
-      console.error('Login error:', error);
+      // 명시적으로 에러를 로그 찍지 않음 (디버깅용 로그는 console.log로 대체 가능하거나 조건부 출력)
+      // 500 이상의 서버 에러거나 네트워크 에러(message에 Network Error 포함)인 경우만 출력
+      const isServerError = error.response && error.response.status >= 500;
+      const isNetworkError =
+        error.message && error.message.includes('Network Error');
+
+      if (isServerError || isNetworkError) {
+        console.error('Login critical error:', error);
+      }
+
       // axios 에러인 경우 서버 응답 메시지 추출
       if (error.response?.data?.message) {
         throw new Error(error.response.data.message);

@@ -12,9 +12,62 @@ import StorybookUIRoot from './.storybook';
 // axios 인터셉터 설정 초기화
 import './src/api/axiosConfig';
 
-import { StyleSheet, StatusBar } from 'react-native';
+import { StyleSheet, StatusBar, View, Text } from 'react-native';
+import Toast from 'react-native-toast-message';
+import { XCircle } from 'lucide-react-native';
 
 const SHOW_STORYBOOK = false;
+
+/* ── Toast Styles ── */
+const toastStyles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginHorizontal: 20,
+    marginTop: 10,
+    backgroundColor: '#1C1C1E',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3.84,
+    elevation: 5,
+    flexDirection: 'row',
+  },
+  text: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginLeft: 8,
+  },
+});
+
+/* ── Toast Config ── */
+const toastConfig = {
+  error: ({ text1 }: { text1: string }) => (
+    <View style={toastStyles.container}>
+      <XCircle size={20} color="#FF453A" strokeWidth={2.5} />
+      <Text style={toastStyles.text}>{text1}</Text>
+    </View>
+  ),
+  success: ({ text1 }: { text1: string }) => (
+    <View style={toastStyles.container}>
+      <Text style={[toastStyles.text, { marginLeft: 0, color: '#30D158' }]}>
+        {text1}
+      </Text>
+    </View>
+  ),
+  info: ({ text1 }: { text1: string }) => (
+    <View style={toastStyles.container}>
+      <Text style={[toastStyles.text, { marginLeft: 0, color: '#BFBFBF' }]}>
+        {text1}
+      </Text>
+    </View>
+  ),
+};
 
 function App() {
   if (SHOW_STORYBOOK) {
@@ -33,6 +86,7 @@ function App() {
                 <NavigationContainer>
                   <AppNavigator />
                 </NavigationContainer>
+                <Toast config={toastConfig} />
               </ItineraryProvider>
             </PlacesProvider>
           </WebSocketProvider>

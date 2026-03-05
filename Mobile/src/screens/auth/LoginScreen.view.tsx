@@ -142,16 +142,14 @@ const PrivacyPolicyModal = ({
 /* ── Props ── */
 
 export interface LoginScreenViewProps {
-  form: { email: string; password: '' };
-  error: string;
+  form: { email: string; password: string };
   isLoading: boolean;
   focused: string | null;
-  isPasswordVisible: boolean;
   onChange: (key: 'email' | 'password', value: string) => void;
   onLogin: () => void;
   onFocus: (key: string) => void;
   onBlur: () => void;
-  onTogglePassword: () => void;
+  onClearPassword: () => void;
   onNavigateToSignup: () => void;
   onNavigateToForgotPassword: () => void;
   onGoogleLogin: () => void;
@@ -160,15 +158,13 @@ export interface LoginScreenViewProps {
 
 export const LoginScreenView = ({
   form,
-  error,
   isLoading,
   focused,
-  isPasswordVisible,
   onChange,
   onLogin,
   onFocus,
   onBlur,
-  onTogglePassword,
+  onClearPassword,
   onNavigateToSignup,
   onNavigateToForgotPassword,
   onGoogleLogin,
@@ -179,92 +175,70 @@ export const LoginScreenView = ({
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>로그인</Text>
-      {!!error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
+
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>이메일</Text>
-        <TextInput
-          style={[styles.input, focused === 'email' && styles.inputFocused]}
-          placeholder="이메일을 입력하세요"
-          value={form.email}
-          onChangeText={text => onChange('email', text)}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          onFocus={() => onFocus('email')}
-          onBlur={onBlur}
-          editable={!isLoading}
-          placeholderTextColor={COLORS.darkGray}
-        />
+        <View
+          style={[
+            styles.inputContainer,
+            focused === 'email' && styles.inputFocused,
+          ]}
+        >
+          <Text style={styles.label}>이메일</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="이메일을 입력하세요"
+            value={form.email}
+            onChangeText={text => onChange('email', text)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            onFocus={() => onFocus('email')}
+            onBlur={onBlur}
+            editable={!isLoading}
+            placeholderTextColor={COLORS.darkGray}
+          />
+        </View>
       </View>
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>비밀번호</Text>
         <View
           style={[
             styles.passwordContainer,
             focused === 'password' && styles.inputFocused,
           ]}
         >
-          <TextInput
-            style={styles.passwordInput}
-            placeholder="비밀번호를 입력하세요"
-            value={form.password}
-            onChangeText={text => onChange('password', text)}
-            secureTextEntry={!isPasswordVisible}
-            autoCapitalize="none"
-            autoCorrect={false}
-            onFocus={() => onFocus('password')}
-            onBlur={onBlur}
-            editable={!isLoading}
-            placeholderTextColor={COLORS.darkGray}
-          />
-          <TouchableOpacity
-            onPress={onTogglePassword}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            {isPasswordVisible ? (
-              <EyeOff size={20} color={COLORS.textSecondary} />
-            ) : (
-              <Eye size={20} color={COLORS.textSecondary} />
-            )}
-          </TouchableOpacity>
+          <View style={styles.passwordContent}>
+            <Text style={styles.label}>비밀번호</Text>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="비밀번호를 입력하세요"
+              value={form.password}
+              onChangeText={text => onChange('password', text)}
+              secureTextEntry={true}
+              autoCapitalize="none"
+              autoCorrect={false}
+              onFocus={() => onFocus('password')}
+              onBlur={onBlur}
+              editable={!isLoading}
+              placeholderTextColor={COLORS.darkGray}
+            />
+          </View>
+          {form.password.length > 0 && (
+            <TouchableOpacity
+              onPress={onClearPassword}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: 10,
+                backgroundColor: '#C7C7CC',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <X size={12} color="#FFFFFF" strokeWidth={3} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
-
-      {/* Social Login */}
-      <View style={styles.socialContainer}>
-        <View style={styles.socialDivider}>
-          <View style={styles.socialDividerLine} />
-          <Text style={styles.socialDividerText}>소셜 계정으로 로그인</Text>
-          <View style={styles.socialDividerLine} />
-        </View>
-        <View style={styles.socialButtons}>
-          <TouchableOpacity
-            style={styles.socialButton}
-            onPress={onGoogleLogin}
-            disabled={isLoading}
-          >
-            <GoogleIcon size={28} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.socialButton}
-            onPress={onNaverLogin}
-            disabled={isLoading}
-          >
-            <NaverIcon size={28} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Privacy Policy */}
-      <TouchableOpacity
-        onPress={() => setShowPrivacyModal(true)}
-        disabled={isLoading}
-      >
-        <Text style={styles.privacyLinkText}>개인정보 처리방침</Text>
-      </TouchableOpacity>
 
       <TouchableOpacity
         style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
@@ -297,6 +271,40 @@ export const LoginScreenView = ({
           <Text style={styles.linkText}>회원가입</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Social Login */}
+      <View style={styles.socialContainer}>
+        <View style={styles.socialDivider}>
+          <View style={styles.socialDividerLine} />
+          <Text style={styles.socialDividerText}>소셜 계정으로 로그인</Text>
+          <View style={styles.socialDividerLine} />
+        </View>
+        <View style={styles.socialButtons}>
+          <TouchableOpacity
+            style={styles.socialButton}
+            onPress={onGoogleLogin}
+            disabled={isLoading}
+          >
+            <GoogleIcon size={28} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.socialButton}
+            onPress={onNaverLogin}
+            disabled={isLoading}
+          >
+            <NaverIcon size={28} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Privacy Policy */}
+      <TouchableOpacity
+        onPress={() => setShowPrivacyModal(true)}
+        disabled={isLoading}
+        style={{ marginTop: 24, alignSelf: 'center' }}
+      >
+        <Text style={styles.privacyLinkText}>개인정보 처리방침</Text>
+      </TouchableOpacity>
 
       <PrivacyPolicyModal
         visible={showPrivacyModal}
