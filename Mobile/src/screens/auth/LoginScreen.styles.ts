@@ -54,9 +54,6 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     justifyContent: 'center',
   },
-  inputFocused: {
-    borderColor: COLORS.primary,
-  },
   label: {
     fontSize: normalize(11),
     color: COLORS.textSecondary,
@@ -104,7 +101,7 @@ export const styles = StyleSheet.create({
   },
   inputFocused: {
     borderColor: COLORS.primary,
-    borderWidth: 2,
+    borderWidth: 2.5,
   },
   submitButton: {
     width: '100%',
