@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -142,6 +142,8 @@ const PrivacyPolicyModal = ({
 /* ── Props ── */
 
 export interface LoginScreenViewProps {
+  isEmailValid: boolean;
+  isPasswordValid: boolean;
   form: { email: string; password: string };
   isLoading: boolean;
   focused: string | null;
@@ -157,6 +159,8 @@ export interface LoginScreenViewProps {
 }
 
 export const LoginScreenView = ({
+  isEmailValid,
+  isPasswordValid,
   form,
   isLoading,
   focused,
@@ -182,6 +186,7 @@ export const LoginScreenView = ({
           style={[
             styles.inputContainer,
             focused === 'email' && styles.inputFocused,
+            !isEmailValid && styles.inputError,
           ]}
         >
           <Text style={styles.label}>이메일</Text>
@@ -204,6 +209,7 @@ export const LoginScreenView = ({
           style={[
             styles.passwordContainer,
             focused === 'password' && styles.inputFocused,
+            !isPasswordValid && styles.inputError,
           ]}
         >
           <View style={styles.passwordContent}>
