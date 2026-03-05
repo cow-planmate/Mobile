@@ -27,7 +27,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     if (!email || !form.password) {
       Toast.show({
         type: 'error',
-        text1: '이메일과 비밀번호를 입력해주세요',
+        text1: '이메일과 비밀번호를 모두 입력해 주세요.',
         position: 'top',
         visibilityTime: 2000,
       });
@@ -38,7 +38,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     } catch (e: any) {
       Toast.show({
         type: 'error',
-        text1: '이메일 또는 비밀번호를 확인해주세요',
+        text1:
+          '계정 정보가 일치하지 않아요. 입력하신 내용을\n다시 확인해 주세요.',
         position: 'top',
         visibilityTime: 2500,
       });

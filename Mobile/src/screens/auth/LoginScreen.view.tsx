@@ -171,6 +171,7 @@ export const LoginScreenView = ({
   onNaverLogin,
 }: LoginScreenViewProps) => {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const isButtonEnabled = form.email.length > 0 && form.password.length > 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -241,7 +242,10 @@ export const LoginScreenView = ({
       </View>
 
       <TouchableOpacity
-        style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
+        style={[
+          styles.submitButton,
+          (isLoading || !isButtonEnabled) && styles.submitButtonDisabled,
+        ]}
         onPress={onLogin}
         disabled={isLoading}
       >

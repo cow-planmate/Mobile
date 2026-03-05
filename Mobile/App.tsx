@@ -21,10 +21,10 @@ const SHOW_STORYBOOK = false;
 /* ── Toast Styles ── */
 const toastStyles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 25,
-    marginHorizontal: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 16,
+    marginHorizontal: 36,
     marginTop: 10,
     backgroundColor: '#1C1C1E',
     alignItems: 'center',
@@ -42,6 +42,8 @@ const toastStyles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     marginLeft: 8,
+    flexShrink: 1,
+    lineHeight: 20,
   },
 });
 
