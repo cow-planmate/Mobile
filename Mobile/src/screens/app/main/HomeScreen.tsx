@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { AppStackParamList } from '../../../navigation/types';
@@ -31,11 +31,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const transportOptions: OptionType[] = [
     {
       label: '대중교통',
-      icon: <Bus size={28} color="#1344FF" strokeWidth={1.5} />,
+      icon: <Bus size={40} color="#1344FF" strokeWidth={1.5} />,
     },
     {
       label: '자동차',
-      icon: <Car size={28} color="#1344FF" strokeWidth={1.5} />,
+      icon: <Car size={40} color="#1344FF" strokeWidth={1.5} />,
     },
   ];
 
@@ -236,3 +236,4 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     />
   );
 }
+

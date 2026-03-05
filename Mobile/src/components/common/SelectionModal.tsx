@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Modal, View, Text, Pressable, TouchableOpacity } from 'react-native';
 import { X, Check } from 'lucide-react-native';
 
@@ -59,14 +59,7 @@ export default function SelectionModal({
                   onPress={() => onSelect(option.label)}
                   activeOpacity={0.7}
                 >
-                  <View
-                    style={[
-                      styles.optionIconContainer,
-                      isSelected && styles.optionIconContainerSelected,
-                    ]}
-                  >
-                    {option.icon}
-                  </View>
+                  <View style={styles.optionIconWrapper}>{option.icon}</View>
                   <Text
                     style={[
                       styles.optionLabel,
@@ -89,3 +82,5 @@ export default function SelectionModal({
     </Modal>
   );
 }
+
+

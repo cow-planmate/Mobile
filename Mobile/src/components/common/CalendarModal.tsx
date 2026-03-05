@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, Pressable, TouchableOpacity } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { X } from 'lucide-react-native';
@@ -95,13 +95,13 @@ export default function CalendarModal({
     const selectedColor = COLORS.primary;
     const textColor = COLORS.white;
 
-    if (!endDate) {
+    if (!endDate || startDate.getTime() === endDate.getTime()) {
       const startKey = startDate.toISOString().split('T')[0];
       marked[startKey] = {
-        customStyles: {
-          container: { backgroundColor: selectedColor, borderRadius: 15 },
-          text: { color: textColor, fontWeight: 'bold' },
-        },
+        startingDay: true,
+        endingDay: true,
+        color: selectedColor,
+        textColor: textColor,
       };
       return marked;
     }
@@ -111,35 +111,12 @@ export default function CalendarModal({
       const key = current.toISOString().split('T')[0];
       const isStart = current.getTime() === startDate.getTime();
       const isEnd = current.getTime() === endDate.getTime();
-      const isSunday = current.getDay() === 0;
-      const isSaturday = current.getDay() === 6;
-
-      const containerStyle: any = {
-        backgroundColor: selectedColor,
-        borderRadius: 0,
-        borderTopLeftRadius: 0,
-        borderBottomLeftRadius: 0,
-        borderTopRightRadius: 0,
-        borderBottomRightRadius: 0,
-      };
-
-      if (isStart || isSunday) {
-        containerStyle.borderTopLeftRadius = 15;
-        containerStyle.borderBottomLeftRadius = 15;
-      }
-      if (isEnd || isSaturday) {
-        containerStyle.borderTopRightRadius = 15;
-        containerStyle.borderBottomRightRadius = 15;
-      }
-      if (isStart && isEnd) {
-        containerStyle.borderRadius = 15;
-      }
 
       marked[key] = {
-        customStyles: {
-          container: containerStyle,
-          text: { color: textColor, fontWeight: 'bold' },
-        },
+        startingDay: isStart,
+        endingDay: isEnd,
+        color: selectedColor,
+        textColor: textColor,
       };
 
       current.setDate(current.getDate() + 1);
@@ -187,19 +164,28 @@ export default function CalendarModal({
           </View>
           <Calendar
             onDayPress={onDayPress}
-            markingType={'custom'}
+            markingType={'period'}
             markedDates={getMarkedDates()}
             theme={{
               todayTextColor: COLORS.primary,
               arrowColor: COLORS.primary,
               monthTextColor: COLORS.text,
               textMonthFontFamily: FONTS.bold,
-              textMonthFontSize: 18,
+              textMonthFontSize: 20,
               textDayHeaderFontFamily: FONTS.semibold,
-              textDayHeaderFontSize: 14,
+              textDayHeaderFontSize: 16,
               textDayFontFamily: FONTS.medium,
-              textDayFontSize: 15,
+              textDayFontSize: 18,
               textSectionTitleColor: COLORS.placeholder,
+              'stylesheet.day.period': {
+                fillers: {
+                  position: 'absolute',
+                  height: 34,
+                  flexDirection: 'row',
+                  left: -2,
+                  right: -2,
+                },
+              },
             }}
           />
           <View style={styles.buttonRow}>
@@ -218,3 +204,4 @@ export default function CalendarModal({
     </Modal>
   );
 }
+

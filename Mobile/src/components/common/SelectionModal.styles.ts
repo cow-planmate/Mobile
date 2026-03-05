@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
+﻿import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const normalize = (size: number) =>
@@ -91,6 +91,9 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: normalize(12),
   },
+  optionIconWrapper: {
+    marginBottom: normalize(12),
+  },
   optionIconContainerSelected: {
     backgroundColor: COLORS.lightBlue,
   },
@@ -115,3 +118,4 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -129,14 +129,8 @@ const InputRow = ({
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <View
-        style={[
-          styles.iconContainer,
-          hasValue && styles.iconContainerFilled,
-          hasError && styles.iconContainerError,
-        ]}
-      >
-        {icon}
+      <View style={[styles.iconContainer, hasValue && styles.iconContainerFilled, hasError && styles.iconContainerError]}>
+        {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { color: hasError ? COLORS.error : COLORS.primary }) : icon}
       </View>
       <View style={styles.rowContent}>
         <View style={[styles.textContainer]}>
@@ -400,3 +394,4 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
     </SafeAreaView>
   );
 };
+
