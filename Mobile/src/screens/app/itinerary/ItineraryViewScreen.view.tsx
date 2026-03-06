@@ -22,7 +22,7 @@ import TimelineItem, {
 } from '../../../components/itinerary/TimelineItem';
 import { Day } from '../../../contexts/ItineraryContext';
 import { SimpleWeatherInfo } from '../../../api/trips';
-import WeatherBadge from '../../../components/weather/WeatherBadge';
+import WeatherHeader from '../../../components/weather/WeatherHeader';
 import {
   styles,
   COLORS,
@@ -235,14 +235,6 @@ export default function ItineraryViewScreenView({
                   >
                     {formatDate(day.date)}
                   </Text>
-                  {weather && (
-                    <WeatherBadge
-                      description={weather.description}
-                      tempMin={weather.temp_min}
-                      tempMax={weather.temp_max}
-                      light={isSelected}
-                    />
-                  )}
                   {day.places.length > 0 && (
                     <Text
                       style={[
@@ -288,6 +280,14 @@ export default function ItineraryViewScreenView({
 
         {selectedDay && (
           <View style={styles.flex1}>
+            {weatherMap[selectedDay.date.toISOString().split('T')[0]] && (
+              <WeatherHeader
+                dayNumber={selectedDay.dayNumber}
+                weather={
+                  weatherMap[selectedDay.date.toISOString().split('T')[0]]
+                }
+              />
+            )}
             <ScrollView
               ref={scrollRef}
               contentContainerStyle={styles.timelineContentContainer}

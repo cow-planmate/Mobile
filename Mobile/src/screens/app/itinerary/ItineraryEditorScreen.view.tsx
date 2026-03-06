@@ -28,7 +28,7 @@ import DetailPopup from '../../../components/itinerary/DetailPopup';
 import PlaceRecommendationList from '../../../components/itinerary/PlaceRecommendationList';
 import { Day } from '../../../contexts/ItineraryContext';
 import { SimpleWeatherInfo } from '../../../api/trips';
-import WeatherBadge from '../../../components/weather/WeatherBadge';
+import WeatherHeader from '../../../components/weather/WeatherHeader';
 import {
   styles,
   COLORS,
@@ -612,14 +612,6 @@ export default function ItineraryEditorScreenView({
                 >
                   {formatDate(day.date)}
                 </Text>
-                {weather && (
-                  <WeatherBadge
-                    description={weather.description}
-                    tempMin={weather.temp_min}
-                    tempMax={weather.temp_max}
-                    light={isSelected}
-                  />
-                )}
                 {day.places.length > 0 && (
                   <Text
                     style={[
@@ -653,14 +645,25 @@ export default function ItineraryEditorScreenView({
       >
         <Tab.Screen name="타임라인">
           {() => (
-            <TimelineComponent
-              ref={timelineScrollRef}
-              selectedDay={selectedDay}
-              onDeletePlace={handleDeletePlace}
-              onEditPlaceTime={handleEditTime}
-              onUpdatePlaceTimes={handleUpdatePlaceTimes}
-              onPressPlace={onOpenDetail}
-            />
+            <View style={{ flex: 1 }}>
+              {selectedDay &&
+                weatherMap[selectedDay.date.toISOString().split('T')[0]] && (
+                  <WeatherHeader
+                    dayNumber={selectedDay.dayNumber}
+                    weather={
+                      weatherMap[selectedDay.date.toISOString().split('T')[0]]
+                    }
+                  />
+                )}
+              <TimelineComponent
+                ref={timelineScrollRef}
+                selectedDay={selectedDay}
+                onDeletePlace={handleDeletePlace}
+                onEditPlaceTime={handleEditTime}
+                onUpdatePlaceTimes={handleUpdatePlaceTimes}
+                onPressPlace={onOpenDetail}
+              />
+            </View>
           )}
         </Tab.Screen>
         <Tab.Screen name="장소추가">
