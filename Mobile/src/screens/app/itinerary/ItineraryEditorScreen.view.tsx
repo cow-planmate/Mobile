@@ -189,6 +189,17 @@ const DraggableTimelineItem = ({
     }
   };
 
+  const startScrollInterval = (bottomEdge: number) => {
+    if (!scrollIntervalRef.current && scrollRef?.current) {
+      scrollIntervalRef.current = setInterval(() => {
+        scrollRef.current?.scrollTo({
+          y: bottomEdge - 200,
+          animated: true,
+        });
+      }, 100);
+    }
+  };
+
   const panGestureMove = Gesture.Pan()
     .onBegin(() => {
       startY.value = top.value;
@@ -200,25 +211,20 @@ const DraggableTimelineItem = ({
       top.value = clampedTop;
 
       // Auto-scroll when near bottom edge
-      if (scrollRef?.current) {
+      if (scrollRef) {
         const bottomEdge = clampedTop + height.value;
         const totalHeight =
           (maxEndMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET * 2;
-        if (bottomEdge > totalHeight - 100 && !scrollIntervalRef.current) {
+        if (bottomEdge > totalHeight - 100) {
           // Trigger scroll down
-          scrollIntervalRef.current = setInterval(() => {
-            scrollRef.current?.scrollTo({
-              y: bottomEdge - 200,
-              animated: true,
-            });
-          }, 100);
+          runOnJS(startScrollInterval)(bottomEdge);
         } else if (bottomEdge <= totalHeight - 100) {
-          clearScrollInterval();
+          runOnJS(clearScrollInterval)();
         }
       }
     })
     .onEnd(event => {
-      clearScrollInterval();
+      runOnJS(clearScrollInterval)();
       const snappedTop =
         Math.round((top.value - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
           GRID_SNAP_HEIGHT +
