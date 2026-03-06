@@ -56,9 +56,17 @@ const TimeGridBackground = React.memo(
           return (
             <View
               key={hour}
-              style={[styles.hourBlock, { height: HOUR_HEIGHT }]}
+              style={[
+                styles.hourBlock,
+                { height: isLastHour ? 0 : HOUR_HEIGHT },
+              ]}
             >
-              <View style={styles.hourLabelContainer}>
+              <View
+                style={[
+                  styles.hourLabelContainer,
+                  { height: isLastHour ? 0 : HOUR_HEIGHT },
+                ]}
+              >
                 <Text style={[styles.timeLabelText, styles.timeLabelTop]}>
                   {`${hourStr(hour)}:00`}
                 </Text>
@@ -95,8 +103,19 @@ const TimeGridBackground = React.memo(
                 )}
               </View>
 
-              <View style={styles.hourContent}>
-                <View style={[styles.quarterBlock, styles.firstQuarterBlock]} />
+              <View
+                style={[
+                  styles.hourContent,
+                  { height: isLastHour ? 0 : HOUR_HEIGHT },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.quarterBlock,
+                    styles.firstQuarterBlock,
+                    isLastHour && { borderTopWidth: 1 },
+                  ]}
+                />
                 {!isLastHour && (
                   <>
                     <View style={styles.quarterBlock} />

@@ -63,52 +63,83 @@ const getDayMeta = (places: Place[]) => {
 
 const TimeGridBackground = React.memo(({ hours }: { hours: number[] }) => {
   const hourStr = (h: number) => h.toString().padStart(2, '0');
+  const endHour = hours.length > 0 ? hours[hours.length - 1] : -1;
 
   return (
     <View style={styles.gridContainer}>
-      {hours.map(hour => (
-        <View key={hour} style={[styles.hourBlock, { height: HOUR_HEIGHT }]}>
-          <View style={styles.hourLabelContainer}>
-            <Text style={[styles.timeLabelText, styles.timeLabelTop]}>
-              {`${hourStr(hour)}:00`}
-            </Text>
-            <Text
+      {hours.map(hour => {
+        const isLastHour = hour === endHour;
+        return (
+          <View
+            key={hour}
+            style={[styles.hourBlock, { height: isLastHour ? 0 : HOUR_HEIGHT }]}
+          >
+            <View
               style={[
-                styles.timeLabelText,
-                styles.minuteLabel,
-                { top: HOUR_HEIGHT / 4 },
+                styles.hourLabelContainer,
+                { height: isLastHour ? 0 : HOUR_HEIGHT },
               ]}
             >
-              {`${hourStr(hour)}:15`}
-            </Text>
-            <Text
-              style={[
-                styles.timeLabelText,
-                styles.minuteLabel,
-                { top: HOUR_HEIGHT / 2 },
-              ]}
-            >
-              {`${hourStr(hour)}:30`}
-            </Text>
-            <Text
-              style={[
-                styles.timeLabelText,
-                styles.minuteLabel,
-                { top: (HOUR_HEIGHT * 3) / 4 },
-              ]}
-            >
-              {`${hourStr(hour)}:45`}
-            </Text>
-          </View>
+              <Text style={[styles.timeLabelText, styles.timeLabelTop]}>
+                {`${hourStr(hour)}:00`}
+              </Text>
+              {!isLastHour && (
+                <>
+                  <Text
+                    style={[
+                      styles.timeLabelText,
+                      styles.minuteLabel,
+                      { top: HOUR_HEIGHT / 4 },
+                    ]}
+                  >
+                    {`${hourStr(hour)}:15`}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.timeLabelText,
+                      styles.minuteLabel,
+                      { top: HOUR_HEIGHT / 2 },
+                    ]}
+                  >
+                    {`${hourStr(hour)}:30`}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.timeLabelText,
+                      styles.minuteLabel,
+                      { top: (HOUR_HEIGHT * 3) / 4 },
+                    ]}
+                  >
+                    {`${hourStr(hour)}:45`}
+                  </Text>
+                </>
+              )}
+            </View>
 
-          <View style={styles.hourContent}>
-            <View style={[styles.quarterBlock, styles.firstQuarterBlock]} />
-            <View style={styles.quarterBlock} />
-            <View style={styles.quarterBlock} />
-            <View style={styles.quarterBlock} />
+            <View
+              style={[
+                styles.hourContent,
+                { height: isLastHour ? 0 : HOUR_HEIGHT },
+              ]}
+            >
+              <View
+                style={[
+                  styles.quarterBlock,
+                  styles.firstQuarterBlock,
+                  isLastHour && { borderTopWidth: 1 },
+                ]}
+              />
+              {!isLastHour && (
+                <>
+                  <View style={styles.quarterBlock} />
+                  <View style={styles.quarterBlock} />
+                  <View style={styles.quarterBlock} />
+                </>
+              )}
+            </View>
           </View>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 });

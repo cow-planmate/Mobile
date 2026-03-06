@@ -125,7 +125,7 @@ export const styles = StyleSheet.create({
     opacity: 0.7,
   },
   timelineContentContainer: {
-    paddingBottom: 20,
+    paddingBottom: 0,
   },
   timelineWrapper: {
     position: 'relative',

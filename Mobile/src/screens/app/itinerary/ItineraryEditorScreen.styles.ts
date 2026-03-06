@@ -125,7 +125,7 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   timelineContentContainer: {
-    paddingBottom: 20,
+    paddingBottom: 0,
   },
   timelineWrapper: {
     position: 'relative',
