@@ -3,6 +3,11 @@ import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { styles } from './IntroScreen.styles';
 
+interface IntroScreenViewProps {
+  onStart: () => void;
+  onLogin: () => void;
+}
+
 const IntroScreenView = ({ onStart, onLogin }: IntroScreenViewProps) => {
   return (
     <SafeAreaView style={styles.container}>

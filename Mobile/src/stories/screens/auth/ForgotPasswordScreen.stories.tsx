@@ -43,20 +43,23 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Step1_Initial: Story = {
+export const Default1: Story = {
+  name: '1',
   args: {
     step: 1,
   },
 };
 
-export const Step1_VerificationSent: Story = {
+export const Default2: Story = {
+  name: '1-1',
   args: {
     step: 1,
     showVerificationInput: true,
   },
 };
 
-export const Step1_Verified: Story = {
+export const Default3: Story = {
+  name: '1-2',
   args: {
     step: 1,
     showVerificationInput: true,
@@ -64,7 +67,8 @@ export const Step1_Verified: Story = {
   },
 };
 
-export const Step2: Story = {
+export const Default4: Story = {
+  name: '2',
   args: {
     step: 2,
   },

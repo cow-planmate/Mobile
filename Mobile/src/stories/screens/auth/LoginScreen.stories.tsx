@@ -37,15 +37,3 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
-
-export const Loading: Story = {
-  args: {
-    isLoading: true,
-  },
-};
-
-export const WithError: Story = {
-  args: {
-    error: '이메일 또는 비밀번호가 올바르지 않습니다.',
-  },
-};

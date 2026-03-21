@@ -18,7 +18,7 @@ const meta = {
   },
   args: {
     step: 1,
-    totalSteps: 3,
+    totalSteps: 4,
     form: {
       email: '',
       verificationCode: '',
@@ -69,12 +69,31 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Step1: Story = {
+  name: '1',
   args: {
     step: 1,
   },
 };
 
+export const Step1_1: Story = {
+  name: '1-1',
+  args: {
+    step: 1,
+    showVerificationInput: true,
+  },
+};
+
+export const Step1_2: Story = {
+  name: '1-2',
+  args: {
+    step: 1,
+    showVerificationInput: true,
+    isEmailVerified: true,
+  },
+};
+
 export const Step2: Story = {
+  name: '2',
   args: {
     step: 2,
     isEmailVerified: true,
@@ -82,10 +101,22 @@ export const Step2: Story = {
 };
 
 export const Step3: Story = {
+  name: '3',
   args: {
     step: 3,
     isEmailVerified: true,
     passwordRequirements: { hasMinLength: true, hasCombination: true },
     isPasswordMatch: true,
+  },
+};
+
+export const Step4: Story = {
+  name: '4',
+  args: {
+    step: 4,
+    isEmailVerified: true,
+    passwordRequirements: { hasMinLength: true, hasCombination: true },
+    isPasswordMatch: true,
+    isNicknameVerified: true,
   },
 };

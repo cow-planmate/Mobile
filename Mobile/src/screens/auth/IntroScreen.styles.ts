@@ -57,15 +57,16 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     width: '100%',
     height: normalize(52),
-    borderRadius: normalize(6),
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: normalize(16),
   },
   startButtonText: {
     color: COLORS.white,
-    fontSize: normalize(16),
+    fontSize: normalize(17),
     fontFamily: FONTS.bold,
+    letterSpacing: 0.3,
   },
   loginPromptContainer: {
     flexDirection: 'row',

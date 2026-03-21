@@ -108,10 +108,18 @@ export const SignupScreenView = ({
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.stepIndicator}>
-          <Text style={styles.stepText}>
-            {step} / {totalSteps}
-          </Text>
+        <Text style={styles.stepText}>STEP {step}</Text>
+        <View style={styles.stepIndicatorContainer}>
+          {Array.from({ length: totalSteps }).map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.stepDot,
+                { width: i + 1 === step ? normalize(24) : normalize(8) },
+                i + 1 <= step && styles.stepDotActive,
+              ]}
+            />
+          ))}
         </View>
       </View>
 
