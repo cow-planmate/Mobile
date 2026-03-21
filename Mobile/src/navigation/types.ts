@@ -43,3 +43,10 @@ export type AppStackParamList = {
     planId?: number;
   };
 };
+
+export type AuthStackParamList = {
+  Intro: undefined;
+  Login: undefined;
+  Signup: undefined;
+  ForgotPassword: undefined;
+};
