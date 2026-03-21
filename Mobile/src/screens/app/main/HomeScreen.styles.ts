@@ -1,9 +1,6 @@
 import { StyleSheet, Dimensions, PixelRatio, Platform } from 'react-native';
 import { theme } from '../../../theme/theme';
-
-const { width } = Dimensions.get('window');
-export const normalize = (size: number) =>
-  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
+import { normalize } from '../../../utils/normalize';
 
 export const COLORS = theme.colors;
 
@@ -21,152 +18,130 @@ export const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingBottom: normalize(40),
   },
-
-  // [변경] 상단 버튼 네비게이션 영역
-  topNavigation: {
+  // [NEW] Top Header Area (planMate logo + menu)
+  topBar: {
     flexDirection: 'row',
-    justifyContent: 'flex-end', // 오른쪽 정렬
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    marginTop: Platform.OS === 'android' ? normalize(16) : normalize(8),
-    paddingHorizontal: normalize(24),
-    marginBottom: normalize(12), // 인사말과의 간격
+    paddingHorizontal: normalize(20),
+    paddingVertical: normalize(12),
+    marginTop: Platform.OS === 'ios' ? normalize(44) : normalize(24), // 스마트폰 상태바 높이 고려하여 아래로 이동
+    backgroundColor: 'transparent', // 배경색을 투명으로 변경하여 일관성 유지
   },
-
-  // [변경] 버튼 그룹
-  headerButtons: {
+  topIcons: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: normalize(12),
   },
-  iconButton: {
-    width: normalize(40),
-    height: normalize(40),
+  userAvatar: {
+    width: normalize(28),
+    height: normalize(28),
+    borderRadius: normalize(14),
+    backgroundColor: '#900',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.round,
+    overflow: 'hidden',
   },
-
-  // [변경] 인사말 영역 (단독 배치)
-  greetingSection: {
-    paddingHorizontal: normalize(24),
-    marginBottom: normalize(8),
-  },
-  headerGreeting: {
-    fontSize: normalize(28),
-    color: theme.colors.text,
-    fontFamily: FONTS.bold,
-    letterSpacing: -0.5,
-    lineHeight: normalize(36),
-  },
-  headerNickname: {
-    color: theme.colors.primary,
-  },
-  headerSubtitle: {
-    fontSize: normalize(15),
-    color: theme.colors.textSecondary,
-    fontFamily: FONTS.regular,
-    marginTop: normalize(8),
-    lineHeight: normalize(22),
-  },
-
-  whiteSection: {
-    flex: 1,
-    paddingHorizontal: normalize(24),
-    backgroundColor: theme.colors.background,
-    marginTop: normalize(28),
-  },
-  sectionTitle: {
-    fontSize: normalize(17),
-    fontFamily: FONTS.bold,
-    color: theme.colors.text,
-    marginBottom: normalize(16),
-    letterSpacing: -0.3,
-  },
-  inputCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.l,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  // [NEW] Hero Section with Background Image
+  heroSection: {
+    width: '100%',
+    height: normalize(185), // 세로 간격 살짝 증가 (160 -> 185)
+    backgroundColor: '#E5E7EB',
+    justifyContent: 'flex-end',
+    paddingBottom: normalize(48), // 텍스트 위치 위로 조정 (32 -> 48)
     paddingHorizontal: normalize(20),
-    marginBottom: normalize(24),
+  },
+  heroImage: {
+    ...StyleSheet.absoluteFillObject,
+    resizeMode: 'cover',
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.2)', // Subtle dark overlay for text legibility
+  },
+  heroTitle: {
+    fontSize: normalize(28), // 텍스트 크기 살짝 증가 (24 -> 28)
+    fontFamily: FONTS.bold,
+    color: theme.colors.white,
+    lineHeight: normalize(36), // 크기 증가에 따른 줄 간격 조정
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+
+  // [NEW] Main Action Card (White portion)
+  actionContainer: {
+    backgroundColor: theme.colors.background,
+    borderTopLeftRadius: 0, // 둥근 모서리 삭제
+    borderTopRightRadius: 0, // 둥근 모서리 삭제
+    marginTop: -normalize(40), // 위로 더 늘림 (-20 -> -40)
+    paddingHorizontal: normalize(20),
+    paddingTop: normalize(24),
+  },
+  cardWrapper: {
+    backgroundColor: theme.colors.white,
+    borderRadius: 12,
+    padding: normalize(20),
+    // Shadow for elevation
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 8,
   },
   inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: normalize(72),
-    paddingVertical: normalize(12),
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    paddingVertical: normalize(16),
+    borderBottomWidth: 3, // 구분선 굵기를 3px로 수정
+    borderBottomColor: '#EEEEEE',
   },
   inputRowLast: {
     borderBottomWidth: 0,
+    paddingBottom: normalize(24),
   },
-  rowContent: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  iconContainer: {
-    width: normalize(40),
-    height: normalize(40),
-    borderRadius: theme.borderRadius.m,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: normalize(14),
-    backgroundColor: theme.colors.sub,
-  },
-  iconContainerFilled: {
-    backgroundColor: '#E0E7FF',
-  },
-  iconContainerError: {
-    backgroundColor: '#FEF2F2',
-  },
-
-  textContainer: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-
   label: {
-    fontSize: normalize(11),
-    color: theme.colors.textSecondary,
-    fontFamily: FONTS.semibold,
-    marginBottom: normalize(4),
-    letterSpacing: -0.2,
+    fontSize: normalize(13),
+    fontFamily: FONTS.medium,
+    color: '#868B94',
+    marginBottom: normalize(8),
+  },
+  valueContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   valueText: {
-    fontSize: normalize(14),
+    fontSize: normalize(16),
+    fontFamily: FONTS.medium, // bold -> medium으로 변경
     color: theme.colors.text,
-    fontFamily: FONTS.medium,
-    letterSpacing: -0.3,
   },
   placeholderText: {
-    fontSize: normalize(14),
-    color: theme.colors.textTertiary,
-    fontFamily: FONTS.regular,
-    letterSpacing: -0.3,
+    fontSize: normalize(16),
+    fontFamily: FONTS.medium, // bold -> medium으로 변경
+    color: '#D1D5DB',
+  },
+  submitButton: {
+    backgroundColor: '#1344FF',
+    height: normalize(52),
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: normalize(8),
+  },
+  submitButtonText: {
+    fontSize: normalize(16),
+    fontFamily: FONTS.bold,
+    color: theme.colors.white,
   },
 
   arrowContainer: {
     marginLeft: normalize(8),
   },
 
-  submitButton: {
-    width: '100%',
-    height: normalize(56),
-    borderRadius: theme.borderRadius.m,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-  },
   submitButtonDisabled: {
     backgroundColor: theme.colors.disabled,
   },
-  submitButtonText: {
+  submitButtonTextTwo: {
     fontSize: theme.typography.size.m,
     fontFamily: FONTS.semibold,
     color: theme.colors.white,

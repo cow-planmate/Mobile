@@ -401,7 +401,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     // Disconnect WebSocket immediately when completing
     disconnect();
 
-    // If plan already exists (editing from MyPage), just navigate to view
+    // If plan already exists (editing from MySchedule), just navigate to view
     if (route.params.planId) {
       navigation.navigate('ItineraryView', {
         days,

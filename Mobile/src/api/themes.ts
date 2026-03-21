@@ -63,7 +63,7 @@ export const savePreferredThemes = async (
 };
 
 /**
- * 선호 테마 카테고리별 변경 (마이페이지)
+ * 선호 테마 카테고리별 변경 (내 일정)
  * PATCH /api/user/preferredThemes
  */
 export const changePreferredThemes = async (

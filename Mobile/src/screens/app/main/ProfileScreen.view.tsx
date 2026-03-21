@@ -5,7 +5,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
-  Pressable,
+  StatusBar,
 } from 'react-native';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import {
@@ -14,20 +14,24 @@ import {
   Calendar,
   Heart,
   Lock,
-  Pencil,
   ChevronRight,
   LogOut,
-  UserX,
+  MapPin,
+  Utensils,
+  Hotel,
+  Pencil,
 } from 'lucide-react-native';
+import { Image } from 'react-native';
+import gravatarUrl from '../../../utils/gravatarUrl';
 import UpdateValueModal from '../../../components/common/UpdateValueModal';
 import UpdateGenderModal from '../../../components/common/UpdateGenderModal';
 import UpdateThemeModal from '../../../components/common/UpdateThemeModal';
 import UpdatePasswordModal from '../../../components/common/UpdatePasswordModal';
 import { styles, COLORS } from './ProfileScreen.styles';
 
-/* ── Reusable row components ── */
+/* ── Reusable card components ── */
 
-const InfoRow = ({
+const InfoCard = ({
   icon,
   label,
   value,
@@ -37,46 +41,34 @@ const InfoRow = ({
   label: string;
   value: string;
   onPress?: () => void;
-}) => {
-  const content = (
-    <View style={styles.infoRow}>
-      <View style={styles.infoIconWrap}>{icon}</View>
-      <View style={styles.infoBody}>
-        <Text style={styles.infoLabel}>{label}</Text>
-        <Text style={styles.infoValue} numberOfLines={1}>
-          {value}
-        </Text>
+}) => (
+  <View style={styles.sectionCard}>
+    <View style={styles.cardHeader}>
+      <View style={styles.cardTitleRow}>
+        {icon}
+        <Text style={styles.cardTitle}>{label}</Text>
       </View>
       {onPress && (
-        <View style={styles.infoAction}>
-          <ChevronRight size={16} color={COLORS.placeholder} strokeWidth={2} />
-        </View>
+        <TouchableOpacity onPress={onPress}>
+          <Text style={styles.changeText}>변경하기</Text>
+        </TouchableOpacity>
       )}
     </View>
-  );
+    <View style={styles.cardContent}>
+      <Text style={styles.cardValue}>{value}</Text>
+    </View>
+  </View>
+);
 
-  if (onPress) {
-    return (
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => (pressed ? { opacity: 0.7 } : undefined)}
-      >
-        {content}
-      </Pressable>
-    );
-  }
-  return content;
-};
+const ThemeTag = ({ text }: { text: string }) => (
+  <View style={styles.tag}>
+    <Text style={styles.tagText}>{text}</Text>
+  </View>
+);
 
-export interface ProfileScreenViewProps {
+interface ProfileScreenViewProps {
   loading: boolean;
-  user: {
-    name: string;
-    email: string;
-    age: string;
-    gender: string;
-    preferredTheme: string;
-  };
+  user: any;
   isNicknameModalVisible: boolean;
   setNicknameModalVisible: (visible: boolean) => void;
   isAgeModalVisible: boolean;
@@ -87,13 +79,13 @@ export interface ProfileScreenViewProps {
   setThemeModalVisible: (visible: boolean) => void;
   isPasswordModalVisible: boolean;
   setPasswordModalVisible: (visible: boolean) => void;
-  handleUpdateNickname: (val: string) => Promise<void>;
-  handleUpdateAge: (val: string) => Promise<void>;
-  handleUpdateGender: (val: string) => Promise<void>;
-  handleUpdateTheme: () => Promise<void>;
-  handleUpdatePassword: (current: string, newPass: string) => Promise<void>;
+  handleUpdateNickname: (val: string) => void;
+  handleUpdateAge: (val: string) => void;
+  handleUpdateGender: (val: string) => void;
+  handleUpdateTheme: () => void;
+  handleUpdatePassword: (cur: string, n: string) => void;
   handleResign: () => void;
-  logout: () => Promise<void>;
+  logout: () => void;
 }
 
 export default function ProfileScreenView({
@@ -127,123 +119,110 @@ export default function ProfileScreenView({
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* ── Profile Header ── */}
-        <View style={styles.profileHeader}>
-          <View style={styles.avatarContainer}>
-            <User size={40} color={COLORS.primary} strokeWidth={1.5} />
+      <StatusBar barStyle="dark-content" />
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* 프로필 요약 (카드 형태 제거) */}
+        <View style={styles.profileInfoArea}>
+          <View style={styles.avatarWrap}>
+            {user.email ? (
+              <Image
+                source={{ uri: gravatarUrl(user.email, 200) }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <User size={40} color="#D1D5DB" />
+            )}
           </View>
-          <Pressable
-            style={styles.profileNameRow}
+          <TouchableOpacity
+            style={styles.nicknameRow}
             onPress={() => setNicknameModalVisible(true)}
           >
-            <Text style={styles.profileName}>{user.name}</Text>
-            <View style={styles.editBadge}>
-              <Pencil size={14} color={COLORS.primary} strokeWidth={2} />
-            </View>
-          </Pressable>
-          <Text style={styles.profileEmail}>{user.email}</Text>
+            <Text style={styles.nicknameText}>{user.name}</Text>
+            <Pencil size={20} color="#6B7280" style={styles.editIcon} />
+          </TouchableOpacity>
         </View>
 
-        {/* ── Account Info ── */}
-        <Text style={styles.sectionLabel}>계정 정보</Text>
-        <View style={styles.sectionContainer}>
-          <InfoRow
-            icon={
-              <Mail size={18} color={COLORS.textSecondary} strokeWidth={1.5} />
-            }
-            label="이메일"
-            value={user.email}
-          />
-          <View style={styles.rowSeparator} />
-          <InfoRow
-            icon={
-              <Calendar
-                size={18}
-                color={COLORS.textSecondary}
-                strokeWidth={1.5}
-              />
-            }
-            label="나이"
-            value={user.age}
-            onPress={() => setAgeModalVisible(true)}
-          />
-          <View style={styles.rowSeparator} />
-          <InfoRow
-            icon={
-              <User size={18} color={COLORS.textSecondary} strokeWidth={1.5} />
-            }
-            label="성별"
-            value={user.gender}
-            onPress={() => setGenderModalVisible(true)}
-          />
+        {/* 이메일 카드 */}
+        <InfoCard
+          icon={<Mail size={20} color="#1F2937" />}
+          label="이메일"
+          value={user.email}
+        />
+
+        {/* 나이 카드 */}
+        <InfoCard
+          icon={<Calendar size={20} color="#1F2937" />}
+          label="나이"
+          value={user.age}
+          onPress={() => setAgeModalVisible(true)}
+        />
+
+        {/* 성별 카드 */}
+        <InfoCard
+          icon={<User size={20} color="#1F2937" />}
+          label="성별"
+          value={user.gender}
+          onPress={() => setGenderModalVisible(true)}
+        />
+
+        {/* 선호테마 카드 */}
+        <View style={styles.sectionCard}>
+          <View style={styles.cardHeader}>
+            <View style={styles.cardTitleRow}>
+              <Heart size={20} color="#1F2937" fill="#1F2937" />
+              <Text style={styles.cardTitle}>선호테마</Text>
+            </View>
+            <TouchableOpacity onPress={() => setThemeModalVisible(true)}>
+              <Text style={styles.changeText}>변경하기</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.themeCategory}>
+            <View style={styles.themeCategoryHeader}>
+              <MapPin size={18} color="#4B5563" />
+              <Text style={styles.themeCategoryTitle}>관광지</Text>
+            </View>
+            <View style={styles.tagContainer}>
+              <ThemeTag text="해수욕장" />
+            </View>
+          </View>
+
+          <View style={styles.themeCategory}>
+            <View style={styles.themeCategoryHeader}>
+              <Hotel size={18} color="#4B5563" />
+              <Text style={styles.themeCategoryTitle}>숙소</Text>
+            </View>
+            <View style={styles.tagContainer}>
+              <ThemeTag text="캠핑장" />
+            </View>
+          </View>
+
+          <View style={styles.themeCategory}>
+            <View style={styles.themeCategoryHeader}>
+              <Utensils size={18} color="#4B5563" />
+              <Text style={styles.themeCategoryTitle}>식당</Text>
+            </View>
+            <View style={styles.tagContainer}>
+              <ThemeTag text="분식" />
+            </View>
+          </View>
         </View>
 
-        {/* ── Preferences ── */}
-        <Text style={styles.sectionLabel}>여행 설정</Text>
-        <View style={styles.sectionContainer}>
-          <InfoRow
-            icon={
-              <Heart size={18} color={COLORS.textSecondary} strokeWidth={1.5} />
-            }
-            label="선호 테마"
-            value={user.preferredTheme}
-            onPress={() => setThemeModalVisible(true)}
-          />
-          <View style={styles.rowSeparator} />
-          <InfoRow
-            icon={
-              <Lock size={18} color={COLORS.textSecondary} strokeWidth={1.5} />
-            }
-            label="비밀번호"
-            value="••••••••"
-            onPress={() => setPasswordModalVisible(true)}
-          />
-        </View>
+        {/* 비밀번호 카드 */}
+        <InfoCard
+          icon={<Lock size={20} color="#4B5563" fill="#4B5563" />}
+          label="비밀번호"
+          value="변경하기를 통해 수정이 가능합니다."
+          onPress={() => setPasswordModalVisible(true)}
+        />
 
-        {/* ── Danger Zone ── */}
-        <Text style={styles.sectionLabel}>기타</Text>
-        <View style={styles.dangerSection}>
-          <Pressable
-            onPress={logout}
-            style={({ pressed }) => [
-              styles.dangerRow,
-              pressed && { opacity: 0.7 },
-            ]}
-          >
-            <View style={styles.dangerIconWrap}>
-              <LogOut
-                size={18}
-                color={COLORS.textSecondary}
-                strokeWidth={1.5}
-              />
-            </View>
-            <Text style={styles.dangerText}>로그아웃</Text>
-            <ChevronRight
-              size={16}
-              color={COLORS.placeholder}
-              strokeWidth={2}
-            />
-          </Pressable>
-          <View style={styles.rowSeparator} />
-          <Pressable
-            onPress={handleResign}
-            style={({ pressed }) => [
-              styles.dangerRow,
-              pressed && { opacity: 0.7 },
-            ]}
-          >
-            <View
-              style={[styles.dangerIconWrap, { backgroundColor: '#FEF2F2' }]}
-            >
-              <UserX size={18} color={COLORS.error} strokeWidth={1.5} />
-            </View>
-            <Text style={[styles.dangerText, styles.dangerTextRed]}>
-              회원 탈퇴
-            </Text>
-            <ChevronRight size={16} color={COLORS.error} strokeWidth={2} />
-          </Pressable>
-        </View>
+        {/* 하단 버튼 */}
+        <TouchableOpacity style={styles.resignButton} onPress={handleResign}>
+          <Text style={styles.resignText}>탈퇴하기</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* ── Modals ── */}

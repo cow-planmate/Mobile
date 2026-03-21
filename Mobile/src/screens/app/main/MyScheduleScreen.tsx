@@ -5,13 +5,15 @@ import axios from 'axios';
 import { API_URL } from '@env';
 import { SimplePlanVO } from '../../../types/env';
 import { AppStackParamList } from '../../../navigation/types';
-import MyPageScreenView from './MyPageScreen.view';
+import MyScheduleScreenView from './MyScheduleScreen.view';
 import { useAlert } from '../../../contexts/AlertContext';
+import { useAuth } from '../../../contexts/AuthContext';
 
-export default function MyPageScreen() {
+export default function MyScheduleScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const { showAlert } = useAlert();
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [myItineraries, setMyItineraries] = useState<SimplePlanVO[]>([]);
@@ -23,6 +25,14 @@ export default function MyPageScreen() {
   const [selectedPlan, setSelectedPlan] = useState<SimplePlanVO | null>(null);
   const [renameModalVisible, setRenameModalVisible] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
+
+  const onNotificationPress = () => {
+    // 알림창 구현 필요시 추가
+  };
+
+  const onNavigateProfile = () => {
+    // 프로필 이동 구현 필요시 추가
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -137,7 +147,7 @@ export default function MyPageScreen() {
   };
 
   return (
-    <MyPageScreenView
+    <MyScheduleScreenView
       loading={loading}
       myItineraries={myItineraries}
       sharedItineraries={sharedItineraries}
@@ -153,6 +163,10 @@ export default function MyPageScreen() {
       handleRenameTitle={handleRenameTitle}
       navigateToView={navigateToView}
       navigateToEditor={navigateToEditor}
+      email={user?.email}
+      nickname={user?.nickname}
+      onNotificationPress={onNotificationPress}
+      onNavigateProfile={onNavigateProfile}
     />
   );
 }

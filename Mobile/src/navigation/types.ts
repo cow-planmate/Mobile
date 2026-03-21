@@ -37,6 +37,7 @@ export type AppStackParamList = {
     fieldToUpdate: 'departure' | 'destination';
     currentValue: string;
   };
+  MySchedule: undefined;
   AddPlace: {
     dayIndex: number;
     destination?: string;

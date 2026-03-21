@@ -1,4 +1,5 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform, PixelRatio, Dimensions } from 'react-native';
+import { normalize } from '../../../utils/normalize';
 
 export const COLORS = {
   primary: '#1344FF',
@@ -25,127 +26,146 @@ export const FONTS = {
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.surface,
+    backgroundColor: '#F7F8FA', // PNG처럼 연한 회색 배경
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: '#F7F8FA',
   },
   scrollContainer: {
-    paddingBottom: 40,
+    paddingTop: normalize(20),
+    paddingBottom: normalize(40),
+    paddingHorizontal: normalize(20),
   },
 
-  /* ── Profile Header ── */
-  profileHeader: {
-    backgroundColor: COLORS.white,
-    paddingTop: 48,
-    paddingBottom: 28,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+  /* ── Page Title ── */
+  pageHeader: {
+    marginBottom: normalize(24),
   },
-  avatarContainer: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: COLORS.sub,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  profileNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  profileName: {
-    fontSize: 22,
+  pageTitle: {
+    fontSize: normalize(28),
     fontFamily: FONTS.bold,
-    color: COLORS.text,
+    color: '#111827',
   },
-  editBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: COLORS.surface,
+
+  /* ── Profile Info Area (No Card) ── */
+  profileInfoArea: {
+    paddingVertical: normalize(32),
+    alignItems: 'center',
+    marginBottom: normalize(20),
+  },
+  avatarWrap: {
+    width: normalize(90),
+    height: normalize(90),
+    borderRadius: normalize(45),
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  profileEmail: {
-    fontSize: 14,
-    fontFamily: FONTS.regular,
-    color: COLORS.placeholder,
-    marginTop: 4,
-  },
-
-  /* ── Sections ── */
-  sectionContainer: {
-    marginTop: 12,
-    marginHorizontal: 16,
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     overflow: 'hidden',
+    marginBottom: normalize(16),
   },
-  sectionLabel: {
-    fontSize: 13,
-    fontFamily: FONTS.semibold,
-    color: COLORS.placeholder,
-    marginTop: 20,
-    marginBottom: 8,
-    marginLeft: 20,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
-
-  /* ── Info Row ── */
-  infoRow: {
+  nicknameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    gap: normalize(8),
   },
-  infoIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: COLORS.surface,
-    justifyContent: 'center',
+  nicknameText: {
+    fontSize: normalize(24),
+    fontFamily: FONTS.bold,
+    color: '#111827',
+  },
+  editIcon: {
+    marginLeft: normalize(4),
+  },
+  sectionCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    // 그림자 제거 또는 매우 약하게 (PNG 기준)
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginRight: 12,
+    marginBottom: 12,
   },
-  infoBody: {
-    flex: 1,
+  cardTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  infoLabel: {
-    fontSize: 12,
-    fontFamily: FONTS.regular,
-    color: COLORS.placeholder,
-    marginBottom: 2,
+  cardTitle: {
+    fontSize: 18,
+    fontFamily: FONTS.bold,
+    color: '#111827',
   },
-  infoValue: {
-    fontSize: 15,
+  changeText: {
+    fontSize: 14,
     fontFamily: FONTS.medium,
-    color: COLORS.text,
+    color: COLORS.primary,
   },
-  infoAction: {
+  cardContent: {
+    marginLeft: 30, // 아이콘 너비만큼 들여쓰기
+  },
+  cardValue: {
+    fontSize: 14,
+    fontFamily: FONTS.medium,
+    color: '#6B7280',
+  },
+
+  /* ── Theme Section specific ── */
+  themeCategory: {
+    marginTop: 16,
+  },
+  themeCategoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  themeCategoryTitle: {
+    fontSize: 15,
+    fontFamily: FONTS.bold,
+    color: '#374151',
+  },
+  tagContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginLeft: 24,
+  },
+  tag: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#E8F1FF',
+    borderWidth: 1,
+    borderColor: '#D0E1FF',
+  },
+  tagText: {
+    fontSize: 13,
+    fontFamily: FONTS.medium,
+    color: COLORS.primary,
+  },
+
+  /* ── Footer ── */
+  resignButton: {
+    marginTop: 10,
     paddingHorizontal: 4,
   },
-  infoActionText: {
-    fontSize: 13,
-    color: COLORS.primary,
-    fontFamily: FONTS.semibold,
-  },
-  rowSeparator: {
-    height: 1,
-    backgroundColor: COLORS.borderLight,
-    marginLeft: 64,
+  resignText: {
+    fontSize: 14,
+    fontFamily: FONTS.medium,
+    color: '#EF4444',
   },
 
   /* ── Danger Zone ── */

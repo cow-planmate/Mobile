@@ -2,10 +2,11 @@ import React from 'react';
 import {
   View,
   Text,
-  SafeAreaView,
+  StatusBar,
   TouchableOpacity,
   ScrollView,
   Pressable,
+  Image,
 } from 'react-native';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import {
@@ -14,12 +15,15 @@ import {
   MapPin,
   Users,
   FolderOpen,
+  Bell,
+  User,
 } from 'lucide-react-native';
 import UpdateValueModal from '../../../components/common/UpdateValueModal';
 import ShareModal from '../../../components/common/ShareModal';
 import MenuModal from '../../../components/common/MenuModal';
 import { SimplePlanVO } from '../../../types/env';
-import { styles, COLORS } from './MyPageScreen.styles';
+import { styles, COLORS } from './MyScheduleScreen.styles';
+import gravatarUrl from '../../../utils/gravatarUrl';
 
 export const MENU_OPTIONS = [
   { label: '제목 바꾸기', action: 'rename' },
@@ -44,26 +48,23 @@ const ItineraryCard = ({
     onPress={onPress}
   >
     <View style={styles.itineraryIconContainer}>
-      <Calendar size={20} color={COLORS.primary} strokeWidth={1.5} />
+      <Calendar size={24} color={COLORS.primary} strokeWidth={2} />
     </View>
     <View style={styles.itineraryContent}>
       <Text style={styles.itineraryTitle} numberOfLines={1}>
         {title}
       </Text>
-      <View style={styles.itineraryDateRow}>
-        <MapPin size={12} color={COLORS.placeholder} strokeWidth={1.5} />
-        <Text style={styles.itinerarySubtitle} numberOfLines={1}>
-          {subtitle}
-        </Text>
-      </View>
+      <Text style={styles.itinerarySubtitle} numberOfLines={1}>
+        {subtitle}
+      </Text>
     </View>
     <TouchableOpacity onPress={onPressMore} style={styles.moreButton}>
-      <MoreVertical size={16} color={COLORS.placeholder} strokeWidth={2} />
+      <MoreVertical size={20} color="#9CA3AF" strokeWidth={2} />
     </TouchableOpacity>
   </Pressable>
 );
 
-export interface MyPageScreenViewProps {
+export interface MyScheduleScreenViewProps {
   loading: boolean;
   myItineraries: SimplePlanVO[];
   sharedItineraries: SimplePlanVO[];
@@ -79,9 +80,14 @@ export interface MyPageScreenViewProps {
   handleRenameTitle: (newTitle: string) => Promise<void>;
   navigateToView: (plan: SimplePlanVO) => void;
   navigateToEditor: (plan: SimplePlanVO) => void;
+  nickname?: string;
+  email?: string;
+  pendingRequestsCount?: number;
+  onNotificationPress: () => void;
+  onNavigateProfile: () => void;
 }
 
-export default function MyPageScreenView({
+export default function MyScheduleScreenView({
   loading,
   myItineraries,
   sharedItineraries,
@@ -96,7 +102,11 @@ export default function MyPageScreenView({
   handleMenuSelect,
   handleRenameTitle,
   navigateToView,
-}: MyPageScreenViewProps) {
+  email,
+  pendingRequestsCount = 0,
+  onNotificationPress,
+  onNavigateProfile,
+}: MyScheduleScreenViewProps) {
   if (loading) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
@@ -106,28 +116,57 @@ export default function MyPageScreenView({
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* ── Page Header ── */}
-        <View style={styles.pageHeader}>
-          <Text style={styles.pageTitle}>마이페이지</Text>
-          <Text style={styles.pageSubtitle}>나의 여행 일정을 관리하세요</Text>
-        </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
 
+      {/* ── Top Bar (Unified with Home) ── */}
+      <View style={styles.topBar}>
+        <View style={styles.topIcons}>
+          <TouchableOpacity
+            style={styles.userAvatar}
+            onPress={onNavigateProfile}
+          >
+            {email ? (
+              <Image
+                source={{ uri: gravatarUrl(email, 100) }}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover"
+              />
+            ) : (
+              <User size={24} color="#FFF" />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onNotificationPress}>
+            <Bell size={24} color="#000" />
+            {pendingRequestsCount > 0 && <View style={styles.badge} />}
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {/* ── My Itineraries ── */}
         <View style={styles.sectionWrapper}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleContainer}>
-              <View style={styles.sectionIconWrap}>
-                <FolderOpen size={16} color={COLORS.primary} strokeWidth={2} />
-              </View>
+            <View style={styles.sectionTitleRow}>
               <Text style={styles.sectionTitle}>나의 일정</Text>
+              <View style={styles.sectionRightContainer}>
+                <View style={styles.sectionInfoWrap}>
+                  <Calendar size={16} color="#868B94" />
+                  <Text style={styles.sectionCountText}>
+                    {myItineraries.length}개의 계획
+                  </Text>
+                </View>
+                <TouchableOpacity style={styles.multiDeleteButton}>
+                  <Text style={styles.multiDeleteButtonText}>다중삭제</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={styles.sectionBadge}>
-              <Text style={styles.sectionBadgeText}>
-                {myItineraries.length}
-              </Text>
-            </View>
+            <Text style={styles.sectionSubtitle}>
+              직접 생성한 일정을 관리하세요.
+            </Text>
           </View>
 
           {myItineraries.length === 0 ? (
@@ -152,28 +191,24 @@ export default function MyPageScreenView({
           )}
         </View>
 
-        <View style={styles.sectionSeparator} />
-
         {/* ── Shared Itineraries ── */}
         <View style={styles.sectionWrapper}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleContainer}>
-              <View
-                style={[styles.sectionIconWrap, { backgroundColor: '#FEF3C7' }]}
-              >
-                <Users size={16} color="#F59E0B" strokeWidth={2} />
+            <View style={styles.sectionTitleRow}>
+              <Text style={styles.sectionTitle}>우리들의 일정</Text>
+              <View style={styles.sectionRightContainer}>
+                <View style={styles.sectionInfoWrap}>
+                  <Calendar size={16} color="#868B94" />
+                  <Text style={styles.sectionCountText}>
+                    {sharedItineraries.length}개의 계획
+                  </Text>
+                </View>
               </View>
-              <Text style={styles.sectionTitle}>공유된 일정</Text>
             </View>
-            <View style={[styles.sectionBadge, { backgroundColor: '#FEF3C7' }]}>
-              <Text style={[styles.sectionBadgeText, { color: '#F59E0B' }]}>
-                {sharedItineraries.length}
-              </Text>
-            </View>
+            <Text style={styles.sectionSubtitle}>
+              초대받은 일정에서 다른 멤버와 함께 편집하세요.
+            </Text>
           </View>
-          <Text style={styles.sectionSubtitle}>
-            초대받은 일정에서 다른 멤버와 함께 편집하세요
-          </Text>
 
           {sharedItineraries.length === 0 ? (
             <View style={styles.emptyContainer}>
@@ -190,7 +225,7 @@ export default function MyPageScreenView({
                 subtitle={
                   item.startDate && item.endDate
                     ? `${item.startDate} ~ ${item.endDate}`
-                    : '초대된 일정'
+                    : '클릭하여 상세보기'
                 }
                 onPress={() => navigateToView(item)}
                 onPressMore={() => handleMenuPress(item)}
@@ -222,6 +257,6 @@ export default function MyPageScreenView({
         onClose={() => setShareModalVisible(false)}
         planId={selectedPlan?.planId}
       />
-    </SafeAreaView>
+    </View>
   );
 }

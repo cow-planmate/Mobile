@@ -168,7 +168,7 @@ const ForgotPasswordScreen = () => {
       showAlert({
         title: '발송 완료',
         message:
-          '이메일로 임시 비밀번호가 발송되었습니다.\n\n로그인 후 마이페이지에서 비밀번호를 꼭 변경해주세요.',
+          '이메일로 임시 비밀번호가 발송되었습니다.\n\n로그인 후 내 일정에서 비밀번호를 꼭 변경해주세요.',
         type: 'success',
         buttons: [
           {

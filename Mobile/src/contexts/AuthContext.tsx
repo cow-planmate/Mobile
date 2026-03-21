@@ -9,6 +9,7 @@ import '../api/axiosConfig';
 interface User {
   userId: number;
   nickname: string;
+  email: string;
 }
 
 interface AuthContextType {
@@ -100,10 +101,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         );
       }
 
-      const { accessToken, refreshToken, userId, nickname } = data;
+      const {
+        accessToken,
+        refreshToken,
+        userId,
+        nickname,
+        email: userEmail,
+      } = data;
 
       if (accessToken && refreshToken && userId) {
-        const userData: User = { userId, nickname: nickname || '사용자' };
+        const userData: User = {
+          userId,
+          nickname: nickname || '사용자',
+          email: userEmail || email,
+        };
 
         axios.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import type { Meta, StoryObj } from '@storybook/react-native';
-import MyPageScreenView from '../../../screens/app/main/MyPageScreen.view';
+import MyScheduleScreenView from '../../../screens/app/main/MyScheduleScreen.view';
 
 const mockPlans = [
   {
@@ -19,8 +19,8 @@ const mockPlans = [
 ];
 
 const meta = {
-  title: 'Screens/Main/MyPageScreen',
-  component: MyPageScreenView,
+  title: 'Screens/Main/MyScheduleScreen',
+  component: MyScheduleScreenView,
   decorators: [
     Story => (
       <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
@@ -47,7 +47,7 @@ const meta = {
     navigateToView: plan => console.log('Navigate to view', plan),
     navigateToEditor: plan => console.log('Navigate to editor', plan),
   },
-} satisfies Meta<typeof MyPageScreenView>;
+} satisfies Meta<typeof MyScheduleScreenView>;
 
 export default meta;
 

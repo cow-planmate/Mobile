@@ -185,6 +185,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   return (
     <HomeScreenView
       nickname={user?.nickname}
+      email={user?.email}
       pendingRequestsCount={pendingRequests.length}
       destination={destination}
       transport={transport}
@@ -236,4 +237,3 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     />
   );
 }
-

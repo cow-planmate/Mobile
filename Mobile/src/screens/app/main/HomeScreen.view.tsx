@@ -6,6 +6,8 @@ import {
   Pressable,
   TouchableOpacity,
   ScrollView,
+  StatusBar,
+  Image,
 } from 'react-native';
 import {
   Map,
@@ -16,6 +18,8 @@ import {
   Check,
   Bell,
   Settings,
+  Edit2,
+  User,
 } from 'lucide-react-native';
 import Animated, {
   useSharedValue,
@@ -34,6 +38,7 @@ import SelectionModal, {
 } from '../../../components/common/SelectionModal';
 import SearchLocationModal from '../../../components/common/SearchLocationModal';
 import { styles, COLORS } from './HomeScreen.styles';
+import gravatarUrl from '../../../utils/gravatarUrl';
 
 /* ── Sliding subtitle carousel ── */
 
@@ -43,6 +48,11 @@ const SUBTITLE_MESSAGES = [
   '완벽한 여행은 좋은 계획에서 시작돼요.',
   '오늘, 어디로 떠나볼까요?',
   '설레는 여행 계획을 시작해 보세요.',
+];
+
+const HERO_IMAGES = [
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
 ];
 
 const SlidingSubtitle = () => {
@@ -129,8 +139,18 @@ const InputRow = ({
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <View style={[styles.iconContainer, hasValue && styles.iconContainerFilled, hasError && styles.iconContainerError]}>
-        {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { color: hasError ? COLORS.error : COLORS.primary }) : icon}
+      <View
+        style={[
+          styles.iconContainer,
+          hasValue && styles.iconContainerFilled,
+          hasError && styles.iconContainerError,
+        ]}
+      >
+        {React.isValidElement(icon)
+          ? React.cloneElement(icon as React.ReactElement<any>, {
+              color: hasError ? COLORS.error : COLORS.primary,
+            })
+          : icon}
       </View>
       <View style={styles.rowContent}>
         <View style={[styles.textContainer]}>
@@ -159,6 +179,7 @@ const InputRow = ({
 
 export interface HomeScreenViewProps {
   nickname?: string;
+  email?: string;
   pendingRequestsCount: number;
   destination: string;
   transport: string;
@@ -200,6 +221,7 @@ export interface HomeScreenViewProps {
 
 export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   nickname,
+  email,
   pendingRequestsCount, // 알림 뱃지 등에 활용 가능
   destination,
   transport,
@@ -238,118 +260,146 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   onAcceptNotification,
   onRejectNotification,
 }) => {
+  const [heroIndex, setHeroIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setHeroIndex(prev => (prev + 1) % HERO_IMAGES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+
+      {/* 1. Top Bar */}
+      <View style={styles.topBar}>
+        <View style={styles.topIcons}>
+          <TouchableOpacity
+            style={styles.userAvatar}
+            onPress={onNavigateProfile}
+          >
+            {email ? (
+              <Image
+                source={{ uri: gravatarUrl(email, 100) }}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover"
+              />
+            ) : (
+              <User size={24} color="#FFF" />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onNotificationPress}>
+            <Bell size={24} color="#000" />
+            {pendingRequestsCount > 0 && (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: 'red',
+                }}
+              />
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
-        bounces={false}
       >
-        {/* [변경] 상단 네비게이션 영역 (버튼만 배치하여 겹침 방지) */}
-        <View style={styles.topNavigation}>
-          <View style={styles.headerButtons}>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={onNotificationPress}
-            >
-              <Bell size={24} color="#000000" strokeWidth={2} />
-              {pendingRequestsCount > 0 && (
-                <View
-                  style={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    width: 8,
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: 'red',
-                  }}
-                />
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={onNavigateProfile}
-            >
-              <Settings size={24} color="#000000" strokeWidth={2} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* [변경] 인사말 영역 (버튼 아래 독립적으로 배치) */}
-        <View style={styles.greetingSection}>
-          <Text style={styles.headerGreeting}>안녕하세요,</Text>
-          <Text
-            style={[styles.headerGreeting, styles.headerNickname]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {nickname || '여행자'}님!
+        {/* 2. Hero Section */}
+        <View style={styles.heroSection}>
+          <Image
+            source={{ uri: HERO_IMAGES[heroIndex] }}
+            style={styles.heroImage}
+          />
+          <View style={styles.heroOverlay} />
+          <Text style={styles.heroTitle}>
+            나다운, 우리다운{'\n'}여행의 시작
           </Text>
-          <SlidingSubtitle />
         </View>
 
-        <View style={styles.whiteSection}>
-          <Text style={styles.sectionTitle}>새로운 여행 만들기</Text>
-          <View style={styles.inputCard}>
-            <InputRow
-              label="여행지"
-              value={destination}
-              placeholder="어디로 갈까요?"
-              icon={<Map size={24} color={COLORS.primary} strokeWidth={1.5} />}
+        {/* 3. Action Card Section */}
+        <View style={styles.actionContainer}>
+          <View style={styles.cardWrapper}>
+            {/* 여행지 */}
+            <TouchableOpacity
+              style={styles.inputRow}
               onPress={() => onOpenSearchModal('destination')}
-              hasError={showErrors && !destination}
-            />
-            <InputRow
-              label="여행 기간"
-              value={dateText}
-              placeholder="언제 떠나시나요?"
-              icon={
-                <Calendar size={24} color={COLORS.primary} strokeWidth={1.5} />
-              }
-              onPress={onOpenCalendar}
-              hasError={showErrors && !dateText}
-            />
-            <InputRow
-              label="인원"
-              value={paxText}
-              placeholder="몇 명이서 떠나시나요?"
-              icon={
-                <Users size={24} color={COLORS.primary} strokeWidth={1.5} />
-              }
-              onPress={onOpenPaxModal}
-              hasError={showErrors && adults === null}
-            />
-            <InputRow
-              label="이동수단"
-              value={transport}
-              placeholder="교통수단을 선택하세요"
-              icon={<Car size={24} color={COLORS.primary} strokeWidth={1.5} />}
-              onPress={onOpenTransportModal}
-              isLast={true}
-              hasError={showErrors && !transport}
-            />
-          </View>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.submitButton,
-              !isFormValid && styles.submitButtonDisabled,
-              pressed &&
-                isFormValid && { opacity: 0.85, transform: [{ scale: 0.98 }] },
-            ]}
-            onPress={onCreateItinerary}
-          >
-            <Text
-              style={[
-                styles.submitButtonText,
-                !isFormValid && styles.submitButtonTextDisabled,
-              ]}
             >
-              일정 생성하기
-            </Text>
-          </Pressable>
+              <Text style={styles.label}>여행지</Text>
+              <View style={styles.valueContainer}>
+                <Text
+                  style={
+                    destination ? styles.valueText : styles.placeholderText
+                  }
+                >
+                  {destination || '어디로 떠나시나요?'}
+                </Text>
+                <ChevronRight size={18} color="#D1D5DB" />
+              </View>
+            </TouchableOpacity>
+
+            {/* 기간 */}
+            <TouchableOpacity style={styles.inputRow} onPress={onOpenCalendar}>
+              <Text style={styles.label}>기간</Text>
+              <View style={styles.valueContainer}>
+                <Text
+                  style={dateText ? styles.valueText : styles.placeholderText}
+                >
+                  {dateText || '언제 떠나시나요?'}
+                </Text>
+                <ChevronRight size={18} color="#D1D5DB" />
+              </View>
+            </TouchableOpacity>
+
+            {/* 인원수 */}
+            <TouchableOpacity style={styles.inputRow} onPress={onOpenPaxModal}>
+              <Text style={styles.label}>인원수</Text>
+              <View style={styles.valueContainer}>
+                <Text
+                  style={paxText ? styles.valueText : styles.placeholderText}
+                >
+                  {paxText || '누구와 함께하시나요?'}
+                </Text>
+                <ChevronRight size={18} color="#D1D5DB" />
+              </View>
+            </TouchableOpacity>
+
+            {/* 이동수단 */}
+            <TouchableOpacity
+              style={[styles.inputRow, styles.inputRowLast]}
+              onPress={onOpenTransportModal}
+            >
+              <Text style={styles.label}>이동수단</Text>
+              <View style={styles.valueContainer}>
+                <Text
+                  style={transport ? styles.valueText : styles.placeholderText}
+                >
+                  {transport || '무엇을 타고 가시나요?'}
+                </Text>
+                <ChevronRight size={18} color="#D1D5DB" />
+              </View>
+            </TouchableOpacity>
+
+            {/* Create Button */}
+            <TouchableOpacity
+              style={[
+                styles.submitButton,
+                !isFormValid && { backgroundColor: '#D1D5DB' },
+              ]}
+              onPress={onCreateItinerary}
+              disabled={!isFormValid}
+            >
+              <Text style={styles.submitButtonText}>일정생성</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
 
@@ -394,4 +444,3 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
     </SafeAreaView>
   );
 };
-

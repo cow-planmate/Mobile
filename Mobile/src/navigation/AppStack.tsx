@@ -5,7 +5,7 @@ import HomeScreen from '../screens/app/main/HomeScreen';
 import ItineraryEditorScreen from '../screens/app/itinerary/ItineraryEditorScreen';
 
 import ItineraryViewScreen from '../screens/app/itinerary/ItineraryViewScreen';
-import MyPageScreen from '../screens/app/main/MyPageScreen';
+import MyScheduleScreen from '../screens/app/main/MyScheduleScreen';
 import ProfileScreen from '../screens/app/main/ProfileScreen';
 import { AppStackParamList } from './types';
 import { View, Platform } from 'react-native';
@@ -36,7 +36,7 @@ function HomeStack() {
   );
 }
 
-function MyPageStack() {
+function MyScheduleStack() {
   return (
     <Stack.Navigator
       screenOptions={{
@@ -46,8 +46,8 @@ function MyPageStack() {
       }}
     >
       <Stack.Screen
-        name="MyPage"
-        component={MyPageScreen}
+        name="MySchedule"
+        component={MyScheduleScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen name="ItineraryEditor" component={ItineraryEditorScreen} />
@@ -60,9 +60,13 @@ const HomeTabIcon = ({ color, size }: { color: string; size: number }) => (
   <Home size={size} color={color} strokeWidth={1.8} />
 );
 
-const MyPageTabIcon = ({ color, size }: { color: string; size: number }) => (
-  <User size={size} color={color} strokeWidth={1.8} />
-);
+const MyScheduleTabIcon = ({
+  color,
+  size,
+}: {
+  color: string;
+  size: number;
+}) => <User size={size} color={color} strokeWidth={1.8} />;
 
 export default function AppStack() {
   return (
@@ -99,11 +103,11 @@ export default function AppStack() {
         }}
       />
       <Tab.Screen
-        name="MyPageTab"
-        component={MyPageStack}
+        name="MyScheduleTab"
+        component={MyScheduleStack}
         options={{
-          title: '마이페이지',
-          tabBarIcon: MyPageTabIcon,
+          title: '내 일정',
+          tabBarIcon: MyScheduleTabIcon,
         }}
       />
     </Tab.Navigator>
