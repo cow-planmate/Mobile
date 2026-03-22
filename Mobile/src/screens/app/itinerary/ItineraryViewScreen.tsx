@@ -105,6 +105,20 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     routeDestination || '',
   );
 
+  const buildWeatherCity = useCallback(
+    (travelCategoryName?: string, travelName?: string) => {
+      const category = travelCategoryName?.trim() || '';
+      const name = travelName?.trim() || '';
+
+      if (category && name) {
+        return `${category} ${name}`;
+      }
+
+      return category || name || '';
+    },
+    [],
+  );
+
   const fetchCompletePlan = useCallback(async () => {
     if (!planId) return;
     try {
@@ -116,9 +130,9 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       if (planFrame?.planName) {
         setTripName(planFrame.planName);
       }
-      if (planFrame?.travelName) {
-        setDestinationCity(planFrame.travelName);
-      }
+      setDestinationCity(
+        buildWeatherCity(planFrame?.travelCategoryName, planFrame?.travelName),
+      );
 
       const categoryMapping = (
         id: number | undefined,
@@ -193,7 +207,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       console.error('Failed to fetch plan:', error);
       showAlert({ title: '오류', message: '일정을 불러오는데 실패했습니다.' });
     }
-  }, [planId]);
+  }, [planId, buildWeatherCity]);
 
   useEffect(() => {
     if (initialDays.length === 0 && planId) {
