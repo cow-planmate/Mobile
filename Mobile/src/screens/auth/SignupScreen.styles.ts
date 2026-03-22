@@ -21,10 +21,10 @@ export const COLORS = {
 };
 
 export const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard Variable',
+  medium: 'Pretendard Variable',
+  semibold: 'Pretendard Variable',
+  bold: 'Pretendard Variable',
 };
 
 export const styles = StyleSheet.create({
@@ -51,26 +51,33 @@ export const styles = StyleSheet.create({
   stepText: {
     fontSize: normalize(12),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
+    lineHeight: normalize(16),
     color: COLORS.primary,
     marginBottom: normalize(4),
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
   },
   scrollContainer: { padding: normalize(24), paddingBottom: normalize(100) },
   title: {
     fontSize: normalize(32),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
+    lineHeight: normalize(40),
+    letterSpacing: 0.2,
     color: COLORS.text,
     marginBottom: normalize(8),
     textAlign: 'left',
-    letterSpacing: 0.5,
   },
   description: {
     fontSize: normalize(15),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(24),
+    letterSpacing: 0.1,
     color: COLORS.textSecondary,
     marginBottom: normalize(32),
-    lineHeight: normalize(22),
+    textAlign: 'left',
   },
   inputGroup: { marginBottom: normalize(24) },
   labelRow: {
@@ -83,6 +90,8 @@ export const styles = StyleSheet.create({
     fontSize: normalize(14),
     color: COLORS.text,
     fontFamily: FONTS.semibold,
+    fontWeight: '600',
+    lineHeight: normalize(18),
     marginLeft: normalize(4),
     marginBottom: normalize(8),
   },
@@ -91,6 +100,8 @@ export const styles = StyleSheet.create({
     color: COLORS.primary,
     textDecorationLine: 'underline',
     marginRight: normalize(4),
+    fontWeight: '500',
+    lineHeight: normalize(16),
   },
   input: {
     height: normalize(52),
@@ -100,6 +111,8 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     fontSize: normalize(16),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(20),
     backgroundColor: COLORS.white,
     color: COLORS.text,
   },
@@ -115,6 +128,8 @@ export const styles = StyleSheet.create({
     color: COLORS.error,
     fontSize: normalize(13),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(18),
     marginTop: normalize(8),
     marginLeft: normalize(4),
   },
@@ -138,7 +153,9 @@ export const styles = StyleSheet.create({
   inlineButtonText: {
     color: COLORS.white,
     fontFamily: FONTS.bold,
+    fontWeight: '700',
     fontSize: normalize(14),
+    lineHeight: normalize(18),
   },
   codeInputWrapper: {
     flexDirection: 'row',
@@ -149,13 +166,17 @@ export const styles = StyleSheet.create({
     flex: 1,
     fontSize: normalize(16),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(20),
     padding: 0,
     color: COLORS.text,
   },
   timerText: {
     color: COLORS.error,
     fontFamily: FONTS.bold,
+    fontWeight: '700',
     fontSize: normalize(14),
+    lineHeight: normalize(18),
   },
   passwordContainer: {
     flexDirection: 'row',
@@ -172,6 +193,8 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     fontSize: normalize(16),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(20),
     color: COLORS.text,
   },
   eyeIcon: { padding: normalize(16) },
@@ -188,8 +211,15 @@ export const styles = StyleSheet.create({
     marginRight: normalize(8),
     fontFamily: FONTS.bold,
     fontSize: normalize(14),
+    fontWeight: '700',
+    lineHeight: normalize(18),
   },
-  requirementText: { fontSize: normalize(13), fontFamily: FONTS.regular },
+  requirementText: {
+    fontSize: normalize(13),
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(18),
+  },
   genderContainer: { flexDirection: 'row', gap: normalize(12) },
   genderButton: {
     flex: 1,
@@ -209,6 +239,8 @@ export const styles = StyleSheet.create({
     fontSize: normalize(16),
     fontFamily: FONTS.semibold,
     color: COLORS.textSecondary,
+    fontWeight: '600',
+    lineHeight: normalize(20),
   },
   genderButtonTextSelected: { color: COLORS.white },
   footer: { padding: normalize(24), backgroundColor: COLORS.white },
@@ -223,8 +255,10 @@ export const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: normalize(17),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
+    lineHeight: normalize(22),
     color: COLORS.white,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   retryButton: {
     alignItems: 'center',
@@ -234,6 +268,8 @@ export const styles = StyleSheet.create({
   retryButtonText: {
     fontSize: normalize(14),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(18),
     color: COLORS.textSecondary,
     textDecorationLine: 'underline',
   },
@@ -245,6 +281,8 @@ export const styles = StyleSheet.create({
   bottomBackButtonText: {
     fontSize: normalize(14),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(18),
     color: COLORS.textSecondary,
     textDecorationLine: 'underline',
   },
@@ -266,6 +304,8 @@ export const styles = StyleSheet.create({
   modalTitle: {
     fontSize: normalize(20),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
+    lineHeight: normalize(24),
     marginBottom: normalize(16),
     textAlign: 'center',
     color: COLORS.text,
@@ -278,6 +318,8 @@ export const styles = StyleSheet.create({
   ageOptionText: {
     fontSize: normalize(16),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(20),
     textAlign: 'center',
     color: COLORS.text,
   },

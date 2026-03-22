@@ -20,6 +20,10 @@
     {
       "path": "src/assets/fonts/Inter_800ExtraBold.ttf",
       "sha1": "22f9890b2c77874a15bfd9c0b731fd10376497b4"
+    },
+    {
+      "path": "src/assets/fonts/PretendardVariable.ttf",
+      "sha1": "89b05a2f18c76f8deb577505d48237127ccfc908"
     }
   ]
 }

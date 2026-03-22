@@ -14,10 +14,10 @@ const COLORS = {
 };
 
 const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard Variable',
+  medium: 'Pretendard Variable',
+  semibold: 'Pretendard Variable',
+  bold: 'Pretendard Variable',
 };
 
 export const styles = StyleSheet.create({
@@ -38,6 +38,9 @@ export const styles = StyleSheet.create({
   title: {
     fontSize: normalize(20),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
+    lineHeight: normalize(28),
+    letterSpacing: 0.2,
     color: COLORS.text,
     marginBottom: normalize(12),
     textAlign: 'center',
@@ -45,8 +48,10 @@ export const styles = StyleSheet.create({
   description: {
     fontSize: normalize(15),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(24),
+    letterSpacing: 0.1,
     color: COLORS.text,
-    lineHeight: normalize(22),
     textAlign: 'center',
   },
   footer: {
@@ -66,7 +71,8 @@ export const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: normalize(17),
     fontFamily: FONTS.bold,
-    letterSpacing: 0.3,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   loginPromptContainer: {
     flexDirection: 'row',
@@ -75,11 +81,15 @@ export const styles = StyleSheet.create({
   loginPromptText: {
     fontSize: normalize(14),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(20),
     color: COLORS.textSecondary,
   },
   loginActionText: {
     fontSize: normalize(14),
     fontFamily: FONTS.bold,
+    fontWeight: '600',
+    lineHeight: normalize(20),
     color: COLORS.primary,
     marginLeft: normalize(4),
   },

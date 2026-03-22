@@ -20,10 +20,10 @@ export const COLORS = {
 };
 
 export const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard Variable',
+  medium: 'Pretendard Variable',
+  semibold: 'Pretendard Variable',
+  bold: 'Pretendard Variable',
 };
 
 export const styles = StyleSheet.create({
@@ -39,7 +39,7 @@ export const styles = StyleSheet.create({
   stepIndicatorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: normalize(6),
+    letterSpacing: 0.2,
     marginBottom: normalize(12),
   },
   stepDot: {
@@ -53,10 +53,12 @@ export const styles = StyleSheet.create({
   stepText: {
     fontSize: normalize(12),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
+    lineHeight: normalize(16),
     color: COLORS.primary,
     marginBottom: normalize(4),
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
   },
   scrollContent: {
     padding: normalize(24),
@@ -65,18 +67,22 @@ export const styles = StyleSheet.create({
   title: {
     fontSize: normalize(32),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
+    lineHeight: normalize(40),
+    letterSpacing: 0.2,
     color: COLORS.text,
     marginBottom: normalize(8),
     textAlign: 'left',
-    letterSpacing: 0.5,
   },
   description: {
     fontSize: normalize(15),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(24),
+    letterSpacing: 0.1,
     color: COLORS.textSecondary,
     marginBottom: normalize(32),
     textAlign: 'left',
-    lineHeight: normalize(22),
   },
   inputGroup: {
     width: '100%',
@@ -87,6 +93,8 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: normalize(8),
     fontFamily: FONTS.semibold,
+    fontWeight: '600',
+    lineHeight: normalize(18),
     marginLeft: normalize(4),
   },
   inlineInputContainer: {
@@ -103,6 +111,8 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     fontSize: normalize(16),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(20),
     backgroundColor: COLORS.white,
     color: COLORS.text,
     marginBottom: 0,
@@ -116,7 +126,7 @@ export const styles = StyleSheet.create({
     color: COLORS.darkGray,
   },
   inlineButton: {
-    height: normalize(60),
+    height: normalize(52),
     paddingHorizontal: normalize(10),
     borderRadius: 8,
     justifyContent: 'center',
@@ -129,7 +139,9 @@ export const styles = StyleSheet.create({
   inlineButtonText: {
     color: COLORS.white,
     fontFamily: FONTS.bold,
+    fontWeight: '700',
     fontSize: normalize(14),
+    lineHeight: normalize(18),
   },
   codeInputWrapper: {
     flexDirection: 'row',
@@ -140,6 +152,8 @@ export const styles = StyleSheet.create({
     flex: 1,
     fontSize: normalize(16),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(20),
     color: COLORS.text,
     height: '100%',
     padding: 0,
@@ -147,7 +161,9 @@ export const styles = StyleSheet.create({
   timerText: {
     color: COLORS.error,
     fontFamily: FONTS.bold,
+    fontWeight: '700',
     fontSize: normalize(14),
+    lineHeight: normalize(18),
   },
 
   tempPasswordContainer: {
@@ -166,14 +182,17 @@ export const styles = StyleSheet.create({
   infoBoxText: {
     fontSize: normalize(16),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
+    lineHeight: normalize(22),
     color: COLORS.text,
   },
   infoBoxSubText: {
     fontSize: normalize(14),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(20),
     color: COLORS.textSecondary,
     textAlign: 'center',
-    lineHeight: normalize(20),
   },
 
   footer: {
@@ -195,8 +214,10 @@ export const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: normalize(17),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
     color: COLORS.white,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
+    lineHeight: normalize(22),
   },
   retryButton: {
     alignItems: 'center',
@@ -206,6 +227,8 @@ export const styles = StyleSheet.create({
   retryButtonText: {
     fontSize: normalize(14),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(18),
     color: COLORS.textSecondary,
     textDecorationLine: 'underline',
   },
@@ -217,6 +240,8 @@ export const styles = StyleSheet.create({
   backButtonText: {
     fontSize: normalize(14),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(18),
     color: COLORS.textSecondary,
     textDecorationLine: 'underline',
   },

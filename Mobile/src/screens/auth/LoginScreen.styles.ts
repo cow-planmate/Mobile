@@ -18,10 +18,10 @@ export const COLORS = {
 };
 
 export const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard Variable',
+  medium: 'Pretendard Variable',
+  semibold: 'Pretendard Variable',
+  bold: 'Pretendard Variable',
 };
 
 export const styles = StyleSheet.create({
@@ -34,10 +34,12 @@ export const styles = StyleSheet.create({
   title: {
     fontSize: normalize(32),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
+    lineHeight: normalize(40),
+    letterSpacing: 0.2,
     textAlign: 'center',
     marginBottom: normalize(32),
     color: COLORS.text,
-    letterSpacing: 0.5,
   },
   inputGroup: {
     width: '100%',
@@ -59,11 +61,15 @@ export const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginBottom: normalize(2),
     fontFamily: FONTS.medium,
+    fontWeight: '500',
+    lineHeight: normalize(16),
   },
   input: {
     width: '100%',
     fontSize: normalize(16),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(20),
     color: COLORS.text,
     padding: 0,
     includeFontPadding: false,
@@ -89,6 +95,8 @@ export const styles = StyleSheet.create({
     width: '100%',
     fontSize: normalize(16),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(20),
     color: COLORS.text,
     padding: 0,
     includeFontPadding: false,
@@ -98,6 +106,8 @@ export const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: normalize(14),
     fontFamily: FONTS.semibold,
+    fontWeight: '600',
+    lineHeight: normalize(20),
   },
   inputFocused: {
     borderColor: COLORS.primary,
@@ -118,8 +128,10 @@ export const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: normalize(17),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
+    lineHeight: normalize(22),
     color: COLORS.white,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   linksContainer: {
     flexDirection: 'row',
@@ -138,6 +150,8 @@ export const styles = StyleSheet.create({
     color: COLORS.darkGray,
     fontSize: normalize(14),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(18),
   },
   linkButton: {
     paddingVertical: normalize(6),
@@ -148,6 +162,8 @@ export const styles = StyleSheet.create({
     color: COLORS.darkGray,
     fontSize: normalize(14),
     fontFamily: FONTS.medium,
+    fontWeight: '500',
+    lineHeight: normalize(18),
   },
 
   /* ── Social Login ── */
@@ -172,6 +188,8 @@ export const styles = StyleSheet.create({
     marginHorizontal: normalize(12),
     fontSize: normalize(12),
     fontFamily: FONTS.medium,
+    fontWeight: '500',
+    lineHeight: normalize(16),
     color: COLORS.darkGray,
   },
   socialButtons: {
@@ -193,6 +211,8 @@ export const styles = StyleSheet.create({
   privacyLinkText: {
     fontSize: normalize(12),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
+    lineHeight: normalize(16),
     color: COLORS.darkGray,
     textDecorationLine: 'underline',
     textAlign: 'center',
@@ -223,6 +243,8 @@ export const styles = StyleSheet.create({
   privacyTitle: {
     fontSize: normalize(18),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
+    lineHeight: normalize(24),
     color: COLORS.text,
   },
   privacyScroll: {
@@ -231,6 +253,8 @@ export const styles = StyleSheet.create({
   privacySectionTitle: {
     fontSize: normalize(13),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
+    lineHeight: normalize(18),
     color: COLORS.text,
     marginTop: normalize(12),
     marginBottom: normalize(6),
@@ -238,21 +262,25 @@ export const styles = StyleSheet.create({
   privacyBullet: {
     fontSize: normalize(12),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: COLORS.textSecondary,
     lineHeight: normalize(18),
     marginBottom: normalize(3),
     paddingLeft: normalize(4),
   },
   privacyCloseButton: {
+    height: normalize(52),
     width: '100%',
-    paddingVertical: normalize(12),
     backgroundColor: COLORS.primary,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   privacyCloseButtonText: {
     fontSize: normalize(15),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
+    lineHeight: normalize(20),
     color: COLORS.white,
   },
 });
