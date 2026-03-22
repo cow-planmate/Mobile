@@ -167,6 +167,17 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     color: '#EF4444',
   },
+  logoutButton: {
+    marginTop: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+  },
+  logoutText: {
+    fontSize: 14,
+    fontFamily: FONTS.medium,
+    color: COLORS.textSecondary,
+    textDecorationLine: 'underline',
+  },
 
   /* ── Danger Zone ── */
   dangerSection: {

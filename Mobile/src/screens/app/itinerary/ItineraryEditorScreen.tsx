@@ -62,6 +62,23 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const planId = route.params.planId;
   const destination = route.params.destination;
 
+  const parseDestination = useCallback((value?: string) => {
+    const normalized = value?.trim() || '';
+    if (!normalized) {
+      return { category: '', name: '' };
+    }
+
+    const parts = normalized.split(/\s+/).filter(Boolean);
+    if (parts.length <= 1) {
+      return { category: normalized, name: normalized };
+    }
+
+    return {
+      category: parts[0],
+      name: parts.slice(1).join(' '),
+    };
+  }, []);
+
   const [isScheduleEditVisible, setScheduleEditVisible] = useState(false);
   const [isShareModalVisible, setShareModalVisible] = useState(false);
   const [isPlaceEditModalVisible, setPlaceEditModalVisible] = useState(false);
@@ -116,12 +133,20 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       fetchAllRecommendations(planId);
     } else if (destination) {
       // No planId yet — use NoAuth API with destination name
-      fetchAllRecommendationsNoAuth(destination, destination);
+      const { category, name } = parseDestination(destination);
+      fetchAllRecommendationsNoAuth(category, name);
     }
     return () => {
       resetPlaces();
     };
-  }, [planId, destination]);
+  }, [
+    planId,
+    destination,
+    fetchAllRecommendations,
+    fetchAllRecommendationsNoAuth,
+    parseDestination,
+    resetPlaces,
+  ]);
 
   // Detail popup handlers
   const handleOpenDetail = useCallback((place: Place) => {

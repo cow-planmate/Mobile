@@ -15,7 +15,6 @@ import {
   Heart,
   Lock,
   ChevronRight,
-  LogOut,
   MapPin,
   Utensils,
   Hotel,
@@ -222,6 +221,10 @@ export default function ProfileScreenView({
         {/* 하단 버튼 */}
         <TouchableOpacity style={styles.resignButton} onPress={handleResign}>
           <Text style={styles.resignText}>탈퇴하기</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+          <Text style={styles.logoutText}>로그아웃</Text>
         </TouchableOpacity>
       </ScrollView>
 
