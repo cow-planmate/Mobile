@@ -308,11 +308,20 @@ export async function leaveAsEditor(planId: number): Promise<void> {
 }
 
 /** Get pending invitations */
-export async function getPendingInvitations(): Promise<any[]> {
+export interface PendingInvitation {
+  requestId: number;
+  senderId: number;
+  senderNickname: string;
+  planId: number;
+  planName: string;
+  type: string;
+}
+
+export async function getPendingInvitations(): Promise<PendingInvitation[]> {
   const response = await axios.get(
     `${API_URL}/api/collaboration-requests/pending`,
   );
-  return response.data.pendingRequests || [];
+  return (response.data.pendingRequests || []) as PendingInvitation[];
 }
 
 /** Accept invitation */

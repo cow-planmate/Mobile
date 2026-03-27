@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
+import { AppState, AppStateStatus } from 'react-native';
 import { AppStackParamList } from '../../../navigation/types';
 import { useAuth } from '../../../contexts/AuthContext';
 import { OptionType } from '../../../components/common/SelectionModal';
@@ -9,11 +10,14 @@ import {
   getPendingInvitations,
   acceptInvitation,
   rejectInvitation,
+  PendingInvitation,
 } from '../../../api/trips';
 import { useAlert } from '../../../contexts/AlertContext';
 import { Bus, Car } from 'lucide-react-native';
+import { useInvitationSse } from '../../../hooks/useInvitationSse';
 
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
+const INVITATION_REFRESH_INTERVAL_MS = 15000;
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const { user } = useAuth();
@@ -49,31 +53,84 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   >('departure');
   const [showErrors, setShowErrors] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<PendingInvitation[]>(
+    [],
+  );
   const [isNotificationModalVisible, setNotificationModalVisible] =
     useState(false);
+  const [appState, setAppState] = useState<AppStateStatus>(
+    AppState.currentState,
+  );
 
-  const fetchPendingRequests = async () => {
+  const fetchPendingRequests = useCallback(async (silent = false) => {
     try {
+      if (!silent) {
+        setLoading(true);
+      }
       const requests = await getPendingInvitations();
       if (requests) {
         setPendingRequests(requests);
       }
     } catch (error) {
       console.log('초대 요청 목록 조회 실패:', error);
+    } finally {
+      if (!silent) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchPendingRequests();
-  }, []);
+    void fetchPendingRequests();
+  }, [fetchPendingRequests]);
 
   // 화면 포커스 시 알림 자동 갱신
   useFocusEffect(
     useCallback(() => {
-      fetchPendingRequests();
-    }, []),
+      void fetchPendingRequests();
+    }, [fetchPendingRequests]),
   );
+
+  useInvitationSse({
+    enabled: !!user,
+    onInvitationEvent: () => fetchPendingRequests(true),
+  });
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextState => {
+      const wasBackground =
+        appState === 'background' ||
+        appState === 'inactive' ||
+        appState === 'unknown';
+      const isNowActive = nextState === 'active';
+
+      setAppState(nextState);
+
+      if (wasBackground && isNowActive && user) {
+        void fetchPendingRequests(true);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [appState, fetchPendingRequests, user]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      if (appState === 'active') {
+        void fetchPendingRequests(true);
+      }
+    }, INVITATION_REFRESH_INTERVAL_MS);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [appState, fetchPendingRequests, user]);
 
   const handleAccept = async (requestId: number) => {
     try {
