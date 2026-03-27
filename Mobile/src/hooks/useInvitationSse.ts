@@ -166,6 +166,14 @@ export function useInvitationSse({
       console.log(
         `[SSE] Invitation stream error: status=${xhrStatus}, state=${xhrState}`,
       );
+
+      // If server denies stream access, stop reconnect loop and rely on polling.
+      if (xhrStatus === '401' || xhrStatus === '403') {
+        shouldReconnectRef.current = false;
+        disconnect();
+        return;
+      }
+
       disconnect();
       scheduleReconnect(connect);
     };

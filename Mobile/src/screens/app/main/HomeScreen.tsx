@@ -15,9 +15,11 @@ import {
 import { useAlert } from '../../../contexts/AlertContext';
 import { Bus, Car } from 'lucide-react-native';
 import { useInvitationSse } from '../../../hooks/useInvitationSse';
+import { useFcmNotifications } from '../../../hooks/useFcmNotifications';
 
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 const INVITATION_REFRESH_INTERVAL_MS = 15000;
+const FCM_RUNTIME_ENABLED = false;
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const { user } = useAuth();
@@ -94,6 +96,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   useInvitationSse({
     enabled: !!user,
     onInvitationEvent: () => fetchPendingRequests(true),
+  });
+
+  useFcmNotifications({
+    enabled: !!user && FCM_RUNTIME_ENABLED,
+    onInvitationPush: () => fetchPendingRequests(true),
   });
 
   useEffect(() => {
