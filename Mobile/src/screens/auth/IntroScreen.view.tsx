@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  Image,
+} from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { styles } from './IntroScreen.styles';
 
@@ -13,8 +19,10 @@ const IntroScreenView = ({ onStart, onLogin }: IntroScreenViewProps) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          {/* Logo placeholder - to be added later */}
-          <View style={{ width: 120, height: 120 }} />
+          <Image
+            source={require('../../assets/android-chrome-192x192.png')}
+            style={styles.logoImage}
+          />
         </View>
         <Text style={styles.title}>어디서든 함께 하는 플랜메이트</Text>
         <Text style={styles.description}>

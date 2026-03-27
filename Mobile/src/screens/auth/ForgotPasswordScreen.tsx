@@ -39,10 +39,12 @@ const ForgotPasswordScreen = () => {
     } else if (timeLeft === 0) {
       if (timerRef.current) clearInterval(timerRef.current);
       setIsTimerActive(false);
-      resetVerification();
+      setVerificationCode('');
+      setAuthToken(null);
       showAlert({
         title: '시간 초과',
-        message: '인증 시간이 만료되었습니다. 다시 시도해주세요.',
+        message:
+          '인증 시간이 만료되었습니다. 인증번호를 다시 받을 수 있습니다.',
       });
     }
     return () => {
@@ -83,6 +85,8 @@ const ForgotPasswordScreen = () => {
         setIsTimerActive(true);
         setTimeLeft(300);
         setIsEmailVerified(false);
+        setVerificationCode('');
+        setAuthToken(null);
       }
     } catch (error: any) {
       console.error('Email Send Error:', error);
@@ -122,6 +126,7 @@ const ForgotPasswordScreen = () => {
         setIsEmailVerified(true);
         setIsTimerActive(false);
         if (timerRef.current) clearInterval(timerRef.current);
+        setStep(2);
       } else {
         showAlert({ title: '실패', message: '인증번호가 올바르지 않습니다.' });
       }

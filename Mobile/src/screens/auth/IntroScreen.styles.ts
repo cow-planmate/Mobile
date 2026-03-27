@@ -35,6 +35,11 @@ export const styles = StyleSheet.create({
     marginBottom: normalize(40),
     alignItems: 'center',
   },
+  logoImage: {
+    width: normalize(112),
+    height: normalize(112),
+    resizeMode: 'contain',
+  },
   title: {
     fontSize: normalize(20),
     fontFamily: FONTS.bold,

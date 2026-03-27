@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-native';
 import IntroScreenView from '../../../screens/auth/IntroScreen.view';
 
 const meta = {
-  title: 'Screens/Auth/IntroScreen',
+  title: 'Screens/Auth/인트로화면',
   component: IntroScreenView,
   decorators: [
     Story => (
@@ -23,4 +23,6 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const Default: Story = {
+  name: '인트로',
+};

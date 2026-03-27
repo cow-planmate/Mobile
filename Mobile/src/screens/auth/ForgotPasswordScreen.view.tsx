@@ -11,7 +11,7 @@ import {
   SafeAreaView,
   Pressable,
 } from 'react-native';
-import { Info } from 'lucide-react-native';
+import { ArrowLeft, Info } from 'lucide-react-native';
 import { styles, COLORS, normalize } from './ForgotPasswordScreen.styles';
 
 export interface ForgotPasswordScreenViewProps {
@@ -60,6 +60,18 @@ export const ForgotPasswordScreenView = ({
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        {step === 1 && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.headerBackButton,
+              pressed && !isLoading && { opacity: 0.7 },
+            ]}
+            onPress={onPrevStep}
+            disabled={isLoading}
+          >
+            <ArrowLeft size={18} color={COLORS.textSecondary} />
+          </Pressable>
+        )}
         <Text style={styles.stepText}>STEP {step}</Text>
         <View style={styles.stepIndicatorContainer}>
           {Array.from({ length: totalSteps }).map((_, i) => (
@@ -96,100 +108,96 @@ export const ForgotPasswordScreenView = ({
           {step === 1 && (
             <>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>이메일</Text>
-                <View style={styles.inlineInputContainer}>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      styles.flex1,
-                      (showVerificationInput || isEmailVerified) &&
-                        styles.inputDisabled,
-                      focusedField === 'email' && styles.inputFocused,
-                    ]}
-                    placeholder="example@email.com"
-                    placeholderTextColor={COLORS.darkGray}
-                    value={email}
-                    onChangeText={onEmailChange}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    editable={
-                      !showVerificationInput && !isEmailVerified && !isLoading
-                    }
-                    onFocus={() => setFocusedField('email')}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.inlineButton,
-                      (showVerificationInput || isEmailVerified) &&
-                        styles.buttonDisabled,
-                      pressed &&
-                        !(
-                          showVerificationInput ||
-                          isEmailVerified ||
-                          isLoading
-                        ) && { opacity: 0.7 },
-                    ]}
-                    onPress={onSendVerificationEmail}
-                    disabled={
-                      showVerificationInput || isEmailVerified || isLoading
-                    }
-                  >
-                    <Text style={styles.inlineButtonText}>
-                      {showVerificationInput ? '전송됨' : '인증요청'}
-                    </Text>
-                  </Pressable>
+                <View
+                  style={[
+                    styles.inputContainer,
+                    focusedField === 'email' && styles.inputFocused,
+                    (showVerificationInput || isEmailVerified) &&
+                      styles.inputDisabled,
+                  ]}
+                >
+                  <Text style={styles.label}>이메일</Text>
+                  <View style={styles.inputRow}>
+                    {showVerificationInput || isEmailVerified ? (
+                      <View style={styles.emailValueWrapper}>
+                        <Text style={styles.emailValue}>{email}</Text>
+                      </View>
+                    ) : (
+                      <TextInput
+                        style={[styles.input, styles.flex1]}
+                        placeholder="example@email.com"
+                        placeholderTextColor={COLORS.darkGray}
+                        value={email}
+                        onChangeText={onEmailChange}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        editable={!isLoading}
+                        onFocus={() => setFocusedField('email')}
+                        onBlur={() => setFocusedField(null)}
+                      />
+                    )}
+                  </View>
                 </View>
               </View>
 
               {showVerificationInput && (
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>인증번호</Text>
-                  <View style={styles.inlineInputContainer}>
-                    <View
-                      style={[
-                        styles.input,
-                        styles.flex1,
-                        styles.codeInputWrapper,
-                        focusedField === 'verificationCode' &&
-                          styles.inputFocused,
-                        isEmailVerified && styles.inputDisabled,
-                      ]}
-                    >
-                      <TextInput
+                  <View
+                    style={[
+                      styles.inputContainer,
+                      focusedField === 'verificationCode' &&
+                        styles.inputFocused,
+                      isEmailVerified && styles.inputDisabled,
+                    ]}
+                  >
+                    <Text style={styles.label}>인증번호</Text>
+                    <View style={styles.inputRow}>
+                      <View
                         style={[
-                          styles.innerInput,
-                          isEmailVerified && { color: COLORS.darkGray },
+                          styles.codeInputWrapper,
+                          styles.flex1,
+                          isEmailVerified && styles.inputDisabled,
                         ]}
-                        placeholder="123456"
-                        placeholderTextColor={COLORS.darkGray}
-                        value={verificationCode}
-                        onChangeText={onVerificationCodeChange}
-                        keyboardType="number-pad"
-                        maxLength={6}
-                        editable={!isLoading && !isEmailVerified}
-                        onFocus={() => setFocusedField('verificationCode')}
-                        onBlur={() => setFocusedField(null)}
-                      />
-                      <Text style={styles.timerText}>
-                        {isEmailVerified ? '' : formatTime(timeLeft)}
-                      </Text>
+                      >
+                        {isEmailVerified ? (
+                          <View style={styles.emailValueWrapper}>
+                            <Text style={styles.emailValue}>
+                              {verificationCode}
+                            </Text>
+                          </View>
+                        ) : (
+                          <TextInput
+                            style={styles.innerInput}
+                            placeholder="123456"
+                            placeholderTextColor={COLORS.darkGray}
+                            value={verificationCode}
+                            onChangeText={onVerificationCodeChange}
+                            keyboardType="number-pad"
+                            maxLength={6}
+                            editable={!isLoading && !isEmailVerified}
+                            onFocus={() => setFocusedField('verificationCode')}
+                            onBlur={() => setFocusedField(null)}
+                          />
+                        )}
+                        <Text style={styles.timerText}>
+                          {isEmailVerified ? '' : formatTime(timeLeft)}
+                        </Text>
+                      </View>
                     </View>
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.inlineButton,
-                        (isEmailVerified || isLoading) && styles.buttonDisabled,
-                        pressed &&
-                          !(isEmailVerified || isLoading) && { opacity: 0.7 },
-                      ]}
-                      onPress={onVerifyCode}
-                      disabled={isEmailVerified || isLoading}
-                    >
-                      <Text style={styles.inlineButtonText}>
-                        {isEmailVerified ? '완료' : '확인'}
-                      </Text>
-                    </Pressable>
                   </View>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.resendButton,
+                      isLoading && styles.resendButtonDisabled,
+                      pressed && !isLoading && { opacity: 0.7 },
+                    ]}
+                    onPress={onSendVerificationEmail}
+                    disabled={isLoading}
+                  >
+                    <Text style={styles.resendButtonText}>
+                      인증번호 다시 받기
+                    </Text>
+                  </Pressable>
                 </View>
               )}
             </>
@@ -224,13 +232,35 @@ export const ForgotPasswordScreenView = ({
               <TouchableOpacity
                 style={[
                   styles.submitButton,
-                  (!isEmailVerified || isLoading) &&
+                  (isLoading ||
+                    (showVerificationInput &&
+                      !isEmailVerified &&
+                      timeLeft === 0)) &&
                     styles.submitButtonDisabled,
                 ]}
-                onPress={onNextStep}
-                disabled={!isEmailVerified || isLoading}
+                onPress={
+                  isEmailVerified
+                    ? onNextStep
+                    : showVerificationInput && timeLeft > 0
+                    ? onVerifyCode
+                    : onSendVerificationEmail
+                }
+                disabled={
+                  isLoading ||
+                  (showVerificationInput && !isEmailVerified && timeLeft === 0)
+                }
               >
-                <Text style={styles.submitButtonText}>다음</Text>
+                {isLoading ? (
+                  <ActivityIndicator color={COLORS.white} />
+                ) : (
+                  <Text style={styles.submitButtonText}>
+                    {isEmailVerified
+                      ? '다음'
+                      : showVerificationInput
+                      ? '인증번호 확인'
+                      : '인증요청'}
+                  </Text>
+                )}
               </TouchableOpacity>
 
               {(showVerificationInput || isEmailVerified) && (
@@ -239,9 +269,7 @@ export const ForgotPasswordScreenView = ({
                   onPress={onResetVerification}
                   disabled={isLoading}
                 >
-                  <Text style={styles.retryButtonText}>
-                    이메일 다시 입력하기
-                  </Text>
+                  <Text style={styles.retryButtonText}>이메일 수정하기</Text>
                 </TouchableOpacity>
               )}
             </>
@@ -262,15 +290,15 @@ export const ForgotPasswordScreenView = ({
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={onPrevStep}
-            disabled={isLoading}
-          >
-            <Text style={styles.backButtonText}>
-              {step === 1 ? '로그인 화면으로 돌아가기' : '이전 단계'}
-            </Text>
-          </TouchableOpacity>
+          {step === 2 && (
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={onPrevStep}
+              disabled={isLoading}
+            >
+              <Text style={styles.backButtonText}>이전 단계</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

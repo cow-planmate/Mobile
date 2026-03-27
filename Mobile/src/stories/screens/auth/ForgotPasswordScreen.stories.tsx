@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-native';
 import { ForgotPasswordScreenView } from '../../../screens/auth/ForgotPasswordScreen.view';
 
 const meta = {
-  title: 'Screens/Auth/ForgotPasswordScreen',
+  title: 'Screens/Auth/비밀번호찾기화면',
   component: ForgotPasswordScreenView,
   decorators: [
     Story => (
@@ -44,31 +44,34 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default1: Story = {
-  name: '1',
+  name: '이메일 입력',
   args: {
     step: 1,
   },
 };
 
 export const Default2: Story = {
-  name: '1-1',
+  name: '인증번호 입력',
   args: {
     step: 1,
+    email: 'planmate.user@gmail.com',
     showVerificationInput: true,
   },
 };
 
 export const Default3: Story = {
-  name: '1-2',
+  name: '인증 완료',
   args: {
     step: 1,
+    email: 'planmate.user@gmail.com',
+    verificationCode: '123456',
     showVerificationInput: true,
     isEmailVerified: true,
   },
 };
 
 export const Default4: Story = {
-  name: '2',
+  name: '임시 비밀번호 발송',
   args: {
     step: 2,
   },

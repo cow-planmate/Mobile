@@ -13,7 +13,7 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
-import { Eye, EyeOff, Check } from 'lucide-react-native';
+import { ArrowLeft, Eye, EyeOff, Check } from 'lucide-react-native';
 import { styles, COLORS, normalize } from './SignupScreen.styles';
 
 export const PasswordRequirement = React.memo(
@@ -105,9 +105,26 @@ export const SignupScreenView = ({
   setIsConfirmPasswordVisible,
   formatTime,
 }: SignupScreenViewProps) => {
+  const step1FooterLabel = isEmailVerified
+    ? '다음'
+    : showVerificationInput
+    ? '인증번호 확인'
+    : '인증요청';
+  const step3FooterLabel = isNicknameVerified ? '다음' : '중복확인';
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.headerBackButton,
+            pressed && !isLoading && { opacity: 0.7 },
+          ]}
+          onPress={onPrevStep}
+          disabled={isLoading}
+        >
+          <ArrowLeft size={18} color={COLORS.textSecondary} />
+        </Pressable>
         <Text style={styles.stepText}>STEP {step}</Text>
         <View style={styles.stepIndicatorContainer}>
           {Array.from({ length: totalSteps }).map((_, i) => (
@@ -145,59 +162,36 @@ export const SignupScreenView = ({
                 로그인에 사용할 이메일을 인증해주세요.
               </Text>
               <View style={styles.inputGroup}>
-                <View style={styles.labelRow}>
-                  <Text style={[styles.label, styles.marginBottom0]}>
-                    이메일
-                  </Text>
-                </View>
-
-                <View style={styles.inlineInputContainer}>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      styles.flex1,
-                      focusedField === 'email' && styles.inputFocused,
-                      (showVerificationInput || isEmailVerified) &&
-                        styles.inputDisabled,
-                      isEmailDuplicate && { borderColor: COLORS.error },
-                    ]}
-                    placeholder="example@email.com"
-                    placeholderTextColor={COLORS.darkGray}
-                    value={form.email}
-                    onChangeText={v => onChange('email', v)}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    editable={!showVerificationInput && !isEmailVerified}
-                    onFocus={() => setFocusedField('email')}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.inlineButton,
-                      (isEmailVerified ||
-                        showVerificationInput ||
-                        isEmailDuplicate) &&
-                        styles.buttonDisabled,
-                      pressed &&
-                        !(
-                          isEmailVerified ||
-                          showVerificationInput ||
-                          isLoading
-                        ) && { opacity: 0.7 },
-                    ]}
-                    onPress={onSendEmail}
-                    disabled={
-                      isEmailVerified || showVerificationInput || isLoading
-                    }
-                  >
-                    <Text style={styles.inlineButtonText}>
-                      {isEmailVerified
-                        ? '인증완료'
-                        : showVerificationInput
-                        ? '전송됨'
-                        : '인증요청'}
-                    </Text>
-                  </Pressable>
+                <View
+                  style={[
+                    styles.authInputContainer,
+                    focusedField === 'email' && styles.inputFocused,
+                    (showVerificationInput || isEmailVerified) &&
+                      styles.inputDisabled,
+                    isEmailDuplicate && { borderColor: COLORS.error },
+                  ]}
+                >
+                  <Text style={styles.label}>이메일</Text>
+                  <View style={styles.authInputRow}>
+                    {showVerificationInput || isEmailVerified ? (
+                      <View style={styles.authValueWrapper}>
+                        <Text style={styles.authValue}>{form.email}</Text>
+                      </View>
+                    ) : (
+                      <TextInput
+                        style={styles.authInput}
+                        placeholder="example@email.com"
+                        placeholderTextColor={COLORS.darkGray}
+                        value={form.email}
+                        onChangeText={v => onChange('email', v)}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        editable={!isLoading}
+                        onFocus={() => setFocusedField('email')}
+                        onBlur={() => setFocusedField(null)}
+                      />
+                    )}
+                  </View>
                 </View>
                 {isEmailDuplicate && (
                   <Text style={styles.errorText}>
@@ -208,51 +202,40 @@ export const SignupScreenView = ({
 
               {showVerificationInput && (
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>인증번호</Text>
-                  <View style={styles.inlineInputContainer}>
-                    <View
-                      style={[
-                        styles.input,
-                        styles.flex1,
-                        styles.codeInputWrapper,
-                        focusedField === 'verificationCode' &&
-                          styles.inputFocused,
-                        isEmailVerified && styles.inputDisabled,
-                      ]}
-                    >
-                      <TextInput
-                        style={[
-                          styles.codeInput,
-                          isEmailVerified && { color: COLORS.darkGray },
-                        ]}
-                        placeholder="123456"
-                        placeholderTextColor={COLORS.darkGray}
-                        value={form.verificationCode}
-                        onChangeText={v => onChange('verificationCode', v)}
-                        keyboardType="number-pad"
-                        maxLength={6}
-                        editable={!isLoading && !isEmailVerified}
-                        onFocus={() => setFocusedField('verificationCode')}
-                        onBlur={() => setFocusedField(null)}
-                      />
+                  <View
+                    style={[
+                      styles.authInputContainer,
+                      focusedField === 'verificationCode' &&
+                        styles.inputFocused,
+                      isEmailVerified && styles.inputDisabled,
+                    ]}
+                  >
+                    <Text style={styles.label}>인증번호</Text>
+                    <View style={styles.authInputRow}>
+                      {isEmailVerified ? (
+                        <View style={styles.authValueWrapper}>
+                          <Text style={styles.authValue}>
+                            {form.verificationCode}
+                          </Text>
+                        </View>
+                      ) : (
+                        <TextInput
+                          style={styles.authInput}
+                          placeholder="123456"
+                          placeholderTextColor={COLORS.darkGray}
+                          value={form.verificationCode}
+                          onChangeText={v => onChange('verificationCode', v)}
+                          keyboardType="number-pad"
+                          maxLength={6}
+                          editable={!isLoading && !isEmailVerified}
+                          onFocus={() => setFocusedField('verificationCode')}
+                          onBlur={() => setFocusedField(null)}
+                        />
+                      )}
                       <Text style={styles.timerText}>
                         {isEmailVerified ? '' : formatTime(timeLeft)}
                       </Text>
                     </View>
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.inlineButton,
-                        (isLoading || isEmailVerified) && styles.buttonDisabled,
-                        pressed &&
-                          !(isLoading || isEmailVerified) && { opacity: 0.7 },
-                      ]}
-                      onPress={onVerifyCode}
-                      disabled={isLoading || isEmailVerified}
-                    >
-                      <Text style={styles.inlineButtonText}>
-                        {isEmailVerified ? '완료' : '확인'}
-                      </Text>
-                    </Pressable>
                   </View>
                 </View>
               )}
@@ -265,33 +248,35 @@ export const SignupScreenView = ({
                 안전한 비밀번호를 설정해주세요.
               </Text>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>비밀번호</Text>
                 <View
                   style={[
                     styles.passwordContainer,
                     focusedField === 'password' && styles.inputFocused,
                   ]}
                 >
-                  <TextInput
-                    style={styles.passwordInput}
-                    value={form.password}
-                    placeholder="********"
-                    placeholderTextColor={COLORS.darkGray}
-                    onChangeText={v => onChange('password', v)}
-                    secureTextEntry={!isPasswordVisible}
-                    onFocus={() => setFocusedField('password')}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeIcon}
-                    onPress={() => setIsPasswordVisible(v => !v)}
-                  >
-                    {isPasswordVisible ? (
-                      <EyeOff size={20} color={COLORS.textSecondary} />
-                    ) : (
-                      <Eye size={20} color={COLORS.textSecondary} />
-                    )}
-                  </TouchableOpacity>
+                  <Text style={styles.label}>비밀번호</Text>
+                  <View style={styles.authInputRow}>
+                    <TextInput
+                      style={styles.authInput}
+                      value={form.password}
+                      placeholder="********"
+                      placeholderTextColor={COLORS.darkGray}
+                      onChangeText={v => onChange('password', v)}
+                      secureTextEntry={!isPasswordVisible}
+                      onFocus={() => setFocusedField('password')}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setIsPasswordVisible(v => !v)}
+                    >
+                      {isPasswordVisible ? (
+                        <EyeOff size={20} color={COLORS.textSecondary} />
+                      ) : (
+                        <Eye size={20} color={COLORS.textSecondary} />
+                      )}
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 <View style={styles.requirementsContainer}>
                   <PasswordRequirement
@@ -306,33 +291,35 @@ export const SignupScreenView = ({
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>비밀번호 확인</Text>
                 <View
                   style={[
                     styles.passwordContainer,
                     focusedField === 'confirmPassword' && styles.inputFocused,
                   ]}
                 >
-                  <TextInput
-                    style={styles.passwordInput}
-                    value={form.confirmPassword}
-                    placeholder="********"
-                    placeholderTextColor={COLORS.darkGray}
-                    onChangeText={v => onChange('confirmPassword', v)}
-                    secureTextEntry={!isConfirmPasswordVisible}
-                    onFocus={() => setFocusedField('confirmPassword')}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeIcon}
-                    onPress={() => setIsConfirmPasswordVisible(v => !v)}
-                  >
-                    {isConfirmPasswordVisible ? (
-                      <EyeOff size={20} color={COLORS.textSecondary} />
-                    ) : (
-                      <Eye size={20} color={COLORS.textSecondary} />
-                    )}
-                  </TouchableOpacity>
+                  <Text style={styles.label}>비밀번호 확인</Text>
+                  <View style={styles.authInputRow}>
+                    <TextInput
+                      style={styles.authInput}
+                      value={form.confirmPassword}
+                      placeholder="********"
+                      placeholderTextColor={COLORS.darkGray}
+                      onChangeText={v => onChange('confirmPassword', v)}
+                      secureTextEntry={!isConfirmPasswordVisible}
+                      onFocus={() => setFocusedField('confirmPassword')}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setIsConfirmPasswordVisible(v => !v)}
+                    >
+                      {isConfirmPasswordVisible ? (
+                        <EyeOff size={20} color={COLORS.textSecondary} />
+                      ) : (
+                        <Eye size={20} color={COLORS.textSecondary} />
+                      )}
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 <View style={styles.requirementsContainer}>
                   <PasswordRequirement
@@ -350,31 +337,25 @@ export const SignupScreenView = ({
                 앱에서 사용할 닉네임을 정해주세요.
               </Text>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>닉네임</Text>
-                <View style={styles.inlineInputContainer}>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      styles.flex1,
-                      focusedField === 'nickname' && styles.inputFocused,
-                    ]}
-                    placeholder="플랜메이트"
-                    placeholderTextColor={COLORS.darkGray}
-                    value={form.nickname}
-                    onChangeText={v => onChange('nickname', v)}
-                    editable={!isLoading}
-                    onFocus={() => setFocusedField('nickname')}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.inlineButton,
-                      pressed && { opacity: 0.7 },
-                    ]}
-                    onPress={onCheckNickname}
-                  >
-                    <Text style={styles.inlineButtonText}>중복확인</Text>
-                  </Pressable>
+                <View
+                  style={[
+                    styles.authInputContainer,
+                    focusedField === 'nickname' && styles.inputFocused,
+                  ]}
+                >
+                  <Text style={styles.label}>닉네임</Text>
+                  <View style={styles.nicknameInputRow}>
+                    <TextInput
+                      style={styles.authInput}
+                      placeholder="플랜메이트"
+                      placeholderTextColor={COLORS.darkGray}
+                      value={form.nickname}
+                      onChangeText={v => onChange('nickname', v)}
+                      editable={!isLoading}
+                      onFocus={() => setFocusedField('nickname')}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                  </View>
                 </View>
               </View>
             </>
@@ -386,61 +367,64 @@ export const SignupScreenView = ({
                 맞춤형 여행 계획을 위해 필요해요.
               </Text>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>나이</Text>
                 <TouchableOpacity
-                  style={[styles.input, styles.justifyCenter]}
+                  style={[styles.authInputContainer, styles.fieldContainerTop]}
                   onPress={() => setAgeModalVisible(true)}
                 >
-                  <Text
-                    style={{
-                      fontSize: normalize(16),
-                      color: form.age ? COLORS.text : COLORS.darkGray,
-                    }}
-                  >
+                  <Text style={styles.label}>나이</Text>
+                  <Text style={[styles.authValue, styles.selectionValue]}>
                     {form.age ? `${form.age}세` : '나이를 선택해주세요'}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>성별</Text>
-                <View style={styles.genderContainer}>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.genderButton,
-                      form.gender === 'male' && styles.genderButtonSelected,
-                      pressed && { opacity: 0.7 },
-                    ]}
-                    onPress={() => onChange('gender', 'male')}
-                  >
-                    <Text
-                      style={[
-                        styles.genderButtonText,
-                        form.gender === 'male' &&
-                          styles.genderButtonTextSelected,
+                <View
+                  style={[
+                    styles.authInputContainer,
+                    styles.fieldContainerTop,
+                    styles.genderInputContainer,
+                  ]}
+                >
+                  <Text style={styles.label}>성별</Text>
+                  <View style={styles.genderContainer}>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.genderButton,
+                        form.gender === 'male' && styles.genderButtonSelected,
+                        pressed && { opacity: 0.7 },
                       ]}
+                      onPress={() => onChange('gender', 'male')}
                     >
-                      남성
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.genderButton,
-                      form.gender === 'female' && styles.genderButtonSelected,
-                      pressed && { opacity: 0.7 },
-                    ]}
-                    onPress={() => onChange('gender', 'female')}
-                  >
-                    <Text
-                      style={[
-                        styles.genderButtonText,
-                        form.gender === 'female' &&
-                          styles.genderButtonTextSelected,
+                      <Text
+                        style={[
+                          styles.genderButtonText,
+                          form.gender === 'male' &&
+                            styles.genderButtonTextSelected,
+                        ]}
+                      >
+                        남성
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.genderButton,
+                        form.gender === 'female' && styles.genderButtonSelected,
+                        pressed && { opacity: 0.7 },
                       ]}
+                      onPress={() => onChange('gender', 'female')}
                     >
-                      여성
-                    </Text>
-                  </Pressable>
+                      <Text
+                        style={[
+                          styles.genderButtonText,
+                          form.gender === 'female' &&
+                            styles.genderButtonTextSelected,
+                        ]}
+                      >
+                        여성
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
               </View>
             </>
@@ -454,17 +438,37 @@ export const SignupScreenView = ({
             <Pressable
               style={({ pressed }) => [
                 styles.submitButton,
-                !isNextButtonEnabled && styles.buttonDisabled,
+                (isLoading ||
+                  (step !== 1 && step !== 3 && !isNextButtonEnabled)) &&
+                  styles.buttonDisabled,
                 pressed &&
-                  isNextButtonEnabled && {
+                  !isLoading && {
                     opacity: 0.85,
                     transform: [{ scale: 0.98 }],
                   },
               ]}
-              onPress={onNextStep}
-              disabled={!isNextButtonEnabled}
+              onPress={
+                step === 1
+                  ? isEmailVerified
+                    ? onNextStep
+                    : showVerificationInput
+                    ? onVerifyCode
+                    : onSendEmail
+                  : step === 3
+                  ? isNicknameVerified
+                    ? onNextStep
+                    : onCheckNickname
+                  : onNextStep
+              }
+              disabled={isLoading}
             >
-              <Text style={styles.submitButtonText}>다음</Text>
+              <Text style={styles.submitButtonText}>
+                {step === 1
+                  ? step1FooterLabel
+                  : step === 3
+                  ? step3FooterLabel
+                  : '다음'}
+              </Text>
             </Pressable>
 
             {step === 1 && (showVerificationInput || isEmailVerified) && (
@@ -494,15 +498,15 @@ export const SignupScreenView = ({
           </Pressable>
         )}
 
-        <TouchableOpacity
-          style={styles.bottomBackButton}
-          onPress={onPrevStep}
-          disabled={isLoading}
-        >
-          <Text style={styles.bottomBackButtonText}>
-            {step === 1 ? '로그인 화면으로 돌아가기' : '이전 단계'}
-          </Text>
-        </TouchableOpacity>
+        {step > 1 && (
+          <TouchableOpacity
+            style={styles.bottomBackButton}
+            onPress={onPrevStep}
+            disabled={isLoading}
+          >
+            <Text style={styles.bottomBackButtonText}>이전 단계</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <Modal

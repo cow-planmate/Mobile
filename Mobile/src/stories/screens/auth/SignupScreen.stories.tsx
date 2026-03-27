@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-native';
 import { SignupScreenView } from '../../../screens/auth/SignupScreen.view';
 
 const meta = {
-  title: 'Screens/Auth/SignupScreen',
+  title: 'Screens/Auth/회원가입화면',
   component: SignupScreenView,
   decorators: [
     Story => (
@@ -69,49 +69,88 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Step1: Story = {
-  name: '1',
+  name: '이메일 인증',
   args: {
     step: 1,
   },
 };
 
 export const Step1_1: Story = {
-  name: '1-1',
+  name: '이메일 인증 - 인증번호 입력',
   args: {
     step: 1,
+    form: {
+      email: 'planmate.user@gmail.com',
+      verificationCode: '',
+      password: '',
+      confirmPassword: '',
+      nickname: '',
+      age: '',
+      gender: '',
+    },
     showVerificationInput: true,
   },
 };
 
 export const Step1_2: Story = {
-  name: '1-2',
+  name: '이메일 인증 - 완료',
   args: {
     step: 1,
+    form: {
+      email: 'planmate.user@gmail.com',
+      verificationCode: '123456',
+      password: '',
+      confirmPassword: '',
+      nickname: '',
+      age: '',
+      gender: '',
+    },
     showVerificationInput: true,
     isEmailVerified: true,
   },
 };
 
 export const Step2: Story = {
-  name: '2',
+  name: '비밀번호 설정',
   args: {
     step: 2,
     isEmailVerified: true,
-  },
-};
-
-export const Step3: Story = {
-  name: '3',
-  args: {
-    step: 3,
-    isEmailVerified: true,
+    form: {
+      email: 'planmate.user@gmail.com',
+      verificationCode: '123456',
+      password: 'Planmate123!',
+      confirmPassword: 'Planmate123!',
+      nickname: '',
+      age: '',
+      gender: '',
+    },
     passwordRequirements: { hasMinLength: true, hasCombination: true },
     isPasswordMatch: true,
   },
 };
 
+export const Step3: Story = {
+  name: '닉네임 설정',
+  args: {
+    step: 3,
+    isEmailVerified: true,
+    form: {
+      email: 'planmate.user@gmail.com',
+      verificationCode: '123456',
+      password: 'Planmate123!',
+      confirmPassword: 'Planmate123!',
+      nickname: '플랜메이트',
+      age: '',
+      gender: '',
+    },
+    passwordRequirements: { hasMinLength: true, hasCombination: true },
+    isPasswordMatch: true,
+    isNicknameVerified: true,
+  },
+};
+
 export const Step4: Story = {
-  name: '4',
+  name: '내 정보 입력',
   args: {
     step: 4,
     isEmailVerified: true,

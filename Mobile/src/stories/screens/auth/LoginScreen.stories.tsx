@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-native';
 import { LoginScreenView } from '../../../screens/auth/LoginScreen.view';
 
 const meta = {
-  title: 'Screens/Auth/LoginScreen',
+  title: 'Screens/Auth/로그인화면',
   component: LoginScreenView,
   decorators: [
     Story => (
@@ -36,4 +36,13 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const Default: Story = {
+  name: '기본',
+};
+
+export const Filled: Story = {
+  name: '아이디 비밀번호 입력',
+  args: {
+    form: { email: 'planmate.user@gmail.com', password: 'Planmate123!' },
+  },
+};
