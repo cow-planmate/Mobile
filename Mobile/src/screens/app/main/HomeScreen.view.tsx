@@ -248,7 +248,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
             <InputRow
               label="여행지"
               value={destination}
-              placeholder="어디로 떠나시나요?"
+              placeholder="여행지 입력" // '어디로 떠나시나요?' 에서 '여행지 입력'으로 수정
               icon={faLocationDot}
               onPress={() => onOpenSearchModal('destination')}
             />

@@ -119,14 +119,14 @@ export const styles = StyleSheet.create({
   label: {
     fontSize: normalize(12),
     fontFamily: FONTS.medium,
-    color: '#9CA3AF',
+    color: '#6B7280', // #9CA3AF에서 더 진한 회색(#6B7280)으로 변경
     marginBottom: normalize(6),
   },
   valueContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomWidth: 3, // 2에서 3으로 굵기 상향 조정
+    borderBottomColor: '#EEEEEE',
     paddingBottom: normalize(10),
   },
   valueText: {
