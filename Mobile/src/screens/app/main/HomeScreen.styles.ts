@@ -68,10 +68,11 @@ export const styles = StyleSheet.create({
   // [NEW] Hero Section with Background Image
   heroSection: {
     width: '100%',
-    height: normalize(180), // 높이를 280에서 180으로 대폭 축소
+    height: normalize(180),
     backgroundColor: '#E5E7EB',
-    justifyContent: 'center',
+    justifyContent: 'flex-end', // 중앙에서 아래쪽 정렬로 변경
     paddingHorizontal: normalize(24),
+    paddingBottom: normalize(24), // 하단 여백 추가
   },
   heroImage: {
     ...StyleSheet.absoluteFillObject,
@@ -87,7 +88,7 @@ export const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#FFFFFF',
     lineHeight: normalize(38),
-    marginTop: normalize(10), // 높이 축소에 맞춰 마진도 소폭 조정
+    textAlign: 'left', // 왼쪽 정렬 명시
   },
 
   // [NEW] Main Action Card (White portion)
