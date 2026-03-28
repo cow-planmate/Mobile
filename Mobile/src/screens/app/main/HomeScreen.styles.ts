@@ -5,10 +5,10 @@ import { normalize } from '../../../utils/normalize';
 export const COLORS = theme.colors;
 
 export const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard Variable',
+  medium: 'Pretendard Variable',
+  semibold: 'Pretendard Variable',
+  bold: 'Pretendard Variable',
 };
 
 export const styles = StyleSheet.create({
@@ -63,6 +63,7 @@ export const styles = StyleSheet.create({
   heroTitle: {
     fontSize: normalize(28), // 텍스트 크기 살짝 증가 (24 -> 28)
     fontFamily: FONTS.bold,
+    fontWeight: '700',
     color: theme.colors.white,
     lineHeight: normalize(36), // 크기 증가에 따른 줄 간격 조정
     textShadowColor: 'rgba(0,0,0,0.3)',

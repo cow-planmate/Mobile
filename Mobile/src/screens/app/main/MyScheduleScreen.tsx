@@ -1,6 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AppState, AppStateStatus } from 'react-native';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { SimplePlanVO } from '../../../types/env';
@@ -8,6 +9,17 @@ import { AppStackParamList } from '../../../navigation/types';
 import MyScheduleScreenView from './MyScheduleScreen.view';
 import { useAlert } from '../../../contexts/AlertContext';
 import { useAuth } from '../../../contexts/AuthContext';
+import {
+  acceptInvitation,
+  getPendingInvitations,
+  PendingInvitation,
+  rejectInvitation,
+} from '../../../api/trips';
+import { useInvitationSse } from '../../../hooks/useInvitationSse';
+import { useFcmNotifications } from '../../../hooks/useFcmNotifications';
+
+const INVITATION_REFRESH_INTERVAL_MS = 15000;
+const FCM_RUNTIME_ENABLED = false;
 
 export default function MyScheduleScreen() {
   const navigation =
@@ -21,17 +33,130 @@ export default function MyScheduleScreen() {
     [],
   );
 
+  const [pendingRequests, setPendingRequests] = useState<PendingInvitation[]>(
+    [],
+  );
+  const [isNotificationModalVisible, setNotificationModalVisible] =
+    useState(false);
+  const [appState, setAppState] = useState<AppStateStatus>(
+    AppState.currentState,
+  );
+
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SimplePlanVO | null>(null);
   const [renameModalVisible, setRenameModalVisible] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
 
+  const fetchPendingRequests = useCallback(async (silent = false) => {
+    try {
+      if (!silent) {
+        setLoading(true);
+      }
+      const requests = await getPendingInvitations();
+      if (requests) {
+        setPendingRequests(requests);
+      }
+    } catch (error) {
+      console.log('초대 요청 목록 조회 실패:', error);
+    } finally {
+      if (!silent) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchPendingRequests();
+  }, [fetchPendingRequests]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void fetchPendingRequests();
+    }, [fetchPendingRequests]),
+  );
+
+  useInvitationSse({
+    enabled: !!user,
+    onInvitationEvent: () => fetchPendingRequests(true),
+  });
+
+  useFcmNotifications({
+    enabled: !!user && FCM_RUNTIME_ENABLED,
+    onInvitationPush: () => fetchPendingRequests(true),
+  });
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextState => {
+      const wasBackground =
+        appState === 'background' ||
+        appState === 'inactive' ||
+        appState === 'unknown';
+      const isNowActive = nextState === 'active';
+
+      setAppState(nextState);
+
+      if (wasBackground && isNowActive && user) {
+        void fetchPendingRequests(true);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [appState, fetchPendingRequests, user]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      if (appState === 'active') {
+        void fetchPendingRequests(true);
+      }
+    }, INVITATION_REFRESH_INTERVAL_MS);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [appState, fetchPendingRequests, user]);
+
+  const handleAccept = async (requestId: number) => {
+    try {
+      await acceptInvitation(requestId);
+      showAlert({ title: '수락 완료', message: '일정에 참여했습니다.' });
+      setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
+      if (pendingRequests.length <= 1) {
+        setNotificationModalVisible(false);
+      }
+    } catch (e) {
+      showAlert({ title: '오류', message: '수락 처리에 실패했습니다.' });
+    }
+  };
+
+  const handleReject = async (requestId: number) => {
+    try {
+      await rejectInvitation(requestId);
+      showAlert({ title: '거절 완료', message: '초대를 거절했습니다.' });
+      setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
+      if (pendingRequests.length <= 1) {
+        setNotificationModalVisible(false);
+      }
+    } catch (e) {
+      showAlert({ title: '오류', message: '거절 처리에 실패했습니다.' });
+    }
+  };
+
   const onNotificationPress = () => {
-    // 알림창 구현 필요시 추가
+    if (pendingRequests.length === 0) {
+      showAlert({ title: '알림', message: '새로운 알림이 없습니다.' });
+      return;
+    }
+    setNotificationModalVisible(true);
   };
 
   const onNavigateProfile = () => {
-    // 프로필 이동 구현 필요시 추가
+    navigation.navigate('Profile');
   };
 
   useFocusEffect(
@@ -165,6 +290,12 @@ export default function MyScheduleScreen() {
       navigateToEditor={navigateToEditor}
       email={user?.email}
       nickname={user?.nickname}
+      pendingRequestsCount={pendingRequests.length}
+      isNotificationModalVisible={isNotificationModalVisible}
+      pendingRequestList={pendingRequests}
+      onCloseNotificationModal={() => setNotificationModalVisible(false)}
+      onAcceptNotification={handleAccept}
+      onRejectNotification={handleReject}
       onNotificationPress={onNotificationPress}
       onNavigateProfile={onNavigateProfile}
     />

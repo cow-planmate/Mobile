@@ -5,10 +5,10 @@ import { normalize } from '../../../utils/normalize';
 export const COLORS = theme.colors;
 
 export const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard Variable',
+  medium: 'Pretendard Variable',
+  semibold: 'Pretendard Variable',
+  bold: 'Pretendard Variable',
 };
 
 export const styles = StyleSheet.create({
@@ -130,6 +130,7 @@ export const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: normalize(22),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
     color: theme.colors.text,
   },
   sectionRightContainer: {

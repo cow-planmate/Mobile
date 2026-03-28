@@ -19,6 +19,9 @@ import {
   User,
 } from 'lucide-react-native';
 import UpdateValueModal from '../../../components/common/UpdateValueModal';
+import NotificationModal, {
+  Invitation,
+} from '../../../components/common/NotificationModal';
 import ShareModal from '../../../components/common/ShareModal';
 import MenuModal from '../../../components/common/MenuModal';
 import { SimplePlanVO } from '../../../types/env';
@@ -83,6 +86,11 @@ export interface MyScheduleScreenViewProps {
   nickname?: string;
   email?: string;
   pendingRequestsCount?: number;
+  isNotificationModalVisible: boolean;
+  pendingRequestList: Invitation[];
+  onCloseNotificationModal: () => void;
+  onAcceptNotification: (requestId: number) => void;
+  onRejectNotification: (requestId: number) => void;
   onNotificationPress: () => void;
   onNavigateProfile: () => void;
 }
@@ -104,6 +112,11 @@ export default function MyScheduleScreenView({
   navigateToView,
   email,
   pendingRequestsCount = 0,
+  isNotificationModalVisible,
+  pendingRequestList,
+  onCloseNotificationModal,
+  onAcceptNotification,
+  onRejectNotification,
   onNotificationPress,
   onNavigateProfile,
 }: MyScheduleScreenViewProps) {
@@ -256,6 +269,14 @@ export default function MyScheduleScreenView({
         visible={shareModalVisible}
         onClose={() => setShareModalVisible(false)}
         planId={selectedPlan?.planId}
+      />
+
+      <NotificationModal
+        visible={isNotificationModalVisible}
+        onClose={onCloseNotificationModal}
+        invitations={pendingRequestList}
+        onAccept={onAcceptNotification}
+        onReject={onRejectNotification}
       />
     </View>
   );
