@@ -1,33 +1,23 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   SafeAreaView,
-  Pressable,
   TouchableOpacity,
   ScrollView,
   StatusBar,
   Image,
 } from 'react-native';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
-  Map,
-  Calendar,
-  Users,
-  Car,
-  ChevronRight,
-  Check,
-  Bell,
-  Settings,
-  Edit2,
-  User,
-} from 'lucide-react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-  runOnJS,
-} from 'react-native-reanimated';
+  faUser,
+  faLocationDot,
+  faCalendar,
+  faCar,
+  faBus,
+  faPen,
+} from '@fortawesome/free-solid-svg-icons';
+import { faBell } from '@fortawesome/free-regular-svg-icons';
 import CalendarModal from '../../../components/common/CalendarModal';
 import PaxModal from '../../../components/common/PaxModal';
 import NotificationModal, {
@@ -37,90 +27,21 @@ import SelectionModal, {
   OptionType,
 } from '../../../components/common/SelectionModal';
 import SearchLocationModal from '../../../components/common/SearchLocationModal';
-import { styles, COLORS } from './HomeScreen.styles';
+import { styles } from './HomeScreen.styles';
 import gravatarUrl from '../../../utils/gravatarUrl';
-
-/* ── Sliding subtitle carousel ── */
-
-const SUBTITLE_MESSAGES = [
-  '새로운 여행을 계획해 보세요.',
-  '함께 떠나는 여행, 함께 만드는 일정.',
-  '완벽한 여행은 좋은 계획에서 시작돼요.',
-  '오늘, 어디로 떠나볼까요?',
-  '설레는 여행 계획을 시작해 보세요.',
-];
 
 const HERO_IMAGES = [
   'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
 ];
 
-const SlidingSubtitle = () => {
-  const [index, setIndex] = useState(0);
-  const opacity = useSharedValue(1);
-  const translateX = useSharedValue(0);
-
-  const goNext = () => {
-    setIndex(prev => (prev + 1) % SUBTITLE_MESSAGES.length);
-  };
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Fade out + slide left
-      opacity.value = withTiming(0, {
-        duration: 300,
-        easing: Easing.in(Easing.cubic),
-      });
-      translateX.value = withTiming(
-        -20,
-        { duration: 300, easing: Easing.in(Easing.cubic) },
-        finished => {
-          if (finished) {
-            runOnJS(goNext)();
-          }
-        },
-      );
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [opacity, translateX]);
-
-  useEffect(() => {
-    // Reset position and fade in
-    translateX.value = 20;
-    opacity.value = 0;
-    setTimeout(() => {
-      translateX.value = withTiming(0, {
-        duration: 350,
-        easing: Easing.out(Easing.cubic),
-      });
-      opacity.value = withTiming(1, {
-        duration: 350,
-        easing: Easing.out(Easing.cubic),
-      });
-    }, 30);
-  }, [index, opacity, translateX]);
-
-  const animStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateX: translateX.value }],
-  }));
-
-  return (
-    <Animated.Text style={[styles.headerSubtitle, animStyle]}>
-      {SUBTITLE_MESSAGES[index]}
-    </Animated.Text>
-  );
-};
-
-// InputRow 컴포넌트는 기존과 동일하게 유지하거나 필요 시 분리 가능
 type InputRowProps = {
   label: string;
   value: string;
   placeholder?: string;
-  icon: React.ReactNode;
+  icon: any;
   onPress?: () => void;
   isLast?: boolean;
-  hasError?: boolean;
 };
 
 const InputRow = ({
@@ -130,7 +51,6 @@ const InputRow = ({
   icon,
   onPress,
   isLast,
-  hasError,
 }: InputRowProps) => {
   const hasValue = Boolean(value);
   return (
@@ -139,38 +59,17 @@ const InputRow = ({
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <View
-        style={[
-          styles.iconContainer,
-          hasValue && styles.iconContainerFilled,
-          hasError && styles.iconContainerError,
-        ]}
-      >
-        {React.isValidElement(icon)
-          ? React.cloneElement(icon as React.ReactElement<any>, {
-              color: hasError ? COLORS.error : COLORS.primary,
-            })
-          : icon}
-      </View>
-      <View style={styles.rowContent}>
-        <View style={[styles.textContainer]}>
-          <Text style={[styles.label, hasError && styles.labelError]}>
-            {label}
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.valueContainer}>
+        {hasValue ? (
+          <Text style={styles.valueText} numberOfLines={1}>
+            {value}
           </Text>
-          {hasValue ? (
-            <Text style={styles.valueText} numberOfLines={1}>
-              {value}
-            </Text>
-          ) : (
-            <Text style={styles.placeholderText}>{placeholder}</Text>
-          )}
-        </View>
-        <View style={[styles.arrowContainer]}>
-          {hasValue ? (
-            <Check size={20} color={COLORS.primary} strokeWidth={2.5} />
-          ) : (
-            <ChevronRight size={20} color={COLORS.disabled} />
-          )}
+        ) : (
+          <Text style={styles.placeholderText}>{placeholder}</Text>
+        )}
+        <View style={styles.rowIcon}>
+          <FontAwesomeIcon icon={icon} color="#9CA3AF" size={18} />
         </View>
       </View>
     </TouchableOpacity>
@@ -275,7 +174,14 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
 
       {/* 1. Top Bar */}
       <View style={styles.topBar}>
+        <Text style={styles.logo}>planMate</Text>
         <View style={styles.topIcons}>
+          <TouchableOpacity
+            style={styles.headerIconBtn}
+            onPress={onNotificationPress}
+          >
+            <FontAwesomeIcon icon={faPen} color="#FFF" size={16} />
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.userAvatar}
             onPress={onNavigateProfile}
@@ -287,30 +193,41 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
                 resizeMode="cover"
               />
             ) : (
-              <User size={24} color="#FFF" />
+              <FontAwesomeIcon icon={faUser} size={20} color="#9CA3AF" />
             )}
           </TouchableOpacity>
+          <Text style={styles.userNickname}>{nickname || '사용자'}님</Text>
           <TouchableOpacity onPress={onNotificationPress}>
-            <Bell size={24} color="#000" />
+            <FontAwesomeIcon icon={faBell} size={22} color="#000" />
             {pendingRequestsCount > 0 && (
               <View
                 style={{
                   position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: 'red',
+                  top: -4,
+                  right: -4,
+                  backgroundColor: '#FF3B30',
+                  borderRadius: 10,
+                  minWidth: 18,
+                  height: 18,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  borderWidth: 2,
+                  borderColor: '#FFF',
                 }}
-              />
+              >
+                <Text
+                  style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}
+                >
+                  {pendingRequestsCount}
+                </Text>
+              </View>
             )}
           </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scrollContainer}
+        style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
         {/* 2. Hero Section */}
@@ -321,83 +238,65 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
           />
           <View style={styles.heroOverlay} />
           <Text style={styles.heroTitle}>
-            나다운, 우리다운{'\n'}여행의 시작
+            {'나다운, 우리다운\n여행의 시작'}
           </Text>
         </View>
 
         {/* 3. Action Card Section */}
         <View style={styles.actionContainer}>
           <View style={styles.cardWrapper}>
-            {/* 여행지 */}
-            <TouchableOpacity
-              style={styles.inputRow}
+            <InputRow
+              label="여행지"
+              value={destination}
+              placeholder="어디로 떠나시나요?"
+              icon={faLocationDot}
               onPress={() => onOpenSearchModal('destination')}
-            >
-              <Text style={styles.label}>여행지</Text>
-              <View style={styles.valueContainer}>
-                <Text
-                  style={
-                    destination ? styles.valueText : styles.placeholderText
-                  }
-                >
-                  {destination || '어디로 떠나시나요?'}
-                </Text>
-                <ChevronRight size={18} color="#D1D5DB" />
-              </View>
-            </TouchableOpacity>
+            />
 
-            {/* 기간 */}
-            <TouchableOpacity style={styles.inputRow} onPress={onOpenCalendar}>
-              <Text style={styles.label}>기간</Text>
-              <View style={styles.valueContainer}>
-                <Text
-                  style={dateText ? styles.valueText : styles.placeholderText}
-                >
-                  {dateText || '언제 떠나시나요?'}
-                </Text>
-                <ChevronRight size={18} color="#D1D5DB" />
-              </View>
-            </TouchableOpacity>
+            <InputRow
+              label="기간"
+              value={dateText}
+              placeholder="언제 떠나시나요?"
+              icon={faCalendar}
+              onPress={onOpenCalendar}
+            />
 
-            {/* 인원수 */}
-            <TouchableOpacity style={styles.inputRow} onPress={onOpenPaxModal}>
-              <Text style={styles.label}>인원수</Text>
-              <View style={styles.valueContainer}>
-                <Text
-                  style={paxText ? styles.valueText : styles.placeholderText}
-                >
-                  {paxText || '누구와 함께하시나요?'}
-                </Text>
-                <ChevronRight size={18} color="#D1D5DB" />
-              </View>
-            </TouchableOpacity>
+            <InputRow
+              label="인원수"
+              value={paxText}
+              placeholder="누구와 함께하시나요?"
+              icon={faUser}
+              onPress={onOpenPaxModal}
+            />
 
-            {/* 이동수단 */}
-            <TouchableOpacity
-              style={[styles.inputRow, styles.inputRowLast]}
+            <InputRow
+              label="이동수단"
+              value={
+                transport === 'car' ? '자동차' : transport ? '대중교통' : ''
+              }
+              placeholder="무엇을 타고 가시나요?"
+              icon={transport === 'car' ? faCar : faBus}
               onPress={onOpenTransportModal}
-            >
-              <Text style={styles.label}>이동수단</Text>
-              <View style={styles.valueContainer}>
-                <Text
-                  style={transport ? styles.valueText : styles.placeholderText}
-                >
-                  {transport || '무엇을 타고 가시나요?'}
-                </Text>
-                <ChevronRight size={18} color="#D1D5DB" />
-              </View>
-            </TouchableOpacity>
+              isLast
+            />
 
             {/* Create Button */}
             <TouchableOpacity
               style={[
                 styles.submitButton,
-                !isFormValid && { backgroundColor: '#D1D5DB' },
+                !isFormValid && styles.submitButtonDisabled,
               ]}
               onPress={onCreateItinerary}
               disabled={!isFormValid}
             >
-              <Text style={styles.submitButtonText}>일정생성</Text>
+              <Text
+                style={[
+                  styles.submitButtonText,
+                  !isFormValid && styles.submitButtonTextDisabled,
+                ]}
+              >
+                일정생성
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
