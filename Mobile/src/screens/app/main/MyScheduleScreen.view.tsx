@@ -31,6 +31,7 @@ import NotificationModal, {
 } from '../../../components/common/NotificationModal';
 import ShareModal from '../../../components/common/ShareModal';
 import MenuModal from '../../../components/common/MenuModal';
+import Header from '../../../components/common/Header';
 import { SimplePlanVO } from '../../../types/env';
 import { styles, COLORS, FONTS } from './MyScheduleScreen.styles';
 import gravatarUrl from '../../../utils/gravatarUrl';
@@ -141,84 +142,13 @@ export default function MyScheduleScreenView({
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* ── Top Bar (Unified with Home style) ── */}
-      <View style={styles.topBar}>
-        <Text
-          style={{
-            fontSize: normalize(22),
-            fontFamily: FONTS.bold,
-            fontWeight: '800',
-            color: '#0047FF',
-          }}
-        >
-          planMate
-        </Text>
-        <View style={styles.topIcons}>
-          <TouchableOpacity
-            style={{
-              width: normalize(32),
-              height: normalize(32),
-              borderRadius: normalize(6),
-              backgroundColor: '#2563EB',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-            onPress={onNotificationPress}
-          >
-            <FontAwesomeIcon icon={faPen} color="#FFF" size={16} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.userAvatar}
-            onPress={onNavigateProfile}
-          >
-            {email ? (
-              <Image
-                source={{ uri: gravatarUrl(email, 100) }}
-                style={{ width: '100%', height: '100%' }}
-                resizeMode="cover"
-              />
-            ) : (
-              <FontAwesomeIcon icon={faUser} size={20} color="#9CA3AF" />
-            )}
-          </TouchableOpacity>
-          <Text
-            style={{
-              fontSize: normalize(13),
-              fontFamily: FONTS.medium,
-              color: '#374151',
-              marginLeft: normalize(4),
-            }}
-          >
-            {nickname || '사용자'}님
-          </Text>
-          <TouchableOpacity onPress={onNotificationPress}>
-            <FontAwesomeIcon icon={faBell} size={22} color="#000" />
-            {pendingRequestsCount > 0 && (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: -4,
-                  right: -4,
-                  backgroundColor: '#FF3B30',
-                  borderRadius: 10,
-                  minWidth: 18,
-                  height: 18,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderWidth: 2,
-                  borderColor: '#FFF',
-                }}
-              >
-                <Text
-                  style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}
-                >
-                  {pendingRequestsCount}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
+      <Header
+        nickname={nickname}
+        email={email}
+        pendingRequestsCount={pendingRequestsCount}
+        onNotificationPress={onNotificationPress}
+        onNavigateProfile={onNavigateProfile}
+      />
 
       <ScrollView
         contentContainerStyle={styles.scrollContainer}

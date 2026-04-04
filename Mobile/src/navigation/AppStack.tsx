@@ -50,6 +50,7 @@ function MyScheduleStack() {
         component={MyScheduleScreen}
         options={{ headerShown: false }}
       />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="ItineraryEditor" component={ItineraryEditorScreen} />
       <Stack.Screen name="ItineraryView" component={ItineraryViewScreen} />
     </Stack.Navigator>

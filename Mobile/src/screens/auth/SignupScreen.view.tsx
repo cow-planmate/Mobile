@@ -403,7 +403,7 @@ export const SignupScreenView = ({
                             styles.genderButtonTextSelected,
                         ]}
                       >
-                        남성
+                        남자
                       </Text>
                     </Pressable>
                     <Pressable
@@ -421,7 +421,7 @@ export const SignupScreenView = ({
                             styles.genderButtonTextSelected,
                         ]}
                       >
-                        여성
+                        여자
                       </Text>
                     </Pressable>
                   </View>

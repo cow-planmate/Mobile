@@ -27,6 +27,7 @@ import SelectionModal, {
   OptionType,
 } from '../../../components/common/SelectionModal';
 import SearchLocationModal from '../../../components/common/SearchLocationModal';
+import Header from '../../../components/common/Header';
 import { styles } from './HomeScreen.styles';
 import gravatarUrl from '../../../utils/gravatarUrl';
 
@@ -172,59 +173,13 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* 1. Top Bar */}
-      <View style={styles.topBar}>
-        <Text style={styles.logo}>planMate</Text>
-        <View style={styles.topIcons}>
-          <TouchableOpacity
-            style={styles.headerIconBtn}
-            onPress={onNotificationPress}
-          >
-            <FontAwesomeIcon icon={faPen} color="#FFF" size={16} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.userAvatar}
-            onPress={onNavigateProfile}
-          >
-            {email ? (
-              <Image
-                source={{ uri: gravatarUrl(email, 100) }}
-                style={{ width: '100%', height: '100%' }}
-                resizeMode="cover"
-              />
-            ) : (
-              <FontAwesomeIcon icon={faUser} size={20} color="#9CA3AF" />
-            )}
-          </TouchableOpacity>
-          <Text style={styles.userNickname}>{nickname || '사용자'}님</Text>
-          <TouchableOpacity onPress={onNotificationPress}>
-            <FontAwesomeIcon icon={faBell} size={22} color="#000" />
-            {pendingRequestsCount > 0 && (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: -4,
-                  right: -4,
-                  backgroundColor: '#FF3B30',
-                  borderRadius: 10,
-                  minWidth: 18,
-                  height: 18,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderWidth: 2,
-                  borderColor: '#FFF',
-                }}
-              >
-                <Text
-                  style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}
-                >
-                  {pendingRequestsCount}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
+      <Header
+        nickname={nickname}
+        email={email}
+        pendingRequestsCount={pendingRequestsCount}
+        onNotificationPress={onNotificationPress}
+        onNavigateProfile={onNavigateProfile}
+      />
 
       <ScrollView
         style={styles.scrollContainer}

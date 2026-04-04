@@ -32,8 +32,8 @@ export default function ProfileScreen() {
       const data = response.data;
 
       let genderStr = '미설정';
-      if (data.gender === 0) genderStr = '남성';
-      else if (data.gender === 1) genderStr = '여성';
+      if (data.gender === 0) genderStr = '남자';
+      else if (data.gender === 1) genderStr = '여자';
 
       const themes =
         data.preferredThemes && data.preferredThemes.length > 0
@@ -92,11 +92,11 @@ export default function ProfileScreen() {
 
   const handleUpdateGender = async (newGender: string) => {
     try {
-      const genderInt = newGender === 'male' ? 0 : 1;
+      const genderInt = newGender === '남자' ? 0 : 1;
       await axios.patch(`${API_URL}/api/user/gender`, { gender: genderInt });
       setUser(prev => ({
         ...prev,
-        gender: newGender === 'male' ? '남성' : '여성',
+        gender: newGender,
       }));
       showAlert({ title: '성공', message: '성별이 변경되었습니다.' });
       setGenderModalVisible(false);

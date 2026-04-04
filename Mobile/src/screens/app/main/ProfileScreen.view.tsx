@@ -8,6 +8,19 @@ import {
   StatusBar,
 } from 'react-native';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import {
+  faEnvelope,
+  faCalendar,
+  faVenus,
+  faMars,
+  faHeart,
+  faLock,
+  faPen,
+  faMapMarkerAlt,
+  faBed,
+  faUtensils,
+} from '@fortawesome/free-solid-svg-icons';
 import {
   User,
   Mail,
@@ -15,10 +28,8 @@ import {
   Heart,
   Lock,
   ChevronRight,
-  MapPin,
-  Utensils,
-  Hotel,
   Pencil,
+  LogOut,
 } from 'lucide-react-native';
 import { Image } from 'react-native';
 import gravatarUrl from '../../../utils/gravatarUrl';
@@ -123,7 +134,7 @@ export default function ProfileScreenView({
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* 프로필 요약 (카드 형태 제거) */}
+        {/* 프로필 요약 (PNG Style Header) */}
         <View style={styles.profileInfoArea}>
           <View style={styles.avatarWrap}>
             {user.email ? (
@@ -132,7 +143,7 @@ export default function ProfileScreenView({
                 style={styles.avatarImage}
               />
             ) : (
-              <User size={40} color="#D1D5DB" />
+              <User size={50} color="#D1D5DB" />
             )}
           </View>
           <TouchableOpacity
@@ -140,92 +151,125 @@ export default function ProfileScreenView({
             onPress={() => setNicknameModalVisible(true)}
           >
             <Text style={styles.nicknameText}>{user.name}</Text>
-            <Pencil size={20} color="#6B7280" style={styles.editIcon} />
+            <FontAwesomeIcon
+              icon={faPen}
+              size={18}
+              color="#6B7280"
+              style={styles.editIcon}
+            />
           </TouchableOpacity>
         </View>
 
-        {/* 이메일 카드 */}
-        <InfoCard
-          icon={<Mail size={20} color="#1F2937" />}
-          label="이메일"
-          value={user.email}
-        />
+        {/* Content Area (내 일정 화면처럼 큰 테두리 하나로 감싸기) */}
+        <View style={styles.sectionWrapper}>
+          <View style={styles.contentArea}>
+            {/* 이메일 카드 */}
+            <InfoCard
+              icon={
+                <FontAwesomeIcon icon={faEnvelope} size={20} color="#374151" />
+              }
+              label="이메일"
+              value={user.email}
+            />
 
-        {/* 나이 카드 */}
-        <InfoCard
-          icon={<Calendar size={20} color="#1F2937" />}
-          label="나이"
-          value={user.age}
-          onPress={() => setAgeModalVisible(true)}
-        />
+            {/* 나이 카드 */}
+            <InfoCard
+              icon={
+                <FontAwesomeIcon icon={faCalendar} size={20} color="#374151" />
+              }
+              label="나이"
+              value={user.age}
+              onPress={() => setAgeModalVisible(true)}
+            />
 
-        {/* 성별 카드 */}
-        <InfoCard
-          icon={<User size={20} color="#1F2937" />}
-          label="성별"
-          value={user.gender}
-          onPress={() => setGenderModalVisible(true)}
-        />
+            {/* 성별 카드 */}
+            <InfoCard
+              icon={
+                <FontAwesomeIcon
+                  icon={user.gender === '남자' ? faMars : faVenus}
+                  size={20}
+                  color="#374151"
+                />
+              }
+              label="성별"
+              value={user.gender}
+              onPress={() => setGenderModalVisible(true)}
+            />
 
-        {/* 선호테마 카드 */}
-        <View style={styles.sectionCard}>
-          <View style={styles.cardHeader}>
-            <View style={styles.cardTitleRow}>
-              <Heart size={20} color="#1F2937" fill="#1F2937" />
-              <Text style={styles.cardTitle}>선호테마</Text>
+            {/* 선호테마 카드 */}
+            <View style={styles.sectionCard}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardTitleRow}>
+                  <FontAwesomeIcon icon={faHeart} size={20} color="#374151" />
+                  <Text style={styles.cardTitle}>선호테마</Text>
+                </View>
+                <TouchableOpacity onPress={() => setThemeModalVisible(true)}>
+                  <Text style={styles.changeText}>변경하기</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.themeCategory}>
+                <View style={styles.themeCategoryHeader}>
+                  <FontAwesomeIcon
+                    icon={faMapMarkerAlt}
+                    size={16}
+                    color="#4B5563"
+                  />
+                  <Text style={styles.themeCategoryTitle}>관광지</Text>
+                </View>
+                <View style={styles.tagContainer}>
+                  <ThemeTag text="해수욕장" />
+                </View>
+              </View>
+
+              <View style={styles.themeCategory}>
+                <View style={styles.themeCategoryHeader}>
+                  <FontAwesomeIcon icon={faBed} size={16} color="#4B5563" />
+                  <Text style={styles.themeCategoryTitle}>숙소</Text>
+                </View>
+                <View style={styles.tagContainer}>
+                  <ThemeTag text="캠핑장" />
+                </View>
+              </View>
+
+              <View style={styles.themeCategory}>
+                <View style={styles.themeCategoryHeader}>
+                  <FontAwesomeIcon
+                    icon={faUtensils}
+                    size={16}
+                    color="#4B5563"
+                  />
+                  <Text style={styles.themeCategoryTitle}>식당</Text>
+                </View>
+                <View style={styles.tagContainer}>
+                  <ThemeTag text="분식" />
+                </View>
+              </View>
             </View>
-            <TouchableOpacity onPress={() => setThemeModalVisible(true)}>
-              <Text style={styles.changeText}>변경하기</Text>
+
+            {/* 비밀번호 카드 */}
+            {user.socialLogin === false && (
+              <InfoCard
+                icon={
+                  <FontAwesomeIcon icon={faLock} size={20} color="#374151" />
+                }
+                label="비밀번호"
+                value="비밀번호 수정이 가능합니다"
+                onPress={() => setPasswordModalVisible(true)}
+              />
+            )}
+          </View>
+
+          {/* 하단 버튼 영역 */}
+          <View style={styles.footerArea}>
+            <TouchableOpacity
+              style={styles.resignButton}
+              onPress={handleResign}
+            >
+              <Text style={styles.resignText}>탈퇴하기</Text>
             </TouchableOpacity>
           </View>
-
-          <View style={styles.themeCategory}>
-            <View style={styles.themeCategoryHeader}>
-              <MapPin size={18} color="#4B5563" />
-              <Text style={styles.themeCategoryTitle}>관광지</Text>
-            </View>
-            <View style={styles.tagContainer}>
-              <ThemeTag text="해수욕장" />
-            </View>
-          </View>
-
-          <View style={styles.themeCategory}>
-            <View style={styles.themeCategoryHeader}>
-              <Hotel size={18} color="#4B5563" />
-              <Text style={styles.themeCategoryTitle}>숙소</Text>
-            </View>
-            <View style={styles.tagContainer}>
-              <ThemeTag text="캠핑장" />
-            </View>
-          </View>
-
-          <View style={styles.themeCategory}>
-            <View style={styles.themeCategoryHeader}>
-              <Utensils size={18} color="#4B5563" />
-              <Text style={styles.themeCategoryTitle}>식당</Text>
-            </View>
-            <View style={styles.tagContainer}>
-              <ThemeTag text="분식" />
-            </View>
-          </View>
         </View>
-
-        {/* 비밀번호 카드 */}
-        <InfoCard
-          icon={<Lock size={20} color="#4B5563" fill="#4B5563" />}
-          label="비밀번호"
-          value="변경하기를 통해 수정이 가능합니다."
-          onPress={() => setPasswordModalVisible(true)}
-        />
-
-        {/* 하단 버튼 */}
-        <TouchableOpacity style={styles.resignButton} onPress={handleResign}>
-          <Text style={styles.resignText}>탈퇴하기</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <Text style={styles.logoutText}>로그아웃</Text>
-        </TouchableOpacity>
       </ScrollView>
 
       {/* ── Modals ── */}
@@ -250,7 +294,7 @@ export default function ProfileScreenView({
         visible={isGenderModalVisible}
         onClose={() => setGenderModalVisible(false)}
         onConfirm={handleUpdateGender}
-        initialGender={user.gender === '남성' ? 'male' : 'female'}
+        initialGender={user.gender === '남자' ? 'male' : 'female'}
       />
       <UpdateThemeModal
         visible={isThemeModalVisible}
