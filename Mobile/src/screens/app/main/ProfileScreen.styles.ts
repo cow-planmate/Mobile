@@ -169,13 +169,21 @@ export const styles = StyleSheet.create({
   /* ── Footer ── */
   footerArea: {
     paddingHorizontal: normalize(20),
-    paddingBottom: normalize(20),
+    paddingBottom: normalize(30),
+    gap: normalize(12),
+  },
+  logoutButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: normalize(4),
+  },
+  logoutText: {
+    fontSize: normalize(14),
+    fontFamily: FONTS.medium,
+    color: '#6B7280',
   },
   resignButton: {
     alignSelf: 'flex-start',
-    paddingVertical: normalize(6),
-    paddingHorizontal: normalize(12),
-    borderRadius: normalize(8),
+    paddingVertical: normalize(4),
   },
   resignText: {
     fontSize: normalize(14),

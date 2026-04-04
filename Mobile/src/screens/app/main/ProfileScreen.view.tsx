@@ -262,6 +262,9 @@ export default function ProfileScreenView({
 
           {/* 하단 버튼 영역 */}
           <View style={styles.footerArea}>
+            <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+              <Text style={styles.logoutText}>로그아웃</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.resignButton}
               onPress={handleResign}
