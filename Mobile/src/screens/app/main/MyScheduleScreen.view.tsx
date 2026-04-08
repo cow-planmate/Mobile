@@ -19,8 +19,11 @@ import {
 } from 'lucide-react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
+  faT,
   faUser,
   faPen,
+  faShare,
+  faTrash,
   faCalendar,
   faCalendarAlt,
 } from '@fortawesome/free-solid-svg-icons';
@@ -38,10 +41,10 @@ import gravatarUrl from '../../../utils/gravatarUrl';
 import { normalize } from '../../../utils/normalize';
 
 export const MENU_OPTIONS = [
-  { label: '제목 바꾸기', action: 'rename' },
-  { label: '수정하기', action: 'edit' },
-  { label: '공유 및 초대', action: 'share' },
-  { label: '삭제하기', action: 'delete', isDestructive: true },
+  { label: '제목 바꾸기', action: 'rename', icon: faT },
+  { label: '수정하기', action: 'edit', icon: faPen },
+  { label: '공유 및 초대', action: 'share', icon: faShare },
+  { label: '삭제하기', action: 'delete', icon: faTrash, isDestructive: true },
 ];
 
 const ItineraryCard = ({

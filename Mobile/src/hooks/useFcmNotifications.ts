@@ -27,8 +27,7 @@ const getMessaging = () => {
   }
 };
 
-const INVITATION_HINTS: string[] = INVITATION_PUSH_TYPES
-  .split(',')
+const INVITATION_HINTS: string[] = INVITATION_PUSH_TYPES.split(',')
   .map((token: string) => token.trim().toLowerCase())
   .filter(Boolean);
 
