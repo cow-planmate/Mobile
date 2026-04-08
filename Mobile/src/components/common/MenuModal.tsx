@@ -1,14 +1,13 @@
 import React from 'react';
 import { Modal, View, Text, Pressable, TouchableOpacity } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { styles } from './MenuModal.styles';
 
 export type MenuOption = {
   label: string;
   action: string;
   isDestructive?: boolean;
-  icon: IconDefinition;
+  icon: any;
 };
 
 type MenuModalProps = {

@@ -13,10 +13,12 @@ import {
   acceptInvitation,
   getPendingInvitations,
   PendingInvitation,
+  leaveAsEditor,
   rejectInvitation,
 } from '../../../api/trips';
 import { useInvitationSse } from '../../../hooks/useInvitationSse';
 import { useFcmNotifications } from '../../../hooks/useFcmNotifications';
+import { MENU_OPTIONS, SHARED_MENU_OPTIONS } from './MyScheduleScreen.view';
 
 const INVITATION_REFRESH_INTERVAL_MS = 15000;
 const FCM_RUNTIME_ENABLED =
@@ -186,6 +188,12 @@ export default function MyScheduleScreen() {
     setMenuVisible(true);
   };
 
+  const isSharedPlan =
+    !!selectedPlan &&
+    sharedItineraries.some(plan => plan.planId === selectedPlan.planId);
+
+  const menuOptions = isSharedPlan ? SHARED_MENU_OPTIONS : MENU_OPTIONS;
+
   const handleMenuSelect = (action: string) => {
     setMenuVisible(false);
     if (!selectedPlan) return;
@@ -202,6 +210,9 @@ export default function MyScheduleScreen() {
         break;
       case 'share':
         setShareModalVisible(true);
+        break;
+      case 'leave':
+        handleLeaveEditor(selectedPlan.planId);
         break;
     }
   };
@@ -258,6 +269,40 @@ export default function MyScheduleScreen() {
     });
   };
 
+  const handleLeaveEditor = async (planId: number) => {
+    showAlert({
+      title: '편집 권한 포기',
+      message: '이 일정의 편집 권한을 포기하시겠습니까?',
+      type: 'confirm',
+      buttons: [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '포기',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await leaveAsEditor(planId);
+              setSharedItineraries(prev =>
+                prev.filter(plan => plan.planId !== planId),
+              );
+              setSelectedPlan(null);
+              showAlert({
+                title: '성공',
+                message: '편집 권한을 포기했습니다.',
+              });
+            } catch (e) {
+              console.error('Leave editor failed:', e);
+              showAlert({
+                title: '실패',
+                message: '편집 권한 포기에 실패했습니다.',
+              });
+            }
+          },
+        },
+      ],
+    });
+  };
+
   const navigateToView = (plan: SimplePlanVO) => {
     navigation.navigate('ItineraryView', {
       days: [],
@@ -280,6 +325,7 @@ export default function MyScheduleScreen() {
       menuVisible={menuVisible}
       setMenuVisible={setMenuVisible}
       selectedPlan={selectedPlan}
+      menuOptions={menuOptions}
       renameModalVisible={renameModalVisible}
       setRenameModalVisible={setRenameModalVisible}
       shareModalVisible={shareModalVisible}

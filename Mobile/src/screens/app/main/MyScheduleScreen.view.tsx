@@ -47,6 +47,18 @@ export const MENU_OPTIONS = [
   { label: '삭제하기', action: 'delete', icon: faTrash, isDestructive: true },
 ];
 
+export const SHARED_MENU_OPTIONS = [
+  { label: '제목 바꾸기', action: 'rename', icon: faT },
+  { label: '수정하기', action: 'edit', icon: faPen },
+  { label: '공유 및 초대', action: 'share', icon: faShare },
+  {
+    label: '편집 권한 포기하기',
+    action: 'leave',
+    icon: faTrash,
+    isDestructive: true,
+  },
+];
+
 const ItineraryCard = ({
   title,
   subtitle,
@@ -86,6 +98,7 @@ export interface MyScheduleScreenViewProps {
   menuVisible: boolean;
   setMenuVisible: (visible: boolean) => void;
   selectedPlan: SimplePlanVO | null;
+  menuOptions: any[];
   renameModalVisible: boolean;
   setRenameModalVisible: (visible: boolean) => void;
   shareModalVisible: boolean;
@@ -114,6 +127,7 @@ export default function MyScheduleScreenView({
   menuVisible,
   setMenuVisible,
   selectedPlan,
+  menuOptions,
   renameModalVisible,
   setRenameModalVisible,
   shareModalVisible,
@@ -262,7 +276,7 @@ export default function MyScheduleScreenView({
       <MenuModal
         visible={menuVisible}
         title="일정 관리"
-        options={MENU_OPTIONS}
+        options={menuOptions}
         onClose={() => setMenuVisible(false)}
         onSelect={handleMenuSelect}
       />
