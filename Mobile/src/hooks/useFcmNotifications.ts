@@ -2,6 +2,10 @@ import { useEffect, useRef } from 'react';
 import { PermissionsAndroid, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import {
+  FCM_TOKEN_REGISTER_URL as FCM_TOKEN_REGISTER_URL_ENV,
+  INVITATION_PUSH_TYPES as INVITATION_PUSH_TYPES_ENV,
+} from '@env';
 
 interface UseFcmNotificationsParams {
   enabled: boolean;
@@ -9,8 +13,9 @@ interface UseFcmNotificationsParams {
 }
 
 const FCM_TOKEN_STORAGE_KEY = 'fcmToken';
-let FCM_TOKEN_REGISTER_URL: string | undefined;
-const INVITATION_PUSH_TYPES = 'invite,invitation,collaboration,초대';
+const FCM_TOKEN_REGISTER_URL = FCM_TOKEN_REGISTER_URL_ENV;
+const INVITATION_PUSH_TYPES =
+  INVITATION_PUSH_TYPES_ENV || 'invite,invitation,collaboration,초대';
 
 const getMessaging = () => {
   try {
@@ -22,9 +27,7 @@ const getMessaging = () => {
   }
 };
 
-const INVITATION_HINTS: string[] = (
-  INVITATION_PUSH_TYPES || 'invite,invitation,collaboration,초대'
-)
+const INVITATION_HINTS: string[] = INVITATION_PUSH_TYPES
   .split(',')
   .map((token: string) => token.trim().toLowerCase())
   .filter(Boolean);

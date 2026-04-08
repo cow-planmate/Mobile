@@ -3,7 +3,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppState, AppStateStatus } from 'react-native';
 import axios from 'axios';
-import { API_URL } from '@env';
+import { API_URL, FCM_RUNTIME_ENABLED as FCM_RUNTIME_ENABLED_ENV } from '@env';
 import { SimplePlanVO } from '../../../types/env';
 import { AppStackParamList } from '../../../navigation/types';
 import MyScheduleScreenView from './MyScheduleScreen.view';
@@ -19,7 +19,8 @@ import { useInvitationSse } from '../../../hooks/useInvitationSse';
 import { useFcmNotifications } from '../../../hooks/useFcmNotifications';
 
 const INVITATION_REFRESH_INTERVAL_MS = 15000;
-const FCM_RUNTIME_ENABLED = false;
+const FCM_RUNTIME_ENABLED =
+  (FCM_RUNTIME_ENABLED_ENV || '').trim().toLowerCase() === 'true';
 
 export default function MyScheduleScreen() {
   const navigation =

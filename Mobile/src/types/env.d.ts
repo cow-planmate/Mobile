@@ -3,6 +3,7 @@ declare module '@env' {
   export const INVITATION_SSE_URL: string | undefined;
   export const FCM_TOKEN_REGISTER_URL: string | undefined;
   export const INVITATION_PUSH_TYPES: string | undefined;
+  export const FCM_RUNTIME_ENABLED: string | undefined;
 }
 
 export interface SimplePlanVO {
