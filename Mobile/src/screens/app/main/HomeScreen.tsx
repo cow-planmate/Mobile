@@ -15,13 +15,13 @@ import {
 import { useAlert } from '../../../contexts/AlertContext';
 import { Bus, Car } from 'lucide-react-native';
 import { useInvitationSse } from '../../../hooks/useInvitationSse';
-import { useFcmNotifications } from '../../../hooks/useFcmNotifications';
-import { FCM_RUNTIME_ENABLED as FCM_RUNTIME_ENABLED_ENV } from '@env';
+import {
+  IS_FCM_RUNTIME_ENABLED,
+  useFcmNotifications,
+} from '../../../hooks/useFcmNotifications';
 
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 const INVITATION_REFRESH_INTERVAL_MS = 15000;
-const FCM_RUNTIME_ENABLED =
-  (FCM_RUNTIME_ENABLED_ENV || '').trim().toLowerCase() === 'true';
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const { user } = useAuth();
@@ -101,7 +101,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   });
 
   useFcmNotifications({
-    enabled: !!user && FCM_RUNTIME_ENABLED,
+    enabled: !!user && IS_FCM_RUNTIME_ENABLED,
     onInvitationPush: () => fetchPendingRequests(true),
   });
 
