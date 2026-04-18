@@ -53,10 +53,11 @@ const TAB_COLORS: { [key in PlaceTab]: string } = {
   관광지: '#84cc16',
   숙소: '#f97316',
   식당: '#3b82f6',
+  '직접 추가': '#8b5cf6',
   검색: '#6b7280',
 };
 
-type PlaceTab = '관광지' | '숙소' | '식당' | '검색';
+type PlaceTab = '관광지' | '숙소' | '식당' | '직접 추가' | '검색';
 
 // ────────────────────────────────────────────────
 // Convert PlaceVO to Place (for TimelineItem compat)
@@ -444,70 +445,41 @@ export default function PlaceRecommendationList({
 
   return (
     <View style={plStyles.container}>
-      {/* Search Bar */}
-      <View style={plStyles.searchContainer}>
-        <TextInput
-          style={plStyles.searchInput}
-          placeholder={
-            destination ? `${destination} 근처 장소 검색` : '장소를 검색하세요'
-          }
-          placeholderTextColor="#9CA3AF"
-          value={searchQuery}
-          onChangeText={handleSearchTextChange}
-          onSubmitEditing={handleSearchSubmit}
-          returnKeyType="search"
-          multiline={false}
-          scrollEnabled={false}
-          numberOfLines={1}
-        />
-        <TouchableOpacity
-          onPress={handleSearchSubmit}
-          style={plStyles.searchButton}
-        >
-          <Search size={20} color="#9CA3AF" strokeWidth={1.5} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleRefresh}
-          style={plStyles.refreshButton}
-          activeOpacity={0.7}
-        >
-          <RotateCw size={18} color="#1344FF" strokeWidth={2} />
-        </TouchableOpacity>
-      </View>
-
       {/* Category Tabs */}
       <View style={plStyles.tabContainer}>
-        {(['관광지', '숙소', '식당', '검색'] as PlaceTab[]).map(tab => {
-          const isSelected = selectedTab === tab;
-          const tabColor = TAB_COLORS[tab];
-          return (
-            <TouchableOpacity
-              key={tab}
-              onPress={() => setSelectedTab(tab)}
-              style={[
-                plStyles.tab,
-                isSelected && { borderBottomColor: tabColor },
-              ]}
-            >
-              <View style={plStyles.tabInner}>
-                <View
-                  style={[
-                    plStyles.tabDot,
-                    { backgroundColor: isSelected ? tabColor : '#D1D5DB' },
-                  ]}
-                />
-                <Text
-                  style={[
-                    plStyles.tabText,
-                    isSelected && { color: tabColor, fontFamily: FONTS.bold },
-                  ]}
-                >
-                  {tab}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+        {(['관광지', '숙소', '식당', '직접 추가', '검색'] as PlaceTab[]).map(
+          tab => {
+            const isSelected = selectedTab === tab;
+            const tabColor = TAB_COLORS[tab];
+            return (
+              <TouchableOpacity
+                key={tab}
+                onPress={() => setSelectedTab(tab)}
+                style={[
+                  plStyles.tab,
+                  isSelected && { borderBottomColor: tabColor },
+                ]}
+              >
+                <View style={plStyles.tabInner}>
+                  <View
+                    style={[
+                      plStyles.tabDot,
+                      { backgroundColor: isSelected ? tabColor : '#D1D5DB' },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      plStyles.tabText,
+                      isSelected && { color: tabColor, fontFamily: FONTS.bold },
+                    ]}
+                  >
+                    {tab}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          },
+        )}
       </View>
 
       {/* Place List */}
