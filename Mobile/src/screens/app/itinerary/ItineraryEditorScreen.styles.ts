@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 export const COLORS = {
   primary: '#1344FF',
@@ -24,12 +24,120 @@ export const HOUR_HEIGHT = 180;
 export const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
 export const MIN_ITEM_HEIGHT = 45;
 export const GRID_SNAP_HEIGHT = HOUR_HEIGHT / 4;
+export const BOTTOM_TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 76 : 64;
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    paddingTop: 30,
+    paddingTop: 0,
+  },
+  topToolbar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    marginTop: 4,
+    paddingTop: 6,
+    paddingBottom: 8,
+    backgroundColor: COLORS.background,
+  },
+  toolbarLeftGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
+    gap: 6,
+  },
+  toolbarRightGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  toolbarTitleButton: {
+    maxWidth: 120,
+    minHeight: 30,
+    justifyContent: 'center',
+  },
+  toolbarTitleText: {
+    fontSize: 19,
+    fontFamily: FONTS.bold,
+    color: COLORS.text,
+    lineHeight: 22,
+  },
+  toolbarTitleInput: {
+    minWidth: 120,
+    maxWidth: 170,
+    minHeight: 30,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    fontSize: 19,
+    fontFamily: FONTS.bold,
+    color: COLORS.text,
+    lineHeight: 22,
+  },
+  toolbarIconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  toolbarIconButtonPlain: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+  },
+  toolbarIconButtonInfo: {
+    backgroundColor: '#E5E7EB',
+    borderColor: '#E5E7EB',
+  },
+  toolbarIconButtonOutlineBlue: {
+    backgroundColor: '#FFFFFF',
+    borderColor: COLORS.primary,
+    borderWidth: 1.5,
+  },
+  toolbarIconButtonOutlineDark: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#D1D5DB',
+    borderWidth: 1.5,
+  },
+  toolbarIconButtonFilledGray: {
+    backgroundColor: '#E5E7EB',
+    borderColor: '#E5E7EB',
+  },
+  toolbarIconButtonFilledBlue: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  toolbarIconButtonActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  toolbarIconButtonDisabled: {
+    opacity: 0.55,
+  },
+  toolbarBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#FF3B30',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 2,
+    borderColor: COLORS.background,
+  },
+  toolbarBadgeText: {
+    color: COLORS.white,
+    fontSize: 9,
+    fontFamily: FONTS.bold,
+    lineHeight: 12,
   },
   loadingContainer: {
     flex: 1,
@@ -68,23 +176,30 @@ export const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingRight: 10,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 8,
+    gap: 8,
   },
   dayTabsContainer: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    alignItems: 'center',
+    paddingVertical: 0,
+    paddingRight: 4,
+    gap: 8,
   },
   dayTabsScroll: {
     flex: 1,
   },
   dayTab: {
+    minWidth: 112,
+    minHeight: 42,
     paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginRight: 10,
-    backgroundColor: COLORS.surface,
+    paddingHorizontal: 15,
+    borderRadius: 11,
+    marginRight: 8,
+    backgroundColor: COLORS.card,
     alignItems: 'center',
-    minWidth: 60,
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,
   },
@@ -92,33 +207,94 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  dayTabText: {
+  dayTabUnselected: {
+    backgroundColor: '#FFFFFF',
+  },
+  dayTabLabel: {
+    textAlign: 'center',
+    fontSize: 16,
     color: COLORS.text,
     fontFamily: FONTS.semibold,
-    fontSize: 14,
+    lineHeight: 18,
   },
-  dayTabTextSelected: {
+  dayTabLabelSelected: {
     color: COLORS.white,
   },
-  dayTabDateText: {
-    color: COLORS.placeholder,
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    marginTop: 2,
+  dayTabDayNumber: {
+    fontSize: 16,
+    fontFamily: FONTS.bold,
+    color: COLORS.text,
+    lineHeight: 18,
   },
-  dayTabDateTextSelected: {
+  dayTabDayNumberSelected: {
+    color: COLORS.white,
+  },
+  dayTabDateInline: {
+    fontSize: 14,
+    fontFamily: FONTS.medium,
+    color: COLORS.placeholder,
+    lineHeight: 16,
+  },
+  dayTabDateInlineSelected: {
     color: COLORS.white,
     opacity: 0.8,
   },
-  dayTabMetaText: {
-    color: COLORS.placeholder,
-    fontFamily: FONTS.regular,
-    fontSize: 10,
-    marginTop: 2,
+  dayEditButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 2,
   },
-  dayTabMetaTextSelected: {
-    color: COLORS.white,
-    opacity: 0.7,
+  bottomTabBar: {
+    backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 20,
+    elevation: 12,
+    height: BOTTOM_TAB_BAR_HEIGHT,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 32 : 12,
+    shadowOpacity: 0.08,
+  },
+  bottomTabContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingHorizontal: 8,
+  },
+  bottomTabItem: {
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bottomTabIcon: {
+    marginBottom: 4,
+    minHeight: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bottomTabLabel: {
+    fontFamily: FONTS.medium,
+    fontSize: 13,
+    marginTop: 0,
+    lineHeight: 16,
+    color: COLORS.placeholder,
+  },
+  bottomTabLabelActive: {
+    color: COLORS.primary,
+  },
+  tabScene: {
+    flex: 1,
+    paddingBottom: BOTTOM_TAB_BAR_HEIGHT,
   },
   tabContentContainer: {
     flex: 1,
@@ -313,20 +489,6 @@ export const styles = StyleSheet.create({
   marginTop20: {
     marginTop: 20,
   },
-  completeButton: {
-    backgroundColor: COLORS.primary,
-    margin: 16,
-    paddingVertical: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  completeButtonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontFamily: FONTS.bold,
-  },
-
   // Online Users Styles
   onlineUsersContainer: {
     flexDirection: 'row',

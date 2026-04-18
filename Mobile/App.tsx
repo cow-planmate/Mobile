@@ -14,9 +14,10 @@ import './src/api/axiosConfig';
 
 import { StyleSheet, StatusBar, View, Text } from 'react-native';
 import Toast from 'react-native-toast-message';
+import type { ToastConfig } from 'react-native-toast-message';
 import { XCircle } from 'lucide-react-native';
 
-const SHOW_STORYBOOK = false;
+const SHOW_STORYBOOK = true;
 
 /* ── Toast Styles ── */
 const toastStyles = StyleSheet.create({
@@ -45,27 +46,35 @@ const toastStyles = StyleSheet.create({
     flexShrink: 1,
     lineHeight: 20,
   },
+  successText: {
+    marginLeft: 0,
+    color: '#30D158',
+  },
+  infoText: {
+    marginLeft: 0,
+    color: '#BFBFBF',
+  },
 });
 
 /* ── Toast Config ── */
-const toastConfig = {
-  error: ({ text1 }: { text1: string }) => (
+const toastConfig: ToastConfig = {
+  error: ({ text1 }) => (
     <View style={toastStyles.container}>
       <XCircle size={20} color="#FF453A" strokeWidth={2.5} />
-      <Text style={toastStyles.text}>{text1}</Text>
+      <Text style={toastStyles.text}>{text1 ?? ''}</Text>
     </View>
   ),
-  success: ({ text1 }: { text1: string }) => (
+  success: ({ text1 }) => (
     <View style={toastStyles.container}>
-      <Text style={[toastStyles.text, { marginLeft: 0, color: '#30D158' }]}>
-        {text1}
+      <Text style={[toastStyles.text, toastStyles.successText]}>
+        {text1 ?? ''}
       </Text>
     </View>
   ),
-  info: ({ text1 }: { text1: string }) => (
+  info: ({ text1 }) => (
     <View style={toastStyles.container}>
-      <Text style={[toastStyles.text, { marginLeft: 0, color: '#BFBFBF' }]}>
-        {text1}
+      <Text style={[toastStyles.text, toastStyles.infoText]}>
+        {text1 ?? ''}
       </Text>
     </View>
   ),

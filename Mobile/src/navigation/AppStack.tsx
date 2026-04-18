@@ -1,6 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import HomeScreen from '../screens/app/main/HomeScreen';
 import ItineraryEditorScreen from '../screens/app/itinerary/ItineraryEditorScreen';
 
@@ -13,6 +14,19 @@ import { Home, User } from 'lucide-react-native';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 const Tab = createBottomTabNavigator();
+
+const baseTabBarStyle = {
+  backgroundColor: '#FFFFFF',
+  borderTopWidth: 1,
+  borderTopColor: '#E5E7EB',
+  height: Platform.OS === 'ios' ? 85 : 60,
+  paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+  paddingTop: 8,
+  elevation: 0,
+};
+
+const isItineraryEditorFocused = (route: any) =>
+  getFocusedRouteNameFromRoute(route) === 'ItineraryEditor';
 
 function HomeStack() {
   return (
@@ -29,7 +43,13 @@ function HomeStack() {
         options={{ headerShown: false }}
       />
       <Stack.Screen name="Profile" component={ProfileScreen} />
-      <Stack.Screen name="ItineraryEditor" component={ItineraryEditorScreen} />
+      <Stack.Screen
+        name="ItineraryEditor"
+        component={ItineraryEditorScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
       {}
       <Stack.Screen name="ItineraryView" component={ItineraryViewScreen} />
     </Stack.Navigator>
@@ -51,7 +71,13 @@ function MyScheduleStack() {
         options={{ headerShown: false }}
       />
       <Stack.Screen name="Profile" component={ProfileScreen} />
-      <Stack.Screen name="ItineraryEditor" component={ItineraryEditorScreen} />
+      <Stack.Screen
+        name="ItineraryEditor"
+        component={ItineraryEditorScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
       <Stack.Screen name="ItineraryView" component={ItineraryViewScreen} />
     </Stack.Navigator>
   );
@@ -72,7 +98,7 @@ const MyScheduleTabIcon = ({
 export default function AppStack() {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: '#1344FF',
         tabBarInactiveTintColor: '#9CA3AF',
@@ -81,19 +107,13 @@ export default function AppStack() {
           fontSize: 11,
           marginTop: -2,
         },
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: '#E5E7EB',
-          height: Platform.OS === 'ios' ? 85 : 60,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
-          paddingTop: 8,
-          elevation: 0,
-        },
+        tabBarStyle: isItineraryEditorFocused(route)
+          ? { display: 'none' }
+          : baseTabBarStyle,
         tabBarIconStyle: {
           marginBottom: -2,
         },
-      }}
+      })}
     >
       <Tab.Screen
         name="HomeTab"

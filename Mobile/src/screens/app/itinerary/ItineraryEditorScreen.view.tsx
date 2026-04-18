@@ -7,8 +7,10 @@ import {
   TouchableOpacity,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  TextInput,
 } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { TabActions } from '@react-navigation/native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -42,8 +44,137 @@ import {
   timeToDate,
   dateToTime,
 } from '../../../utils/timeUtils';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import {
+  faCalendar,
+  faMapPin,
+  faCheck,
+  faCircleInfo,
+  faLocationDot,
+  faMap,
+  faRedo,
+  faUserPlus,
+  faUndo,
+  faUsers,
+} from '@fortawesome/free-solid-svg-icons';
 
 const Tab = createMaterialTopTabNavigator();
+
+const TimelineTabIcon = ({ color }: { color: string }) => (
+  <FontAwesomeIcon icon={faCalendar} color={color} size={24} />
+);
+
+const PlaceTabIcon = ({ color }: { color: string }) => (
+  <FontAwesomeIcon icon={faMapPin} color={color} size={24} />
+);
+
+const BottomMenuBar = ({
+  state,
+  navigation,
+  descriptors,
+}: {
+  state: any;
+  navigation: any;
+  descriptors: any;
+}) => {
+  return (
+    <View style={styles.bottomTabBar}>
+      <View style={styles.bottomTabContent}>
+        {state.routes.map((route: any, index: number) => {
+          const descriptor = descriptors[route.key];
+          const options = descriptor.options;
+          const focused = state.index === index;
+          const color = focused ? COLORS.primary : COLORS.placeholder;
+          const label = options.title ?? route.name;
+          const icon = options.tabBarIcon?.({ focused, color }) ?? null;
+
+          const handlePress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
+
+            if (!focused && !event.defaultPrevented) {
+              navigation.dispatch(TabActions.jumpTo(route.name));
+            }
+          };
+
+          return (
+            <TouchableOpacity
+              key={route.key}
+              onPress={handlePress}
+              activeOpacity={0.8}
+              style={styles.bottomTabItem}
+            >
+              <View style={styles.bottomTabIcon}>{icon}</View>
+              <Text
+                style={[
+                  styles.bottomTabLabel,
+                  focused && styles.bottomTabLabelActive,
+                ]}
+                numberOfLines={1}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+};
+
+type ToolbarButtonVariant =
+  | 'plain'
+  | 'info'
+  | 'outlineBlue'
+  | 'outlineDark'
+  | 'filledGray'
+  | 'filledBlue';
+
+const ToolbarIconButton = ({
+  children,
+  onPress,
+  active = false,
+  disabled = false,
+  badgeCount,
+  variant = 'info',
+}: {
+  children: React.ReactNode;
+  onPress: () => void;
+  active?: boolean;
+  disabled?: boolean;
+  badgeCount?: number;
+  variant?: ToolbarButtonVariant;
+}) => (
+  <TouchableOpacity
+    onPress={onPress}
+    disabled={disabled}
+    activeOpacity={0.8}
+    hitSlop={8}
+    style={[
+      styles.toolbarIconButton,
+      variant === 'plain' && styles.toolbarIconButtonPlain,
+      variant === 'info' && styles.toolbarIconButtonInfo,
+      variant === 'outlineBlue' && styles.toolbarIconButtonOutlineBlue,
+      variant === 'outlineDark' && styles.toolbarIconButtonOutlineDark,
+      variant === 'filledGray' && styles.toolbarIconButtonFilledGray,
+      variant === 'filledBlue' && styles.toolbarIconButtonFilledBlue,
+      active && styles.toolbarIconButtonActive,
+      disabled && styles.toolbarIconButtonDisabled,
+    ]}
+  >
+    {children}
+    {typeof badgeCount === 'number' && badgeCount > 0 && (
+      <View style={styles.toolbarBadge}>
+        <Text style={styles.toolbarBadgeText}>
+          {badgeCount > 9 ? '9+' : badgeCount}
+        </Text>
+      </View>
+    )}
+  </TouchableOpacity>
+);
 
 const TimeGridBackground = React.memo(
   ({ hours, endHour }: { hours: number[]; endHour: number }) => {
@@ -513,6 +644,10 @@ export interface ItineraryEditorScreenViewProps {
   selectedDayIndex: number;
   setSelectedDayIndex: (idx: number) => void;
   tripName: string;
+  isEditingTripName: boolean;
+  setIsEditingTripName: (visible: boolean) => void;
+  setTripName: (value: string) => void;
+  onSaveTripName: () => void;
   isTimePickerVisible: boolean;
   setTimePickerVisible: (visible: boolean) => void;
   editingTime: {
@@ -542,6 +677,12 @@ export interface ItineraryEditorScreenViewProps {
   onConfirmTimePicker: (date: Date) => void;
   destination: string;
   onComplete: () => void;
+  onOpenParticipants: () => void;
+  onOpenMap: () => void;
+  onOpenShare: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  participantsCount: number;
   // New props for detail popup & recommendations
   planId: number | null;
   detailPlace: Place | null;
@@ -556,6 +697,10 @@ export default function ItineraryEditorScreenView({
   selectedDayIndex,
   setSelectedDayIndex,
   tripName,
+  isEditingTripName,
+  setIsEditingTripName,
+  setTripName,
+  onSaveTripName,
   isTimePickerVisible,
   setTimePickerVisible,
   editingTime,
@@ -573,6 +718,12 @@ export default function ItineraryEditorScreenView({
   onConfirmTimePicker,
   destination,
   onComplete,
+  onOpenParticipants,
+  onOpenMap,
+  onOpenShare,
+  onUndo,
+  onRedo,
+  participantsCount,
   planId,
   detailPlace,
   isDetailVisible,
@@ -592,6 +743,66 @@ export default function ItineraryEditorScreenView({
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.topToolbar}>
+        <View style={styles.toolbarLeftGroup}>
+          {isEditingTripName ? (
+            <TextInput
+              value={tripName}
+              onChangeText={setTripName}
+              onBlur={onSaveTripName}
+              onSubmitEditing={onSaveTripName}
+              autoFocus
+              numberOfLines={1}
+              style={styles.toolbarTitleInput}
+              placeholder="일정 이름"
+              placeholderTextColor="#9CA3AF"
+            />
+          ) : (
+            <TouchableOpacity
+              onPress={() => setIsEditingTripName(true)}
+              activeOpacity={0.8}
+              style={styles.toolbarTitleButton}
+            >
+              <Text style={styles.toolbarTitleText} numberOfLines={1}>
+                {tripName}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          <ToolbarIconButton onPress={onUndo} variant="plain">
+            <FontAwesomeIcon icon={faUndo} color="#111827" size={18} />
+          </ToolbarIconButton>
+          <ToolbarIconButton onPress={onRedo} variant="plain">
+            <FontAwesomeIcon icon={faRedo} color="#111827" size={18} />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            onPress={() => setScheduleEditVisible(true)}
+            variant="info"
+          >
+            <FontAwesomeIcon icon={faCircleInfo} color="#111827" size={18} />
+          </ToolbarIconButton>
+        </View>
+
+        <View style={styles.toolbarRightGroup}>
+          <ToolbarIconButton
+            onPress={onOpenParticipants}
+            badgeCount={participantsCount}
+            variant="outlineBlue"
+          >
+            <FontAwesomeIcon icon={faUsers} color="#1344FF" size={17} />
+          </ToolbarIconButton>
+          <ToolbarIconButton onPress={onOpenMap} variant="outlineDark">
+            <FontAwesomeIcon icon={faMap} color="#111827" size={17} />
+          </ToolbarIconButton>
+          <ToolbarIconButton onPress={onOpenShare} variant="filledGray">
+            <FontAwesomeIcon icon={faUserPlus} color="#111827" size={17} />
+          </ToolbarIconButton>
+          <ToolbarIconButton onPress={onComplete} variant="filledBlue" active>
+            <FontAwesomeIcon icon={faCheck} color="#FFFFFF" size={18} />
+          </ToolbarIconButton>
+        </View>
+      </View>
+
       <View style={styles.dayTabsWrapper}>
         <ScrollView
           horizontal
@@ -600,69 +811,72 @@ export default function ItineraryEditorScreenView({
           style={styles.dayTabsScroll}
         >
           {days.map((day, index) => {
-            const totalMin = day.places.reduce((sum, p) => {
-              return (
-                sum + (timeToMinutes(p.endTime) - timeToMinutes(p.startTime))
-              );
-            }, 0);
-            const timeLabel = totalMin > 0 ? `${totalMin}분` : '';
-            const dateKey = day.date.toISOString().split('T')[0];
-            const weather = weatherMap[dateKey];
             const isSelected = selectedDayIndex === index;
+
             return (
               <TouchableOpacity
                 key={index}
-                style={[styles.dayTab, isSelected && styles.dayTabSelected]}
+                style={[
+                  styles.dayTab,
+                  isSelected && styles.dayTabSelected,
+                  !isSelected && styles.dayTabUnselected,
+                ]}
                 onPress={() => setSelectedDayIndex(index)}
+                activeOpacity={0.85}
               >
                 <Text
                   style={[
-                    styles.dayTabText,
-                    isSelected && styles.dayTabTextSelected,
+                    styles.dayTabLabel,
+                    isSelected && styles.dayTabLabelSelected,
                   ]}
+                  numberOfLines={1}
                 >
-                  {day.dayNumber}일차
-                </Text>
-                <Text
-                  style={[
-                    styles.dayTabDateText,
-                    isSelected && styles.dayTabDateTextSelected,
-                  ]}
-                >
-                  {formatDate(day.date)}
-                </Text>
-                {day.places.length > 0 && (
                   <Text
                     style={[
-                      styles.dayTabMetaText,
-                      isSelected && styles.dayTabMetaTextSelected,
+                      styles.dayTabDayNumber,
+                      isSelected && styles.dayTabDayNumberSelected,
                     ]}
                   >
-                    {day.places.length}개소 {timeLabel}
+                    {day.dayNumber}일차{' '}
                   </Text>
-                )}
+                  <Text
+                    style={[
+                      styles.dayTabDateInline,
+                      isSelected && styles.dayTabDateInlineSelected,
+                    ]}
+                  >
+                    {formatDate(day.date)}
+                  </Text>
+                </Text>
               </TouchableOpacity>
             );
           })}
-          <TouchableOpacity
-            style={styles.dayTab}
-            onPress={() => setScheduleEditVisible(true)}
-          >
-            <Text style={styles.dayTabText}>+</Text>
-            <Text style={styles.dayTabDateText}>수정</Text>
-          </TouchableOpacity>
         </ScrollView>
+        <TouchableOpacity
+          style={styles.dayEditButton}
+          onPress={() => setScheduleEditVisible(true)}
+          activeOpacity={0.85}
+          hitSlop={8}
+        >
+          <FontAwesomeIcon icon={faCalendar} color="#6B7280" size={22} />
+        </TouchableOpacity>
       </View>
 
       <Tab.Navigator
+        tabBar={props => <BottomMenuBar {...props} />}
+        sceneStyle={styles.tabScene}
         screenOptions={{
           tabBarActiveTintColor: COLORS.primary,
           tabBarInactiveTintColor: COLORS.placeholder,
-          tabBarIndicatorStyle: { backgroundColor: COLORS.primary },
-          tabBarLabelStyle: { fontFamily: 'Inter_700Bold' },
         }}
       >
-        <Tab.Screen name="타임라인">
+        <Tab.Screen
+          name="타임라인"
+          options={{
+            title: '시간표',
+            tabBarIcon: TimelineTabIcon,
+          }}
+        >
           {() => (
             <View style={{ flex: 1 }}>
               {selectedDay &&
@@ -685,7 +899,13 @@ export default function ItineraryEditorScreenView({
             </View>
           )}
         </Tab.Screen>
-        <Tab.Screen name="장소추가">
+        <Tab.Screen
+          name="장소추가"
+          options={{
+            title: '추천 장소',
+            tabBarIcon: PlaceTabIcon,
+          }}
+        >
           {() => (
             <PlaceRecommendationList
               onAddPlace={handleAddPlace}
@@ -695,10 +915,6 @@ export default function ItineraryEditorScreenView({
           )}
         </Tab.Screen>
       </Tab.Navigator>
-
-      <TouchableOpacity style={styles.completeButton} onPress={onComplete}>
-        <Text style={styles.completeButtonText}>일정 생성 완료</Text>
-      </TouchableOpacity>
 
       {editingTime && (
         <TimePickerModal
