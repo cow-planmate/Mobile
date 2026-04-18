@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Easing } from 'react-native';
 import Svg, {
   Circle,
   Line,
@@ -8,12 +9,32 @@ import Svg, {
   SvgProps,
 } from 'react-native-svg';
 
+const AnimatedG = Animated.createAnimatedComponent(G);
+
 // ── Reusable primitives ──
 
 const SunRays = ({ stroke = '#ffa500' }: { stroke?: string }) => {
+  const rotation = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(rotation, {
+        toValue: 1,
+        duration: 8000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    ).start();
+  }, [rotation]);
+
+  const spin = rotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   const angles = [0, 45, 90, 135, 180, 225, 270, 315];
   return (
-    <>
+    <AnimatedG style={{ transform: [{ rotate: spin }] }}>
       {angles.map(a => (
         <Line
           key={a}
@@ -29,7 +50,7 @@ const SunRays = ({ stroke = '#ffa500' }: { stroke?: string }) => {
         />
       ))}
       <Circle r={5} fill={stroke} stroke={stroke} strokeWidth={2} />
-    </>
+    </AnimatedG>
   );
 };
 
@@ -40,23 +61,58 @@ const Cloud = ({
   fill = '#57A0EE',
   tx = -20,
   ty = -11,
-  scaleVal,
+  scaleVal = 1,
+  animated = true,
 }: {
   fill?: string;
   tx?: number;
   ty?: number;
   scaleVal?: number;
-}) => (
-  <G translate={`${tx}, ${ty}`} scale={scaleVal}>
-    <Path
-      d={CLOUD_D}
-      fill={fill}
-      stroke="#fff"
-      strokeLinejoin="round"
-      strokeWidth={1.2}
-    />
-  </G>
-);
+  animated?: boolean;
+}) => {
+  const drift = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!animated) return;
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(drift, {
+          toValue: 1,
+          duration: 3000,
+          easing: Easing.inOut(Easing.sine),
+          useNativeDriver: true,
+        }),
+        Animated.timing(drift, {
+          toValue: 0,
+          duration: 3000,
+          easing: Easing.inOut(Easing.sine),
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+  }, [animated, drift]);
+
+  const translateX = drift.interpolate({
+    inputRange: [0, 1],
+    outputRange: [tx - 2, tx + 2],
+  });
+
+  return (
+    <AnimatedG
+      style={{
+        transform: [{ translateX }, { scale: scaleVal }, { translateY: ty }],
+      }}
+    >
+      <Path
+        d={CLOUD_D}
+        fill={fill}
+        stroke="#fff"
+        strokeLinejoin="round"
+        strokeWidth={1.2}
+      />
+    </AnimatedG>
+  );
+};
 
 const RainLines = ({
   count = 3,
@@ -65,30 +121,103 @@ const RainLines = ({
   count?: number;
   stroke?: string;
 }) => {
+  const rainAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(rainAnim, {
+        toValue: 1,
+        duration: 600,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    ).start();
+  }, [rainAnim]);
+
+  const translateY = rainAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 8],
+  });
+
+  const opacity = rainAnim.interpolate({
+    inputRange: [0, 0.8, 1],
+    outputRange: [1, 1, 0],
+  });
+
   const offsets = count === 2 ? [-3, 3] : [-4, 0, 4];
   return (
     <G translate="10,35" rotation={10} origin="0,0">
       {offsets.map((ox, i) => (
-        <Line
+        <AnimatedG
           key={i}
-          x1={ox}
-          y1={0}
-          x2={ox}
-          y2={8}
-          stroke={stroke}
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeDasharray="4,4"
-        />
+          style={{ transform: [{ translateY }, { translateX: ox }], opacity }}
+        >
+          <Line
+            x1={0}
+            y1={0}
+            x2={0}
+            y2={8}
+            stroke={stroke}
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeDasharray="4,4"
+          />
+        </AnimatedG>
       ))}
     </G>
   );
 };
 
 const SnowFlake = ({ cx, cy }: { cx: number; cy: number }) => {
+  const rotation = useRef(new Animated.Value(0)).current;
+  const fall = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.parallel([
+        Animated.timing(rotation, {
+          toValue: 1,
+          duration: 3000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fall, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+  }, [rotation, fall]);
+
+  const spin = rotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const translateY = fall.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-5, 5],
+  });
+
+  const opacity = fall.interpolate({
+    inputRange: [0, 0.8, 1],
+    outputRange: [1, 1, 0],
+  });
+
   const angles = [0, 45, 90, 135];
   return (
-    <G translate={`${cx},${cy}`}>
+    <AnimatedG
+      style={{
+        transform: [
+          { translateX: cx },
+          { translateY: cy + (translateY as any) },
+          { rotate: spin },
+        ],
+        opacity,
+      }}
+    >
       {angles.map(a => (
         <Line
           key={a}
@@ -103,20 +232,57 @@ const SnowFlake = ({ cx, cy }: { cx: number; cy: number }) => {
           origin="0,0"
         />
       ))}
-    </G>
+    </AnimatedG>
   );
 };
 
-const Lightning = ({ tx = 4, ty = 28 }: { tx?: number; ty?: number }) => (
-  <G translate={`${tx},${ty}`} scale={1.2}>
-    <Polygon
-      points="11.1,6.9 14.3,-2.9 20.5,-2.9 16.4,4.3 20.3,4.3 11.5,14.6 14.9,6.9"
-      fill="#ffa500"
-      stroke="#fff"
-      strokeWidth={0.8}
-    />
-  </G>
-);
+const Lightning = ({ tx = 4, ty = 28 }: { tx?: number; ty?: number }) => {
+  const flash = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(flash, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(flash, {
+          toValue: 0,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(flash, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(flash, {
+          toValue: 0,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.delay(2000),
+      ]),
+    ).start();
+  }, [flash]);
+
+  return (
+    <AnimatedG
+      style={{
+        transform: [{ translateX: tx }, { translateY: ty }, { scale: 1.2 }],
+        opacity: flash,
+      }}
+    >
+      <Polygon
+        points="11.1,6.9 14.3,-2.9 20.5,-2.9 16.4,4.3 20.3,4.3 11.5,14.6 14.9,6.9"
+        fill="#ffa500"
+        stroke="#fff"
+        strokeWidth={0.8}
+      />
+    </AnimatedG>
+  );
+};
 
 // ── 10 weather icons ──
 
