@@ -18,11 +18,36 @@ export const FONTS = {
 };
 
 export const CATEGORY_COLORS = {
-  0: { border: '#84cc16', bg: '#f7fee7' }, // 관광지 (Lime)
-  1: { border: '#f97316', bg: '#fff7ed' }, // 숙소 (Orange)
-  2: { border: '#3b82f6', bg: '#eff6ff' }, // 식당 (Blue)
-  3: { border: '#8b5cf6', bg: '#f5f3ff' }, // 직접 추가 (Violet)
-  4: { border: '#6b7280', bg: '#f9fafb' }, // 검색/기타 (Gray)
+  0: {
+    border: '#84cc16',
+    bg: '#f7fee7',
+    textMain: '#064e3b',
+    textSub: '#4d7c0f',
+  }, // 관광지 (Lime)
+  1: {
+    border: '#f97316',
+    bg: '#fff7ed',
+    textMain: '#7c2d12',
+    textSub: '#c2410c',
+  }, // 숙소 (Orange)
+  2: {
+    border: '#3b82f6',
+    bg: '#eff6ff',
+    textMain: '#1e3a8a',
+    textSub: '#1d4ed8',
+  }, // 식당 (Blue)
+  3: {
+    border: '#8b5cf6',
+    bg: '#f5f3ff',
+    textMain: '#4c1d95',
+    textSub: '#6d28d9',
+  }, // 직접 추가 (Violet)
+  4: {
+    border: '#6b7280',
+    bg: '#f9fafb',
+    textMain: '#111827',
+    textSub: '#4b5563',
+  }, // 검색/기타 (Gray)
 };
 
 export const styles = StyleSheet.create({
@@ -36,67 +61,46 @@ export const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     backgroundColor: COLORS.card,
-    borderRadius: 8,
-    padding: 10,
-    alignItems: 'center',
+    borderRadius: 4,
+    padding: 16,
+    alignItems: 'flex-start',
     overflow: 'hidden',
     borderLeftWidth: 4,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    borderWidth: 0,
+  },
+  cardCompact: {
+    paddingVertical: 8,
   },
   infoContainer: {
     flex: 1,
     marginLeft: 0,
     justifyContent: 'center',
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  timeText: {
-    fontSize: 12,
-    color: COLORS.placeholder,
-    fontFamily: FONTS.medium,
-  },
-  timeTextEditable: {
-    fontSize: 12,
-    color: COLORS.primary,
-    fontFamily: FONTS.semibold,
-    textDecorationLine: 'underline',
+    gap: 2,
   },
   nameText: {
-    fontSize: 16,
-    fontFamily: FONTS.bold,
-    color: COLORS.text,
-  },
-  metaText: {
-    fontSize: 12,
-    fontFamily: FONTS.regular,
-    color: COLORS.placeholder,
-    marginTop: 2,
-  },
-  memoText: {
-    fontSize: 11,
-    color: '#4B5563',
-    marginTop: 4,
-    fontStyle: 'italic',
-    fontFamily: FONTS.regular,
-  },
-  deleteButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginLeft: 8,
-  },
-  deleteButtonText: {
-    color: COLORS.error,
     fontSize: 18,
     fontFamily: FONTS.bold,
-    lineHeight: 22,
+    color: '#064e3b', // default for lime-900 like
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaText: {
+    fontSize: 13,
+    fontFamily: FONTS.medium,
+    color: '#4d7c0f', // default for lime-600 like
+  },
+  actionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  actionButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

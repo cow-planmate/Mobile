@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, TouchableOpacity } from 'react-native';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faPencil, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 import { styles, CATEGORY_COLORS } from './TimelineItem.styles';
 
@@ -63,6 +65,9 @@ const TimelineItem = React.memo(function TimelineItem({
     CATEGORY_COLORS[4];
   const categoryName = CATEGORY_NAMES[categoryId] || item.type || '기타';
 
+  const textColorMain = categoryColor.textMain || '#111827';
+  const textColorSub = categoryColor.textSub || '#6B7280';
+
   return (
     <Pressable style={[styles.cardContainer, style]} onPress={onPress}>
       <View
@@ -72,45 +77,38 @@ const TimelineItem = React.memo(function TimelineItem({
             borderLeftColor: categoryColor.border,
             backgroundColor: categoryColor.bg,
           },
+          isCompact && styles.cardCompact,
         ]}
       >
         <View style={styles.infoContainer}>
-          {!isCompact && (
-            <View style={styles.timeRow}>
-              <TouchableOpacity onPress={() => onEditTime('startTime')}>
-                <Text style={styles.timeTextEditable}>{item.startTime}</Text>
-              </TouchableOpacity>
-              <Text style={styles.timeText}> ~ </Text>
-              <TouchableOpacity onPress={() => onEditTime('endTime')}>
-                <Text style={styles.timeTextEditable}>{item.endTime}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          <Text style={styles.nameText} numberOfLines={1}>
+          <Text
+            style={[styles.nameText, { color: textColorMain }]}
+            numberOfLines={1}
+          >
             {item.name}
           </Text>
 
-          {!isCompact && (
-            <>
-              <Text style={styles.metaText} numberOfLines={1}>
-                ⭐️ {item.rating} · {categoryName}
-              </Text>
-              {item.memo ? (
-                <Text style={styles.memoText} numberOfLines={2}>
-                  "{item.memo}"
-                </Text>
-              ) : (
-                <Text style={styles.metaText} numberOfLines={1}>
-                  {item.address}
-                </Text>
-              )}
-            </>
-          )}
+          <View style={styles.metaRow}>
+            <Text
+              style={[styles.metaText, { color: textColorSub }]}
+              numberOfLines={1}
+            >
+              {categoryName} | {item.startTime} - {item.endTime}
+            </Text>
+          </View>
         </View>
-        <Pressable style={styles.deleteButton} onPress={onDelete}>
-          <Text style={styles.deleteButtonText}>x</Text>
-        </Pressable>
+
+        <View style={styles.actionContainer}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => onEditTime('startTime')}
+          >
+            <FontAwesomeIcon icon={faPencil} size={14} color={textColorMain} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton} onPress={onDelete}>
+            <FontAwesomeIcon icon={faTimes} size={16} color={textColorMain} />
+          </TouchableOpacity>
+        </View>
       </View>
     </Pressable>
   );
