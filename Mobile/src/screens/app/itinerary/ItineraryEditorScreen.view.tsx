@@ -878,15 +878,22 @@ export default function ItineraryEditorScreenView({
           }}
         >
           {() => (
-            <View style={{ flex: 1 }}>
+            <View style={styles.timelineStage}>
+              <View pointerEvents="none" style={styles.timelineSceneBackdrop} />
               {selectedDay &&
                 weatherMap[selectedDay.date.toISOString().split('T')[0]] && (
-                  <WeatherHeader
-                    dayNumber={selectedDay.dayNumber}
-                    weather={
-                      weatherMap[selectedDay.date.toISOString().split('T')[0]]
-                    }
-                  />
+                  <View
+                    pointerEvents="none"
+                    style={styles.timelineWeatherOverlay}
+                  >
+                    <WeatherHeader
+                      dayNumber={selectedDay.dayNumber}
+                      weather={
+                        weatherMap[selectedDay.date.toISOString().split('T')[0]]
+                      }
+                      appearance="overlay"
+                    />
+                  </View>
                 )}
               <TimelineComponent
                 ref={timelineScrollRef}

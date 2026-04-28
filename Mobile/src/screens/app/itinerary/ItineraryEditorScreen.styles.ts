@@ -298,10 +298,27 @@ export const styles = StyleSheet.create({
   },
   tabContentContainer: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: 'transparent',
+  },
+  timelineStage: {
+    flex: 1,
+    position: 'relative',
+  },
+  timelineSceneBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: COLORS.surface,
+  },
+  timelineWeatherOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    elevation: 20,
   },
   timelineContentContainer: {
     paddingBottom: 0,
+    backgroundColor: 'transparent',
   },
   timelineWrapper: {
     position: 'relative',

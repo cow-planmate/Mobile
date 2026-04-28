@@ -8,19 +8,23 @@ import LinearGradient from 'react-native-linear-gradient';
 interface WeatherHeaderProps {
   dayNumber: number;
   weather: SimpleWeatherInfo;
+  appearance?: 'default' | 'overlay';
 }
 
 export default function WeatherHeader({
   dayNumber,
   weather,
+  appearance = 'default',
 }: WeatherHeaderProps) {
+  const isOverlay = appearance === 'overlay';
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isOverlay && styles.containerOverlay]}>
       <LinearGradient
         colors={[
           'rgba(255, 255, 255, 0)',
-          'rgba(255, 255, 255, 0.9)',
-          'rgba(255, 255, 255, 1)',
+          isOverlay ? 'rgba(255, 255, 255, 0.72)' : 'rgba(255, 255, 255, 0.9)',
+          isOverlay ? 'rgba(255, 255, 255, 0.96)' : 'rgba(255, 255, 255, 1)',
         ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
@@ -63,13 +67,21 @@ export default function WeatherHeader({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingVertical: 18,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
     backgroundColor: theme.colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 16,
     position: 'relative',
     overflow: 'hidden',
+  },
+  containerOverlay: {
+    backgroundColor: 'rgba(255, 255, 255, 0.82)',
+    borderColor: 'rgba(229, 231, 235, 0.95)',
   },
   vignette: {
     position: 'absolute',
