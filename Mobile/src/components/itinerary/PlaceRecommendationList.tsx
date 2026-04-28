@@ -10,6 +10,8 @@ import {
   StyleSheet,
   Modal,
   RefreshControl,
+  Linking,
+  Alert,
 } from 'react-native';
 import { API_URL } from '@env';
 import { X, Search, Map, Palmtree, RotateCw } from 'lucide-react-native';
@@ -17,6 +19,7 @@ import { Place } from './TimelineItem';
 import KakaoMapView from './KakaoMapView';
 import { usePlaces } from '../../contexts/PlacesContext';
 import { PlaceVO } from '../../api/trips';
+import GoogleMapsIcon from '../common/GoogleMapsIcon';
 
 const FONTS = {
   regular: 'Inter_400Regular',
@@ -355,10 +358,35 @@ export default function PlaceRecommendationList({
     setMapPlace(null);
   }, []);
 
+  const handleOpenGoogleMaps = useCallback(async (item: PlaceVO) => {
+    const lat = item.yLocation ?? item.ylocation;
+    const lng = item.xLocation ?? item.xlocation;
+    const name = encodeURIComponent(item.name);
+
+    if (!lat || !lng) {
+      Alert.alert('오류', '위치 정보가 없습니다.');
+      return;
+    }
+
+    // Google Maps Universal Link (works on both iOS and Android)
+    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${item.placeId}`;
+
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        // Fallback for cases where the link can't be opened
+        Alert.alert('오류', '구글 지도를 열 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('Failed to open Google Maps:', error);
+    }
+  }, []);
+
   // ─── Render ───
   const renderPlaceItem = ({ item }: { item: PlaceVO }) => {
     const type = getCategoryType(item.categoryId);
-    const color = CATEGORY_COLORS[type] || CATEGORY_COLORS['기타'];
 
     return (
       <TouchableOpacity
@@ -379,31 +407,41 @@ export default function PlaceRecommendationList({
             {item.name}
           </Text>
           <View style={plStyles.metaRow}>
-            <View
-              style={[plStyles.typeBadge, { backgroundColor: color + '20' }]}
-            >
-              <Text style={[plStyles.typeBadgeText, { color }]}>{type}</Text>
-            </View>
             {item.rating > 0 && (
-              <Text style={plStyles.ratingText}>⭐ {item.rating}</Text>
+              <View style={plStyles.ratingContainer}>
+                <Text style={plStyles.starIcon}>★</Text>
+                <Text style={plStyles.ratingText}>{item.rating}</Text>
+              </View>
             )}
+            <Text style={plStyles.addressText} numberOfLines={1}>
+              {item.formatted_address}
+            </Text>
           </View>
-          <Text style={plStyles.addressText} numberOfLines={1}>
-            {item.formatted_address}
-          </Text>
         </View>
 
-        {/* Map Button */}
-        <TouchableOpacity
-          style={plStyles.mapButton}
-          onPress={e => {
-            e.stopPropagation?.();
-            handleOpenMap(item);
-          }}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Map size={20} color="#1344FF" strokeWidth={1.5} />
-        </TouchableOpacity>
+        {/* Action Buttons */}
+        <View style={plStyles.actionGroup}>
+          <TouchableOpacity
+            style={plStyles.mapButton}
+            onPress={e => {
+              e.stopPropagation?.();
+              handleOpenGoogleMaps(item);
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <GoogleMapsIcon size={20} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={plStyles.mobileAddButton}
+            onPress={e => {
+              e.stopPropagation?.();
+              onAddPlace(placeVOToPlace(item, type));
+            }}
+          >
+            <Text style={plStyles.mobileAddButtonText}>추가</Text>
+          </TouchableOpacity>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -600,22 +638,23 @@ const plStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
   },
   placeImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 10,
-    backgroundColor: '#F3F4F6',
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: '#D1D5DB',
   },
   placeholderImage: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   placeholderText: {
-    fontSize: 20,
+    fontSize: 16,
     fontFamily: FONTS.bold,
     color: '#9CA3AF',
   },
@@ -623,48 +662,63 @@ const plStyles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     justifyContent: 'center',
+    gap: 4,
   },
   placeName: {
-    fontSize: 16,
-    fontFamily: FONTS.semibold,
-    color: '#111827',
-    marginBottom: 3,
+    fontSize: 20,
+    fontFamily: FONTS.bold,
+    color: '#000000',
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
+    gap: 8,
   },
-  typeBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginRight: 6,
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
   },
-  typeBadgeText: {
-    fontSize: 11,
-    fontFamily: FONTS.semibold,
+  starIcon: {
+    color: '#FACC15',
+    fontSize: 14,
   },
   ratingText: {
-    fontSize: 12,
-    color: '#111827',
+    fontSize: 14,
+    color: '#000000',
     fontFamily: FONTS.regular,
   },
   addressText: {
-    fontSize: 12,
-    color: '#9CA3AF',
+    flex: 1,
+    fontSize: 14,
+    color: '#6B7280',
     fontFamily: FONTS.regular,
   },
+  actionGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   mapButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#EEF2FF',
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#D1D5DB',
+  },
+  mobileAddButton: {
+    backgroundColor: '#DBEAFE',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  mobileAddButtonText: {
+    fontSize: 12,
+    fontFamily: FONTS.bold,
+    color: '#2563EB',
   },
   mapModalContainer: {
     flex: 1,

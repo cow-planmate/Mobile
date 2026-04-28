@@ -29,7 +29,7 @@ export default function WeatherHeader({
       <View style={styles.content}>
         <View style={styles.leftSection}>
           <View style={styles.iconContainer}>
-            <WeatherIcon description={weather.description} size={56} />
+            <WeatherIcon description={weather.description} size={76} />
           </View>
           <View style={styles.leftText}>
             <Text style={styles.dayLabel}>{dayNumber}일차</Text>
@@ -94,7 +94,8 @@ const styles = StyleSheet.create({
     height: 56,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 14,
+    overflow: 'visible',
   },
   leftText: {
     justifyContent: 'center',

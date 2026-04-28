@@ -79,13 +79,13 @@ const Cloud = ({
         Animated.timing(drift, {
           toValue: 1,
           duration: 3000,
-          easing: Easing.inOut(Easing.sine),
+          easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
         Animated.timing(drift, {
           toValue: 0,
           duration: 3000,
-          easing: Easing.inOut(Easing.sine),
+          easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
       ]),
