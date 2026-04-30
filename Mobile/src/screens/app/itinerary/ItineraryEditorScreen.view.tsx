@@ -51,12 +51,12 @@ import {
   faCheck,
   faCircleInfo,
   faLocationDot,
-  faMap,
   faRedo,
   faUserPlus,
   faUndo,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
+import { Map as MapOutlineIcon } from 'lucide-react-native';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -485,11 +485,21 @@ const DraggableTimelineItem = ({
   });
 
   const topHandleStyle = useAnimatedStyle(() => {
-    return { opacity: isResizingTop.value };
+    return {
+      transform: [
+        { scaleX: 1 + isResizingTop.value * 0.14 },
+        { scaleY: 1 + isResizingTop.value * 0.14 },
+      ],
+    };
   });
 
   const bottomHandleStyle = useAnimatedStyle(() => {
-    return { opacity: isResizingBottom.value };
+    return {
+      transform: [
+        { scaleX: 1 + isResizingBottom.value * 0.14 },
+        { scaleY: 1 + isResizingBottom.value * 0.14 },
+      ],
+    };
   });
 
   return (
@@ -542,6 +552,7 @@ const TimelineComponent = React.memo(
         newEndMinutes: number,
       ) => void;
       onPressPlace?: (place: Place) => void;
+      topPadding?: number;
     }
   >(
     (
@@ -551,6 +562,7 @@ const TimelineComponent = React.memo(
         onEditPlaceTime,
         onUpdatePlaceTimes,
         onPressPlace,
+        topPadding = 0,
       },
       ref,
     ) => {
@@ -600,7 +612,10 @@ const TimelineComponent = React.memo(
         <View style={styles.tabContentContainer}>
           <ScrollView
             ref={ref}
-            contentContainerStyle={styles.timelineContentContainer}
+            contentContainerStyle={[
+              styles.timelineContentContainer,
+              { paddingTop: topPadding },
+            ]}
           >
             <View style={styles.timelineWrapper}>
               <TimeGridBackground hours={gridHours} endHour={endHour} />
@@ -792,7 +807,7 @@ export default function ItineraryEditorScreenView({
             <FontAwesomeIcon icon={faUsers} color="#1344FF" size={17} />
           </ToolbarIconButton>
           <ToolbarIconButton onPress={onOpenMap} variant="outlineDark">
-            <FontAwesomeIcon icon={faMap} color="#111827" size={17} />
+            <MapOutlineIcon color="#111827" size={17} strokeWidth={2} />
           </ToolbarIconButton>
           <ToolbarIconButton onPress={onOpenShare} variant="filledGray">
             <FontAwesomeIcon icon={faUserPlus} color="#111827" size={17} />
@@ -902,6 +917,12 @@ export default function ItineraryEditorScreenView({
                 onEditPlaceTime={handleEditTime}
                 onUpdatePlaceTimes={handleUpdatePlaceTimes}
                 onPressPlace={onOpenDetail}
+                topPadding={
+                  selectedDay &&
+                  weatherMap[selectedDay.date.toISOString().split('T')[0]]
+                    ? 75
+                    : 0
+                }
               />
             </View>
           )}
