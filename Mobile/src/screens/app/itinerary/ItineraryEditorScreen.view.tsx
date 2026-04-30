@@ -47,6 +47,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faCalendar,
+  faCalendarDays,
   faMapPin,
   faCheck,
   faCircleInfo,
@@ -873,7 +874,7 @@ export default function ItineraryEditorScreenView({
           activeOpacity={0.85}
           hitSlop={8}
         >
-          <FontAwesomeIcon icon={faCalendar} color="#6B7280" size={22} />
+          <FontAwesomeIcon icon={faCalendarDays} color="#6B7280" size={22} />
         </TouchableOpacity>
       </View>
 
