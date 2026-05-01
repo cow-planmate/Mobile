@@ -13,8 +13,18 @@ import {
   Linking,
   Alert,
 } from 'react-native';
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import {
+  faBed,
+  faCircleInfo,
+  faMagnifyingGlass,
+  faPencil,
+  faUmbrellaBeach,
+  faUtensils,
+} from '@fortawesome/free-solid-svg-icons';
 import { API_URL } from '@env';
-import { X, Search, Map, Palmtree, RotateCw } from 'lucide-react-native';
+import { X } from 'lucide-react-native';
 import { Place } from './TimelineItem';
 import KakaoMapView from './KakaoMapView';
 import { usePlaces } from '../../contexts/PlacesContext';
@@ -43,15 +53,6 @@ const getCategoryType = (
   return '기타';
 };
 
-const CATEGORY_COLORS: { [key: string]: string } = {
-  관광지: '#84cc16',
-  숙소: '#f97316',
-  식당: '#3b82f6',
-  '직접 추가': '#8b5cf6',
-  검색: '#6b7280',
-  기타: '#6b7280',
-};
-
 const TAB_COLORS: { [key in PlaceTab]: string } = {
   관광지: '#84cc16',
   숙소: '#f97316',
@@ -60,7 +61,63 @@ const TAB_COLORS: { [key in PlaceTab]: string } = {
   검색: '#6b7280',
 };
 
+const TAB_DOT_ACTIVE_STYLES: Record<PlaceTab, { backgroundColor: string }> = {
+  관광지: { backgroundColor: '#84cc16' },
+  숙소: { backgroundColor: '#f97316' },
+  식당: { backgroundColor: '#3b82f6' },
+  '직접 추가': { backgroundColor: '#8b5cf6' },
+  검색: { backgroundColor: '#6b7280' },
+};
+
 type PlaceTab = '관광지' | '숙소' | '식당' | '직접 추가' | '검색';
+
+type EmptyStateConfig = {
+  icon: IconDefinition;
+  iconColor: string;
+  iconBackground: string;
+  title: string;
+  subtitle: string;
+  note?: string;
+};
+
+const EMPTY_STATE_CONFIG: Record<PlaceTab, EmptyStateConfig> = {
+  관광지: {
+    icon: faUmbrellaBeach,
+    iconColor: '#84cc16',
+    iconBackground: '#ecfccb',
+    title: '관광지 추천장소가 존재하지 않아요.',
+    subtitle: '검색 탭에서 장소를 직접 찾아볼 수 있어요!',
+  },
+  숙소: {
+    icon: faBed,
+    iconColor: '#f97316',
+    iconBackground: '#ffedd5',
+    title: '숙소 추천장소가 존재하지 않아요.',
+    subtitle: '검색 탭에서 장소를 직접 찾아볼 수 있어요!',
+  },
+  식당: {
+    icon: faUtensils,
+    iconColor: '#3b82f6',
+    iconBackground: '#dbeafe',
+    title: '식당 추천장소가 존재하지 않아요.',
+    subtitle: '검색 탭에서 장소를 직접 찾아볼 수 있어요!',
+  },
+  '직접 추가': {
+    icon: faPencil,
+    iconColor: '#8b5cf6',
+    iconBackground: '#ede9fe',
+    title: "위 일정에 맞춰 장소 이름을 입력하고 '추가' 버튼을 눌러보세요.",
+    subtitle: '추가된 장소는 일정에 바로 반영돼요.',
+    note: '추가된 장소는 순서에 따라 자동 저장돼요.',
+  },
+  검색: {
+    icon: faMagnifyingGlass,
+    iconColor: '#9ca3af',
+    iconBackground: '#f3f4f6',
+    title: '검색 결과가 없습니다.',
+    subtitle: '다른 키워드로 장소를 다시 찾아보세요.',
+  },
+};
 
 // ────────────────────────────────────────────────
 // Convert PlaceVO to Place (for TimelineItem compat)
@@ -242,8 +299,12 @@ export default function PlaceRecommendationList({
 
   const [selectedTab, setSelectedTab] = useState<PlaceTab>('관광지');
   const [searchQuery, setSearchQuery] = useState('');
+  const [customPlaceName, setCustomPlaceName] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const normalizedSearchQuery = searchQuery.trim();
+  const isSearchReady =
+    selectedTab === '검색' && normalizedSearchQuery.length >= 2;
 
   // ─── Pull-to-refresh ───
   const handleRefresh = useCallback(async () => {
@@ -258,15 +319,15 @@ export default function PlaceRecommendationList({
 
   // ─── Debounced search ───
   const handleSearchSubmit = useCallback(() => {
-    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
+    if (!normalizedSearchQuery || normalizedSearchQuery.length < 2) {
       return;
     }
     const fullQuery = destination
-      ? `${destination} ${searchQuery.trim()}`
-      : searchQuery.trim();
+      ? `${destination} ${normalizedSearchQuery}`
+      : normalizedSearchQuery;
     doSearchPlaces(planId, fullQuery);
     setSelectedTab('검색');
-  }, [searchQuery, destination, planId, doSearchPlaces]);
+  }, [normalizedSearchQuery, destination, planId, doSearchPlaces]);
 
   const handleSearchTextChange = useCallback(
     (text: string) => {
@@ -289,6 +350,29 @@ export default function PlaceRecommendationList({
     [destination, planId, doSearchPlaces],
   );
 
+  const handleDirectAdd = useCallback(() => {
+    const trimmedName = customPlaceName.trim();
+
+    if (!trimmedName) {
+      return;
+    }
+
+    const placeId = `custom_${Date.now()}`;
+    onAddPlace({
+      id: placeId,
+      placeRefId: placeId,
+      name: trimmedName,
+      type: '직접 추가',
+      categoryId: 3,
+      address: destination ?? '',
+      rating: 0,
+      imageUrl: '',
+      latitude: 0,
+      longitude: 0,
+    });
+    setCustomPlaceName('');
+  }, [customPlaceName, destination, onAddPlace]);
+
   useEffect(() => {
     return () => {
       if (debounceRef.current) {
@@ -307,7 +391,7 @@ export default function PlaceRecommendationList({
       case '식당':
         return restaurant;
       case '검색':
-        return search;
+        return isSearchReady ? search : [];
       default:
         return [];
     }
@@ -322,7 +406,7 @@ export default function PlaceRecommendationList({
       case '식당':
         return restaurantNext;
       case '검색':
-        return searchNext;
+        return isSearchReady ? searchNext : [];
       default:
         return [];
     }
@@ -348,11 +432,6 @@ export default function PlaceRecommendationList({
   const [mapPlace, setMapPlace] = useState<PlaceVO | null>(null);
   const [isMapVisible, setMapVisible] = useState(false);
 
-  const handleOpenMap = useCallback((item: PlaceVO) => {
-    setMapPlace(item);
-    setMapVisible(true);
-  }, []);
-
   const handleCloseMap = useCallback(() => {
     setMapVisible(false);
     setMapPlace(null);
@@ -361,7 +440,6 @@ export default function PlaceRecommendationList({
   const handleOpenGoogleMaps = useCallback(async (item: PlaceVO) => {
     const lat = item.yLocation ?? item.ylocation;
     const lng = item.xLocation ?? item.xlocation;
-    const name = encodeURIComponent(item.name);
 
     if (!lat || !lng) {
       Alert.alert('오류', '위치 정보가 없습니다.');
@@ -469,16 +547,128 @@ export default function PlaceRecommendationList({
 
   const renderEmpty = () => {
     if (isLoading) return null;
+
+    if (selectedTab === '검색' && normalizedSearchQuery.length < 2) {
+      return (
+        <View style={plStyles.emptyContainer}>
+          <View style={[plStyles.emptyIconWrapper, plStyles.emptyIconSearch]}>
+            <FontAwesomeIcon
+              icon={faMagnifyingGlass}
+              size={28}
+              color="#9CA3AF"
+            />
+          </View>
+          <Text style={plStyles.emptyTitle}>장소를 검색해보세요.</Text>
+          <Text style={plStyles.emptySubtitle}>
+            두 글자 이상 입력하면 결과를 바로 확인할 수 있어요.
+          </Text>
+        </View>
+      );
+    }
+
+    const config = EMPTY_STATE_CONFIG[selectedTab];
+
     return (
       <View style={plStyles.emptyContainer}>
-        <Palmtree size={40} color="#9CA3AF" strokeWidth={1.5} />
-        <Text style={plStyles.emptyText}>
-          {selectedTab === '검색'
-            ? '검색 결과가 없습니다.'
-            : `추천 ${selectedTab}이(가) 없습니다.`}
-        </Text>
+        <View
+          style={[
+            plStyles.emptyIconWrapper,
+            { backgroundColor: config.iconBackground },
+          ]}
+        >
+          <FontAwesomeIcon
+            icon={config.icon}
+            size={28}
+            color={config.iconColor}
+          />
+        </View>
+        <Text style={plStyles.emptyTitle}>{config.title}</Text>
+        <Text style={plStyles.emptySubtitle}>{config.subtitle}</Text>
+        {config.note && (
+          <View style={plStyles.emptyNotePill}>
+            <FontAwesomeIcon icon={faCircleInfo} size={12} color="#6B7280" />
+            <Text style={plStyles.emptyNoteText}>{config.note}</Text>
+          </View>
+        )}
       </View>
     );
+  };
+
+  const renderHeader = () => {
+    if (selectedTab === '검색') {
+      return (
+        <View style={plStyles.searchContainer}>
+          <View style={plStyles.searchField}>
+            <FontAwesomeIcon
+              icon={faMagnifyingGlass}
+              size={16}
+              color="#9CA3AF"
+            />
+            <TextInput
+              value={searchQuery}
+              onChangeText={handleSearchTextChange}
+              onSubmitEditing={handleSearchSubmit}
+              placeholder="장소를 입력하세요 (2글자 이상)"
+              placeholderTextColor="#9CA3AF"
+              returnKeyType="search"
+              style={plStyles.searchInput}
+              autoCorrect={false}
+              autoCapitalize="none"
+            />
+          </View>
+          <TouchableOpacity
+            style={[
+              plStyles.searchActionButton,
+              !normalizedSearchQuery || normalizedSearchQuery.length < 2
+                ? plStyles.searchActionButtonDisabled
+                : plStyles.searchActionButtonActive,
+            ]}
+            onPress={handleSearchSubmit}
+            disabled={
+              !normalizedSearchQuery || normalizedSearchQuery.length < 2
+            }
+            activeOpacity={0.85}
+          >
+            <Text style={plStyles.searchActionButtonText}>검색</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (selectedTab === '직접 추가') {
+      return (
+        <View style={plStyles.searchContainer}>
+          <View style={plStyles.searchField}>
+            <FontAwesomeIcon icon={faPencil} size={16} color="#8B5CF6" />
+            <TextInput
+              value={customPlaceName}
+              onChangeText={setCustomPlaceName}
+              onSubmitEditing={handleDirectAdd}
+              placeholder="장소 이름을 입력하세요"
+              placeholderTextColor="#9CA3AF"
+              returnKeyType="done"
+              style={plStyles.searchInput}
+              autoCorrect={false}
+            />
+          </View>
+          <TouchableOpacity
+            style={[
+              plStyles.searchActionButton,
+              !customPlaceName.trim()
+                ? plStyles.searchActionButtonDisabled
+                : plStyles.searchActionButtonPurple,
+            ]}
+            onPress={handleDirectAdd}
+            disabled={!customPlaceName.trim()}
+            activeOpacity={0.85}
+          >
+            <Text style={plStyles.searchActionButtonText}>추가</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -502,7 +692,9 @@ export default function PlaceRecommendationList({
                   <View
                     style={[
                       plStyles.tabDot,
-                      { backgroundColor: isSelected ? tabColor : '#D1D5DB' },
+                      isSelected
+                        ? TAB_DOT_ACTIVE_STYLES[tab]
+                        : plStyles.tabDotInactive,
                     ]}
                   />
                   <Text
@@ -526,8 +718,10 @@ export default function PlaceRecommendationList({
         keyExtractor={(item, index) => `${item.placeId}_${index}`}
         renderItem={renderPlaceItem}
         ListEmptyComponent={renderEmpty}
+        ListHeaderComponent={renderHeader}
         ListFooterComponent={renderFooter}
         contentContainerStyle={plStyles.listContent}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -558,40 +752,6 @@ const plStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    fontSize: 15,
-    color: '#111827',
-    fontFamily: FONTS.regular,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  searchButton: {
-    padding: 8,
-  },
-  refreshButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: '#E8EDFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 4,
-  },
   tabContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -621,6 +781,9 @@ const plStyles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
+  tabDotInactive: {
+    backgroundColor: '#D1D5DB',
+  },
   tabText: {
     fontSize: 15,
     fontFamily: FONTS.medium,
@@ -633,6 +796,57 @@ const plStyles = StyleSheet.create({
   listContent: {
     paddingBottom: 20,
     flexGrow: 1,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    gap: 10,
+  },
+  searchField: {
+    flex: 1,
+    minHeight: 46,
+    borderRadius: 16,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 0,
+    fontSize: 15,
+    color: '#111827',
+    fontFamily: FONTS.regular,
+  },
+  searchActionButton: {
+    minWidth: 74,
+    minHeight: 46,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+  },
+  searchActionButtonActive: {
+    backgroundColor: '#1344FF',
+  },
+  searchActionButtonPurple: {
+    backgroundColor: '#8B5CF6',
+  },
+  searchActionButtonDisabled: {
+    backgroundColor: '#D1D5DB',
+  },
+  searchActionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: FONTS.bold,
   },
   placeCard: {
     flexDirection: 'row',
@@ -774,13 +988,53 @@ const plStyles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    paddingTop: 60,
+    minHeight: 360,
+    paddingHorizontal: 24,
+    paddingVertical: 40,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  emptyText: {
-    fontSize: 15,
+  emptyIconWrapper: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  emptyIconSearch: {
+    backgroundColor: '#F3F4F6',
+  },
+  emptyTitle: {
+    fontSize: 18,
+    lineHeight: 25,
+    color: '#111827',
+    fontFamily: FONTS.bold,
+    textAlign: 'center',
+    letterSpacing: -0.2,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    lineHeight: 19,
     color: '#9CA3AF',
     fontFamily: FONTS.regular,
-    marginTop: 12,
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  emptyNotePill: {
+    marginTop: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: '#F3F4F6',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  emptyNoteText: {
+    color: '#6B7280',
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: FONTS.medium,
   },
 });
