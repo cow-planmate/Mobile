@@ -3,7 +3,6 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppState, AppStateStatus } from 'react-native';
 import axios from 'axios';
-import { API_URL } from '@env';
 import { SimplePlanVO } from '../../../types/env';
 import { AppStackParamList } from '../../../navigation/types';
 import MyScheduleScreenView from './MyScheduleScreen.view';
@@ -21,6 +20,7 @@ import {
   IS_FCM_RUNTIME_ENABLED,
   useFcmNotifications,
 } from '../../../hooks/useFcmNotifications';
+import { resolveApiUrl } from '../../../utils/apiUrl';
 import { MENU_OPTIONS, SHARED_MENU_OPTIONS } from './MyScheduleScreen.view';
 
 const INVITATION_REFRESH_INTERVAL_MS = 15000;
@@ -172,7 +172,7 @@ export default function MyScheduleScreen() {
   const fetchPlans = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/api/user/profile`);
+      const response = await axios.get(resolveApiUrl('/api/user/profile'));
       const data = response.data;
       setMyItineraries(data.myPlanVOs || []);
       setSharedItineraries(data.editablePlanVOs || []);
@@ -221,7 +221,7 @@ export default function MyScheduleScreen() {
   const handleRenameTitle = async (newTitle: string) => {
     if (!selectedPlan) return;
     try {
-      await axios.patch(`${API_URL}/api/plan/${selectedPlan.planId}`, {
+      await axios.patch(resolveApiUrl(`/api/plan/${selectedPlan.planId}`), {
         title: newTitle,
       });
       setMyItineraries(prev =>
@@ -254,7 +254,7 @@ export default function MyScheduleScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await axios.delete(`${API_URL}/api/plan/${planId}`);
+              await axios.delete(resolveApiUrl(`/api/plan/${planId}`));
               setMyItineraries(prev => prev.filter(p => p.planId !== planId));
               showAlert({ title: '성공', message: '일정이 삭제되었습니다.' });
             } catch (e) {

@@ -9,12 +9,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import axios from 'axios';
-import { API_URL } from '@env';
 import { Map, Bed, UtensilsCrossed } from 'lucide-react-native';
 import { PreferredThemeVO, changePreferredThemes } from '../../api/themes';
 import ThemeSelector, { ThemeSelectorResult } from './ThemeSelector';
 import { styles, COLORS } from './UpdateThemeModal.styles';
 import { useAlert } from '../../contexts/AlertContext';
+import { resolveApiUrl } from '../../utils/apiUrl';
 
 const CATEGORY_ICONS: Record<number, React.ReactNode> = {
   0: <Map size={16} color="#6B7280" strokeWidth={1.5} />,
@@ -49,7 +49,7 @@ export default function UpdateThemeModal({
   const fetchUserThemes = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/api/user/profile`);
+      const response = await axios.get(resolveApiUrl('/api/user/profile'));
       const themes: PreferredThemeVO[] = response.data.preferredThemes || [];
       setCurrentThemes(themes);
 

@@ -2,8 +2,11 @@ import { useCallback, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import EventSource, { MessageEvent } from 'react-native-sse';
+import { INVITATION_SSE_URL } from '@env';
 
-const DEFAULT_INVITATION_SSE_PATH = '/api/collaboration-requests/stream';
+import { resolveApiUrl } from '../utils/apiUrl';
+
+const DEFAULT_INVITATION_SSE_PATH = '/api/sse/subscribe';
 const INITIAL_RECONNECT_DELAY_MS = 1000;
 const MAX_RECONNECT_DELAY_MS = 30000;
 const CUSTOM_EVENT_TYPES = [
@@ -20,13 +23,16 @@ interface UseInvitationSseParams {
 }
 
 const resolveSseUrl = (): string => {
+  const configuredUrl = INVITATION_SSE_URL?.trim();
+
+  if (configuredUrl && configuredUrl.includes('/api/sse/subscribe')) {
+    return resolveApiUrl(configuredUrl);
+  }
+
   const baseUrl =
     typeof axios.defaults.baseURL === 'string' ? axios.defaults.baseURL : '';
-  const normalizedBaseUrl = baseUrl.endsWith('/')
-    ? baseUrl.slice(0, -1)
-    : baseUrl;
 
-  return `${normalizedBaseUrl}${DEFAULT_INVITATION_SSE_PATH}`;
+  return resolveApiUrl(DEFAULT_INVITATION_SSE_PATH, baseUrl);
 };
 
 export function useInvitationSse({

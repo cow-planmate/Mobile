@@ -118,7 +118,7 @@ jest.mock('lucide-react-native', () => {
 
 import App from '../App';
 
-test('renders the storybook root', async () => {
+test('renders the app shell', async () => {
   let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
 
   await ReactTestRenderer.act(async () => {
@@ -126,5 +126,6 @@ test('renders the storybook root', async () => {
   });
 
   expect(renderer).toBeDefined();
-  expect(renderer?.root.findByProps({ testID: 'storybook-root' })).toBeTruthy();
+  expect(renderer?.root.findByProps({ testID: 'app-navigator' })).toBeTruthy();
+  expect(renderer?.root.findByProps({ testID: 'toast-root' })).toBeTruthy();
 });

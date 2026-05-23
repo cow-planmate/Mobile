@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_URL } from '@env';
+import { resolveApiUrl } from '../utils/apiUrl';
 
 // ────────────────────────────────────────────────
 // Types
@@ -289,7 +290,7 @@ export async function inviteEditor(
   planId: number,
   nickname: string,
 ): Promise<void> {
-  await axios.post(`${API_URL}/api/plan/${planId}/invite`, {
+  await axios.post(resolveApiUrl(`/api/plan/${planId}/invite`), {
     receiverNickname: nickname,
   });
 }
@@ -319,19 +320,23 @@ export interface PendingInvitation {
 
 export async function getPendingInvitations(): Promise<PendingInvitation[]> {
   const response = await axios.get(
-    `${API_URL}/api/collaboration-requests/pending`,
+    resolveApiUrl('/api/collaboration-requests/pending'),
   );
   return (response.data.pendingRequests || []) as PendingInvitation[];
 }
 
 /** Accept invitation */
 export async function acceptInvitation(requestId: number): Promise<void> {
-  await axios.post(`${API_URL}/api/collaboration-requests/${requestId}/accept`);
+  await axios.post(
+    resolveApiUrl(`/api/collaboration-requests/${requestId}/accept`),
+  );
 }
 
 /** Reject invitation */
 export async function rejectInvitation(requestId: number): Promise<void> {
-  await axios.post(`${API_URL}/api/collaboration-requests/${requestId}/reject`);
+  await axios.post(
+    resolveApiUrl(`/api/collaboration-requests/${requestId}/reject`),
+  );
 }
 
 // ────────────────────────────────────────────────

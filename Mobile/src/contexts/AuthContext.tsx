@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { API_URL } from '@env';
+import { resolveApiUrl } from '../utils/apiUrl';
 
 // axios 설정이 적용되도록 import (App.tsx에서 이미 import하지만 안전을 위해)
 import '../api/axiosConfig';
@@ -161,9 +161,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       // Exchange code for tokens
       // POST /api/oauth/exchange?code=...
-      const response = await axios.post(`${API_URL}/api/oauth/exchange`, null, {
-        params: { code },
-      });
+      const response = await axios.post(
+        resolveApiUrl('/api/oauth/exchange'),
+        null,
+        {
+          params: { code },
+        },
+      );
 
       const { accessToken, refreshToken, nickname } = response.data;
 
@@ -175,7 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       let userId = 0;
       try {
-        const profileRes = await axios.get(`${API_URL}/api/user/profile`);
+        const profileRes = await axios.get(resolveApiUrl('/api/user/profile'));
         userId = profileRes.data.userId;
       } catch (err) {
         console.warn('Failed to fetch profile during OAuth login', err);
@@ -207,7 +211,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }) => {
     setIsLoading(true);
     try {
-      const response = await axios.post(`${API_URL}/api/oauth/complete`, data);
+      const response = await axios.post(
+        resolveApiUrl('/api/oauth/complete'),
+        data,
+      );
 
       const { success, message, accessToken, refreshToken, userId, nickname } =
         response.data;
@@ -243,7 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (accessToken) {
         await axios.post(
-          `${API_URL}/api/auth/logout`,
+          resolveApiUrl('/api/auth/logout'),
           { refreshToken: refreshToken || '' },
           {
             headers: { Authorization: `Bearer ${accessToken}` },

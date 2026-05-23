@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAlert } from '../../../contexts/AlertContext';
 import axios from 'axios';
-import { API_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../../contexts/AuthContext';
 import { PreferredThemeVO } from '../../../types/env';
 import ProfileScreenView from './ProfileScreen.view';
+import { resolveApiUrl } from '../../../utils/apiUrl';
 
 export default function ProfileScreen() {
   const { logout } = useAuth();
@@ -28,7 +28,7 @@ export default function ProfileScreen() {
   const fetchUserProfile = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/api/user/profile`);
+      const response = await axios.get(resolveApiUrl('/api/user/profile'));
       const data = response.data;
 
       let genderStr = '미설정';
@@ -66,7 +66,7 @@ export default function ProfileScreen() {
 
   const handleUpdateNickname = async (newNickname: string) => {
     try {
-      await axios.patch(`${API_URL}/api/user/nickname`, {
+      await axios.patch(resolveApiUrl('/api/user/nickname'), {
         nickname: newNickname,
       });
       setUser(prev => ({ ...prev, name: newNickname }));
@@ -79,7 +79,7 @@ export default function ProfileScreen() {
 
   const handleUpdateAge = async (newAge: string) => {
     try {
-      await axios.patch(`${API_URL}/api/user/age`, {
+      await axios.patch(resolveApiUrl('/api/user/age'), {
         age: parseInt(newAge, 10),
       });
       setUser(prev => ({ ...prev, age: newAge }));
@@ -93,7 +93,9 @@ export default function ProfileScreen() {
   const handleUpdateGender = async (newGender: string) => {
     try {
       const genderInt = newGender === '남자' ? 0 : 1;
-      await axios.patch(`${API_URL}/api/user/gender`, { gender: genderInt });
+      await axios.patch(resolveApiUrl('/api/user/gender'), {
+        gender: genderInt,
+      });
       setUser(prev => ({
         ...prev,
         gender: newGender,
@@ -114,7 +116,7 @@ export default function ProfileScreen() {
   const handleUpdatePassword = async (current: string, newPass: string) => {
     try {
       const verifyResponse = await axios.post(
-        `${API_URL}/api/auth/password/verify`,
+        resolveApiUrl('/api/auth/password/verify'),
         {
           password: current,
         },
@@ -128,7 +130,7 @@ export default function ProfileScreen() {
         return;
       }
 
-      await axios.patch(`${API_URL}/api/auth/password`, {
+      await axios.patch(resolveApiUrl('/api/auth/password'), {
         password: newPass,
         confirmPassword: newPass,
       });
@@ -168,7 +170,7 @@ export default function ProfileScreen() {
               }
 
               const response = await axios.delete(
-                `${API_URL}/api/user/account`,
+                resolveApiUrl('/api/user/account'),
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,

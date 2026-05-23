@@ -2,8 +2,10 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@env';
 
+const normalizedApiUrl = API_URL.trim().replace(/\/+$/, '');
+
 // axios 기본 설정
-axios.defaults.baseURL = API_URL;
+axios.defaults.baseURL = normalizedApiUrl;
 axios.defaults.timeout = 30000; // 30초 타임아웃
 axios.defaults.headers.common['Content-Type'] = 'application/json';
 
