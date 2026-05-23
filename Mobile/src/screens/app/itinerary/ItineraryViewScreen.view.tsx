@@ -7,14 +7,18 @@ import {
   TouchableOpacity,
   Pressable,
 } from 'react-native';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
-  MapPin,
-  ChevronUp,
-  ChevronDown,
-  Share2,
-  Pencil,
-  Check,
-} from 'lucide-react-native';
+  faMap,
+  faShareNodes,
+  faPencil,
+  faCheck,
+  faMapPin,
+  faChevronUp,
+  faChevronDown,
+  faCalendarDays,
+} from '@fortawesome/free-solid-svg-icons';
+import { Map as MapOutlineIcon } from 'lucide-react-native';
 import KakaoMapView from '../../../components/itinerary/KakaoMapView';
 import ShareModal from '../../../components/common/ShareModal';
 import TimelineItem, {
@@ -60,6 +64,57 @@ const getDayMeta = (places: Place[]) => {
   const timeStr = h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
   return `${count}개소 ${timeStr}`;
 };
+
+type ToolbarButtonVariant =
+  | 'plain'
+  | 'info'
+  | 'outlineBlue'
+  | 'outlineDark'
+  | 'filledGray'
+  | 'filledBlue';
+
+const ToolbarIconButton = ({
+  children,
+  onPress,
+  active = false,
+  disabled = false,
+  badgeCount,
+  variant = 'info',
+}: {
+  children: React.ReactNode;
+  onPress: () => void;
+  active?: boolean;
+  disabled?: boolean;
+  badgeCount?: number;
+  variant?: ToolbarButtonVariant;
+}) => (
+  <TouchableOpacity
+    onPress={onPress}
+    disabled={disabled}
+    activeOpacity={0.8}
+    hitSlop={8}
+    style={[
+      styles.toolbarIconButton,
+      variant === 'plain' && styles.toolbarIconButtonPlain,
+      variant === 'info' && styles.toolbarIconButtonInfo,
+      variant === 'outlineBlue' && styles.toolbarIconButtonOutlineBlue,
+      variant === 'outlineDark' && styles.toolbarIconButtonOutlineDark,
+      variant === 'filledGray' && styles.toolbarIconButtonFilledGray,
+      variant === 'filledBlue' && styles.toolbarIconButtonFilledBlue,
+      active && styles.toolbarIconButtonActive,
+      disabled && styles.toolbarIconButtonDisabled,
+    ]}
+  >
+    {children}
+    {typeof badgeCount === 'number' && badgeCount > 0 && (
+      <View style={styles.toolbarBadge}>
+        <Text style={styles.toolbarBadgeText}>
+          {badgeCount > 9 ? '9+' : badgeCount}
+        </Text>
+      </View>
+    )}
+  </TouchableOpacity>
+);
 
 const TimeGridBackground = React.memo(({ hours }: { hours: number[] }) => {
   const hourStr = (h: number) => h.toString().padStart(2, '0');
@@ -155,7 +210,7 @@ const StaticTimelineItem = React.memo(
     const height = durationMinutes * MINUTE_HEIGHT;
 
     const itemStyle = {
-      position: 'absolute',
+      position: 'absolute' as const,
       top: top,
       height: Math.max(height, MIN_ITEM_HEIGHT),
       left: 60,
@@ -191,6 +246,7 @@ export interface ItineraryViewScreenViewProps {
   handleEdit: () => void;
   planId?: number;
   weatherMap: Record<string, SimpleWeatherInfo>;
+  tripName: string;
 }
 
 export default function ItineraryViewScreenView({
@@ -209,11 +265,97 @@ export default function ItineraryViewScreenView({
   handleEdit,
   planId,
   weatherMap,
+  tripName,
 }: ItineraryViewScreenViewProps) {
   const selectedDay = days[selectedDayIndex];
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.topToolbar}>
+        <View style={styles.toolbarLeftGroup}>
+          <View style={styles.toolbarTitleButton}>
+            <Text style={styles.toolbarTitleText} numberOfLines={1}>
+              {tripName}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.toolbarRightGroup}>
+          <ToolbarIconButton
+            onPress={() => setMapVisible(!isMapVisible)}
+            variant="outlineDark"
+          >
+            <MapOutlineIcon color="#111827" size={17} strokeWidth={2} />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            onPress={() => setShareModalVisible(true)}
+            variant="outlineDark"
+          >
+            <FontAwesomeIcon icon={faShareNodes} color="#111827" size={17} />
+          </ToolbarIconButton>
+          <ToolbarIconButton onPress={handleEdit} variant="filledGray">
+            <FontAwesomeIcon icon={faPencil} color="#111827" size={17} />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            onPress={handleConfirm}
+            variant="filledBlue"
+            active
+          >
+            <FontAwesomeIcon icon={faCheck} color="#FFFFFF" size={18} />
+          </ToolbarIconButton>
+        </View>
+      </View>
+
+      <View style={styles.dayTabsWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.dayTabsContainer}
+          style={styles.dayTabsScroll}
+        >
+          {days.map((day, index) => {
+            const isSelected = selectedDayIndex === index;
+            return (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.dayTab,
+                  isSelected && styles.dayTabSelected,
+                  !isSelected && styles.dayTabUnselected,
+                ]}
+                onPress={() => setSelectedDayIndex(index)}
+                activeOpacity={0.85}
+              >
+                <Text
+                  style={[
+                    styles.dayTabLabel,
+                    isSelected && styles.dayTabLabelSelected,
+                  ]}
+                  numberOfLines={1}
+                >
+                  <Text
+                    style={[
+                      styles.dayTabDayNumber,
+                      isSelected && styles.dayTabDayNumberSelected,
+                    ]}
+                  >
+                    {day.dayNumber}일차{' '}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.dayTabDateInline,
+                      isSelected && styles.dayTabDateInlineSelected,
+                    ]}
+                  >
+                    {formatDate(day.date)}
+                  </Text>
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+
       {isMapVisible && (
         <View style={styles.mapContainer}>
           <View style={styles.mapInner}>
@@ -234,81 +376,6 @@ export default function ItineraryViewScreenView({
       )}
 
       <View style={styles.flex1}>
-        <View style={styles.dayTabsWrapper}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.dayTabsContainer}
-          >
-            {days.map((day, index) => {
-              const dateKey = day.date.toISOString().split('T')[0];
-              const weather = weatherMap[dateKey];
-              const isSelected = selectedDayIndex === index;
-              return (
-                <TouchableOpacity
-                  key={index}
-                  style={[styles.dayTab, isSelected && styles.dayTabSelected]}
-                  onPress={() => setSelectedDayIndex(index)}
-                >
-                  <Text
-                    style={[
-                      styles.dayTabText,
-                      isSelected && styles.dayTabTextSelected,
-                    ]}
-                  >
-                    {day.dayNumber}일차
-                  </Text>
-                  <Text
-                    style={[
-                      styles.dayTabDateText,
-                      isSelected && styles.dayTabDateTextSelected,
-                    ]}
-                  >
-                    {formatDate(day.date)}
-                  </Text>
-                  {day.places.length > 0 && (
-                    <Text
-                      style={[
-                        styles.dayTabMetaText,
-                        isSelected && styles.dayTabMetaTextSelected,
-                      ]}
-                    >
-                      {getDayMeta(day.places)}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-          <TouchableOpacity
-            style={[
-              styles.mapToggleButton,
-              isMapVisible && styles.mapToggleButtonActive,
-            ]}
-            onPress={() => setMapVisible(!isMapVisible)}
-            activeOpacity={0.7}
-          >
-            <MapPin
-              size={14}
-              color={isMapVisible ? '#FFFFFF' : COLORS.primary}
-              strokeWidth={2}
-            />
-            <Text
-              style={[
-                styles.mapToggleButtonText,
-                isMapVisible && styles.mapToggleButtonTextActive,
-              ]}
-            >
-              {isMapVisible ? '숨기기' : '지도'}
-            </Text>
-            {isMapVisible ? (
-              <ChevronUp size={12} color="#FFFFFF" strokeWidth={2.5} />
-            ) : (
-              <ChevronDown size={12} color={COLORS.primary} strokeWidth={2.5} />
-            )}
-          </TouchableOpacity>
-        </View>
-
         {selectedDay && (
           <View style={styles.flex1}>
             {weatherMap[selectedDay.date.toISOString().split('T')[0]] && (
@@ -336,40 +403,6 @@ export default function ItineraryViewScreenView({
             </ScrollView>
           </View>
         )}
-      </View>
-
-      <View style={styles.footer}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.footerButton,
-            pressed && { opacity: 0.7 },
-          ]}
-          onPress={() => setShareModalVisible(true)}
-        >
-          <Share2 size={18} color={COLORS.text} strokeWidth={2} />
-          <Text style={styles.footerButtonText}>공유</Text>
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [
-            styles.footerButton,
-            pressed && { opacity: 0.7 },
-          ]}
-          onPress={handleEdit}
-        >
-          <Pencil size={18} color={COLORS.text} strokeWidth={2} />
-          <Text style={styles.footerButtonText}>수정</Text>
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [
-            styles.footerButton,
-            styles.confirmButton,
-            pressed && { opacity: 0.7 },
-          ]}
-          onPress={handleConfirm}
-        >
-          <Check size={18} color={COLORS.white} strokeWidth={2.5} />
-          <Text style={styles.confirmButtonText}>확인</Text>
-        </Pressable>
       </View>
 
       <ShareModal

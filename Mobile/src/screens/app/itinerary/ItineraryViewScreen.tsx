@@ -288,6 +288,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       handleEdit={() => navigation.navigate('ItineraryEditor', { planId })}
       planId={planId}
       weatherMap={weatherMap}
+      tripName={tripName}
     />
   );
 }
