@@ -234,6 +234,24 @@ export const styles = StyleSheet.create({
     color: COLORS.white,
     opacity: 0.8,
   },
+  timelineStage: {
+    flex: 1,
+    position: 'relative',
+    backgroundColor: COLORS.surface, // timelineSceneBackdrop
+  },
+  timelineSceneBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: COLORS.surface,
+    zIndex: 0,
+  },
+  timelineWeatherOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    elevation: 20,
+  },
   timelineContentContainer: {
     paddingBottom: 0,
   },

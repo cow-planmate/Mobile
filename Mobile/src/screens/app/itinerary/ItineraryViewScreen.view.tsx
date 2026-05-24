@@ -378,29 +378,43 @@ export default function ItineraryViewScreenView({
       <View style={styles.flex1}>
         {selectedDay && (
           <View style={styles.flex1}>
-            {weatherMap[selectedDay.date.toISOString().split('T')[0]] && (
-              <WeatherHeader
-                dayNumber={selectedDay.dayNumber}
-                weather={
-                  weatherMap[selectedDay.date.toISOString().split('T')[0]]
-                }
-              />
-            )}
-            <ScrollView
-              ref={scrollRef}
-              contentContainerStyle={styles.timelineContentContainer}
-            >
-              <View style={styles.timelineWrapper}>
-                <TimeGridBackground hours={gridHours} />
-                {selectedDay.places.map(place => (
-                  <StaticTimelineItem
-                    key={place.id}
-                    place={place}
-                    offsetMinutes={offsetMinutes}
+            <View style={styles.timelineStage}>
+              <View pointerEvents="none" style={styles.timelineSceneBackdrop} />
+              {weatherMap[selectedDay.date.toISOString().split('T')[0]] && (
+                <View
+                  pointerEvents="none"
+                  style={styles.timelineWeatherOverlay}
+                >
+                  <WeatherHeader
+                    dayNumber={selectedDay.dayNumber}
+                    weather={
+                      weatherMap[selectedDay.date.toISOString().split('T')[0]]
+                    }
+                    appearance="overlay"
                   />
-                ))}
-              </View>
-            </ScrollView>
+                </View>
+              )}
+              <ScrollView
+                ref={scrollRef}
+                contentContainerStyle={[
+                  styles.timelineContentContainer,
+                  weatherMap[selectedDay.date.toISOString().split('T')[0]]
+                    ? { paddingTop: 75 }
+                    : {},
+                ]}
+              >
+                <View style={styles.timelineWrapper}>
+                  <TimeGridBackground hours={gridHours} />
+                  {selectedDay.places.map(place => (
+                    <StaticTimelineItem
+                      key={place.id}
+                      place={place}
+                      offsetMinutes={offsetMinutes}
+                    />
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
           </View>
         )}
       </View>
