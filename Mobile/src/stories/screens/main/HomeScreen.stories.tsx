@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View } from 'react-native';
 import type { Meta, StoryObj } from '@storybook/react-native';
 import { Bus, Car } from 'lucide-react-native';
@@ -7,13 +7,49 @@ import { HomeScreenView } from '../../../screens/app/main/HomeScreen.view';
 const meta = {
   title: 'Screens/Main/HomeScreen',
   component: HomeScreenView,
-  decorators: [
-    Story => (
+  render: (args: any) => {
+    const [isNotificationModalVisible, setNotificationModalVisible] = useState(
+      args.isNotificationModalVisible,
+    );
+    const [isSearchModalVisible, setSearchModalVisible] = useState(
+      args.isSearchModalVisible,
+    );
+    const [isCalendarVisible, setCalendarVisible] = useState(
+      args.isCalendarVisible,
+    );
+    const [isPaxModalVisible, setPaxModalVisible] = useState(
+      args.isPaxModalVisible,
+    );
+    const [isTransportModalVisible, setTransportModalVisible] = useState(
+      args.isTransportModalVisible,
+    );
+
+    useEffect(() => {
+      setNotificationModalVisible(args.isNotificationModalVisible);
+      setSearchModalVisible(args.isSearchModalVisible);
+      setCalendarVisible(args.isCalendarVisible);
+      setPaxModalVisible(args.isPaxModalVisible);
+      setTransportModalVisible(args.isTransportModalVisible);
+    }, [args]);
+
+    return (
       <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-        <Story />
+        <HomeScreenView
+          {...args}
+          isNotificationModalVisible={isNotificationModalVisible}
+          onCloseNotificationModal={() => setNotificationModalVisible(false)}
+          isSearchModalVisible={isSearchModalVisible}
+          onCloseSearchModal={() => setSearchModalVisible(false)}
+          isCalendarVisible={isCalendarVisible}
+          onCloseCalendar={() => setCalendarVisible(false)}
+          isPaxModalVisible={isPaxModalVisible}
+          onClosePaxModal={() => setPaxModalVisible(false)}
+          isTransportModalVisible={isTransportModalVisible}
+          onCloseTransportModal={() => setTransportModalVisible(false)}
+        />
       </View>
-    ),
-  ],
+    );
+  },
   args: {
     nickname: '디자인테스트',
     pendingRequestsCount: 0,
@@ -66,11 +102,9 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  args: {},
-};
+export const 기본화면: Story = {};
 
-export const Filled: Story = {
+export const 입력완료화면: Story = {
   args: {
     destination: '부산',
     dateText: '2024. 04. 01. ~ 2024. 04. 03.',
@@ -80,15 +114,47 @@ export const Filled: Story = {
   },
 };
 
-export const WithNotifications: Story = {
+export const 알림있는화면: Story = {
   args: {
     pendingRequestsCount: 3,
   },
 };
 
-export const ShowErrors: Story = {
+export const 에러발생화면: Story = {
   args: {
     showErrors: true,
     isFormValid: false,
+  },
+};
+
+export const 알림모달화면: Story = {
+  args: {
+    isNotificationModalVisible: true,
+    pendingRequestsCount: 1,
+    pendingRequestList: [{ id: 1, message: '새로운 여행 초대가 있습니다.' }],
+  },
+};
+
+export const 장소검색모달화면: Story = {
+  args: {
+    isSearchModalVisible: true,
+  },
+};
+
+export const 캘린더모달화면: Story = {
+  args: {
+    isCalendarVisible: true,
+  },
+};
+
+export const 인원선택모달화면: Story = {
+  args: {
+    isPaxModalVisible: true,
+  },
+};
+
+export const 교통수단모달화면: Story = {
+  args: {
+    isTransportModalVisible: true,
   },
 };

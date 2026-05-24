@@ -43,15 +43,13 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default1: Story = {
-  name: '이메일 입력',
+export const 이메일입력화면: Story = {
   args: {
     step: 1,
   },
 };
 
-export const Default2: Story = {
-  name: '인증번호 입력',
+export const 인증번호입력화면: Story = {
   args: {
     step: 1,
     email: 'planmate.user@gmail.com',
@@ -59,8 +57,7 @@ export const Default2: Story = {
   },
 };
 
-export const Default3: Story = {
-  name: '인증 완료',
+export const 인증완료화면: Story = {
   args: {
     step: 1,
     email: 'planmate.user@gmail.com',
@@ -70,8 +67,7 @@ export const Default3: Story = {
   },
 };
 
-export const Default4: Story = {
-  name: '임시 비밀번호 발송',
+export const 임시비밀번호발송화면: Story = {
   args: {
     step: 2,
   },

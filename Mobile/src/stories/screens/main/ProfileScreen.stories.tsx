@@ -50,10 +50,22 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const 기본화면: Story = {};
 
-export const Loading: Story = {
+export const 로딩상태화면: Story = {
   args: {
     loading: true,
+  },
+};
+
+export const 프로필편집화면: Story = {
+  args: {
+    isEditing: true,
+    editForm: {
+      nickname: '플랜메이트',
+      currentPassword: '',
+      newPassword: '',
+      confirmNewPassword: '',
+    },
   },
 };

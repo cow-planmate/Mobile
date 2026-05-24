@@ -68,15 +68,15 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const 기본화면: Story = {};
 
-export const Loading: Story = {
+export const 로딩상태화면: Story = {
   args: {
     loading: true,
   },
 };
 
-export const Empty: Story = {
+export const 빈일정화면: Story = {
   args: {
     myItineraries: [],
     sharedItineraries: [],

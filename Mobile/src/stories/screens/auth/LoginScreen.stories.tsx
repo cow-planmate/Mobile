@@ -36,13 +36,31 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  name: '기본',
-};
+export const 기본화면: Story = {};
 
-export const Filled: Story = {
-  name: '아이디 비밀번호 입력',
+export const 입력완료화면: Story = {
   args: {
     form: { email: 'planmate.user@gmail.com', password: 'Planmate123!' },
+  },
+};
+
+export const 비밀번호표시화면: Story = {
+  args: {
+    form: { email: 'planmate.user@gmail.com', password: 'Planmate123!' },
+    isPasswordVisible: true,
+  },
+};
+
+export const 로딩화면: Story = {
+  args: {
+    form: { email: 'planmate.user@gmail.com', password: 'Planmate123!' },
+    isLoading: true,
+  },
+};
+
+export const 에러발생화면: Story = {
+  args: {
+    form: { email: 'wrong@gmail.com', password: 'wrong' },
+    error: '이메일 또는 비밀번호가 일치하지 않습니다.',
   },
 };

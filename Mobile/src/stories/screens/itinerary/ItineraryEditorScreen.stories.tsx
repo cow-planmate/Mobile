@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View } from 'react-native';
 import type { Meta, StoryObj } from '@storybook/react-native';
 import ItineraryEditorScreenView from '../../../screens/app/itinerary/ItineraryEditorScreen.view';
@@ -92,15 +92,43 @@ const mockWeatherMap: Record<string, SimpleWeatherInfo> = {
 const meta = {
   title: 'Screens/Itinerary/일정 생성 화면',
   component: ItineraryEditorScreenView,
-  decorators: [
-    Story => (
+  render: (args: any) => {
+    const [isTimePickerVisible, setTimePickerVisible] = useState(
+      args.isTimePickerVisible,
+    );
+    const [isScheduleEditVisible, setScheduleEditVisible] = useState(
+      args.isScheduleEditVisible,
+    );
+    const [selectedDayIndex, setSelectedDayIndex] = useState(
+      args.selectedDayIndex,
+    );
+
+    useEffect(() => {
+      setTimePickerVisible(args.isTimePickerVisible);
+      setScheduleEditVisible(args.isScheduleEditVisible);
+      setSelectedDayIndex(args.selectedDayIndex);
+    }, [
+      args.isTimePickerVisible,
+      args.isScheduleEditVisible,
+      args.selectedDayIndex,
+    ]);
+
+    return (
       <PlacesProvider>
         <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-          <Story />
+          <ItineraryEditorScreenView
+            {...args}
+            isTimePickerVisible={isTimePickerVisible}
+            setTimePickerVisible={setTimePickerVisible}
+            isScheduleEditVisible={isScheduleEditVisible}
+            setScheduleEditVisible={setScheduleEditVisible}
+            selectedDayIndex={selectedDayIndex}
+            setSelectedDayIndex={setSelectedDayIndex}
+          />
         </GestureHandlerRootView>
       </PlacesProvider>
-    ),
-  ],
+    );
+  },
   args: {
     days: [
       mockDayOne,
@@ -162,15 +190,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  name: '기본 예시',
-  args: { ...meta.args },
-};
+export const 기본화면: Story = {};
 
-export const EmptyDay: Story = {
-  name: '빈 일정',
+export const 빈일정화면: Story = {
   args: {
-    ...meta.args,
     selectedDayIndex: 1,
     selectedDay: {
       dayNumber: 2,
@@ -179,5 +202,17 @@ export const EmptyDay: Story = {
       endTime: '20:00',
       places: [],
     },
+  },
+};
+
+export const 시간선택모달화면: Story = {
+  args: {
+    isTimePickerVisible: true,
+  },
+};
+
+export const 일정수정모달화면: Story = {
+  args: {
+    isScheduleEditVisible: true,
   },
 };

@@ -23,6 +23,4 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  name: '인트로',
-};
+export const 인트로화면: Story = {};

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { View, ScrollView } from 'react-native';
 import type { Meta, StoryObj } from '@storybook/react-native';
 import ItineraryViewScreenView from '../../../screens/app/itinerary/ItineraryViewScreen.view';
@@ -53,9 +53,32 @@ const meta = {
   component: ItineraryViewScreenView,
   render: (args: any) => {
     const scrollRef = useRef<ScrollView>(null);
+    const [isShareModalVisible, setShareModalVisible] = useState(
+      args.isShareModalVisible,
+    );
+    const [isMapVisible, setMapVisible] = useState(args.isMapVisible);
+    const [selectedDayIndex, setSelectedDayIndex] = useState(
+      args.selectedDayIndex,
+    );
+
+    useEffect(() => {
+      setShareModalVisible(args.isShareModalVisible);
+      setMapVisible(args.isMapVisible);
+      setSelectedDayIndex(args.selectedDayIndex);
+    }, [args.isShareModalVisible, args.isMapVisible, args.selectedDayIndex]);
+
     return (
       <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-        <ItineraryViewScreenView {...args} scrollRef={scrollRef} />
+        <ItineraryViewScreenView
+          {...args}
+          scrollRef={scrollRef}
+          isShareModalVisible={isShareModalVisible}
+          setShareModalVisible={setShareModalVisible}
+          isMapVisible={isMapVisible}
+          setMapVisible={setMapVisible}
+          selectedDayIndex={selectedDayIndex}
+          setSelectedDayIndex={setSelectedDayIndex}
+        />
       </View>
     );
   },
@@ -94,10 +117,36 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const 지도표시화면: Story = {};
 
-export const MapHidden: Story = {
+export const 지도숨김화면: Story = {
   args: {
     isMapVisible: false,
+  },
+};
+
+export const 공유모달표시화면: Story = {
+  args: {
+    isShareModalVisible: true,
+  },
+};
+
+export const 일정없는날화면: Story = {
+  args: {
+    selectedDayIndex: 1, // 2일차 선택
+  },
+};
+
+export const 비오는날화면: Story = {
+  args: {
+    weatherMap: {
+      '2024-03-01': {
+        date: '2024-03-01',
+        description: '비',
+        temp_min: 5,
+        temp_max: 12,
+        feels_like: 8,
+      },
+    },
   },
 };

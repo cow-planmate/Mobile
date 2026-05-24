@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View } from 'react-native';
 import type { Meta, StoryObj } from '@storybook/react-native';
 import { SignupScreenView } from '../../../screens/auth/SignupScreen.view';
@@ -6,13 +6,25 @@ import { SignupScreenView } from '../../../screens/auth/SignupScreen.view';
 const meta = {
   title: 'Screens/Auth/회원가입화면',
   component: SignupScreenView,
-  decorators: [
-    Story => (
+  render: (args: any) => {
+    const [isAgeModalVisible, setAgeModalVisible] = useState(
+      args.isAgeModalVisible,
+    );
+
+    useEffect(() => {
+      setAgeModalVisible(args.isAgeModalVisible);
+    }, [args.isAgeModalVisible]);
+
+    return (
       <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-        <Story />
+        <SignupScreenView
+          {...args}
+          isAgeModalVisible={isAgeModalVisible}
+          setAgeModalVisible={setAgeModalVisible}
+        />
       </View>
-    ),
-  ],
+    );
+  },
   parameters: {
     layout: 'fullscreen',
   },
@@ -68,15 +80,13 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Step1: Story = {
-  name: '이메일 인증',
+export const 이메일인증화면: Story = {
   args: {
     step: 1,
   },
 };
 
-export const Step1_1: Story = {
-  name: '이메일 인증 - 인증번호 입력',
+export const 이메일인증번호입력화면: Story = {
   args: {
     step: 1,
     form: {
@@ -92,8 +102,7 @@ export const Step1_1: Story = {
   },
 };
 
-export const Step1_2: Story = {
-  name: '이메일 인증 - 완료',
+export const 이메일인증완료화면: Story = {
   args: {
     step: 1,
     form: {
@@ -110,8 +119,7 @@ export const Step1_2: Story = {
   },
 };
 
-export const Step2: Story = {
-  name: '비밀번호 설정',
+export const 비밀번호설정화면: Story = {
   args: {
     step: 2,
     isEmailVerified: true,
@@ -129,8 +137,7 @@ export const Step2: Story = {
   },
 };
 
-export const Step3: Story = {
-  name: '닉네임 설정',
+export const 닉네임설정화면: Story = {
   args: {
     step: 3,
     isEmailVerified: true,
@@ -149,13 +156,41 @@ export const Step3: Story = {
   },
 };
 
-export const Step4: Story = {
-  name: '내 정보 입력',
+export const 내정보입력화면: Story = {
   args: {
     step: 4,
     isEmailVerified: true,
+    form: {
+      email: 'planmate.user@gmail.com',
+      verificationCode: '123456',
+      password: 'Planmate123!',
+      confirmPassword: 'Planmate123!',
+      nickname: '플랜메이트',
+      age: '',
+      gender: '',
+    },
     passwordRequirements: { hasMinLength: true, hasCombination: true },
     isPasswordMatch: true,
     isNicknameVerified: true,
+  },
+};
+
+export const 연령선택모달화면: Story = {
+  args: {
+    step: 4,
+    isEmailVerified: true,
+    form: {
+      email: 'planmate.user@gmail.com',
+      verificationCode: '123456',
+      password: 'Planmate123!',
+      confirmPassword: 'Planmate123!',
+      nickname: '플랜메이트',
+      age: '',
+      gender: '',
+    },
+    passwordRequirements: { hasMinLength: true, hasCombination: true },
+    isPasswordMatch: true,
+    isNicknameVerified: true,
+    isAgeModalVisible: true,
   },
 };
