@@ -2,6 +2,11 @@
 #
 .DS_Store
 
+# AI Assistant Custom Instructions
+/App/Gemini.md
+/App/auto-fix.md
+/.agent/workflows/auto-fix.md
+
 # Xcode
 #
 build/
