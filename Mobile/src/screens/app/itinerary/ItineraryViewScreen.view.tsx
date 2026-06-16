@@ -5,18 +5,12 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Pressable,
 } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
-  faMap,
   faShareNodes,
   faPencil,
   faCheck,
-  faMapPin,
-  faChevronUp,
-  faChevronDown,
-  faCalendarDays,
 } from '@fortawesome/free-solid-svg-icons';
 import { Map as MapOutlineIcon } from 'lucide-react-native';
 import KakaoMapView from '../../../components/itinerary/KakaoMapView';

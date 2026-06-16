@@ -1,12 +1,10 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
   TextInput,
 } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
@@ -707,6 +705,7 @@ export interface ItineraryEditorScreenViewProps {
   onOpenDetail: (place: Place) => void;
   onCloseDetail: () => void;
   weatherMap: Record<string, SimpleWeatherInfo>;
+  initialTabName?: string;
 }
 
 export default function ItineraryEditorScreenView({
@@ -747,6 +746,7 @@ export default function ItineraryEditorScreenView({
   onOpenDetail,
   onCloseDetail,
   weatherMap,
+  initialTabName,
 }: ItineraryEditorScreenViewProps) {
   if (!selectedDay) {
     return <AirplaneLoading />;
@@ -876,6 +876,7 @@ export default function ItineraryEditorScreenView({
       <Tab.Navigator
         tabBar={props => <BottomMenuBar {...props} />}
         sceneStyle={styles.tabScene}
+        initialRouteName={initialTabName}
         screenOptions={{
           tabBarActiveTintColor: COLORS.primary,
           tabBarInactiveTintColor: COLORS.placeholder,

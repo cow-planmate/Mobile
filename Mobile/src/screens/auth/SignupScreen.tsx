@@ -47,8 +47,6 @@ export default function SignupScreen() {
   const [emailAuthToken, setEmailAuthToken] = useState<string | null>(null);
 
   const [isEmailDuplicate, setIsEmailDuplicate] = useState(false);
-
-  const [isAgeModalVisible, setAgeModalVisible] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const [timeLeft, setTimeLeft] = useState(300);
@@ -334,11 +332,6 @@ export default function SignupScreen() {
     return true;
   }, [step, isEmailVerified, isPasswordStepValid, isNicknameVerified]);
 
-  const handleSelectAge = (selectedAge: string) => {
-    handleChange('age', selectedAge);
-    setAgeModalVisible(false);
-  };
-
   return (
     <SignupScreenView
       step={step}
@@ -351,7 +344,6 @@ export default function SignupScreen() {
       isEmailVerified={isEmailVerified}
       isNicknameVerified={isNicknameVerified}
       isEmailDuplicate={isEmailDuplicate}
-      isAgeModalVisible={isAgeModalVisible}
       focusedField={focusedField}
       timeLeft={timeLeft}
       passwordRequirements={passwordRequirements}
@@ -365,8 +357,6 @@ export default function SignupScreen() {
       onNextStep={handleNextStep}
       onPrevStep={handlePrevStep}
       onResetEmail={handleResetEmail}
-      onSelectAge={handleSelectAge}
-      setAgeModalVisible={setAgeModalVisible}
       setFocusedField={setFocusedField}
       setIsPasswordVisible={setIsPasswordVisible}
       setIsConfirmPasswordVisible={setIsConfirmPasswordVisible}

@@ -154,7 +154,7 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     color: '#868B94',
   },
-  sectionSubtitle: {
+  sectionTitleDetail: {
     fontSize: normalize(14),
     fontFamily: FONTS.medium,
     color: '#868B94',

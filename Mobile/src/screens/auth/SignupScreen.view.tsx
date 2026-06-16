@@ -10,8 +10,6 @@ import {
   Platform,
   KeyboardAvoidingView,
   ScrollView,
-  Modal,
-  FlatList,
 } from 'react-native';
 import { ArrowLeft, Eye, EyeOff, Check } from 'lucide-react-native';
 import { styles, COLORS, normalize } from './SignupScreen.styles';
@@ -36,8 +34,6 @@ export const PasswordRequirement = React.memo(
   ),
 );
 
-const AGE_OPTIONS = Array.from({ length: 100 }, (_, i) => (i + 1).toString());
-
 export interface SignupScreenViewProps {
   step: number;
   totalSteps: number;
@@ -49,7 +45,6 @@ export interface SignupScreenViewProps {
   isEmailVerified: boolean;
   isNicknameVerified: boolean;
   isEmailDuplicate: boolean;
-  isAgeModalVisible: boolean;
   focusedField: string | null;
   timeLeft: number;
   passwordRequirements: { hasMinLength: boolean; hasCombination: boolean };
@@ -63,8 +58,6 @@ export interface SignupScreenViewProps {
   onNextStep: () => void;
   onPrevStep: () => void;
   onResetEmail: () => void;
-  onSelectAge: (age: string) => void;
-  setAgeModalVisible: (visible: boolean) => void;
   setFocusedField: (field: string | null) => void;
   setIsPasswordVisible: (visible: boolean | ((v: boolean) => boolean)) => void;
   setIsConfirmPasswordVisible: (
@@ -84,7 +77,6 @@ export const SignupScreenView = ({
   isEmailVerified,
   isNicknameVerified,
   isEmailDuplicate,
-  isAgeModalVisible,
   focusedField,
   timeLeft,
   passwordRequirements,
@@ -98,8 +90,6 @@ export const SignupScreenView = ({
   onNextStep,
   onPrevStep,
   onResetEmail,
-  onSelectAge,
-  setAgeModalVisible,
   setFocusedField,
   setIsPasswordVisible,
   setIsConfirmPasswordVisible,
@@ -367,15 +357,31 @@ export const SignupScreenView = ({
                 맞춤형 여행 계획을 위해 필요해요.
               </Text>
               <View style={styles.inputGroup}>
-                <TouchableOpacity
-                  style={[styles.authInputContainer, styles.fieldContainerTop]}
-                  onPress={() => setAgeModalVisible(true)}
+                <View
+                  style={[
+                    styles.authInputContainer,
+                    focusedField === 'age' && styles.inputFocused,
+                  ]}
                 >
                   <Text style={styles.label}>나이</Text>
-                  <Text style={[styles.authValue, styles.selectionValue]}>
-                    {form.age ? `${form.age}세` : '나이를 선택해주세요'}
-                  </Text>
-                </TouchableOpacity>
+                  <View style={styles.authInputRow}>
+                    <TextInput
+                      style={styles.authInput}
+                      placeholder="나이 입력"
+                      placeholderTextColor={COLORS.darkGray}
+                      value={form.age}
+                      onChangeText={v => onChange('age', v)}
+                      keyboardType="number-pad"
+                      maxLength={3}
+                      editable={!isLoading}
+                      onFocus={() => setFocusedField('age')}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                    {form.age ? (
+                      <Text style={styles.authValue}>세</Text>
+                    ) : null}
+                  </View>
+                </View>
               </View>
 
               <View style={styles.inputGroup}>
@@ -508,36 +514,6 @@ export const SignupScreenView = ({
           </TouchableOpacity>
         )}
       </View>
-
-      <Modal
-        visible={isAgeModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setAgeModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setAgeModalVisible(false)}
-        >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>나이 선택</Text>
-            <FlatList
-              data={AGE_OPTIONS}
-              keyExtractor={item => item}
-              showsVerticalScrollIndicator={false}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.ageOption}
-                  onPress={() => onSelectAge(item)}
-                >
-                  <Text style={styles.ageOptionText}>{item}세</Text>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </SafeAreaView>
   );
 };

@@ -111,6 +111,7 @@ const meta = {
     },
   },
   render: function Render(args) {
+    const [days, setDays] = React.useState(args.days);
     const [selectedDayIndex, setSelectedDayIndex] = React.useState(args.selectedDayIndex);
     const [isEditingTripName, setIsEditingTripName] = React.useState(args.isEditingTripName);
     const [tripName, setTripName] = React.useState(args.tripName);
@@ -119,12 +120,60 @@ const meta = {
     const [isDetailVisible, setDetailVisible] = React.useState(args.isDetailVisible);
     const [detailPlace, setDetailPlace] = React.useState(args.detailPlace);
 
+    const handleAddPlace = (newPlace: any) => {
+      const updatedDays = [...days];
+      const currentDay = updatedDays[selectedDayIndex];
+      
+      // Calculate a default time (last place end time + 1 hour)
+      let startTime = '09:00:00';
+      if (currentDay.places.length > 0) {
+        const lastPlace = currentDay.places[currentDay.places.length - 1];
+        startTime = lastPlace.endTime;
+      }
+      
+      const [h, m] = startTime.split(':').map(Number);
+      const endH = Math.min(h + 1, 23);
+      const endTime = `${endH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:00`;
+
+      currentDay.places.push({
+        ...newPlace,
+        startTime,
+        endTime,
+      });
+      setDays(updatedDays);
+      console.log('Added place to Day', selectedDayIndex + 1, newPlace.name);
+    };
+
+    const handleDeletePlace = (placeId: string) => {
+      const updatedDays = [...days];
+      updatedDays[selectedDayIndex].places = updatedDays[selectedDayIndex].places.filter(
+        p => p.id !== placeId
+      );
+      setDays(updatedDays);
+    };
+
+    const handleUpdatePlaceTimes = (placeId: string, start: number, end: number) => {
+      const updatedDays = [...days];
+      const place = updatedDays[selectedDayIndex].places.find(p => p.id === placeId);
+      if (place) {
+        const format = (min: number) => {
+          const h = Math.floor(min / 60).toString().padStart(2, '0');
+          const m = (min % 60).toString().padStart(2, '0');
+          return `${h}:${m}:00`;
+        };
+        place.startTime = format(start);
+        place.endTime = format(end);
+        setDays(updatedDays);
+      }
+    };
+
     return (
       <ItineraryEditorScreenView
         {...args}
+        days={days}
         selectedDayIndex={selectedDayIndex}
         setSelectedDayIndex={setSelectedDayIndex}
-        selectedDay={args.days[selectedDayIndex]}
+        selectedDay={days[selectedDayIndex]}
         isEditingTripName={isEditingTripName}
         setIsEditingTripName={setIsEditingTripName}
         tripName={tripName}
@@ -143,6 +192,9 @@ const meta = {
         onCloseDetail={() => setDetailVisible(false)}
         onConfirmScheduleEdit={() => setScheduleEditVisible(false)}
         onConfirmTimePicker={() => setTimePickerVisible(false)}
+        handleAddPlace={handleAddPlace}
+        handleDeletePlace={handleDeletePlace}
+        handleUpdatePlaceTimes={handleUpdatePlaceTimes}
       />
     );
   },
@@ -153,6 +205,12 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+export const RecommendationTab: Story = {
+  args: {
+    initialTabName: '장소추가',
+  },
+};
 
 export const Loading: Story = {
   args: {

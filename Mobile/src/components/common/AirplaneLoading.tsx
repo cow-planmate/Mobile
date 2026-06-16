@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, SafeAreaView, DimensionValue } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -7,28 +7,23 @@ import Animated, {
   withTiming,
   withSequence,
   Easing,
-  interpolate,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const Cloud = ({ 
   style, 
   duration, 
-  delay = 0, 
   top, 
   scale = 1, 
   opacity = 0.8,
-  blur = 0 
 }: { 
   style?: any, 
   duration: number, 
-  delay?: number, 
-  top: string | number,
+  top: DimensionValue,
   scale?: number,
   opacity?: number,
-  blur?: number
 }) => {
   const translateX = useSharedValue(SCREEN_WIDTH);
 
@@ -99,7 +94,7 @@ const AirplaneLoading = () => {
       -1,
       false
     );
-  }, []);
+  }, [flyX, flyY, rotate]);
 
   const airplaneStyle = useAnimatedStyle(() => ({
     transform: [
