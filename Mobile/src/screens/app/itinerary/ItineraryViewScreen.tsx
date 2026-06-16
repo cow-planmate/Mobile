@@ -20,6 +20,7 @@ import {
 } from '../../../api/trips';
 import { useAlert } from '../../../contexts/AlertContext';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
+import AirplaneLoading from '../../../components/common/AirplaneLoading';
 
 // DTO Interfaces
 interface PlaceBlockVO {
@@ -270,6 +271,10 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       buttons: [{ text: '확인', onPress: () => navigation.popToTop() }],
     });
   };
+
+  if (days.length === 0) {
+    return <AirplaneLoading />;
+  }
 
   return (
     <ItineraryViewScreenView

@@ -28,6 +28,7 @@ import TimePickerModal from '../../../components/common/TimePickerModal';
 import ScheduleEditModal from '../../../components/common/ScheduleEditModal';
 import DetailPopup from '../../../components/itinerary/DetailPopup';
 import PlaceRecommendationList from '../../../components/itinerary/PlaceRecommendationList';
+import AirplaneLoading from '../../../components/common/AirplaneLoading';
 import { Day } from '../../../contexts/ItineraryContext';
 import { SimpleWeatherInfo } from '../../../api/trips';
 import WeatherHeader from '../../../components/weather/WeatherHeader';
@@ -748,13 +749,7 @@ export default function ItineraryEditorScreenView({
   weatherMap,
 }: ItineraryEditorScreenViewProps) {
   if (!selectedDay) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text>일정을 불러오는 중...</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <AirplaneLoading />;
   }
 
   return (
