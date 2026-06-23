@@ -7,14 +7,27 @@ import ItineraryEditorScreen from '../features/itinerary/screens/ItineraryEditor
 import ItineraryViewScreen from '../features/itinerary/screens/ItineraryViewScreen';
 import MyScheduleScreen from '../features/itinerary/screens/MyScheduleScreen';
 import ProfileScreen from '../features/auth/screens/ProfileScreen';
+import ThemeSettingsScreen from '../features/auth/screens/ThemeSettingsScreen';
+import ChangePasswordScreen from '../features/auth/screens/ChangePasswordScreen';
+import ThemePreferenceScreen from '../features/auth/screens/ThemePreferenceScreen';
 import { CommunityScreen } from '../features/community';
 import { MapScreen } from '../features/places';
-import { AppStackParamList } from './types';
+import {
+  TabParamList,
+  ScheduleStackParamList,
+  CommunityStackParamList,
+  MapStackParamList,
+  ProfileStackParamList,
+} from './types';
 import { Platform } from 'react-native';
 import { Calendar, MessageSquare, Map, User } from 'lucide-react-native';
 
-const Stack = createNativeStackNavigator<AppStackParamList>();
-const Tab = createBottomTabNavigator();
+const ScheduleStackNavigator = createNativeStackNavigator<ScheduleStackParamList>();
+const CommunityStackNavigator = createNativeStackNavigator<CommunityStackParamList>();
+const MapStackNavigator = createNativeStackNavigator<MapStackParamList>();
+const ProfileStackNavigator = createNativeStackNavigator<ProfileStackParamList>();
+
+const Tab = createBottomTabNavigator<TabParamList>();
 
 const baseTabBarStyle = {
   backgroundColor: '#FFFFFF',
@@ -26,38 +39,104 @@ const baseTabBarStyle = {
   elevation: 0,
 };
 
-const isItineraryEditorFocused = (route: any) =>
-  getFocusedRouteNameFromRoute(route) === 'ItineraryEditor';
+const isItineraryEditorFocused = (route: any) => {
+  const routeName = getFocusedRouteNameFromRoute(route);
+  return routeName === 'ItineraryEditor';
+};
 
 function ScheduleStack() {
   return (
-    <Stack.Navigator
+    <ScheduleStackNavigator.Navigator
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
         animationDuration: 250,
       }}
     >
-      <Stack.Screen
+      <ScheduleStackNavigator.Screen
         name="MySchedule"
         component={MyScheduleScreen}
-        options={{ headerShown: false }}
       />
-      <Stack.Screen
+      <ScheduleStackNavigator.Screen
         name="Home"
         component={HomeScreen}
-        options={{ headerShown: false }}
       />
-      <Stack.Screen name="Profile" component={ProfileScreen} />
-      <Stack.Screen
+      <ScheduleStackNavigator.Screen
+        name="Profile"
+        component={ProfileScreen}
+      />
+      <ScheduleStackNavigator.Screen
         name="ItineraryEditor"
         component={ItineraryEditorScreen}
-        options={{
-          headerShown: false,
-        }}
       />
-      <Stack.Screen name="ItineraryView" component={ItineraryViewScreen} />
-    </Stack.Navigator>
+      <ScheduleStackNavigator.Screen
+        name="ItineraryView"
+        component={ItineraryViewScreen}
+      />
+    </ScheduleStackNavigator.Navigator>
+  );
+}
+
+function CommunityStack() {
+  return (
+    <CommunityStackNavigator.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+        animationDuration: 250,
+      }}
+    >
+      <CommunityStackNavigator.Screen
+        name="CommunityMain"
+        component={CommunityScreen}
+      />
+    </CommunityStackNavigator.Navigator>
+  );
+}
+
+function MapStack() {
+  return (
+    <MapStackNavigator.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+        animationDuration: 250,
+      }}
+    >
+      <MapStackNavigator.Screen
+        name="MapMain"
+        component={MapScreen}
+      />
+    </MapStackNavigator.Navigator>
+  );
+}
+
+function ProfileStack() {
+  return (
+    <ProfileStackNavigator.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+        animationDuration: 250,
+      }}
+    >
+      <ProfileStackNavigator.Screen
+        name="ProfileMain"
+        component={ProfileScreen}
+      />
+      <ProfileStackNavigator.Screen
+        name="ThemeSettings"
+        component={ThemeSettingsScreen}
+      />
+      <ProfileStackNavigator.Screen
+        name="ChangePassword"
+        component={ChangePasswordScreen}
+      />
+      <ProfileStackNavigator.Screen
+        name="ThemePreference"
+        component={ThemePreferenceScreen}
+      />
+    </ProfileStackNavigator.Navigator>
   );
 }
 
@@ -107,7 +186,7 @@ export default function AppStack() {
       />
       <Tab.Screen
         name="CommunityTab"
-        component={CommunityScreen}
+        component={CommunityStack}
         options={{
           title: '커뮤니티',
           tabBarIcon: CommunityTabIcon,
@@ -115,7 +194,7 @@ export default function AppStack() {
       />
       <Tab.Screen
         name="MapTab"
-        component={MapScreen}
+        component={MapStack}
         options={{
           title: '지도',
           tabBarIcon: MapTabIcon,
@@ -123,7 +202,7 @@ export default function AppStack() {
       />
       <Tab.Screen
         name="ProfileTab"
-        component={ProfileScreen}
+        component={ProfileStack}
         options={{
           title: '프로필',
           tabBarIcon: ProfileTabIcon,

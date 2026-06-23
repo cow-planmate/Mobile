@@ -1,13 +1,20 @@
 import { Day } from '../contexts/ItineraryContext';
 
-export type AppStackParamList = {
+export type TabParamList = {
+  ScheduleTab: undefined;
+  CommunityTab: undefined;
+  MapTab: undefined;
+  ProfileTab: undefined;
+};
+
+export type ScheduleStackParamList = {
+  MySchedule: undefined;
   Home:
     | {
         selectedLocation?: string;
         fieldToUpdate?: 'departure' | 'destination';
       }
     | undefined;
-  Profile: undefined;
   ItineraryEditor: {
     planId?: number;
     departure?: string;
@@ -19,7 +26,6 @@ export type AppStackParamList = {
     children?: number;
     transport?: string;
   };
-
   ItineraryView: {
     days: Day[];
     tripName: string;
@@ -37,14 +43,36 @@ export type AppStackParamList = {
     fieldToUpdate: 'departure' | 'destination';
     currentValue: string;
   };
-  MySchedule: undefined;
   AddPlace: {
     dayIndex: number;
     destination?: string;
     planId?: number;
   };
-  Community: undefined;
-  Map: undefined;
+  Profile: undefined;
+};
+
+// Aliased for compatibility with existing components using AppStackParamList
+export type AppStackParamList = ScheduleStackParamList;
+
+export type CommunityStackParamList = {
+  CommunityMain: undefined;
+  CommunityDetail: {
+    postId: string;
+  };
+};
+
+export type MapStackParamList = {
+  MapMain: undefined;
+  PlaceDetail: {
+    placeId: string;
+  };
+};
+
+export type ProfileStackParamList = {
+  ProfileMain: undefined;
+  ThemeSettings: undefined;
+  ChangePassword: undefined;
+  ThemePreference: undefined;
 };
 
 export type AuthStackParamList = {
