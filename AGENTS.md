@@ -1,5 +1,5 @@
 ---
-description: 제미나이 규칙
+description: rules
 ---
 
 [Role]
