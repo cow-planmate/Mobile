@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { AppState, AppStateStatus } from 'react-native';
 import { AppStackParamList } from '../../../navigation/types';
 import { useAuth } from '../../../contexts/AuthContext';
-import { OptionType } from '../../../components/common/SelectionModal';
+import { OptionType } from '../../../components/common';
 import { HomeScreenView } from './HomeScreen.view';
 import {
   getPendingInvitations,

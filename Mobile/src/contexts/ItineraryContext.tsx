@@ -6,7 +6,7 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
-import { Place } from '../components/itinerary/TimelineItem';
+import { Place } from '../features/itinerary/components/TimelineItem';
 import { useWebSocket } from './WebSocketContext';
 
 export interface Day {

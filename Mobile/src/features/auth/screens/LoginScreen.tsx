@@ -1,7 +1,7 @@
 ﻿import React, { useState } from 'react';
 import Toast from 'react-native-toast-message';
-import { useAuth } from '../../contexts/AuthContext';
-import { useAlert } from '../../contexts/AlertContext';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useAlert } from '../../../contexts/AlertContext';
 import { LoginScreenView } from './LoginScreen.view';
 
 type LoginScreenProps = {

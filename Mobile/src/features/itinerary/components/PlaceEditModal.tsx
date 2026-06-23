@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import { X } from 'lucide-react-native';
-import { theme } from '../../theme/theme';
+import { theme } from '../../../theme/theme';
 
 const COLORS = theme.colors;
 const FONTS = {

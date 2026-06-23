@@ -9,8 +9,8 @@ import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { SignupScreenView } from './SignupScreen.view';
-import { useAuth } from '../../contexts/AuthContext';
-import { useAlert } from '../../contexts/AlertContext';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useAlert } from '../../../contexts/AlertContext';
 
 const formatTime = (seconds: number) => {
   const minutes = Math.floor(seconds / 60);

@@ -13,14 +13,14 @@ import {
   faCheck,
 } from '@fortawesome/free-solid-svg-icons';
 import { Map as MapOutlineIcon } from 'lucide-react-native';
-import KakaoMapView from '../../../components/itinerary/KakaoMapView';
-import ShareModal from '../../../components/common/ShareModal';
+import KakaoMapView from '../components/KakaoMapView';
+import { ShareModal } from '../../../components/common';
 import TimelineItem, {
   Place,
-} from '../../../components/itinerary/TimelineItem';
+} from '../components/TimelineItem';
 import { Day } from '../../../contexts/ItineraryContext';
 import { SimpleWeatherInfo } from '../../../api/trips';
-import WeatherHeader from '../../../components/weather/WeatherHeader';
+import WeatherHeader from '../components/weather/WeatherHeader';
 import {
   styles,
   COLORS,

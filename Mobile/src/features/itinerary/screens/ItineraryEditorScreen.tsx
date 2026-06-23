@@ -15,7 +15,7 @@ import axios from 'axios';
 import { API_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppStackParamList } from '../../../navigation/types';
-import { Place } from '../../../components/itinerary/TimelineItem';
+import { Place } from '../components/TimelineItem';
 import { useWebSocket } from '../../../contexts/WebSocketContext';
 import { useItinerary } from '../../../contexts/ItineraryContext';
 import { usePlaces } from '../../../contexts/PlacesContext';
@@ -27,9 +27,9 @@ import {
 } from '../../../api/trips';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { styles } from './ItineraryEditorScreen.styles';
-import ShareModal from '../../../components/itinerary/ShareModal';
-import PlaceEditModal from '../../../components/itinerary/PlaceEditModal';
-import KakaoMapView from '../../../components/itinerary/KakaoMapView';
+import ShareModal from '../components/ShareModal';
+import PlaceEditModal from '../components/PlaceEditModal';
+import KakaoMapView from '../components/KakaoMapView';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faMap, faUsers, faXmark } from '@fortawesome/free-solid-svg-icons';
 

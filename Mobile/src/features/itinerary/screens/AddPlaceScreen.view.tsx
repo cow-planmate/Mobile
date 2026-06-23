@@ -9,8 +9,8 @@ import {
   Pressable,
   Image,
 } from 'react-native';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
-import { Place } from '../../../components/itinerary/TimelineItem';
+import { LoadingSpinner } from '../../../components/common';
+import { Place } from '../components/TimelineItem';
 import { styles, COLORS } from './AddPlaceScreen.styles';
 
 const PlaceSearchResultItem = ({

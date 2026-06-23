@@ -1,9 +1,7 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { savePreferredThemes } from '../api/themes';
-import ThemeSelector, {
-  ThemeSelectorResult,
-} from '../components/common/ThemeSelector';
+import { ThemeSelector, ThemeSelectorResult } from '../components/common';
 import AuthStack from './AuthStack';
 import AppStack from './AppStack';
 

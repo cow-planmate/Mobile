@@ -21,15 +21,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import TimelineItem, {
   Place,
-} from '../../../components/itinerary/TimelineItem';
-import TimePickerModal from '../../../components/common/TimePickerModal';
-import ScheduleEditModal from '../../../components/common/ScheduleEditModal';
-import DetailPopup from '../../../components/itinerary/DetailPopup';
-import PlaceRecommendationList from '../../../components/itinerary/PlaceRecommendationList';
-import AirplaneLoading from '../../../components/common/AirplaneLoading';
+} from '../components/TimelineItem';
+import { AirplaneLoading, ScheduleEditModal, TimePickerModal } from '../../../components/common';
+import DetailPopup from '../components/DetailPopup';
+import PlaceRecommendationList from '../components/PlaceRecommendationList';
 import { Day } from '../../../contexts/ItineraryContext';
 import { SimpleWeatherInfo } from '../../../api/trips';
-import WeatherHeader from '../../../components/weather/WeatherHeader';
+import WeatherHeader from '../components/weather/WeatherHeader';
 import {
   styles,
   COLORS,

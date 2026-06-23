@@ -18,16 +18,7 @@ import {
   faPen,
 } from '@fortawesome/free-solid-svg-icons';
 import { faBell } from '@fortawesome/free-regular-svg-icons';
-import CalendarModal from '../../../components/common/CalendarModal';
-import PaxModal from '../../../components/common/PaxModal';
-import NotificationModal, {
-  Invitation,
-} from '../../../components/common/NotificationModal';
-import SelectionModal, {
-  OptionType,
-} from '../../../components/common/SelectionModal';
-import SearchLocationModal from '../../../components/common/SearchLocationModal';
-import Header from '../../../components/common/Header';
+import { CalendarModal, Header, Invitation, NotificationModal, OptionType, PaxModal, SearchLocationModal, SelectionModal } from '../../../components/common';
 import { styles } from './HomeScreen.styles';
 import gravatarUrl from '../../../utils/gravatarUrl';
 

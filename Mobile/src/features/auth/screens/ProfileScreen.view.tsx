@@ -7,7 +7,7 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { LoadingSpinner, UpdateGenderModal, UpdatePasswordModal, UpdateThemeModal, UpdateValueModal } from '../../../components/common';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faEnvelope,
@@ -33,10 +33,6 @@ import {
 } from 'lucide-react-native';
 import { Image } from 'react-native';
 import gravatarUrl from '../../../utils/gravatarUrl';
-import UpdateValueModal from '../../../components/common/UpdateValueModal';
-import UpdateGenderModal from '../../../components/common/UpdateGenderModal';
-import UpdateThemeModal from '../../../components/common/UpdateThemeModal';
-import UpdatePasswordModal from '../../../components/common/UpdatePasswordModal';
 import { styles, COLORS } from './ProfileScreen.styles';
 
 /* ── Reusable card components ── */

@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import WeatherIcon from './WeatherIcon';
-import { SimpleWeatherInfo } from '../../api/trips';
-import { theme } from '../../theme/theme';
+import { SimpleWeatherInfo } from '../../../../api/trips';
+import { theme } from '../../../../theme/theme';
 import LinearGradient from 'react-native-linear-gradient';
 
 interface WeatherHeaderProps {

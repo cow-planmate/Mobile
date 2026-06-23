@@ -15,9 +15,9 @@ import {
   inviteEditor,
   getEditors,
   removeEditor,
-} from '../../api/trips';
-import { theme } from '../../theme/theme';
-import { useAlert } from '../../contexts/AlertContext';
+} from '../../../api/trips';
+import { theme } from '../../../theme/theme';
+import { useAlert } from '../../../contexts/AlertContext';
 
 const COLORS = theme.colors;
 const FONTS = {

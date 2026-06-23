@@ -8,7 +8,7 @@ import {
   Pressable,
   Image,
 } from 'react-native';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { Header, Invitation, LoadingSpinner, MenuModal, NotificationModal, ShareModal, UpdateValueModal } from '../../../components/common';
 import {
   Calendar,
   MoreVertical,
@@ -28,13 +28,6 @@ import {
   faCalendarAlt,
 } from '@fortawesome/free-solid-svg-icons';
 import { faBell } from '@fortawesome/free-regular-svg-icons';
-import UpdateValueModal from '../../../components/common/UpdateValueModal';
-import NotificationModal, {
-  Invitation,
-} from '../../../components/common/NotificationModal';
-import ShareModal from '../../../components/common/ShareModal';
-import MenuModal from '../../../components/common/MenuModal';
-import Header from '../../../components/common/Header';
 import { SimplePlanVO } from '../../../types/env';
 import { styles, COLORS, FONTS } from './MyScheduleScreen.styles';
 import gravatarUrl from '../../../utils/gravatarUrl';

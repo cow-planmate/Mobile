@@ -10,7 +10,7 @@ import axios from 'axios';
 import { API_URL } from '@env';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
-import { Place } from '../../../components/itinerary/TimelineItem';
+import { Place } from '../components/TimelineItem';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MINUTE_HEIGHT } from './ItineraryViewScreen.styles';
 import { Day } from '../../../contexts/ItineraryContext';
@@ -20,8 +20,7 @@ import {
 } from '../../../api/trips';
 import { useAlert } from '../../../contexts/AlertContext';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
-import AirplaneLoading from '../../../components/common/AirplaneLoading';
-
+import { AirplaneLoading } from '../../../components/common';
 // DTO Interfaces
 interface PlaceBlockVO {
   blockId?: number;

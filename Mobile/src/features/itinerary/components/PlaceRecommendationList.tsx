@@ -27,10 +27,9 @@ import { API_URL } from '@env';
 import { X } from 'lucide-react-native';
 import { Place } from './TimelineItem';
 import KakaoMapView from './KakaoMapView';
-import { usePlaces } from '../../contexts/PlacesContext';
-import { PlaceVO } from '../../api/trips';
-import GoogleMapsIcon from '../common/GoogleMapsIcon';
-
+import { usePlaces } from '../../../contexts/PlacesContext';
+import { PlaceVO } from '../../../api/trips';
+import { GoogleMapsIcon } from '../../../components/common';
 const FONTS = {
   regular: 'Inter_400Regular',
   medium: 'Inter_500Medium',

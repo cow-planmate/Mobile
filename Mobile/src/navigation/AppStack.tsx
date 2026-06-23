@@ -2,12 +2,12 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
-import HomeScreen from '../screens/app/main/HomeScreen';
-import ItineraryEditorScreen from '../screens/app/itinerary/ItineraryEditorScreen';
+import HomeScreen from '../features/home/screens/HomeScreen';
+import ItineraryEditorScreen from '../features/itinerary/screens/ItineraryEditorScreen';
 
-import ItineraryViewScreen from '../screens/app/itinerary/ItineraryViewScreen';
-import MyScheduleScreen from '../screens/app/main/MyScheduleScreen';
-import ProfileScreen from '../screens/app/main/ProfileScreen';
+import ItineraryViewScreen from '../features/itinerary/screens/ItineraryViewScreen';
+import MyScheduleScreen from '../features/itinerary/screens/MyScheduleScreen';
+import ProfileScreen from '../features/auth/screens/ProfileScreen';
 import { AppStackParamList } from './types';
 import { View, Platform } from 'react-native';
 import { Home, User } from 'lucide-react-native';
