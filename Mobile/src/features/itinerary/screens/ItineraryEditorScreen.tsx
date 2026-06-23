@@ -20,6 +20,7 @@ import { useWebSocket } from '../../../contexts/WebSocketContext';
 import { useItinerary } from '../../../contexts/ItineraryContext';
 import { usePlaces } from '../../../contexts/PlacesContext';
 import { useItineraryEditor } from '../../../hooks/useItineraryEditor';
+import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
 import { timeToMinutes, dateToTime } from '../../../utils/timeUtils';
 import {
   SimpleWeatherInfo,
@@ -37,6 +38,7 @@ type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const { showAlert } = useAlert();
+  const createFullPlanMutation = useCreateFullPlan();
   const {
     days,
     selectedDayIndex,
@@ -434,25 +436,21 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         });
       });
 
-      const response = await axios.post(
-        `${API_URL}/api/plan/create`,
-        {
-          planFrame: {
-            planName: tripName || '나의 일정',
-            departure: route.params.departure || 'SEOUL',
-            transportationCategoryId:
-              route.params.transport === '자동차' ? 1 : 0,
-            travelId: route.params.travelId || 1,
-            adultCount: route.params.adults || 1,
-            childCount: route.params.children || 0,
-          },
-          timetables: timetableVOs,
-          timetablePlaceBlocks: allBlocks,
+      const result = await createFullPlanMutation.mutateAsync({
+        planFrame: {
+          planName: tripName || '나의 일정',
+          departure: route.params.departure || 'SEOUL',
+          transportationCategoryId:
+            route.params.transport === '자동차' ? 1 : 0,
+          travelId: route.params.travelId || 1,
+          adultCount: route.params.adults || 1,
+          childCount: route.params.children || 0,
         },
-        config,
-      );
+        timetables: timetableVOs,
+        timetablePlaceBlocks: allBlocks,
+      });
 
-      const newPlanId = response.data?.planId;
+      const newPlanId = result?.planId;
 
       navigation.navigate('ItineraryView', {
         days,
