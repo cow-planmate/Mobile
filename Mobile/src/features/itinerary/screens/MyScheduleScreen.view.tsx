@@ -6,9 +6,16 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
-  Image,
 } from 'react-native';
-import { Header, Invitation, LoadingSpinner, MenuModal, NotificationModal, ShareModal, UpdateValueModal } from '../../../components/common';
+import {
+  Header,
+  Invitation,
+  LoadingSpinner,
+  MenuModal,
+  NotificationModal,
+  ShareModal,
+  UpdateValueModal,
+} from '../../../components/common';
 import {
   Calendar,
   MoreVertical,
@@ -16,6 +23,7 @@ import {
   Users,
   FolderOpen,
   CalendarDays,
+  Plus,
 } from 'lucide-react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
@@ -27,11 +35,8 @@ import {
   faCalendar,
   faCalendarAlt,
 } from '@fortawesome/free-solid-svg-icons';
-import { faBell } from '@fortawesome/free-regular-svg-icons';
 import { SimplePlanVO } from '../../../types/env';
 import { styles, COLORS, FONTS } from './MyScheduleScreen.styles';
-import gravatarUrl from '../../../utils/gravatarUrl';
-import { normalize } from '../../../utils/normalize';
 
 export const MENU_OPTIONS = [
   { label: '제목 바꾸기', action: 'rename', icon: faT },
@@ -111,6 +116,7 @@ export interface MyScheduleScreenViewProps {
   onRejectNotification: (requestId: number) => void;
   onNotificationPress: () => void;
   onNavigateProfile: () => void;
+  onCreatePlan?: () => void;
 }
 
 export default function MyScheduleScreenView({
@@ -139,6 +145,7 @@ export default function MyScheduleScreenView({
   onRejectNotification,
   onNotificationPress,
   onNavigateProfile,
+  onCreatePlan = () => {},
 }: MyScheduleScreenViewProps) {
   if (loading) {
     return (
@@ -296,6 +303,15 @@ export default function MyScheduleScreenView({
         onAccept={onAcceptNotification}
         onReject={onRejectNotification}
       />
+
+      {/* Floating Add Plan Button */}
+      <TouchableOpacity
+        style={styles.floatingButton}
+        onPress={onCreatePlan}
+        activeOpacity={0.8}
+      >
+        <Plus size={24} color="#FFF" />
+      </TouchableOpacity>
     </View>
   );
 }

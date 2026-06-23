@@ -1,3 +1,4 @@
 // Export public API for community feature
-export {};
+export { default as CommunityScreen } from './screens/CommunityScreen';
+
 

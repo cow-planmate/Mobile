@@ -20,7 +20,7 @@ const IntroScreenView = ({ onStart, onLogin }: IntroScreenViewProps) => {
       <View style={styles.content}>
         <View style={styles.logoContainer}>
           <Image
-            source={require('../../assets/android-chrome-192x192.png')}
+            source={require('../../../assets/android-chrome-192x192.png')}
             style={styles.logoImage}
           />
         </View>

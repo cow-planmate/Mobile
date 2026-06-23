@@ -43,6 +43,8 @@ export type AppStackParamList = {
     destination?: string;
     planId?: number;
   };
+  Community: undefined;
+  Map: undefined;
 };
 
 export type AuthStackParamList = {

@@ -1,3 +1,4 @@
 // Export public API for places feature
-export {};
+export { default as MapScreen } from './screens/MapScreen';
+
 

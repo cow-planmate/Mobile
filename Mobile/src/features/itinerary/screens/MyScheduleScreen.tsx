@@ -318,6 +318,10 @@ export default function MyScheduleScreen() {
     });
   };
 
+  const handleCreatePlan = () => {
+    navigation.navigate('Home');
+  };
+
   return (
     <MyScheduleScreenView
       loading={loading}
@@ -346,6 +350,7 @@ export default function MyScheduleScreen() {
       onRejectNotification={handleReject}
       onNotificationPress={onNotificationPress}
       onNavigateProfile={onNavigateProfile}
+      onCreatePlan={handleCreatePlan}
     />
   );
 }
