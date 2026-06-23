@@ -5,7 +5,11 @@ const {
 
 const defaultConfig = getDefaultConfig(__dirname);
 
-const config = {};
+const config = {
+  resolver: {
+    unstable_enablePackageExports: true,
+  },
+};
 
 const finalConfig = mergeConfig(defaultConfig, config);
 

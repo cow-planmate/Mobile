@@ -31,6 +31,7 @@
     "@storybook/addon-ondevice-actions": "^10.1.11",
     "@storybook/addon-ondevice-controls": "^10.1.11",
     "@storybook/react-native": "^10.1.11",
+    "@tanstack/react-query": "^5.101.1",
     "axios": "^1.13.2",
     "babel-loader": "^8.4.1",
     "blueimp-md5": "^2.19.0",

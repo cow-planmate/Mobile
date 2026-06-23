@@ -7,6 +7,8 @@ import { ItineraryProvider } from './src/contexts/ItineraryContext';
 import { WebSocketProvider } from './src/contexts/WebSocketContext';
 import { PlacesProvider } from './src/contexts/PlacesContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './src/api/queryClient';
 import StorybookUIRoot from './.storybook';
 
 // axios 인터셉터 설정 초기화
@@ -89,20 +91,22 @@ function App() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <AuthProvider>
-        <AlertProvider>
-          <WebSocketProvider>
-            <PlacesProvider>
-              <ItineraryProvider>
-                <NavigationContainer>
-                  <AppNavigator />
-                </NavigationContainer>
-                <Toast config={toastConfig} />
-              </ItineraryProvider>
-            </PlacesProvider>
-          </WebSocketProvider>
-        </AlertProvider>
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <AlertProvider>
+            <WebSocketProvider>
+              <PlacesProvider>
+                <ItineraryProvider>
+                  <NavigationContainer>
+                    <AppNavigator />
+                  </NavigationContainer>
+                  <Toast config={toastConfig} />
+                </ItineraryProvider>
+              </PlacesProvider>
+            </WebSocketProvider>
+          </AlertProvider>
+        </AuthProvider>
+      </QueryClientProvider>
     </GestureHandlerRootView>
   );
 }
