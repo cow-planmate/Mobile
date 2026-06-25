@@ -483,7 +483,7 @@ export default function PlaceRecommendationList({
   }, []);
 
   // ─── Render ───
-  const renderPlaceItem = ({ item }: { item: PlaceVO }) => {
+  const renderPlaceItem = useCallback(({ item }: { item: PlaceVO }) => {
     const type = getCategoryType(item.categoryId);
 
     return (
@@ -542,9 +542,9 @@ export default function PlaceRecommendationList({
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [onAddPlace, handleOpenGoogleMaps]);
 
-  const renderFooter = () => {
+  const renderFooter = useCallback(() => {
     if (isLoading) {
       return (
         <View style={plStyles.footerLoading}>
@@ -563,9 +563,9 @@ export default function PlaceRecommendationList({
       );
     }
     return null;
-  };
+  }, [isLoading, hasMoreData, handleLoadMore]);
 
-  const renderEmpty = () => {
+  const renderEmpty = useCallback(() => {
     if (isLoading) return null;
 
     if (selectedTab === '검색' && normalizedSearchQuery.length < 2) {
@@ -612,9 +612,9 @@ export default function PlaceRecommendationList({
         )}
       </View>
     );
-  };
+  }, [isLoading, selectedTab, normalizedSearchQuery]);
 
-  const renderHeader = () => {
+  const renderHeader = useCallback(() => {
     if (selectedTab === '검색') {
       return (
         <View style={plStyles.searchContainer}>
@@ -689,7 +689,7 @@ export default function PlaceRecommendationList({
     }
 
     return null;
-  };
+  }, [selectedTab, searchQuery, normalizedSearchQuery, customPlaceName, handleSearchTextChange, handleSearchSubmit, handleDirectAdd]);
 
   return (
     <View style={plStyles.container}>
@@ -766,6 +766,10 @@ export default function PlaceRecommendationList({
         contentContainerStyle={plStyles.listContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={true}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
