@@ -5,12 +5,12 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
-  Image,
   ScrollView,
   Pressable,
   Linking,
   Dimensions,
 } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import { X, Map as MapIcon } from 'lucide-react-native';
 import { Place } from './TimelineItem';
 import { CATEGORY_COLORS } from './TimelineItem.styles';
@@ -117,10 +117,10 @@ export default function DetailPopup({
 
             {/* Photo */}
             {place.imageUrl ? (
-              <Image
-                source={{ uri: place.imageUrl }}
+              <FastImage
+                source={{ uri: place.imageUrl, priority: FastImage.priority.normal }}
                 style={popupStyles.photo}
-                resizeMode="cover"
+                resizeMode={FastImage.resizeMode.cover}
               />
             ) : (
               <View style={[popupStyles.photo, popupStyles.placeholderPhoto]}>

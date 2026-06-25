@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import FastImage from 'react-native-fast-image';
 import {
   View,
   Text,
   TouchableOpacity,
-  Image,
+
   Modal,
   ScrollView,
   Pressable,
@@ -570,9 +571,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
                     <View key={user.uid} style={modalStyles.participantRow}>
                       <View style={modalStyles.participantAvatar}>
                         {user.avatarUrl ? (
-                          <Image
-                            source={{ uri: user.avatarUrl }}
+                          <FastImage
+                            source={{ uri: user.avatarUrl, priority: FastImage.priority.normal }}
                             style={modalStyles.participantAvatarImage}
+                            resizeMode={FastImage.resizeMode.cover}
                           />
                         ) : (
                           <Text style={modalStyles.participantAvatarText}>

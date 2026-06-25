@@ -1,4 +1,5 @@
 import React from 'react';
+import FastImage from 'react-native-fast-image';
 import {
   View,
   Text,
@@ -7,7 +8,7 @@ import {
   FlatList,
   TouchableOpacity,
   Pressable,
-  Image,
+
 } from 'react-native';
 import { LoadingSpinner } from '../../../components/common';
 import { Place } from '../components/TimelineItem';
@@ -23,7 +24,7 @@ const PlaceSearchResultItem = ({
   <TouchableOpacity style={styles.resultItem} onPress={onSelect}>
     <View style={styles.imageContainer}>
       {item.imageUrl ? (
-        <Image source={{ uri: item.imageUrl }} style={styles.placeImage} />
+        <FastImage source={{ uri: item.imageUrl, priority: FastImage.priority.normal }} style={styles.placeImage} resizeMode={FastImage.resizeMode.cover} />
       ) : (
         <View style={[styles.placeImage, styles.placeholderImage]}>
           <Text style={styles.placeholderText}>{item.type[0]}</Text>

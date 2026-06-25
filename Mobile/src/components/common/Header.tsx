@@ -3,10 +3,10 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Image,
   StyleSheet,
   Platform,
 } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faUser, faPen } from '@fortawesome/free-solid-svg-icons';
 import { faBell } from '@fortawesome/free-regular-svg-icons';
@@ -40,10 +40,10 @@ const Header: React.FC<HeaderProps> = ({
         </TouchableOpacity>
         <TouchableOpacity style={styles.userAvatar} onPress={onNavigateProfile}>
           {email ? (
-            <Image
-              source={{ uri: gravatarUrl(email, 100) }}
+            <FastImage
+              source={{ uri: gravatarUrl(email, 100), priority: FastImage.priority.normal }}
               style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
+              resizeMode={FastImage.resizeMode.cover}
             />
           ) : (
             <FontAwesomeIcon icon={faUser} size={20} color="#9CA3AF" />

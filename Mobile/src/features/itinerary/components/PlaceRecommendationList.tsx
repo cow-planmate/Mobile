@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import FastImage from 'react-native-fast-image';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   FlatList,
-  Image,
+
   ActivityIndicator,
   StyleSheet,
   Modal,
@@ -198,10 +199,13 @@ const PlaceImage = React.memo(
     }
 
     return (
-      <Image
-        source={{ uri: currentUrl }}
+      <FastImage
+        source={{
+          uri: currentUrl,
+          priority: FastImage.priority.normal,
+        }}
         style={plStyles.placeImage}
-        resizeMode="cover"
+        resizeMode={FastImage.resizeMode.cover}
         onError={() => {
           if (!hasError) {
             setHasError(true);

@@ -31,7 +31,7 @@ import {
   Pencil,
   LogOut,
 } from 'lucide-react-native';
-import { Image } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import gravatarUrl from '../../../utils/gravatarUrl';
 import { styles, COLORS } from './ProfileScreen.styles';
 
@@ -134,9 +134,10 @@ export default function ProfileScreenView({
         <View style={styles.profileInfoArea}>
           <View style={styles.avatarWrap}>
             {user.email ? (
-              <Image
-                source={{ uri: gravatarUrl(user.email, 200) }}
+              <FastImage
+                source={{ uri: gravatarUrl(user.email, 200), priority: FastImage.priority.normal }}
                 style={styles.avatarImage}
+                resizeMode={FastImage.resizeMode.cover}
               />
             ) : (
               <User size={50} color="#D1D5DB" />

@@ -1,10 +1,11 @@
 import React from 'react';
+import FastImage from 'react-native-fast-image';
 import {
   View,
   Text,
   TextInput,
   ScrollView,
-  Image,
+
   TouchableOpacity,
 } from 'react-native';
 import { Search, Star, MapPin } from 'lucide-react-native';
@@ -129,9 +130,10 @@ export default function MapScreenView({
               {/* Place Image */}
               <View style={styles.cardImage}>
                 {place.imageUrl ? (
-                  <Image
-                    source={{ uri: place.imageUrl }}
+                  <FastImage
+                    source={{ uri: place.imageUrl, priority: FastImage.priority.normal }}
                     style={{ width: '100%', height: '100%', borderRadius: 12 }}
+                    resizeMode={FastImage.resizeMode.cover}
                   />
                 ) : (
                   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>

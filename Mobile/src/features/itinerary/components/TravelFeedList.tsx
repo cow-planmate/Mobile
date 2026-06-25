@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import FastImage from 'react-native-fast-image';
 import {
   View,
   Text,
-  Image,
+
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
@@ -111,10 +112,10 @@ export default function TravelFeedList({ onItemPress }: TravelFeedListProps) {
       onPress={() => onItemPress && onItemPress(item)}
       activeOpacity={0.9}
     >
-      <Image
-        source={{ uri: item.thumbnailUrl }}
+      <FastImage
+        source={{ uri: item.thumbnailUrl, priority: FastImage.priority.normal }}
         style={styles.thumbnail}
-        resizeMode="cover"
+        resizeMode={FastImage.resizeMode.cover}
       />
       
       <View style={styles.cardContent}>
@@ -137,9 +138,10 @@ export default function TravelFeedList({ onItemPress }: TravelFeedListProps) {
 
         <View style={styles.footer}>
           <View style={styles.authorContainer}>
-            <Image
-              source={{ uri: item.authorAvatar }}
+            <FastImage
+              source={{ uri: item.authorAvatar, priority: FastImage.priority.low }}
               style={styles.avatar}
+              resizeMode={FastImage.resizeMode.cover}
             />
             <Text style={styles.authorName}>{item.author}</Text>
           </View>

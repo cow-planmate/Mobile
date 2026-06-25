@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  Image,
 } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faUser,
@@ -178,9 +178,10 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
       >
         {/* 2. Hero Section */}
         <View style={styles.heroSection}>
-          <Image
-            source={{ uri: HERO_IMAGES[heroIndex] }}
+          <FastImage
+            source={{ uri: HERO_IMAGES[heroIndex], priority: FastImage.priority.normal }}
             style={styles.heroImage}
+            resizeMode={FastImage.resizeMode.cover}
           />
           <View style={styles.heroOverlay} />
           <Text style={styles.heroTitle}>
