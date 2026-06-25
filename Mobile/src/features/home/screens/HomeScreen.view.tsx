@@ -6,8 +6,10 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
+  Switch,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
+import { usePlaces } from '../../../contexts/PlacesContext';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faUser,
@@ -151,6 +153,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   onAcceptNotification,
   onRejectNotification,
 }) => {
+  const { isPetFriendly, setPetFriendly } = usePlaces();
   const [heroIndex, setHeroIndex] = useState(0);
 
   useEffect(() => {
@@ -224,8 +227,18 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               placeholder="무엇을 타고 가시나요?"
               icon={transport === 'car' ? faCar : faBus}
               onPress={onOpenTransportModal}
-              isLast
             />
+
+            {/* Pet Friendly Toggle Row */}
+            <View style={[styles.inputRow, styles.inputRowLast, { justifyContent: 'space-between', alignItems: 'center', minHeight: 48 }]}>
+              <Text style={styles.label}>🐾 반려동물 동반 여행</Text>
+              <Switch
+                value={isPetFriendly}
+                onValueChange={setPetFriendly}
+                trackColor={{ false: '#D1D5DB', true: '#10B981' }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
 
             {/* Create Button */}
             <TouchableOpacity

@@ -298,6 +298,8 @@ export default function PlaceRecommendationList({
     doSearchPlaces,
     loadMorePlaces,
     fetchAllRecommendations,
+    isPetFriendly,
+    setPetFriendly,
   } = usePlaces();
 
   const [selectedTab, setSelectedTab] = useState<PlaceTab>('관광지');
@@ -386,18 +388,33 @@ export default function PlaceRecommendationList({
 
   // ─── Data ───
   const getTabData = (): PlaceVO[] => {
+    let rawData: PlaceVO[] = [];
     switch (selectedTab) {
       case '관광지':
-        return tour;
+        rawData = tour;
+        break;
       case '숙소':
-        return lodging;
+        rawData = lodging;
+        break;
       case '식당':
-        return restaurant;
+        rawData = restaurant;
+        break;
       case '검색':
-        return isSearchReady ? search : [];
+        rawData = isSearchReady ? search : [];
+        break;
       default:
-        return [];
+        rawData = [];
     }
+
+    if (isPetFriendly) {
+      const keywords = ['반려', '애견', '동반', '펫', 'pet', 'dog', '동물', '카페', '펜션', '공원', '해수욕장', '캠핑'];
+      return rawData.filter(item => {
+        const name = item.name || '';
+        const address = item.formatted_address || '';
+        return keywords.some(keyword => name.toLowerCase().includes(keyword) || address.toLowerCase().includes(keyword));
+      });
+    }
+    return rawData;
   };
 
   const getTabTokens = (): string[] => {
@@ -713,6 +730,29 @@ export default function PlaceRecommendationList({
             );
           },
         )}
+      </View>
+
+      {/* Pet Friendly Filter Toggle */}
+      <View style={plStyles.filterContainer}>
+        <View style={plStyles.filterLabelRow}>
+          <Text style={plStyles.filterLabelText}>🐾 반려동물 동반 장소만 보기</Text>
+          <Text style={plStyles.filterSubText}>공모전 핵심: 펫 프렌들리 필터링</Text>
+        </View>
+        <TouchableOpacity
+          style={[
+            plStyles.filterToggle,
+            isPetFriendly ? plStyles.filterToggleActive : plStyles.filterToggleInactive,
+          ]}
+          onPress={() => setPetFriendly(!isPetFriendly)}
+          activeOpacity={0.8}
+        >
+          <View
+            style={[
+              plStyles.filterToggleBall,
+              isPetFriendly ? plStyles.filterToggleBallActive : plStyles.filterToggleBallInactive,
+            ]}
+          />
+        </TouchableOpacity>
       </View>
 
       {/* Place List */}
@@ -1039,5 +1079,59 @@ const plStyles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     fontFamily: FONTS.medium,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#F9FAFB',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  filterLabelRow: {
+    flexDirection: 'column',
+    gap: 2,
+  },
+  filterLabelText: {
+    fontSize: 14,
+    fontFamily: FONTS.semibold,
+    color: '#111827',
+  },
+  filterSubText: {
+    fontSize: 11,
+    fontFamily: FONTS.regular,
+    color: '#6B7280',
+  },
+  filterToggle: {
+    width: 44,
+    height: 24,
+    borderRadius: 12,
+    padding: 2,
+    justifyContent: 'center',
+  },
+  filterToggleActive: {
+    backgroundColor: '#10B981',
+  },
+  filterToggleInactive: {
+    backgroundColor: '#D1D5DB',
+  },
+  filterToggleBall: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  filterToggleBallActive: {
+    alignSelf: 'flex-end',
+  },
+  filterToggleBallInactive: {
+    alignSelf: 'flex-start',
   },
 });

@@ -34,6 +34,7 @@ export interface PlacesState {
   searchNext: string[];
 
   isLoading: boolean;
+  isPetFriendly: boolean;
 }
 
 interface PlacesContextType extends PlacesState {
@@ -55,6 +56,8 @@ interface PlacesContextType extends PlacesState {
   ) => Promise<void>;
   /** Reset all places */
   resetPlaces: () => void;
+  /** Set pet friendly filtering state */
+  setPetFriendly: (val: boolean) => void;
 }
 
 const PlacesContext = createContext<PlacesContextType | undefined>(undefined);
@@ -75,6 +78,7 @@ export function PlacesProvider({children}: PropsWithChildren) {
   const [searchNext, setSearchNext] = useState<string[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isPetFriendly, setPetFriendly] = useState(false);
 
   const fetchAllRecommendations = useCallback(async (planId: number) => {
     setIsLoading(true);
@@ -211,11 +215,13 @@ export function PlacesProvider({children}: PropsWithChildren) {
         restaurantNext,
         searchNext,
         isLoading,
+        isPetFriendly,
         fetchAllRecommendations,
         fetchAllRecommendationsNoAuth,
         doSearchPlaces,
         loadMorePlaces,
         resetPlaces,
+        setPetFriendly,
       }}>
       {children}
     </PlacesContext.Provider>
