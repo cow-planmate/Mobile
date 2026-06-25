@@ -5,6 +5,7 @@ import React, {
   PropsWithChildren,
   useEffect,
   useCallback,
+  useMemo,
 } from 'react';
 import { Place } from '../features/itinerary/components/TimelineItem';
 import { useWebSocket } from './WebSocketContext';
@@ -404,7 +405,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     };
   }, [subscribeToMessages, unsubscribeFromMessages, handleWebSocketMessage]);
 
-  const addPlaceToDay = (
+  const addPlaceToDay = useCallback((
     dayIndex: number,
     placeData: Omit<Place, 'startTime' | 'endTime'>,
   ) => {
@@ -471,9 +472,9 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         });
       }
     }
-  };
+  }, [days, sendMessage]);
 
-  const deletePlaceFromDay = (dayIndex: number, placeId: string) => {
+  const deletePlaceFromDay = useCallback((dayIndex: number, placeId: string) => {
     if (days.length === 0 || !days[dayIndex]) {
       return;
     }
@@ -502,9 +503,9 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         ),
       );
     }
-  };
+  }, [days, sendMessage]);
 
-  const updatePlaceTimes = (
+  const updatePlaceTimes = useCallback((
     dayIndex: number,
     placeId: string,
     newStartTime: string,
@@ -546,9 +547,9 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         );
       });
     }
-  };
+  }, [days, sendMessage]);
 
-  const updatePlaceMemo = (dayIndex: number, placeId: string, memo: string) => {
+  const updatePlaceMemo = useCallback((dayIndex: number, placeId: string, memo: string) => {
     if (days.length === 0 || !days[dayIndex]) {
       return;
     }
@@ -574,14 +575,14 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         ),
       );
     }
-  };
+  }, [days, sendMessage]);
 
   /**
    * Combined update for time, memo, and other place fields.
    * Updates local state first, then sends a single WebSocket message
    * with the complete DTO (matching Frontend behavior).
    */
-  const updatePlaceDetails = (
+  const updatePlaceDetails = useCallback((
     dayIndex: number,
     placeId: string,
     updates: Partial<
@@ -640,22 +641,30 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         }
       }
     }
-  };
+  }, [days, sendMessage]);
+
+  const contextValue = useMemo(() => ({
+    days,
+    setDays,
+    lastAddedPlaceId,
+    setLastAddedPlaceId,
+    addPlaceToDay,
+    deletePlaceFromDay,
+    updatePlaceTimes,
+    updatePlaceMemo,
+    updatePlaceDetails,
+  }), [
+    days,
+    lastAddedPlaceId,
+    addPlaceToDay,
+    deletePlaceFromDay,
+    updatePlaceTimes,
+    updatePlaceMemo,
+    updatePlaceDetails,
+  ]);
 
   return (
-    <ItineraryContext.Provider
-      value={{
-        days,
-        setDays,
-        lastAddedPlaceId,
-        setLastAddedPlaceId,
-        addPlaceToDay,
-        deletePlaceFromDay,
-        updatePlaceTimes,
-        updatePlaceMemo,
-        updatePlaceDetails,
-      }}
-    >
+    <ItineraryContext.Provider value={contextValue}>
       {children}
     </ItineraryContext.Provider>
   );

@@ -60,19 +60,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const oauthLogin = useAuthStore((state) => state.oauthLogin);
   const oauthComplete = useAuthStore((state) => state.oauthComplete);
 
+  const contextValue = React.useMemo(() => ({
+    user,
+    isLoading,
+    needsThemeSelection,
+    setNeedsThemeSelection,
+    login,
+    logout,
+    oauthLogin,
+    oauthComplete,
+  }), [user, isLoading, needsThemeSelection, setNeedsThemeSelection, login, logout, oauthLogin, oauthComplete]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        needsThemeSelection,
-        setNeedsThemeSelection,
-        login,
-        logout,
-        oauthLogin,
-        oauthComplete,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

@@ -3,6 +3,7 @@ import React, {
   useState,
   useContext,
   useCallback,
+  useMemo,
   PropsWithChildren,
 } from 'react';
 import {
@@ -203,26 +204,33 @@ export function PlacesProvider({children}: PropsWithChildren) {
     setSearchNext([]);
   }, []);
 
+  const contextValue = useMemo(() => ({
+    tour,
+    lodging,
+    restaurant,
+    search,
+    tourNext,
+    lodgingNext,
+    restaurantNext,
+    searchNext,
+    isLoading,
+    isPetFriendly,
+    fetchAllRecommendations,
+    fetchAllRecommendationsNoAuth,
+    doSearchPlaces,
+    loadMorePlaces,
+    resetPlaces,
+    setPetFriendly,
+  }), [
+    tour, lodging, restaurant, search,
+    tourNext, lodgingNext, restaurantNext, searchNext,
+    isLoading, isPetFriendly,
+    fetchAllRecommendations, fetchAllRecommendationsNoAuth,
+    doSearchPlaces, loadMorePlaces, resetPlaces, setPetFriendly
+  ]);
+
   return (
-    <PlacesContext.Provider
-      value={{
-        tour,
-        lodging,
-        restaurant,
-        search,
-        tourNext,
-        lodgingNext,
-        restaurantNext,
-        searchNext,
-        isLoading,
-        isPetFriendly,
-        fetchAllRecommendations,
-        fetchAllRecommendationsNoAuth,
-        doSearchPlaces,
-        loadMorePlaces,
-        resetPlaces,
-        setPetFriendly,
-      }}>
+    <PlacesContext.Provider value={contextValue}>
       {children}
     </PlacesContext.Provider>
   );

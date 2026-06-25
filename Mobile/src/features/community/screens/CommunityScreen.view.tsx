@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -44,7 +44,7 @@ export default function CommunityScreenView({
   onWritePost,
   onPostPress,
 }: CommunityScreenViewProps) {
-  const renderPostItem = ({ item }: { item: Post }) => (
+  const renderPostItem = useCallback(({ item }: { item: Post }) => (
     <TouchableOpacity
       style={styles.postCard}
       onPress={() => onPostPress(item.id)}
@@ -85,7 +85,15 @@ export default function CommunityScreenView({
         </View>
       </View>
     </TouchableOpacity>
-  );
+  ), [onPostPress]);
+
+  const renderEmptyComponent = useCallback(() => (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 80 }}>
+      <Text style={{ color: COLORS.textTertiary, fontSize: 15 }}>게시글이 존재하지 않습니다</Text>
+    </View>
+  ), []);
+
+  const keyExtractor = useCallback((item: Post) => item.id, []);
 
   return (
     <View style={styles.container}>
@@ -151,14 +159,14 @@ export default function CommunityScreenView({
       <FlatList
         data={posts}
         renderItem={renderPostItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         contentContainerStyle={styles.postList}
         showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 80 }}>
-            <Text style={{ color: COLORS.textTertiary, fontSize: 15 }}>게시글이 존재하지 않습니다</Text>
-          </View>
-        }
+        ListEmptyComponent={renderEmptyComponent}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={true}
       />
 
       {/* Write Button (FAB) */}
