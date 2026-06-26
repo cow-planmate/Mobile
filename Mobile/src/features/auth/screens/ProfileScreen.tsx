@@ -2,13 +2,13 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useAlert } from '../../../contexts/AlertContext';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuthStore } from '../../../store/useAuthStore';
 import { PreferredThemeVO } from '../../../types/env';
 import ProfileScreenView from './ProfileScreen.view';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 
 export default function ProfileScreen() {
-  const { logout } = useAuth();
+  const logout = useAuthStore((state) => state.logout);
   const { showAlert } = useAlert();
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState({

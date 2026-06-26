@@ -12,7 +12,7 @@ import SockJS from 'sockjs-client';
 import { Image } from 'react-native';
 import { API_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from './AuthContext';
+
 import gravatarUrl from '../utils/gravatarUrl';
 
 declare var global: any;
@@ -72,7 +72,7 @@ export const useWebSocket = () => useContext(WebSocketContext);
 export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  // const { user } = useAuth();
+
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<UserPresence[]>([]);
   const stompClient = useRef<Client | null>(null);

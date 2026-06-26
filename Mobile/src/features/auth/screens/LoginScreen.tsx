@@ -1,6 +1,6 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import Toast from 'react-native-toast-message';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { LoginScreenView } from './LoginScreen.view';
 
@@ -15,7 +15,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     field: 'email' | 'password' | 'all' | null;
     message: string | null;
   }>({ field: null, message: null });
-  const { login, isLoading } = useAuth();
+  const login = useAuthStore((state) => state.login);
+  const isLoading = useAuthStore((state) => state.isLoading);
   const { showAlert } = useAlert();
 
   const isEmailValid =

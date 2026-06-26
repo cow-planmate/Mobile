@@ -33,7 +33,7 @@ const FONTS = {
   bold: 'Inter_700Bold',
 };
 
-export default function NotificationModal({
+const NotificationModal = ({
   visible,
   onClose,
   invitations = [],
@@ -97,6 +97,8 @@ export default function NotificationModal({
     </Modal>
   );
 }
+
+export default React.memo(NotificationModal);
 
 const styles = StyleSheet.create({
   overlay: {

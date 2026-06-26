@@ -20,19 +20,25 @@ jest.mock('react-native-gesture-handler', () => {
   };
 });
 
-jest.mock('../src/contexts/AuthContext', () => {
-  const React = require('react');
+jest.mock('../src/store/useAuthStore', () => ({
+  useAuthStore: Object.assign(
+    (selector: any) => {
+      const state = {
+        user: null,
+        needsThemeSelection: false,
+        setNeedsThemeSelection: jest.fn(),
+        initialize: jest.fn(),
+      };
+      return selector ? selector(state) : state;
+    },
+    {
+      getState: () => ({
+        initialize: jest.fn(),
+      }),
+    }
+  )
+}));
 
-  return {
-    AuthProvider: ({ children }: { children?: React.ReactNode }) =>
-      React.createElement(React.Fragment, null, children),
-    useAuth: () => ({
-      user: null,
-      needsThemeSelection: false,
-      setNeedsThemeSelection: jest.fn(),
-    }),
-  };
-});
 
 jest.mock('../src/contexts/AlertContext', () => {
   const React = require('react');

@@ -18,7 +18,7 @@ export { default as SelectionModal } from './SelectionModal';
 export * from './SelectionModal';
 export { default as ShareModal } from './ShareModal';
 export * from './StyledButton';
-export * from './StyledInput';
+
 export { default as ThemeSelector } from './ThemeSelector';
 export * from './ThemeSelector';
 export { default as TimePickerModal } from './TimePickerModal';

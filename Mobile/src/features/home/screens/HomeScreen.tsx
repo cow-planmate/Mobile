@@ -1,9 +1,9 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { AppState, AppStateStatus } from 'react-native';
 import { AppStackParamList } from '../../../navigation/types';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuthStore } from '../../../store/useAuthStore';
 import { OptionType } from '../../../components/common';
 import { HomeScreenView } from './HomeScreen.view';
 import {
@@ -24,7 +24,7 @@ type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 const INVITATION_REFRESH_INTERVAL_MS = 15000;
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const { showAlert } = useAlert();
 
   const [startDate, setStartDate] = useState<Date | null>(new Date());

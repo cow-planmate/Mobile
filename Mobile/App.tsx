@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { AuthProvider } from './src/contexts/AuthContext';
+import { useAuthStore } from './src/store/useAuthStore';
 import { AlertProvider } from './src/contexts/AlertContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { ItineraryProvider } from './src/contexts/ItineraryContext';
@@ -83,6 +83,12 @@ const toastConfig: ToastConfig = {
 };
 
 function App() {
+  const initializeAuth = useAuthStore((state) => state.initialize);
+
+  React.useEffect(() => {
+    void initializeAuth();
+  }, [initializeAuth]);
+
   if (SHOW_STORYBOOK) {
     // getStorybookUI()의 결과는 컴포넌트입니다.
     return <StorybookUIRoot />;
@@ -92,7 +98,6 @@ function App() {
     <GestureHandlerRootView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
           <AlertProvider>
             <PlacesProvider>
               <WebSocketProvider>
@@ -105,7 +110,6 @@ function App() {
               </WebSocketProvider>
             </PlacesProvider>
           </AlertProvider>
-        </AuthProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

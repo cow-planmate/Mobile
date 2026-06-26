@@ -1,6 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuthStore } from '../store/useAuthStore';
 import { savePreferredThemes, PreferredThemeVO } from '../api/themes';
 import { ThemeSelector, ThemeSelectorResult } from '../components/common';
 import AuthStack from './AuthStack';
@@ -14,7 +14,9 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
-  const { user, needsThemeSelection, setNeedsThemeSelection } = useAuth();
+  const user = useAuthStore((state) => state.user);
+  const needsThemeSelection = useAuthStore((state) => state.needsThemeSelection);
+  const setNeedsThemeSelection = useAuthStore((state) => state.setNeedsThemeSelection);
 
   const handleThemeComplete = async (selections: ThemeSelectorResult) => {
     try {

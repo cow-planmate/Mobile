@@ -29,7 +29,7 @@ import {
 } from '../../../api/trips';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { styles } from './ItineraryEditorScreen.styles';
-import ShareModal from '../components/ShareModal';
+import { ShareModal } from '../../../components/common';
 import PlaceEditModal from '../components/PlaceEditModal';
 import KakaoMapView from '../components/KakaoMapView';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';

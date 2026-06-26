@@ -7,7 +7,7 @@ import { SimplePlanVO } from '../../../types/env';
 import { AppStackParamList } from '../../../navigation/types';
 import MyScheduleScreenView from './MyScheduleScreen.view';
 import { useAlert } from '../../../contexts/AlertContext';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuthStore } from '../../../store/useAuthStore';
 import {
   acceptInvitation,
   getPendingInvitations,
@@ -29,7 +29,7 @@ export default function MyScheduleScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const { showAlert } = useAlert();
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
 
   const [loading, setLoading] = useState(true);
   const [myItineraries, setMyItineraries] = useState<SimplePlanVO[]>([]);

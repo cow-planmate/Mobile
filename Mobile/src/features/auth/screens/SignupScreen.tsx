@@ -9,7 +9,7 @@ import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { SignupScreenView } from './SignupScreen.view';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 
 const formatTime = (seconds: number) => {
@@ -20,7 +20,8 @@ const formatTime = (seconds: number) => {
 
 export default function SignupScreen() {
   const navigation = useNavigation<any>();
-  const { login, setNeedsThemeSelection } = useAuth();
+  const login = useAuthStore((state) => state.login);
+  const setNeedsThemeSelection = useAuthStore((state) => state.setNeedsThemeSelection);
   const { showAlert } = useAlert();
 
   const [step, setStep] = useState(1);
