@@ -54,6 +54,21 @@ axios.interceptors.request.use(
   },
 );
 
+// 토큰 갱신을 위한 상태 변수 및 큐
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 // 응답 인터셉터: 응답 로깅 및 토큰 갱신
 axios.interceptors.response.use(
   response => {
@@ -88,7 +103,21 @@ axios.interceptors.response.use(
       originalRequest.url !== '/api/auth/login' &&
       originalRequest.url !== '/api/auth/token'
     ) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(token => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return axios(originalRequest);
+          })
+          .catch(err => {
+            return Promise.reject(err);
+          });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
         const refreshToken = await AsyncStorage.getItem('refreshToken');
@@ -102,17 +131,35 @@ axios.interceptors.response.use(
             await AsyncStorage.setItem('accessToken', newAccessToken);
             axios.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+            
+            processQueue(null, newAccessToken);
+            isRefreshing = false;
+            
             return axios(originalRequest);
           }
         }
+        throw new Error('No refresh token found or token creation failed');
       } catch (refreshError) {
-        // 토큰 갱신 실패 - 로그아웃 처리가 필요할 수 있음
         if (__DEV__) {
           console.error('Token refresh failed:', refreshError);
         }
-        // 저장된 토큰 제거
+        
+        // 저장된 토큰 및 유저 정보 제거
         await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
         delete axios.defaults.headers.common.Authorization;
+        
+        // Zustand auth store 상태 업데이트 (동적 로드를 통해 순환 참조 방지)
+        try {
+          const { useAuthStore } = require('../store/useAuthStore');
+          useAuthStore.getState().setUser(null);
+        } catch (storeError) {
+          console.error('Failed to update auth store on token refresh failure:', storeError);
+        }
+        
+        processQueue(refreshError, null);
+        isRefreshing = false;
+        
+        return Promise.reject(refreshError);
       }
     }
 

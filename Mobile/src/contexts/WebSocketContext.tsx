@@ -5,6 +5,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useMemo,
 } from 'react';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
@@ -86,13 +87,13 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     }>
   >([]);
 
-  const subscribeToMessages = (callback: (msg: any) => void) => {
+  const subscribeToMessages = useCallback((callback: (msg: any) => void) => {
     messageListeners.current.add(callback);
-  };
+  }, []);
 
-  const unsubscribeFromMessages = (callback: (msg: any) => void) => {
+  const unsubscribeFromMessages = useCallback((callback: (msg: any) => void) => {
     messageListeners.current.delete(callback);
-  };
+  }, []);
 
   const notifyListeners = (message: any) => {
     messageListeners.current.forEach(listener => listener(message));
@@ -296,7 +297,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
    * 공통 요청 구조에 맞춘 메시지 전송
    * WebSocket이 아직 연결되지 않았으면 큐에 추가하고 연결 후 자동 전송
    */
-  const sendMessage = (
+  const sendMessage = useCallback((
     action: string,
     targetName: string,
     target: any,
@@ -320,7 +321,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       target,
       eventId,
     );
-  };
+  }, [isConnected]);
 
   useEffect(() => {
     // 컴포넌트 언마운트 시 연결 해제
@@ -329,18 +330,26 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
+  const contextValue = useMemo(() => ({
+    isConnected,
+    onlineUsers,
+    connect,
+    disconnect,
+    sendMessage,
+    subscribeToMessages,
+    unsubscribeFromMessages,
+  }), [
+    isConnected,
+    onlineUsers,
+    connect,
+    disconnect,
+    sendMessage,
+    subscribeToMessages,
+    unsubscribeFromMessages,
+  ]);
+
   return (
-    <WebSocketContext.Provider
-      value={{
-        isConnected,
-        onlineUsers,
-        connect,
-        disconnect,
-        sendMessage,
-        subscribeToMessages,
-        unsubscribeFromMessages,
-      }}
-    >
+    <WebSocketContext.Provider value={contextValue}>
       {children}
     </WebSocketContext.Provider>
   );

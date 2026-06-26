@@ -409,101 +409,123 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     dayIndex: number,
     placeData: Omit<Place, 'startTime' | 'endTime'>,
   ) => {
-    if (days.length === 0 || !days[dayIndex]) {
-      return;
-    }
-
     const newId = `place_${Date.now()}_${Math.random()}`;
 
-    const placeToAdd: Place = {
-      ...placeData,
-      id: newId,
-      placeRefId: placeData.id,
-      categoryId: normalizeCategoryId(placeData.categoryId, placeData.type),
-      startTime: '12:00',
-      endTime: '13:00',
-      latitude: placeData.latitude ?? 0,
-      longitude: placeData.longitude ?? 0,
-    };
+    let finalPlace: Place | undefined;
+    let dayTimetableId: number | undefined;
+    let dayDateString: string | undefined;
+    let otherPlacesToSync: Place[] = [];
 
-    const updatedDays = [...days];
-    const dayToUpdate = { ...updatedDays[dayIndex] };
-    const newPlacesList = [
-      ...dayToUpdate.places.map(p => ({ ...p })),
-      placeToAdd,
-    ];
+    setDays(prevDays => {
+      if (prevDays.length === 0 || !prevDays[dayIndex]) {
+        return prevDays;
+      }
 
-    dayToUpdate.places = resolveConflictsAndSort(
-      newPlacesList,
-      placeToAdd.id,
-      dayToUpdate.endTime ? timeToMinutes(dayToUpdate.endTime) : undefined,
-    );
-    updatedDays[dayIndex] = dayToUpdate;
+      const placeToAdd: Place = {
+        ...placeData,
+        id: newId,
+        placeRefId: placeData.id,
+        categoryId: normalizeCategoryId(placeData.categoryId, placeData.type),
+        startTime: '12:00',
+        endTime: '13:00',
+        latitude: placeData.latitude ?? 0,
+        longitude: placeData.longitude ?? 0,
+      };
 
-    setDays(updatedDays);
+      const updatedDays = [...prevDays];
+      const dayToUpdate = { ...updatedDays[dayIndex] };
+      const newPlacesList = [
+        ...dayToUpdate.places.map(p => ({ ...p })),
+        placeToAdd,
+      ];
+
+      dayToUpdate.places = resolveConflictsAndSort(
+        newPlacesList,
+        placeToAdd.id,
+        dayToUpdate.endTime ? timeToMinutes(dayToUpdate.endTime) : undefined,
+      );
+      updatedDays[dayIndex] = dayToUpdate;
+
+      finalPlace = dayToUpdate.places.find(p => p.id === newId);
+      dayTimetableId = dayToUpdate.timetableId;
+      dayDateString = dayToUpdate.date.toISOString().split('T')[0];
+      otherPlacesToSync = dayToUpdate.places.filter(p => p.id !== newId);
+
+      return updatedDays;
+    });
+
     setLastAddedPlaceId(newId);
 
-    const finalPlace = dayToUpdate.places.find(p => p.id === newId);
-    if (finalPlace && dayToUpdate.timetableId) {
-      sendMessage(
-        'create',
-        'timetableplaceblock',
-        mapToTimetablePlaceBlockDto(
-          finalPlace,
-          dayToUpdate.timetableId,
-          dayToUpdate.date.toISOString().split('T')[0],
-        ),
-        newId, // Pass eventId
-      );
+    setTimeout(() => {
+      if (finalPlace && dayTimetableId && dayDateString) {
+        sendMessage(
+          'create',
+          'timetableplaceblock',
+          mapToTimetablePlaceBlockDto(
+            finalPlace,
+            dayTimetableId,
+            dayDateString,
+          ),
+          newId,
+        );
 
-      // If other places were shifted during conflict resolution, sync their new times
-      const otherPlaces = dayToUpdate.places.filter(p => p.id !== newId);
-      if (otherPlaces.length > 0) {
-        otherPlaces.forEach(p => {
-          sendMessage(
-            'update',
-            'timetableplaceblock',
-            mapToTimetablePlaceBlockDto(
-              p,
-              dayToUpdate.timetableId!,
-              dayToUpdate.date.toISOString().split('T')[0],
-            ),
-          );
-        });
+        if (otherPlacesToSync.length > 0) {
+          otherPlacesToSync.forEach(p => {
+            sendMessage(
+              'update',
+              'timetableplaceblock',
+              mapToTimetablePlaceBlockDto(
+                p,
+                dayTimetableId!,
+                dayDateString!,
+              ),
+            );
+          });
+        }
       }
-    }
-  }, [days, sendMessage]);
+    }, 0);
+  }, [sendMessage]);
 
   const deletePlaceFromDay = useCallback((dayIndex: number, placeId: string) => {
-    if (days.length === 0 || !days[dayIndex]) {
-      return;
-    }
-    const updatedDays = [...days];
-    const dayToUpdate = { ...updatedDays[dayIndex] };
+    let placeToDelete: Place | undefined;
+    let dayTimetableId: number | undefined;
+    let dayDateString: string | undefined;
 
-    // Find the place before deleting to send the DTO (at least ID is needed)
-    const placeToDelete = dayToUpdate.places.find(p => p.id === placeId);
+    setDays(prevDays => {
+      if (prevDays.length === 0 || !prevDays[dayIndex]) {
+        return prevDays;
+      }
+      const updatedDays = [...prevDays];
+      const dayToUpdate = { ...updatedDays[dayIndex] };
 
-    dayToUpdate.places = dayToUpdate.places.filter(
-      place => place.id !== placeId,
-    );
-    updatedDays[dayIndex] = dayToUpdate;
+      placeToDelete = dayToUpdate.places.find(p => p.id === placeId);
+      dayToUpdate.places = dayToUpdate.places.filter(
+        place => place.id !== placeId,
+      );
+      updatedDays[dayIndex] = dayToUpdate;
 
-    setDays(updatedDays);
+      dayTimetableId = dayToUpdate.timetableId;
+      dayDateString = dayToUpdate.date.toISOString().split('T')[0];
+
+      return updatedDays;
+    });
+
     setLastAddedPlaceId(null);
 
-    if (placeToDelete && dayToUpdate.timetableId) {
-      sendMessage(
-        'delete',
-        'timetableplaceblock',
-        mapToTimetablePlaceBlockDto(
-          placeToDelete,
-          dayToUpdate.timetableId,
-          dayToUpdate.date.toISOString().split('T')[0],
-        ),
-      );
-    }
-  }, [days, sendMessage]);
+    setTimeout(() => {
+      if (placeToDelete && dayTimetableId && dayDateString) {
+        sendMessage(
+          'delete',
+          'timetableplaceblock',
+          mapToTimetablePlaceBlockDto(
+            placeToDelete,
+            dayTimetableId,
+            dayDateString,
+          ),
+        );
+      }
+    }, 0);
+  }, [sendMessage]);
 
   const updatePlaceTimes = useCallback((
     dayIndex: number,
@@ -511,77 +533,95 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     newStartTime: string,
     newEndTime: string,
   ) => {
-    if (days.length === 0 || !days[dayIndex]) {
-      return;
-    }
-    const updatedDays = [...days];
-    const dayToUpdate = { ...updatedDays[dayIndex] };
+    let placesToSync: Place[] = [];
+    let dayTimetableId: number | undefined;
+    let dayDateString: string | undefined;
 
-    const newPlacesList = dayToUpdate.places.map(p =>
-      p.id === placeId
-        ? { ...p, startTime: newStartTime, endTime: newEndTime }
-        : { ...p },
-    );
+    setDays(prevDays => {
+      if (prevDays.length === 0 || !prevDays[dayIndex]) {
+        return prevDays;
+      }
+      const updatedDays = [...prevDays];
+      const dayToUpdate = { ...updatedDays[dayIndex] };
 
-    dayToUpdate.places = resolveConflictsAndSort(
-      newPlacesList,
-      placeId,
-      dayToUpdate.endTime ? timeToMinutes(dayToUpdate.endTime) : undefined,
-    );
-    updatedDays[dayIndex] = dayToUpdate;
+      const newPlacesList = dayToUpdate.places.map(p =>
+        p.id === placeId
+          ? { ...p, startTime: newStartTime, endTime: newEndTime }
+          : { ...p },
+      );
 
-    setDays(updatedDays);
+      dayToUpdate.places = resolveConflictsAndSort(
+        newPlacesList,
+        placeId,
+        dayToUpdate.endTime ? timeToMinutes(dayToUpdate.endTime) : undefined,
+      );
+      updatedDays[dayIndex] = dayToUpdate;
+
+      placesToSync = dayToUpdate.places;
+      dayTimetableId = dayToUpdate.timetableId;
+      dayDateString = dayToUpdate.date.toISOString().split('T')[0];
+
+      return updatedDays;
+    });
+
     setLastAddedPlaceId(null);
 
-    // Send individual updates to ensure the web client processes them correctly
-    if (dayToUpdate.timetableId) {
-      dayToUpdate.places.forEach(p => {
+    setTimeout(() => {
+      if (dayTimetableId && dayDateString && placesToSync.length > 0) {
+        placesToSync.forEach(p => {
+          sendMessage(
+            'update',
+            'timetableplaceblock',
+            mapToTimetablePlaceBlockDto(
+              p,
+              dayTimetableId!,
+              dayDateString!,
+            ),
+          );
+        });
+      }
+    }, 0);
+  }, [sendMessage]);
+
+  const updatePlaceMemo = useCallback((dayIndex: number, placeId: string, memo: string) => {
+    let finalPlace: Place | undefined;
+    let dayTimetableId: number | undefined;
+    let dayDateString: string | undefined;
+
+    setDays(prevDays => {
+      if (prevDays.length === 0 || !prevDays[dayIndex]) {
+        return prevDays;
+      }
+      const updatedDays = [...prevDays];
+      const dayToUpdate = { ...updatedDays[dayIndex] };
+
+      dayToUpdate.places = dayToUpdate.places.map(p =>
+        p.id === placeId ? { ...p, memo } : { ...p },
+      );
+      updatedDays[dayIndex] = dayToUpdate;
+
+      finalPlace = dayToUpdate.places.find(p => p.id === placeId);
+      dayTimetableId = dayToUpdate.timetableId;
+      dayDateString = dayToUpdate.date.toISOString().split('T')[0];
+
+      return updatedDays;
+    });
+
+    setTimeout(() => {
+      if (finalPlace && dayTimetableId && dayDateString) {
         sendMessage(
           'update',
           'timetableplaceblock',
           mapToTimetablePlaceBlockDto(
-            p,
-            dayToUpdate.timetableId!,
-            dayToUpdate.date.toISOString().split('T')[0],
+            finalPlace,
+            dayTimetableId,
+            dayDateString,
           ),
         );
-      });
-    }
-  }, [days, sendMessage]);
+      }
+    }, 0);
+  }, [sendMessage]);
 
-  const updatePlaceMemo = useCallback((dayIndex: number, placeId: string, memo: string) => {
-    if (days.length === 0 || !days[dayIndex]) {
-      return;
-    }
-    const updatedDays = [...days];
-    const dayToUpdate = { ...updatedDays[dayIndex] };
-
-    dayToUpdate.places = dayToUpdate.places.map(p =>
-      p.id === placeId ? { ...p, memo } : { ...p },
-    );
-    updatedDays[dayIndex] = dayToUpdate;
-
-    setDays(updatedDays);
-
-    const finalPlace = dayToUpdate.places.find(p => p.id === placeId);
-    if (finalPlace && dayToUpdate.timetableId) {
-      sendMessage(
-        'update',
-        'timetableplaceblock',
-        mapToTimetablePlaceBlockDto(
-          finalPlace,
-          dayToUpdate.timetableId,
-          dayToUpdate.date.toISOString().split('T')[0],
-        ),
-      );
-    }
-  }, [days, sendMessage]);
-
-  /**
-   * Combined update for time, memo, and other place fields.
-   * Updates local state first, then sends a single WebSocket message
-   * with the complete DTO (matching Frontend behavior).
-   */
   const updatePlaceDetails = useCallback((
     dayIndex: number,
     placeId: string,
@@ -589,59 +629,69 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       Pick<Place, 'startTime' | 'endTime' | 'memo' | 'name' | 'address'>
     >,
   ) => {
-    if (days.length === 0 || !days[dayIndex]) {
-      return;
-    }
-    const updatedDays = [...days];
-    const dayToUpdate = { ...updatedDays[dayIndex] };
+    let placesToSync: Place[] = [];
+    let singlePlaceToSync: Place | undefined;
+    let dayTimetableId: number | undefined;
+    let dayDateString: string | undefined;
+    let isTimeChanged = updates.startTime !== undefined || updates.endTime !== undefined;
 
-    // Apply all updates to the target place
-    const newPlacesList = dayToUpdate.places.map(p =>
-      p.id === placeId ? { ...p, ...updates } : { ...p },
-    );
+    setDays(prevDays => {
+      if (prevDays.length === 0 || !prevDays[dayIndex]) {
+        return prevDays;
+      }
+      const updatedDays = [...prevDays];
+      const dayToUpdate = { ...updatedDays[dayIndex] };
 
-    // Resolve time conflicts if times were changed
-    if (updates.startTime !== undefined || updates.endTime !== undefined) {
-      dayToUpdate.places = resolveConflictsAndSort(newPlacesList, placeId);
-    } else {
-      dayToUpdate.places = newPlacesList;
-    }
+      const newPlacesList = dayToUpdate.places.map(p =>
+        p.id === placeId ? { ...p, ...updates } : { ...p },
+      );
 
-    updatedDays[dayIndex] = dayToUpdate;
-    setDays(updatedDays);
+      if (isTimeChanged) {
+        dayToUpdate.places = resolveConflictsAndSort(newPlacesList, placeId);
+      } else {
+        dayToUpdate.places = newPlacesList;
+      }
+
+      updatedDays[dayIndex] = dayToUpdate;
+
+      placesToSync = dayToUpdate.places;
+      singlePlaceToSync = dayToUpdate.places.find(p => p.id === placeId);
+      dayTimetableId = dayToUpdate.timetableId;
+      dayDateString = dayToUpdate.date.toISOString().split('T')[0];
+
+      return updatedDays;
+    });
+
     setLastAddedPlaceId(null);
 
-    // Send individual WebSocket messages
-    if (dayToUpdate.timetableId) {
-      if (updates.startTime !== undefined || updates.endTime !== undefined) {
-        // If time changed, other places might have been shifted, so send all individually
-        dayToUpdate.places.forEach(p => {
+    setTimeout(() => {
+      if (dayTimetableId && dayDateString) {
+        if (isTimeChanged) {
+          placesToSync.forEach(p => {
+            sendMessage(
+              'update',
+              'timetableplaceblock',
+              mapToTimetablePlaceBlockDto(
+                p,
+                dayTimetableId!,
+                dayDateString!,
+              ),
+            );
+          });
+        } else if (singlePlaceToSync) {
           sendMessage(
             'update',
             'timetableplaceblock',
             mapToTimetablePlaceBlockDto(
-              p,
-              dayToUpdate.timetableId!,
-              dayToUpdate.date.toISOString().split('T')[0],
-            ),
-          );
-        });
-      } else {
-        const finalPlace = dayToUpdate.places.find(p => p.id === placeId);
-        if (finalPlace) {
-          sendMessage(
-            'update',
-            'timetableplaceblock',
-            mapToTimetablePlaceBlockDto(
-              finalPlace,
-              dayToUpdate.timetableId,
-              dayToUpdate.date.toISOString().split('T')[0],
+              singlePlaceToSync,
+              dayTimetableId,
+              dayDateString,
             ),
           );
         }
       }
-    }
-  }, [days, sendMessage]);
+    }, 0);
+  }, [sendMessage]);
 
   const contextValue = useMemo(() => ({
     days,

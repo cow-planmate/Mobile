@@ -44,6 +44,11 @@ export function useInvitationSse({
   const reconnectDelayRef = useRef(INITIAL_RECONNECT_DELAY_MS);
   const shouldReconnectRef = useRef(false);
   const seenEventIdsRef = useRef<Set<string>>(new Set());
+  const onInvitationEventRef = useRef(onInvitationEvent);
+
+  useEffect(() => {
+    onInvitationEventRef.current = onInvitationEvent;
+  }, [onInvitationEvent]);
 
   const clearReconnectTimer = useCallback(() => {
     if (reconnectTimerRef.current) {
@@ -137,7 +142,7 @@ export function useInvitationSse({
         // Non-JSON heartbeat messages are ignored.
       }
 
-      Promise.resolve(onInvitationEvent()).catch(error => {
+      Promise.resolve(onInvitationEventRef.current()).catch(error => {
         console.log('[SSE] Invitation event handler failed:', error);
       });
     };
@@ -199,7 +204,7 @@ export function useInvitationSse({
     });
 
     sourceRef.current = source;
-  }, [disconnect, onInvitationEvent, scheduleReconnect]);
+  }, [disconnect, scheduleReconnect]);
 
   useEffect(() => {
     shouldReconnectRef.current = enabled;
