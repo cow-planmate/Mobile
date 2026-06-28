@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import FastImage from 'react-native-fast-image';
 import {
   View,
@@ -29,7 +29,7 @@ import {
 } from '../../../api/trips';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { styles } from './ItineraryEditorScreen.styles';
-import { ShareModal } from '../../../components/common';
+import { ShareModal, PlanInfoModal } from '../../../components/common';
 import PlaceEditModal from '../components/PlaceEditModal';
 import KakaoMapView from '../components/KakaoMapView';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -59,7 +59,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     handleDeletePlace,
     handleAddPlace,
     selectedDay,
+    planMetadata,
   } = useItineraryEditor(route, navigation);
+
+  const [isPlanInfoVisible, setPlanInfoVisible] = useState(false);
 
   const { updatePlaceMemo, updatePlaceDetails, setDays } = useItinerary();
   const { connect, disconnect, onlineUsers, sendMessage } = useWebSocket();
@@ -98,6 +101,27 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   // Detail popup state
   const [detailPlace, setDetailPlace] = useState<Place | null>(null);
   const [isDetailVisible, setDetailVisible] = useState(false);
+
+  // ── Undo/Redo History state ──
+  const [history, setHistory] = useState<Day[][]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const isSystemUpdate = useRef(false);
+
+  useEffect(() => {
+    if (days.length === 0) return;
+
+    if (isSystemUpdate.current) {
+      isSystemUpdate.current = false;
+      return;
+    }
+
+    const clonedDays = JSON.parse(JSON.stringify(days));
+    setHistory(prev => {
+      const nextHistory = prev.slice(0, historyIndex + 1);
+      return [...nextHistory, clonedDays];
+    });
+    setHistoryIndex(prev => prev + 1);
+  }, [days]);
 
   // ── Weather state ──
   const [weatherMap, setWeatherMap] = useState<
@@ -218,12 +242,26 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   }, []);
 
   const handleUndo = useCallback(() => {
-    showAlert({ title: '안내', message: '되돌리기 기능은 준비 중입니다.' });
-  }, [showAlert]);
+    if (historyIndex > 0) {
+      isSystemUpdate.current = true;
+      const prevDays = history[historyIndex - 1];
+      setDays(JSON.parse(JSON.stringify(prevDays)));
+      setHistoryIndex(prev => prev - 1);
+    } else {
+      showAlert({ title: '알림', message: '되돌릴 일정이 없습니다.' });
+    }
+  }, [history, historyIndex, setDays, showAlert]);
 
   const handleRedo = useCallback(() => {
-    showAlert({ title: '안내', message: '다시 실행 기능은 준비 중입니다.' });
-  }, [showAlert]);
+    if (historyIndex < history.length - 1) {
+      isSystemUpdate.current = true;
+      const nextDays = history[historyIndex + 1];
+      setDays(JSON.parse(JSON.stringify(nextDays)));
+      setHistoryIndex(prev => prev + 1);
+    } else {
+      showAlert({ title: '알림', message: '다시 실행할 일정이 없습니다.' });
+    }
+  }, [history, historyIndex, setDays, showAlert]);
 
   const onConfirmScheduleEdit = (updatedDays: any[]) => {
     if (updatedDays.length > 0) {
@@ -517,6 +555,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           setDetailPlace(null);
         }}
         weatherMap={weatherMap}
+        onOpenPlanInfo={() => setPlanInfoVisible(true)}
       />
       <Modal
         visible={isParticipantsVisible}
@@ -658,6 +697,17 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           onDelete={handleDeletePlace}
         />
       )}
+      <PlanInfoModal
+        visible={isPlanInfoVisible}
+        onClose={() => setPlanInfoVisible(false)}
+        planName={tripName}
+        destination={planMetadata?.travelName || route.params.destination || '미정'}
+        startDate={days.length > 0 ? days[0].date.toISOString().split('T')[0] : route.params.startDate}
+        endDate={days.length > 0 ? days[days.length - 1].date.toISOString().split('T')[0] : route.params.endDate}
+        adultCount={planMetadata?.adultCount ?? route.params.adults ?? 1}
+        childCount={planMetadata?.childCount ?? route.params.children ?? 0}
+        transport={planMetadata ? (planMetadata.transportationCategoryId === 1 ? '자동차' : '대중교통') : (route.params.transport || '대중교통')}
+      />
     </>
   );
 }

@@ -83,6 +83,49 @@ export function PlacesProvider({children}: PropsWithChildren) {
 
   const fetchAllRecommendations = useCallback(async (planId: number) => {
     setIsLoading(true);
+    if (planId === 123) {
+      setTour([
+        {
+          placeId: 'tour-1',
+          name: '협재 해수욕장',
+          categoryId: 0,
+          formatted_address: '제주특별자치도 제주시 한림읍 협재리 2497-1',
+          rating: 4.6,
+          photoUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200',
+        },
+        {
+          placeId: 'tour-2',
+          name: '한라산 국립공원',
+          categoryId: 0,
+          formatted_address: '제주특별자치도 제주시 해안동',
+          rating: 4.8,
+          photoUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200',
+        },
+      ]);
+      setLodging([
+        {
+          placeId: 'lodging-1',
+          name: '제주 신라호텔',
+          categoryId: 1,
+          formatted_address: '제주특별자치도 서귀포시 중문관광로72번길 75',
+          rating: 4.7,
+          photoUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200',
+        },
+      ]);
+      setRestaurant([
+        {
+          placeId: 'restaurant-1',
+          name: '오는정김밥',
+          categoryId: 2,
+          formatted_address: '제주특별자치도 서귀포시 동문동로 2',
+          rating: 4.3,
+          photoUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=200',
+        },
+      ]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const [tourData, lodgingData, restaurantData] = await Promise.all([
         fetchTourPlaces(planId),
@@ -131,6 +174,19 @@ export function PlacesProvider({children}: PropsWithChildren) {
   const doSearchPlaces = useCallback(
     async (planIdOrNull: number | null, query: string) => {
       setIsLoading(true);
+      if (planIdOrNull === 123) {
+        setSearch([
+          {
+            placeId: 'search-1',
+            name: `${query} 맛집`,
+            categoryId: 2,
+            formatted_address: `제주 제주시 ${query}로 12`,
+            rating: 4.5,
+          },
+        ]);
+        setIsLoading(false);
+        return;
+      }
       try {
         const result = planIdOrNull
           ? await searchPlaces(planIdOrNull, query)

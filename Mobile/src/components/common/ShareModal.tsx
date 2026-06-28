@@ -21,22 +21,24 @@ import { useAlert } from '../../contexts/AlertContext';
 
 const COLORS = theme.colors;
 const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard Variable',
+  medium: 'Pretendard Variable',
+  semibold: 'Pretendard Variable',
+  bold: 'Pretendard Variable',
 };
 
 interface ShareModalProps {
   visible: boolean;
   onClose: () => void;
   planId: number;
+  isMock?: boolean;
 }
 
 export default function ShareModal({
   visible,
   onClose,
   planId,
+  isMock = false,
 }: ShareModalProps) {
   const { showAlert } = useAlert();
   const [shareLink, setShareLink] = useState('');
@@ -52,6 +54,10 @@ export default function ShareModal({
   }, [visible, planId]);
 
   const fetchShareLink = async () => {
+    if (isMock) {
+      setShareLink('https://planmate.cow/share/mock-trip-123');
+      return;
+    }
     try {
       const response = await getShareUrl(planId);
       setShareLink(response.shareUrl);
@@ -61,9 +67,17 @@ export default function ShareModal({
   };
 
   const fetchEditors = async () => {
+    if (isMock) {
+      if (editors.length === 0) {
+        setEditors([
+          { userId: 1, nickname: '홍길동' },
+          { userId: 2, nickname: '김철수' },
+        ]);
+      }
+      return;
+    }
     try {
       const response = await getEditors(planId);
-      // Ensure response is an array, handle potential nested structures if any
       const editorsList = Array.isArray(response)
         ? response
         : (response as any).editors || [];
@@ -80,10 +94,17 @@ export default function ShareModal({
     }
     setLoading(true);
     try {
-      await inviteEditor(planId, nickname);
-      showAlert({ title: '성공', message: `${nickname}님을 초대했습니다.` });
-      setNickname('');
-      fetchEditors();
+      if (isMock) {
+        await new Promise(resolve => setTimeout(resolve, 600));
+        setEditors(prev => [...prev, { userId: Date.now(), nickname }]);
+        showAlert({ title: '성공', message: `${nickname}님을 초대했습니다.` });
+        setNickname('');
+      } else {
+        await inviteEditor(planId, nickname);
+        showAlert({ title: '성공', message: `${nickname}님을 초대했습니다.` });
+        setNickname('');
+        fetchEditors();
+      }
     } catch (error) {
       console.error('Invite failed:', error);
       showAlert({
@@ -107,8 +128,12 @@ export default function ShareModal({
           style: 'destructive',
           onPress: async () => {
             try {
-              await removeEditor(planId, userId);
-              fetchEditors();
+              if (isMock) {
+                setEditors(prev => prev.filter(e => e.userId !== userId));
+              } else {
+                await removeEditor(planId, userId);
+                fetchEditors();
+              }
             } catch (error) {
               console.error('Remove editor failed:', error);
               showAlert({
@@ -215,14 +240,14 @@ export default function ShareModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   container: {
     width: '90%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 24,
     maxHeight: '80%',
     borderWidth: 1,
@@ -344,7 +369,8 @@ const styles = StyleSheet.create({
   confirmButton: {
     backgroundColor: '#F3F4F6',
     borderRadius: 12,
-    paddingVertical: 16,
+    height: 52,
+    justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
     borderWidth: 1,

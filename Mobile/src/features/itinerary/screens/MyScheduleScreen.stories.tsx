@@ -15,8 +15,28 @@ const meta = {
   ],
   args: {
     loading: false,
-    myItineraries: [],
-    sharedItineraries: [],
+    myItineraries: [
+      {
+        planId: 1,
+        planName: '제주도 푸른 밤',
+        startDate: '2026-08-01',
+        endDate: '2026-08-03',
+      },
+      {
+        planId: 2,
+        planName: '서울 도심 여행',
+        startDate: '2026-09-10',
+        endDate: '2026-09-11',
+      },
+    ],
+    sharedItineraries: [
+      {
+        planId: 3,
+        planName: '부산 식도락 투어',
+        startDate: '2026-10-05',
+        endDate: '2026-10-07',
+      },
+    ],
     menuVisible: false,
     setMenuVisible: () => {},
     selectedPlan: null,
@@ -64,52 +84,27 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
+export const Empty: Story = {
+  args: {
+    myItineraries: [],
+    sharedItineraries: [],
+  },
+};
+
 export const Loading: Story = {
   args: {
     loading: true,
   },
 };
 
-export const WithData: Story = {
-  args: {
-    myItineraries: [
-      {
-        planId: 1,
-        planName: '제주도 푸른 밤',
-        startDate: '2024-08-01',
-        endDate: '2024-08-03',
-        destination: '제주도',
-      },
-      {
-        planId: 2,
-        planName: '서울 도심 여행',
-        startDate: '2024-09-10',
-        endDate: '2024-09-11',
-        destination: '서울',
-      },
-    ],
-    sharedItineraries: [
-      {
-        planId: 3,
-        planName: '부산 식도락 투어',
-        startDate: '2024-10-05',
-        endDate: '2024-10-07',
-        destination: '부산',
-      },
-    ],
-  },
-};
-
 export const MenuOpened: Story = {
   args: {
-    ...WithData.args,
     menuVisible: true,
     selectedPlan: {
       planId: 1,
       planName: '제주도 푸른 밤',
-      startDate: '2024-08-01',
-      endDate: '2024-08-03',
-      destination: '제주도',
+      startDate: '2026-08-01',
+      endDate: '2026-08-03',
     },
   },
 };

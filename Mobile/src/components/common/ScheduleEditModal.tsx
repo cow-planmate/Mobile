@@ -17,17 +17,20 @@ import {
   Clock,
   ChevronDown,
 } from 'lucide-react-native';
+import { useAlert } from '../../contexts/AlertContext';
+import { timeToMinutes } from '../../utils/timeUtils';
 
 type DayConfig = {
   dayNumber: number;
   date: Date;
   startTime: string;
   endTime: string;
+  places?: any[];
 };
 
 type ScheduleEditModalProps = {
   visible: boolean;
-  initialDays: { date: Date; startTime?: string; endTime?: string }[];
+  initialDays: { date: Date; startTime?: string; endTime?: string; places?: any[] }[];
   onClose: () => void;
   onConfirm: (days: DayConfig[]) => void;
 };
@@ -40,6 +43,7 @@ export default function ScheduleEditModal({
   onClose,
   onConfirm,
 }: ScheduleEditModalProps) {
+  const { showAlert } = useAlert();
   const [days, setDays] = useState<DayConfig[]>([]);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [timePickerOpen, setTimePickerOpen] = useState(false);
@@ -57,12 +61,18 @@ export default function ScheduleEditModal({
           date: new Date(day.date),
           startTime: day.startTime || '09:00:00',
           endTime: day.endTime || '20:00:00',
+          places: day.places || [],
         })),
       );
     }
   }, [visible, initialDays]);
 
   const handleAddDay = () => {
+    if (days.length >= 14) {
+      showAlert({ title: '알림', message: '일정은 최대 14일까지 추가할 수 있습니다.' });
+      return;
+    }
+
     const lastDay = days[days.length - 1];
     const newDate = new Date(lastDay ? lastDay.date : new Date());
     if (lastDay) {
@@ -76,12 +86,32 @@ export default function ScheduleEditModal({
         date: newDate,
         startTime: lastDay ? lastDay.startTime : '09:00:00',
         endTime: lastDay ? lastDay.endTime : '20:00:00',
+        places: [],
       },
     ]);
   };
 
   const handleRemoveDay = () => {
-    if (days.length > 1) {
+    if (days.length <= 1) return;
+
+    const lastDay = days[days.length - 1];
+    if (lastDay.places && lastDay.places.length > 0) {
+      showAlert({
+        title: '삭제 확인',
+        message: `${lastDay.dayNumber}일차에 등록된 장소가 존재합니다. 정말 삭제하시겠습니까?`,
+        type: 'confirm',
+        buttons: [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '삭제',
+            style: 'destructive',
+            onPress: () => {
+              setDays(days.slice(0, -1));
+            },
+          },
+        ],
+      });
+    } else {
       setDays(days.slice(0, -1));
     }
   };
@@ -136,6 +166,31 @@ export default function ScheduleEditModal({
     setDays(newDays);
     setDatePickerOpen(false);
     setTimePickerOpen(false);
+  };
+
+  const handleFinalConfirm = () => {
+    // 시간 유효성 검증
+    for (const day of days) {
+      const startMinutes = timeToMinutes(day.startTime);
+      const endMinutes = timeToMinutes(day.endTime);
+
+      if (startMinutes >= endMinutes) {
+        showAlert({
+          title: '시간 설정 오류',
+          message: `${day.dayNumber}일차의 시작 시간이 종료 시간보다 늦거나 같습니다.`,
+        });
+        return;
+      }
+
+      if (endMinutes - startMinutes < 60) {
+        showAlert({
+          title: '시간 범위 오류',
+          message: `${day.dayNumber}일차의 일정 운영 시간은 최소 1시간 이상 설정해야 합니다.`,
+        });
+        return;
+      }
+    }
+    onConfirm(days);
   };
 
   const formatCompactDate = (date: Date) => {
@@ -277,7 +332,7 @@ export default function ScheduleEditModal({
           <View style={styles.footer}>
             <TouchableOpacity
               style={styles.confirmBtn}
-              onPress={() => onConfirm(days)}
+              onPress={handleFinalConfirm}
               activeOpacity={0.7}
             >
               <Text style={styles.confirmBtnText}>확인</Text>

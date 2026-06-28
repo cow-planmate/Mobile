@@ -19,10 +19,10 @@ export const COLORS = {
 };
 
 export const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard Variable',
+  medium: 'Pretendard Variable',
+  semibold: 'Pretendard Variable',
+  bold: 'Pretendard Variable',
 };
 
 export const styles = StyleSheet.create({
@@ -221,8 +221,8 @@ export const styles = StyleSheet.create({
   },
   confirmBtn: {
     width: '100%',
-    height: normalize(48),
-    borderRadius: normalize(14),
+    height: normalize(52), // 높이 52 통일
+    borderRadius: normalize(12), // 둥글기 12 통일
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
@@ -230,6 +230,7 @@ export const styles = StyleSheet.create({
   confirmBtnText: {
     fontSize: normalize(15),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
     color: COLORS.white,
   },
 });

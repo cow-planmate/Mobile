@@ -302,6 +302,7 @@ const DraggableTimelineItem = ({
 
   const top = useSharedValue(initialTop);
   const height = useSharedValue(initialHeight);
+  const previewHeight = useSharedValue(initialHeight);
 
   React.useEffect(() => {
     const newStartMinutes = timeToMinutes(place.startTime);
@@ -319,12 +320,15 @@ const DraggableTimelineItem = ({
     if (height.value !== newHeight) {
       height.value = withSpring(newHeight);
     }
+    previewHeight.value = newHeight;
   }, [place.startTime, place.endTime, offsetMinutes, top, height]);
 
   const startY = useSharedValue(0);
   const startHeight = useSharedValue(0);
   const isResizingTop = useSharedValue(0);
   const isResizingBottom = useSharedValue(0);
+  const isDragging = useSharedValue(0);
+  const previewTop = useSharedValue(initialTop);
 
   // Auto-scroll helper
   const scrollIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(
@@ -349,14 +353,25 @@ const DraggableTimelineItem = ({
   };
 
   const panGestureMove = Gesture.Pan()
+    .minDistance(10)
     .onBegin(() => {
       startY.value = top.value;
+      previewTop.value = top.value;
+      previewHeight.value = height.value;
+      isDragging.value = withSpring(1);
     })
     .onUpdate(event => {
       const newTop = startY.value + event.translationY;
       const maxTop = MAX_BOTTOM_PX - height.value;
       const clampedTop = Math.max(MIN_TOP_PX, Math.min(newTop, maxTop));
       top.value = clampedTop;
+
+      // Realtime preview of snapped drop target
+      previewTop.value =
+        Math.round((clampedTop - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
+          GRID_SNAP_HEIGHT +
+        GRID_TOP_OFFSET;
+      previewHeight.value = height.value;
 
       // Auto-scroll when near bottom edge
       if (scrollRef) {
@@ -372,6 +387,7 @@ const DraggableTimelineItem = ({
       }
     })
     .onEnd(event => {
+      isDragging.value = withSpring(0);
       runOnJS(clearScrollInterval)();
       const snappedTop =
         Math.round((top.value - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
@@ -392,14 +408,23 @@ const DraggableTimelineItem = ({
       const finalTop =
         (newStartMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
       top.value = withSpring(finalTop);
+      previewTop.value = finalTop;
+      previewHeight.value = height.value;
 
       runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
+    })
+    .onFinalize(() => {
+      isDragging.value = withSpring(0);
     });
 
   const panGestureResizeTop = Gesture.Pan()
+    .minDistance(4)
     .onBegin(() => {
       startY.value = top.value;
       startHeight.value = height.value;
+      isDragging.value = withSpring(1);
+      previewTop.value = top.value;
+      previewHeight.value = height.value;
       isResizingTop.value = withSpring(1);
     })
     .onUpdate(event => {
@@ -409,9 +434,27 @@ const DraggableTimelineItem = ({
       if (newHeight >= MIN_ITEM_HEIGHT && newTop >= MIN_TOP_PX) {
         top.value = newTop;
         height.value = newHeight;
+
+        // Realtime snapped resizing preview
+        const snappedTop =
+          Math.round((newTop - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
+            GRID_SNAP_HEIGHT +
+          GRID_TOP_OFFSET;
+        const bottom = startY.value + startHeight.value;
+        let finalTop = Math.max(MIN_TOP_PX, snappedTop);
+        let finalHeight = bottom - finalTop;
+
+        if (finalHeight < MIN_ITEM_HEIGHT) {
+          finalHeight = MIN_ITEM_HEIGHT;
+          finalTop = bottom - MIN_ITEM_HEIGHT;
+        }
+
+        previewTop.value = finalTop;
+        previewHeight.value = finalHeight;
       }
     })
     .onEnd(() => {
+      isDragging.value = withSpring(0);
       const snappedTop =
         Math.round((top.value - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
           GRID_SNAP_HEIGHT +
@@ -427,6 +470,8 @@ const DraggableTimelineItem = ({
 
       top.value = withSpring(finalTop);
       height.value = withSpring(finalHeight);
+      previewTop.value = finalTop;
+      previewHeight.value = finalHeight;
 
       const newStartMinutes =
         (finalTop - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
@@ -436,11 +481,16 @@ const DraggableTimelineItem = ({
     })
     .onFinalize(() => {
       isResizingTop.value = withSpring(0);
+      isDragging.value = withSpring(0);
     });
 
   const panGestureResizeBottom = Gesture.Pan()
+    .minDistance(4)
     .onBegin(() => {
       startHeight.value = height.value;
+      isDragging.value = withSpring(1);
+      previewTop.value = top.value;
+      previewHeight.value = height.value;
       isResizingBottom.value = withSpring(1);
     })
     .onUpdate(event => {
@@ -449,9 +499,20 @@ const DraggableTimelineItem = ({
 
       if (newHeight >= MIN_ITEM_HEIGHT && newBottom <= MAX_BOTTOM_PX) {
         height.value = newHeight;
+
+        // Realtime snapped resizing preview
+        const snappedHeight =
+          Math.round(newHeight / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
+        let finalHeight = Math.max(snappedHeight, MIN_ITEM_HEIGHT);
+        if (top.value + finalHeight > MAX_BOTTOM_PX) {
+          finalHeight = MAX_BOTTOM_PX - top.value;
+        }
+
+        previewHeight.value = finalHeight;
       }
     })
     .onEnd(() => {
+      isDragging.value = withSpring(0);
       const snappedHeight =
         Math.round(height.value / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
       let finalHeight = Math.max(snappedHeight, MIN_ITEM_HEIGHT);
@@ -461,6 +522,7 @@ const DraggableTimelineItem = ({
       }
 
       height.value = withSpring(finalHeight);
+      previewHeight.value = finalHeight;
 
       const newStartMinutes =
         (top.value - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
@@ -470,6 +532,7 @@ const DraggableTimelineItem = ({
     })
     .onFinalize(() => {
       isResizingBottom.value = withSpring(0);
+      isDragging.value = withSpring(0);
     });
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -479,6 +542,37 @@ const DraggableTimelineItem = ({
       height: height.value,
       left: 60,
       right: 15,
+      opacity: withSpring(isDragging.value === 1 ? 0.9 : 1),
+      transform: [
+        { scale: withSpring(isDragging.value === 1 ? 1.015 : 1) }
+      ],
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: isDragging.value === 1 ? 6 : 0 },
+      shadowOpacity: isDragging.value === 1 ? 0.15 : 0,
+      shadowRadius: isDragging.value === 1 ? 10 : 0,
+      elevation: isDragging.value === 1 ? 5 : 0,
+      zIndex: isDragging.value === 1 ? 100 : 1,
+    };
+  });
+
+  const indicatorStyle = useAnimatedStyle(() => {
+    return {
+      position: 'absolute',
+      top: withSpring(previewTop.value, {
+        damping: 15,
+        stiffness: 120,
+        mass: 0.8,
+      }),
+      height: height.value,
+      left: 60,
+      right: 15,
+      borderWidth: 2,
+      borderColor: '#1344FF',
+      borderStyle: 'dashed',
+      borderRadius: 12,
+      backgroundColor: 'rgba(19, 68, 255, 0.08)',
+      opacity: isDragging.value,
+      zIndex: -1,
     };
   });
 
@@ -501,35 +595,38 @@ const DraggableTimelineItem = ({
   });
 
   return (
-    <Animated.View style={animatedStyle}>
-      <GestureDetector gesture={panGestureMove}>
-        <Animated.View style={styles.flex1}>
-          <TimelineItem
-            item={place}
-            onDelete={onDelete}
-            onEditTime={onEditTime}
-            onPress={onPress}
-            style={styles.flex1}
-          />
-        </Animated.View>
-      </GestureDetector>
+    <>
+      <Animated.View style={indicatorStyle} pointerEvents="none" />
+      <Animated.View style={animatedStyle}>
+        <GestureDetector gesture={panGestureMove}>
+          <Animated.View style={styles.flex1}>
+            <TimelineItem
+              item={place}
+              onDelete={onDelete}
+              onEditTime={onEditTime}
+              onPress={onPress}
+              style={styles.flex1}
+            />
+          </Animated.View>
+        </GestureDetector>
 
-      <GestureDetector gesture={panGestureResizeTop}>
-        <Animated.View style={styles.resizeHandleTop}>
-          <Animated.View
-            style={[styles.resizeHandleIndicator, topHandleStyle]}
-          />
-        </Animated.View>
-      </GestureDetector>
+        <GestureDetector gesture={panGestureResizeTop}>
+          <Animated.View style={styles.resizeHandleTop}>
+            <Animated.View
+              style={[styles.resizeHandleIndicator, topHandleStyle]}
+            />
+          </Animated.View>
+        </GestureDetector>
 
-      <GestureDetector gesture={panGestureResizeBottom}>
-        <Animated.View style={styles.resizeHandleBottom}>
-          <Animated.View
-            style={[styles.resizeHandleIndicator, bottomHandleStyle]}
-          />
-        </Animated.View>
-      </GestureDetector>
-    </Animated.View>
+        <GestureDetector gesture={panGestureResizeBottom}>
+          <Animated.View style={styles.resizeHandleBottom}>
+            <Animated.View
+              style={[styles.resizeHandleIndicator, bottomHandleStyle]}
+            />
+          </Animated.View>
+        </GestureDetector>
+      </Animated.View>
+    </>
   );
 };
 
@@ -704,6 +801,7 @@ export interface ItineraryEditorScreenViewProps {
   onCloseDetail: () => void;
   weatherMap: Record<string, SimpleWeatherInfo>;
   initialTabName?: string;
+  onOpenPlanInfo: () => void;
 }
 
 export default function ItineraryEditorScreenView({
@@ -745,6 +843,7 @@ export default function ItineraryEditorScreenView({
   onCloseDetail,
   weatherMap,
   initialTabName,
+  onOpenPlanInfo,
 }: ItineraryEditorScreenViewProps) {
   if (!selectedDay) {
     return <AirplaneLoading />;
@@ -785,7 +884,7 @@ export default function ItineraryEditorScreenView({
             <FontAwesomeIcon icon={faRedo} color="#111827" size={18} />
           </ToolbarIconButton>
           <ToolbarIconButton
-            onPress={() => setScheduleEditVisible(true)}
+            onPress={onOpenPlanInfo}
             variant="info"
           >
             <FontAwesomeIcon icon={faCircleInfo} color="#111827" size={18} />
@@ -954,6 +1053,7 @@ export default function ItineraryEditorScreenView({
           date: d.date,
           startTime: d.startTime,
           endTime: d.endTime,
+          places: d.places,
         }))}
         onClose={() => setScheduleEditVisible(false)}
         onConfirm={onConfirmScheduleEdit}

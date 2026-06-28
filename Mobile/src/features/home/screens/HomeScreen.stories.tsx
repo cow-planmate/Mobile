@@ -21,7 +21,6 @@ const meta = {
     isTransportModalVisible: false,
     isNotificationModalVisible: false,
     pendingRequestList: [],
-    fieldToUpdate: 'departure',
     transportOptions: [],
     onCloseNotificationModal: () => {},
     onAcceptNotification: () => {},
@@ -109,7 +108,7 @@ export const Default: Story = {};
 export const FormFilled: Story = {
   args: {
     destination: '제주특별자치도',
-    dateText: '2024.08.01 ~ 2024.08.03',
+    dateText: '2026.08.01 ~ 2026.08.03',
     paxText: '성인 2명, 어린이 1명',
     transport: '대중교통',
     isFormValid: true,
@@ -118,18 +117,12 @@ export const FormFilled: Story = {
 
 export const WithNotifications: Story = {
   args: {
-    pendingRequestsCount: 2,
+    pendingRequestsCount: 1,
     pendingRequestList: [
       {
         requestId: 1,
-        senderId: 101,
         senderNickname: 'Alice',
-        travelId: 201,
-        title: '제주도 여름 휴가',
-        destination: '제주도',
-        startDate: '2024-08-01',
-        endDate: '2024-08-03',
-        status: 'PENDING',
+        planName: '제주도 여름 휴가',
       },
     ],
   },

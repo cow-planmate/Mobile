@@ -2,9 +2,14 @@ import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { Day } from '../../../contexts/ItineraryContext';
-import { PlacesProvider } from '../../../contexts/PlacesContext';
+import { PlacesProvider, usePlaces } from '../../../contexts/PlacesContext';
 import { AlertProvider } from '../../../contexts/AlertContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { PlanInfoModal, ShareModal } from '../../../components/common';
+import { Modal, View, Text, TouchableOpacity, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faUsers, faXmark, faMap } from '@fortawesome/free-solid-svg-icons';
+import KakaoMapView from '../components/KakaoMapView';
 
 const mockDays: Day[] = [
   {
@@ -95,6 +100,7 @@ const meta = {
     onOpenShare: () => {},
     onUndo: () => {},
     onRedo: () => {},
+    onOpenPlanInfo: () => {},
     participantsCount: 3,
     planId: 123,
     detailPlace: null,
@@ -108,6 +114,12 @@ const meta = {
         icon: '01d',
         description: '맑음',
       },
+      '2024-08-02': {
+        temp: 26,
+        condition: 'Cloudy',
+        icon: '03d',
+        description: '구름 많음',
+      },
     },
   },
   render: function Render(args) {
@@ -119,6 +131,16 @@ const meta = {
     const [isScheduleEditVisible, setScheduleEditVisible] = React.useState(args.isScheduleEditVisible);
     const [isDetailVisible, setDetailVisible] = React.useState(args.isDetailVisible);
     const [detailPlace, setDetailPlace] = React.useState(args.detailPlace);
+    const [isPlanInfoVisible, setPlanInfoVisible] = React.useState(args.isPlanInfoVisible ?? false);
+    const [isShareModalVisible, setShareModalVisible] = React.useState(args.isShareModalVisible ?? false);
+    const [isParticipantsVisible, setParticipantsVisible] = React.useState(args.isParticipantsVisible ?? false);
+    const [isMapPreviewVisible, setMapPreviewVisible] = React.useState(args.isMapPreviewVisible ?? false);
+    const [weatherMap, setWeatherMap] = React.useState(args.weatherMap);
+    const { fetchAllRecommendations } = usePlaces();
+
+    React.useEffect(() => {
+      fetchAllRecommendations(123);
+    }, [fetchAllRecommendations]);
 
     const handleAddPlace = (newPlace: any) => {
       const updatedDays = [...days];
@@ -145,11 +167,12 @@ const meta = {
     };
 
     const handleDeletePlace = (placeId: string) => {
-      const updatedDays = [...days];
-      updatedDays[selectedDayIndex].places = updatedDays[selectedDayIndex].places.filter(
-        p => p.id !== placeId
-      );
+      const updatedDays = days.map(day => ({
+        ...day,
+        places: day.places.filter(p => p.id !== placeId),
+      }));
       setDays(updatedDays);
+      console.log('Deleted place via Storybook interaction:', placeId);
     };
 
     const handleUpdatePlaceTimes = (placeId: string, start: number, end: number) => {
@@ -163,39 +186,193 @@ const meta = {
         };
         place.startTime = format(start);
         place.endTime = format(end);
-        setDays(updatedDays);
       }
     };
 
+    const handleConfirmScheduleEdit = (updatedDays: any[]) => {
+      const newDays: Day[] = updatedDays.map((ud, index) => {
+        const dateStr = ud.date.toISOString().split('T')[0];
+        // 동적으로 가상 날씨 탑재
+        if (!weatherMap[dateStr]) {
+          setWeatherMap(prev => ({
+            ...prev,
+            [dateStr]: {
+              temp: 24 + (index % 5),
+              condition: index % 2 === 0 ? 'Sunny' : 'Cloudy',
+              icon: index % 2 === 0 ? '01d' : '03d',
+              description: index % 2 === 0 ? '맑음' : '구름 조금',
+            }
+          }));
+        }
+
+        const existingDay = days.find(
+          d => d.date.toISOString().split('T')[0] === ud.date.toISOString().split('T')[0]
+        );
+        return {
+          dayNumber: index + 1,
+          date: ud.date,
+          startTime: ud.startTime,
+          endTime: ud.endTime,
+          places: existingDay ? existingDay.places : [],
+        };
+      });
+      setDays(newDays);
+      setSelectedDayIndex(0);
+      setScheduleEditVisible(false);
+    };
+
     return (
-      <ItineraryEditorScreenView
-        {...args}
-        days={days}
-        selectedDayIndex={selectedDayIndex}
-        setSelectedDayIndex={setSelectedDayIndex}
-        selectedDay={days[selectedDayIndex]}
-        isEditingTripName={isEditingTripName}
-        setIsEditingTripName={setIsEditingTripName}
-        tripName={tripName}
-        setTripName={setTripName}
-        onSaveTripName={() => setIsEditingTripName(false)}
-        isTimePickerVisible={isTimePickerVisible}
-        setTimePickerVisible={setTimePickerVisible}
-        isScheduleEditVisible={isScheduleEditVisible}
-        setScheduleEditVisible={setScheduleEditVisible}
-        isDetailVisible={isDetailVisible}
-        detailPlace={detailPlace}
-        onOpenDetail={(place) => {
-          setDetailPlace(place);
-          setDetailVisible(true);
-        }}
-        onCloseDetail={() => setDetailVisible(false)}
-        onConfirmScheduleEdit={() => setScheduleEditVisible(false)}
-        onConfirmTimePicker={() => setTimePickerVisible(false)}
-        handleAddPlace={handleAddPlace}
-        handleDeletePlace={handleDeletePlace}
-        handleUpdatePlaceTimes={handleUpdatePlaceTimes}
-      />
+      <>
+        <ItineraryEditorScreenView
+          {...args}
+          days={days}
+          selectedDayIndex={selectedDayIndex}
+          setSelectedDayIndex={setSelectedDayIndex}
+          selectedDay={days[selectedDayIndex] || days[0]}
+          isEditingTripName={isEditingTripName}
+          setIsEditingTripName={setIsEditingTripName}
+          tripName={tripName}
+          setTripName={setTripName}
+          onSaveTripName={() => setIsEditingTripName(false)}
+          isTimePickerVisible={isTimePickerVisible}
+          setTimePickerVisible={setTimePickerVisible}
+          isScheduleEditVisible={isScheduleEditVisible}
+          setScheduleEditVisible={setScheduleEditVisible}
+          isDetailVisible={isDetailVisible}
+          detailPlace={detailPlace}
+          onOpenDetail={(place) => {
+            setDetailPlace(place);
+            setDetailVisible(true);
+          }}
+          onCloseDetail={() => setDetailVisible(false)}
+          onConfirmScheduleEdit={handleConfirmScheduleEdit}
+          onConfirmTimePicker={() => setTimePickerVisible(false)}
+          handleAddPlace={handleAddPlace}
+          handleDeletePlace={handleDeletePlace}
+          handleUpdatePlaceTimes={handleUpdatePlaceTimes}
+          onOpenPlanInfo={() => setPlanInfoVisible(true)}
+          onOpenShare={() => setShareModalVisible(true)}
+          onOpenParticipants={() => setParticipantsVisible(true)}
+          onOpenMap={() => setMapPreviewVisible(true)}
+          weatherMap={weatherMap}
+        />
+        <PlanInfoModal
+          visible={isPlanInfoVisible}
+          onClose={() => setPlanInfoVisible(false)}
+          planName={tripName}
+          destination="제주도 애월읍"
+          startDate="2026-08-01"
+          endDate="2026-08-02"
+          adultCount={2}
+          childCount={1}
+          transport="대중교통"
+        />
+        <ShareModal
+          visible={isShareModalVisible}
+          onClose={() => setShareModalVisible(false)}
+          planId={123}
+          isMock={true}
+        />
+        <Modal
+          visible={isParticipantsVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setParticipantsVisible(false)}
+        >
+          <Pressable
+            style={modalStyles.overlay}
+            onPress={() => setParticipantsVisible(false)}
+          >
+            <Pressable
+              style={modalStyles.panel}
+              onPress={e => e.stopPropagation()}
+            >
+              <View style={modalStyles.panelHeader}>
+                <View style={modalStyles.panelHeaderTitleRow}>
+                  <View style={modalStyles.panelHeaderIcon}>
+                    <FontAwesomeIcon icon={faUsers} color="#1344FF" size={18} />
+                  </View>
+                  <View>
+                    <Text style={modalStyles.panelTitle}>참여자</Text>
+                    <Text style={modalStyles.panelSubtitle}>
+                      현재 일정에 참여 중인 사람 (스토리북)
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity onPress={() => setParticipantsVisible(false)}>
+                  <FontAwesomeIcon icon={faXmark} color="#9CA3AF" size={20} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                style={modalStyles.participantList}
+                contentContainerStyle={modalStyles.participantListContent}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={modalStyles.participantRow}>
+                  <View style={modalStyles.participantAvatar}>
+                    <Text style={modalStyles.participantAvatarText}>홍</Text>
+                  </View>
+                  <View style={modalStyles.participantInfo}>
+                    <Text style={modalStyles.participantName}>홍길동 (나)</Text>
+                    <Text style={modalStyles.participantStatus}>현재 일정에 접속 중</Text>
+                  </View>
+                </View>
+                <View style={modalStyles.participantRow}>
+                  <View style={modalStyles.participantAvatar}>
+                    <Text style={modalStyles.participantAvatarText}>김</Text>
+                  </View>
+                  <View style={modalStyles.participantInfo}>
+                    <Text style={modalStyles.participantName}>김철수</Text>
+                    <Text style={modalStyles.participantStatus}>현재 일정에 접속 중</Text>
+                  </View>
+                </View>
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </Modal>
+
+        <Modal
+          visible={isMapPreviewVisible}
+          transparent={false}
+          animationType="slide"
+          onRequestClose={() => setMapPreviewVisible(false)}
+        >
+          <View style={modalStyles.mapContainer}>
+            <View style={modalStyles.mapHeader}>
+              <View style={modalStyles.panelHeaderTitleRow}>
+                <View style={modalStyles.panelHeaderIcon}>
+                  <FontAwesomeIcon icon={faMap} color="#1344FF" size={18} />
+                </View>
+                <View>
+                  <Text style={modalStyles.panelTitle}>일정 지도</Text>
+                  <Text style={modalStyles.panelSubtitle}>
+                    현재 선택한 일차의 장소를 보여줍니다 (스토리북)
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setMapPreviewVisible(false)}>
+                <FontAwesomeIcon icon={faXmark} color="#9CA3AF" size={20} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={modalStyles.mapBody}>
+              <KakaoMapView
+                places={
+                  days[selectedDayIndex]?.places.map(place => ({
+                    id: place.id,
+                    name: place.name,
+                    address: place.address,
+                    latitude: place.latitude,
+                    longitude: place.longitude,
+                    place_url: place.place_url,
+                  })) || []
+                }
+              />
+            </View>
+          </View>
+        </Modal>
+      </>
     );
   },
 } satisfies Meta<typeof ItineraryEditorScreenView>;
@@ -236,3 +413,128 @@ export const ScheduleEditOpen: Story = {
     isScheduleEditVisible: true,
   },
 };
+
+export const ParticipantsOpen: Story = {
+  args: {
+    isParticipantsVisible: true,
+  },
+};
+
+export const MapPreviewOpen: Story = {
+  args: {
+    isMapPreviewVisible: true,
+  },
+};
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.42)',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  panel: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 18,
+    maxHeight: '78%',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  panelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  panelHeaderTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  panelHeaderIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E8EDFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  panelTitle: {
+    fontSize: 18,
+    fontFamily: 'Pretendard Variable',
+    fontWeight: '700',
+    color: '#111827',
+  },
+  panelSubtitle: {
+    marginTop: 2,
+    fontSize: 12,
+    fontFamily: 'Pretendard Variable',
+    color: '#6B7280',
+  },
+  participantList: {
+    flexGrow: 0,
+  },
+  participantListContent: {
+    gap: 10,
+    paddingBottom: 6,
+  },
+  participantRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 16,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  participantAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1344FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    marginRight: 12,
+  },
+  participantAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Pretendard Variable',
+    fontWeight: '700',
+  },
+  participantInfo: {
+    flex: 1,
+  },
+  participantName: {
+    fontSize: 15,
+    fontFamily: 'Pretendard Variable',
+    fontWeight: '700',
+    color: '#111827',
+  },
+  participantStatus: {
+    marginTop: 2,
+    fontSize: 12,
+    fontFamily: 'Pretendard Variable',
+    color: '#6B7280',
+  },
+  mapContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  mapHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  mapBody: {
+    flex: 1,
+    padding: 16,
+  },
+});

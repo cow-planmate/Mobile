@@ -26,3 +26,4 @@ export { default as UpdateGenderModal } from './UpdateGenderModal';
 export { default as UpdatePasswordModal } from './UpdatePasswordModal';
 export { default as UpdateThemeModal } from './UpdateThemeModal';
 export { default as UpdateValueModal } from './UpdateValueModal';
+export { default as PlanInfoModal } from './PlanInfoModal';
