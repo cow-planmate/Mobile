@@ -47,14 +47,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     },
   ];
 
-  const [departure, setDeparture] = useState('');
   const [destination, setDestination] = useState('');
   const [travelId, setTravelId] = useState<number>(0);
 
   const [isSearchModalVisible, setSearchModalVisible] = useState(false);
   const [fieldToUpdate, setFieldToUpdate] = useState<
     'departure' | 'destination'
-  >('departure');
+  >('destination');
   const [showErrors, setShowErrors] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<PendingInvitation[]>(
@@ -223,7 +222,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     // Navigate to editor without creating plan on server.
     // Plan will only be created when "일정 생성 완료" is clicked.
     navigation.navigate('ItineraryEditor', {
-      departure: departure || 'SEOUL',
+      departure: 'SEOUL',
       destination,
       travelId: travelId || 0,
       startDate: startDate?.toISOString() ?? new Date().toISOString(),
@@ -240,12 +239,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   };
 
   const onSelectLocation = (location: string, id?: number) => {
-    if (fieldToUpdate === 'departure') {
-      setDeparture(location);
-    } else {
-      setDestination(location);
-      if (id !== undefined) setTravelId(id);
-    }
+    setDestination(location);
+    if (id !== undefined) setTravelId(id);
   };
 
   return (

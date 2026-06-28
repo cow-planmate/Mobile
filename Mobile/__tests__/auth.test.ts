@@ -90,4 +90,53 @@ describe('Auth Store - Social Login & Complete', () => {
     });
     expect(AsyncStorage.multiSet).toHaveBeenCalled();
   });
+
+  it('should successfully login with email and password', async () => {
+    const mockLoginResponse = {
+      data: {
+        accessToken: 'mock-access-token',
+        refreshToken: 'mock-refresh-token',
+        userId: 789,
+        nickname: '일반가입자',
+        email: 'user@example.com',
+      },
+    };
+
+    mockedAxios.post.mockResolvedValueOnce(mockLoginResponse);
+
+    const store = useAuthStore.getState();
+    await store.login('user@example.com', 'password123');
+
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      '/api/auth/login',
+      {
+        email: 'user@example.com',
+        password: 'password123',
+      },
+      expect.any(Object)
+    );
+
+    expect(useAuthStore.getState().user).toEqual({
+      userId: 789,
+      nickname: '일반가입자',
+      email: 'user@example.com',
+    });
+    expect(AsyncStorage.multiSet).toHaveBeenCalled();
+  });
+
+  it('should throw error when login response fails', async () => {
+    const mockFailedResponse = {
+      data: {
+        loginSuccess: false,
+        message: '이메일 또는 비밀번호가 올바르지 않습니다.',
+      },
+    };
+
+    mockedAxios.post.mockResolvedValueOnce(mockFailedResponse);
+
+    const store = useAuthStore.getState();
+    await expect(store.login('user@example.com', 'wrongpassword')).rejects.toThrow(
+      '이메일 또는 비밀번호가 올바르지 않습니다.'
+    );
+  });
 });

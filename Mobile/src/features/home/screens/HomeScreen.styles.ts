@@ -110,24 +110,26 @@ export const styles = StyleSheet.create({
     elevation: 5,
   },
   inputRow: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: normalize(16),
     paddingVertical: normalize(12),
+    marginBottom: normalize(12),
   },
   inputRowLast: {
-    borderBottomWidth: 0,
-    paddingBottom: 0,
+    marginBottom: 0,
   },
   label: {
-    fontSize: normalize(12),
-    fontFamily: FONTS.medium,
-    color: '#6B7280', // #9CA3AF에서 더 진한 회색(#6B7280)으로 변경
-    marginBottom: normalize(6),
+    fontSize: normalize(11),
+    fontFamily: FONTS.semibold,
+    color: '#64748B',
+    marginBottom: normalize(3),
   },
   valueContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderBottomWidth: 3, // 2에서 3으로 굵기 상향 조정
-    borderBottomColor: '#EEEEEE',
-    paddingBottom: normalize(10),
   },
   valueText: {
     flex: 1,
