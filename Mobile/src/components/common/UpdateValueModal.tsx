@@ -8,6 +8,7 @@ import {
   TextInput,
 } from 'react-native';
 import { styles } from './UpdateValueModal.styles';
+import { X } from 'lucide-react-native';
 
 type UpdateValueModalProps = {
   visible: boolean;
@@ -50,7 +51,12 @@ export default function UpdateValueModal({
     >
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.modalView} onPress={() => {}}>
-          <Text style={styles.title}>{title}</Text>
+          <View style={styles.header}>
+            <Text style={styles.title}>{title}</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.7}>
+              <X size={20} color="#9CA3AF" strokeWidth={1.5} />
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>{label}</Text>
@@ -63,16 +69,11 @@ export default function UpdateValueModal({
             />
           </View>
 
-          <View style={styles.buttonContainer}>
+          <View style={styles.confirmFooter}>
             <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={onClose}
-            >
-              <Text style={styles.cancelButtonText}>취소</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.confirmButton]}
+              style={styles.confirmButton}
               onPress={handleConfirm}
+              activeOpacity={0.7}
             >
               <Text style={styles.confirmButtonText}>확인</Text>
             </TouchableOpacity>

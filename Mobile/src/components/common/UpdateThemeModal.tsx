@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import axios from 'axios';
-import { Map, Bed, UtensilsCrossed } from 'lucide-react-native';
+import { Map, Bed, UtensilsCrossed, X } from 'lucide-react-native';
 import { PreferredThemeVO, changePreferredThemes } from '../../api/themes';
 import ThemeSelector, { ThemeSelectorResult } from './ThemeSelector';
 import { styles, COLORS } from './UpdateThemeModal.styles';
@@ -130,7 +130,12 @@ export default function UpdateThemeModal({
       >
         <Pressable style={styles.backdrop} onPress={onClose}>
           <Pressable style={styles.modalView} onPress={() => {}}>
-            <Text style={styles.title}>선호 테마 변경</Text>
+            <View style={styles.header}>
+              <Text style={styles.title}>선호 테마 변경</Text>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.7}>
+                <X size={20} color="#9CA3AF" strokeWidth={1.5} />
+              </TouchableOpacity>
+            </View>
 
             {loading ? (
               <View style={styles.loadingContainer}>
@@ -193,17 +198,12 @@ export default function UpdateThemeModal({
                   </Text>
                 </TouchableOpacity>
 
-                <View style={styles.buttonContainer}>
+                <View style={styles.confirmFooter}>
                   <TouchableOpacity
-                    style={[styles.button, styles.cancelButton]}
-                    onPress={onClose}
-                  >
-                    <Text style={styles.cancelButtonText}>취소</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.button, styles.confirmButton]}
+                    style={styles.confirmButton}
                     onPress={handleSave}
                     disabled={saving}
+                    activeOpacity={0.7}
                   >
                     {saving ? (
                       <ActivityIndicator size="small" color="#fff" />

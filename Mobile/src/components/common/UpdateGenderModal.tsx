@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, Pressable, TouchableOpacity } from 'react-native';
 import { styles } from './UpdateGenderModal.styles';
+import { X } from 'lucide-react-native';
 
 type UpdateGenderModalProps = {
   visible: boolean;
@@ -37,7 +38,12 @@ export default function UpdateGenderModal({
     >
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.modalView} onPress={() => {}}>
-          <Text style={styles.title}>성별 변경</Text>
+          <View style={styles.header}>
+            <Text style={styles.title}>성별 변경</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.7}>
+              <X size={20} color="#9CA3AF" strokeWidth={1.5} />
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>성별 선택</Text>
@@ -77,16 +83,11 @@ export default function UpdateGenderModal({
             </View>
           </View>
 
-          <View style={styles.buttonContainer}>
+          <View style={styles.confirmFooter}>
             <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={onClose}
-            >
-              <Text style={styles.cancelButtonText}>취소</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.confirmButton]}
+              style={styles.confirmButton}
               onPress={handleConfirm}
+              activeOpacity={0.7}
             >
               <Text style={styles.confirmButtonText}>확인</Text>
             </TouchableOpacity>

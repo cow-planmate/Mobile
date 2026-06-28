@@ -1,4 +1,8 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
+
+const { width } = Dimensions.get('window');
+const normalize = (size: number) =>
+  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
 
 export const COLORS = {
   primary: '#1344FF',
@@ -10,10 +14,10 @@ export const COLORS = {
 };
 
 export const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard Variable',
+  medium: 'Pretendard Variable',
+  semibold: 'Pretendard Variable',
+  bold: 'Pretendard Variable',
 };
 
 export const styles = StyleSheet.create({
@@ -21,22 +25,38 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.45)', // 0.45 백드롭 투명도 통일
   },
   modalView: {
     width: '90%',
     maxWidth: 400,
     backgroundColor: COLORS.white,
-    borderRadius: 16,
+    borderRadius: normalize(20), // 20 둥글기 통일
     padding: 24,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: normalize(20),
+  },
   title: {
-    fontSize: 20,
+    fontSize: normalize(20),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
     color: COLORS.text,
-    marginBottom: 24,
+    letterSpacing: -0.3,
+  },
+  closeButton: {
+    width: normalize(36),
+    height: normalize(36),
+    borderRadius: normalize(18),
+    backgroundColor: COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   inputGroup: {
     width: '100%',
@@ -74,35 +94,22 @@ export const styles = StyleSheet.create({
   genderButtonTextSelected: {
     color: COLORS.white,
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+  confirmFooter: {
     width: '100%',
-    gap: 8,
-  },
-  button: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  cancelButtonText: {
-    color: COLORS.text,
-    fontFamily: FONTS.medium,
-    fontSize: 16,
+    marginTop: normalize(8),
   },
   confirmButton: {
+    width: '100%',
+    height: normalize(52), // 높이 52 통일
+    borderRadius: normalize(12), // 둥글기 12 통일
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: COLORS.primary,
   },
   confirmButtonText: {
     color: COLORS.white,
     fontFamily: FONTS.bold,
+    fontWeight: '700',
     fontSize: 16,
   },
 });

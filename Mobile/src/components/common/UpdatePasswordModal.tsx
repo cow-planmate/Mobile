@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
 } from 'react-native';
-import { Eye, EyeOff } from 'lucide-react-native';
+import { Eye, EyeOff, X } from 'lucide-react-native';
 import { styles, COLORS } from './UpdatePasswordModal.styles';
 import { useAlert } from '../../contexts/AlertContext';
 
@@ -95,7 +95,12 @@ export default function UpdatePasswordModal({
     >
       <Pressable style={styles.backdrop} onPress={handleClose}>
         <Pressable style={styles.modalView} onPress={() => {}}>
-          <Text style={styles.title}>비밀번호 변경</Text>
+          <View style={styles.header}>
+            <Text style={styles.title}>비밀번호 변경</Text>
+            <TouchableOpacity onPress={handleClose} style={styles.closeButton} activeOpacity={0.7}>
+              <X size={20} color="#9CA3AF" strokeWidth={1.5} />
+            </TouchableOpacity>
+          </View>
 
           <PasswordInput
             label="현재 비밀번호"
@@ -116,16 +121,11 @@ export default function UpdatePasswordModal({
             placeholder="비밀번호를 다시 입력하세요"
           />
 
-          <View style={styles.buttonContainer}>
+          <View style={styles.confirmFooter}>
             <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={handleClose}
-            >
-              <Text style={styles.cancelButtonText}>취소</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.confirmButton]}
+              style={styles.confirmButton}
               onPress={handleConfirm}
+              activeOpacity={0.7}
             >
               <Text style={styles.confirmButtonText}>확인</Text>
             </TouchableOpacity>
