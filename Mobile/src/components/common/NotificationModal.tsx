@@ -27,10 +27,10 @@ interface NotificationModalProps {
 
 const COLORS = theme.colors;
 const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard Variable',
+  medium: 'Pretendard Variable',
+  semibold: 'Pretendard Variable',
+  bold: 'Pretendard Variable',
 };
 
 const NotificationModal = ({
@@ -51,7 +51,7 @@ const NotificationModal = ({
         <Pressable style={styles.container} onPress={e => e.stopPropagation()}>
           <View style={styles.header}>
             <Text style={styles.title}>알림</Text>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.7}>
               <X size={20} color="#9CA3AF" strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
@@ -103,14 +103,14 @@ export default React.memo(NotificationModal);
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.45)', // 0.45 백드롭 투명도 통일
     justifyContent: 'center',
     alignItems: 'center',
   },
   container: {
     width: '85%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20, // 둥글기 20 통일
     padding: 24,
     maxHeight: '70%',
     borderWidth: 1,
@@ -125,7 +125,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontFamily: FONTS.bold,
+    fontWeight: '700',
     color: '#111827',
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F3F4F6', // 둥근 회색 닫기 버튼 통일
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   listContainer: {
     marginTop: 8,
@@ -156,6 +165,7 @@ const styles = StyleSheet.create({
   },
   highlight: {
     fontFamily: FONTS.bold,
+    fontWeight: '700',
     color: COLORS.primary,
   },
   buttonContainer: {
@@ -177,6 +187,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 13,
     fontFamily: FONTS.semibold,
+    fontWeight: '600',
   },
   rejectButton: {
     backgroundColor: '#F3F4F6',
@@ -187,5 +198,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontSize: 13,
     fontFamily: FONTS.semibold,
+    fontWeight: '600',
   },
 });

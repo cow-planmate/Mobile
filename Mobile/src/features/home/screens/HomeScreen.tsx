@@ -51,9 +51,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [travelId, setTravelId] = useState<number>(0);
 
   const [isSearchModalVisible, setSearchModalVisible] = useState(false);
-  const [fieldToUpdate, setFieldToUpdate] = useState<
-    'departure' | 'destination'
-  >('destination');
   const [showErrors, setShowErrors] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<PendingInvitation[]>(
@@ -233,8 +230,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     });
   };
 
-  const openSearchModal = (field: 'departure' | 'destination') => {
-    setFieldToUpdate(field);
+  const openSearchModal = () => {
     setSearchModalVisible(true);
   };
 
@@ -258,7 +254,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       isCalendarVisible={isCalendarVisible}
       isPaxModalVisible={isPaxModalVisible}
       isTransportModalVisible={isTransportModalVisible}
-      fieldToUpdate={fieldToUpdate}
       startDate={startDate}
       endDate={endDate}
       adults={adults}

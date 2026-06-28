@@ -89,7 +89,6 @@ export interface HomeScreenViewProps {
   onCloseNotificationModal: () => void;
   onAcceptNotification: (requestId: number) => void;
   onRejectNotification: (requestId: number) => void;
-  fieldToUpdate: 'departure' | 'destination';
   startDate?: Date | null;
   endDate?: Date | null;
   adults?: number | null;
@@ -97,7 +96,7 @@ export interface HomeScreenViewProps {
   transportOptions: OptionType[];
   onNotificationPress: () => void;
   onNavigateProfile: () => void;
-  onOpenSearchModal: (field: 'departure' | 'destination') => void;
+  onOpenSearchModal: () => void;
   onCloseSearchModal: () => void;
   onSelectLocation: (location: string, id?: number) => void;
   onOpenCalendar: () => void;
@@ -126,7 +125,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   isCalendarVisible,
   isPaxModalVisible,
   isTransportModalVisible,
-  fieldToUpdate,
   startDate,
   endDate,
   adults,
@@ -200,7 +198,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               value={destination}
               placeholder="여행지 입력" // '어디로 떠나시나요?' 에서 '여행지 입력'으로 수정
               icon={faLocationDot}
-              onPress={() => onOpenSearchModal('destination')}
+              onPress={onOpenSearchModal}
             />
 
             <InputRow
@@ -264,7 +262,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
       <SearchLocationModal
         visible={isSearchModalVisible}
         onClose={onCloseSearchModal}
-        fieldToUpdate={fieldToUpdate}
         currentValue={destination}
         onSelect={onSelectLocation}
       />

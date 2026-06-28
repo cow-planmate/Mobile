@@ -1,4 +1,4 @@
-﻿import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
+import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const normalize = (size: number) =>
@@ -16,10 +16,10 @@ export const COLORS = {
 };
 
 export const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard Variable',
+  medium: 'Pretendard Variable',
+  semibold: 'Pretendard Variable',
+  bold: 'Pretendard Variable',
 };
 
 export const styles = StyleSheet.create({
@@ -27,12 +27,12 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.45)', // 0.45 백드롭 투명도 통일
   },
   modalView: {
     margin: normalize(20),
     backgroundColor: COLORS.white,
-    borderRadius: normalize(20),
+    borderRadius: normalize(20), // 20 둥글기 통일
     paddingHorizontal: normalize(24),
     paddingTop: normalize(24),
     paddingBottom: normalize(28),
@@ -50,6 +50,7 @@ export const styles = StyleSheet.create({
   title: {
     fontSize: normalize(20),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
     color: COLORS.text,
     letterSpacing: -0.3,
   },
@@ -100,11 +101,13 @@ export const styles = StyleSheet.create({
   optionLabel: {
     fontSize: normalize(15),
     fontFamily: FONTS.medium,
+    fontWeight: '500',
     color: COLORS.text,
   },
   optionLabelSelected: {
     color: COLORS.primary,
     fontFamily: FONTS.bold,
+    fontWeight: '700',
   },
   checkBadge: {
     position: 'absolute',
@@ -118,4 +121,3 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-

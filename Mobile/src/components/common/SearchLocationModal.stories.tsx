@@ -30,7 +30,6 @@ const meta = {
   },
   args: {
     visible: true,
-    fieldToUpdate: 'destination',
   },
 } satisfies Meta<typeof SearchLocationModal>;
 
@@ -38,10 +37,4 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Destination: Story = {};
-
-export const Departure: Story = {
-  args: {
-    fieldToUpdate: 'departure',
-  },
-};
+export const Default: Story = {};

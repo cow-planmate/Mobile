@@ -111,9 +111,13 @@ export default function PaxModal({
               minValue={0}
             />
           </View>
-          <Pressable style={styles.confirmButton} onPress={handleConfirm}>
+          <TouchableOpacity
+            style={styles.confirmButton}
+            onPress={handleConfirm}
+            activeOpacity={0.7}
+          >
             <Text style={styles.confirmButtonText}>확인</Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>

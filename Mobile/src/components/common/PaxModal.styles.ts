@@ -15,10 +15,10 @@ export const COLORS = {
 };
 
 export const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard Variable',
+  medium: 'Pretendard Variable',
+  semibold: 'Pretendard Variable',
+  bold: 'Pretendard Variable',
 };
 
 export const styles = StyleSheet.create({
@@ -26,12 +26,12 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.45)', // 0.45 백드롭 투명도 통일
   },
   modalView: {
     margin: normalize(20),
     backgroundColor: COLORS.white,
-    borderRadius: normalize(20),
+    borderRadius: normalize(20), // 20 둥글기 통일
     paddingHorizontal: normalize(24),
     paddingTop: normalize(24),
     paddingBottom: normalize(28),
@@ -50,6 +50,7 @@ export const styles = StyleSheet.create({
   headerTitle: {
     fontSize: normalize(20),
     fontFamily: FONTS.bold,
+    fontWeight: '700',
     color: COLORS.text,
     letterSpacing: -0.3,
   },
@@ -82,11 +83,13 @@ export const styles = StyleSheet.create({
   counterLabel: {
     fontSize: normalize(16),
     fontFamily: FONTS.semibold,
+    fontWeight: '600',
     color: COLORS.text,
   },
   counterSubLabel: {
     fontSize: normalize(12),
     fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: COLORS.placeholder,
     marginTop: normalize(2),
   },
@@ -112,6 +115,7 @@ export const styles = StyleSheet.create({
     minWidth: normalize(40),
     textAlign: 'center',
     fontFamily: FONTS.bold,
+    fontWeight: '700',
     color: COLORS.text,
   },
   divider: {
@@ -121,14 +125,16 @@ export const styles = StyleSheet.create({
   },
   confirmButton: {
     width: '100%',
-    borderRadius: normalize(12),
-    paddingVertical: normalize(14),
-    backgroundColor: COLORS.primary,
+    height: normalize(52), // 높이 52 통일
+    borderRadius: normalize(12), // 둥글기 12 통일
+    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.primary,
   },
   confirmButtonText: {
     fontSize: normalize(15),
     color: COLORS.white,
     fontFamily: FONTS.bold,
+    fontWeight: '700',
   },
 });
