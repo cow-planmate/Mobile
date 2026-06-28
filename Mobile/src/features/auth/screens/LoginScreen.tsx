@@ -3,9 +3,10 @@ import Toast from 'react-native-toast-message';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { LoginScreenView } from './LoginScreen.view';
+import { API_URL } from '@env';
 
 type LoginScreenProps = {
-  navigation: { navigate: (screen: string) => void };
+  navigation: { navigate: (screen: string, params?: any) => void };
 };
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
@@ -16,8 +17,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     message: string | null;
   }>({ field: null, message: null });
   const login = useAuthStore((state) => state.login);
+  const oauthLogin = useAuthStore((state) => state.oauthLogin);
   const isLoading = useAuthStore((state) => state.isLoading);
   const { showAlert } = useAlert();
+  const [snsAuthUrl, setSnsAuthUrl] = useState<string | null>(null);
 
   const isEmailValid =
     (form.email.length === 0 ||
@@ -91,11 +94,50 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   };
 
   const handleGoogleLogin = () => {
-    showAlert({ title: '소셜 로그인', message: '구글 로그인', type: 'info' });
+    setSnsAuthUrl(`${API_URL}/api/oauth/google`);
   };
 
   const handleNaverLogin = () => {
-    showAlert({ title: '소셜 로그인', message: '네이버 로그인', type: 'info' });
+    setSnsAuthUrl(`${API_URL}/api/oauth/naver`);
+  };
+
+  const handleSnsNavigationStateChange = async (navState: any) => {
+    const url = navState.url;
+    if (url.includes('status=SUCCESS') || url.includes('status=NEED_ADDITIONAL_INFO') || url.includes('status=FAIL')) {
+      setSnsAuthUrl(null);
+      // parse query strings
+      const queryParams = url.split('?')[1];
+      if (queryParams) {
+        const params = new URLSearchParams(queryParams);
+        const status = params.get('status');
+        if (status === 'SUCCESS') {
+          const code = params.get('code');
+          if (code) {
+            try {
+              await oauthLogin(code);
+            } catch (e: any) {
+              Toast.show({
+                type: 'error',
+                text1: '소셜 로그인 실패',
+                position: 'top',
+                visibilityTime: 2500,
+              });
+            }
+          }
+        } else if (status === 'NEED_ADDITIONAL_INFO') {
+          const signupId = params.get('signupId');
+          const needEmailStr = params.get('needEmail');
+          const needEmail = needEmailStr === 'true';
+          if (signupId) {
+            navigation.navigate('OAuthAdditionalInfo', { signupId, needEmail });
+          } else {
+            showAlert({ title: '오류', message: '가입 세션 정보가 올바르지 않습니다.' });
+          }
+        } else {
+          showAlert({ title: '오류', message: '소셜 로그인 중 오류가 발생했습니다.' });
+        }
+      }
+    }
   };
 
   return (
@@ -114,6 +156,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       onNavigateToForgotPassword={() => navigation.navigate('ForgotPassword')}
       onGoogleLogin={handleGoogleLogin}
       onNaverLogin={handleNaverLogin}
+      snsAuthUrl={snsAuthUrl}
+      onSnsClose={() => setSnsAuthUrl(null)}
+      onSnsNavigationStateChange={handleSnsNavigationStateChange}
     />
   );
 }

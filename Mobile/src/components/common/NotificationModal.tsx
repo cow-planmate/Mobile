@@ -39,7 +39,7 @@ const NotificationModal = ({
   invitations = [],
   onAccept,
   onReject,
-}: NotificationModalProps) {
+}: NotificationModalProps) => {
   return (
     <Modal
       visible={visible}

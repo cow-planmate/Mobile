@@ -21,9 +21,8 @@ interface AuthState {
   logout: () => Promise<void>;
   oauthLogin: (code: string) => Promise<void>;
   oauthComplete: (data: {
-    provider: string;
-    providerId: string;
-    email: string;
+    signupId: string;
+    email: string | null;
     age: number;
     gender: number;
   }) => Promise<void>;
@@ -161,11 +160,15 @@ export const useAuthStore = create<AuthState>((set) => ({
         data
       );
 
-      const { success, message, accessToken, refreshToken, userId, nickname } =
+      const { accessToken, refreshToken, userId, nickname, email } =
         response.data;
 
-      if (success) {
-        const userData: User = { userId, nickname, email: data.email || '' };
+      if (accessToken && refreshToken && userId) {
+        const userData: User = {
+          userId,
+          nickname: nickname || '사용자',
+          email: email || data.email || '',
+        };
         axios.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
 
         await AsyncStorage.multiSet([
@@ -176,10 +179,13 @@ export const useAuthStore = create<AuthState>((set) => ({
 
         set({ user: userData });
       } else {
-        throw new Error(message || 'Social signup failed.');
+        throw new Error('서버 응답 형식이 올바르지 않습니다.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('OAuth Complete error:', error);
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
       throw error;
     } finally {
       set({ isLoading: false });

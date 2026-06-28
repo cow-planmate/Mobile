@@ -4,6 +4,7 @@ import IntroScreen from '../features/auth/screens/IntroScreen';
 import LoginScreen from '../features/auth/screens/LoginScreen';
 import SignupScreen from '../features/auth/screens/SignupScreen';
 import ForgotPasswordScreen from '../features/auth/screens/ForgotPasswordScreen';
+import OAuthAdditionalInfoScreen from '../features/auth/screens/OAuthAdditionalInfoScreen';
 import { AuthStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -39,6 +40,13 @@ export default function AuthStack() {
       <Stack.Screen
         name="ForgotPassword"
         component={ForgotPasswordScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="OAuthAdditionalInfo"
+        component={OAuthAdditionalInfoScreen}
         options={{
           headerShown: false,
         }}

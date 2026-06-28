@@ -9,7 +9,6 @@ import MyScheduleScreen from '../features/itinerary/screens/MyScheduleScreen';
 import ProfileScreen from '../features/auth/screens/ProfileScreen';
 import ThemeSettingsScreen from '../features/auth/screens/ThemeSettingsScreen';
 import ChangePasswordScreen from '../features/auth/screens/ChangePasswordScreen';
-import ThemePreferenceScreen from '../features/auth/screens/ThemePreferenceScreen';
 import { CommunityScreen } from '../features/community';
 import { MapScreen } from '../features/places';
 import {
@@ -131,10 +130,6 @@ function ProfileStack() {
       <ProfileStackNavigator.Screen
         name="ChangePassword"
         component={ChangePasswordScreen}
-      />
-      <ProfileStackNavigator.Screen
-        name="ThemePreference"
-        component={ThemePreferenceScreen}
       />
     </ProfileStackNavigator.Navigator>
   );

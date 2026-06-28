@@ -221,11 +221,9 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
 
             <InputRow
               label="이동수단"
-              value={
-                transport === 'car' ? '자동차' : transport ? '대중교통' : ''
-              }
+              value={transport}
               placeholder="무엇을 타고 가시나요?"
-              icon={transport === 'car' ? faCar : faBus}
+              icon={transport === '자동차' ? faCar : faBus}
               onPress={onOpenTransportModal}
             />
 

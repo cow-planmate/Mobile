@@ -72,7 +72,6 @@ export type ProfileStackParamList = {
   ProfileMain: undefined;
   ThemeSettings: undefined;
   ChangePassword: undefined;
-  ThemePreference: undefined;
 };
 
 export type AuthStackParamList = {
@@ -80,4 +79,8 @@ export type AuthStackParamList = {
   Login: undefined;
   Signup: undefined;
   ForgotPassword: undefined;
+  OAuthAdditionalInfo: {
+    signupId: string;
+    needEmail: boolean;
+  };
 };

@@ -17,6 +17,7 @@ export default function ProfileScreen() {
     age: '',
     gender: '',
     preferredTheme: '',
+    socialLogin: false,
   });
 
   const [isNicknameModalVisible, setNicknameModalVisible] = useState(false);
@@ -48,6 +49,7 @@ export default function ProfileScreen() {
         age: data.age ? data.age.toString() : '미설정',
         gender: genderStr,
         preferredTheme: themes,
+        socialLogin: data.socialLogin || false,
       });
     } catch (error) {
       console.error('Failed to fetch profile:', error);

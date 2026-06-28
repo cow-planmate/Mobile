@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -49,6 +49,8 @@ const NaverIcon = ({ size = 28 }: { size?: number }) => (
 
 /* ── Privacy Policy Modal ── */
 
+import { WebView } from 'react-native-webview';
+
 const PrivacyPolicyModal = ({
   visible,
   onClose,
@@ -56,6 +58,7 @@ const PrivacyPolicyModal = ({
   visible: boolean;
   onClose: () => void;
 }) => (
+  // ... Privacy Modal omitted for brevity, let's keep it ...
   <Modal
     visible={visible}
     transparent
@@ -156,6 +159,9 @@ export interface LoginScreenViewProps {
   onNavigateToForgotPassword: () => void;
   onGoogleLogin: () => void;
   onNaverLogin: () => void;
+  snsAuthUrl: string | null;
+  onSnsClose: () => void;
+  onSnsNavigationStateChange: (navState: any) => void;
 }
 
 export const LoginScreenView = ({
@@ -173,6 +179,9 @@ export const LoginScreenView = ({
   onNavigateToForgotPassword,
   onGoogleLogin,
   onNaverLogin,
+  snsAuthUrl,
+  onSnsClose,
+  onSnsNavigationStateChange,
 }: LoginScreenViewProps) => {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const isButtonEnabled = form.email.length > 0 && form.password.length > 0;
@@ -320,6 +329,33 @@ export const LoginScreenView = ({
         visible={showPrivacyModal}
         onClose={() => setShowPrivacyModal(false)}
       />
+
+      {snsAuthUrl && (
+        <Modal
+          visible={true}
+          transparent={false}
+          animationType="slide"
+          onRequestClose={onSnsClose}
+        >
+          <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF' }}>
+            <View style={{ height: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#EEE' }}>
+              <TouchableOpacity onPress={onSnsClose}>
+                <X size={24} color={COLORS.darkGray} />
+              </TouchableOpacity>
+            </View>
+            <WebView
+              source={{ uri: snsAuthUrl }}
+              onNavigationStateChange={onSnsNavigationStateChange}
+              startInLoadingState={true}
+              renderLoading={() => (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                  <ActivityIndicator size="large" color={COLORS.primary} />
+                </View>
+              )}
+            />
+          </SafeAreaView>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 };

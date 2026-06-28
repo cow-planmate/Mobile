@@ -19,7 +19,7 @@ import Toast from 'react-native-toast-message';
 import type { ToastConfig } from 'react-native-toast-message';
 import { XCircle } from 'lucide-react-native';
 
-const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && false;
+const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && true;
 
 /* ── Toast Styles ── */
 const toastStyles = StyleSheet.create({
@@ -83,7 +83,7 @@ const toastConfig: ToastConfig = {
 };
 
 function App() {
-  const initializeAuth = useAuthStore((state) => state.initialize);
+  const initializeAuth = useAuthStore(state => state.initialize);
 
   React.useEffect(() => {
     void initializeAuth();
@@ -98,18 +98,18 @@ function App() {
     <GestureHandlerRootView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <QueryClientProvider client={queryClient}>
-          <AlertProvider>
-            <PlacesProvider>
-              <WebSocketProvider>
-                <ItineraryProvider>
-                  <NavigationContainer>
-                    <AppNavigator />
-                  </NavigationContainer>
-                  <Toast config={toastConfig} />
-                </ItineraryProvider>
-              </WebSocketProvider>
-            </PlacesProvider>
-          </AlertProvider>
+        <AlertProvider>
+          <PlacesProvider>
+            <WebSocketProvider>
+              <ItineraryProvider>
+                <NavigationContainer>
+                  <AppNavigator />
+                </NavigationContainer>
+                <Toast config={toastConfig} />
+              </ItineraryProvider>
+            </WebSocketProvider>
+          </PlacesProvider>
+        </AlertProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );
