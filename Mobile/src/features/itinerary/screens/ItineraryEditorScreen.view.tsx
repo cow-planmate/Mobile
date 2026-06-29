@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, createContext, useContext, useMemo } from 'react';
 import {
   View,
   Text,
@@ -330,6 +330,23 @@ const DraggableTimelineItem = ({
   const isDragging = useSharedValue(0);
   const previewTop = useSharedValue(initialTop);
 
+  const exitOpacity = useSharedValue(1);
+  const exitScale = useSharedValue(1);
+  const exitTranslateX = useSharedValue(0);
+
+  const dragOpacity = useSharedValue(1);
+  const dragScale = useSharedValue(1);
+
+  const handleDeleteWithAnim = React.useCallback(() => {
+    exitScale.value = withTiming(0.8, { duration: 250 });
+    exitTranslateX.value = withTiming(400, { duration: 250 });
+    exitOpacity.value = withTiming(0, { duration: 250 }, (finished) => {
+      if (finished) {
+        runOnJS(onDelete)();
+      }
+    });
+  }, [onDelete, exitOpacity, exitScale, exitTranslateX]);
+
   // Auto-scroll helper
   const scrollIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(
     null,
@@ -358,7 +375,9 @@ const DraggableTimelineItem = ({
       startY.value = top.value;
       previewTop.value = top.value;
       previewHeight.value = height.value;
-      isDragging.value = withSpring(1);
+      isDragging.value = 1;
+      dragOpacity.value = withSpring(0.9);
+      dragScale.value = withSpring(1.015);
     })
     .onUpdate(event => {
       const newTop = startY.value + event.translationY;
@@ -387,7 +406,9 @@ const DraggableTimelineItem = ({
       }
     })
     .onEnd(event => {
-      isDragging.value = withSpring(0);
+      isDragging.value = 0;
+      dragOpacity.value = withSpring(1);
+      dragScale.value = withSpring(1);
       runOnJS(clearScrollInterval)();
       const snappedTop =
         Math.round((top.value - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
@@ -414,7 +435,9 @@ const DraggableTimelineItem = ({
       runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
     })
     .onFinalize(() => {
-      isDragging.value = withSpring(0);
+      isDragging.value = 0;
+      dragOpacity.value = withSpring(1);
+      dragScale.value = withSpring(1);
     });
 
   const panGestureResizeTop = Gesture.Pan()
@@ -422,7 +445,9 @@ const DraggableTimelineItem = ({
     .onBegin(() => {
       startY.value = top.value;
       startHeight.value = height.value;
-      isDragging.value = withSpring(1);
+      isDragging.value = 1;
+      dragOpacity.value = withSpring(0.9);
+      dragScale.value = withSpring(1.015);
       previewTop.value = top.value;
       previewHeight.value = height.value;
       isResizingTop.value = withSpring(1);
@@ -454,7 +479,9 @@ const DraggableTimelineItem = ({
       }
     })
     .onEnd(() => {
-      isDragging.value = withSpring(0);
+      isDragging.value = 0;
+      dragOpacity.value = withSpring(1);
+      dragScale.value = withSpring(1);
       const snappedTop =
         Math.round((top.value - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
           GRID_SNAP_HEIGHT +
@@ -481,14 +508,18 @@ const DraggableTimelineItem = ({
     })
     .onFinalize(() => {
       isResizingTop.value = withSpring(0);
-      isDragging.value = withSpring(0);
+      isDragging.value = 0;
+      dragOpacity.value = withSpring(1);
+      dragScale.value = withSpring(1);
     });
 
   const panGestureResizeBottom = Gesture.Pan()
     .minDistance(4)
     .onBegin(() => {
       startHeight.value = height.value;
-      isDragging.value = withSpring(1);
+      isDragging.value = 1;
+      dragOpacity.value = withSpring(0.9);
+      dragScale.value = withSpring(1.015);
       previewTop.value = top.value;
       previewHeight.value = height.value;
       isResizingBottom.value = withSpring(1);
@@ -512,7 +543,9 @@ const DraggableTimelineItem = ({
       }
     })
     .onEnd(() => {
-      isDragging.value = withSpring(0);
+      isDragging.value = 0;
+      dragOpacity.value = withSpring(1);
+      dragScale.value = withSpring(1);
       const snappedHeight =
         Math.round(height.value / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
       let finalHeight = Math.max(snappedHeight, MIN_ITEM_HEIGHT);
@@ -532,7 +565,9 @@ const DraggableTimelineItem = ({
     })
     .onFinalize(() => {
       isResizingBottom.value = withSpring(0);
-      isDragging.value = withSpring(0);
+      isDragging.value = 0;
+      dragOpacity.value = withSpring(1);
+      dragScale.value = withSpring(1);
     });
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -542,9 +577,10 @@ const DraggableTimelineItem = ({
       height: height.value,
       left: 60,
       right: 15,
-      opacity: withSpring(isDragging.value === 1 ? 0.9 : 1),
+      opacity: exitOpacity.value * dragOpacity.value,
       transform: [
-        { scale: withSpring(isDragging.value === 1 ? 1.015 : 1) }
+        { scale: exitScale.value * dragScale.value },
+        { translateX: exitTranslateX.value },
       ],
       shadowColor: '#000',
       shadowOffset: { width: 0, height: isDragging.value === 1 ? 6 : 0 },
@@ -602,7 +638,7 @@ const DraggableTimelineItem = ({
           <Animated.View style={styles.flex1}>
             <TimelineItem
               item={place}
-              onDelete={onDelete}
+              onDelete={handleDeleteWithAnim}
               onEditTime={onEditTime}
               onPress={onPress}
               style={styles.flex1}
@@ -749,6 +785,82 @@ const TimelineComponent = React.memo(
   ),
 );
 
+export const EditorStateContext = createContext<{
+  timelineScrollRef: any;
+  selectedDay: any;
+  handleDeletePlace: any;
+  handleEditTime: any;
+  handleUpdatePlaceTimes: any;
+  onOpenDetail: any;
+  weatherMap: any;
+  handleAddPlace: any;
+  planId: any;
+  destination: any;
+} | null>(null);
+
+const TimelineTabScreen = React.memo(() => {
+  const state = useContext(EditorStateContext);
+  if (!state) return null;
+  const {
+    timelineScrollRef,
+    selectedDay,
+    handleDeletePlace,
+    handleEditTime,
+    handleUpdatePlaceTimes,
+    onOpenDetail,
+    weatherMap,
+  } = state;
+
+  return (
+    <View style={styles.timelineStage}>
+      <View pointerEvents="none" style={styles.timelineSceneBackdrop} />
+      {selectedDay &&
+        weatherMap[selectedDay.date.toISOString().split('T')[0]] && (
+          <View
+            pointerEvents="none"
+            style={styles.timelineWeatherOverlay}
+          >
+            <WeatherHeader
+              dayNumber={selectedDay.dayNumber}
+              weather={
+                weatherMap[selectedDay.date.toISOString().split('T')[0]]
+              }
+              appearance="overlay"
+            />
+          </View>
+        )}
+      <TimelineComponent
+        ref={timelineScrollRef}
+        selectedDay={selectedDay}
+        onDeletePlace={handleDeletePlace}
+        onEditPlaceTime={handleEditTime}
+        onUpdatePlaceTimes={handleUpdatePlaceTimes}
+        onPressPlace={onOpenDetail}
+        topPadding={
+          selectedDay &&
+          weatherMap[selectedDay.date.toISOString().split('T')[0]]
+            ? 75
+            : 0
+        }
+      />
+    </View>
+  );
+});
+
+const AddPlaceTabScreen = React.memo(() => {
+  const state = useContext(EditorStateContext);
+  if (!state) return null;
+  const { handleAddPlace, planId, destination } = state;
+
+  return (
+    <PlaceRecommendationList
+      onAddPlace={handleAddPlace}
+      planId={planId}
+      destination={destination}
+    />
+  );
+});
+
 export interface ItineraryEditorScreenViewProps {
   days: Day[];
   selectedDayIndex: number;
@@ -848,6 +960,32 @@ export default function ItineraryEditorScreenView({
   if (!selectedDay) {
     return <AirplaneLoading />;
   }
+
+  const editorStateContextValue = useMemo(() => {
+    return {
+      timelineScrollRef,
+      selectedDay,
+      handleDeletePlace,
+      handleEditTime,
+      handleUpdatePlaceTimes,
+      onOpenDetail,
+      weatherMap,
+      handleAddPlace,
+      planId,
+      destination,
+    };
+  }, [
+    timelineScrollRef,
+    selectedDay,
+    handleDeletePlace,
+    handleEditTime,
+    handleUpdatePlaceTimes,
+    onOpenDetail,
+    weatherMap,
+    handleAddPlace,
+    planId,
+    destination,
+  ]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -970,73 +1108,36 @@ export default function ItineraryEditorScreenView({
         </TouchableOpacity>
       </View>
 
-      <Tab.Navigator
-        tabBar={props => <BottomMenuBar {...props} />}
-        sceneStyle={styles.tabScene}
-        initialRouteName={initialTabName}
-        screenOptions={{
-          tabBarActiveTintColor: COLORS.primary,
-          tabBarInactiveTintColor: COLORS.placeholder,
-        }}
-      >
-        <Tab.Screen
-          name="타임라인"
-          options={{
-            title: '시간표',
-            tabBarIcon: TimelineTabIcon,
+      <EditorStateContext.Provider value={editorStateContextValue}>
+        <Tab.Navigator
+          tabBar={props => <BottomMenuBar {...props} />}
+          sceneStyle={styles.tabScene}
+          initialRouteName={initialTabName}
+          screenOptions={{
+            tabBarActiveTintColor: COLORS.primary,
+            tabBarInactiveTintColor: COLORS.placeholder,
           }}
         >
-          {() => (
-            <View style={styles.timelineStage}>
-              <View pointerEvents="none" style={styles.timelineSceneBackdrop} />
-              {selectedDay &&
-                weatherMap[selectedDay.date.toISOString().split('T')[0]] && (
-                  <View
-                    pointerEvents="none"
-                    style={styles.timelineWeatherOverlay}
-                  >
-                    <WeatherHeader
-                      dayNumber={selectedDay.dayNumber}
-                      weather={
-                        weatherMap[selectedDay.date.toISOString().split('T')[0]]
-                      }
-                      appearance="overlay"
-                    />
-                  </View>
-                )}
-              <TimelineComponent
-                ref={timelineScrollRef}
-                selectedDay={selectedDay}
-                onDeletePlace={handleDeletePlace}
-                onEditPlaceTime={handleEditTime}
-                onUpdatePlaceTimes={handleUpdatePlaceTimes}
-                onPressPlace={onOpenDetail}
-                topPadding={
-                  selectedDay &&
-                  weatherMap[selectedDay.date.toISOString().split('T')[0]]
-                    ? 75
-                    : 0
-                }
-              />
-            </View>
-          )}
-        </Tab.Screen>
-        <Tab.Screen
-          name="장소추가"
-          options={{
-            title: '추천 장소',
-            tabBarIcon: PlaceTabIcon,
-          }}
-        >
-          {() => (
-            <PlaceRecommendationList
-              onAddPlace={handleAddPlace}
-              planId={planId}
-              destination={destination}
-            />
-          )}
-        </Tab.Screen>
-      </Tab.Navigator>
+          <Tab.Screen
+            name="타임라인"
+            options={{
+              title: '시간표',
+              tabBarIcon: TimelineTabIcon,
+            }}
+          >
+            {() => <TimelineTabScreen />}
+          </Tab.Screen>
+          <Tab.Screen
+            name="장소추가"
+            options={{
+              title: '추천 장소',
+              tabBarIcon: PlaceTabIcon,
+            }}
+          >
+            {() => <AddPlaceTabScreen />}
+          </Tab.Screen>
+        </Tab.Navigator>
+      </EditorStateContext.Provider>
 
       {editingTime && (
         <TimePickerModal

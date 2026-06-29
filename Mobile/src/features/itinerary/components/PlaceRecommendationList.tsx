@@ -529,16 +529,6 @@ export default function PlaceRecommendationList({
           >
             <GoogleMapsIcon size={20} />
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={plStyles.mobileAddButton}
-            onPress={e => {
-              e.stopPropagation?.();
-              onAddPlace(placeVOToPlace(item, type));
-            }}
-          >
-            <Text style={plStyles.mobileAddButtonText}>추가</Text>
-          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
@@ -969,17 +959,6 @@ const plStyles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#D1D5DB',
-  },
-  mobileAddButton: {
-    backgroundColor: '#DBEAFE',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  mobileAddButtonText: {
-    fontSize: 12,
-    fontFamily: FONTS.bold,
-    color: '#2563EB',
   },
   mapModalContainer: {
     flex: 1,

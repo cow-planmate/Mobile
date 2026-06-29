@@ -89,7 +89,6 @@ const meta = {
     handleUpdatePlaceTimes: () => {},
     handleDeletePlace: () => {},
     handleAddPlace: () => {},
-    selectedDay: mockDays[0],
     onlineUsers: [],
     isScheduleEditVisible: false,
     setScheduleEditVisible: () => {},

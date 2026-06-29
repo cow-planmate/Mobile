@@ -182,13 +182,25 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
               : null;
 
           setDays(prevDays => {
-            const dayIndex = prevDays.findIndex(
+            let dayIndex = prevDays.findIndex(
               d => d.timetableId === timetableId,
             );
+
+            if (dayIndex === -1 && respVO.date) {
+              const targetDateStr = respVO.date.split('T')[0];
+              dayIndex = prevDays.findIndex(
+                d => d.date.toISOString().split('T')[0] === targetDateStr
+              );
+            }
+
             if (dayIndex === -1) return prevDays;
 
             const updatedDays = [...prevDays];
             const dayToUpdate = { ...updatedDays[dayIndex] };
+
+            if (!dayToUpdate.timetableId && timetableId) {
+              dayToUpdate.timetableId = timetableId;
+            }
 
             if (type === 'create') {
               // If we have an eventId (tempId), try to find the placeholder

@@ -92,6 +92,8 @@ export function PlacesProvider({children}: PropsWithChildren) {
           formatted_address: '제주특별자치도 제주시 한림읍 협재리 2497-1',
           rating: 4.6,
           photoUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200',
+          yLocation: 33.3940,
+          xLocation: 126.2397,
         },
         {
           placeId: 'tour-2',
@@ -100,6 +102,8 @@ export function PlacesProvider({children}: PropsWithChildren) {
           formatted_address: '제주특별자치도 제주시 해안동',
           rating: 4.8,
           photoUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200',
+          yLocation: 33.3617,
+          xLocation: 126.5292,
         },
       ]);
       setLodging([
@@ -110,6 +114,8 @@ export function PlacesProvider({children}: PropsWithChildren) {
           formatted_address: '제주특별자치도 서귀포시 중문관광로72번길 75',
           rating: 4.7,
           photoUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200',
+          yLocation: 33.2475,
+          xLocation: 126.4082,
         },
       ]);
       setRestaurant([
@@ -120,6 +126,8 @@ export function PlacesProvider({children}: PropsWithChildren) {
           formatted_address: '제주특별자치도 서귀포시 동문동로 2',
           rating: 4.3,
           photoUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=200',
+          yLocation: 33.2505,
+          xLocation: 126.5684,
         },
       ]);
       setIsLoading(false);
@@ -182,6 +190,8 @@ export function PlacesProvider({children}: PropsWithChildren) {
             categoryId: 2,
             formatted_address: `제주 제주시 ${query}로 12`,
             rating: 4.5,
+            yLocation: 33.5113,
+            xLocation: 126.4930,
           },
         ]);
         setIsLoading(false);
