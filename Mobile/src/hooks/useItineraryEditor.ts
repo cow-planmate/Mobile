@@ -4,7 +4,7 @@ import axios from 'axios';
 import { API_URL } from '@env';
 import { useItinerary, Day, Place } from '../contexts/ItineraryContext';
 import { useWebSocket } from '../contexts/WebSocketContext';
-import { timeToMinutes, minutesToTime } from '../utils/timeUtils';
+import { timeToMinutes, minutesToTime, resolveConflictsAndSort } from '../utils/timeUtils';
 import { MINUTE_HEIGHT } from '../features/itinerary/screens/ItineraryEditorScreen.styles';
 import { useAlert } from '../contexts/AlertContext';
 
@@ -129,7 +129,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
               timetableId: ttId,
               date: date,
               dayNumber: index + 1,
-              places: dayPlaces,
+              places: resolveConflictsAndSort(dayPlaces),
             };
           });
           setDays(newDays);

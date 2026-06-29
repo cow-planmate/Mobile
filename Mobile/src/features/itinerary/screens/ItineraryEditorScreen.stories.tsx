@@ -11,6 +11,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faUsers, faXmark, faMap } from '@fortawesome/free-solid-svg-icons';
 import KakaoMapView from '../components/KakaoMapView';
 
+import { resolveConflictsAndSort } from '../../../utils/timeUtils';
+
 const mockDays: Day[] = [
   {
     dayNumber: 1,
@@ -144,7 +146,7 @@ const meta = {
 
     const handleAddPlace = (newPlace: any) => {
       const updatedDays = [...days];
-      const currentDay = updatedDays[selectedDayIndex];
+      const currentDay = { ...updatedDays[selectedDayIndex] };
       
       // Calculate a default time (last place end time + 1 hour)
       let startTime = '09:00:00';
@@ -157,11 +159,19 @@ const meta = {
       const endH = Math.min(h + 1, 23);
       const endTime = `${endH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:00`;
 
-      currentDay.places.push({
+      const placeToAdd = {
         ...newPlace,
+        id: `place_${Date.now()}_${Math.random()}`,
         startTime,
         endTime,
-      });
+      };
+
+      currentDay.places = resolveConflictsAndSort([
+        ...currentDay.places,
+        placeToAdd
+      ], placeToAdd.id);
+
+      updatedDays[selectedDayIndex] = currentDay;
       setDays(updatedDays);
       console.log('Added place to Day', selectedDayIndex + 1, newPlace.name);
     };
@@ -177,16 +187,26 @@ const meta = {
 
     const handleUpdatePlaceTimes = (placeId: string, start: number, end: number) => {
       const updatedDays = [...days];
-      const place = updatedDays[selectedDayIndex].places.find(p => p.id === placeId);
-      if (place) {
-        const format = (min: number) => {
-          const h = Math.floor(min / 60).toString().padStart(2, '0');
-          const m = (min % 60).toString().padStart(2, '0');
-          return `${h}:${m}:00`;
-        };
-        place.startTime = format(start);
-        place.endTime = format(end);
-      }
+      const currentDay = { ...updatedDays[selectedDayIndex] };
+      const format = (min: number) => {
+        const h = Math.floor(min / 60).toString().padStart(2, '0');
+        const m = (min % 60).toString().padStart(2, '0');
+        return `${h}:${m}:00`;
+      };
+      
+      const newPlacesList = currentDay.places.map(p =>
+        p.id === placeId
+          ? { ...p, startTime: format(start), endTime: format(end) }
+          : { ...p }
+      );
+      
+      currentDay.places = resolveConflictsAndSort(
+        newPlacesList,
+        placeId
+      );
+      
+      updatedDays[selectedDayIndex] = currentDay;
+      setDays(updatedDays);
     };
 
     const handleConfirmScheduleEdit = (updatedDays: any[]) => {

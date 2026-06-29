@@ -18,7 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppStackParamList } from '../../../navigation/types';
 import { Place } from '../components/TimelineItem';
 import { useWebSocket } from '../../../contexts/WebSocketContext';
-import { useItinerary } from '../../../contexts/ItineraryContext';
+import { useItinerary, Day } from '../../../contexts/ItineraryContext';
 import { usePlaces } from '../../../contexts/PlacesContext';
 import { useItineraryEditor } from '../../../hooks/useItineraryEditor';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
