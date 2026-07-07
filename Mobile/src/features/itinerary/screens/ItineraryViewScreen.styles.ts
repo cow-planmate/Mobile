@@ -254,6 +254,7 @@ export const styles = StyleSheet.create({
   },
   timelineContentContainer: {
     paddingBottom: 0,
+    backgroundColor: 'transparent',
   },
   timelineWrapper: {
     position: 'relative',
@@ -287,17 +288,16 @@ export const styles = StyleSheet.create({
     height: HOUR_HEIGHT,
     flexDirection: 'column',
     position: 'absolute',
-    left: 0,
-    right: 0,
-    paddingLeft: 60,
+    left: 60,
+    right: 15,
   },
   quarterBlock: {
     height: HOUR_HEIGHT / 4,
     borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
+    borderTopColor: '#E5E7EB', // Enhanced from COLORS.borderLight (#F3F4F6)
   },
   firstQuarterBlock: {
-    borderTopColor: COLORS.border,
+    borderTopColor: '#9CA3AF', // Enhanced from COLORS.border (#E5E7EB)
   },
   footer: {
     flexDirection: 'row',

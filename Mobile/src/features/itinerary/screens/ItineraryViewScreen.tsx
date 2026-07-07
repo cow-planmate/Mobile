@@ -249,16 +249,20 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     }
   }, [selectedDay]);
 
-  const { gridHours, offsetMinutes } = useMemo(() => {
-    const minHour = 9;
-    const maxHour = 20;
+  const { gridHours, offsetMinutes, endHour } = useMemo(() => {
+    const startTimeStr = selectedDay?.startTime || '09:00:00';
+    const endTimeStr = selectedDay?.endTime || '20:00:00';
+    const minHour = Math.floor(timeToMinutes(startTimeStr) / 60);
+    const endMin = timeToMinutes(endTimeStr);
+    const maxHour = Math.ceil(endMin / 60);
+
     const hours = Array.from(
       { length: maxHour - minHour + 1 },
       (_, i) => i + minHour,
     );
     const offset = minHour * 60;
-    return { gridHours: hours, offsetMinutes: offset };
-  }, []);
+    return { gridHours: hours, offsetMinutes: offset, endHour: maxHour };
+  }, [selectedDay]);
 
   const handleConfirm = async () => {
     // Plan is already created/saved in ItineraryEditorScreen.
@@ -287,6 +291,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       scrollRef={scrollRef}
       gridHours={gridHours}
       offsetMinutes={offsetMinutes}
+      endHour={endHour}
       handleConfirm={handleConfirm}
       goBack={() => navigation.goBack()}
       handleEdit={() => navigation.navigate('ItineraryEditor', { planId })}

@@ -110,9 +110,9 @@ const ToolbarIconButton = ({
   </TouchableOpacity>
 );
 
-const TimeGridBackground = React.memo(({ hours }: { hours: number[] }) => {
-  const hourStr = (h: number) => h.toString().padStart(2, '0');
-  const endHour = hours.length > 0 ? hours[hours.length - 1] : -1;
+const TimeGridBackground = React.memo(
+  ({ hours, endHour }: { hours: number[]; endHour: number }) => {
+    const hourStr = (h: number) => h.toString().padStart(2, '0');
 
   return (
     <View style={styles.gridContainer}>
@@ -215,8 +215,7 @@ const StaticTimelineItem = React.memo(
       <View style={itemStyle}>
         <TimelineItem
           item={place}
-          onDelete={() => {}}
-          onEditTime={() => {}}
+          isReadOnly={true}
           style={styles.flex1}
         />
       </View>
@@ -232,9 +231,10 @@ export interface ItineraryViewScreenViewProps {
   setMapVisible: (visible: boolean) => void;
   isShareModalVisible: boolean;
   setShareModalVisible: (visible: boolean) => void;
-  scrollRef: React.RefObject<ScrollView>;
+  scrollRef: React.RefObject<ScrollView | null>;
   gridHours: number[];
   offsetMinutes: number;
+  endHour?: number;
   handleConfirm: () => void;
   goBack: () => void;
   handleEdit: () => void;
@@ -254,6 +254,7 @@ export default function ItineraryViewScreenView({
   scrollRef,
   gridHours,
   offsetMinutes,
+  endHour,
   handleConfirm,
   goBack,
   handleEdit,
@@ -262,6 +263,7 @@ export default function ItineraryViewScreenView({
   tripName,
 }: ItineraryViewScreenViewProps) {
   const selectedDay = days[selectedDayIndex];
+  const endHourVal = endHour ?? (gridHours.length > 0 ? gridHours[gridHours.length - 1] : 20);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -398,7 +400,7 @@ export default function ItineraryViewScreenView({
                 ]}
               >
                 <View style={styles.timelineWrapper}>
-                  <TimeGridBackground hours={gridHours} />
+                  <TimeGridBackground hours={gridHours} endHour={endHourVal} />
                   {selectedDay.places.map(place => (
                     <StaticTimelineItem
                       key={place.id}
@@ -416,7 +418,7 @@ export default function ItineraryViewScreenView({
       <ShareModal
         visible={isShareModalVisible}
         onClose={() => setShareModalVisible(false)}
-        planId={planId}
+        planId={planId ?? 0}
       />
     </SafeAreaView>
   );

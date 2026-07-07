@@ -34,10 +34,11 @@ export type Place = {
 
 type TimelineItemProps = {
   item: Place;
-  onDelete: () => void;
-  onEditTime: (type: 'startTime' | 'endTime') => void;
+  onDelete?: () => void;
+  onEditTime?: (type: 'startTime' | 'endTime') => void;
   onPress?: () => void;
   style?: object;
+  isReadOnly?: boolean;
 };
 
 const CATEGORY_NAMES: { [key: number]: string } = {
@@ -54,6 +55,7 @@ const TimelineItem = React.memo(function TimelineItem({
   onEditTime,
   onPress,
   style,
+  isReadOnly = false,
 }: TimelineItemProps) {
   const durationMinutes =
     timeToMinutes(item.endTime) - timeToMinutes(item.startTime);
@@ -98,17 +100,19 @@ const TimelineItem = React.memo(function TimelineItem({
           </View>
         </View>
 
-        <View style={styles.actionContainer}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onEditTime('startTime')}
-          >
-            <FontAwesomeIcon icon={faPencil} size={14} color={textColorMain} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={onDelete}>
-            <FontAwesomeIcon icon={faTimes} size={16} color={textColorMain} />
-          </TouchableOpacity>
-        </View>
+        {!isReadOnly && (
+          <View style={styles.actionContainer}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => onEditTime?.('startTime')}
+            >
+              <FontAwesomeIcon icon={faPencil} size={14} color={textColorMain} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={onDelete}>
+              <FontAwesomeIcon icon={faTimes} size={16} color={textColorMain} />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </Pressable>
   );
