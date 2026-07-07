@@ -48,7 +48,7 @@ function ScheduleStack() {
     <ScheduleStackNavigator.Navigator
       screenOptions={{
         headerShown: false,
-        animation: 'slide_from_right',
+        animation: Platform.OS === 'ios' ? 'default' : 'slide_from_right',
         animationDuration: 250,
       }}
     >
@@ -67,10 +67,18 @@ function ScheduleStack() {
       <ScheduleStackNavigator.Screen
         name="ItineraryEditor"
         component={ItineraryEditorScreen}
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
       />
       <ScheduleStackNavigator.Screen
         name="ItineraryView"
         component={ItineraryViewScreen}
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
       />
     </ScheduleStackNavigator.Navigator>
   );
@@ -115,7 +123,7 @@ function ProfileStack() {
     <ProfileStackNavigator.Navigator
       screenOptions={{
         headerShown: false,
-        animation: 'slide_from_right',
+        animation: Platform.OS === 'ios' ? 'default' : 'slide_from_right',
         animationDuration: 250,
       }}
     >
@@ -126,10 +134,18 @@ function ProfileStack() {
       <ProfileStackNavigator.Screen
         name="ThemeSettings"
         component={ThemeSettingsScreen}
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
       />
       <ProfileStackNavigator.Screen
         name="ChangePassword"
         component={ChangePasswordScreen}
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
       />
     </ProfileStackNavigator.Navigator>
   );
