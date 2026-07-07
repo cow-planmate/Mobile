@@ -14,10 +14,21 @@ import StorybookUIRoot from './.storybook';
 // axios 인터셉터 설정 초기화
 import './src/api/axiosConfig';
 
-import { StyleSheet, StatusBar, View, Text } from 'react-native';
+import { StyleSheet, StatusBar, View, Text, TextInput } from 'react-native';
 import Toast from 'react-native-toast-message';
 import type { ToastConfig } from 'react-native-toast-message';
 import { XCircle, CheckCircle2, Info } from 'lucide-react-native';
+
+// 글로벌 폰트 스케일링 가드 적용 (레이아웃 깨짐 원천 방지)
+if ((Text as any).defaultProps == null) {
+  (Text as any).defaultProps = {};
+}
+(Text as any).defaultProps.allowFontScaling = false;
+
+if ((TextInput as any).defaultProps == null) {
+  (TextInput as any).defaultProps = {};
+}
+(TextInput as any).defaultProps.allowFontScaling = false;
 
 const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && true;
 
@@ -98,7 +109,7 @@ function App() {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" translucent={false} />
       <QueryClientProvider client={queryClient}>
         <AlertProvider>
           <PlacesProvider>
