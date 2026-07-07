@@ -293,26 +293,34 @@ const s = StyleSheet.create({
   card: {
     width: CARD_W,
     backgroundColor: '#FFF',
-    borderRadius: 16,
-    paddingTop: 28,
-    paddingBottom: 20,
+    borderRadius: 20, // More rounded, modern corners
+    paddingTop: 32,
+    paddingBottom: 24,
     paddingHorizontal: 24,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F3F4F6', // Delicate border to define edge
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.06, // Smoother floating shadow
+    shadowRadius: 20,
+    elevation: 8,
   },
   iconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14,
+    marginBottom: 16,
   },
   title: {
-    fontSize: 17,
+    fontSize: 18,
     fontFamily: 'Inter_700Bold',
     color: '#111827',
     textAlign: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
+    lineHeight: 24,
   },
   message: {
     fontSize: 14,
@@ -325,15 +333,15 @@ const s = StyleSheet.create({
   buttonRow: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 20,
+    marginTop: 24,
     width: '100%',
   },
   buttonRowSingle: {
     justifyContent: 'center',
   },
   button: {
-    height: 44,
-    borderRadius: 10,
+    height: 46, // Taller buttons for better tap target
+    borderRadius: 12, // Modern rounded corners
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
@@ -359,6 +367,6 @@ const s = StyleSheet.create({
     color: '#FFFFFF',
   },
   buttonTextCancel: {
-    color: '#6B7280',
+    color: '#4B5563', // Slightly darker cancel text color
   },
 });

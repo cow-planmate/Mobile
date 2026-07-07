@@ -7,6 +7,7 @@ import { useWebSocket } from '../contexts/WebSocketContext';
 import { timeToMinutes, minutesToTime, resolveConflictsAndSort } from '../utils/timeUtils';
 import { MINUTE_HEIGHT } from '../features/itinerary/screens/ItineraryEditorScreen.styles';
 import { useAlert } from '../contexts/AlertContext';
+import Toast from 'react-native-toast-message';
 
 export const useItineraryEditor = (route: any, _navigation: any) => {
   const { sendMessage, isConnected } = useWebSocket();
@@ -217,6 +218,12 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
       const newStartTime = minutesToTime(newStartMinutes);
       const newEndTime = minutesToTime(newEndMinutes);
       updatePlaceTimes(selectedDayIndex, placeId, newStartTime, newEndTime);
+      Toast.show({
+        type: 'success',
+        text1: '일정 시간이 수정되었습니다.',
+        position: 'top',
+        visibilityTime: 2000,
+      });
     },
     [selectedDayIndex, updatePlaceTimes],
   );
@@ -224,6 +231,12 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   const handleDeletePlace = useCallback(
     (placeId: string) => {
       deletePlaceFromDay(selectedDayIndex, placeId);
+      Toast.show({
+        type: 'success',
+        text1: '일정이 삭제되었습니다.',
+        position: 'top',
+        visibilityTime: 2000,
+      });
     },
     [selectedDayIndex, deletePlaceFromDay],
   );
@@ -231,6 +244,12 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   const handleAddPlace = useCallback(
     (place: Omit<Place, 'startTime' | 'endTime'>) => {
       addPlaceToDay(selectedDayIndex, place);
+      Toast.show({
+        type: 'success',
+        text1: '일정이 추가되었습니다.',
+        position: 'top',
+        visibilityTime: 2000,
+      });
     },
     [selectedDayIndex, addPlaceToDay],
   );

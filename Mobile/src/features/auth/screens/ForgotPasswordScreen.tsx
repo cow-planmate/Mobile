@@ -4,6 +4,7 @@ import axios from 'axios';
 import { API_URL } from '@env';
 import { ForgotPasswordScreenView } from './ForgotPasswordScreen.view';
 import { useAlert } from '../../../contexts/AlertContext';
+import Toast from 'react-native-toast-message';
 
 const formatTime = (seconds: number) => {
   const minutes = Math.floor(seconds / 60);
@@ -63,7 +64,12 @@ const ForgotPasswordScreen = () => {
 
   const handleSendVerificationEmail = async () => {
     if (!email) {
-      showAlert({ title: '알림', message: '이메일을 입력해주세요.' });
+      Toast.show({
+        type: 'error',
+        text1: '이메일을 입력해주세요.',
+        position: 'top',
+        visibilityTime: 2500,
+      });
       return;
     }
     setIsLoading(true);
@@ -102,7 +108,12 @@ const ForgotPasswordScreen = () => {
 
   const handleVerifyCode = async () => {
     if (!verificationCode) {
-      showAlert({ title: '알림', message: '인증번호를 입력해주세요.' });
+      Toast.show({
+        type: 'error',
+        text1: '인증번호를 입력해주세요.',
+        position: 'top',
+        visibilityTime: 2500,
+      });
       return;
     }
     setIsLoading(true);
@@ -121,14 +132,24 @@ const ForgotPasswordScreen = () => {
 
       if (isVerified) {
         const token = response.data.token || response.data.verificationToken;
-        showAlert({ title: '성공', message: '이메일 인증이 완료되었습니다.' });
+        Toast.show({
+          type: 'success',
+          text1: '이메일 인증이 완료되었습니다.',
+          position: 'top',
+          visibilityTime: 2500,
+        });
         setAuthToken(token);
         setIsEmailVerified(true);
         setIsTimerActive(false);
         if (timerRef.current) clearInterval(timerRef.current);
         setStep(2);
       } else {
-        showAlert({ title: '실패', message: '인증번호가 올바르지 않습니다.' });
+        Toast.show({
+          type: 'error',
+          text1: '인증번호가 올바르지 않습니다.',
+          position: 'top',
+          visibilityTime: 2500,
+        });
       }
     } catch (error: any) {
       console.error('Verify Code Error:', error);

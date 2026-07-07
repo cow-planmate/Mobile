@@ -11,6 +11,7 @@ import { API_URL } from '@env';
 import { SignupScreenView } from './SignupScreen.view';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
+import Toast from 'react-native-toast-message';
 
 const formatTime = (seconds: number) => {
   const minutes = Math.floor(seconds / 60);
@@ -93,12 +94,22 @@ export default function SignupScreen() {
 
   const handleSendEmail = async () => {
     if (!form.email) {
-      showAlert({ title: '알림', message: '이메일을 입력해주세요.' });
+      Toast.show({
+        type: 'error',
+        text1: '이메일을 입력해주세요.',
+        position: 'top',
+        visibilityTime: 2500,
+      });
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email)) {
-      showAlert({ title: '오류', message: '올바른 이메일 형식이 아닙니다.' });
+      Toast.show({
+        type: 'error',
+        text1: '올바른 이메일 형식이 아닙니다.',
+        position: 'top',
+        visibilityTime: 2500,
+      });
       return;
     }
 
@@ -142,7 +153,12 @@ export default function SignupScreen() {
 
   const handleVerifyCode = async () => {
     if (!form.verificationCode) {
-      showAlert({ title: '알림', message: '인증 번호를 입력해주세요.' });
+      Toast.show({
+        type: 'error',
+        text1: '인증 번호를 입력해주세요.',
+        position: 'top',
+        visibilityTime: 2500,
+      });
       return;
     }
 
@@ -183,7 +199,12 @@ export default function SignupScreen() {
 
   const handleCheckNickname = async () => {
     if (!form.nickname) {
-      showAlert({ title: '알림', message: '닉네임을 입력해주세요.' });
+      Toast.show({
+        type: 'error',
+        text1: '닉네임을 입력해주세요.',
+        position: 'top',
+        visibilityTime: 2500,
+      });
       return;
     }
     try {
@@ -196,12 +217,19 @@ export default function SignupScreen() {
 
       if (response.data.nicknameAvailable) {
         setIsNicknameVerified(true);
-        showAlert({ title: '사용 가능', message: '사용 가능한 닉네임입니다.' });
+        Toast.show({
+          type: 'success',
+          text1: '사용 가능한 닉네임입니다.',
+          position: 'top',
+          visibilityTime: 2500,
+        });
       } else {
         setIsNicknameVerified(false);
-        showAlert({
-          title: '사용 불가',
-          message: '이미 사용 중인 닉네임입니다.',
+        Toast.show({
+          type: 'error',
+          text1: '이미 사용 중인 닉네임입니다.',
+          position: 'top',
+          visibilityTime: 2500,
         });
       }
     } catch (error: any) {
@@ -222,9 +250,11 @@ export default function SignupScreen() {
       !form.age ||
       !form.gender
     ) {
-      showAlert({
-        title: '알림',
-        message: '모든 정보를 입력하고 인증을 완료해주세요.',
+      Toast.show({
+        type: 'error',
+        text1: '모든 정보를 입력하고 인증을 완료해주세요.',
+        position: 'top',
+        visibilityTime: 2500,
       });
       return;
     }
@@ -239,7 +269,12 @@ export default function SignupScreen() {
 
     const ageNum = parseInt(form.age, 10);
     if (isNaN(ageNum) || ageNum <= 0 || ageNum > 120) {
-      showAlert({ title: '오류', message: '올바른 나이를 선택해주세요.' });
+      Toast.show({
+        type: 'error',
+        text1: '올바른 나이를 선택해주세요.',
+        position: 'top',
+        visibilityTime: 2500,
+      });
       return;
     }
 

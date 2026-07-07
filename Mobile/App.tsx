@@ -17,44 +17,44 @@ import './src/api/axiosConfig';
 import { StyleSheet, StatusBar, View, Text } from 'react-native';
 import Toast from 'react-native-toast-message';
 import type { ToastConfig } from 'react-native-toast-message';
-import { XCircle } from 'lucide-react-native';
+import { XCircle, CheckCircle2, Info } from 'lucide-react-native';
 
 const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && true;
 
 /* ── Toast Styles ── */
 const toastStyles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 16,
-    marginHorizontal: 36,
-    marginTop: 10,
-    backgroundColor: '#1C1C1E',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
+    marginHorizontal: 24,
+    marginTop: 8,
+    backgroundColor: 'rgba(28, 28, 30, 0.90)', // Glassmorphism dark base
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
     flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)', // Subtle border
   },
   text: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '600',
-    textAlign: 'center',
+    textAlign: 'left',
     marginLeft: 8,
     flexShrink: 1,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   successText: {
-    marginLeft: 0,
-    color: '#30D158',
+    color: '#FFFFFF',
   },
   infoText: {
-    marginLeft: 0,
-    color: '#BFBFBF',
+    color: '#FFFFFF',
   },
 });
 
@@ -62,12 +62,13 @@ const toastStyles = StyleSheet.create({
 const toastConfig: ToastConfig = {
   error: ({ text1 }) => (
     <View style={toastStyles.container}>
-      <XCircle size={20} color="#FF453A" strokeWidth={2.5} />
+      <XCircle size={18} color="#FF453A" strokeWidth={2.5} />
       <Text style={toastStyles.text}>{text1 ?? ''}</Text>
     </View>
   ),
   success: ({ text1 }) => (
     <View style={toastStyles.container}>
+      <CheckCircle2 size={18} color="#30D158" strokeWidth={2.5} />
       <Text style={[toastStyles.text, toastStyles.successText]}>
         {text1 ?? ''}
       </Text>
@@ -75,6 +76,7 @@ const toastConfig: ToastConfig = {
   ),
   info: ({ text1 }) => (
     <View style={toastStyles.container}>
+      <Info size={18} color="#0A84FF" strokeWidth={2.5} />
       <Text style={[toastStyles.text, toastStyles.infoText]}>
         {text1 ?? ''}
       </Text>

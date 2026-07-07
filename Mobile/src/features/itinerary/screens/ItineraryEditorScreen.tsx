@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAlert } from '../../../contexts/AlertContext';
+import Toast from 'react-native-toast-message';
 import axios from 'axios';
 import { API_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -248,9 +249,14 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       setDays(JSON.parse(JSON.stringify(prevDays)));
       setHistoryIndex(prev => prev - 1);
     } else {
-      showAlert({ title: '알림', message: '되돌릴 일정이 없습니다.' });
+      Toast.show({
+        type: 'info',
+        text1: '되돌릴 일정이 없습니다.',
+        position: 'top',
+        visibilityTime: 2000,
+      });
     }
-  }, [history, historyIndex, setDays, showAlert]);
+  }, [history, historyIndex, setDays]);
 
   const handleRedo = useCallback(() => {
     if (historyIndex < history.length - 1) {
@@ -259,9 +265,14 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       setDays(JSON.parse(JSON.stringify(nextDays)));
       setHistoryIndex(prev => prev + 1);
     } else {
-      showAlert({ title: '알림', message: '다시 실행할 일정이 없습니다.' });
+      Toast.show({
+        type: 'info',
+        text1: '다시 실행할 일정이 없습니다.',
+        position: 'top',
+        visibilityTime: 2000,
+      });
     }
-  }, [history, historyIndex, setDays, showAlert]);
+  }, [history, historyIndex, setDays]);
 
   const onConfirmScheduleEdit = (updatedDays: any[]) => {
     if (updatedDays.length > 0) {

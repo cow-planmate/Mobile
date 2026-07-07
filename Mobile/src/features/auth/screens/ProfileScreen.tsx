@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAlert } from '../../../contexts/AlertContext';
+import Toast from 'react-native-toast-message';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../../../store/useAuthStore';
@@ -72,10 +73,20 @@ export default function ProfileScreen() {
         nickname: newNickname,
       });
       setUser(prev => ({ ...prev, name: newNickname }));
-      showAlert({ title: '성공', message: '닉네임이 변경되었습니다.' });
+      Toast.show({
+        type: 'success',
+        text1: '닉네임이 변경되었습니다.',
+        position: 'top',
+        visibilityTime: 2500,
+      });
       setNicknameModalVisible(false);
     } catch (e) {
-      showAlert({ title: '실패', message: '닉네임 변경에 실패했습니다.' });
+      Toast.show({
+        type: 'error',
+        text1: '닉네임 변경에 실패했습니다.',
+        position: 'top',
+        visibilityTime: 2500,
+      });
     }
   };
 
@@ -85,10 +96,20 @@ export default function ProfileScreen() {
         age: parseInt(newAge, 10),
       });
       setUser(prev => ({ ...prev, age: newAge }));
-      showAlert({ title: '성공', message: '나이가 변경되었습니다.' });
+      Toast.show({
+        type: 'success',
+        text1: '나이가 변경되었습니다.',
+        position: 'top',
+        visibilityTime: 2500,
+      });
       setAgeModalVisible(false);
     } catch (e) {
-      showAlert({ title: '실패', message: '나이 변경에 실패했습니다.' });
+      Toast.show({
+        type: 'error',
+        text1: '나이 변경에 실패했습니다.',
+        position: 'top',
+        visibilityTime: 2500,
+      });
     }
   };
 
@@ -102,16 +123,31 @@ export default function ProfileScreen() {
         ...prev,
         gender: newGender,
       }));
-      showAlert({ title: '성공', message: '성별이 변경되었습니다.' });
+      Toast.show({
+        type: 'success',
+        text1: '성별이 변경되었습니다.',
+        position: 'top',
+        visibilityTime: 2500,
+      });
       setGenderModalVisible(false);
     } catch (e) {
-      showAlert({ title: '실패', message: '성별 변경에 실패했습니다.' });
+      Toast.show({
+        type: 'error',
+        text1: '성별 변경에 실패했습니다.',
+        position: 'top',
+        visibilityTime: 2500,
+      });
     }
   };
 
   const handleUpdateTheme = async () => {
     await fetchUserProfile();
-    showAlert({ title: '완료', message: '선호 테마가 변경되었습니다.' });
+    Toast.show({
+      type: 'success',
+      text1: '선호 테마가 변경되었습니다.',
+      position: 'top',
+      visibilityTime: 2500,
+    });
     setThemeModalVisible(false);
   };
 
@@ -125,9 +161,11 @@ export default function ProfileScreen() {
       );
 
       if (!verifyResponse.data.passwordVerified) {
-        showAlert({
-          title: '오류',
-          message: '현재 비밀번호가 일치하지 않습니다.',
+        Toast.show({
+          type: 'error',
+          text1: '현재 비밀번호가 일치하지 않습니다.',
+          position: 'top',
+          visibilityTime: 2500,
         });
         return;
       }
@@ -137,15 +175,22 @@ export default function ProfileScreen() {
         confirmPassword: newPass,
       });
 
-      showAlert({
-        title: '완료',
-        message: '비밀번호가 성공적으로 변경되었습니다.',
+      Toast.show({
+        type: 'success',
+        text1: '비밀번호가 성공적으로 변경되었습니다.',
+        position: 'top',
+        visibilityTime: 2500,
       });
       setPasswordModalVisible(false);
     } catch (e: any) {
       console.error('Password Update Error:', e);
       const msg = e.response?.data?.message || '비밀번호 변경에 실패했습니다.';
-      showAlert({ title: '실패', message: msg });
+      Toast.show({
+        type: 'error',
+        text1: msg,
+        position: 'top',
+        visibilityTime: 2500,
+      });
     }
   };
 
