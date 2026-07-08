@@ -172,7 +172,7 @@ export default function MyScheduleScreen() {
   const fetchPlans = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(resolveApiUrl('/api/user/profile'));
+      const response = await axios.get('/api/user/profile');
       const data = response.data;
       setMyItineraries(data.myPlanVOs || []);
       setSharedItineraries(data.editablePlanVOs || []);
@@ -221,8 +221,8 @@ export default function MyScheduleScreen() {
   const handleRenameTitle = async (newTitle: string) => {
     if (!selectedPlan) return;
     try {
-      await axios.patch(resolveApiUrl(`/api/plan/${selectedPlan.planId}`), {
-        title: newTitle,
+      await axios.patch(`/api/plan/${selectedPlan.planId}/name`, {
+        planName: newTitle,
       });
       setMyItineraries(prev =>
         prev.map(p =>
@@ -254,7 +254,7 @@ export default function MyScheduleScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await axios.delete(resolveApiUrl(`/api/plan/${planId}`));
+              await axios.delete(`/api/plan/${planId}`);
               setMyItineraries(prev => prev.filter(p => p.planId !== planId));
               showAlert({ title: '성공', message: '일정이 삭제되었습니다.' });
             } catch (e) {

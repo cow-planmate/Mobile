@@ -38,6 +38,13 @@ import { faMap, faUsers, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
+const cloneDaysWithDates = (daysList: Day[]): Day[] => {
+  return JSON.parse(JSON.stringify(daysList)).map((day: any) => ({
+    ...day,
+    date: new Date(day.date),
+  }));
+};
+
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const { showAlert } = useAlert();
   const createFullPlanMutation = useCreateFullPlan();
@@ -116,7 +123,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       return;
     }
 
-    const clonedDays = JSON.parse(JSON.stringify(days));
+    const clonedDays = cloneDaysWithDates(days);
     setHistory(prev => {
       const nextHistory = prev.slice(0, historyIndex + 1);
       return [...nextHistory, clonedDays];
@@ -246,7 +253,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     if (historyIndex > 0) {
       isSystemUpdate.current = true;
       const prevDays = history[historyIndex - 1];
-      setDays(JSON.parse(JSON.stringify(prevDays)));
+      setDays(cloneDaysWithDates(prevDays));
       setHistoryIndex(prev => prev - 1);
     } else {
       Toast.show({
@@ -262,7 +269,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     if (historyIndex < history.length - 1) {
       isSystemUpdate.current = true;
       const nextDays = history[historyIndex + 1];
-      setDays(JSON.parse(JSON.stringify(nextDays)));
+      setDays(cloneDaysWithDates(nextDays));
       setHistoryIndex(prev => prev + 1);
     } else {
       Toast.show({
