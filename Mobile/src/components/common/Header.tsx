@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faUser, faPen } from '@fortawesome/free-solid-svg-icons';
+import { faUser } from '@fortawesome/free-solid-svg-icons';
 import { faBell } from '@fortawesome/free-regular-svg-icons';
 import { normalize } from '../../utils/normalize';
 import gravatarUrl from '../../utils/gravatarUrl';
@@ -32,12 +32,6 @@ const Header: React.FC<HeaderProps> = ({
     <View style={styles.topBar}>
       <Text style={styles.logo}>planMate</Text>
       <View style={styles.topIcons}>
-        <TouchableOpacity
-          style={styles.headerIconBtn}
-          onPress={onNotificationPress}
-        >
-          <FontAwesomeIcon icon={faPen} color="#FFF" size={16} />
-        </TouchableOpacity>
         <TouchableOpacity style={styles.userAvatar} onPress={onNavigateProfile}>
           {email ? (
             <FastImage
@@ -86,14 +80,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: normalize(10),
   },
-  headerIconBtn: {
-    width: normalize(32),
-    height: normalize(32),
-    borderRadius: normalize(6),
-    backgroundColor: '#2563EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+
   userAvatar: {
     width: normalize(28),
     height: normalize(28),
