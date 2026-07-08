@@ -14,6 +14,7 @@ import { API_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import gravatarUrl from '../utils/gravatarUrl';
+import { resolveApiUrl } from '../utils/apiUrl';
 
 declare var global: any;
 
@@ -110,8 +111,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     // Frontend와 동일하게 SockJS URL에 토큰 포함 (JwtHandshakeInterceptor 인증)
     const token = await AsyncStorage.getItem('accessToken');
     const wsUrl = token
-      ? `${API_URL}/ws?token=${encodeURIComponent(token)}`
-      : `${API_URL}/ws`;
+      ? resolveApiUrl(`/ws?token=${encodeURIComponent(token)}`)
+      : resolveApiUrl('/ws');
 
     const client = new Client({
       // SockJS 지원을 위해 factory 사용

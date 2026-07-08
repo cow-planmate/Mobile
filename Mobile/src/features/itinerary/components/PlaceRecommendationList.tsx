@@ -28,6 +28,7 @@ import { API_URL } from '@env';
 import { X } from 'lucide-react-native';
 import { Place } from './TimelineItem';
 import KakaoMapView from './KakaoMapView';
+import { resolveApiUrl } from '../../../utils/apiUrl';
 import { usePlaces } from '../../../contexts/PlacesContext';
 import { PlaceVO } from '../../../api/trips';
 import { GoogleMapsIcon } from '../../../components/common';
@@ -185,7 +186,7 @@ const PlaceImage = React.memo(
     const [hasError, setHasError] = useState(false);
 
     const primaryUrl = placeId
-      ? `${API_URL}/image/place/${encodeURIComponent(placeId)}`
+      ? resolveApiUrl(`/image/place/${encodeURIComponent(placeId)}`)
       : '';
     const fallbackUrl = iconUrl || '';
     const currentUrl = hasError ? fallbackUrl : primaryUrl;

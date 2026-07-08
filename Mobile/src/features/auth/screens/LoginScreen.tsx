@@ -4,6 +4,7 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { LoginScreenView } from './LoginScreen.view';
 import { API_URL } from '@env';
+import { resolveApiUrl } from '../../../utils/apiUrl';
 
 type LoginScreenProps = {
   navigation: { navigate: (screen: string, params?: any) => void };
@@ -94,11 +95,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   };
 
   const handleGoogleLogin = () => {
-    setSnsAuthUrl(`${API_URL}/api/oauth/google`);
+    setSnsAuthUrl(resolveApiUrl('/api/oauth/google'));
   };
 
   const handleNaverLogin = () => {
-    setSnsAuthUrl(`${API_URL}/api/oauth/naver`);
+    setSnsAuthUrl(resolveApiUrl('/api/oauth/naver'));
   };
 
   const handleSnsNavigationStateChange = async (navState: any) => {
