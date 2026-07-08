@@ -231,12 +231,10 @@ export default function ProfileScreen() {
                   buttons: [
                     {
                       text: '확인',
-                      onPress: async () => {
-                        await logout();
-                      },
                     },
                   ],
                 });
+                await logout();
               }
             } catch (error) {
               console.error('Resign Error:', error);
