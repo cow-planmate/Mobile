@@ -10,7 +10,7 @@ import ProfileScreen from '../features/auth/screens/ProfileScreen';
 import ThemeSettingsScreen from '../features/auth/screens/ThemeSettingsScreen';
 import ChangePasswordScreen from '../features/auth/screens/ChangePasswordScreen';
 import { CommunityScreen } from '../features/community';
-import { MapScreen } from '../features/places';
+
 import {
   TabParamList,
   ScheduleStackParamList,
@@ -19,11 +19,11 @@ import {
   ProfileStackParamList,
 } from './types';
 import { Platform } from 'react-native';
-import { Calendar, MessageSquare, Map, User } from 'lucide-react-native';
+import { Calendar, MessageSquare, User } from 'lucide-react-native';
 
 const ScheduleStackNavigator = createNativeStackNavigator<ScheduleStackParamList>();
 const CommunityStackNavigator = createNativeStackNavigator<CommunityStackParamList>();
-const MapStackNavigator = createNativeStackNavigator<MapStackParamList>();
+
 const ProfileStackNavigator = createNativeStackNavigator<ProfileStackParamList>();
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -101,22 +101,7 @@ function CommunityStack() {
   );
 }
 
-function MapStack() {
-  return (
-    <MapStackNavigator.Navigator
-      screenOptions={{
-        headerShown: false,
-        animation: 'slide_from_right',
-        animationDuration: 250,
-      }}
-    >
-      <MapStackNavigator.Screen
-        name="MapMain"
-        component={MapScreen}
-      />
-    </MapStackNavigator.Navigator>
-  );
-}
+
 
 function ProfileStack() {
   return (
@@ -159,9 +144,7 @@ const CommunityTabIcon = ({ color, size }: { color: string; size: number }) => (
   <MessageSquare size={size} color={color} strokeWidth={1.8} />
 );
 
-const MapTabIcon = ({ color, size }: { color: string; size: number }) => (
-  <Map size={size} color={color} strokeWidth={1.8} />
-);
+
 
 const ProfileTabIcon = ({ color, size }: { color: string; size: number }) => (
   <User size={size} color={color} strokeWidth={1.8} />
@@ -203,14 +186,7 @@ export default function AppStack() {
           tabBarIcon: CommunityTabIcon,
         }}
       />
-      <Tab.Screen
-        name="MapTab"
-        component={MapStack}
-        options={{
-          title: '지도',
-          tabBarIcon: MapTabIcon,
-        }}
-      />
+
       <Tab.Screen
         name="ProfileTab"
         component={ProfileStack}

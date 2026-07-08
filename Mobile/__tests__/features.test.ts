@@ -22,6 +22,15 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
+jest.mock('react-native-webview', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    WebView: (props: any) => React.createElement(View, props),
+    default: (props: any) => React.createElement(View, props),
+  };
+});
+
 import * as auth from '../src/features/auth';
 import * as itinerary from '../src/features/itinerary';
 import * as community from '../src/features/community';

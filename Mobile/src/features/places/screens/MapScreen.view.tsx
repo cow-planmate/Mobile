@@ -11,15 +11,7 @@ import {
 import { Search, Star, MapPin } from 'lucide-react-native';
 import { styles, COLORS } from './MapScreen.styles';
 
-let MapView: any;
-let Marker: any;
-try {
-  const MapModule = require('react-native-maps');
-  MapView = MapModule.default;
-  Marker = MapModule.Marker;
-} catch (e) {
-  console.log('react-native-maps is not available in this environment');
-}
+import KakaoMapView from '../../itinerary/components/KakaoMapView';
 
 export interface MapPlace {
   id: string;
@@ -50,49 +42,21 @@ export default function MapScreenView({
   onSearchChange,
   onMarkerPress,
 }: MapScreenViewProps) {
-  const hasMap = !!MapView && !!Marker;
-
-  // Initial region centered around Jeju (as our mock data points are in Jeju)
-  const initialRegion = {
-    latitude: 33.4996213,
-    longitude: 126.5311884,
-    latitudeDelta: 0.15,
-    longitudeDelta: 0.15,
-  };
+  const kakaoPlaces = places.map((p) => ({
+    id: p.id,
+    name: p.title,
+    address: p.address,
+    latitude: p.latitude,
+    longitude: p.longitude,
+  }));
 
   return (
     <View style={styles.container}>
-      {/* Map or Fallback */}
-      {hasMap ? (
-        <MapView
-          style={styles.map}
-          initialRegion={initialRegion}
-          showsUserLocation={false}
-          showsMyLocationButton={false}
-        >
-          {places.map((place) => (
-            <Marker
-              key={place.id}
-              coordinate={{
-                latitude: place.latitude,
-                longitude: place.longitude,
-              }}
-              title={place.title}
-              description={place.category}
-              onPress={() => onMarkerPress(place)}
-              pinColor={selectedPlace?.id === place.id ? '#1344FF' : '#FF3B30'}
-            />
-          ))}
-        </MapView>
-      ) : (
-        <View style={styles.fallbackMapContainer}>
-          <MapPin size={48} color={COLORS.textTertiary} />
-          <Text style={styles.fallbackMapText}>지도 서비스를 불러올 수 없습니다</Text>
-          <Text style={{ fontSize: 13, color: COLORS.textTertiary, marginTop: 4 }}>
-            (에뮬레이터 또는 네이티브 모듈 로드 실패)
-          </Text>
-        </View>
-      )}
+      {/* Kakao Map */}
+      <KakaoMapView
+        places={kakaoPlaces}
+        style={styles.map}
+      />
 
       {/* Floating Search Bar */}
       <View style={styles.searchContainer}>
