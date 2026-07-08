@@ -265,7 +265,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       onCloseNotificationModal={() => setNotificationModalVisible(false)}
       onAcceptNotification={handleAccept}
       onRejectNotification={handleReject}
-      onNavigateProfile={() => navigation.navigate('Profile')}
+      onNavigateProfile={() => navigation.navigate('ProfileTab' as any)}
       onOpenSearchModal={openSearchModal}
       onCloseSearchModal={() => setSearchModalVisible(false)}
       onSelectLocation={onSelectLocation}
