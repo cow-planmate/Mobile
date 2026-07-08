@@ -123,7 +123,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     if (!planId) return;
     try {
       const response = await axios.get<GetCompletePlanResponse>(
-        `${API_URL}/api/plan/${planId}`,
+        `/api/plan/${planId}`,
       );
       const { planFrame, placeBlocks, timetables } = response.data;
 

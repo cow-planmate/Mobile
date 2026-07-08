@@ -118,7 +118,7 @@ export default function SignupScreen() {
 
     try {
       const response = await axios.post(
-        `${API_URL}/api/auth/email/verification`,
+        '/api/auth/email/verification',
         {
           email: form.email,
           purpose: 'SIGN_UP',
@@ -165,7 +165,7 @@ export default function SignupScreen() {
     setIsLoading(true);
     try {
       const response = await axios.post(
-        `${API_URL}/api/auth/email/verification/confirm`,
+        '/api/auth/email/verification/confirm',
         {
           email: form.email,
           purpose: 'SIGN_UP',
@@ -209,7 +209,7 @@ export default function SignupScreen() {
     }
     try {
       const response = await axios.post(
-        `${API_URL}/api/auth/register/nickname/verify`,
+        '/api/auth/register/nickname/verify',
         {
           nickname: form.nickname,
         },
@@ -283,7 +283,7 @@ export default function SignupScreen() {
       const genderInt = form.gender === 'male' ? 0 : 1;
 
       await axios.post(
-        `${API_URL}/api/auth/register`,
+        '/api/auth/register',
         {
           nickname: form.nickname,
           password: form.password,

@@ -120,7 +120,7 @@ export const login = async (
   password: string,
 ): Promise<LoginResponse> => {
   const response = await axios.post<LoginResponse>(
-    `${API_URL}/api/auth/login`,
+    '/api/auth/login',
     {
       email,
       password,
@@ -135,7 +135,7 @@ export const login = async (
  */
 export const logout = async (refreshToken: string): Promise<LogoutResponse> => {
   const response = await axios.post<LogoutResponse>(
-    `${API_URL}/api/auth/logout`,
+    '/api/auth/logout',
     { refreshToken },
   );
   return response.data;
@@ -150,7 +150,7 @@ export const sendVerificationEmail = async (
   purpose: 'SIGN_UP' | 'RESET_PASSWORD',
 ): Promise<SendEmailResponse> => {
   const response = await axios.post<SendEmailResponse>(
-    `${API_URL}/api/auth/email/verification`,
+    '/api/auth/email/verification',
     { email, purpose },
   );
   return response.data;
@@ -166,7 +166,7 @@ export const verifyEmail = async (
   verificationCode: string,
 ): Promise<EmailVerificationResponse> => {
   const response = await axios.post<EmailVerificationResponse>(
-    `${API_URL}/api/auth/email/verification/confirm`,
+    '/api/auth/email/verification/confirm',
     { email, purpose, verificationCode },
   );
   return response.data;
@@ -182,7 +182,7 @@ export const register = async (
   data: RegisterRequest,
 ): Promise<RegisterResponse> => {
   const response = await axios.post<RegisterResponse>(
-    `${API_URL}/api/auth/register`,
+    '/api/auth/register',
     data,
     {
       headers: {
@@ -201,7 +201,7 @@ export const verifyNickname = async (
   nickname: string,
 ): Promise<NicknameVerificationResponse> => {
   const response = await axios.post<NicknameVerificationResponse>(
-    `${API_URL}/api/auth/register/nickname/verify`,
+    '/api/auth/register/nickname/verify',
     { nickname },
   );
   return response.data;
@@ -215,7 +215,7 @@ export const refreshAccessToken = async (
   refreshToken: string,
 ): Promise<RefreshTokenResponse> => {
   const response = await axios.get<RefreshTokenResponse>(
-    `${API_URL}/api/auth/token`,
+    '/api/auth/token',
     {
       params: { refreshToken },
     },
@@ -231,7 +231,7 @@ export const verifyPassword = async (
   password: string,
 ): Promise<VerifyPasswordResponse> => {
   const response = await axios.post<VerifyPasswordResponse>(
-    `${API_URL}/api/auth/password/verify`,
+    '/api/auth/password/verify',
     { password },
   );
   return response.data;
@@ -247,7 +247,7 @@ export const changePassword = async (
   confirmPassword: string,
 ): Promise<ChangePasswordResponse> => {
   const response = await axios.patch<ChangePasswordResponse>(
-    `${API_URL}/api/auth/password`,
+    '/api/auth/password',
     { currentPassword, newPassword, confirmPassword },
   );
   return response.data;
@@ -262,7 +262,7 @@ export const sendTempPassword = async (
   verificationToken: string,
 ): Promise<{ sendSuccess: boolean; message?: string }> => {
   const response = await axios.post(
-    `${API_URL}/api/auth/password/email`,
+    '/api/auth/password/email',
     {},
     {
       headers: {

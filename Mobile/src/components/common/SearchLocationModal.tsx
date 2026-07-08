@@ -20,6 +20,7 @@ import {
 
 import { styles, COLORS } from './SearchLocationModal.styles';
 import { TARGET_REGIONS, SUB_REGIONS } from '../../constants/regions';
+import { isRegionMatch } from '../../utils/regionMatcher';
 
 interface TravelVO {
   travelId: number;
@@ -62,7 +63,7 @@ export default function SearchLocationModal({
   const fetchDestinations = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/api/travel`);
+      const response = await axios.get('/api/travel');
       const serverData: TravelVO[] = response.data.travels || [];
 
       if (__DEV__) {
@@ -72,11 +73,7 @@ export default function SearchLocationModal({
       setRawDestinations(serverData);
 
       const formattedList = TARGET_REGIONS.map((regionName) => {
-        const matched = serverData.find(item => {
-          const sName = item.travelName.replace(/\s+/g, '');
-          const rName = regionName.replace(/\s+/g, '');
-          return sName.includes(rName) || rName.includes(sName);
-        });
+        const matched = serverData.find(item => isRegionMatch(item.travelName, regionName));
 
         return {
           travelId: matched ? matched.travelId : -1,
@@ -122,26 +119,17 @@ export default function SearchLocationModal({
 
     const fullLocation = `${selectedParentRegion} ${selectedSubRegion}`;
 
-    let matched = rawDestinations.find(d => {
-      const sName = d.travelName.replace(/\s+/g, '');
-      const target = selectedSubRegion.replace(/\s+/g, '');
-      return sName === target;
-    });
+    // 1. First, check if any travel matches the sub-region (e.g. "제주시" -> "제주")
+    let matched = rawDestinations.find(d => isRegionMatch(d.travelName, selectedSubRegion));
 
+    // 2. Next, check if any travel matches the parent region (e.g. "제주특별자치도" -> "제주")
     if (!matched) {
-      matched = rawDestinations.find(d => {
-        const sName = d.travelName.replace(/\s+/g, '');
-        const target = selectedSubRegion.replace(/\s+/g, '');
-        return sName.includes(target) || target.includes(sName);
-      });
+      matched = rawDestinations.find(d => isRegionMatch(d.travelName, selectedParentRegion));
     }
 
+    // 3. Fallback to check the fullLocation
     if (!matched) {
-      matched = rawDestinations.find(d => {
-        const sName = d.travelName.replace(/\s+/g, '');
-        const target = selectedParentRegion.replace(/\s+/g, '');
-        return sName.includes(target) || target.includes(sName);
-      });
+      matched = rawDestinations.find(d => isRegionMatch(d.travelName, fullLocation));
     }
 
     const travelId = matched ? matched.travelId : -1;

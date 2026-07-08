@@ -43,7 +43,7 @@ export interface ChangePreferredThemesResponse {
 export const getPreferredThemes =
   async (): Promise<GetPreferredThemeResponse> => {
     const response = await axios.get<GetPreferredThemeResponse>(
-      `${API_URL}/api/user/preferredTheme`,
+      '/api/user/preferredTheme',
     );
     return response.data;
   };
@@ -56,7 +56,7 @@ export const savePreferredThemes = async (
   themeIds: number[],
 ): Promise<SavePreferredThemeResponse> => {
   const response = await axios.post<SavePreferredThemeResponse>(
-    `${API_URL}/api/user/preferredTheme`,
+    '/api/user/preferredTheme',
     { preferredThemeIds: themeIds },
   );
   return response.data;
@@ -71,7 +71,7 @@ export const changePreferredThemes = async (
   themeIds: number[],
 ): Promise<ChangePreferredThemesResponse> => {
   const response = await axios.patch<ChangePreferredThemesResponse>(
-    `${API_URL}/api/user/preferredThemes`,
+    '/api/user/preferredThemes',
     { preferredThemeCategoryId: categoryId, preferredThemeIds: themeIds },
   );
   return response.data;

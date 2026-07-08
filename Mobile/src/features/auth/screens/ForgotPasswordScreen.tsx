@@ -75,7 +75,7 @@ const ForgotPasswordScreen = () => {
     setIsLoading(true);
     try {
       const response = await axios.post(
-        `${API_URL}/api/auth/email/verification`,
+        '/api/auth/email/verification',
         {
           email: email,
           purpose: 'RESET_PASSWORD',
@@ -119,7 +119,7 @@ const ForgotPasswordScreen = () => {
     setIsLoading(true);
     try {
       const response = await axios.post(
-        `${API_URL}/api/auth/email/verification/confirm`,
+        '/api/auth/email/verification/confirm',
         {
           email: email,
           purpose: 'RESET_PASSWORD',
@@ -182,7 +182,7 @@ const ForgotPasswordScreen = () => {
 
     try {
       await axios.post(
-        `${API_URL}/api/auth/password/email`,
+        '/api/auth/password/email',
         {},
         {
           headers: {

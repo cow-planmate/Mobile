@@ -111,7 +111,7 @@ export interface FullPlanPayload {
 
 /** Fetch full plan data (plan frame + timetables + place blocks) */
 export async function fetchPlan(planId: string): Promise<PlanResponse> {
-  const response = await axios.get(`${API_URL}/api/plan/${planId}`);
+  const response = await axios.get(`/api/plan/${planId}`);
   return response.data;
 }
 
@@ -119,7 +119,7 @@ export async function fetchPlan(planId: string): Promise<PlanResponse> {
 export async function createPlan(
   payload: CreatePlanPayload,
 ): Promise<{ planId: string }> {
-  const response = await axios.post(`${API_URL}/api/plan`, payload);
+  const response = await axios.post(`/api/plan`, payload);
   return response.data;
 }
 
@@ -127,13 +127,13 @@ export async function createPlan(
 export async function createFullPlan(
   payload: FullPlanPayload,
 ): Promise<{ planId: string }> {
-  const response = await axios.post(`${API_URL}/api/plan/create`, payload);
+  const response = await axios.post(`/api/plan/create`, payload);
   return response.data;
 }
 
 /** Request edit access */
 export async function requestEditAccess(planId: string): Promise<void> {
-  await axios.post(`${API_URL}/api/plan/${planId}/request-access`);
+  await axios.post(`/api/plan/${planId}/request-access`);
 }
 
 // ────────────────────────────────────────────────
@@ -145,7 +145,7 @@ export async function fetchCategoryPlaces(
   planId: string,
   category: 'tour' | 'lodging' | 'restaurant',
 ): Promise<PlacesResponse> {
-  const response = await axios.get(`${API_URL}/api/plan/${planId}/${category}`);
+  const response = await axios.get(`/api/plan/${planId}/${category}`);
   return response.data;
 }
 
@@ -165,7 +165,7 @@ export async function fetchCategoryPlacesNoAuth(
   name: string,
 ): Promise<PlacesResponse> {
   const response = await axios.get(
-    `${API_URL}/api/plan/${categoryType}/${encodeURIComponent(
+    `/api/plan/${categoryType}/${encodeURIComponent(
       category,
     )}/${encodeURIComponent(name)}`,
   );
@@ -191,7 +191,7 @@ export async function searchPlaces(
   query: string,
 ): Promise<PlacesResponse> {
   const response = await axios.get(
-    `${API_URL}/api/plan/${planId}/place/${encodeURIComponent(query)}`,
+    `/api/plan/${planId}/place/${encodeURIComponent(query)}`,
   );
   return response.data;
 }
@@ -201,7 +201,7 @@ export async function searchPlacesNoAuth(
   query: string,
 ): Promise<PlacesResponse> {
   const response = await axios.get(
-    `${API_URL}/api/plan/place/${encodeURIComponent(query)}`,
+    `/api/plan/place/${encodeURIComponent(query)}`,
   );
   return response.data;
 }
@@ -210,7 +210,7 @@ export async function searchPlacesNoAuth(
 export async function fetchNextPlaces(
   nextPageTokens: string[],
 ): Promise<PlacesResponse> {
-  const response = await axios.post(`${API_URL}/api/plan/nextplace`, {
+  const response = await axios.post(`/api/plan/nextplace`, {
     nextPageTokens,
   });
   return response.data;
@@ -239,7 +239,7 @@ export async function fetchWeatherRecommendations(
   startDate: string,
   endDate: string,
 ): Promise<WeatherResponse> {
-  const response = await axios.post(`${API_URL}/api/weather/recommendations`, {
+  const response = await axios.post(`/api/weather/recommendations`, {
     city,
     start_date: startDate,
     end_date: endDate,
@@ -255,13 +255,13 @@ export async function fetchWeatherRecommendations(
 export async function getShareUrl(
   planId: string,
 ): Promise<{ shareUrl: string }> {
-  const response = await axios.get(`${API_URL}/api/plan/${planId}/share`);
+  const response = await axios.get(`/api/plan/${planId}/share`);
   return response.data;
 }
 
 /** Get list of editors */
 export async function getEditors(planId: string): Promise<any[]> {
-  const response = await axios.get(`${API_URL}/api/plan/${planId}/editors`);
+  const response = await axios.get(`/api/plan/${planId}/editors`);
   return response.data;
 }
 
@@ -280,12 +280,12 @@ export async function removeEditor(
   planId: string,
   userId: string,
 ): Promise<void> {
-  await axios.delete(`${API_URL}/api/plan/${planId}/editors/${userId}`);
+  await axios.delete(`/api/plan/${planId}/editors/${userId}`);
 }
 
 /** Leave as editor */
 export async function leaveAsEditor(planId: string): Promise<void> {
-  await axios.delete(`${API_URL}/api/plan/${planId}/editor/me`);
+  await axios.delete(`/api/plan/${planId}/editor/me`);
 }
 
 /** Get pending invitations */
@@ -331,7 +331,7 @@ export interface TravelDestination {
 
 /** Get available travel destinations */
 export async function fetchTravelDestinations(): Promise<TravelDestination[]> {
-  const response = await axios.get(`${API_URL}/api/travel`);
+  const response = await axios.get('/api/travel');
   return response.data;
 }
 
@@ -341,7 +341,7 @@ export async function fetchTravelDestinations(): Promise<TravelDestination[]> {
 
 /** Search departure locations */
 export async function searchDeparture(query: string): Promise<any[]> {
-  const response = await axios.post(`${API_URL}/api/departure`, {
+  const response = await axios.post(`/api/departure`, {
     departureQuery: query,
   });
   return response.data;

@@ -57,7 +57,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
 
       try {
         const response = await axios.get(
-          `${API_URL}/api/plan/${route.params.planId}`,
+          `/api/plan/${route.params.planId}`,
         );
         const { planFrame, placeBlocks, timetables } = response.data;
 
