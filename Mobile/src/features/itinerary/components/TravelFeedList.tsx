@@ -207,7 +207,7 @@ export default function TravelFeedList({ onItemPress }: TravelFeedListProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#F8F9FA',
   },
   listContent: {
     paddingHorizontal: normalize(16),

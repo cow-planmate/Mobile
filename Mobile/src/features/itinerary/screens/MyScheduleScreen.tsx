@@ -160,7 +160,7 @@ export default function MyScheduleScreen() {
   };
 
   const onNavigateProfile = () => {
-    navigation.navigate('ProfileTab' as any);
+    navigation.navigate('Profile');
   };
 
   useFocusEffect(

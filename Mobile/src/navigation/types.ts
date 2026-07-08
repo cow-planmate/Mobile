@@ -1,10 +1,13 @@
 import { Day } from '../contexts/ItineraryContext';
 
 export type TabParamList = {
+  FeedTab: undefined;
   ScheduleTab: undefined;
   CommunityTab: undefined;
-  MapTab: undefined;
-  ProfileTab: undefined;
+};
+
+export type FeedStackParamList = {
+  FeedMain: undefined;
 };
 
 export type ScheduleStackParamList = {

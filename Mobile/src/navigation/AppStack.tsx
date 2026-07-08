@@ -1,11 +1,11 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import ItineraryEditorScreen from '../features/itinerary/screens/ItineraryEditorScreen';
 import ItineraryViewScreen from '../features/itinerary/screens/ItineraryViewScreen';
 import MyScheduleScreen from '../features/itinerary/screens/MyScheduleScreen';
+import TravelFeedScreen from '../features/itinerary/screens/TravelFeedScreen';
 import ProfileScreen from '../features/auth/screens/ProfileScreen';
 import ThemeSettingsScreen from '../features/auth/screens/ThemeSettingsScreen';
 import ChangePasswordScreen from '../features/auth/screens/ChangePasswordScreen';
@@ -13,20 +13,18 @@ import { CommunityScreen } from '../features/community';
 
 import {
   TabParamList,
+  FeedStackParamList,
   ScheduleStackParamList,
   CommunityStackParamList,
-  MapStackParamList,
-  ProfileStackParamList,
 } from './types';
 import { Platform } from 'react-native';
-import { Calendar, MessageSquare, User } from 'lucide-react-native';
+import { Calendar, MessageSquare, Compass } from 'lucide-react-native';
 
+const FeedStackNavigator = createNativeStackNavigator<FeedStackParamList>();
 const ScheduleStackNavigator = createNativeStackNavigator<ScheduleStackParamList>();
 const CommunityStackNavigator = createNativeStackNavigator<CommunityStackParamList>();
-
-const ProfileStackNavigator = createNativeStackNavigator<ProfileStackParamList>();
-
 const Tab = createBottomTabNavigator<TabParamList>();
+const Stack = createNativeStackNavigator();
 
 const baseTabBarStyle = {
   backgroundColor: '#FFFFFF',
@@ -38,10 +36,22 @@ const baseTabBarStyle = {
   elevation: 0,
 };
 
-const isItineraryEditorFocused = (route: any) => {
-  const routeName = getFocusedRouteNameFromRoute(route);
-  return routeName === 'ItineraryEditor';
-};
+function FeedStack() {
+  return (
+    <FeedStackNavigator.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+        animationDuration: 250,
+      }}
+    >
+      <FeedStackNavigator.Screen
+        name="FeedMain"
+        component={TravelFeedScreen}
+      />
+    </FeedStackNavigator.Navigator>
+  );
+}
 
 function ScheduleStack() {
   return (
@@ -59,10 +69,6 @@ function ScheduleStack() {
       <ScheduleStackNavigator.Screen
         name="Home"
         component={HomeScreen}
-      />
-      <ScheduleStackNavigator.Screen
-        name="Profile"
-        component={ProfileScreen}
       />
       <ScheduleStackNavigator.Screen
         name="ItineraryEditor"
@@ -101,40 +107,9 @@ function CommunityStack() {
   );
 }
 
-
-
-function ProfileStack() {
-  return (
-    <ProfileStackNavigator.Navigator
-      screenOptions={{
-        headerShown: false,
-        animation: Platform.OS === 'ios' ? 'default' : 'slide_from_right',
-        animationDuration: 250,
-      }}
-    >
-      <ProfileStackNavigator.Screen
-        name="ProfileMain"
-        component={ProfileScreen}
-      />
-      <ProfileStackNavigator.Screen
-        name="ThemeSettings"
-        component={ThemeSettingsScreen}
-        options={{
-          animation: 'slide_from_bottom',
-          presentation: 'modal',
-        }}
-      />
-      <ProfileStackNavigator.Screen
-        name="ChangePassword"
-        component={ChangePasswordScreen}
-        options={{
-          animation: 'slide_from_bottom',
-          presentation: 'modal',
-        }}
-      />
-    </ProfileStackNavigator.Navigator>
-  );
-}
+const FeedTabIcon = ({ color, size }: { color: string; size: number }) => (
+  <Compass size={size} color={color} strokeWidth={1.8} />
+);
 
 const ScheduleTabIcon = ({ color, size }: { color: string; size: number }) => (
   <Calendar size={size} color={color} strokeWidth={1.8} />
@@ -144,16 +119,10 @@ const CommunityTabIcon = ({ color, size }: { color: string; size: number }) => (
   <MessageSquare size={size} color={color} strokeWidth={1.8} />
 );
 
-
-
-const ProfileTabIcon = ({ color, size }: { color: string; size: number }) => (
-  <User size={size} color={color} strokeWidth={1.8} />
-);
-
-export default function AppStack() {
+function MainTabs() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={() => ({
         headerShown: false,
         tabBarActiveTintColor: '#1344FF',
         tabBarInactiveTintColor: '#9CA3AF',
@@ -162,14 +131,20 @@ export default function AppStack() {
           fontSize: 11,
           marginTop: -2,
         },
-        tabBarStyle: isItineraryEditorFocused(route)
-          ? { display: 'none' }
-          : baseTabBarStyle,
+        tabBarStyle: baseTabBarStyle,
         tabBarIconStyle: {
           marginBottom: -2,
         },
       })}
     >
+      <Tab.Screen
+        name="FeedTab"
+        component={FeedStack}
+        options={{
+          title: '피드',
+          tabBarIcon: FeedTabIcon,
+        }}
+      />
       <Tab.Screen
         name="ScheduleTab"
         component={ScheduleStack}
@@ -186,15 +161,23 @@ export default function AppStack() {
           tabBarIcon: CommunityTabIcon,
         }}
       />
-
-      <Tab.Screen
-        name="ProfileTab"
-        component={ProfileStack}
-        options={{
-          title: '프로필',
-          tabBarIcon: ProfileTabIcon,
-        }}
-      />
     </Tab.Navigator>
+  );
+}
+
+export default function AppStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: Platform.OS === 'ios' ? 'default' : 'slide_from_right',
+        animationDuration: 250,
+      }}
+    >
+      <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="ThemeSettings" component={ThemeSettingsScreen} />
+      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+    </Stack.Navigator>
   );
 }
