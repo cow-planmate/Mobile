@@ -17,13 +17,13 @@ const meta = {
     loading: false,
     myItineraries: [
       {
-        planId: 1,
+        planId: '1',
         planName: '제주도 푸른 밤',
         startDate: '2026-08-01',
         endDate: '2026-08-03',
       },
       {
-        planId: 2,
+        planId: '2',
         planName: '서울 도심 여행',
         startDate: '2026-09-10',
         endDate: '2026-09-11',
@@ -31,7 +31,7 @@ const meta = {
     ],
     sharedItineraries: [
       {
-        planId: 3,
+        planId: '3',
         planName: '부산 식도락 투어',
         startDate: '2026-10-05',
         endDate: '2026-10-07',
@@ -101,7 +101,7 @@ export const MenuOpened: Story = {
   args: {
     menuVisible: true,
     selectedPlan: {
-      planId: 1,
+      planId: '1',
       planName: '제주도 푸른 밤',
       startDate: '2026-08-01',
       endDate: '2026-08-03',

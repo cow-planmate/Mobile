@@ -16,7 +16,7 @@ export type ScheduleStackParamList = {
       }
     | undefined;
   ItineraryEditor: {
-    planId?: number;
+    planId?: string;
     departure?: string;
     destination?: string;
     travelId?: number;
@@ -29,7 +29,7 @@ export type ScheduleStackParamList = {
   ItineraryView: {
     days: Day[];
     tripName: string;
-    planId?: number;
+    planId?: string;
     departure?: string;
     destination?: string;
     travelId?: number;
@@ -46,7 +46,7 @@ export type ScheduleStackParamList = {
   AddPlace: {
     dayIndex: number;
     destination?: string;
-    planId?: number;
+    planId?: string;
   };
   Profile: undefined;
 };

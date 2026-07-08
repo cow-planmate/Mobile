@@ -35,11 +35,11 @@ export function useCreateFullPlan() {
 }
 
 /** Hook for searching tourist/restaurant/lodging places by keyword, with planId routing */
-export function useSearchPlaces(query: string, planId?: number) {
+export function useSearchPlaces(query: string, planId?: string) {
   return useQuery<PlacesResponse>({
     queryKey: ['placesSearch', query, planId],
     queryFn: () => {
-      if (planId && planId > 0) {
+      if (planId) {
         return searchPlaces(planId, query);
       }
       return searchPlacesNoAuth(query);

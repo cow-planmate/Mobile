@@ -694,7 +694,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       <ShareModal
         visible={isShareModalVisible}
         onClose={() => setShareModalVisible(false)}
-        planId={planId as number}
+        planId={planId as string}
       />
       {editingPlace && (
         <PlaceEditModal

@@ -59,7 +59,7 @@ export interface PlaceBlockVO {
 }
 
 export interface PlanFrameVO {
-  planId: number;
+  planId: string;
   planName: string;
   departure: string;
   travelCategoryName: string;
@@ -88,7 +88,7 @@ export interface CreatePlanPayload {
 
 export interface FullPlanPayload {
   planFrame: {
-    planId: number;
+    planId?: string;
     planName?: string;
     departure: string;
     transportationCategoryId: number;
@@ -97,7 +97,7 @@ export interface FullPlanPayload {
     childCount: number;
   };
   timetables: {
-    timetableId: number;
+    timetableId?: number;
     date: string;
     timeTableStartTime: string;
     timeTableEndTime: string;
@@ -110,7 +110,7 @@ export interface FullPlanPayload {
 // ────────────────────────────────────────────────
 
 /** Fetch full plan data (plan frame + timetables + place blocks) */
-export async function fetchPlan(planId: number): Promise<PlanResponse> {
+export async function fetchPlan(planId: string): Promise<PlanResponse> {
   const response = await axios.get(`${API_URL}/api/plan/${planId}`);
   return response.data;
 }
@@ -118,7 +118,7 @@ export async function fetchPlan(planId: number): Promise<PlanResponse> {
 /** Create a new plan and return planId */
 export async function createPlan(
   payload: CreatePlanPayload,
-): Promise<{ planId: number }> {
+): Promise<{ planId: string }> {
   const response = await axios.post(`${API_URL}/api/plan`, payload);
   return response.data;
 }
@@ -126,13 +126,13 @@ export async function createPlan(
 /** Create full plan (non-login save) */
 export async function createFullPlan(
   payload: FullPlanPayload,
-): Promise<{ planId: number }> {
+): Promise<{ planId: string }> {
   const response = await axios.post(`${API_URL}/api/plan/create`, payload);
   return response.data;
 }
 
 /** Request edit access */
-export async function requestEditAccess(planId: number): Promise<void> {
+export async function requestEditAccess(planId: string): Promise<void> {
   await axios.post(`${API_URL}/api/plan/${planId}/request-access`);
 }
 
@@ -142,7 +142,7 @@ export async function requestEditAccess(planId: number): Promise<void> {
 
 /** Fetch recommended places for a plan by category */
 export async function fetchCategoryPlaces(
-  planId: number,
+  planId: string,
   category: 'tour' | 'lodging' | 'restaurant',
 ): Promise<PlacesResponse> {
   const response = await axios.get(`${API_URL}/api/plan/${planId}/${category}`);
@@ -150,13 +150,13 @@ export async function fetchCategoryPlaces(
 }
 
 /** Fetch recommended tour places for a plan */
-export const fetchTourPlaces = (planId: number) => fetchCategoryPlaces(planId, 'tour');
+export const fetchTourPlaces = (planId: string) => fetchCategoryPlaces(planId, 'tour');
 
 /** Fetch recommended lodging places for a plan */
-export const fetchLodgingPlaces = (planId: number) => fetchCategoryPlaces(planId, 'lodging');
+export const fetchLodgingPlaces = (planId: string) => fetchCategoryPlaces(planId, 'lodging');
 
 /** Fetch recommended restaurant places for a plan */
-export const fetchRestaurantPlaces = (planId: number) => fetchCategoryPlaces(planId, 'restaurant');
+export const fetchRestaurantPlaces = (planId: string) => fetchCategoryPlaces(planId, 'restaurant');
 
 /** Fetch recommended places by category (no auth) */
 export async function fetchCategoryPlacesNoAuth(
@@ -187,7 +187,7 @@ export const fetchRestaurantPlacesNoAuth = (category: string, name: string) => f
 
 /** Search places for a plan */
 export async function searchPlaces(
-  planId: number,
+  planId: string,
   query: string,
 ): Promise<PlacesResponse> {
   const response = await axios.get(
@@ -253,21 +253,21 @@ export async function fetchWeatherRecommendations(
 
 /** Get share URL */
 export async function getShareUrl(
-  planId: number,
+  planId: string,
 ): Promise<{ shareUrl: string }> {
   const response = await axios.get(`${API_URL}/api/plan/${planId}/share`);
   return response.data;
 }
 
 /** Get list of editors */
-export async function getEditors(planId: number): Promise<any[]> {
+export async function getEditors(planId: string): Promise<any[]> {
   const response = await axios.get(`${API_URL}/api/plan/${planId}/editors`);
   return response.data;
 }
 
 /** Invite an editor by nickname */
 export async function inviteEditor(
-  planId: number,
+  planId: string,
   nickname: string,
 ): Promise<void> {
   await axios.post(resolveApiUrl(`/api/plan/${planId}/invite`), {
@@ -277,14 +277,14 @@ export async function inviteEditor(
 
 /** Remove an editor */
 export async function removeEditor(
-  planId: number,
-  userId: number,
+  planId: string,
+  userId: string,
 ): Promise<void> {
   await axios.delete(`${API_URL}/api/plan/${planId}/editors/${userId}`);
 }
 
 /** Leave as editor */
-export async function leaveAsEditor(planId: number): Promise<void> {
+export async function leaveAsEditor(planId: string): Promise<void> {
   await axios.delete(`${API_URL}/api/plan/${planId}/editor/me`);
 }
 
@@ -293,7 +293,7 @@ export interface PendingInvitation {
   requestId: number;
   senderId: number;
   senderNickname: string;
-  planId: number;
+  planId: string;
   planName: string;
   type: string;
 }

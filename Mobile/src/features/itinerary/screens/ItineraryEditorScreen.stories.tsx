@@ -28,7 +28,10 @@ const mockDays: Day[] = [
         endTime: '10:30:00',
         latitude: 33.5113,
         longitude: 126.493,
-        category: '교통',
+        categoryId: 4,
+        type: '기타',
+        rating: 4.5,
+        imageUrl: '',
         memo: '도착 후 렌터카 수령',
       },
       {
@@ -39,7 +42,10 @@ const mockDays: Day[] = [
         endTime: '13:00:00',
         latitude: 33.4623,
         longitude: 126.3106,
-        category: '음식점',
+        categoryId: 2,
+        type: '식당',
+        rating: 4.6,
+        imageUrl: '',
         memo: '점심 식사 및 바다 구경',
       },
     ],
@@ -103,22 +109,25 @@ const meta = {
     onRedo: () => {},
     onOpenPlanInfo: () => {},
     participantsCount: 3,
-    planId: 123,
+    planId: '123',
+    selectedDay: mockDays[0],
     detailPlace: null,
     isDetailVisible: false,
     onOpenDetail: () => {},
     onCloseDetail: () => {},
     weatherMap: {
       '2024-08-01': {
-        temp: 28,
-        condition: 'Sunny',
-        icon: '01d',
+        date: '2024-08-01',
+        temp_min: 24,
+        temp_max: 32,
+        feels_like: 30,
         description: '맑음',
       },
       '2024-08-02': {
-        temp: 26,
-        condition: 'Cloudy',
-        icon: '03d',
+        date: '2024-08-02',
+        temp_min: 22,
+        temp_max: 28,
+        feels_like: 26,
         description: '구름 많음',
       },
     },
@@ -132,15 +141,15 @@ const meta = {
     const [isScheduleEditVisible, setScheduleEditVisible] = React.useState(args.isScheduleEditVisible);
     const [isDetailVisible, setDetailVisible] = React.useState(args.isDetailVisible);
     const [detailPlace, setDetailPlace] = React.useState(args.detailPlace);
-    const [isPlanInfoVisible, setPlanInfoVisible] = React.useState(args.isPlanInfoVisible ?? false);
-    const [isShareModalVisible, setShareModalVisible] = React.useState(args.isShareModalVisible ?? false);
-    const [isParticipantsVisible, setParticipantsVisible] = React.useState(args.isParticipantsVisible ?? false);
-    const [isMapPreviewVisible, setMapPreviewVisible] = React.useState(args.isMapPreviewVisible ?? false);
+    const [isPlanInfoVisible, setPlanInfoVisible] = React.useState(false);
+    const [isShareModalVisible, setShareModalVisible] = React.useState(false);
+    const [isParticipantsVisible, setParticipantsVisible] = React.useState(false);
+    const [isMapPreviewVisible, setMapPreviewVisible] = React.useState(false);
     const [weatherMap, setWeatherMap] = React.useState(args.weatherMap);
     const { fetchAllRecommendations } = usePlaces();
 
     React.useEffect(() => {
-      fetchAllRecommendations(123);
+      fetchAllRecommendations('123');
     }, [fetchAllRecommendations]);
 
     const handleAddPlace = (newPlace: any) => {
@@ -289,7 +298,7 @@ const meta = {
         <ShareModal
           visible={isShareModalVisible}
           onClose={() => setShareModalVisible(false)}
-          planId={123}
+          planId="123"
           isMock={true}
         />
         <Modal
@@ -418,30 +427,6 @@ export const Loading: Story = {
 export const EmptyDay: Story = {
   args: {
     selectedDayIndex: 1,
-  },
-};
-
-export const EditingName: Story = {
-  args: {
-    isEditingTripName: true,
-  },
-};
-
-export const ScheduleEditOpen: Story = {
-  args: {
-    isScheduleEditVisible: true,
-  },
-};
-
-export const ParticipantsOpen: Story = {
-  args: {
-    isParticipantsVisible: true,
-  },
-};
-
-export const MapPreviewOpen: Story = {
-  args: {
-    isMapPreviewVisible: true,
   },
 };
 

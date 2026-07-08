@@ -11,7 +11,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   loginSuccess: boolean;
-  userId: number;
+  userId: string;
   nickname: string;
   email: string;
   accessToken: string;
@@ -50,7 +50,7 @@ export interface SendEmailRequest {
 }
 
 export interface SendEmailResponse {
-  sendSuccess: boolean;
+  isVerificationSent: boolean;
   message?: string;
 }
 
@@ -62,8 +62,8 @@ export interface EmailVerificationRequest {
 }
 
 export interface EmailVerificationResponse {
-  verifySuccess: boolean;
-  verificationToken?: string;
+  emailVerified: boolean;
+  token?: string;
   message?: string;
 }
 
@@ -73,7 +73,7 @@ export interface NicknameVerificationRequest {
 }
 
 export interface NicknameVerificationResponse {
-  available: boolean;
+  nicknameAvailable: boolean;
   message?: string;
 }
 
@@ -89,7 +89,8 @@ export interface RefreshTokenResponse {
 
 // 비밀번호 변경
 export interface ChangePasswordRequest {
-  password: string;
+  currentPassword: string;
+  newPassword: string;
   confirmPassword: string;
 }
 
@@ -241,12 +242,13 @@ export const verifyPassword = async (
  * PATCH /api/auth/password
  */
 export const changePassword = async (
-  password: string,
+  currentPassword: string,
+  newPassword: string,
   confirmPassword: string,
 ): Promise<ChangePasswordResponse> => {
   const response = await axios.patch<ChangePasswordResponse>(
     `${API_URL}/api/auth/password`,
-    { password, confirmPassword },
+    { currentPassword, newPassword, confirmPassword },
   );
   return response.data;
 };

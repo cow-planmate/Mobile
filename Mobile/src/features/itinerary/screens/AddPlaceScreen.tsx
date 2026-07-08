@@ -5,24 +5,11 @@ import { useItinerary } from '../../../contexts/ItineraryContext';
 import { useSearchPlaces } from '../../../hooks/usePlanQueries';
 import { PlaceVO } from '../../../api/trips';
 import AddPlaceScreenView from './AddPlaceScreen.view';
+import { Place } from '../components/TimelineItem';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'AddPlace'>;
 
-export interface Place {
-  id: string;
-  name: string;
-  type: string;
-  categoryId: number;
-  address: string;
-  rating: number;
-  imageUrl: string;
-  latitude: number;
-  longitude: number;
-  time: string;
-  memo?: string;
-}
-
-function getCategoryType(categoryId: number): string {
+function getCategoryType(categoryId: number): Place['type'] {
   if (categoryId === 1) return '관광지';
   if (categoryId === 2) return '숙소';
   if (categoryId === 3) return '식당';
@@ -37,7 +24,7 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
   );
 
   const { addPlaceToDay } = useItinerary();
-  const { dayIndex, destination } = route.params || {};
+  const { dayIndex, destination, planId } = route.params || {};
 
   // Formulate search keyword
   const effectiveQuery = useMemo(() => {
@@ -48,8 +35,8 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
     return destination ? `${destination} ${q}` : q;
   }, [activeQuery, destination, selectedTab]);
 
-  // Hook in React Query
-  const { data, isLoading } = useSearchPlaces(effectiveQuery);
+  // Hook in React Query (pass planId as string)
+  const { data, isLoading } = useSearchPlaces(effectiveQuery, planId);
 
   // Trigger search on submit
   const handleSearch = () => {
@@ -73,10 +60,9 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
       categoryId: p.categoryId,
       address: p.formatted_address,
       rating: p.rating,
-      imageUrl: p.iconUrl,
-      latitude: p.ylocation,
-      longitude: p.xlocation,
-      time: '10:00',
+      imageUrl: p.photoUrl || p.iconUrl || '',
+      latitude: p.yLocation ?? p.ylocation ?? 0,
+      longitude: p.xLocation ?? p.xlocation ?? 0,
     }));
   }, [data]);
 
@@ -89,7 +75,7 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
     });
   }, [searchResults, selectedTab]);
 
-  const handleSelectPlace = (place: Place) => {
+  const handleSelectPlace = (place: Omit<Place, 'startTime' | 'endTime'>) => {
     addPlaceToDay(dayIndex, place);
     navigation.goBack();
   };
@@ -101,7 +87,7 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
       selectedTab={selectedTab}
       setSelectedTab={setSelectedTab}
       isLoading={isLoading}
-      filteredPlaces={filteredPlaces}
+      filteredPlaces={filteredPlaces as any}
       destination={destination}
       handleSearch={handleSearch}
       handleSelectPlace={handleSelectPlace}

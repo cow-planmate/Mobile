@@ -7,6 +7,7 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { PreferredThemeVO } from '../../../types/env';
 import ProfileScreenView from './ProfileScreen.view';
 import { resolveApiUrl } from '../../../utils/apiUrl';
+import { changePassword } from '../../../api/auth';
 
 export default function ProfileScreen() {
   const logout = useAuthStore((state) => state.logout);
@@ -170,10 +171,7 @@ export default function ProfileScreen() {
         return;
       }
 
-      await axios.patch(resolveApiUrl('/api/auth/password'), {
-        password: newPass,
-        confirmPassword: newPass,
-      });
+      await changePassword(current, newPass, newPass);
 
       Toast.show({
         type: 'success',

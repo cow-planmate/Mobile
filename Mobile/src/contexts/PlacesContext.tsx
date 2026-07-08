@@ -40,7 +40,7 @@ export interface PlacesState {
 
 interface PlacesContextType extends PlacesState {
   /** Fetch all recommended places for a plan (tour, lodging, restaurant) */
-  fetchAllRecommendations: (planId: number) => Promise<void>;
+  fetchAllRecommendations: (planId: string) => Promise<void>;
   /** Fetch all recommended places without auth */
   fetchAllRecommendationsNoAuth: (
     category: string,
@@ -48,7 +48,7 @@ interface PlacesContextType extends PlacesState {
   ) => Promise<void>;
   /** Search places */
   doSearchPlaces: (
-    planIdOrNull: number | null,
+    planIdOrNull: string | null,
     query: string,
   ) => Promise<void>;
   /** Load more places for a category using pagination tokens */
@@ -81,7 +81,7 @@ export function PlacesProvider({children}: PropsWithChildren) {
   const [isLoading, setIsLoading] = useState(false);
   const [isPetFriendly, setPetFriendly] = useState(false);
 
-  const fetchAllRecommendations = useCallback(async (planId: number) => {
+  const fetchAllRecommendations = useCallback(async (planId: string) => {
     setIsLoading(true);
     if (planId === 123) {
       setTour([
@@ -180,7 +180,7 @@ export function PlacesProvider({children}: PropsWithChildren) {
   );
 
   const doSearchPlaces = useCallback(
-    async (planIdOrNull: number | null, query: string) => {
+    async (planIdOrNull: string | null, query: string) => {
       setIsLoading(true);
       if (planIdOrNull === 123) {
         setSearch([

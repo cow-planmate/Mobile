@@ -51,7 +51,7 @@ interface ActionData<T = any> {
 interface WebSocketContextType {
   isConnected: boolean;
   onlineUsers: UserPresence[];
-  connect: (planId: number) => void;
+  connect: (planId: string) => void;
   disconnect: () => void;
   sendMessage: (
     action: string,
@@ -76,7 +76,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<UserPresence[]>([]);
   const stompClient = useRef<Client | null>(null);
-  const currentPlanId = useRef<number | null>(null);
+  const currentPlanId = useRef<string | null>(null);
   const messageListeners = useRef<Set<(msg: any) => void>>(new Set());
   const messageQueue = useRef<
     Array<{
@@ -99,7 +99,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     messageListeners.current.forEach(listener => listener(message));
   };
 
-  const connect = useCallback(async (planId: number) => {
+  const connect = useCallback(async (planId: string) => {
     if (stompClient.current && stompClient.current.active) {
       if (currentPlanId.current === planId) return; // 이미 같은 방에 연결됨
       disconnect();

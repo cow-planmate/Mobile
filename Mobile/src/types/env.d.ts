@@ -7,7 +7,7 @@ declare module '@env' {
 }
 
 export interface SimplePlanVO {
-  planId: number;
+  planId: string;
   planName: string;
   startDate?: string;
   endDate?: string;

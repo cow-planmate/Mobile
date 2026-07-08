@@ -30,7 +30,7 @@ if ((TextInput as any).defaultProps == null) {
 }
 (TextInput as any).defaultProps.allowFontScaling = false;
 
-const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && true;
+const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && false;
 
 /* ── Toast Styles ── */
 const toastStyles = StyleSheet.create({
@@ -103,13 +103,16 @@ function App() {
   }, [initializeAuth]);
 
   if (SHOW_STORYBOOK) {
-    // getStorybookUI()의 결과는 컴포넌트입니다.
     return <StorybookUIRoot />;
   }
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" translucent={false} />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#FFFFFF"
+        translucent={false}
+      />
       <QueryClientProvider client={queryClient}>
         <AlertProvider>
           <PlacesProvider>

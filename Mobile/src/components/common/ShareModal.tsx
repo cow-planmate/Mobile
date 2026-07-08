@@ -30,7 +30,7 @@ const FONTS = {
 interface ShareModalProps {
   visible: boolean;
   onClose: () => void;
-  planId: number;
+  planId: string;
   isMock?: boolean;
 }
 

@@ -242,7 +242,7 @@ export default function MyScheduleScreen() {
     }
   };
 
-  const handleDeletePlan = async (planId: number) => {
+  const handleDeletePlan = async (planId: string) => {
     showAlert({
       title: '일정 삭제',
       message: '정말로 이 일정을 삭제하시겠습니까?',
@@ -270,7 +270,7 @@ export default function MyScheduleScreen() {
     });
   };
 
-  const handleLeaveEditor = async (planId: number) => {
+  const handleLeaveEditor = async (planId: string) => {
     showAlert({
       title: '편집 권한 포기',
       message: '이 일정의 편집 권한을 포기하시겠습니까?',

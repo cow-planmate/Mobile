@@ -238,7 +238,7 @@ export interface ItineraryViewScreenViewProps {
   handleConfirm: () => void;
   goBack: () => void;
   handleEdit: () => void;
-  planId?: number;
+  planId?: string;
   weatherMap: Record<string, SimpleWeatherInfo>;
   tripName: string;
 }
@@ -418,7 +418,7 @@ export default function ItineraryViewScreenView({
       <ShareModal
         visible={isShareModalVisible}
         onClose={() => setShareModalVisible(false)}
-        planId={planId ?? 0}
+        planId={planId ?? ''}
       />
     </SafeAreaView>
   );

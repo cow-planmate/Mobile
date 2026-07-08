@@ -5,7 +5,7 @@ import { resolveApiUrl } from '../utils/apiUrl';
 import '../api/axiosConfig';
 
 export interface User {
-  userId: number;
+  userId: string;
   nickname: string;
   email: string;
 }
@@ -127,7 +127,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const { accessToken, refreshToken, nickname } = response.data;
       axios.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
 
-      let userId = 0;
+      let userId = '';
       try {
         const profileRes = await axios.get(resolveApiUrl('/api/user/profile'));
         userId = profileRes.data.userId;

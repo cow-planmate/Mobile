@@ -293,7 +293,7 @@ export default function MyScheduleScreenView({
       <ShareModal
         visible={shareModalVisible}
         onClose={() => setShareModalVisible(false)}
-        planId={selectedPlan?.planId}
+        planId={selectedPlan?.planId ?? ''}
       />
 
       <NotificationModal

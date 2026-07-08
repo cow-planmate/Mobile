@@ -275,7 +275,7 @@ const PlaceMapModal = React.memo(
 // ────────────────────────────────────────────────
 
 interface PlaceRecommendationListProps {
-  planId: number | null;
+  planId: string | null;
   destination?: string;
   onAddPlace: (place: Omit<Place, 'startTime' | 'endTime'>) => void;
 }

@@ -906,7 +906,7 @@ export interface ItineraryEditorScreenViewProps {
   onRedo: () => void;
   participantsCount: number;
   // New props for detail popup & recommendations
-  planId: number | null;
+  planId: string | null;
   detailPlace: Place | null;
   isDetailVisible: boolean;
   onOpenDetail: (place: Place) => void;
