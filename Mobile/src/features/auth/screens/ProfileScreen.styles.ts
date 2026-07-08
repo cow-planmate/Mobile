@@ -190,4 +190,15 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     color: '#EF4444',
   },
+  emptyThemeContainer: {
+    padding: normalize(16),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyThemeText: {
+    fontSize: normalize(13),
+    fontFamily: FONTS.medium,
+    color: '#9CA3AF',
+    textAlign: 'center',
+  },
 });

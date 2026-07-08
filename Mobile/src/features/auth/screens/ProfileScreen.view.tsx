@@ -115,6 +115,20 @@ export default function ProfileScreenView({
   handleResign,
   logout,
 }: ProfileScreenViewProps) {
+  const tourismThemes = (user.preferredThemes || []).filter(
+    (t: any) => t.preferredThemeCategoryId === 0,
+  );
+  const lodgingThemes = (user.preferredThemes || []).filter(
+    (t: any) => t.preferredThemeCategoryId === 1,
+  );
+  const restaurantThemes = (user.preferredThemes || []).filter(
+    (t: any) => t.preferredThemeCategoryId === 2,
+  );
+  const hasAnyTheme =
+    tourismThemes.length > 0 ||
+    lodgingThemes.length > 0 ||
+    restaurantThemes.length > 0;
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -205,43 +219,63 @@ export default function ProfileScreenView({
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.themeCategory}>
-                <View style={styles.themeCategoryHeader}>
-                  <FontAwesomeIcon
-                    icon={faMapMarkerAlt}
-                    size={16}
-                    color="#4B5563"
-                  />
-                  <Text style={styles.themeCategoryTitle}>관광지</Text>
-                </View>
-                <View style={styles.tagContainer}>
-                  <ThemeTag text="해수욕장" />
-                </View>
-              </View>
+              {hasAnyTheme ? (
+                <>
+                  {tourismThemes.length > 0 && (
+                    <View style={styles.themeCategory}>
+                      <View style={styles.themeCategoryHeader}>
+                        <FontAwesomeIcon
+                          icon={faMapMarkerAlt}
+                          size={16}
+                          color="#4B5563"
+                        />
+                        <Text style={styles.themeCategoryTitle}>관광지</Text>
+                      </View>
+                      <View style={styles.tagContainer}>
+                        {tourismThemes.map((t: any) => (
+                          <ThemeTag key={t.preferredThemeId} text={t.preferredThemeName} />
+                        ))}
+                      </View>
+                    </View>
+                  )}
 
-              <View style={styles.themeCategory}>
-                <View style={styles.themeCategoryHeader}>
-                  <FontAwesomeIcon icon={faBed} size={16} color="#4B5563" />
-                  <Text style={styles.themeCategoryTitle}>숙소</Text>
-                </View>
-                <View style={styles.tagContainer}>
-                  <ThemeTag text="캠핑장" />
-                </View>
-              </View>
+                  {lodgingThemes.length > 0 && (
+                    <View style={styles.themeCategory}>
+                      <View style={styles.themeCategoryHeader}>
+                        <FontAwesomeIcon icon={faBed} size={16} color="#4B5563" />
+                        <Text style={styles.themeCategoryTitle}>숙소</Text>
+                      </View>
+                      <View style={styles.tagContainer}>
+                        {lodgingThemes.map((t: any) => (
+                          <ThemeTag key={t.preferredThemeId} text={t.preferredThemeName} />
+                        ))}
+                      </View>
+                    </View>
+                  )}
 
-              <View style={styles.themeCategory}>
-                <View style={styles.themeCategoryHeader}>
-                  <FontAwesomeIcon
-                    icon={faUtensils}
-                    size={16}
-                    color="#4B5563"
-                  />
-                  <Text style={styles.themeCategoryTitle}>식당</Text>
+                  {restaurantThemes.length > 0 && (
+                    <View style={styles.themeCategory}>
+                      <View style={styles.themeCategoryHeader}>
+                        <FontAwesomeIcon
+                          icon={faUtensils}
+                          size={16}
+                          color="#4B5563"
+                        />
+                        <Text style={styles.themeCategoryTitle}>식당</Text>
+                      </View>
+                      <View style={styles.tagContainer}>
+                        {restaurantThemes.map((t: any) => (
+                          <ThemeTag key={t.preferredThemeId} text={t.preferredThemeName} />
+                        ))}
+                      </View>
+                    </View>
+                  )}
+                </>
+              ) : (
+                <View style={styles.emptyThemeContainer}>
+                  <Text style={styles.emptyThemeText}>등록된 선호테마가 없습니다. 변경하기를 통해 등록해 보세요!</Text>
                 </View>
-                <View style={styles.tagContainer}>
-                  <ThemeTag text="분식" />
-                </View>
-              </View>
+              )}
             </View>
 
             {/* 비밀번호 카드 */}

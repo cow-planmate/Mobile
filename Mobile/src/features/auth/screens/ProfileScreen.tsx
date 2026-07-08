@@ -18,7 +18,7 @@ export default function ProfileScreen() {
     email: '',
     age: '',
     gender: '',
-    preferredTheme: '',
+    preferredThemes: [] as PreferredThemeVO[],
     socialLogin: false,
   });
 
@@ -50,7 +50,7 @@ export default function ProfileScreen() {
         email: data.email || '',
         age: data.age ? data.age.toString() : '미설정',
         gender: genderStr,
-        preferredTheme: themes,
+        preferredThemes: data.preferredThemes || [],
         socialLogin: data.socialLogin || false,
       });
     } catch (error) {
