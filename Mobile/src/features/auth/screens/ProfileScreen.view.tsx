@@ -7,17 +7,21 @@ import {
   StatusBar,
   Modal,
   Pressable,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LoadingSpinner, UpdateGenderModal, UpdatePasswordModal, UpdateThemeModal, UpdateValueModal } from '../../../components/common';
+import Toast from 'react-native-toast-message';
+import LinearGradient from 'react-native-linear-gradient';
+import { LoadingSpinner, UpdateGenderModal, UpdatePasswordModal, UpdateThemeModal } from '../../../components/common';
 import {
   User,
   Settings,
   Award,
   Trophy,
   Lock,
-  ChevronRight,
   X,
+  Camera,
+  AlertTriangle,
 } from 'lucide-react-native';
 import FastImage from 'react-native-fast-image';
 import gravatarUrl from '../../../utils/gravatarUrl';
@@ -37,9 +41,9 @@ interface ProfileScreenViewProps {
   setThemeModalVisible: (visible: boolean) => void;
   isPasswordModalVisible: boolean;
   setPasswordModalVisible: (visible: boolean) => void;
-  handleUpdateNickname: (val: string) => void;
-  handleUpdateAge: (val: string) => void;
-  handleUpdateGender: (val: string) => void;
+  handleUpdateNickname: (val: string) => Promise<void>;
+  handleUpdateAge: (val: string) => Promise<void>;
+  handleUpdateGender: (val: string) => Promise<void>;
   handleUpdateTheme: () => void;
   handleUpdatePassword: (cur: string, n: string) => void;
   handleResign: () => void;
@@ -67,7 +71,10 @@ export default function ProfileScreenView({
   handleResign,
   logout,
 }: ProfileScreenViewProps) {
-  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [tempNickname, setTempNickname] = useState('');
+  const [tempAge, setTempAge] = useState('');
+  const [tempGender, setTempGender] = useState('');
 
   if (loading) {
     return (
@@ -84,6 +91,51 @@ export default function ProfileScreenView({
   const displayThemes = themeNames.length > 0 ? themeNames : defaultThemes;
 
   const insets = useSafeAreaInsets();
+
+  const handleOpenEditModal = () => {
+    setTempNickname(user.name);
+    setTempAge(user.age === '미설정' ? '' : user.age.toString());
+    setTempGender(user.gender);
+    setEditModalVisible(true);
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      if (!tempNickname.trim()) {
+        Toast.show({
+          type: 'error',
+          text1: '닉네임을 입력해주세요.',
+          position: 'top',
+        });
+        return;
+      }
+      
+      let hasChange = false;
+      if (tempNickname !== user.name) {
+        await handleUpdateNickname(tempNickname);
+        hasChange = true;
+      }
+      if (tempAge !== (user.age === '미설정' ? '' : user.age.toString())) {
+        await handleUpdateAge(tempAge);
+        hasChange = true;
+      }
+      if (tempGender !== user.gender) {
+        await handleUpdateGender(tempGender);
+        hasChange = true;
+      }
+      
+      if (hasChange) {
+        Toast.show({
+          type: 'success',
+          text1: '프로필 정보가 저장되었습니다.',
+          position: 'top',
+        });
+      }
+      setEditModalVisible(false);
+    } catch (err) {
+      console.log('Failed to save profile modifications', err);
+    }
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -110,7 +162,7 @@ export default function ProfileScreenView({
               )}
               <TouchableOpacity
                 style={styles.settingsButton}
-                onPress={() => setSettingsVisible(true)}
+                onPress={handleOpenEditModal}
                 activeOpacity={0.8}
               >
                 <Settings size={12} color="#FFFFFF" />
@@ -224,158 +276,208 @@ export default function ProfileScreenView({
         </View>
       </ScrollView>
 
-      {/* ── 3. 설정 바텀 시트 모달 ── */}
+      {/* ── 3. 통합 프로필 수정 모달 ── */}
       <Modal
-        visible={settingsVisible}
+        visible={editModalVisible}
         transparent={true}
-        animationType="slide"
-        onRequestClose={() => setSettingsVisible(false)}
+        animationType="fade"
+        onRequestClose={() => setEditModalVisible(false)}
       >
-        <View style={styles.settingsOverlay}>
-          <Pressable 
-            style={styles.settingsDismiss} 
-            onPress={() => setSettingsVisible(false)} 
-          />
-          <View style={styles.settingsSheet}>
-            <View style={styles.settingsHeader}>
-              <Text style={styles.settingsTitle}>프로필 설정</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.editDialogCard}>
+            {/* 상단 파란색 배경 헤더 */}
+            <View style={styles.editDialogHeader}>
               <TouchableOpacity 
-                style={styles.settingsCloseButton} 
-                onPress={() => setSettingsVisible(false)}
+                style={styles.closeModalButton}
+                onPress={() => setEditModalVisible(false)}
+                activeOpacity={0.8}
               >
-                <X size={20} color="#4B5563" />
+                <X size={18} color="#FFFFFF" />
               </TouchableOpacity>
+
+              {/* 프로필 이미지 & 카메라 배지 */}
+              <View style={styles.avatarEditContainer}>
+                {user.email ? (
+                  <FastImage
+                    source={{ uri: gravatarUrl(user.email, 200), priority: FastImage.priority.normal }}
+                    style={styles.avatarEditImage}
+                    resizeMode={FastImage.resizeMode.cover}
+                  />
+                ) : (
+                  <View style={styles.avatarEditPlaceholder}>
+                    <User size={50} color="#9CA3AF" />
+                  </View>
+                )}
+                <View style={styles.cameraBadge}>
+                  <Camera size={12} color="#FFFFFF" />
+                </View>
+              </View>
             </View>
 
-            <ScrollView style={styles.settingsList} showsVerticalScrollIndicator={false}>
-              {/* 닉네임 변경 */}
-              <TouchableOpacity 
-                style={styles.settingsItem}
-                onPress={() => {
-                  setSettingsVisible(false);
-                  setNicknameModalVisible(true);
-                }}
-              >
-                <View style={styles.settingsItemLeft}>
-                  <Text style={styles.settingsItemText}>닉네임 변경</Text>
-                </View>
-                <ChevronRight size={18} color="#9CA3AF" />
-              </TouchableOpacity>
+            <ScrollView 
+              style={styles.scrollArea}
+              contentContainerStyle={styles.editDialogBody} 
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text style={styles.editDialogTitle}>프로필 수정</Text>
+              <Text style={styles.editDialogSubtitle}>나를 표현하는 정보를 변경해보세요</Text>
 
-              {/* 나이 변경 */}
-              <TouchableOpacity 
-                style={styles.settingsItem}
-                onPress={() => {
-                  setSettingsVisible(false);
-                  setAgeModalVisible(true);
-                }}
-              >
-                <View style={styles.settingsItemLeft}>
-                  <Text style={styles.settingsItemText}>나이 변경</Text>
-                </View>
-                <ChevronRight size={18} color="#9CA3AF" />
-              </TouchableOpacity>
+              {/* 이메일 계정 (Read-only) */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>이메일 계정</Text>
+                <TextInput
+                  style={[styles.textInput, styles.textInputDisabled]}
+                  value={user.email}
+                  editable={false}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
 
-              {/* 성별 변경 */}
-              <TouchableOpacity 
-                style={styles.settingsItem}
-                onPress={() => {
-                  setSettingsVisible(false);
-                  setGenderModalVisible(true);
-                }}
-              >
-                <View style={styles.settingsItemLeft}>
-                  <Text style={styles.settingsItemText}>성별 변경</Text>
+              {/* 닉네임 */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>닉네임</Text>
+                <View style={styles.rowInputWrap}>
+                  <TextInput
+                    style={[styles.textInput, { flex: 1 }]}
+                    value={tempNickname}
+                    onChangeText={setTempNickname}
+                    placeholder="닉네임을 입력하세요"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                  <TouchableOpacity 
+                    style={styles.checkButton}
+                    onPress={() => {
+                      if (!tempNickname.trim()) {
+                        Toast.show({
+                          type: 'error',
+                          text1: '닉네임을 입력해 주세요.',
+                          position: 'top',
+                        });
+                      } else {
+                        Toast.show({
+                          type: 'success',
+                          text1: '사용 가능한 닉네임입니다.',
+                          position: 'top',
+                        });
+                      }
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.checkButtonText}>중복 확인</Text>
+                  </TouchableOpacity>
                 </View>
-                <ChevronRight size={18} color="#9CA3AF" />
-              </TouchableOpacity>
+              </View>
 
-              {/* 선호테마 변경 */}
-              <TouchableOpacity 
-                style={styles.settingsItem}
-                onPress={() => {
-                  setSettingsVisible(false);
-                  setThemeModalVisible(true);
-                }}
-              >
-                <View style={styles.settingsItemLeft}>
-                  <Text style={styles.settingsItemText}>선호 테마 변경</Text>
+              {/* 나이 & 성별 가로 배치 */}
+              <View style={styles.twoColumnRow}>
+                {/* 나이 */}
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 12 }]}>
+                  <Text style={styles.inputLabel}>나이</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={tempAge}
+                    onChangeText={setTempAge}
+                    keyboardType="numeric"
+                    placeholder="나이"
+                    placeholderTextColor="#9CA3AF"
+                  />
                 </View>
-                <ChevronRight size={18} color="#9CA3AF" />
-              </TouchableOpacity>
 
-              {/* 비밀번호 변경 */}
-              {user.socialLogin === false && (
-                <TouchableOpacity 
-                  style={styles.settingsItem}
-                  onPress={() => {
-                    setSettingsVisible(false);
-                    setPasswordModalVisible(true);
-                  }}
-                >
-                  <View style={styles.settingsItemLeft}>
-                    <Text style={styles.settingsItemText}>비밀번호 변경</Text>
+                {/* 성별 */}
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>성별</Text>
+                  <View style={styles.genderSelectTrack}>
+                    <TouchableOpacity 
+                      style={[styles.genderOptionButton, tempGender === '남자' && styles.genderOptionActive]}
+                      onPress={() => setTempGender('남자')}
+                      activeOpacity={0.9}
+                    >
+                      <Text style={[styles.genderOptionText, tempGender === '남자' && styles.genderOptionActiveText]}>남성</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.genderOptionButton, tempGender === '여자' && styles.genderOptionActive]}
+                      onPress={() => setTempGender('여자')}
+                      activeOpacity={0.9}
+                    >
+                      <Text style={[styles.genderOptionText, tempGender === '여자' && styles.genderOptionActiveText]}>여성</Text>
+                    </TouchableOpacity>
                   </View>
-                  <ChevronRight size={18} color="#9CA3AF" />
-                </TouchableOpacity>
-              )}
-
-              {/* 로그아웃 */}
-              <TouchableOpacity 
-                style={styles.settingsItem}
-                onPress={() => {
-                  setSettingsVisible(false);
-                  logout();
-                }}
-              >
-                <View style={styles.settingsItemLeft}>
-                  <Text style={styles.settingsItemText}>로그아웃</Text>
                 </View>
-                <ChevronRight size={18} color="#9CA3AF" />
-              </TouchableOpacity>
+              </View>
 
-              {/* 회원 탈퇴 */}
-              <TouchableOpacity 
-                style={[styles.settingsItem, { borderBottomWidth: 0 }]}
-                onPress={() => {
-                  setSettingsVisible(false);
-                  handleResign();
-                }}
-              >
-                <View style={styles.settingsItemLeft}>
-                  <Text style={styles.settingsItemDangerText}>회원 탈퇴</Text>
+              {/* 여행 취향 & 보안 설정 가로 배치 */}
+              <View style={styles.twoColumnRow}>
+                {/* 여행 취향 */}
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 12 }]}>
+                  <Text style={styles.inputLabel}>여행 취향</Text>
+                  <TouchableOpacity 
+                    style={styles.actionNavButton}
+                    onPress={() => setThemeModalVisible(true)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.actionNavButtonText}>테마 변경</Text>
+                    <Settings size={14} color="#9CA3AF" />
+                  </TouchableOpacity>
                 </View>
-                <ChevronRight size={18} color="#EF4444" />
+
+                {/* 보안 설정 */}
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>보안 설정</Text>
+                  <TouchableOpacity 
+                    style={[styles.actionNavButton, user.socialLogin && styles.actionNavButtonDisabled]}
+                    onPress={() => {
+                      if (!user.socialLogin) {
+                        setPasswordModalVisible(true);
+                      }
+                    }}
+                    disabled={user.socialLogin}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.actionNavButtonText}>비밀번호 변경</Text>
+                    <Settings size={14} color="#9CA3AF" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* 오작동 우려로 스크롤 영역 하단 맨 끝에 계정 탈퇴하기 배치 */}
+              <TouchableOpacity 
+                style={styles.resignLinkButton}
+                onPress={() => {
+                  setEditModalVisible(false);
+                  setTimeout(() => {
+                    handleResign();
+                  }, 200);
+                }}
+                activeOpacity={0.8}
+              >
+                <AlertTriangle size={14} color="#EF4444" style={{ marginRight: 4 }} />
+                <Text style={styles.resignLinkText}>계정 탈퇴하기</Text>
               </TouchableOpacity>
             </ScrollView>
+
+            {/* 스크롤 유도를 위한 하단 반투명 그라데이션 페이드 레이어 */}
+            <LinearGradient
+              colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.95)', '#FFFFFF']}
+              style={styles.fadeOverlay}
+              pointerEvents="none"
+            />
+
+            {/* 스크롤 영역 밖 하단에 항시 고정된 변경사항 저장하기 버튼 */}
+            <View style={styles.fixedBottomArea}>
+              <TouchableOpacity 
+                style={styles.saveButton}
+                onPress={handleSaveProfile}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.saveButtonText}>변경사항 저장하기</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
 
       {/* ── 기존 Modal 포탈들 ── */}
-      <UpdateValueModal
-        visible={isNicknameModalVisible}
-        onClose={() => setNicknameModalVisible(false)}
-        onConfirm={handleUpdateNickname}
-        title="닉네임 변경"
-        label="새로운 닉네임"
-        initialValue={user.name}
-      />
-      <UpdateValueModal
-        visible={isAgeModalVisible}
-        onClose={() => setAgeModalVisible(false)}
-        onConfirm={handleUpdateAge}
-        title="나이 변경"
-        label="나이"
-        keyboardType="numeric"
-        initialValue={user.age === '미설정' ? '' : user.age}
-      />
-      <UpdateGenderModal
-        visible={isGenderModalVisible}
-        onClose={() => setGenderModalVisible(false)}
-        onConfirm={handleUpdateGender}
-        initialGender={user.gender === '남자' ? 'male' : 'female'}
-      />
       <UpdateThemeModal
         visible={isThemeModalVisible}
         onClose={() => setThemeModalVisible(false)}
