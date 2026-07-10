@@ -10,6 +10,7 @@ import ProfileScreen from '../features/auth/screens/ProfileScreen';
 import ThemeSettingsScreen from '../features/auth/screens/ThemeSettingsScreen';
 import ChangePasswordScreen from '../features/auth/screens/ChangePasswordScreen';
 import { CommunityScreen } from '../features/community';
+import { SocialScreen } from '../features/social';
 
 import {
   TabParamList,
@@ -178,6 +179,7 @@ export default function AppStack() {
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="ThemeSettings" component={ThemeSettingsScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+      <Stack.Screen name="Social" component={SocialScreen} />
     </Stack.Navigator>
   );
 }

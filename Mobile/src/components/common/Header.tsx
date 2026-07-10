@@ -51,7 +51,7 @@ const Header: React.FC<HeaderProps> = ({
           navigation.navigate('Profile');
         }
       } else if (action === 'social') {
-        navigation.navigate('CommunityTab');
+        navigation.navigate('Social');
       } else if (action === 'logout') {
         void logout();
       }
