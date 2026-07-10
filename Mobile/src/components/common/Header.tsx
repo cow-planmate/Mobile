@@ -32,20 +32,22 @@ const Header: React.FC<HeaderProps> = ({
     <View style={styles.topBar}>
       <Text style={styles.logo}>planMate</Text>
       <View style={styles.topIcons}>
-        <TouchableOpacity style={styles.userAvatar} onPress={onNavigateProfile}>
-          {email ? (
-            <FastImage
-              source={{ uri: gravatarUrl(email, 100), priority: FastImage.priority.normal }}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode={FastImage.resizeMode.cover}
-            />
-          ) : (
-            <FontAwesomeIcon icon={faUser} size={20} color="#9CA3AF" />
-          )}
+        <TouchableOpacity style={styles.profileContainer} onPress={onNavigateProfile}>
+          <View style={styles.userAvatar}>
+            {email ? (
+              <FastImage
+                source={{ uri: gravatarUrl(email, 100), priority: FastImage.priority.normal }}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode={FastImage.resizeMode.cover}
+              />
+            ) : (
+              <FontAwesomeIcon icon={faUser} size={20} color="#9CA3AF" />
+            )}
+          </View>
+          <Text style={styles.userNickname}>{nickname || '사용자'}님</Text>
         </TouchableOpacity>
-        <Text style={styles.userNickname}>{nickname || '사용자'}님</Text>
         <TouchableOpacity onPress={onNotificationPress}>
-          <FontAwesomeIcon icon={faBell} size={22} color="#000" />
+          <FontAwesomeIcon icon={faBell} size={25} color="#000" />
           {pendingRequestsCount > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{pendingRequestsCount}</Text>
@@ -78,9 +80,12 @@ const styles = StyleSheet.create({
   topIcons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: normalize(10),
+    gap: normalize(16),
   },
-
+  profileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   userAvatar: {
     width: normalize(28),
     height: normalize(28),
@@ -93,13 +98,14 @@ const styles = StyleSheet.create({
   userNickname: {
     fontSize: normalize(13),
     fontFamily: 'Pretendard Variable',
+    fontWeight: 'bold',
     color: '#374151',
-    marginLeft: normalize(4),
+    marginLeft: normalize(8),
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -4,
+    top: -5,
+    right: -5,
     backgroundColor: '#FF3B30',
     borderRadius: 10,
     minWidth: 18,
