@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Search, Plus, LayoutGrid, List, SlidersHorizontal, X, MapPin } from 'lucide-react-native';
+import { Search, LayoutGrid, List, SlidersHorizontal, X, MapPin } from 'lucide-react-native';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { Header, NotificationModal } from '../../../components/common';
@@ -139,9 +139,6 @@ export default function TravelFeedScreen() {
     });
   };
 
-  const handleCreatePlan = () => {
-    navigation.navigate('ScheduleTab', { screen: 'Home' });
-  };
 
   const openFilterModal = () => {
     setTempSortBy(sortBy);
@@ -284,24 +281,6 @@ export default function TravelFeedScreen() {
         />
       </View>
 
-      {/* 🗺️ 에어비앤비 스타일 하단 중앙 플로팅 지도 버튼 */}
-      <TouchableOpacity
-        style={styles.mapFloatingButton}
-        onPress={() => setMapModalVisible(true)}
-        activeOpacity={0.9}
-      >
-        <MapPin size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-        <Text style={styles.mapFloatingButtonText}>지도보기</Text>
-      </TouchableOpacity>
-
-      {/* ➕ 계획 생성 플로팅 버튼 (FAB) */}
-      <TouchableOpacity
-        style={styles.floatingButton}
-        onPress={handleCreatePlan}
-        activeOpacity={0.8}
-      >
-        <Plus size={24} color="#FFF" />
-      </TouchableOpacity>
 
       {/* 🧭 바텀 시트 상세 필터 모달 */}
       <Modal
