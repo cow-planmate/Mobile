@@ -19,6 +19,7 @@ import { LoadingSpinner, UpdateGenderModal, UpdatePasswordModal, UpdateThemeModa
 import axios from 'axios';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { leaveAsEditor } from '../../../api/trips';
+
 import {
   User,
   Settings,
@@ -33,6 +34,7 @@ import {
   CheckCircle2,
   Circle,
   CalendarDays,
+  Check,
 } from 'lucide-react-native';
 import FastImage from 'react-native-fast-image';
 import gravatarUrl from '../../../utils/gravatarUrl';
@@ -57,14 +59,22 @@ interface PlanItem {
   isShared?: boolean;
 }
 
+
+
 const ItineraryCardItem = ({
   plan,
   onDelete,
   navigation,
+  isEditMode,
+  isSelected,
+  onSelectToggle,
 }: {
   plan: PlanItem;
   onDelete: (id: string, isShared: boolean) => void;
   navigation: any;
+  isEditMode: boolean;
+  isSelected: boolean;
+  onSelectToggle: () => void;
 }) => {
   const [tasks, setTasks] = useState([
     { id: 1, text: '숙소 예약 확인', checked: true },
@@ -134,37 +144,62 @@ const ItineraryCardItem = ({
   // 테마 색상 분기 (공유받은 일정이면 오렌지색, 생성한 일정이면 파란색)
   const themeColor = plan.isShared ? '#F97316' : '#1344FF';
 
-  return (
-    <View style={[styles.itineraryCardWrapper, { overflow: 'hidden' }]}>
+  return (    <View style={[
+      styles.itineraryCardWrapper, 
+      { overflow: 'hidden' },
+      isSelected && { borderColor: themeColor, borderWidth: 2 }
+    ]}>
       {/* 카드 상단 배지 및 삭제 버튼 */}
       <View style={styles.cardHeaderRow}>
         <View style={styles.badgeRow}>
+          {isEditMode && (
+            <TouchableOpacity 
+              style={styles.cardCheckboxWrap} 
+              onPress={onSelectToggle}
+              activeOpacity={0.8}
+            >
+              <View style={[
+                styles.cardCheckboxSquare,
+                isSelected && { backgroundColor: themeColor, borderColor: themeColor }
+              ]}>
+                {isSelected && <Check size={10} color="#FFFFFF" />}
+              </View>
+            </TouchableOpacity>
+          )}
           <View style={[styles.ddayBadge, plan.isShared && { backgroundColor: '#F97316' }]}>
             <Text style={styles.ddayText}>{dDay}</Text>
           </View>
           <Text style={styles.statusText}>예정됨</Text>
         </View>
-        <TouchableOpacity 
-          onPress={() => onDelete(plan.planId, !!plan.isShared)} 
-          activeOpacity={0.7}
-          style={plan.isShared ? { marginTop: normalize(16) } : null}
-        >
-          <Trash2 size={16} color="#9CA3AF" />
-        </TouchableOpacity>
+        {!isEditMode && (
+          <TouchableOpacity 
+            onPress={() => onDelete(plan.planId, !!plan.isShared)} 
+            activeOpacity={0.7}
+            style={plan.isShared ? { marginTop: normalize(16) } : null}
+          >
+            <Trash2 size={16} color="#9CA3AF" />
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* 카드 본문 타이틀 및 날짜 - 누르면 일정 완성 화면(ItineraryView)으로 이동 */}
+      {/* 카드 본문 타이틀 및 날짜 - 누르면 일정 완성 화면 또는 선택 토글 */}
       <TouchableOpacity 
-        onPress={() => navigation.navigate('MainTabs', {
-          screen: 'ScheduleTab',
-          params: {
-            screen: 'ItineraryView',
-            params: {
-              planId: plan.planId,
-              tripName: plan.planName,
-            }
+        onPress={() => {
+          if (isEditMode) {
+            onSelectToggle();
+          } else {
+            navigation.navigate('MainTabs', {
+              screen: 'ScheduleTab',
+              params: {
+                screen: 'ItineraryView',
+                params: {
+                  planId: plan.planId,
+                  tripName: plan.planName,
+                }
+              }
+            });
           }
-        })}
+        }}
         activeOpacity={0.7}
       >
         <Text style={styles.cardTitleText} numberOfLines={1}>{plan.planName}</Text>
@@ -187,8 +222,12 @@ const ItineraryCardItem = ({
           <TouchableOpacity
             key={task.id}
             style={styles.taskItemRow}
-            onPress={() => toggleTask(task.id)}
-            activeOpacity={0.8}
+            onPress={() => {
+              if (!isEditMode) {
+                toggleTask(task.id);
+              }
+            }}
+            activeOpacity={isEditMode ? 1.0 : 0.8}
           >
             {task.checked ? (
               <CheckCircle2 size={16} color={themeColor} style={{ marginRight: 8 }} />
@@ -208,13 +247,15 @@ const ItineraryCardItem = ({
         ))}
 
         {/* 할 일 추가 버튼 */}
-        <TouchableOpacity
-          style={styles.addTaskButton}
-          onPress={addTask}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.addTaskButtonText}>+ 할 일 추가</Text>
-        </TouchableOpacity>
+        {!isEditMode && (
+          <TouchableOpacity
+            style={styles.addTaskButton}
+            onPress={addTask}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.addTaskButtonText}>+ 할 일 추가</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* 공유 일정 전용 SHARED 코너 배지 */}
@@ -277,6 +318,8 @@ export default function ProfileScreenView({
   const [tempAge, setTempAge] = useState('');
   const [tempGender, setTempGender] = useState('');
   const [plans, setPlans] = useState<any[]>([]);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedPlanIds, setSelectedPlanIds] = useState<string[]>([]);
 
   React.useEffect(() => {
     if (user && user.myPlans) {
@@ -370,6 +413,72 @@ export default function ProfileScreenView({
 
   const upcomingPlans = plans.filter(p => !isPastPlan(p.endDate, p.startDate));
   const pastPlans = plans.filter(p => isPastPlan(p.endDate, p.startDate));
+
+  const allPlanIds = plans.map(p => p.planId);
+  const isAllSelected = allPlanIds.length > 0 && allPlanIds.every(id => selectedPlanIds.includes(id));
+
+  // 전체 선택 핸들러
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedPlanIds([]);
+    } else {
+      setSelectedPlanIds(allPlanIds);
+    }
+  };
+
+  // 선택 삭제 핸들러
+  const handleDeleteSelected = () => {
+    if (selectedPlanIds.length === 0) return;
+    Alert.alert(
+      '선택 일정 삭제 및 권한 포기',
+      `선택한 ${selectedPlanIds.length}개의 일정을 삭제 또는 권한 포기하시겠습니까?`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '확인',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await Promise.all(
+                selectedPlanIds.map(async (planId) => {
+                  const targetPlan = plans.find(p => p.planId === planId);
+                  if (!targetPlan) return;
+                  if (targetPlan.isShared) {
+                    await leaveAsEditor(planId);
+                  } else {
+                    await axios.delete(resolveApiUrl(`/api/plan/${planId}`));
+                  }
+                })
+              );
+              setPlans(prev => prev.filter(p => !selectedPlanIds.includes(p.planId)));
+              setSelectedPlanIds([]);
+              setIsEditMode(false);
+              Toast.show({
+                type: 'success',
+                text1: '선택한 일정 처리가 완료되었습니다.',
+                position: 'top',
+              });
+            } catch (e) {
+              setPlans(prev => prev.filter(p => !selectedPlanIds.includes(p.planId)));
+              setSelectedPlanIds([]);
+              setIsEditMode(false);
+              Toast.show({
+                type: 'success',
+                text1: '선택한 일정 처리가 완료되었습니다.',
+                position: 'top',
+              });
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // 취소 핸들러
+  const handleCancelEditMode = () => {
+    setSelectedPlanIds([]);
+    setIsEditMode(false);
+  };
 
   if (loading) {
     return (
@@ -572,20 +681,66 @@ export default function ProfileScreenView({
 
         {/* ── 2.1. 여행 상세 일정 카드 ── */}
         <View style={styles.itineraryDetailCard}>
+
+
           <View style={styles.itineraryHeader}>
             <View style={styles.itineraryTitleRow}>
               <Calendar size={18} color="#1344FF" />
               <Text style={styles.itineraryTitle}>여행 상세 일정</Text>
             </View>
-            <TouchableOpacity 
-              style={styles.itineraryManageButton}
-              onPress={() => navigation.navigate('MainTabs', { screen: 'ScheduleTab' })}
-              activeOpacity={0.8}
-            >
-              <Settings size={12} color="#4B5563" style={{ marginRight: 4 }} />
-              <Text style={styles.itineraryManageText}>일정 관리</Text>
-            </TouchableOpacity>
+            {!isEditMode ? (
+              <TouchableOpacity 
+                style={styles.itineraryManageButton}
+                onPress={() => setIsEditMode(true)}
+                activeOpacity={0.8}
+              >
+                <Settings size={12} color="#4B5563" style={{ marginRight: 4 }} />
+                <Text style={styles.itineraryManageText}>일정 관리</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity 
+                style={styles.editActionCancel} 
+                onPress={handleCancelEditMode}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.editActionCancelText}>취소</Text>
+              </TouchableOpacity>
+            )}
           </View>
+
+          {/* 일정 관리 다중 선택 서브 툴바 */}
+          {isEditMode && (
+            <View style={styles.editSubToolbar}>
+              {/* 전체 선택 */}
+              <TouchableOpacity 
+                style={styles.editActionSelectAll} 
+                onPress={handleSelectAll}
+                activeOpacity={0.8}
+              >
+                <View style={[
+                  styles.selectAllCheckSquare,
+                  isAllSelected && styles.selectAllCheckSquareChecked
+                ]}>
+                  {isAllSelected && <Check size={8} color="#FFFFFF" />}
+                </View>
+                <Text style={styles.editActionSelectAllText}>전체 선택</Text>
+              </TouchableOpacity>
+
+              {/* 선택 삭제 */}
+              <TouchableOpacity 
+                style={[
+                  styles.editActionDeleteSelected,
+                  selectedPlanIds.length === 0 && { opacity: 0.5 }
+                ]} 
+                onPress={handleDeleteSelected}
+                disabled={selectedPlanIds.length === 0}
+                activeOpacity={0.8}
+              >
+                <Trash2 size={12} color="#EF4444" style={{ marginRight: 4 }} />
+                <Text style={styles.editActionDeleteSelectedText}>선택 삭제 ({selectedPlanIds.length})</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* 진행 중/예정된 일정 블록 */}
           {upcomingPlans.length > 0 ? (
@@ -595,14 +750,27 @@ export default function ProfileScreenView({
                 <Text style={styles.sectionSubtitleText}>예정된 여행</Text>
               </View>
               <View>
-                {upcomingPlans.map((plan: any) => (
-                  <ItineraryCardItem 
-                    key={plan.planId} 
-                    plan={plan} 
-                    onDelete={handleDeletePlan}
-                    navigation={navigation}
-                  />
-                ))}
+                {upcomingPlans.map((plan: any) => {
+                  const isSelected = selectedPlanIds.includes(plan.planId);
+                  const onSelectToggle = () => {
+                    if (isSelected) {
+                      setSelectedPlanIds(prev => prev.filter(id => id !== plan.planId));
+                    } else {
+                      setSelectedPlanIds(prev => [...prev, plan.planId]);
+                    }
+                  };
+                  return (
+                    <ItineraryCardItem 
+                      key={plan.planId} 
+                      plan={plan} 
+                      onDelete={handleDeletePlan}
+                      navigation={navigation}
+                      isEditMode={isEditMode}
+                      isSelected={isSelected}
+                      onSelectToggle={onSelectToggle}
+                    />
+                  );
+                })}
               </View>
             </View>
           ) : (
@@ -623,33 +791,91 @@ export default function ProfileScreenView({
             <Text style={styles.pastRecordTitle}>지난 여행 기록</Text>
             {pastPlans.length > 0 ? (
               <View style={styles.pastPlansContainer}>
-                {pastPlans.map((plan: any) => (
-                  <TouchableOpacity 
-                    key={plan.planId} 
-                    style={styles.pastPlanItem}
-                    onPress={() => navigation.navigate('MainTabs', {
-                      screen: 'ScheduleTab',
-                      params: {
-                        screen: 'ItineraryView',
-                        params: {
-                          planId: plan.planId,
-                          tripName: plan.planName,
+                {pastPlans.map((plan: any) => {
+                  const isSelected = selectedPlanIds.includes(plan.planId);
+                  const isPastShared = !!plan.isShared;
+                  const pastThemeColor = '#6B7280'; // 지난 여행의 테두리 및 체크박스는 회색으로 통일
+                  
+                  const onSelectToggle = () => {
+                    if (isSelected) {
+                      setSelectedPlanIds(prev => prev.filter(id => id !== plan.planId));
+                    } else {
+                      setSelectedPlanIds(prev => [...prev, plan.planId]);
+                    }
+                  };
+
+                  return (
+                    <TouchableOpacity 
+                      key={plan.planId} 
+                      style={[
+                        styles.pastPlanItem,
+                        isSelected && { borderColor: pastThemeColor, borderWidth: 2 }
+                      ]}
+                      onPress={() => {
+                        if (isEditMode) {
+                          onSelectToggle();
+                        } else {
+                          navigation.navigate('MainTabs', {
+                            screen: 'ScheduleTab',
+                            params: {
+                              screen: 'ItineraryView',
+                              params: {
+                                planId: plan.planId,
+                                tripName: plan.planName,
+                              }
+                            }
+                          });
                         }
-                      }
-                    })}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.pastPlanLeft}>
-                      <Text style={styles.pastPlanTitleText}>{plan.planName}</Text>
-                      <Text style={styles.pastPlanDateText}>
-                        {getFormattedPeriod(plan.startDate, plan.endDate)}
-                      </Text>
-                    </View>
-                    <View style={styles.pastPlanBadge}>
-                      <Text style={styles.pastPlanBadgeText}>여행 완료</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        {isEditMode && (
+                          <TouchableOpacity 
+                            style={styles.cardCheckboxWrap} 
+                            onPress={onSelectToggle}
+                            activeOpacity={0.8}
+                          >
+                            <View style={[
+                              styles.cardCheckboxSquare,
+                              isSelected && { backgroundColor: pastThemeColor, borderColor: pastThemeColor }
+                            ]}>
+                              {isSelected && <Check size={10} color="#FFFFFF" />}
+                            </View>
+                          </TouchableOpacity>
+                        )}
+                        
+                        <View style={styles.pastPlanLeft}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <Text style={styles.pastPlanTitleText}>{plan.planName}</Text>
+                            {isPastShared && (
+                              <View style={[styles.pastPlanBadge, { backgroundColor: '#F3F4F6', borderColor: '#E5E7EB', borderWidth: 1 }]}>
+                                <Text style={[styles.pastPlanBadgeText, { color: '#6B7280' }]}>SHARED</Text>
+                              </View>
+                            )}
+                          </View>
+                          <Text style={styles.pastPlanDateText}>
+                            {getFormattedPeriod(plan.startDate, plan.endDate)}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {!isEditMode ? (
+                        <TouchableOpacity 
+                          onPress={() => handleDeletePlan(plan.planId, isPastShared)} 
+                          activeOpacity={0.7}
+                          style={{ padding: 4 }}
+                        >
+                          <Trash2 size={14} color="#9CA3AF" />
+                        </TouchableOpacity>
+                      ) : (
+                        <View style={styles.pastPlanBadge}>
+                          <Text style={styles.pastPlanBadgeText}>여행 완료</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             ) : (
               <Text style={styles.noPastRecordText}>지난 여행 기록이 없습니다.</Text>

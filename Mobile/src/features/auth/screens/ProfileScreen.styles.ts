@@ -527,6 +527,7 @@ export const styles = StyleSheet.create({
     borderTopColor: '#F3F4F6',
     width: '100%',
   },
+
   /* ── Itinerary Details Area ── */
   itineraryDetailCard: {
     backgroundColor: '#FFFFFF',
@@ -598,6 +599,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
     borderRadius: normalize(12),
     padding: normalize(16),
+    marginTop: normalize(16),
   },
   pastRecordTitle: {
     fontSize: normalize(13),
@@ -611,11 +613,8 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: normalize(16),
   },
-  /* ── Itinerary Card Slider & Items ── */
-  horizontalScrollContainer: {
-    paddingRight: normalize(16),
-    paddingVertical: normalize(4),
-  },
+
+  /* ── Itinerary Card Items ── */
   itineraryCardWrapper: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -735,6 +734,7 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#4B5563',
   },
+
   /* ── Past Plan Compact List Styles ── */
   pastPlansContainer: {
     gap: normalize(10),
@@ -791,5 +791,89 @@ export const styles = StyleSheet.create({
     fontSize: normalize(10),
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+
+  /* ── Batch Edit Mode Header & Items ── */
+  editModeHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(8),
+  },
+  editActionSelectAll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB',
+    borderRadius: normalize(8),
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(6),
+  },
+  selectAllCheckSquare: {
+    width: normalize(12),
+    height: normalize(12),
+    borderWidth: 1,
+    borderColor: '#9CA3AF',
+    borderRadius: normalize(3),
+    marginRight: normalize(4),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectAllCheckSquareChecked: {
+    backgroundColor: '#4B5563',
+    borderColor: '#4B5563',
+  },
+  editActionSelectAllText: {
+    fontSize: normalize(11),
+    color: '#4B5563',
+    fontWeight: 'bold',
+  },
+  editActionDeleteSelected: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+    backgroundColor: '#FEF2F2',
+    borderRadius: normalize(8),
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(6),
+  },
+  editActionDeleteSelectedText: {
+    fontSize: normalize(11),
+    color: '#EF4444',
+    fontWeight: 'bold',
+  },
+  editActionCancel: {
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(6),
+  },
+  editActionCancelText: {
+    fontSize: normalize(11),
+    color: '#6B7280',
+    fontWeight: 'bold',
+  },
+  cardCheckboxWrap: {
+    marginRight: normalize(6),
+  },
+  cardCheckboxSquare: {
+    width: normalize(16),
+    height: normalize(16),
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: normalize(4),
+    alignItems: 'center',
+    justifyContent: 'center',    backgroundColor: '#FFFFFF',
+  },
+  editSubToolbar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: normalize(12),
+    paddingVertical: normalize(8),
+    borderRadius: normalize(12),
+    marginBottom: normalize(16),
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
   },
 });

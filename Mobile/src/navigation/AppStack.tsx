@@ -64,7 +64,7 @@ function ScheduleStack() {
     >
       <ScheduleStackNavigator.Screen
         name="MySchedule"
-        component={MyScheduleScreen}
+        component={ProfileScreen}
       />
       <ScheduleStackNavigator.Screen
         name="Home"
