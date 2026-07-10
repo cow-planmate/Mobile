@@ -21,6 +21,25 @@ jest.mock('react-native-reanimated', () => {
     },
   };
 });
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  multiSet: jest.fn(() => Promise.resolve()),
+  multiRemove: jest.fn(() => Promise.resolve()),
+  getItem: jest.fn(() => Promise.resolve(null)),
+}));
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({
+    navigate: jest.fn(),
+  }),
+}));
+
+jest.mock('@fortawesome/react-native-fontawesome', () => ({
+  FontAwesomeIcon: () => null,
+}));
+jest.mock('react-native-date-picker', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return (props: any) => React.createElement(View, props);
+});
 
 jest.mock('react-native-webview', () => {
   const React = require('react');

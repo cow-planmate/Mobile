@@ -1,71 +1,163 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useAlert } from '../../../contexts/AlertContext';
+import { useAuthStore } from '../../../store/useAuthStore';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { getPendingInvitations, PendingInvitation } from '../../../api/trips';
 import CommunityScreenView, { Post } from './CommunityScreen.view';
 
 const MOCK_POSTS: Post[] = [
   {
     id: '1',
-    title: '제주도 3박 4일 뚜벅이 최적 동선 코스 추천! 🌴',
-    content: '차 없이 떠나는 제주 동쪽 코스입니다. 함덕부터 성산까지 버스로 이동하기 수월하고 힐링할 수 있는 스팟들 위주로 구성해봤어요. 상세 일정 및 맛집 리스트 참고하세요!',
-    author: '감귤사랑',
-    time: '2시간 전',
-    category: '일정 공유',
-    likes: 28,
-    comments: 12,
-    views: 156,
+    title: '자유게시판 게시글 1',
+    content: '여행에 대한 자유로운 이야기를 나누는 공간입니다. 서로의 경험을 공유해보세요!',
+    author: '사용자1',
+    level: 4,
+    time: '6시간 전',
+    category: '자유게시판',
+    likes: 4,
+    comments: 29,
+    views: 648,
+    thumbnail: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=150&auto=format&fit=crop',
   },
   {
     id: '2',
-    title: '일본 교토 전통 가옥 감성 숙소 정보 공유합니다 🏠',
-    content: '교토 기온 거리에 위치한 100년 된 료칸풍 에어비앤비 후기입니다. 다다미방과 아담한 정원이 있어 교토 특유의 고즈넉한 분위기를 제대로 느낄 수 있어요.',
-    author: '교토매니아',
-    time: '4시간 전',
-    category: '자유',
-    likes: 45,
-    comments: 8,
-    views: 242,
+    title: '자유게시판 게시글 2',
+    content: '여행에 대한 자유로운 이야기를 나누는 공간입니다. 서로의 경험을 공유해보세요!',
+    author: '사용자2',
+    level: 1,
+    time: '3시간 전',
+    category: '자유게시판',
+    likes: 74,
+    comments: 9,
+    views: 488,
+    thumbnail: null,
   },
   {
     id: '3',
-    title: '올여름 가족 휴가: 여수 vs 남해 어디가 좋을까요? 🤔',
-    content: '부모님 모시고 2박 3일로 다녀오려고 하는데, 맛있는 해산물과 여유로운 오션뷰 중 고민이네요. 부모님 만족도가 더 높았던 여행지 추천 부탁드려요!',
-    author: '결정장애',
-    time: '6시간 전',
-    category: '질문',
-    likes: 14,
+    title: '자유게시판 게시글 3',
+    content: '여행에 대한 자유로운 이야기를 나누는 공간입니다. 서로의 경험을 공유해보세요!',
+    author: '사용자3',
+    level: 1,
+    time: '14시간 전',
+    category: '자유게시판',
+    likes: 58,
     comments: 29,
-    views: 198,
+    views: 961,
+    thumbnail: null,
   },
   {
     id: '4',
-    title: '유럽 유레일 패스 vs 구간권 완벽 비교 & 할인 꿀팁 🚄',
-    content: '유럽 배낭여행 갈 때 가장 고민되는 교통권 정리글입니다. 국가 간 이동 횟수와 나이대에 따라 어떤 티켓이 더 이득인지 엑셀식 계산기로 비교해 알려드립니다.',
-    author: '유럽방랑자',
-    time: '1일 전',
-    category: '정보',
-    likes: 89,
-    comments: 21,
-    views: 524,
+    title: '자유게시판 게시글 4',
+    content: '여행에 대한 자유로운 이야기를 나누는 공간입니다. 서로의 경험을 공유해보세요!',
+    author: '사용자4',
+    level: 3,
+    time: '3시간 전',
+    category: '자유게시판',
+    likes: 75,
+    comments: 10,
+    views: 294,
+    thumbnail: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=150&auto=format&fit=crop',
   },
   {
     id: '5',
-    title: '혼자 떠나는 강릉 당일치기 바다 힐링 여행 후기 🌊',
-    content: '주말에 급 KTX 예매해서 다녀온 강릉 안목해변과 초당순두부마을 후기입니다. 혼밥하기 좋은 감성 맛집들과 바다 전망 카페 추천 포함되어 있습니다.',
-    author: '바다조아',
-    time: '2일 전',
-    category: '자유',
-    likes: 37,
-    comments: 6,
-    views: 145,
+    title: '자유게시판 게시글 5',
+    content: '여행에 대한 자유로운 이야기를 나누는 공간입니다. 서로의 경험을 공유해보세요!',
+    author: '사용자5',
+    level: 2,
+    time: '2시간 전',
+    category: '자유게시판',
+    likes: 57,
+    comments: 37,
+    views: 251,
+    thumbnail: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=150&auto=format&fit=crop',
   },
+  {
+    id: '6',
+    title: 'Q&A 질문 게시글 1',
+    content: '일본 도쿄 3박 4일 일정 짜는데 비행기 편명이랑 시간대 추천부탁드려요!',
+    author: '도쿄러버',
+    level: 2,
+    time: '5시간 전',
+    category: 'Q&A',
+    likes: 12,
+    comments: 32,
+    views: 180,
+    thumbnail: null,
+  },
+  {
+    id: '7',
+    title: '메이트 찾기 게시글 1',
+    content: '다음달 8월에 파리 가시는 분 계신가요? 에펠탑 보면서 맥주 한잔해요!',
+    author: '파리메이트',
+    level: 5,
+    time: '12시간 전',
+    category: '메이트 찾기',
+    likes: 22,
+    comments: 15,
+    views: 310,
+    thumbnail: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=150&auto=format&fit=crop',
+  },
+  {
+    id: '8',
+    title: '장소 추천 게시글 1',
+    content: '강릉 안목해변 카페거리 말고 진짜 숨겨진 로컬 오션뷰 스팟 알려드림!',
+    author: '숨은명소',
+    level: 4,
+    time: '1일 전',
+    category: '장소 추천',
+    likes: 95,
+    comments: 42,
+    views: 890,
+    thumbnail: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=150&auto=format&fit=crop',
+  },
+  {
+    id: '9',
+    title: '자유게시판 게시글 8',
+    content: '여행에 대한 자유로운 이야기를 나누는 공간입니다. 서로의 경험을 공유해보세요!',
+    author: '사용자8',
+    level: 3,
+    time: '23시간 전',
+    category: '자유게시판',
+    likes: 68,
+    comments: 20,
+    views: 787,
+    thumbnail: 'https://images.unsplash.com/photo-1527631746610-bca00a040d60?w=150&auto=format&fit=crop',
+  }
 ];
 
-const CATEGORIES = ['전체', '일정 공유', '자유', '정보', '질문'];
+const CATEGORIES = ['자유게시판', 'Q&A', '메이트 찾기', '장소 추천'];
 
 export default function CommunityScreen() {
   const { showAlert } = useAlert();
-  const [selectedCategory, setSelectedCategory] = useState('전체');
+  const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const user = useAuthStore((state) => state.user);
+
+  const [selectedCategory, setSelectedCategory] = useState('자유게시판');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isNotificationModalVisible, setNotificationModalVisible] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState<PendingInvitation[]>([]);
+
+  const fetchPendingRequests = useCallback(async (silent = false) => {
+    try {
+      const requests = await getPendingInvitations();
+      if (requests) {
+        setPendingRequests(requests);
+      }
+    } catch (error) {
+      console.log('초대 요청 목록 조회 실패:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchPendingRequests();
+  }, [fetchPendingRequests]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void fetchPendingRequests(true);
+    }, [fetchPendingRequests])
+  );
 
   const handleSelectCategory = (category: string) => {
     setSelectedCategory(category);
@@ -92,10 +184,17 @@ export default function CommunityScreen() {
     }
   };
 
+  const handleNotificationPress = () => {
+    setNotificationModalVisible(true);
+  };
+
+  const handleNavigateProfile = () => {
+    navigation.navigate('Profile');
+  };
+
   // Filter posts based on selected category and search query
   const filteredPosts = MOCK_POSTS.filter((post) => {
-    const matchesCategory =
-      selectedCategory === '전체' || post.category === selectedCategory;
+    const matchesCategory = post.category === selectedCategory;
     const matchesSearch =
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -103,9 +202,15 @@ export default function CommunityScreen() {
     return matchesCategory && matchesSearch;
   });
 
+  const hotPosts = [...MOCK_POSTS]
+    .filter(p => p.category === selectedCategory)
+    .sort((a, b) => b.likes - a.likes)
+    .slice(0, 3);
+
   return (
     <CommunityScreenView
       posts={filteredPosts}
+      hotPosts={hotPosts}
       categories={CATEGORIES}
       selectedCategory={selectedCategory}
       onSelectCategory={handleSelectCategory}
@@ -113,6 +218,13 @@ export default function CommunityScreen() {
       onSearchChange={handleSearchChange}
       onWritePost={handleWritePost}
       onPostPress={handlePostPress}
+      user={user}
+      pendingRequests={pendingRequests}
+      isNotificationModalVisible={isNotificationModalVisible}
+      setNotificationModalVisible={setNotificationModalVisible}
+      onNotificationPress={handleNotificationPress}
+      onNavigateProfile={handleNavigateProfile}
+      fetchPendingRequests={fetchPendingRequests}
     />
   );
 }
