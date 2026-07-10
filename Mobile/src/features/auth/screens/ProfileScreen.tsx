@@ -20,6 +20,7 @@ export default function ProfileScreen() {
     gender: '',
     preferredThemes: [] as PreferredThemeVO[],
     socialLogin: false,
+    myPlans: [] as any[],
   });
 
   const [isNicknameModalVisible, setNicknameModalVisible] = useState(false);
@@ -27,7 +28,6 @@ export default function ProfileScreen() {
   const [isGenderModalVisible, setGenderModalVisible] = useState(false);
   const [isThemeModalVisible, setThemeModalVisible] = useState(false);
   const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
-
   const fetchUserProfile = useCallback(async () => {
     try {
       setLoading(true);
@@ -38,12 +38,38 @@ export default function ProfileScreen() {
       if (data.gender === 0) genderStr = '남자';
       else if (data.gender === 1) genderStr = '여자';
 
-      const themes =
-        data.preferredThemes && data.preferredThemes.length > 0
-          ? data.preferredThemes
-              .map((t: PreferredThemeVO) => t.preferredThemeName)
-              .join(', ')
-          : '미설정';
+      const myPlansRaw = data.myPlanVOs || [];
+      const editablePlansRaw = data.editablePlanVOs || [];
+      const allPlansRaw = [...myPlansRaw, ...editablePlansRaw];
+
+      const plansWithDates = await Promise.all(
+        allPlansRaw.map(async (plan: any) => {
+          try {
+            const planDetailRes = await axios.get(resolveApiUrl(`/api/plan/${plan.planId}`));
+            const { timetables } = planDetailRes.data;
+            if (timetables && timetables.length > 0) {
+              const sorted = [...timetables].sort(
+                (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+              );
+              const formatDateStr = (dateStr: string) => {
+                const d = new Date(dateStr);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}.${mm}.${dd}`;
+              };
+              return {
+                ...plan,
+                startDate: formatDateStr(sorted[0].date),
+                endDate: formatDateStr(sorted[sorted.length - 1].date),
+              };
+            }
+          } catch (e) {
+            console.log(`Failed to fetch dates for plan ${plan.planId}:`, e);
+          }
+          return plan;
+        })
+      );
 
       setUser({
         name: data.nickname || '이름 없음',
@@ -52,6 +78,7 @@ export default function ProfileScreen() {
         gender: genderStr,
         preferredThemes: data.preferredThemes || [],
         socialLogin: data.socialLogin || false,
+        myPlans: plansWithDates,
       });
     } catch (error) {
       console.error('Failed to fetch profile:', error);

@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import LinearGradient from 'react-native-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 import { LoadingSpinner, UpdateGenderModal, UpdatePasswordModal, UpdateThemeModal } from '../../../components/common';
 import {
   User,
@@ -22,11 +23,189 @@ import {
   X,
   Camera,
   AlertTriangle,
+  Calendar,
+  Trash2,
+  CheckCircle2,
+  Circle,
+  CalendarDays,
 } from 'lucide-react-native';
 import FastImage from 'react-native-fast-image';
 import gravatarUrl from '../../../utils/gravatarUrl';
 import { normalize } from '../../../utils/normalize';
 import { styles, COLORS } from './ProfileScreen.styles';
+const getFormattedPeriod = (start?: string, end?: string) => {
+  if (!start) return '날짜 확인 필요';
+  const cleanedStart = start.replace(/-/g, '.');
+  const cleanedEnd = end ? end.replace(/-/g, '.') : '';
+  
+  if (!cleanedEnd || cleanedStart === cleanedEnd) {
+    return cleanedStart;
+  }
+  return `${cleanedStart} - ${cleanedEnd}`;
+};
+
+interface PlanItem {
+  planId: string;
+  planName: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+const ItineraryCardItem = ({
+  plan,
+  onDelete,
+  navigation,
+}: {
+  plan: PlanItem;
+  onDelete: (id: string) => void;
+  navigation: any;
+}) => {
+  const [tasks, setTasks] = useState([
+    { id: 1, text: '숙소 예약 확인', checked: true },
+    { id: 2, text: '짐 싸기 완료', checked: false },
+    { id: 3, text: '맛집 리스트 체크', checked: false },
+  ]);
+
+  // D-Day 계산
+  const getDDay = (startDateStr?: string) => {
+    if (!startDateStr) return 'D-Day';
+    try {
+      const parsedDate = startDateStr.includes('.')
+        ? startDateStr.replace(/\./g, '-')
+        : startDateStr;
+      const start = new Date(parsedDate);
+      const today = new Date();
+      start.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      
+      const diffTime = start.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays === 0) return 'D-Day';
+      if (diffDays > 0) return `D-${diffDays}`;
+      return `D+${Math.abs(diffDays)}`;
+    } catch {
+      return 'D-Day';
+    }
+  };
+
+  const dDay = getDDay(plan.startDate);
+  const formattedPeriod = getFormattedPeriod(plan.startDate, plan.endDate);
+
+  // 체크 토글
+  const toggleTask = (id: number) => {
+    setTasks(prev =>
+      prev.map(t => (t.id === id ? { ...t, checked: !t.checked } : t))
+    );
+  };
+
+  // 할 일 추가
+  const dummyTaskPool = [
+    '환전하기',
+    '보조배터리 챙기기',
+    '상비약 구매',
+    '카메라 충전',
+    '날씨 체크',
+    '여행자 보험 가입',
+  ];
+
+  const addTask = () => {
+    const nextTaskText = dummyTaskPool[tasks.length % dummyTaskPool.length];
+    const newTask = {
+      id: Date.now(),
+      text: nextTaskText,
+      checked: false,
+    };
+    setTasks(prev => [...prev, newTask]);
+    Toast.show({
+      type: 'success',
+      text1: `할 일이 추가되었습니다: ${nextTaskText}`,
+      position: 'top',
+    });
+  };
+
+  const completedCount = tasks.filter(t => t.checked).length;
+
+  return (
+    <View style={styles.itineraryCardWrapper}>
+      {/* 카드 상단 배지 및 삭제 버튼 */}
+      <View style={styles.cardHeaderRow}>
+        <View style={styles.badgeRow}>
+          <View style={styles.ddayBadge}>
+            <Text style={styles.ddayText}>{dDay}</Text>
+          </View>
+          <Text style={styles.statusText}>예정됨</Text>
+        </View>
+        <TouchableOpacity onPress={() => onDelete(plan.planId)} activeOpacity={0.7}>
+          <Trash2 size={16} color="#9CA3AF" />
+        </TouchableOpacity>
+      </View>
+
+      {/* 카드 본문 타이틀 및 날짜 - 누르면 일정 완성 화면(ItineraryView)으로 이동 */}
+      <TouchableOpacity 
+        onPress={() => navigation.navigate('MainTabs', {
+          screen: 'ScheduleTab',
+          params: {
+            screen: 'ItineraryView',
+            params: {
+              planId: plan.planId,
+              tripName: plan.planName,
+            }
+          }
+        })}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.cardTitleText} numberOfLines={1}>{plan.planName}</Text>
+        <View style={styles.dateInfoRow}>
+          <Calendar size={12} color="#9CA3AF" style={{ marginRight: 4 }} />
+          <Text style={styles.datePeriodText}>{formattedPeriod}</Text>
+        </View>
+      </TouchableOpacity>
+
+      {/* 체크리스트 영역 */}
+      <View style={styles.checklistContainer}>
+        <View style={styles.checklistHeader}>
+          <Text style={styles.checklistTitle}>CHECK LIST</Text>
+          <Text style={styles.checklistProgressText}>
+            {completedCount}/{tasks.length}
+          </Text>
+        </View>
+
+        {tasks.map(task => (
+          <TouchableOpacity
+            key={task.id}
+            style={styles.taskItemRow}
+            onPress={() => toggleTask(task.id)}
+            activeOpacity={0.8}
+          >
+            {task.checked ? (
+              <CheckCircle2 size={16} color="#1344FF" style={{ marginRight: 8 }} />
+            ) : (
+              <Circle size={16} color="#D1D5DB" style={{ marginRight: 8 }} />
+            )}
+            <Text
+              style={[
+                styles.taskText,
+                task.checked && styles.taskTextCompleted,
+              ]}
+              numberOfLines={1}
+            >
+              {task.text}
+            </Text>
+          </TouchableOpacity>
+        ))}
+
+        {/* 할 일 추가 버튼 */}
+        <TouchableOpacity
+          style={styles.addTaskButton}
+          onPress={addTask}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.addTaskButtonText}>+ 할 일 추가</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
 
 interface ProfileScreenViewProps {
   loading: boolean;
@@ -71,10 +250,50 @@ export default function ProfileScreenView({
   handleResign,
   logout,
 }: ProfileScreenViewProps) {
+  const navigation = useNavigation<any>();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [tempNickname, setTempNickname] = useState('');
   const [tempAge, setTempAge] = useState('');
   const [tempGender, setTempGender] = useState('');
+  const [plans, setPlans] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    if (user && user.myPlans) {
+      setPlans(user.myPlans);
+    }
+  }, [user]);
+
+  const handleDeletePlan = (planId: string) => {
+    setPlans(prev => prev.filter(p => p.planId !== planId));
+    Toast.show({
+      type: 'success',
+      text1: '일정이 정상적으로 삭제되었습니다.',
+      position: 'top',
+    });
+  };
+
+  // 오늘 날짜 2026-07-11 기준 지난 일정 여부 판단
+  const isPastPlan = (endDateStr?: string, startDateStr?: string) => {
+    const targetStr = endDateStr || startDateStr;
+    if (!targetStr) return false;
+    try {
+      const parsedDate = targetStr.includes('.')
+        ? targetStr.replace(/\./g, '-')
+        : targetStr;
+      const targetDate = new Date(parsedDate);
+      const today = new Date();
+      
+      targetDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      
+      return targetDate.getTime() < today.getTime();
+    } catch {
+      return false;
+    }
+  };
+
+  const upcomingPlans = plans.filter(p => !isPastPlan(p.endDate, p.startDate));
+  const pastPlans = plans.filter(p => isPastPlan(p.endDate, p.startDate));
 
   if (loading) {
     return (
@@ -272,6 +491,93 @@ export default function ProfileScreenView({
               <Lock size={11} color="#9CA3AF" />
               <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>전국 제패</Text>
             </View>
+          </View>
+        </View>
+
+        {/* ── 2.1. 여행 상세 일정 카드 ── */}
+        <View style={styles.itineraryDetailCard}>
+          <View style={styles.itineraryHeader}>
+            <View style={styles.itineraryTitleRow}>
+              <Calendar size={18} color="#1344FF" />
+              <Text style={styles.itineraryTitle}>여행 상세 일정</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.itineraryManageButton}
+              onPress={() => navigation.navigate('MainTabs', { screen: 'ScheduleTab' })}
+              activeOpacity={0.8}
+            >
+              <Settings size={12} color="#4B5563" style={{ marginRight: 4 }} />
+              <Text style={styles.itineraryManageText}>일정 관리</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* 진행 중/예정된 일정 블록 */}
+          {upcomingPlans.length > 0 ? (
+            <View style={{ marginBottom: normalize(16) }}>
+              <View style={styles.sectionSubtitleRow}>
+                <CalendarDays size={14} color="#6B7280" />
+                <Text style={styles.sectionSubtitleText}>예정된 여행</Text>
+              </View>
+              <View>
+                {upcomingPlans.map((plan: any) => (
+                  <ItineraryCardItem 
+                    key={plan.planId} 
+                    plan={plan} 
+                    onDelete={handleDeletePlan}
+                    navigation={navigation}
+                  />
+                ))}
+              </View>
+            </View>
+          ) : (
+            <View style={styles.dashedPlanBox}>
+              <Calendar size={36} color="#D1D5DB" style={{ marginBottom: normalize(8) }} />
+              <Text style={styles.noPlanText}>진행 중이거나 예정된 여행 일정이 없습니다.</Text>
+              <TouchableOpacity 
+                onPress={() => navigation.navigate('MainTabs', { screen: 'ScheduleTab', params: { screen: 'Home' } })}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.createPlanLink}>새로운 여행 계획하기</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* 지난 여행 기록 블록 */}
+          <View style={styles.pastRecordBox}>
+            <Text style={styles.pastRecordTitle}>지난 여행 기록</Text>
+            {pastPlans.length > 0 ? (
+              <View style={styles.pastPlansContainer}>
+                {pastPlans.map((plan: any) => (
+                  <TouchableOpacity 
+                    key={plan.planId} 
+                    style={styles.pastPlanItem}
+                    onPress={() => navigation.navigate('MainTabs', {
+                      screen: 'ScheduleTab',
+                      params: {
+                        screen: 'ItineraryView',
+                        params: {
+                          planId: plan.planId,
+                          tripName: plan.planName,
+                        }
+                      }
+                    })}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.pastPlanLeft}>
+                      <Text style={styles.pastPlanTitleText}>{plan.planName}</Text>
+                      <Text style={styles.pastPlanDateText}>
+                        {getFormattedPeriod(plan.startDate, plan.endDate)}
+                      </Text>
+                    </View>
+                    <View style={styles.pastPlanBadge}>
+                      <Text style={styles.pastPlanBadgeText}>여행 완료</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.noPastRecordText}>지난 여행 기록이 없습니다.</Text>
+            )}
           </View>
         </View>
       </ScrollView>
