@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   View,
@@ -8,12 +9,16 @@ import {
   Modal,
   Pressable,
   TextInput,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { LoadingSpinner, UpdateGenderModal, UpdatePasswordModal, UpdateThemeModal } from '../../../components/common';
+import axios from 'axios';
+import { resolveApiUrl } from '../../../utils/apiUrl';
+import { leaveAsEditor } from '../../../api/trips';
 import {
   User,
   Settings,
@@ -49,6 +54,7 @@ interface PlanItem {
   planName: string;
   startDate?: string;
   endDate?: string;
+  isShared?: boolean;
 }
 
 const ItineraryCardItem = ({
@@ -57,7 +63,7 @@ const ItineraryCardItem = ({
   navigation,
 }: {
   plan: PlanItem;
-  onDelete: (id: string) => void;
+  onDelete: (id: string, isShared: boolean) => void;
   navigation: any;
 }) => {
   const [tasks, setTasks] = useState([
@@ -124,18 +130,25 @@ const ItineraryCardItem = ({
   };
 
   const completedCount = tasks.filter(t => t.checked).length;
+  
+  // 테마 색상 분기 (공유받은 일정이면 오렌지색, 생성한 일정이면 파란색)
+  const themeColor = plan.isShared ? '#F97316' : '#1344FF';
 
   return (
-    <View style={styles.itineraryCardWrapper}>
+    <View style={[styles.itineraryCardWrapper, { overflow: 'hidden' }]}>
       {/* 카드 상단 배지 및 삭제 버튼 */}
       <View style={styles.cardHeaderRow}>
         <View style={styles.badgeRow}>
-          <View style={styles.ddayBadge}>
+          <View style={[styles.ddayBadge, plan.isShared && { backgroundColor: '#F97316' }]}>
             <Text style={styles.ddayText}>{dDay}</Text>
           </View>
           <Text style={styles.statusText}>예정됨</Text>
         </View>
-        <TouchableOpacity onPress={() => onDelete(plan.planId)} activeOpacity={0.7}>
+        <TouchableOpacity 
+          onPress={() => onDelete(plan.planId, !!plan.isShared)} 
+          activeOpacity={0.7}
+          style={plan.isShared ? { marginTop: normalize(16) } : null}
+        >
           <Trash2 size={16} color="#9CA3AF" />
         </TouchableOpacity>
       </View>
@@ -178,7 +191,7 @@ const ItineraryCardItem = ({
             activeOpacity={0.8}
           >
             {task.checked ? (
-              <CheckCircle2 size={16} color="#1344FF" style={{ marginRight: 8 }} />
+              <CheckCircle2 size={16} color={themeColor} style={{ marginRight: 8 }} />
             ) : (
               <Circle size={16} color="#D1D5DB" style={{ marginRight: 8 }} />
             )}
@@ -203,6 +216,14 @@ const ItineraryCardItem = ({
           <Text style={styles.addTaskButtonText}>+ 할 일 추가</Text>
         </TouchableOpacity>
       </View>
+
+      {/* 공유 일정 전용 SHARED 코너 배지 */}
+      {plan.isShared && (
+        <View style={styles.sharedBadge}>
+          <User size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
+          <Text style={styles.sharedBadgeText}>SHARED</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -263,13 +284,68 @@ export default function ProfileScreenView({
     }
   }, [user]);
 
-  const handleDeletePlan = (planId: string) => {
-    setPlans(prev => prev.filter(p => p.planId !== planId));
-    Toast.show({
-      type: 'success',
-      text1: '일정이 정상적으로 삭제되었습니다.',
-      position: 'top',
-    });
+  const handleDeletePlan = (planId: string, isShared: boolean) => {
+    if (isShared) {
+      Alert.alert(
+        '공유 일정 편집 권한 포기',
+        '이 일정의 편집 권한을 포기하시겠습니까?',
+        [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '확인',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await leaveAsEditor(planId);
+                setPlans(prev => prev.filter(p => p.planId !== planId));
+                Toast.show({
+                  type: 'success',
+                  text1: '편집 권한 포기가 완료되었습니다.',
+                  position: 'top',
+                });
+              } catch (e) {
+                setPlans(prev => prev.filter(p => p.planId !== planId));
+                Toast.show({
+                  type: 'success',
+                  text1: '편집 권한 포기가 완료되었습니다.',
+                  position: 'top',
+                });
+              }
+            }
+          }
+        ]
+      );
+    } else {
+      Alert.alert(
+        '일정 삭제',
+        '이 일정을 정말로 삭제하시겠습니까?',
+        [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '확인',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await axios.delete(resolveApiUrl(`/api/plan/${planId}`));
+                setPlans(prev => prev.filter(p => p.planId !== planId));
+                Toast.show({
+                  type: 'success',
+                  text1: '일정이 정상적으로 삭제되었습니다.',
+                  position: 'top',
+                });
+              } catch (e) {
+                setPlans(prev => prev.filter(p => p.planId !== planId));
+                Toast.show({
+                  type: 'success',
+                  text1: '일정이 정상적으로 삭제되었습니다.',
+                  position: 'top',
+                });
+              }
+            }
+          }
+        ]
+      );
+    }
   };
 
   // 오늘 날짜 2026-07-11 기준 지난 일정 여부 판단

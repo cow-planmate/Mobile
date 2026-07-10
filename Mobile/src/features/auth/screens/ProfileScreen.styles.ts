@@ -774,4 +774,22 @@ export const styles = StyleSheet.create({
     color: '#6B7280',
     fontWeight: 'bold',
   },
+  sharedBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#F97316',
+    borderTopRightRadius: normalize(15),
+    borderBottomLeftRadius: normalize(16),
+    paddingHorizontal: normalize(12),
+    paddingVertical: normalize(6),
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  sharedBadgeText: {
+    fontSize: normalize(10),
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
 });

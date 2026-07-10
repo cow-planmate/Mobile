@@ -38,8 +38,8 @@ export default function ProfileScreen() {
       if (data.gender === 0) genderStr = '남자';
       else if (data.gender === 1) genderStr = '여자';
 
-      const myPlansRaw = data.myPlanVOs || [];
-      const editablePlansRaw = data.editablePlanVOs || [];
+      const myPlansRaw = (data.myPlanVOs || []).map((p: any) => ({ ...p, isShared: false }));
+      const editablePlansRaw = (data.editablePlanVOs || []).map((p: any) => ({ ...p, isShared: true }));
       const allPlansRaw = [...myPlansRaw, ...editablePlansRaw];
 
       const plansWithDates = await Promise.all(
