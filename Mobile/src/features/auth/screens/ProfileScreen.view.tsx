@@ -1,76 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   StatusBar,
+  Modal,
+  Pressable,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LoadingSpinner, UpdateGenderModal, UpdatePasswordModal, UpdateThemeModal, UpdateValueModal } from '../../../components/common';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import {
-  faEnvelope,
-  faCalendar,
-  faVenus,
-  faMars,
-  faHeart,
-  faLock,
-  faPen,
-  faMapMarkerAlt,
-  faBed,
-  faUtensils,
-} from '@fortawesome/free-solid-svg-icons';
 import {
   User,
-  Mail,
-  Calendar,
-  Heart,
+  Settings,
+  Award,
+  Trophy,
   Lock,
   ChevronRight,
-  Pencil,
-  LogOut,
+  X,
 } from 'lucide-react-native';
 import FastImage from 'react-native-fast-image';
 import gravatarUrl from '../../../utils/gravatarUrl';
+import { normalize } from '../../../utils/normalize';
 import { styles, COLORS } from './ProfileScreen.styles';
-
-/* ── Reusable card components ── */
-
-const InfoCard = ({
-  icon,
-  label,
-  value,
-  onPress,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  onPress?: () => void;
-}) => (
-  <View style={styles.sectionCard}>
-    <View style={styles.cardHeader}>
-      <View style={styles.cardTitleRow}>
-        {icon}
-        <Text style={styles.cardTitle}>{label}</Text>
-      </View>
-      {onPress && (
-        <TouchableOpacity onPress={onPress}>
-          <Text style={styles.changeText}>변경하기</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-    <View style={styles.cardContent}>
-      <Text style={styles.cardValue}>{value}</Text>
-    </View>
-  </View>
-);
-
-const ThemeTag = ({ text }: { text: string }) => (
-  <View style={styles.tag}>
-    <Text style={styles.tagText}>{text}</Text>
-  </View>
-);
 
 interface ProfileScreenViewProps {
   loading: boolean;
@@ -115,19 +67,7 @@ export default function ProfileScreenView({
   handleResign,
   logout,
 }: ProfileScreenViewProps) {
-  const tourismThemes = (user.preferredThemes || []).filter(
-    (t: any) => t.preferredThemeCategoryId === 0,
-  );
-  const lodgingThemes = (user.preferredThemes || []).filter(
-    (t: any) => t.preferredThemeCategoryId === 1,
-  );
-  const restaurantThemes = (user.preferredThemes || []).filter(
-    (t: any) => t.preferredThemeCategoryId === 2,
-  );
-  const hasAnyTheme =
-    tourismThemes.length > 0 ||
-    lodgingThemes.length > 0 ||
-    restaurantThemes.length > 0;
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
   if (loading) {
     return (
@@ -137,176 +77,282 @@ export default function ProfileScreenView({
     );
   }
 
+  // 선호테마 추출 및 파싱
+  const preferredThemes = user.preferredThemes || [];
+  const themeNames = preferredThemes.map((t: any) => t.preferredThemeName || t);
+  const defaultThemes = ['해수욕장', '호텔', '한식', '고기집', '이자카야'];
+  const displayThemes = themeNames.length > 0 ? themeNames : defaultThemes;
+
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" />
       <ScrollView
-        contentContainerStyle={styles.scrollContainer}
+        contentContainerStyle={[styles.scrollContainer, { paddingBottom: insets.bottom + normalize(40) }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* 프로필 요약 (PNG Style Header) */}
-        <View style={styles.profileInfoArea}>
-          <View style={styles.avatarWrap}>
-            {user.email ? (
-              <FastImage
-                source={{ uri: gravatarUrl(user.email, 200), priority: FastImage.priority.normal }}
-                style={styles.avatarImage}
-                resizeMode={FastImage.resizeMode.cover}
-              />
-            ) : (
-              <User size={50} color="#D1D5DB" />
-            )}
-          </View>
-          <TouchableOpacity
-            style={styles.nicknameRow}
-            onPress={() => setNicknameModalVisible(true)}
-          >
-            <Text style={styles.nicknameText}>{user.name}</Text>
-            <FontAwesomeIcon
-              icon={faPen}
-              size={18}
-              color="#6B7280"
-              style={styles.editIcon}
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Content Area (내 일정 화면처럼 큰 테두리 하나로 감싸기) */}
-        <View style={styles.sectionWrapper}>
-          <View style={styles.contentArea}>
-            {/* 이메일 카드 */}
-            <InfoCard
-              icon={
-                <FontAwesomeIcon icon={faEnvelope} size={20} color="#374151" />
-              }
-              label="이메일"
-              value={user.email}
-            />
-
-            {/* 나이 카드 */}
-            <InfoCard
-              icon={
-                <FontAwesomeIcon icon={faCalendar} size={20} color="#374151" />
-              }
-              label="나이"
-              value={user.age}
-              onPress={() => setAgeModalVisible(true)}
-            />
-
-            {/* 성별 카드 */}
-            <InfoCard
-              icon={
-                <FontAwesomeIcon
-                  icon={user.gender === '남자' ? faMars : faVenus}
-                  size={20}
-                  color="#374151"
+        {/* ── 1. 프로필 카드 ── */}
+        <View style={styles.profileCard}>
+          <View style={styles.profileHeaderRow}>
+            {/* 프로필 이미지 & 설정 버튼 */}
+            <View style={styles.avatarContainer}>
+              {user.email ? (
+                <FastImage
+                  source={{ uri: gravatarUrl(user.email, 200), priority: FastImage.priority.normal }}
+                  style={styles.avatarImage}
+                  resizeMode={FastImage.resizeMode.cover}
                 />
-              }
-              label="성별"
-              value={user.gender}
-              onPress={() => setGenderModalVisible(true)}
-            />
-
-            {/* 선호테마 카드 */}
-            <View style={styles.sectionCard}>
-              <View style={styles.cardHeader}>
-                <View style={styles.cardTitleRow}>
-                  <FontAwesomeIcon icon={faHeart} size={20} color="#374151" />
-                  <Text style={styles.cardTitle}>선호테마</Text>
-                </View>
-                <TouchableOpacity onPress={() => setThemeModalVisible(true)}>
-                  <Text style={styles.changeText}>변경하기</Text>
-                </TouchableOpacity>
-              </View>
-
-              {hasAnyTheme ? (
-                <>
-                  {tourismThemes.length > 0 && (
-                    <View style={styles.themeCategory}>
-                      <View style={styles.themeCategoryHeader}>
-                        <FontAwesomeIcon
-                          icon={faMapMarkerAlt}
-                          size={16}
-                          color="#4B5563"
-                        />
-                        <Text style={styles.themeCategoryTitle}>관광지</Text>
-                      </View>
-                      <View style={styles.tagContainer}>
-                        {tourismThemes.map((t: any) => (
-                          <ThemeTag key={t.preferredThemeId} text={t.preferredThemeName} />
-                        ))}
-                      </View>
-                    </View>
-                  )}
-
-                  {lodgingThemes.length > 0 && (
-                    <View style={styles.themeCategory}>
-                      <View style={styles.themeCategoryHeader}>
-                        <FontAwesomeIcon icon={faBed} size={16} color="#4B5563" />
-                        <Text style={styles.themeCategoryTitle}>숙소</Text>
-                      </View>
-                      <View style={styles.tagContainer}>
-                        {lodgingThemes.map((t: any) => (
-                          <ThemeTag key={t.preferredThemeId} text={t.preferredThemeName} />
-                        ))}
-                      </View>
-                    </View>
-                  )}
-
-                  {restaurantThemes.length > 0 && (
-                    <View style={styles.themeCategory}>
-                      <View style={styles.themeCategoryHeader}>
-                        <FontAwesomeIcon
-                          icon={faUtensils}
-                          size={16}
-                          color="#4B5563"
-                        />
-                        <Text style={styles.themeCategoryTitle}>식당</Text>
-                      </View>
-                      <View style={styles.tagContainer}>
-                        {restaurantThemes.map((t: any) => (
-                          <ThemeTag key={t.preferredThemeId} text={t.preferredThemeName} />
-                        ))}
-                      </View>
-                    </View>
-                  )}
-                </>
               ) : (
-                <View style={styles.emptyThemeContainer}>
-                  <Text style={styles.emptyThemeText}>등록된 선호테마가 없습니다. 변경하기를 통해 등록해 보세요!</Text>
+                <View style={styles.avatarPlaceholder}>
+                  <User size={40} color="#9CA3AF" />
                 </View>
               )}
+              <TouchableOpacity
+                style={styles.settingsButton}
+                onPress={() => setSettingsVisible(true)}
+                activeOpacity={0.8}
+              >
+                <Settings size={12} color="#FFFFFF" />
+              </TouchableOpacity>
             </View>
 
-            {/* 비밀번호 카드 */}
-            {user.socialLogin === false && (
-              <InfoCard
-                icon={
-                  <FontAwesomeIcon icon={faLock} size={20} color="#374151" />
-                }
-                label="비밀번호"
-                value="비밀번호 수정이 가능합니다"
-                onPress={() => setPasswordModalVisible(true)}
-              />
-            )}
+            {/* 닉네임, 등급, 이메일, 성별/나이 */}
+            <View style={styles.profileTextInfo}>
+              <View style={styles.nicknameRow}>
+                <Text style={styles.nicknameText}>{user.name || '사용자'}</Text>
+                <View style={styles.levelBadge}>
+                  <Award size={10} color="#FFFFFF" />
+                  <Text style={styles.levelBadgeText}>LV.1 • 여행 입문자</Text>
+                </View>
+              </View>
+
+              <View style={styles.emailRow}>
+                <Text style={styles.emailText} numberOfLines={1}>{user.email || '이메일 없음'}</Text>
+                <Text style={styles.emailDivider}>|</Text>
+                <View style={styles.genderAgeBadge}>
+                  <Text style={styles.genderAgeBadgeText}>
+                    {user.gender || '미설정'} • {user.age === '미설정' ? '미설정' : `${user.age}세`}
+                  </Text>
+                </View>
+              </View>
+            </View>
           </View>
 
-          {/* 하단 버튼 영역 */}
-          <View style={styles.footerArea}>
-            <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-              <Text style={styles.logoutText}>로그아웃</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.resignButton}
-              onPress={handleResign}
-            >
-              <Text style={styles.resignText}>탈퇴하기</Text>
-            </TouchableOpacity>
+          {/* 경험치 프로그레스 바 */}
+          <View style={styles.experienceSection}>
+            <View style={styles.experienceLabelRow}>
+              <Text style={styles.experienceTitle}>현재 경험치</Text>
+              <Text style={styles.experienceValue}>10 / 100 EXP</Text>
+            </View>
+            <View style={styles.progressBarTrack}>
+              <View style={[styles.progressBarFill, { width: '10%' }]} />
+            </View>
+          </View>
+
+          {/* 관심 분야 태그 */}
+          <View style={styles.tagSection}>
+            {displayThemes.map((theme: string, idx: number) => (
+              <View key={idx} style={styles.interestTag}>
+                <Text style={styles.interestTagText}>
+                  {theme.startsWith('#') ? theme : `#${theme}`}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          {/* 통계 수치 3종 */}
+          <View style={styles.statsSection}>
+            <View style={styles.statBlock}>
+              <Text style={styles.statNumber}>0</Text>
+              <Text style={styles.statLabel}>나의 일정</Text>
+            </View>
+            <View style={styles.statBlock}>
+              <Text style={styles.statNumber}>0</Text>
+              <Text style={styles.statLabel}>초대된 일정</Text>
+            </View>
+            <View style={styles.statBlock}>
+              <Text style={styles.statNumber}>0</Text>
+              <Text style={styles.statLabel}>좋아요</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* ── 2. 내 업적 카드 ── */}
+        <View style={styles.achievementCard}>
+          <View style={styles.achievementHeader}>
+            <View style={styles.achievementTitleRow}>
+              <Award size={18} color="#1344FF" />
+              <Text style={styles.achievementTitle}>내 업적</Text>
+            </View>
+            <View style={styles.achievementProgressBadge}>
+              <Text style={styles.achievementProgressText}>3 / 5 달성</Text>
+            </View>
+          </View>
+
+          <View style={styles.badgeList}>
+            {/* 업적 1: 첫 걸음 (활성) */}
+            <View style={[styles.achievementBadge, { backgroundColor: '#FEF3C7' }]}>
+              <Trophy size={11} color="#D97706" />
+              <Text style={[styles.badgeText, { color: '#D97706' }]}>첫 걸음</Text>
+            </View>
+
+            {/* 업적 2: 계획의 달인 (활성) */}
+            <View style={[styles.achievementBadge, { backgroundColor: '#DBEAFE' }]}>
+              <Trophy size={11} color="#2563EB" />
+              <Text style={[styles.badgeText, { color: '#2563EB' }]}>계획의 달인</Text>
+            </View>
+
+            {/* 업적 3: 열혈 리뷰어 (활성) */}
+            <View style={[styles.achievementBadge, { backgroundColor: '#FCE7F3' }]}>
+              <Trophy size={11} color="#DB2777" />
+              <Text style={[styles.badgeText, { color: '#DB2777' }]}>열혈 리뷰어</Text>
+            </View>
+
+            {/* 업적 4: 베스트 파트너 (비활성) */}
+            <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
+              <Lock size={11} color="#9CA3AF" />
+              <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>베스트 파트너</Text>
+            </View>
+
+            {/* 업적 5: 전국 제패 (비활성) */}
+            <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
+              <Lock size={11} color="#9CA3AF" />
+              <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>전국 제패</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
 
-      {/* ── Modals ── */}
+      {/* ── 3. 설정 바텀 시트 모달 ── */}
+      <Modal
+        visible={settingsVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setSettingsVisible(false)}
+      >
+        <View style={styles.settingsOverlay}>
+          <Pressable 
+            style={styles.settingsDismiss} 
+            onPress={() => setSettingsVisible(false)} 
+          />
+          <View style={styles.settingsSheet}>
+            <View style={styles.settingsHeader}>
+              <Text style={styles.settingsTitle}>프로필 설정</Text>
+              <TouchableOpacity 
+                style={styles.settingsCloseButton} 
+                onPress={() => setSettingsVisible(false)}
+              >
+                <X size={20} color="#4B5563" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.settingsList} showsVerticalScrollIndicator={false}>
+              {/* 닉네임 변경 */}
+              <TouchableOpacity 
+                style={styles.settingsItem}
+                onPress={() => {
+                  setSettingsVisible(false);
+                  setNicknameModalVisible(true);
+                }}
+              >
+                <View style={styles.settingsItemLeft}>
+                  <Text style={styles.settingsItemText}>닉네임 변경</Text>
+                </View>
+                <ChevronRight size={18} color="#9CA3AF" />
+              </TouchableOpacity>
+
+              {/* 나이 변경 */}
+              <TouchableOpacity 
+                style={styles.settingsItem}
+                onPress={() => {
+                  setSettingsVisible(false);
+                  setAgeModalVisible(true);
+                }}
+              >
+                <View style={styles.settingsItemLeft}>
+                  <Text style={styles.settingsItemText}>나이 변경</Text>
+                </View>
+                <ChevronRight size={18} color="#9CA3AF" />
+              </TouchableOpacity>
+
+              {/* 성별 변경 */}
+              <TouchableOpacity 
+                style={styles.settingsItem}
+                onPress={() => {
+                  setSettingsVisible(false);
+                  setGenderModalVisible(true);
+                }}
+              >
+                <View style={styles.settingsItemLeft}>
+                  <Text style={styles.settingsItemText}>성별 변경</Text>
+                </View>
+                <ChevronRight size={18} color="#9CA3AF" />
+              </TouchableOpacity>
+
+              {/* 선호테마 변경 */}
+              <TouchableOpacity 
+                style={styles.settingsItem}
+                onPress={() => {
+                  setSettingsVisible(false);
+                  setThemeModalVisible(true);
+                }}
+              >
+                <View style={styles.settingsItemLeft}>
+                  <Text style={styles.settingsItemText}>선호 테마 변경</Text>
+                </View>
+                <ChevronRight size={18} color="#9CA3AF" />
+              </TouchableOpacity>
+
+              {/* 비밀번호 변경 */}
+              {user.socialLogin === false && (
+                <TouchableOpacity 
+                  style={styles.settingsItem}
+                  onPress={() => {
+                    setSettingsVisible(false);
+                    setPasswordModalVisible(true);
+                  }}
+                >
+                  <View style={styles.settingsItemLeft}>
+                    <Text style={styles.settingsItemText}>비밀번호 변경</Text>
+                  </View>
+                  <ChevronRight size={18} color="#9CA3AF" />
+                </TouchableOpacity>
+              )}
+
+              {/* 로그아웃 */}
+              <TouchableOpacity 
+                style={styles.settingsItem}
+                onPress={() => {
+                  setSettingsVisible(false);
+                  logout();
+                }}
+              >
+                <View style={styles.settingsItemLeft}>
+                  <Text style={styles.settingsItemText}>로그아웃</Text>
+                </View>
+                <ChevronRight size={18} color="#9CA3AF" />
+              </TouchableOpacity>
+
+              {/* 회원 탈퇴 */}
+              <TouchableOpacity 
+                style={[styles.settingsItem, { borderBottomWidth: 0 }]}
+                onPress={() => {
+                  setSettingsVisible(false);
+                  handleResign();
+                }}
+              >
+                <View style={styles.settingsItemLeft}>
+                  <Text style={styles.settingsItemDangerText}>회원 탈퇴</Text>
+                </View>
+                <ChevronRight size={18} color="#EF4444" />
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── 기존 Modal 포탈들 ── */}
       <UpdateValueModal
         visible={isNicknameModalVisible}
         onClose={() => setNicknameModalVisible(false)}
@@ -340,6 +386,6 @@ export default function ProfileScreenView({
         onClose={() => setPasswordModalVisible(false)}
         onConfirm={handleUpdatePassword}
       />
-    </SafeAreaView>
+    </View>
   );
 }
