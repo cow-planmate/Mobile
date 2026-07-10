@@ -42,7 +42,7 @@ export default function TravelFeedScreen() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [sortBy, setSortBy] = useState('최신순');
   const [filterRegion, setFilterRegion] = useState('전체');
   const [filterDuration, setFilterDuration] = useState('전체');
