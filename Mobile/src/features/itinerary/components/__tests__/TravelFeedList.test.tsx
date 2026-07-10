@@ -28,9 +28,12 @@ jest.mock('@shopify/flash-list', () => {
 jest.mock('lucide-react-native', () => {
   const { View } = require('react-native');
   return {
-    Heart: () => <View testID="mock-icon-heart" />,
+    ThumbsUp: () => <View testID="mock-icon-thumbsup" />,
+    ThumbsDown: () => <View testID="mock-icon-thumbsdown" />,
     MessageSquare: () => <View testID="mock-icon-message" />,
-    MapPin: () => <View testID="mock-icon-mappin" />,
+    Eye: () => <View testID="mock-icon-eye" />,
+    Copy: () => <View testID="mock-icon-copy" />,
+    Clock: () => <View testID="mock-icon-clock" />,
   };
 });
 

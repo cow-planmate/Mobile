@@ -9,7 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { Heart, MessageSquare, MapPin } from 'lucide-react-native';
+import { ThumbsUp, ThumbsDown, MessageSquare, Eye, Copy, Clock } from 'lucide-react-native';
 import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
 
@@ -18,14 +18,19 @@ const COLORS = theme.colors;
 export interface TravelFeedItem {
   id: string;
   title: string;
+  description: string;
   author: string;
   authorAvatar: string;
   thumbnailUrl: string;
   createdAt: string;
   likes: number;
+  dislikes: number;
   comments: number;
+  views: number;
+  forks: number;
   tags: string[];
   location: string;
+  duration: string;
 }
 
 const generateMockFeedData = (page: number, limit: number = 10): TravelFeedItem[] => {
@@ -36,20 +41,35 @@ const generateMockFeedData = (page: number, limit: number = 10): TravelFeedItem[
     ['#뚜벅이최적화', '#극한의J'],
     ['#여유로운P', '#동선낭비없는'],
   ];
+  const landscapeImages = [
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=400&fit=crop', // 해변
+    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=400&fit=crop', // 산
+    'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&h=400&fit=crop', // 안개 낀 강
+    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&h=400&fit=crop', // 요세미티 계곡
+    'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=600&h=400&fit=crop', // 호수와 산
+    'https://images.unsplash.com/photo-1472214222541-d510753a4907?w=600&h=400&fit=crop', // 초원
+    'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=600&h=400&fit=crop', // 숲길
+    'https://images.unsplash.com/photo-1433832597046-4f10e10ac764?w=600&h=400&fit=crop', // 열기구와 풍경
+  ];
   return Array.from({ length: limit }).map((_, index) => {
     const currentId = startIndex + index + 1;
     const id = currentId.toString();
     return {
       id,
-      title: `나만 알고 싶은 인생 여행지 #${id} - 환상적인 뷰와 맛집 코스`,
+      title: currentId % 3 === 1 ? '서울 3박 4일 완벽 여행 코스' : `나만 알고 싶은 인생 여행지 #${id}`,
+      description: currentId % 3 === 1 ? '경복궁, 북촌한옥마을, 명동까지 핫플 다 담았어요!' : '상세 일정 및 꿀팁, 맛집 정보가 가득 포함된 알찬 코스입니다.',
       author: `여행러_${id}`,
       authorAvatar: `https://picsum.photos/id/${(currentId * 3) % 70}/100/100`,
-      thumbnailUrl: `https://picsum.photos/id/${(currentId * 7) % 70}/600/400`,
+      thumbnailUrl: landscapeImages[currentId % landscapeImages.length],
       createdAt: `${Math.floor((currentId * 1.5) % 6) + 1}일 전`,
       likes: ((currentId * 12) % 150) + 5,
+      dislikes: ((currentId * 2) % 15) + 1,
       comments: ((currentId * 3) % 40) + 1,
+      views: ((currentId * 110) % 1800) + 80,
+      forks: ((currentId * 15) % 90) + 5,
       tags: mockTagsList[currentId % 4],
       location: ['서울', '부산', '제주도', '강릉', '경주', '전주'][currentId % 6],
+      duration: ['1일', '2박 3일', '3박 4일', '4일 이상'][currentId % 4],
     };
   });
 };
@@ -151,62 +171,85 @@ export default function TravelFeedList({
   }, [loading, hasMore, page, fetchFeeds]);
 
   const renderItem = useCallback(({ item }: { item: TravelFeedItem }) => {
-    const isGrid = viewMode === 'grid';
+    const isActualGrid = viewMode === 'grid';
     return (
       <TouchableOpacity
-        style={[styles.feedCard, isGrid && styles.feedCardGrid]}
+        style={[styles.feedCard, isActualGrid && styles.feedCardGrid]}
         onPress={() => onItemPress && onItemPress(item)}
         activeOpacity={0.9}
       >
-        <FastImage
-          source={{ uri: item.thumbnailUrl, priority: FastImage.priority.normal }}
-          style={[styles.thumbnail, isGrid && styles.thumbnailGrid]}
-          resizeMode={FastImage.resizeMode.cover}
-        />
+        <View style={styles.thumbnailContainer}>
+          <FastImage
+            source={{ uri: item.thumbnailUrl, priority: FastImage.priority.normal }}
+            style={styles.thumbnail}
+            resizeMode={FastImage.resizeMode.cover}
+          />
+          <View style={styles.locationBadge}>
+            <Text style={styles.locationBadgeText}>{item.location}</Text>
+          </View>
+        </View>
         
-        <View style={[styles.cardContent, isGrid && styles.cardContentGrid]}>
-          <View style={styles.locationTag}>
-            <MapPin size={10} color={COLORS.primary} />
-            <Text style={styles.locationText}>{item.location}</Text>
+        <View style={styles.cardContent}>
+          <View style={styles.authorContainer}>
+            <FastImage
+              source={{ uri: item.authorAvatar, priority: FastImage.priority.low }}
+              style={styles.avatar}
+              resizeMode={FastImage.resizeMode.cover}
+            />
+            <View style={styles.authorInfo}>
+              <Text style={styles.authorName} numberOfLines={1}>
+                {item.author}
+              </Text>
+              <Text style={styles.createdAtText}>{item.createdAt}</Text>
+            </View>
           </View>
 
-          <Text style={[styles.title, isGrid && styles.titleGrid]} numberOfLines={isGrid ? 1 : 2}>
+          <Text style={styles.title} numberOfLines={1}>
             {item.title}
           </Text>
 
-          {!isGrid && (
+          <Text style={styles.description} numberOfLines={2}>
+            {item.description}
+          </Text>
+
+          <View style={styles.tagDurationContainer}>
             <View style={styles.tagContainer}>
-              {item.tags.map((tag, index) => (
+              {item.tags.slice(0, 2).map((tag, index) => (
                 <View key={index} style={styles.tag}>
                   <Text style={styles.tagText}>{tag}</Text>
                 </View>
               ))}
             </View>
-          )}
-
-          <View style={[styles.footer, isGrid && styles.footerGrid]}>
-            <View style={styles.authorContainer}>
-              <FastImage
-                source={{ uri: item.authorAvatar, priority: FastImage.priority.low }}
-                style={[styles.avatar, isGrid && styles.avatarGrid]}
-                resizeMode={FastImage.resizeMode.cover}
-              />
-              <Text style={[styles.authorName, isGrid && styles.authorNameGrid]} numberOfLines={1}>
-                {item.author}
-              </Text>
+            <View style={styles.durationBadge}>
+              <Clock size={12} color="#6B7280" style={{ marginRight: 4 }} />
+              <Text style={styles.durationText}>{item.duration}</Text>
             </View>
+          </View>
 
+          <View style={styles.footer}>
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <Heart size={12} color={COLORS.textSecondary} />
-                <Text style={styles.statText}>{item.likes}</Text>
+                <ThumbsUp size={14} color="#1344FF" />
+                <Text style={[styles.statText, { color: '#1344FF', fontWeight: 'bold' }]}>
+                  {item.likes}
+                </Text>
               </View>
-              {!isGrid && (
-                <View style={styles.statItem}>
-                  <MessageSquare size={12} color={COLORS.textSecondary} />
-                  <Text style={styles.statText}>{item.comments}</Text>
-                </View>
-              )}
+              <View style={styles.statItem}>
+                <ThumbsDown size={14} color="#6B7280" />
+                <Text style={styles.statText}>{item.dislikes}</Text>
+              </View>
+              <View style={styles.statItem}>
+                <MessageSquare size={14} color="#6B7280" />
+                <Text style={styles.statText}>{item.comments}</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Eye size={14} color="#6B7280" />
+                <Text style={styles.statText}>{item.views.toLocaleString()}</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Copy size={14} color="#6B7280" />
+                <Text style={styles.statText}>{item.forks}</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -239,11 +282,11 @@ export default function TravelFeedList({
     <View style={styles.container}>
       <FlashList
         key={viewMode}
-        numColumns={viewMode === 'grid' ? 2 : 1}
+        numColumns={1}
         data={processedFeeds}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        estimatedItemSize={viewMode === 'grid' ? 200 : 340}
+        estimatedItemSize={340}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={renderFooter}
@@ -272,12 +315,12 @@ const styles = StyleSheet.create({
     paddingVertical: normalize(12),
   },
   listContentGrid: {
-    paddingHorizontal: normalize(10),
+    paddingHorizontal: normalize(16),
   },
   feedCard: {
     backgroundColor: COLORS.white,
     borderRadius: normalize(16),
-    marginBottom: normalize(16),
+    marginBottom: normalize(20),
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: COLORS.borderLight,
@@ -289,69 +332,111 @@ const styles = StyleSheet.create({
   },
   feedCardGrid: {
     flex: 1,
-    margin: normalize(6),
-    marginBottom: normalize(12),
+    marginBottom: normalize(20),
+  },
+  thumbnailContainer: {
+    position: 'relative',
+    width: '100%',
+    height: normalize(180),
   },
   thumbnail: {
     width: '100%',
-    height: normalize(180),
+    height: '100%',
     backgroundColor: COLORS.surface,
   },
-  thumbnailGrid: {
-    height: normalize(110),
+  locationBadge: {
+    position: 'absolute',
+    top: normalize(12),
+    right: normalize(12),
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(4),
+    borderRadius: normalize(12),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  locationBadgeText: {
+    fontSize: normalize(11),
+    fontWeight: 'bold',
+    color: '#1344FF',
   },
   cardContent: {
     padding: normalize(16),
   },
-  cardContentGrid: {
-    padding: normalize(10),
-  },
-  locationTag: {
+  authorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.sub,
-    paddingHorizontal: normalize(8),
-    paddingVertical: normalize(4),
-    borderRadius: normalize(4),
-    alignSelf: 'flex-start',
-    marginBottom: normalize(8),
-    gap: normalize(4),
+    marginBottom: normalize(12),
+    gap: normalize(8),
   },
-  locationText: {
+  avatar: {
+    width: normalize(32),
+    height: normalize(32),
+    borderRadius: normalize(16),
+    backgroundColor: COLORS.surface,
+  },
+  authorInfo: {
+    flex: 1,
+  },
+  authorName: {
+    fontSize: normalize(13),
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  createdAtText: {
     fontSize: normalize(11),
-    fontWeight: '600',
-    color: COLORS.primary,
+    color: COLORS.textSecondary,
+    marginTop: normalize(1),
   },
   title: {
     fontSize: normalize(16),
-    fontWeight: '700',
+    fontWeight: 'bold',
     color: COLORS.text,
     lineHeight: normalize(22),
-    marginBottom: normalize(8),
+    marginBottom: normalize(6),
   },
-  titleGrid: {
+  description: {
     fontSize: normalize(13),
+    color: COLORS.textSecondary,
     lineHeight: normalize(18),
-    height: normalize(18),
-    marginBottom: normalize(4),
+    marginBottom: normalize(12),
+  },
+  tagDurationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: normalize(12),
   },
   tagContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: normalize(6),
-    marginBottom: normalize(12),
   },
   tag: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: '#F0F4FF',
     paddingHorizontal: normalize(8),
     paddingVertical: normalize(4),
     borderRadius: normalize(6),
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
   },
   tagText: {
     fontSize: normalize(11),
-    color: COLORS.textSecondary,
+    color: '#1344FF',
+    fontWeight: 'bold',
+  },
+  durationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: normalize(8),
+    paddingVertical: normalize(4),
+    borderRadius: normalize(6),
+  },
+  durationText: {
+    fontSize: normalize(11),
+    color: '#6B7280',
+    fontWeight: '500',
   },
   footer: {
     flexDirection: 'row',
@@ -360,40 +445,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.borderLight,
     paddingTop: normalize(12),
-    marginTop: normalize(4),
-  },
-  footerGrid: {
-    paddingTop: normalize(8),
-    marginTop: normalize(2),
-  },
-  authorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(8),
-  },
-  avatar: {
-    width: normalize(24),
-    height: normalize(24),
-    borderRadius: normalize(12),
-    backgroundColor: COLORS.surface,
-  },
-  avatarGrid: {
-    width: normalize(16),
-    height: normalize(16),
-    borderRadius: normalize(8),
-  },
-  authorName: {
-    fontSize: normalize(13),
-    fontWeight: '500',
-    color: COLORS.text,
-  },
-  authorNameGrid: {
-    fontSize: normalize(10),
-    maxWidth: normalize(60),
   },
   statsContainer: {
     flexDirection: 'row',
-    gap: normalize(12),
+    alignItems: 'center',
+    gap: normalize(14),
   },
   statItem: {
     flexDirection: 'row',
