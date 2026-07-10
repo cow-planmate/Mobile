@@ -18,7 +18,7 @@ import {
   CommunityStackParamList,
 } from './types';
 import { Platform } from 'react-native';
-import { Calendar, MessageSquare, Compass } from 'lucide-react-native';
+import { Calendar, MessageSquare, Compass, PlusCircle } from 'lucide-react-native';
 
 const FeedStackNavigator = createNativeStackNavigator<FeedStackParamList>();
 const ScheduleStackNavigator = createNativeStackNavigator<ScheduleStackParamList>();
@@ -63,12 +63,12 @@ function ScheduleStack() {
       }}
     >
       <ScheduleStackNavigator.Screen
-        name="MySchedule"
-        component={ProfileScreen}
-      />
-      <ScheduleStackNavigator.Screen
         name="Home"
         component={HomeScreen}
+      />
+      <ScheduleStackNavigator.Screen
+        name="MySchedule"
+        component={ProfileScreen}
       />
       <ScheduleStackNavigator.Screen
         name="ItineraryEditor"
@@ -112,7 +112,7 @@ const FeedTabIcon = ({ color, size }: { color: string; size: number }) => (
 );
 
 const ScheduleTabIcon = ({ color, size }: { color: string; size: number }) => (
-  <Calendar size={size} color={color} strokeWidth={1.8} />
+  <PlusCircle size={size} color={color} strokeWidth={1.8} />
 );
 
 const CommunityTabIcon = ({ color, size }: { color: string; size: number }) => (
@@ -149,7 +149,7 @@ function MainTabs() {
         name="ScheduleTab"
         component={ScheduleStack}
         options={{
-          title: '일정',
+          title: '일정 생성',
           tabBarIcon: ScheduleTabIcon,
         }}
       />
