@@ -641,11 +641,15 @@ export default function ProfileScreenView({
           {/* 통계 수치 3종 */}
           <View style={styles.statsSection}>
             <View style={styles.statBlock}>
-              <Text style={styles.statNumber}>0</Text>
+              <Text style={styles.statNumber}>
+                {plans.filter((p: any) => !p.isShared).length}
+              </Text>
               <Text style={styles.statLabel}>나의 일정</Text>
             </View>
             <View style={styles.statBlock}>
-              <Text style={styles.statNumber}>0</Text>
+              <Text style={styles.statNumber}>
+                {plans.filter((p: any) => p.isShared).length}
+              </Text>
               <Text style={styles.statLabel}>초대된 일정</Text>
             </View>
             <View style={styles.statBlock}>
