@@ -19,6 +19,7 @@ import {
   IS_FCM_RUNTIME_ENABLED,
   useFcmNotifications,
 } from '../../../hooks/useFcmNotifications';
+import { AirplaneLoading } from '../../../components/common';
 
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 const INVITATION_REFRESH_INTERVAL_MS = 15000;
@@ -27,6 +28,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const user = useAuthStore((state) => state.user);
   const { showAlert } = useAlert();
 
+  const [isCreating, setIsCreating] = useState(false);
   const [startDate, setStartDate] = useState<Date | null>(new Date());
   const [endDate, setEndDate] = useState<Date | null>(new Date());
   const [isCalendarVisible, setCalendarVisible] = useState(false);
@@ -204,20 +206,21 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       return;
     }
 
+    setIsCreating(true);
 
-
-    // Navigate to editor without creating plan on server.
-    // Plan will only be created when "일정 생성 완료" is clicked.
-    navigation.navigate('ItineraryEditor', {
-      departure: 'SEOUL',
-      destination,
-      travelId: travelId || 0,
-      startDate: startDate?.toISOString() ?? new Date().toISOString(),
-      endDate: endDate?.toISOString() ?? new Date().toISOString(),
-      adults: adults ?? 1,
-      children: children ?? 0,
-      transport: transport || '대중교통',
-    });
+    setTimeout(() => {
+      setIsCreating(false);
+      navigation.navigate('ItineraryEditor', {
+        departure: 'SEOUL',
+        destination,
+        travelId: travelId || 0,
+        startDate: startDate?.toISOString() ?? new Date().toISOString(),
+        endDate: endDate?.toISOString() ?? new Date().toISOString(),
+        adults: adults ?? 1,
+        children: children ?? 0,
+        transport: transport || '대중교통',
+      });
+    }, 1200);
   };
 
   const openSearchModal = () => {
@@ -228,6 +231,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     setDestination(location);
     if (id !== undefined) setTravelId(id);
   };
+
+  if (isCreating) {
+    return <AirplaneLoading />;
+  }
 
   return (
     <HomeScreenView

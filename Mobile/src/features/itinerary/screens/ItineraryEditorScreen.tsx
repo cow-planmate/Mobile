@@ -30,7 +30,7 @@ import {
 } from '../../../api/trips';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { styles } from './ItineraryEditorScreen.styles';
-import { ShareModal, PlanInfoModal } from '../../../components/common';
+import { ShareModal, PlanInfoModal, AirplaneLoading } from '../../../components/common';
 import PlaceEditModal from '../components/PlaceEditModal';
 import KakaoMapView from '../components/KakaoMapView';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -564,6 +564,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       setIsSaving(false);
     }
   };
+
+  if (days.length === 0) {
+    return <AirplaneLoading />;
+  }
 
   return (
     <>
