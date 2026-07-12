@@ -71,14 +71,6 @@ function ScheduleStack() {
         name="MySchedule"
         component={ProfileScreen}
       />
-      <ScheduleStackNavigator.Screen
-        name="ItineraryView"
-        component={ItineraryViewScreen}
-        options={{
-          animation: 'slide_from_bottom',
-          presentation: 'modal',
-        }}
-      />
     </ScheduleStackNavigator.Navigator>
   );
 }

@@ -74,6 +74,13 @@ const timeToMinutes = (time: string) => {
   return hours * 60 + minutes;
 };
 
+const formatDateLocal = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 
 export default function ItineraryViewScreen({ route, navigation }: Props) {
@@ -218,8 +225,8 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   // Fetch weather when destination and days are available
   useEffect(() => {
     if (!destinationCity || days.length === 0) return;
-    const startDate = days[0].date.toISOString().split('T')[0];
-    const endDate = days[days.length - 1].date.toISOString().split('T')[0];
+    const startDate = formatDateLocal(days[0].date);
+    const endDate = formatDateLocal(days[days.length - 1].date);
     fetchWeatherRecommendations(destinationCity, startDate, endDate)
       .then(res => {
         const map: Record<string, SimpleWeatherInfo> = {};

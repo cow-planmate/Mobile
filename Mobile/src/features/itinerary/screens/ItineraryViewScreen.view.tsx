@@ -38,6 +38,13 @@ const timeToMinutes = (time: string) => {
   return hours * 60 + minutes;
 };
 
+const formatDateLocal = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const formatDate = (date: Date) => {
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
@@ -382,7 +389,7 @@ export default function ItineraryViewScreenView({
           <View style={styles.flex1}>
             <View style={styles.timelineStage}>
               <View pointerEvents="none" style={styles.timelineSceneBackdrop} />
-              {weatherMap[selectedDay.date.toISOString().split('T')[0]] && (
+              {weatherMap[formatDateLocal(selectedDay.date)] && (
                 <View
                   pointerEvents="none"
                   style={styles.timelineWeatherOverlay}
@@ -390,7 +397,7 @@ export default function ItineraryViewScreenView({
                   <WeatherHeader
                     dayNumber={selectedDay.dayNumber}
                     weather={
-                      weatherMap[selectedDay.date.toISOString().split('T')[0]]
+                      weatherMap[formatDateLocal(selectedDay.date)]
                     }
                     appearance="overlay"
                   />
@@ -400,7 +407,7 @@ export default function ItineraryViewScreenView({
                 ref={scrollRef}
                 contentContainerStyle={[
                   styles.timelineContentContainer,
-                  weatherMap[selectedDay.date.toISOString().split('T')[0]]
+                  weatherMap[formatDateLocal(selectedDay.date)]
                     ? { paddingTop: 62 }
                     : {},
                 ]}

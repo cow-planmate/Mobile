@@ -45,6 +45,13 @@ const cloneDaysWithDates = (daysList: Day[]): Day[] => {
   }));
 };
 
+const formatDateLocal = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const { showAlert } = useAlert();
   const createFullPlanMutation = useCreateFullPlan();
@@ -164,8 +171,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   useEffect(() => {
     if (!destinationCity || days.length === 0) return;
 
-    const startDate = days[0].date.toISOString().split('T')[0];
-    const endDate = days[days.length - 1].date.toISOString().split('T')[0];
+    const startDate = formatDateLocal(days[0].date);
+    const endDate = formatDateLocal(days[days.length - 1].date);
 
     fetchWeatherRecommendations(destinationCity, startDate, endDate)
       .then(res => {
@@ -311,10 +318,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const onConfirmScheduleEdit = (updatedDays: any[]) => {
     if (updatedDays.length > 0) {
       const oldDates = new Set(
-        days.map(d => d.date.toISOString().split('T')[0]),
+        days.map(d => formatDateLocal(d.date)),
       );
       const newDates = new Set(
-        updatedDays.map(d => d.date.toISOString().split('T')[0]),
+        updatedDays.map(d => formatDateLocal(d.date)),
       );
 
       const addedDates = [...newDates].filter(d => !oldDates.has(d));
@@ -323,7 +330,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       if (addedDates.length > 0) {
         const newTimetables = addedDates.map(dateStr => {
           const matched = updatedDays.find(
-            ud => ud.date.toISOString().split('T')[0] === dateStr,
+            ud => formatDateLocal(ud.date) === dateStr,
           );
           return {
             timetableId: 0,
@@ -338,11 +345,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       if (removedDates.length > 0) {
         const removedTimetables = days
           .filter(d =>
-            removedDates.includes(d.date.toISOString().split('T')[0]),
+            removedDates.includes(formatDateLocal(d.date)),
           )
           .map(d => ({
             timetableId: d.timetableId,
-            date: d.date.toISOString().split('T')[0],
+            date: formatDateLocal(d.date),
             startTime: d.startTime || '09:00:00',
             endTime: d.endTime || '20:00:00',
           }));
@@ -355,9 +362,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       // Update days (add new days, delete removed days, and sync existing days)
       setDays(prevDays => {
         return updatedDays.map((ud, idx) => {
-          const dateStr = ud.date.toISOString().split('T')[0];
+          const dateStr = formatDateLocal(ud.date);
           const existingDay = prevDays.find(
-            pd => pd.date.toISOString().split('T')[0] === dateStr,
+            pd => formatDateLocal(pd.date) === dateStr,
           );
           if (existingDay) {
             return {
@@ -491,13 +498,13 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         : {};
 
       const timetableVOs = days.map(day => ({
-        date: day.date.toISOString().split('T')[0],
+        date: formatDateLocal(day.date),
         timeTableStartTime: '09:00:00',
         timeTableEndTime: '20:00:00',
       }));
 
       const allBlocks = days.flatMap(day => {
-        const dateStr = day.date.toISOString().split('T')[0];
+        const dateStr = formatDateLocal(day.date);
         return day.places.map(place => {
           const categoryId = normalizeCategoryId(place.categoryId, place.type);
           const startTime =
@@ -759,8 +766,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         onClose={() => setPlanInfoVisible(false)}
         planName={tripName}
         destination={planMetadata?.travelName || route.params.destination || '미정'}
-        startDate={days.length > 0 ? days[0].date.toISOString().split('T')[0] : route.params.startDate}
-        endDate={days.length > 0 ? days[days.length - 1].date.toISOString().split('T')[0] : route.params.endDate}
+        startDate={days.length > 0 ? formatDateLocal(days[0].date) : route.params.startDate}
+        endDate={days.length > 0 ? formatDateLocal(days[days.length - 1].date) : route.params.endDate}
         adultCount={planMetadata?.adultCount ?? route.params.adults ?? 1}
         childCount={planMetadata?.childCount ?? route.params.children ?? 0}
         transport={planMetadata ? (planMetadata.transportationCategoryId === 1 ? '자동차' : '대중교통') : (route.params.transport || '대중교통')}

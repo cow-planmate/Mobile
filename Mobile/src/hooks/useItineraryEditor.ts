@@ -9,6 +9,13 @@ import { MINUTE_HEIGHT } from '../features/itinerary/screens/ItineraryEditorScre
 import { useAlert } from '../contexts/AlertContext';
 import Toast from 'react-native-toast-message';
 
+const parseDestinationName = (destination?: string) => {
+  const normalized = destination?.trim() || '';
+  if (!normalized) return '';
+  const parts = normalized.split(/\s+/).filter(Boolean);
+  return parts.length <= 1 ? normalized : parts.slice(1).join(' ');
+};
+
 export const useItineraryEditor = (route: any, _navigation: any) => {
   const { sendMessage, isConnected } = useWebSocket();
   const { showAlert } = useAlert();
@@ -22,7 +29,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     setLastAddedPlaceId,
   } = useItinerary();
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-  const [tripName, setTripName] = useState('');
+  const [tripName, setTripName] = useState(parseDestinationName(route.params?.destination) || '');
   const [isEditingTripName, setIsEditingTripName] = useState(false);
   const [planMetadata, setPlanMetadata] = useState<any>(null);
 

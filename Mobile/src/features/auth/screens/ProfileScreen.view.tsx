@@ -189,15 +189,9 @@ const ItineraryCardItem = ({
           if (isEditMode) {
             onSelectToggle();
           } else {
-            navigation.navigate('MainTabs', {
-              screen: 'ScheduleTab',
-              params: {
-                screen: 'ItineraryView',
-                params: {
-                  planId: plan.planId,
-                  tripName: plan.planName,
-                }
-              }
+            navigation.navigate('ItineraryView', {
+              planId: plan.planId,
+              tripName: plan.planName,
             });
           }
         }}
