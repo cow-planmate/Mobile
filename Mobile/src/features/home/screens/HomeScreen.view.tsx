@@ -4,12 +4,9 @@ import {
   Text,
   SafeAreaView,
   TouchableOpacity,
-  ScrollView,
   StatusBar,
-  Switch,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import { usePlaces } from '../../../contexts/PlacesContext';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faUser,
@@ -17,16 +14,13 @@ import {
   faCalendar,
   faCar,
   faBus,
-  faPen,
 } from '@fortawesome/free-solid-svg-icons';
-import { faBell } from '@fortawesome/free-regular-svg-icons';
 import { CalendarModal, Header, Invitation, NotificationModal, OptionType, PaxModal, SearchLocationModal, SelectionModal } from '../../../components/common';
 import { styles } from './HomeScreen.styles';
-import gravatarUrl from '../../../utils/gravatarUrl';
 
 const HERO_IMAGES = [
-  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1608463123864-40a2961b7d00?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?auto=format&fit=crop&w=800&q=80',
 ];
 
 type InputRowProps = {
@@ -78,7 +72,6 @@ export interface HomeScreenViewProps {
   transport: string;
   dateText: string;
   paxText: string;
-  showErrors: boolean;
   isFormValid: boolean;
   isSearchModalVisible: boolean;
   isCalendarVisible: boolean;
@@ -119,7 +112,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   transport,
   dateText,
   paxText,
-  showErrors,
   isFormValid,
   isSearchModalVisible,
   isCalendarVisible,
@@ -151,7 +143,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   onAcceptNotification,
   onRejectNotification,
 }) => {
-  const { isPetFriendly, setPetFriendly } = usePlaces();
   const [heroIndex, setHeroIndex] = useState(0);
 
   useEffect(() => {
@@ -173,9 +164,8 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         onNavigateProfile={onNavigateProfile}
       />
 
-      <ScrollView
+      <View
         style={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
       >
         {/* 2. Hero Section */}
         <View style={styles.heroSection}>
@@ -225,16 +215,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               onPress={onOpenTransportModal}
             />
 
-            {/* Pet Friendly Toggle Row */}
-            <View style={[styles.inputRow, styles.inputRowLast, { justifyContent: 'space-between', alignItems: 'center', minHeight: 48 }]}>
-              <Text style={styles.label}>🐾 반려동물 동반 여행</Text>
-              <Switch
-                value={isPetFriendly}
-                onValueChange={setPetFriendly}
-                trackColor={{ false: '#D1D5DB', true: '#10B981' }}
-                thumbColor="#FFFFFF"
-              />
-            </View>
+
 
             {/* Create Button */}
             <TouchableOpacity
@@ -256,7 +237,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
             </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
+      </View>
 
       {/* Modals - 기존 유지 */}
       <SearchLocationModal

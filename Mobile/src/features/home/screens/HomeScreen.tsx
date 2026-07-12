@@ -51,8 +51,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [travelId, setTravelId] = useState<number>(0);
 
   const [isSearchModalVisible, setSearchModalVisible] = useState(false);
-  const [showErrors, setShowErrors] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<PendingInvitation[]>(
     [],
   );
@@ -62,21 +60,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     AppState.currentState,
   );
 
-  const fetchPendingRequests = useCallback(async (silent = false) => {
+  const fetchPendingRequests = useCallback(async () => {
     try {
-      if (!silent) {
-        setLoading(true);
-      }
       const requests = await getPendingInvitations();
       if (requests) {
         setPendingRequests(requests);
       }
     } catch (error) {
       console.log('초대 요청 목록 조회 실패:', error);
-    } finally {
-      if (!silent) {
-        setLoading(false);
-      }
     }
   }, []);
 
@@ -93,12 +84,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   useInvitationSse({
     enabled: !!user,
-    onInvitationEvent: () => fetchPendingRequests(true),
+    onInvitationEvent: () => fetchPendingRequests(),
   });
 
   useFcmNotifications({
     enabled: !!user && IS_FCM_RUNTIME_ENABLED,
-    onInvitationPush: () => fetchPendingRequests(true),
+    onInvitationPush: () => fetchPendingRequests(),
   });
 
   useEffect(() => {
@@ -112,7 +103,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       setAppState(nextState);
 
       if (wasBackground && isNowActive && user) {
-        void fetchPendingRequests(true);
+        void fetchPendingRequests();
       }
     });
 
@@ -128,7 +119,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
     const intervalId = setInterval(() => {
       if (appState === 'active') {
-        void fetchPendingRequests(true);
+        void fetchPendingRequests();
       }
     }, INVITATION_REFRESH_INTERVAL_MS);
 
@@ -201,7 +192,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const handleCreateItinerary = () => {
     if (!isFormValid) {
-      setShowErrors(true);
       return;
     }
 
@@ -214,7 +204,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       return;
     }
 
-    setShowErrors(false);
+
 
     // Navigate to editor without creating plan on server.
     // Plan will only be created when "일정 생성 완료" is clicked.
@@ -248,7 +238,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       transport={transport}
       dateText={getDateText()}
       paxText={getPaxText()}
-      showErrors={showErrors}
       isFormValid={isFormValid}
       isSearchModalVisible={isSearchModalVisible}
       isCalendarVisible={isCalendarVisible}

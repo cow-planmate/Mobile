@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions, PixelRatio, Platform } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
 
@@ -17,7 +17,7 @@ export const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   scrollContainer: {
-    flexGrow: 1,
+    flex: 1,
   },
   // [NEW] Top Header Area (planMate logo + menu)
   topBar: {
@@ -110,22 +110,23 @@ export const styles = StyleSheet.create({
     elevation: 5,
   },
   inputRow: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    paddingHorizontal: normalize(16),
-    paddingVertical: normalize(12),
-    marginBottom: normalize(12),
+    backgroundColor: 'transparent',
+    borderRadius: 0,
+    borderWidth: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    paddingHorizontal: 0,
+    paddingVertical: normalize(10),
+    marginBottom: normalize(16),
   },
   inputRowLast: {
-    marginBottom: 0,
+    marginBottom: normalize(8),
   },
   label: {
-    fontSize: normalize(11),
-    fontFamily: FONTS.semibold,
-    color: '#64748B',
-    marginBottom: normalize(3),
+    fontSize: normalize(12),
+    fontFamily: FONTS.medium,
+    color: '#9CA3AF',
+    marginBottom: normalize(4),
   },
   valueContainer: {
     flexDirection: 'row',
@@ -135,24 +136,24 @@ export const styles = StyleSheet.create({
     flex: 1,
     fontSize: normalize(15),
     fontFamily: FONTS.medium,
-    color: '#1F2937',
+    color: '#111827',
   },
   placeholderText: {
     flex: 1,
     fontSize: normalize(15),
     fontFamily: FONTS.medium,
-    color: '#D1D5DB',
+    color: '#9CA3AF',
   },
   rowIcon: {
     marginLeft: normalize(8),
   },
   submitButton: {
-    backgroundColor: '#1B52FF',
-    height: normalize(48),
+    backgroundColor: '#0047FF',
+    height: normalize(50),
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: normalize(20),
+    marginTop: normalize(24),
   },
   submitButtonText: {
     fontSize: normalize(16),
