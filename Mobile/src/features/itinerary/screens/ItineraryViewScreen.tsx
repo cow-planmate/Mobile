@@ -80,7 +80,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const { showAlert } = useAlert();
   const {
     days: initialDays = [],
-    tripName: initialTripName = '완성된 일정',
+    tripName: initialTripName = '',
     departure,
     destination: routeDestination,
     travelId,

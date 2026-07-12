@@ -2,17 +2,17 @@ import React from 'react';
 import {
   View,
   Text,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faShareNodes,
   faPencil,
   faCheck,
 } from '@fortawesome/free-solid-svg-icons';
-import { Map as MapOutlineIcon } from 'lucide-react-native';
+import { Map as MapOutlineIcon, ChevronLeft } from 'lucide-react-native';
 import KakaoMapView from '../components/KakaoMapView';
 import { ShareModal } from '../../../components/common';
 import TimelineItem, {
@@ -262,11 +262,24 @@ export default function ItineraryViewScreenView({
   weatherMap,
   tripName,
 }: ItineraryViewScreenViewProps) {
+  const insets = useSafeAreaInsets();
   const selectedDay = days[selectedDayIndex];
   const endHourVal = endHour ?? (gridHours.length > 0 ? gridHours[gridHours.length - 1] : 20);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.topBarHeader}>
+        <TouchableOpacity
+          style={styles.topBarBackButton}
+          onPress={goBack}
+          activeOpacity={0.7}
+        >
+          <ChevronLeft size={24} color="#111827" />
+        </TouchableOpacity>
+        <Text style={styles.topBarHeaderTitle}>일정완성</Text>
+        <View style={{ width: 28 }} />
+      </View>
+
       <View style={styles.topToolbar}>
         <View style={styles.toolbarLeftGroup}>
           <View style={styles.toolbarTitleButton}>
@@ -308,6 +321,7 @@ export default function ItineraryViewScreenView({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.dayTabsContainer}
           style={styles.dayTabsScroll}
+          fadingEdgeLength={40}
         >
           {days.map((day, index) => {
             const isSelected = selectedDayIndex === index;
@@ -412,6 +426,6 @@ export default function ItineraryViewScreenView({
         onClose={() => setShareModalVisible(false)}
         planId={planId ?? ''}
       />
-    </SafeAreaView>
+    </View>
   );
 }
