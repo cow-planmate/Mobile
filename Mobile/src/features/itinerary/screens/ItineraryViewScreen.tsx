@@ -102,6 +102,12 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [isShareModalVisible, setShareModalVisible] = useState(false);
   const [isMapVisible, setMapVisible] = useState(false);
+  const [isBacking, setIsBacking] = useState(false);
+  const isBackingRef = useRef(false);
+
+  const handleGoBack = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
   const scrollRef = useRef<ScrollView>(null);
 
   // Weather
@@ -245,6 +251,33 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     });
   }, [navigation, tripName]);
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (isBackingRef.current) {
+        return;
+      }
+
+      if (days.length === 0) {
+        e.preventDefault();
+        return;
+      }
+
+      e.preventDefault();
+      isBackingRef.current = true;
+      setIsBacking(true);
+
+      const timer = setTimeout(() => {
+        setIsBacking(false);
+        navigation.dispatch(e.data.action);
+        isBackingRef.current = false;
+      }, 1200);
+
+      return () => clearTimeout(timer);
+    });
+
+    return unsubscribe;
+  }, [navigation, days.length]);
+
   const selectedDay = days[selectedDayIndex];
 
   useEffect(() => {
@@ -282,9 +315,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     });
   };
 
-  if (days.length === 0) {
-    return <AirplaneLoading />;
-  }
+
 
   return (
     <ItineraryViewScreenView
@@ -300,11 +331,12 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       offsetMinutes={offsetMinutes}
       endHour={endHour}
       handleConfirm={handleConfirm}
-      goBack={() => navigation.goBack()}
+      goBack={handleGoBack}
       handleEdit={() => navigation.navigate('ItineraryEditor', { planId })}
       planId={planId}
       weatherMap={weatherMap}
       tripName={tripName}
+      isBacking={isBacking}
     />
   );
 }

@@ -78,6 +78,20 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   } = useItineraryEditor(route, navigation);
 
   const [isPlanInfoVisible, setPlanInfoVisible] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isBacking, setIsBacking] = useState(false);
+  const isBackingRef = useRef(false);
+
+  const handleGoBack = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const { updatePlaceMemo, updatePlaceDetails, setDays } = useItinerary();
   const { connect, disconnect, onlineUsers, sendMessage } = useWebSocket();
@@ -133,6 +147,33 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   // Detail popup state
   const [detailPlace, setDetailPlace] = useState<Place | null>(null);
   const [isDetailVisible, setDetailVisible] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (isBackingRef.current) {
+        return;
+      }
+
+      if (days.length === 0 || isSaving) {
+        e.preventDefault();
+        return;
+      }
+
+      e.preventDefault();
+      isBackingRef.current = true;
+      setIsBacking(true);
+
+      const timer = setTimeout(() => {
+        setIsBacking(false);
+        navigation.dispatch(e.data.action);
+        isBackingRef.current = false;
+      }, 1200);
+
+      return () => clearTimeout(timer);
+    });
+
+    return unsubscribe;
+  }, [navigation, days.length, isSaving]);
 
   // ── Undo/Redo History state ──
   const [history, setHistory] = useState<Day[][]>([]);
@@ -572,10 +613,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     }
   };
 
-  if (days.length === 0) {
-    return <AirplaneLoading />;
-  }
-
   return (
     <>
       <ItineraryEditorScreenView
@@ -620,6 +657,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         }}
         weatherMap={weatherMap}
         onOpenPlanInfo={() => setPlanInfoVisible(true)}
+        onGoBack={handleGoBack}
       />
       <Modal
         visible={isParticipantsVisible}
@@ -772,6 +810,14 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         childCount={planMetadata?.childCount ?? route.params.children ?? 0}
         transport={planMetadata ? (planMetadata.transportationCategoryId === 1 ? '자동차' : '대중교통') : (route.params.transport || '대중교통')}
       />
+      <Modal
+        visible={isInitialLoading || days.length === 0 || isSaving || isBacking}
+        transparent={false}
+        animationType="fade"
+        onRequestClose={() => {}}
+      >
+        <AirplaneLoading />
+      </Modal>
     </>
   );
 }

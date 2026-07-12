@@ -168,16 +168,16 @@ export default function AppStack() {
         name="ItineraryEditor"
         component={ItineraryEditorScreen}
         options={{
-          animation: 'slide_from_bottom',
-          presentation: 'modal',
+          animation: 'none',
+          presentation: 'card',
         }}
       />
       <Stack.Screen
         name="ItineraryView"
         component={ItineraryViewScreen}
         options={{
-          animation: 'slide_from_bottom',
-          presentation: 'modal',
+          animation: 'none',
+          presentation: 'card',
         }}
       />
     </Stack.Navigator>

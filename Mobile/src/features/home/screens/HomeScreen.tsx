@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
-import { AppState, AppStateStatus, Modal } from 'react-native';
+import { AppState, AppStateStatus, Modal, BackHandler } from 'react-native';
 import { AppStackParamList } from '../../../navigation/types';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { OptionType } from '../../../components/common';
@@ -29,6 +29,22 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const { showAlert } = useAlert();
 
   const [isCreating, setIsCreating] = useState(false);
+
+  useEffect(() => {
+    if (!isCreating) return;
+    const backAction = () => true;
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+  }, [isCreating]);
+
+  useEffect(() => {
+    if (!isCreating) return;
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      e.preventDefault();
+    });
+    return unsubscribe;
+  }, [navigation, isCreating]);
+
   const [startDate, setStartDate] = useState<Date | null>(new Date());
   const [endDate, setEndDate] = useState<Date | null>(new Date());
   const [isCalendarVisible, setCalendarVisible] = useState(false);
@@ -288,6 +304,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         visible={isCreating}
         transparent={false}
         animationType="fade"
+        onRequestClose={() => {}}
       >
         <AirplaneLoading />
       </Modal>

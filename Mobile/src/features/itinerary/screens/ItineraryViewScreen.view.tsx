@@ -4,6 +4,7 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -14,7 +15,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { Map as MapOutlineIcon, ChevronLeft } from 'lucide-react-native';
 import KakaoMapView from '../components/KakaoMapView';
-import { ShareModal } from '../../../components/common';
+import { ShareModal, AirplaneLoading, LoadingSpinner } from '../../../components/common';
 import TimelineItem, {
   Place,
 } from '../components/TimelineItem';
@@ -248,6 +249,7 @@ export interface ItineraryViewScreenViewProps {
   planId?: string;
   weatherMap: Record<string, SimpleWeatherInfo>;
   tripName: string;
+  isBacking: boolean;
 }
 
 export default function ItineraryViewScreenView({
@@ -268,6 +270,7 @@ export default function ItineraryViewScreenView({
   planId,
   weatherMap,
   tripName,
+  isBacking,
 }: ItineraryViewScreenViewProps) {
   const insets = useSafeAreaInsets();
   const selectedDay = days[selectedDayIndex];
@@ -433,6 +436,20 @@ export default function ItineraryViewScreenView({
         onClose={() => setShareModalVisible(false)}
         planId={planId ?? ''}
       />
+      <Modal
+        visible={days.length === 0 || isBacking}
+        transparent={false}
+        animationType="fade"
+        onRequestClose={() => {}}
+      >
+        {days.length === 0 ? (
+          <AirplaneLoading />
+        ) : (
+          <View style={{ flex: 1, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' }}>
+            <LoadingSpinner color="#1344FF" />
+          </View>
+        )}
+      </Modal>
     </View>
   );
 }

@@ -933,6 +933,7 @@ export interface ItineraryEditorScreenViewProps {
   weatherMap: Record<string, SimpleWeatherInfo>;
   initialTabName?: string;
   onOpenPlanInfo: () => void;
+  onGoBack: () => void;
 }
 
 export default function ItineraryEditorScreenView({
@@ -946,6 +947,7 @@ export default function ItineraryEditorScreenView({
   onSaveTripName,
   isTimePickerVisible,
   setTimePickerVisible,
+  onGoBack,
   editingTime,
   timelineScrollRef,
   formatDate,
@@ -1034,7 +1036,7 @@ export default function ItineraryEditorScreenView({
       <View style={styles.topBarHeader}>
         <TouchableOpacity
           style={styles.topBarBackButton}
-          onPress={() => navigation.goBack()}
+          onPress={onGoBack}
           activeOpacity={0.7}
         >
           <ChevronLeft size={24} color="#111827" />
