@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, Modal } from 'react-native';
 import { AppStackParamList } from '../../../navigation/types';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { OptionType } from '../../../components/common';
@@ -232,60 +232,65 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     if (id !== undefined) setTravelId(id);
   };
 
-  if (isCreating) {
-    return <AirplaneLoading />;
-  }
-
   return (
-    <HomeScreenView
-      nickname={user?.nickname}
-      email={user?.email}
-      pendingRequestsCount={pendingRequests.length}
-      destination={destination}
-      transport={transport}
-      dateText={getDateText()}
-      paxText={getPaxText()}
-      isFormValid={isFormValid}
-      isSearchModalVisible={isSearchModalVisible}
-      isCalendarVisible={isCalendarVisible}
-      isPaxModalVisible={isPaxModalVisible}
-      isTransportModalVisible={isTransportModalVisible}
-      startDate={startDate}
-      endDate={endDate}
-      adults={adults}
-      children={children}
-      transportOptions={transportOptions}
-      onNotificationPress={handleNotificationPress}
-      isNotificationModalVisible={isNotificationModalVisible}
-      pendingRequestList={pendingRequests}
-      onCloseNotificationModal={() => setNotificationModalVisible(false)}
-      onAcceptNotification={handleAccept}
-      onRejectNotification={handleReject}
-      onNavigateProfile={() => navigation.navigate('Profile')}
-      onOpenSearchModal={openSearchModal}
-      onCloseSearchModal={() => setSearchModalVisible(false)}
-      onSelectLocation={onSelectLocation}
-      onOpenCalendar={() => setCalendarVisible(true)}
-      onCloseCalendar={() => setCalendarVisible(false)}
-      onConfirmCalendar={({ startDate: newStartDate, endDate: newEndDate }) => {
-        setStartDate(newStartDate);
-        setEndDate(newEndDate);
-        setCalendarVisible(false);
-      }}
-      onOpenPaxModal={() => setPaxModalVisible(true)}
-      onClosePaxModal={() => setPaxModalVisible(false)}
-      onConfirmPax={({ adults: newAdults, children: newChildren }) => {
-        setAdults(newAdults);
-        setChildren(newChildren);
-        setPaxModalVisible(false);
-      }}
-      onOpenTransportModal={() => setTransportModalVisible(true)}
-      onCloseTransportModal={() => setTransportModalVisible(false)}
-      onSelectTransport={option => {
-        setTransport(option);
-        setTransportModalVisible(false);
-      }}
-      onCreateItinerary={handleCreateItinerary}
-    />
+    <>
+      <HomeScreenView
+        nickname={user?.nickname}
+        email={user?.email}
+        pendingRequestsCount={pendingRequests.length}
+        destination={destination}
+        transport={transport}
+        dateText={getDateText()}
+        paxText={getPaxText()}
+        isFormValid={isFormValid}
+        isSearchModalVisible={isSearchModalVisible}
+        isCalendarVisible={isCalendarVisible}
+        isPaxModalVisible={isPaxModalVisible}
+        isTransportModalVisible={isTransportModalVisible}
+        startDate={startDate}
+        endDate={endDate}
+        adults={adults}
+        children={children}
+        transportOptions={transportOptions}
+        onNotificationPress={handleNotificationPress}
+        isNotificationModalVisible={isNotificationModalVisible}
+        pendingRequestList={pendingRequests}
+        onCloseNotificationModal={() => setNotificationModalVisible(false)}
+        onAcceptNotification={handleAccept}
+        onRejectNotification={handleReject}
+        onNavigateProfile={() => navigation.navigate('Profile')}
+        onOpenSearchModal={openSearchModal}
+        onCloseSearchModal={() => setSearchModalVisible(false)}
+        onSelectLocation={onSelectLocation}
+        onOpenCalendar={() => setCalendarVisible(true)}
+        onCloseCalendar={() => setCalendarVisible(false)}
+        onConfirmCalendar={({ startDate: newStartDate, endDate: newEndDate }) => {
+          setStartDate(newStartDate);
+          setEndDate(newEndDate);
+          setCalendarVisible(false);
+        }}
+        onOpenPaxModal={() => setPaxModalVisible(true)}
+        onClosePaxModal={() => setPaxModalVisible(false)}
+        onConfirmPax={({ adults: newAdults, children: newChildren }) => {
+          setAdults(newAdults);
+          setChildren(newChildren);
+          setPaxModalVisible(false);
+        }}
+        onOpenTransportModal={() => setTransportModalVisible(true)}
+        onCloseTransportModal={() => setTransportModalVisible(false)}
+        onSelectTransport={option => {
+          setTransport(option);
+          setTransportModalVisible(false);
+        }}
+        onCreateItinerary={handleCreateItinerary}
+      />
+      <Modal
+        visible={isCreating}
+        transparent={false}
+        animationType="fade"
+      >
+        <AirplaneLoading />
+      </Modal>
+    </>
   );
 }
