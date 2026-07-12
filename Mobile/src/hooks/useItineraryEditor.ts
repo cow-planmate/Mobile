@@ -33,6 +33,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     time: string;
   } | null>(null);
 
+  const isInitialized = useRef(false);
   const timelineScrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -48,7 +49,10 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   };
 
   useEffect(() => {
+    if (isInitialized.current) return;
+
     const fetchPlanDetails = async () => {
+      isInitialized.current = true;
       if (!route.params?.planId) {
         // Fallback for new plan creation flow (client-side only init)
         initDaysFromDates();
