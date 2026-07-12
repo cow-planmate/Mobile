@@ -845,6 +845,7 @@ const TimelineTabScreen = React.memo(() => {
 
       <View style={styles.floatingHistoryContainer}>
         <TouchableOpacity
+          testID="btn-undo"
           style={styles.floatingHistoryButton}
           onPress={onUndo}
           activeOpacity={0.8}
@@ -852,6 +853,7 @@ const TimelineTabScreen = React.memo(() => {
           <FontAwesomeIcon icon={faUndo} color="#111827" size={16} />
         </TouchableOpacity>
         <TouchableOpacity
+          testID="btn-redo"
           style={styles.floatingHistoryButton}
           onPress={onRedo}
           activeOpacity={0.8}

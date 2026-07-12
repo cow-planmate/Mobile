@@ -24,7 +24,7 @@ export const HOUR_HEIGHT = 180;
 export const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
 export const MIN_ITEM_HEIGHT = 45;
 export const GRID_SNAP_HEIGHT = HOUR_HEIGHT / 4;
-export const BOTTOM_TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 76 : 64;
+export const BOTTOM_TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 85 : 60;
 
 export const styles = StyleSheet.create({
   container: {
@@ -585,12 +585,14 @@ export const styles = StyleSheet.create({
   // Floating History Actions
   floatingHistoryContainer: {
     position: 'absolute',
-    bottom: 16,
-    right: 16,
+    bottom: BOTTOM_TAB_BAR_HEIGHT + 16,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
-    gap: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
     zIndex: 30,
-    elevation: 5,
   },
   floatingHistoryButton: {
     width: 42,
@@ -600,10 +602,10 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2.5,
+    elevation: 2,
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },

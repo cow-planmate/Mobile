@@ -282,4 +282,79 @@ describe('ItineraryEditorScreenView Component', () => {
     expect(timelineScreenDay1Again.findByProps({ testID: 'timeline-item-1' })).toBeTruthy();
     expect(() => timelineScreenDay1Again.findByProps({ testID: 'timeline-item-2' })).toThrow();
   });
+
+  it('renders undo and redo buttons in the Timeline screen', async () => {
+    const mockUndo = jest.fn();
+    const mockRedo = jest.fn();
+
+    let rendererInstance: renderer.ReactTestRenderer | undefined;
+
+    await act(async () => {
+      rendererInstance = renderer.create(
+        <ItineraryEditorScreenView
+          days={mockDays}
+          selectedDayIndex={0}
+          setSelectedDayIndex={() => {}}
+          tripName="제주도 여행"
+          isEditingTripName={false}
+          setIsEditingTripName={() => {}}
+          setTripName={() => {}}
+          onSaveTripName={() => {}}
+          isTimePickerVisible={false}
+          setTimePickerVisible={() => {}}
+          editingTime={null}
+          timelineScrollRef={{ current: null } as any}
+          formatDate={(d) => d.toISOString().split('T')[0]}
+          handleEditTime={() => {}}
+          handleUpdatePlaceTimes={() => {}}
+          handleDeletePlace={() => {}}
+          handleAddPlace={() => {}}
+          selectedDay={mockDays[0]}
+          onlineUsers={[]}
+          isScheduleEditVisible={false}
+          setScheduleEditVisible={() => {}}
+          onConfirmScheduleEdit={() => {}}
+          onConfirmTimePicker={() => {}}
+          destination="제주도"
+          onComplete={() => {}}
+          onOpenParticipants={() => {}}
+          onOpenMap={() => {}}
+          onOpenShare={() => {}}
+          onUndo={mockUndo}
+          onRedo={mockRedo}
+          participantsCount={0}
+          planId={null}
+          detailPlace={null}
+          isDetailVisible={false}
+          onOpenDetail={() => {}}
+          onCloseDetail={() => {}}
+          weatherMap={{}}
+          onOpenPlanInfo={() => {}}
+        />
+      );
+    });
+
+    expect(rendererInstance).toBeDefined();
+
+    const timelineScreen = rendererInstance?.root.findByProps({
+      testID: 'mock-tab-screen-타임라인',
+    });
+
+    const iconViews = timelineScreen?.findAllByProps({ testID: 'mock-fa-icon' });
+    expect(iconViews?.length).toBeGreaterThanOrEqual(2);
+
+    const undoButton = timelineScreen?.findByProps({ testID: 'btn-undo' });
+    const redoButton = timelineScreen?.findByProps({ testID: 'btn-redo' });
+
+    expect(undoButton).toBeDefined();
+    expect(redoButton).toBeDefined();
+
+    await act(async () => {
+      undoButton?.props.onPress();
+      redoButton?.props.onPress();
+    });
+
+    expect(mockUndo).toHaveBeenCalledTimes(1);
+    expect(mockRedo).toHaveBeenCalledTimes(1);
+  });
 });
