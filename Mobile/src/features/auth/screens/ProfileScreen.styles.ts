@@ -26,7 +26,7 @@ export const FONTS = {
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#FFFFFF',
   },
   loadingContainer: {
     flex: 1,
@@ -875,5 +875,24 @@ export const styles = StyleSheet.create({
     marginBottom: normalize(16),
     borderWidth: 1,
     borderColor: '#F3F4F6',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: normalize(16),
+    height: normalize(52),
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  backButton: {
+    padding: normalize(4),
+  },
+  headerTitle: {
+    fontSize: normalize(18),
+    fontFamily: FONTS.bold,
+    fontWeight: 'bold',
+    color: '#111827',
   },
 });

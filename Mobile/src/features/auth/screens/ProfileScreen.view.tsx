@@ -35,6 +35,7 @@ import {
   Circle,
   CalendarDays,
   Check,
+  ChevronLeft,
 } from 'lucide-react-native';
 import FastImage from 'react-native-fast-image';
 import gravatarUrl from '../../../utils/gravatarUrl';
@@ -541,10 +542,30 @@ export default function ProfileScreenView({
     }
   };
 
+  const handleBackPress = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('MainTabs', { screen: 'FeedTab' });
+    }
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" />
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleBackPress}
+          activeOpacity={0.7}
+        >
+          <ChevronLeft size={24} color="#111827" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>마이페이지</Text>
+        <View style={{ width: 28 }} />
+      </View>
       <ScrollView
+        style={{ backgroundColor: '#F8F9FA' }}
         contentContainerStyle={[styles.scrollContainer, { paddingBottom: insets.bottom + normalize(40) }]}
         showsVerticalScrollIndicator={false}
       >
