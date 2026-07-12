@@ -78,8 +78,8 @@ export const styles = StyleSheet.create({
     gap: 2,
   },
   nameText: {
-    fontSize: 18,
-    fontFamily: FONTS.bold,
+    fontSize: 15,
+    fontFamily: FONTS.semibold,
     color: '#064e3b', // default for lime-900 like
   },
   metaRow: {
@@ -87,8 +87,8 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   metaText: {
-    fontSize: 13,
-    fontFamily: FONTS.medium,
+    fontSize: 12,
+    fontFamily: FONTS.regular,
     color: '#4d7c0f', // default for lime-600 like
   },
   actionContainer: {

@@ -4,7 +4,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import ItineraryEditorScreen from '../features/itinerary/screens/ItineraryEditorScreen';
 import ItineraryViewScreen from '../features/itinerary/screens/ItineraryViewScreen';
-import MyScheduleScreen from '../features/itinerary/screens/MyScheduleScreen';
 import TravelFeedScreen from '../features/itinerary/screens/TravelFeedScreen';
 import ProfileScreen from '../features/auth/screens/ProfileScreen';
 import ThemeSettingsScreen from '../features/auth/screens/ThemeSettingsScreen';
@@ -19,7 +18,7 @@ import {
   CommunityStackParamList,
 } from './types';
 import { Platform } from 'react-native';
-import { Calendar, MessageSquare, Compass, PlusCircle } from 'lucide-react-native';
+import { MessageSquare, Compass, PlusCircle } from 'lucide-react-native';
 
 const FeedStackNavigator = createNativeStackNavigator<FeedStackParamList>();
 const ScheduleStackNavigator = createNativeStackNavigator<ScheduleStackParamList>();
@@ -71,14 +70,6 @@ function ScheduleStack() {
       <ScheduleStackNavigator.Screen
         name="MySchedule"
         component={ProfileScreen}
-      />
-      <ScheduleStackNavigator.Screen
-        name="ItineraryEditor"
-        component={ItineraryEditorScreen}
-        options={{
-          animation: 'slide_from_bottom',
-          presentation: 'modal',
-        }}
       />
       <ScheduleStackNavigator.Screen
         name="ItineraryView"
@@ -181,6 +172,14 @@ export default function AppStack() {
       <Stack.Screen name="ThemeSettings" component={ThemeSettingsScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
       <Stack.Screen name="Social" component={SocialScreen} />
+      <Stack.Screen
+        name="ItineraryEditor"
+        component={ItineraryEditorScreen}
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
     </Stack.Navigator>
   );
 }

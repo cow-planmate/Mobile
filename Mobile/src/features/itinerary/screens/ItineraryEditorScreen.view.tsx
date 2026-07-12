@@ -2,13 +2,13 @@ import React, { useCallback, createContext, useContext, useMemo } from 'react';
 import {
   View,
   Text,
-  SafeAreaView,
-  ScrollView,
   TouchableOpacity,
+  ScrollView,
   TextInput,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { TabActions } from '@react-navigation/native';
+import { TabActions, useNavigation } from '@react-navigation/native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -54,7 +54,7 @@ import {
   faUndo,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
-import { Map as MapOutlineIcon } from 'lucide-react-native';
+import { Map as MapOutlineIcon, ChevronLeft } from 'lucide-react-native';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -796,6 +796,8 @@ export const EditorStateContext = createContext<{
   handleAddPlace: any;
   planId: any;
   destination: any;
+  onUndo: any;
+  onRedo: any;
 } | null>(null);
 
 const TimelineTabScreen = React.memo(() => {
@@ -809,26 +811,28 @@ const TimelineTabScreen = React.memo(() => {
     handleUpdatePlaceTimes,
     onOpenDetail,
     weatherMap,
+    onUndo,
+    onRedo,
   } = state;
+
+  const localDateStr = selectedDay ? selectedDay.date.toISOString().split('T')[0] : '';
+  const currentWeather = selectedDay ? weatherMap[localDateStr] : undefined;
 
   return (
     <View style={styles.timelineStage}>
       <View pointerEvents="none" style={styles.timelineSceneBackdrop} />
-      {selectedDay &&
-        weatherMap[selectedDay.date.toISOString().split('T')[0]] && (
-          <View
-            pointerEvents="none"
-            style={styles.timelineWeatherOverlay}
-          >
-            <WeatherHeader
-              dayNumber={selectedDay.dayNumber}
-              weather={
-                weatherMap[selectedDay.date.toISOString().split('T')[0]]
-              }
-              appearance="overlay"
-            />
-          </View>
-        )}
+      {selectedDay && currentWeather && (
+        <View
+          pointerEvents="none"
+          style={styles.timelineWeatherOverlay}
+        >
+          <WeatherHeader
+            dayNumber={selectedDay.dayNumber}
+            weather={currentWeather}
+            appearance="overlay"
+          />
+        </View>
+      )}
       <TimelineComponent
         ref={timelineScrollRef}
         selectedDay={selectedDay}
@@ -836,13 +840,25 @@ const TimelineTabScreen = React.memo(() => {
         onEditPlaceTime={handleEditTime}
         onUpdatePlaceTimes={handleUpdatePlaceTimes}
         onPressPlace={onOpenDetail}
-        topPadding={
-          selectedDay &&
-          weatherMap[selectedDay.date.toISOString().split('T')[0]]
-            ? 75
-            : 0
-        }
+        topPadding={selectedDay && currentWeather ? 62 : 0}
       />
+
+      <View style={styles.floatingHistoryContainer}>
+        <TouchableOpacity
+          style={styles.floatingHistoryButton}
+          onPress={onUndo}
+          activeOpacity={0.8}
+        >
+          <FontAwesomeIcon icon={faUndo} color="#111827" size={16} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.floatingHistoryButton}
+          onPress={onRedo}
+          activeOpacity={0.8}
+        >
+          <FontAwesomeIcon icon={faRedo} color="#111827" size={16} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 });
@@ -957,9 +973,8 @@ export default function ItineraryEditorScreenView({
   initialTabName,
   onOpenPlanInfo,
 }: ItineraryEditorScreenViewProps) {
-  if (!selectedDay) {
-    return <AirplaneLoading />;
-  }
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   const editorStateContextValue = useMemo(() => {
     return {
@@ -973,6 +988,8 @@ export default function ItineraryEditorScreenView({
       handleAddPlace,
       planId,
       destination,
+      onUndo,
+      onRedo,
     };
   }, [
     timelineScrollRef,
@@ -985,10 +1002,28 @@ export default function ItineraryEditorScreenView({
     handleAddPlace,
     planId,
     destination,
+    onUndo,
+    onRedo,
   ]);
 
+  if (!selectedDay) {
+    return <AirplaneLoading />;
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.topBarHeader}>
+        <TouchableOpacity
+          style={styles.topBarBackButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+        >
+          <ChevronLeft size={24} color="#111827" />
+        </TouchableOpacity>
+        <Text style={styles.topBarHeaderTitle}>일정편집</Text>
+        <View style={{ width: 28 }} />
+      </View>
+
       <View style={styles.topToolbar}>
         <View style={styles.toolbarLeftGroup}>
           {isEditingTripName ? (
@@ -1015,12 +1050,6 @@ export default function ItineraryEditorScreenView({
             </TouchableOpacity>
           )}
 
-          <ToolbarIconButton onPress={onUndo} variant="plain">
-            <FontAwesomeIcon icon={faUndo} color="#111827" size={18} />
-          </ToolbarIconButton>
-          <ToolbarIconButton onPress={onRedo} variant="plain">
-            <FontAwesomeIcon icon={faRedo} color="#111827" size={18} />
-          </ToolbarIconButton>
           <ToolbarIconButton
             onPress={onOpenPlanInfo}
             variant="info"
@@ -1072,27 +1101,19 @@ export default function ItineraryEditorScreenView({
               >
                 <Text
                   style={[
-                    styles.dayTabLabel,
-                    isSelected && styles.dayTabLabelSelected,
+                    styles.dayTabDayNumber,
+                    isSelected && styles.dayTabDayNumberSelected,
                   ]}
-                  numberOfLines={1}
                 >
-                  <Text
-                    style={[
-                      styles.dayTabDayNumber,
-                      isSelected && styles.dayTabDayNumberSelected,
-                    ]}
-                  >
-                    {day.dayNumber}일차{' '}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.dayTabDateInline,
-                      isSelected && styles.dayTabDateInlineSelected,
-                    ]}
-                  >
-                    {formatDate(day.date)}
-                  </Text>
+                  {day.dayNumber}일차
+                </Text>
+                <Text
+                  style={[
+                    styles.dayTabDateInline,
+                    isSelected && styles.dayTabDateInlineSelected,
+                  ]}
+                >
+                  {formatDate(day.date)}
                 </Text>
               </TouchableOpacity>
             );
@@ -1169,6 +1190,6 @@ export default function ItineraryEditorScreenView({
           onDelete={onDeleteFromDetail}
         />
       )} */}
-    </SafeAreaView>
+    </View>
   );
 }

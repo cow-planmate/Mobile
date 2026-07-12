@@ -324,27 +324,19 @@ export default function ItineraryViewScreenView({
               >
                 <Text
                   style={[
-                    styles.dayTabLabel,
-                    isSelected && styles.dayTabLabelSelected,
+                    styles.dayTabDayNumber,
+                    isSelected && styles.dayTabDayNumberSelected,
                   ]}
-                  numberOfLines={1}
                 >
-                  <Text
-                    style={[
-                      styles.dayTabDayNumber,
-                      isSelected && styles.dayTabDayNumberSelected,
-                    ]}
-                  >
-                    {day.dayNumber}일차{' '}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.dayTabDateInline,
-                      isSelected && styles.dayTabDateInlineSelected,
-                    ]}
-                  >
-                    {formatDate(day.date)}
-                  </Text>
+                  {day.dayNumber}일차
+                </Text>
+                <Text
+                  style={[
+                    styles.dayTabDateInline,
+                    isSelected && styles.dayTabDateInlineSelected,
+                  ]}
+                >
+                  {formatDate(day.date)}
                 </Text>
               </TouchableOpacity>
             );
@@ -395,7 +387,7 @@ export default function ItineraryViewScreenView({
                 contentContainerStyle={[
                   styles.timelineContentContainer,
                   weatherMap[selectedDay.date.toISOString().split('T')[0]]
-                    ? { paddingTop: 75 }
+                    ? { paddingTop: 62 }
                     : {},
                 ]}
               >

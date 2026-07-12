@@ -29,6 +29,10 @@ jest.mock('@react-navigation/native', () => ({
   TabActions: {
     jumpTo: jest.fn(),
   },
+  useNavigation: () => ({
+    goBack: jest.fn(),
+    navigate: jest.fn(),
+  }),
 }));
 
 jest.mock('react-native-gesture-handler', () => {
@@ -87,8 +91,13 @@ jest.mock('lucide-react-native', () => {
   const { View } = require('react-native');
   return {
     Map: () => React.createElement(View, { testID: 'mock-lucide-map-icon' }),
+    ChevronLeft: () => React.createElement(View, { testID: 'mock-lucide-chevron-left' }),
   };
 });
+
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 44, left: 0, right: 0, bottom: 34 }),
+}));
 
 jest.mock('../src/features/itinerary/components/TimelineItem', () => {
   const React = require('react');

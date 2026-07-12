@@ -81,6 +81,23 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   } = usePlaces();
   const planId = route.params.planId;
   const destination = route.params.destination;
+  const [destinationCity, setDestinationCity] = useState(
+    route.params.destination || '',
+  );
+
+  const buildWeatherCity = useCallback(
+    (travelCategoryName?: string, travelName?: string) => {
+      const category = travelCategoryName?.trim() || '';
+      const name = travelName?.trim() || '';
+
+      if (category && name) {
+        return `${category} ${name}`;
+      }
+
+      return category || name || '';
+    },
+    [],
+  );
 
   const parseDestination = useCallback((value?: string) => {
     const normalized = value?.trim() || '';
@@ -137,10 +154,20 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   >({});
 
   useEffect(() => {
-    if (!destination || days.length === 0) return;
+    if (planMetadata?.travelCategoryName || planMetadata?.travelName) {
+      setDestinationCity(
+        buildWeatherCity(planMetadata.travelCategoryName, planMetadata.travelName),
+      );
+    }
+  }, [planMetadata, buildWeatherCity]);
+
+  useEffect(() => {
+    if (!destinationCity || days.length === 0) return;
+
     const startDate = days[0].date.toISOString().split('T')[0];
     const endDate = days[days.length - 1].date.toISOString().split('T')[0];
-    fetchWeatherRecommendations(destination, startDate, endDate)
+
+    fetchWeatherRecommendations(destinationCity, startDate, endDate)
       .then(res => {
         const map: Record<string, SimpleWeatherInfo> = {};
         res.weather.forEach(w => {
@@ -151,7 +178,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       .catch(() => {
         // weather is non-critical – silently ignore
       });
-  }, [destination, days.length]);
+  }, [destinationCity, days.length]);
 
   useEffect(() => {
     if (planId) {
@@ -325,21 +352,29 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         }
       }
 
-      // Update startTime/endTime on existing days (sync with schedule edit changes)
+      // Update days (add new days, delete removed days, and sync existing days)
       setDays(prevDays => {
-        return prevDays.map(day => {
-          const dateStr = day.date.toISOString().split('T')[0];
-          const matched = updatedDays.find(
-            ud => ud.date.toISOString().split('T')[0] === dateStr,
+        return updatedDays.map((ud, idx) => {
+          const dateStr = ud.date.toISOString().split('T')[0];
+          const existingDay = prevDays.find(
+            pd => pd.date.toISOString().split('T')[0] === dateStr,
           );
-          if (matched) {
+          if (existingDay) {
             return {
-              ...day,
-              startTime: matched.startTime,
-              endTime: matched.endTime,
+              ...existingDay,
+              startTime: ud.startTime,
+              endTime: ud.endTime,
+              dayNumber: idx + 1,
+            };
+          } else {
+            return {
+              date: ud.date,
+              dayNumber: idx + 1,
+              startTime: ud.startTime || '09:00:00',
+              endTime: ud.endTime || '20:00:00',
+              places: [],
             };
           }
-          return day;
         });
       });
 
