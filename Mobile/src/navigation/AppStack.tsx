@@ -35,6 +35,7 @@ const baseTabBarStyle = {
   paddingBottom: Platform.OS === 'ios' ? 28 : 8,
   paddingTop: 8,
   elevation: 0,
+  marginBottom: Platform.OS === 'ios' ? 10 : 6,
 };
 
 function FeedStack() {
