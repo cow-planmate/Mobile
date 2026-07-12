@@ -145,11 +145,28 @@ const ItineraryCardItem = ({
   // 테마 색상 분기 (공유받은 일정이면 오렌지색, 생성한 일정이면 파란색)
   const themeColor = plan.isShared ? '#F97316' : '#1344FF';
 
-  return (    <View style={[
-      styles.itineraryCardWrapper, 
-      { overflow: 'hidden' },
-      isSelected && { borderColor: themeColor, borderWidth: 2 }
-    ]}>
+  const handleCardPress = () => {
+    if (isEditMode) {
+      onSelectToggle();
+    } else {
+      navigation.navigate('ItineraryView', {
+        planId: plan.planId,
+        tripName: plan.planName,
+      });
+    }
+  };
+
+  return (
+    <Pressable
+      onPress={handleCardPress}
+      style={({ pressed }) => [
+        styles.itineraryCardWrapper,
+        { overflow: 'hidden' },
+        isSelected 
+          ? { borderColor: themeColor, borderWidth: 2 } 
+          : (pressed ? { borderColor: themeColor, borderWidth: 2, backgroundColor: '#F3F4F6' } : null)
+      ]}
+    >
       {/* 카드 상단 배지 및 삭제 버튼 */}
       <View style={styles.cardHeaderRow}>
         <View style={styles.badgeRow}>
@@ -183,26 +200,14 @@ const ItineraryCardItem = ({
         )}
       </View>
 
-      {/* 카드 본문 타이틀 및 날짜 - 누르면 일정 완성 화면 또는 선택 토글 */}
-      <TouchableOpacity 
-        onPress={() => {
-          if (isEditMode) {
-            onSelectToggle();
-          } else {
-            navigation.navigate('ItineraryView', {
-              planId: plan.planId,
-              tripName: plan.planName,
-            });
-          }
-        }}
-        activeOpacity={0.7}
-      >
+      {/* 카드 본문 타이틀 및 날짜 - 터치는 부모 Pressable이 처리함 */}
+      <View style={{ pointerEvents: 'none' }}>
         <Text style={styles.cardTitleText} numberOfLines={1}>{plan.planName}</Text>
         <View style={styles.dateInfoRow}>
           <Calendar size={12} color="#9CA3AF" style={{ marginRight: 4 }} />
           <Text style={styles.datePeriodText}>{formattedPeriod}</Text>
         </View>
-      </TouchableOpacity>
+      </View>
 
       {/* 체크리스트 영역 */}
       <View style={styles.checklistContainer}>
@@ -260,7 +265,7 @@ const ItineraryCardItem = ({
           <Text style={styles.sharedBadgeText}>SHARED</Text>
         </View>
       )}
-    </View>
+    </Pressable>
   );
 };
 
