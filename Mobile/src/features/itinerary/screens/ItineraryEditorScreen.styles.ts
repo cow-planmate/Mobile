@@ -195,7 +195,8 @@ export const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingLeft: 0,
+    paddingRight: 12,
     paddingTop: 10,
     paddingBottom: 8,
     gap: 8,
@@ -203,7 +204,8 @@ export const styles = StyleSheet.create({
   dayTabsContainer: {
     alignItems: 'center',
     paddingVertical: 0,
-    paddingRight: 4,
+    paddingLeft: 16,
+    paddingRight: 16,
     gap: 8,
   },
   dayTabsScroll: {

@@ -1086,6 +1086,7 @@ export default function ItineraryEditorScreenView({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.dayTabsContainer}
           style={styles.dayTabsScroll}
+          fadingEdgeLength={40}
         >
           {days.map((day, index) => {
             const isSelected = selectedDayIndex === index;
