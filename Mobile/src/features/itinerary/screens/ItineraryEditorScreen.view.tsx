@@ -1,10 +1,11 @@
-import React, { useCallback, createContext, useContext, useMemo } from 'react';
+import React, { useCallback, createContext, useContext, useMemo, useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   TextInput,
+  Keyboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
@@ -977,6 +978,22 @@ export default function ItineraryEditorScreenView({
 }: ItineraryEditorScreenViewProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const [inputWidth, setInputWidth] = useState(120);
+
+  React.useEffect(() => {
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        if (isEditingTripName) {
+          onSaveTripName();
+        }
+      },
+    );
+
+    return () => {
+      keyboardDidHideListener.remove();
+    };
+  }, [isEditingTripName, onSaveTripName]);
 
   const editorStateContextValue = useMemo(() => {
     return {
@@ -1029,17 +1046,41 @@ export default function ItineraryEditorScreenView({
       <View style={styles.topToolbar}>
         <View style={styles.toolbarLeftGroup}>
           {isEditingTripName ? (
-            <TextInput
-              value={tripName}
-              onChangeText={setTripName}
-              onBlur={onSaveTripName}
-              onSubmitEditing={onSaveTripName}
-              autoFocus
-              numberOfLines={1}
-              style={styles.toolbarTitleInput}
-              placeholder="일정 이름"
-              placeholderTextColor="#9CA3AF"
-            />
+            <>
+              <Text
+                style={[
+                  styles.toolbarTitleInput,
+                  {
+                    position: 'absolute',
+                    opacity: 0,
+                    width: 'auto',
+                    minWidth: 0,
+                    maxWidth: undefined,
+                  },
+                ]}
+                onLayout={(e) => {
+                  const { width } = e.nativeEvent.layout;
+                  const finalWidth = Math.max(30, Math.min(170, width + 8));
+                  setInputWidth(finalWidth);
+                }}
+              >
+                {tripName || '일정 이름'}
+              </Text>
+              <TextInput
+                value={tripName}
+                onChangeText={setTripName}
+                onBlur={onSaveTripName}
+                onSubmitEditing={onSaveTripName}
+                autoFocus
+                numberOfLines={1}
+                style={[
+                  styles.toolbarTitleInput,
+                  { width: inputWidth, minWidth: 0, maxWidth: 170 },
+                ]}
+                placeholder="일정 이름"
+                placeholderTextColor="#9CA3AF"
+              />
+            </>
           ) : (
             <TouchableOpacity
               onPress={() => setIsEditingTripName(true)}

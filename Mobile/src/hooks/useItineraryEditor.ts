@@ -22,7 +22,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     setLastAddedPlaceId,
   } = useItinerary();
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-  const [tripName, setTripName] = useState('나의 일정1');
+  const [tripName, setTripName] = useState('');
   const [isEditingTripName, setIsEditingTripName] = useState(false);
   const [planMetadata, setPlanMetadata] = useState<any>(null);
 
@@ -65,7 +65,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
         );
         const { planFrame, placeBlocks, timetables } = response.data;
 
-        setTripName(planFrame.planName || '나의 일정');
+        setTripName(planFrame.planName || '');
         setPlanMetadata(planFrame);
 
         if (timetables && timetables.length > 0) {
