@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   Platform,
   Modal,
   Pressable,
+  Dimensions,
+  StatusBar,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -36,9 +38,20 @@ const Header: React.FC<HeaderProps> = ({
   const navigation = useNavigation<any>();
   const logout = useAuthStore((state) => state.logout);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 16 });
+  const profileRef = useRef<TouchableOpacity>(null);
 
   const handleProfilePress = () => {
-    setMenuVisible(true);
+    profileRef.current?.measure((x, y, width, height, pageX, pageY) => {
+      const screenWidth = Dimensions.get('window').width;
+      const right = screenWidth - (pageX + width);
+      const statusBarHeight = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
+      setMenuPosition({
+        top: pageY + height - statusBarHeight + 3,
+        right: Math.max(16, right),
+      });
+      setMenuVisible(true);
+    });
   };
 
   const handleMenuItemPress = (action: 'profile' | 'social' | 'logout') => {
@@ -63,6 +76,7 @@ const Header: React.FC<HeaderProps> = ({
       <Text style={styles.logo}>planMate</Text>
       <View style={styles.topIcons}>
         <TouchableOpacity 
+          ref={profileRef}
           style={[styles.profileBadge, menuVisible && styles.profileBadgeActive]} 
           onPress={handleProfilePress}
         >
@@ -103,7 +117,7 @@ const Header: React.FC<HeaderProps> = ({
           style={styles.modalOverlay} 
           onPress={() => setMenuVisible(false)}
         >
-          <View style={styles.dropdownMenu}>
+          <View style={[styles.dropdownMenu, { top: menuPosition.top, right: menuPosition.right }]}>
             <TouchableOpacity 
               style={styles.menuItem} 
               onPress={() => handleMenuItemPress('profile')}
@@ -211,12 +225,9 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
   },
   dropdownMenu: {
-    marginTop: Platform.OS === 'ios' ? normalize(38) : Platform.OS === 'android' ? normalize(72) : normalize(54),
-    marginRight: normalize(16),
+    position: 'absolute',
     backgroundColor: '#FFFFFF',
     borderRadius: normalize(16),
     paddingVertical: normalize(8),
