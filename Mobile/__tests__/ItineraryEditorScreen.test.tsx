@@ -138,8 +138,114 @@ jest.mock('../src/features/itinerary/components/weather/WeatherHeader', () => {
   return () => React.createElement(View, { testID: 'mock-weather-header' });
 });
 
+jest.mock('react-native-toast-message', () => ({
+  show: jest.fn(),
+  hide: jest.fn(),
+}));
+
+jest.mock('react-native-fast-image', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const FastImage = (props: any) => React.createElement(View, props);
+  (FastImage as any).priority = {
+    low: 'low',
+    normal: 'normal',
+    high: 'high',
+  };
+  (FastImage as any).resizeMode = {
+    contain: 'contain',
+    cover: 'cover',
+    stretch: 'stretch',
+    center: 'center',
+  };
+  return FastImage;
+});
+
+jest.mock('@env', () => ({
+  API_URL: 'mock-api-url',
+}), { virtual: true });
+
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
+
+jest.mock('react-native-date-picker', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return (props: any) => React.createElement(View, props);
+});
+
 import ItineraryEditorScreenView from '../src/features/itinerary/screens/ItineraryEditorScreen.view';
+import ItineraryEditorScreen from '../src/features/itinerary/screens/ItineraryEditorScreen';
 import { Day } from '../src/contexts/ItineraryContext';
+
+// Mocks for ItineraryEditorScreen container component
+const mockShowAlert = jest.fn();
+jest.mock('../src/contexts/AlertContext', () => ({
+  useAlert: () => ({
+    showAlert: mockShowAlert,
+  }),
+}));
+
+const mockMutateAsync = jest.fn();
+jest.mock('../src/hooks/usePlanQueries', () => ({
+  useCreateFullPlan: () => ({
+    mutateAsync: mockMutateAsync,
+  }),
+}));
+
+const mockWebSocket = {
+  connect: jest.fn(),
+  disconnect: jest.fn(),
+  onlineUsers: [],
+  sendMessage: jest.fn(),
+};
+jest.mock('../src/contexts/WebSocketContext', () => ({
+  useWebSocket: () => mockWebSocket,
+}));
+
+const mockItinerary = {
+  updatePlaceMemo: jest.fn(),
+  updatePlaceDetails: jest.fn(),
+  setDays: jest.fn(),
+};
+jest.mock('../src/contexts/ItineraryContext', () => ({
+  useItinerary: () => mockItinerary,
+}));
+
+const mockPlaces = {
+  fetchAllRecommendations: jest.fn(),
+  fetchAllRecommendationsNoAuth: jest.fn(),
+  resetPlaces: jest.fn(),
+};
+jest.mock('../src/contexts/PlacesContext', () => ({
+  usePlaces: () => mockPlaces,
+}));
+
+const mockItineraryEditor = {
+  days: [] as Day[],
+  selectedDayIndex: 0,
+  setSelectedDayIndex: jest.fn(),
+  tripName: '제주도 여행',
+  setTripName: jest.fn(),
+  isEditingTripName: false,
+  setIsEditingTripName: jest.fn(),
+  isTimePickerVisible: false,
+  setTimePickerVisible: jest.fn(),
+  editingTime: null as any,
+  setEditingTime: jest.fn(),
+  timelineScrollRef: { current: null } as any,
+  formatDate: (d: Date) => d.toISOString().split('T')[0],
+  handleEditTime: jest.fn(),
+  handleUpdatePlaceTimes: jest.fn(),
+  handleDeletePlace: jest.fn(),
+  handleAddPlace: jest.fn(),
+  selectedDay: null as any,
+  planMetadata: {},
+};
+jest.mock('../src/hooks/useItineraryEditor', () => ({
+  useItineraryEditor: () => mockItineraryEditor,
+}));
 
 const mockDays: Day[] = [
   {
@@ -356,5 +462,160 @@ describe('ItineraryEditorScreenView Component', () => {
 
     expect(mockUndo).toHaveBeenCalledTimes(1);
     expect(mockRedo).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ItineraryEditorScreen Component', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('registers beforeRemove listener and shows warning alert on exit', async () => {
+    // Setup mock days to trigger the exit warning check
+    mockItineraryEditor.days = mockDays;
+    mockItineraryEditor.selectedDay = mockDays[0];
+
+    const mockAddListener = jest.fn();
+    const mockDispatch = jest.fn();
+    const mockNavigation = {
+      addListener: mockAddListener,
+      goBack: jest.fn(),
+      navigate: jest.fn(),
+      dispatch: mockDispatch,
+      setParams: jest.fn(),
+    } as any;
+
+    const mockRoute = {
+      params: {
+        planId: 'plan-123',
+        destination: '제주도',
+      },
+    } as any;
+
+    // Render component
+    await act(async () => {
+      renderer.create(
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+      );
+    });
+
+    // Verify beforeRemove listener was registered
+    expect(mockAddListener).toHaveBeenCalledWith('beforeRemove', expect.any(Function));
+
+    // Find the beforeRemove handler callback
+    const beforeRemoveHandler = mockAddListener.mock.calls.find(
+      (call) => call[0] === 'beforeRemove'
+    )?.[1];
+
+    expect(beforeRemoveHandler).toBeDefined();
+
+    // Trigger beforeRemove event
+    const mockPreventDefault = jest.fn();
+    const mockAction = { type: 'GO_BACK' };
+    const mockEvent = {
+      preventDefault: mockPreventDefault,
+      data: { action: mockAction },
+    };
+
+    await act(async () => {
+      beforeRemoveHandler(mockEvent);
+    });
+
+    // Alert should have been prevented
+    expect(mockPreventDefault).toHaveBeenCalled();
+
+    // Custom Alert should be shown
+    expect(mockShowAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: '변경사항 저장 안 됨',
+        type: 'warning',
+        buttons: expect.any(Array),
+      })
+    );
+
+    // Get the buttons passed to showAlert
+    const alertOptions = mockShowAlert.mock.calls[0][0];
+    const leaveButton = alertOptions.buttons.find(
+      (btn: any) => btn.text === '나가기'
+    );
+    expect(leaveButton).toBeDefined();
+
+    // Press '나가기' (leave) button
+    await act(async () => {
+      leaveButton.onPress();
+    });
+
+    // Dispatch should be called after 1200ms timeout
+    expect(mockDispatch).not.toHaveBeenCalled();
+    
+    await act(async () => {
+      jest.advanceTimersByTime(1200);
+    });
+
+    expect(mockDispatch).toHaveBeenCalledWith(mockAction);
+  });
+
+  it('does not show warning alert when completed via onComplete', async () => {
+    mockItineraryEditor.days = mockDays;
+    mockItineraryEditor.selectedDay = mockDays[0];
+
+    const mockAddListener = jest.fn();
+    const mockNavigation = {
+      addListener: mockAddListener,
+      goBack: jest.fn(),
+      navigate: jest.fn(),
+      dispatch: jest.fn(),
+      setParams: jest.fn(),
+    } as any;
+
+    const mockRoute = {
+      params: {
+        planId: 'plan-123',
+        destination: '제주도',
+      },
+    } as any;
+
+    let rendererInstance: renderer.ReactTestRenderer | undefined;
+
+    await act(async () => {
+      rendererInstance = renderer.create(
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+      );
+    });
+
+    // Find ItineraryEditorScreenView to call onComplete
+    const viewComponent = rendererInstance?.root.findByType(ItineraryEditorScreenView);
+    expect(viewComponent).toBeDefined();
+
+    // Trigger completion
+    await act(async () => {
+      viewComponent.props.onComplete();
+    });
+
+    // Get the registered beforeRemove handler
+    const beforeRemoveHandler = mockAddListener.mock.calls.find(
+      (call) => call[0] === 'beforeRemove'
+    )?.[1];
+    expect(beforeRemoveHandler).toBeDefined();
+
+    // Trigger beforeRemove
+    const mockPreventDefault = jest.fn();
+    const mockEvent = {
+      preventDefault: mockPreventDefault,
+      data: { action: { type: 'GO_BACK' } },
+    };
+
+    await act(async () => {
+      beforeRemoveHandler(mockEvent);
+    });
+
+    // It should NOT call preventDefault or showAlert, letting the native transition go through
+    expect(mockPreventDefault).not.toHaveBeenCalled();
+    expect(mockShowAlert).not.toHaveBeenCalled();
   });
 });

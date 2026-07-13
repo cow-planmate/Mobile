@@ -81,6 +81,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isBacking, setIsBacking] = useState(false);
   const isBackingRef = useRef(false);
+  const isCompletingRef = useRef(false);
 
   const handleGoBack = useCallback(() => {
     navigation.goBack();
@@ -150,6 +151,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (isCompletingRef.current) {
+        return;
+      }
+
       if (isBackingRef.current) {
         return;
       }
@@ -160,20 +165,37 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       }
 
       e.preventDefault();
-      isBackingRef.current = true;
-      setIsBacking(true);
 
-      const timer = setTimeout(() => {
-        setIsBacking(false);
-        navigation.dispatch(e.data.action);
-        isBackingRef.current = false;
-      }, 1200);
+      showAlert({
+        title: '변경사항 저장 안 됨',
+        message: '작성 중인 내용이 저장되지 않았습니다. 정말 나가시겠습니까?',
+        type: 'warning',
+        buttons: [
+          {
+            text: '계속 작성',
+            style: 'cancel',
+            onPress: () => {},
+          },
+          {
+            text: '나가기',
+            style: 'destructive',
+            onPress: () => {
+              isBackingRef.current = true;
+              setIsBacking(true);
 
-      return () => clearTimeout(timer);
+              const timer = setTimeout(() => {
+                setIsBacking(false);
+                navigation.dispatch(e.data.action);
+                isBackingRef.current = false;
+              }, 1200);
+            },
+          },
+        ],
+      });
     });
 
     return unsubscribe;
-  }, [navigation, days.length, isSaving]);
+  }, [navigation, days.length, isSaving, showAlert]);
 
   // ── Undo/Redo History state ──
   const [history, setHistory] = useState<Day[][]>([]);
@@ -507,6 +529,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   };
 
   const onComplete = async () => {
+    isCompletingRef.current = true;
+
     // Disconnect WebSocket immediately when completing
     disconnect();
 
@@ -608,6 +632,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     } catch (error: any) {
       console.error('Failed to create plan:', error);
       showAlert({ title: '오류', message: '일정 저장에 실패했습니다.' });
+      isCompletingRef.current = false;
     } finally {
       setIsSaving(false);
     }
