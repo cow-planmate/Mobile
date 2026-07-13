@@ -143,6 +143,13 @@ jest.mock('react-native-toast-message', () => ({
   hide: jest.fn(),
 }));
 
+jest.mock('axios', () => ({
+  get: jest.fn(() => Promise.resolve({ data: {} })),
+  post: jest.fn(() => Promise.resolve({ data: {} })),
+  patch: jest.fn(() => Promise.resolve({ data: {} })),
+  delete: jest.fn(() => Promise.resolve({ data: {} })),
+}));
+
 jest.mock('react-native-fast-image', () => {
   const React = require('react');
   const { View } = require('react-native');

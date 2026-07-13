@@ -14,6 +14,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAlert } from '../../../contexts/AlertContext';
 import Toast from 'react-native-toast-message';
 import axios from 'axios';
+import { resolveApiUrl } from '../../../utils/apiUrl';
 import { API_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppStackParamList } from '../../../navigation/types';
@@ -531,11 +532,28 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const onComplete = async () => {
     isCompletingRef.current = true;
 
+    // If editing existing plan, send the final trip name update via WebSocket before disconnecting
+    if (route.params.planId && tripName) {
+      sendMessage('update', 'plan', { planId: route.params.planId, title: tripName });
+      // Brief delay to allow websocket frame transmission
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
     // Disconnect WebSocket immediately when completing
     disconnect();
 
     // If plan already exists (editing from MySchedule), just navigate to view
     if (route.params.planId) {
+      try {
+        if (tripName) {
+          await axios.patch(resolveApiUrl(`/api/plan/${route.params.planId}/name`), {
+            planName: tripName,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to update plan title on complete:', err);
+      }
+
       navigation.navigate('ItineraryView', {
         days,
         tripName,
@@ -615,6 +633,18 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       });
 
       const newPlanId = result?.planId;
+
+      // 백엔드가 생성 시 planName을 무시하고 강제로 목적지명 등으로 생성할 수 있으므로,
+      // 생성이 끝난 직후 신규 planId에 대해 즉각 이름 변경 PATCH API를 추가 호출하여 동기화합니다.
+      if (newPlanId && tripName) {
+        try {
+          await axios.patch(resolveApiUrl(`/api/plan/${newPlanId}/name`), {
+            planName: tripName,
+          });
+        } catch (patchErr) {
+          console.error('Failed to patch plan name after creation:', patchErr);
+        }
+      }
 
       navigation.navigate('ItineraryView', {
         days,
