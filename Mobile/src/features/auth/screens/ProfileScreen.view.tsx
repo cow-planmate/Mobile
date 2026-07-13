@@ -787,7 +787,6 @@ export default function ProfileScreenView({
           {upcomingPlans.length > 0 ? (
             <View style={{ marginBottom: normalize(16) }}>
               <View style={styles.sectionSubtitleRow}>
-                <CalendarDays size={14} color="#6B7280" />
                 <Text style={styles.sectionSubtitleText}>예정된 여행</Text>
               </View>
               <View>
