@@ -306,12 +306,28 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
 
   const handleConfirm = async () => {
     // Plan is already created/saved in ItineraryEditorScreen.
-    // Just navigate back to home.
+    // Navigate to My Page (Profile) to see the created plan.
     showAlert({
       title: '성공',
       message: '일정이 저장되었습니다.',
       type: 'success',
-      buttons: [{ text: '확인', onPress: () => navigation.popToTop() }],
+      buttons: [
+        {
+          text: '확인',
+          onPress: () => {
+            navigation.reset({
+              index: 1,
+              routes: [
+                { name: 'MainTabs' },
+                {
+                  name: 'Profile',
+                  params: { scrollToItinerary: true },
+                },
+              ],
+            });
+          },
+        },
+      ],
     });
   };
 

@@ -9,7 +9,7 @@ import ProfileScreenView from './ProfileScreen.view';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { changePassword } from '../../../api/auth';
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ route }: any) {
   const logout = useAuthStore((state) => state.logout);
   const { showAlert } = useAlert();
   const [loading, setLoading] = useState(false);
@@ -297,6 +297,7 @@ export default function ProfileScreen() {
       handleUpdatePassword={handleUpdatePassword}
       handleResign={handleResign}
       logout={logout}
+      scrollToItinerary={route?.params?.scrollToItinerary}
     />
   );
 }

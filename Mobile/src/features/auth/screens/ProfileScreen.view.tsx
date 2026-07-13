@@ -289,6 +289,7 @@ interface ProfileScreenViewProps {
   handleUpdatePassword: (cur: string, n: string) => void;
   handleResign: () => void;
   logout: () => void;
+  scrollToItinerary?: boolean;
 }
 
 export default function ProfileScreenView({
@@ -311,6 +312,7 @@ export default function ProfileScreenView({
   handleUpdatePassword,
   handleResign,
   logout,
+  scrollToItinerary,
 }: ProfileScreenViewProps) {
   const navigation = useNavigation<any>();
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -320,6 +322,17 @@ export default function ProfileScreenView({
   const [plans, setPlans] = useState<any[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPlanIds, setSelectedPlanIds] = useState<string[]>([]);
+  const scrollRef = React.useRef<ScrollView>(null);
+  const [itineraryY, setItineraryY] = useState(0);
+
+  React.useEffect(() => {
+    if (scrollToItinerary && itineraryY > 0) {
+      const timer = setTimeout(() => {
+        scrollRef.current?.scrollTo({ y: itineraryY, animated: true });
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [scrollToItinerary, itineraryY]);
 
   React.useEffect(() => {
     if (user && user.myPlans) {
@@ -564,6 +577,7 @@ export default function ProfileScreenView({
         <View style={{ width: 28 }} />
       </View>
       <ScrollView
+        ref={scrollRef}
         style={{ backgroundColor: '#F8F9FA' }}
         contentContainerStyle={[styles.scrollContainer, { paddingBottom: insets.bottom + normalize(40) }]}
         showsVerticalScrollIndicator={false}
@@ -704,7 +718,10 @@ export default function ProfileScreenView({
         </View>
 
         {/* ── 2.1. 여행 상세 일정 카드 ── */}
-        <View style={styles.itineraryDetailCard}>
+        <View 
+          style={styles.itineraryDetailCard}
+          onLayout={e => setItineraryY(e.nativeEvent.layout.y)}
+        >
 
 
           <View style={styles.itineraryHeader}>
