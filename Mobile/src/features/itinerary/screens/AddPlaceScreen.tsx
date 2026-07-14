@@ -76,8 +76,10 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
   }, [searchResults, selectedTab]);
 
   const handleSelectPlace = (place: Omit<Place, 'startTime' | 'endTime'>) => {
-    addPlaceToDay(dayIndex, place);
-    navigation.goBack();
+    navigation.navigate('ItineraryEditor', {
+      planId,
+      pendingPlace: place,
+    });
   };
 
   return (

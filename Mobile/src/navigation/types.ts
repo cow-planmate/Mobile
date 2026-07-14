@@ -28,6 +28,7 @@ export type ScheduleStackParamList = {
     adults?: number;
     children?: number;
     transport?: string;
+    pendingPlace?: any;
   };
   ItineraryView: {
     days: Day[];

@@ -11,6 +11,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { TabActions } from '@react-navigation/native';
 import { useAlert } from '../../../contexts/AlertContext';
 import Toast from 'react-native-toast-message';
 import axios from 'axios';
@@ -77,6 +78,52 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     selectedDay,
     planMetadata,
   } = useItineraryEditor(route, navigation);
+
+  const [activeTab, setActiveTab] = useState<'타임라인' | '장소추가'>('타임라인');
+  const [isSaving, setIsSaving] = useState(false);
+  const [pendingPlace, setPendingPlace] = useState<any>(null);
+  const [previewStartTime, setPreviewStartTime] = useState<string | null>(null);
+  const [previewEndTime, setPreviewEndTime] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (route.params?.pendingPlace) {
+      setPendingPlace(route.params.pendingPlace);
+      setPreviewStartTime(null);
+      setPreviewEndTime(null);
+      navigation.setParams({ pendingPlace: undefined } as any);
+    }
+  }, [route.params?.pendingPlace, navigation]);
+
+  const handleAddPlaceOverride = useCallback((place: Omit<Place, 'startTime' | 'endTime'>) => {
+    setPendingPlace(place);
+    setPreviewStartTime(null);
+    setPreviewEndTime(null);
+    setActiveTab('타임라인');
+  }, []);
+
+  const handleConfirmPlacement = useCallback(() => {
+    if (pendingPlace && previewStartTime && previewEndTime) {
+      handleAddPlace({
+        ...pendingPlace,
+        startTime: previewStartTime,
+        endTime: previewEndTime,
+      } as any);
+      setPendingPlace(null);
+      setPreviewStartTime(null);
+      setPreviewEndTime(null);
+    }
+  }, [pendingPlace, previewStartTime, previewEndTime, handleAddPlace]);
+
+  const handleCancelPlacement = useCallback(() => {
+    setPendingPlace(null);
+    setPreviewStartTime(null);
+    setPreviewEndTime(null);
+  }, []);
+
+  const handleCancelPreview = useCallback(() => {
+    setPreviewStartTime(null);
+    setPreviewEndTime(null);
+  }, []);
 
   const [isPlanInfoVisible, setPlanInfoVisible] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -503,7 +550,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setEditingTime(null);
   };
 
-  const [isSaving, setIsSaving] = useState(false);
+
 
   /**
    * Normalize raw categoryId to 0-4 range used by backend.
@@ -687,7 +734,15 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         handleEditTime={handleEditTime}
         handleUpdatePlaceTimes={handleUpdatePlaceTimes}
         handleDeletePlace={handleDeletePlace}
-        handleAddPlace={handleAddPlace}
+        handleAddPlace={handleAddPlaceOverride}
+        pendingPlace={pendingPlace}
+        previewStartTime={previewStartTime}
+        previewEndTime={previewEndTime}
+        setPreviewStartTime={setPreviewStartTime}
+        setPreviewEndTime={setPreviewEndTime}
+        onConfirmPlacement={handleConfirmPlacement}
+        onCancelPlacement={handleCancelPlacement}
+        onCancelPreview={handleCancelPreview}
         selectedDay={selectedDay}
         onlineUsers={onlineUsers}
         isScheduleEditVisible={isScheduleEditVisible}
@@ -713,6 +768,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         weatherMap={weatherMap}
         onOpenPlanInfo={() => setPlanInfoVisible(true)}
         onGoBack={handleGoBack}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
       />
       <Modal
         visible={isParticipantsVisible}

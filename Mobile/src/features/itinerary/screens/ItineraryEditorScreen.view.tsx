@@ -1,4 +1,4 @@
-import React, { useCallback, createContext, useContext, useMemo, useState } from 'react';
+import React, { useCallback, createContext, useContext, useMemo, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TextInput,
   Keyboard,
+  Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
@@ -41,6 +42,7 @@ import {
   timeToMinutes,
   timeToDate,
   dateToTime,
+  minutesToTime,
 } from '../../../utils/timeUtils';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
@@ -54,10 +56,13 @@ import {
   faUserPlus,
   faUndo,
   faUsers,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { Map as MapOutlineIcon, ChevronLeft } from 'lucide-react-native';
 
 const Tab = createMaterialTopTabNavigator();
+const TabNavigatorAny = Tab.Navigator as any;
+const TabScreenAny = Tab.Screen as any;
 
 const TimelineTabIcon = ({ color }: { color: string }) => (
   <FontAwesomeIcon icon={faCalendar} color={color} size={24} />
@@ -71,11 +76,24 @@ const BottomMenuBar = ({
   state,
   navigation,
   descriptors,
+  activeTab,
+  setActiveTab,
 }: {
   state: any;
   navigation: any;
   descriptors: any;
+  activeTab?: string;
+  setActiveTab?: (tab: '타임라인' | '장소추가') => void;
 }) => {
+  React.useEffect(() => {
+    if (activeTab) {
+      const currentRouteName = state.routes[state.index].name;
+      if (currentRouteName !== activeTab) {
+        navigation.navigate(activeTab);
+      }
+    }
+  }, [activeTab, navigation, state.index, state.routes]);
+
   return (
     <View style={styles.bottomTabBar}>
       <View style={styles.bottomTabContent}>
@@ -96,6 +114,9 @@ const BottomMenuBar = ({
 
             if (!focused && !event.defaultPrevented) {
               navigation.dispatch(TabActions.jumpTo(route.name));
+              if (route.name === '타임라인' || route.name === '장소추가') {
+                setActiveTab?.(route.name);
+              }
             }
           };
 
@@ -180,7 +201,7 @@ const TimeGridBackground = React.memo(
     const hourStr = (h: number) => h.toString().padStart(2, '0');
 
     return (
-      <View style={styles.gridContainer}>
+      <View style={styles.gridContainer} pointerEvents="none">
         {hours.map(hour => {
           const isLastHour = hour === endHour;
           return (
@@ -685,6 +706,14 @@ const TimelineComponent = React.memo(
       ) => void;
       onPressPlace?: (place: Place) => void;
       topPadding?: number;
+      pendingPlace?: Omit<Place, 'startTime' | 'endTime'> | null;
+      previewStartTime?: string | null;
+      previewEndTime?: string | null;
+      setPreviewStartTime?: (time: string | null) => void;
+      setPreviewEndTime?: (time: string | null) => void;
+      onConfirmPlacement?: () => void;
+      onCancelPlacement?: () => void;
+      onCancelPreview?: () => void;
     }
   >(
     (
@@ -695,6 +724,14 @@ const TimelineComponent = React.memo(
         onUpdatePlaceTimes,
         onPressPlace,
         topPadding = 0,
+        pendingPlace,
+        previewStartTime,
+        previewEndTime,
+        setPreviewStartTime,
+        setPreviewEndTime,
+        onConfirmPlacement,
+        onCancelPlacement,
+        onCancelPreview,
       },
       ref,
     ) => {
@@ -749,29 +786,106 @@ const TimelineComponent = React.memo(
               { paddingTop: topPadding },
             ]}
           >
-            <View style={styles.timelineWrapper}>
-              <TimeGridBackground hours={gridHours} endHour={endHour} />
-              {selectedDay?.places.map(place => (
-                <DraggableTimelineItem
-                  key={place.id}
-                  place={place}
-                  offsetMinutes={offsetMinutes}
-                  maxEndMinutes={maxEndMinutes}
-                  onDelete={() => onDeletePlace(place.id)}
-                  onEditTime={type =>
-                    onEditPlaceTime(
-                      place.id,
-                      type,
-                      type === 'startTime' ? place.startTime : place.endTime,
-                    )
-                  }
-                  onDragEnd={onUpdatePlaceTimes}
-                  onPress={() => onPressPlace?.(place)}
-                  onOverflow={showOverflowBanner}
-                  scrollRef={ref as React.RefObject<ScrollView | null>}
-                />
-              ))}
-            </View>
+            <Pressable
+              onPress={(evt) => {
+                if (!pendingPlace || !setPreviewStartTime || !setPreviewEndTime) return;
+                const clickY = evt.nativeEvent.locationY;
+                const minutes = (clickY - 40) / MINUTE_HEIGHT + offsetMinutes;
+                const snappedMinutes = Math.floor(minutes / 15) * 15;
+                const dayStartMinutes = timeToMinutes(selectedDay?.startTime || '09:00:00');
+                const dayEndMinutes = timeToMinutes(selectedDay?.endTime || '20:00:00');
+                const clampedMinutes = Math.max(dayStartMinutes, Math.min(snappedMinutes, dayEndMinutes - 60));
+                
+                const startTimeStr = minutesToTime(clampedMinutes);
+                const endTimeStr = minutesToTime(clampedMinutes + 60);
+                
+                setPreviewStartTime(startTimeStr);
+                setPreviewEndTime(endTimeStr);
+              }}
+            >
+              <View style={styles.timelineWrapper} pointerEvents="box-none">
+                <TimeGridBackground hours={gridHours} endHour={endHour} />
+                {selectedDay?.places.map(place => (
+                  <DraggableTimelineItem
+                    key={place.id}
+                    place={place}
+                    offsetMinutes={offsetMinutes}
+                    maxEndMinutes={maxEndMinutes}
+                    onDelete={() => onDeletePlace(place.id)}
+                    onEditTime={type =>
+                      onEditPlaceTime(
+                        place.id,
+                        type,
+                        type === 'startTime' ? place.startTime : place.endTime,
+                      )
+                    }
+                    onDragEnd={onUpdatePlaceTimes}
+                    onPress={() => onPressPlace?.(place)}
+                    onOverflow={showOverflowBanner}
+                    scrollRef={ref as React.RefObject<ScrollView | null>}
+                  />
+                ))}
+
+                {pendingPlace && previewStartTime && previewEndTime && (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: (timeToMinutes(previewStartTime) - offsetMinutes) * MINUTE_HEIGHT + 40,
+                      height: Math.max((timeToMinutes(previewEndTime) - timeToMinutes(previewStartTime)) * MINUTE_HEIGHT, 45),
+                      left: 60,
+                      right: 15,
+                      borderWidth: 2,
+                      borderColor: '#1344FF',
+                      borderStyle: 'dashed',
+                      borderRadius: 12,
+                      backgroundColor: 'rgba(19, 68, 255, 0.08)',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingHorizontal: 12,
+                      zIndex: 200,
+                    }}
+                  >
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                      <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#1344FF' }} numberOfLines={1}>
+                        {pendingPlace.name}
+                      </Text>
+                      <Text style={{ fontSize: 12, color: '#6B7280' }}>
+                        {previewStartTime} - {previewEndTime} ({pendingPlace.type})
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <TouchableOpacity
+                        onPress={onCancelPreview}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 16,
+                          backgroundColor: '#EF4444',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faXmark} color="#FFFFFF" size={14} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={onConfirmPlacement}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 16,
+                          backgroundColor: '#10B981',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faCheck} color="#FFFFFF" size={14} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </View>
+            </Pressable>
           </ScrollView>
 
           {/* Overflow warning banner */}
@@ -799,6 +913,14 @@ export const EditorStateContext = createContext<{
   destination: any;
   onUndo: any;
   onRedo: any;
+  pendingPlace: any;
+  previewStartTime: any;
+  previewEndTime: any;
+  setPreviewStartTime: any;
+  setPreviewEndTime: any;
+  onConfirmPlacement: any;
+  onCancelPlacement: any;
+  onCancelPreview: any;
 } | null>(null);
 
 const TimelineTabScreen = React.memo(() => {
@@ -814,6 +936,14 @@ const TimelineTabScreen = React.memo(() => {
     weatherMap,
     onUndo,
     onRedo,
+    pendingPlace,
+    previewStartTime,
+    previewEndTime,
+    setPreviewStartTime,
+    setPreviewEndTime,
+    onConfirmPlacement,
+    onCancelPlacement,
+    onCancelPreview,
   } = state;
 
   const localDateStr = selectedDay ? selectedDay.date.toISOString().split('T')[0] : '';
@@ -842,6 +972,14 @@ const TimelineTabScreen = React.memo(() => {
         onUpdatePlaceTimes={handleUpdatePlaceTimes}
         onPressPlace={onOpenDetail}
         topPadding={selectedDay && currentWeather ? 62 : 0}
+        pendingPlace={pendingPlace}
+        previewStartTime={previewStartTime}
+        previewEndTime={previewEndTime}
+        setPreviewStartTime={setPreviewStartTime}
+        setPreviewEndTime={setPreviewEndTime}
+        onConfirmPlacement={onConfirmPlacement}
+        onCancelPlacement={onCancelPlacement}
+        onCancelPreview={onCancelPreview}
       />
 
       <View style={styles.floatingHistoryContainer}>
@@ -933,7 +1071,17 @@ export interface ItineraryEditorScreenViewProps {
   weatherMap: Record<string, SimpleWeatherInfo>;
   initialTabName?: string;
   onOpenPlanInfo: () => void;
-  onGoBack: () => void;
+  onGoBack?: () => void;
+  activeTab?: '타임라인' | '장소추가';
+  setActiveTab?: (tab: '타임라인' | '장소추가') => void;
+  pendingPlace?: Omit<Place, 'startTime' | 'endTime'> | null;
+  previewStartTime?: string | null;
+  previewEndTime?: string | null;
+  setPreviewStartTime?: (time: string | null) => void;
+  setPreviewEndTime?: (time: string | null) => void;
+  onConfirmPlacement?: () => void;
+  onCancelPlacement?: () => void;
+  onCancelPreview?: () => void;
 }
 
 export default function ItineraryEditorScreenView({
@@ -977,6 +1125,16 @@ export default function ItineraryEditorScreenView({
   weatherMap,
   initialTabName,
   onOpenPlanInfo,
+  pendingPlace,
+  previewStartTime,
+  previewEndTime,
+  setPreviewStartTime,
+  setPreviewEndTime,
+  onConfirmPlacement,
+  onCancelPlacement,
+  onCancelPreview,
+  activeTab,
+  setActiveTab,
 }: ItineraryEditorScreenViewProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -1011,6 +1169,14 @@ export default function ItineraryEditorScreenView({
       destination,
       onUndo,
       onRedo,
+      pendingPlace,
+      previewStartTime,
+      previewEndTime,
+      setPreviewStartTime,
+      setPreviewEndTime,
+      onConfirmPlacement,
+      onCancelPlacement,
+      onCancelPreview,
     };
   }, [
     timelineScrollRef,
@@ -1025,6 +1191,14 @@ export default function ItineraryEditorScreenView({
     destination,
     onUndo,
     onRedo,
+    pendingPlace,
+    previewStartTime,
+    previewEndTime,
+    setPreviewStartTime,
+    setPreviewEndTime,
+    onConfirmPlacement,
+    onCancelPlacement,
+    onCancelPreview,
   ]);
 
   if (!selectedDay) {
@@ -1175,17 +1349,46 @@ export default function ItineraryEditorScreenView({
         </TouchableOpacity>
       </View>
 
+      {pendingPlace && (
+        <View
+          style={{
+            backgroundColor: '#1344FF',
+            paddingVertical: 10,
+            paddingHorizontal: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '600', flex: 1, marginRight: 8 }}>
+            '{pendingPlace.name}'을 배치할 타임라인의 빈 영역을 클릭해 주세요.
+          </Text>
+          <TouchableOpacity
+            onPress={onCancelPlacement}
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              paddingVertical: 4,
+              paddingHorizontal: 10,
+              borderRadius: 6,
+            }}
+          >
+            <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: 'bold' }}>취소</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <EditorStateContext.Provider value={editorStateContextValue}>
-        <Tab.Navigator
-          tabBar={props => <BottomMenuBar {...props} />}
+        <TabNavigatorAny
+          tabBar={(props: any) => <BottomMenuBar {...props} activeTab={activeTab} setActiveTab={setActiveTab} />}
           sceneStyle={styles.tabScene}
-          initialRouteName={initialTabName}
+          initialRouteName={activeTab}
           screenOptions={{
+            swipeEnabled: false,
             tabBarActiveTintColor: COLORS.primary,
             tabBarInactiveTintColor: COLORS.placeholder,
           }}
         >
-          <Tab.Screen
+          <TabScreenAny
             name="타임라인"
             options={{
               title: '시간표',
@@ -1193,8 +1396,8 @@ export default function ItineraryEditorScreenView({
             }}
           >
             {() => <TimelineTabScreen />}
-          </Tab.Screen>
-          <Tab.Screen
+          </TabScreenAny>
+          <TabScreenAny
             name="장소추가"
             options={{
               title: '추천 장소',
@@ -1202,8 +1405,8 @@ export default function ItineraryEditorScreenView({
             }}
           >
             {() => <AddPlaceTabScreen />}
-          </Tab.Screen>
-        </Tab.Navigator>
+          </TabScreenAny>
+        </TabNavigatorAny>
       </EditorStateContext.Provider>
 
       {editingTime && (

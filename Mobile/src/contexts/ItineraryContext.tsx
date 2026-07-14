@@ -30,7 +30,7 @@ interface ItineraryContextType {
   setLastAddedPlaceId: React.Dispatch<React.SetStateAction<string | null>>;
   addPlaceToDay: (
     dayIndex: number,
-    place: Omit<Place, 'startTime' | 'endTime'>,
+    place: Omit<Place, 'startTime' | 'endTime'> & { startTime?: string; endTime?: string },
   ) => void;
   deletePlaceFromDay: (dayIndex: number, placeId: string) => void;
   updatePlaceTimes: (
@@ -333,7 +333,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
   const addPlaceToDay = useCallback((
     dayIndex: number,
-    placeData: Omit<Place, 'startTime' | 'endTime'>,
+    placeData: Omit<Place, 'startTime' | 'endTime'> & { startTime?: string; endTime?: string },
   ) => {
     const newId = `place_${Date.now()}_${Math.random()}`;
 
@@ -352,8 +352,8 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         id: newId,
         placeRefId: placeData.id,
         categoryId: normalizeCategoryId(placeData.categoryId, placeData.type),
-        startTime: '12:00',
-        endTime: '13:00',
+        startTime: placeData.startTime || '12:00',
+        endTime: placeData.endTime || '13:00',
         latitude: placeData.latitude ?? 0,
         longitude: placeData.longitude ?? 0,
       };

@@ -209,7 +209,12 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     if (lastAddedPlaceId && selectedDay && timelineScrollRef.current) {
       const newPlace = selectedDay.places.find(p => p.id === lastAddedPlaceId);
       if (newPlace) {
-        const yOffset = timeToMinutes(newPlace.startTime) * MINUTE_HEIGHT;
+        const dayStartTimeStr = selectedDay.startTime || '09:00:00';
+        const minHour = Math.floor(timeToMinutes(dayStartTimeStr) / 60);
+        const offsetMinutes = minHour * 60;
+        
+        // Calculate correct relative Y offset by subtracting timeline start offset
+        const yOffset = Math.max(0, (timeToMinutes(newPlace.startTime) - offsetMinutes) * MINUTE_HEIGHT);
         timelineScrollRef.current.scrollTo({ y: yOffset, animated: true });
         setLastAddedPlaceId(null);
       }

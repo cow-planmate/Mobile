@@ -350,6 +350,15 @@ describe('ItineraryEditorScreenView Component', () => {
             onCloseDetail={() => {}}
             weatherMap={{}}
             onOpenPlanInfo={() => {}}
+            onGoBack={() => {}}
+            pendingPlace={null}
+            previewStartTime={null}
+            previewEndTime={null}
+            setPreviewStartTime={() => {}}
+            setPreviewEndTime={() => {}}
+            onConfirmPlacement={() => {}}
+            onCancelPlacement={() => {}}
+            onCancelPreview={() => {}}
           />
         </View>
       );
@@ -443,6 +452,15 @@ describe('ItineraryEditorScreenView Component', () => {
           onCloseDetail={() => {}}
           weatherMap={{}}
           onOpenPlanInfo={() => {}}
+          onGoBack={() => {}}
+          pendingPlace={null}
+          previewStartTime={null}
+          previewEndTime={null}
+          setPreviewStartTime={() => {}}
+          setPreviewEndTime={() => {}}
+          onConfirmPlacement={() => {}}
+          onCancelPlacement={() => {}}
+          onCancelPreview={() => {}}
         />
       );
     });
