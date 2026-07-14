@@ -8,7 +8,10 @@ import {
   ActivityIndicator,
   StyleSheet,
   Pressable,
+  Share,
+  NativeModules,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { X } from 'lucide-react-native';
 import {
   getShareUrl,
@@ -63,6 +66,61 @@ export default function ShareModal({
       setShareLink(response.shareUrl);
     } catch (error) {
       console.error('Failed to fetch share link:', error);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (!shareLink) return;
+    
+    // 1. 웹 브라우저 환경 (navigator.clipboard) 대응
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(shareLink)
+        .then(() => {
+          Toast.show({
+            type: 'success',
+            text1: '링크가 복사되었습니다.',
+            position: 'top',
+            visibilityTime: 1500,
+          });
+        })
+        .catch((err) => {
+          console.warn('Web clipboard copy failed:', err);
+          handleShareLink();
+        });
+      return;
+    }
+    
+    // 2. 모바일 네이티브 환경 대응
+    const hasNativeClipboard = !!NativeModules.RNCClipboard;
+    if (hasNativeClipboard) {
+      try {
+        const Clipboard = require('@react-native-clipboard/clipboard').default;
+        Clipboard.setString(shareLink);
+        Toast.show({
+          type: 'success',
+          text1: '링크가 복사되었습니다.',
+          position: 'top',
+          visibilityTime: 1500,
+        });
+        return;
+      } catch (e) {
+        console.warn('Failed to copy to native clipboard:', e);
+      }
+    }
+    
+    // 3. 둘 다 지원되지 않는 환경에서는 Share API로 대체
+    console.warn('Native RNCClipboard module not available. Falling back to native Share API.');
+    handleShareLink();
+  };
+
+  const handleShareLink = async () => {
+    if (!shareLink) return;
+    try {
+      await Share.share({
+        message: `[PlanMate] 완성된 여행 일정 링크입니다!\n${shareLink}`,
+      });
+    } catch (error) {
+      console.error('Share failed:', error);
     }
   };
 
@@ -172,9 +230,15 @@ export default function ShareModal({
                 editable={false}
                 selectTextOnFocus
               />
+              <TouchableOpacity style={styles.copyButton} onPress={handleCopyLink}>
+                <Text style={styles.copyButtonText}>복사</Text>
+              </TouchableOpacity>
             </View>
+            <TouchableOpacity style={styles.shareButton} onPress={handleShareLink}>
+              <Text style={styles.shareButtonText}>링크 공유하기</Text>
+            </TouchableOpacity>
             <Text style={styles.helperText}>
-              링크를 복사해서 친구들에게 공유하세요.
+              링크를 복사하거나 공유하여 친구들에게 보내세요.
             </Text>
           </View>
 
@@ -287,6 +351,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#111827',
     fontFamily: FONTS.regular,
+  },
+  copyButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 4,
+  },
+  copyButtonText: {
+    color: '#FFFFFF',
+    fontFamily: FONTS.semibold,
+    fontSize: 13,
+  },
+  shareButton: {
+    backgroundColor: '#EBF0FF',
+    borderRadius: 8,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#D2DFFF',
+  },
+  shareButtonText: {
+    color: COLORS.primary,
+    fontFamily: FONTS.semibold,
+    fontSize: 14,
   },
   helperText: {
     fontSize: 12,

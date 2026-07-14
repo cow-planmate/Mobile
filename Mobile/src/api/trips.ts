@@ -256,7 +256,9 @@ export async function getShareUrl(
   planId: string,
 ): Promise<{ shareUrl: string }> {
   const response = await axios.get(`/api/plan/${planId}/share`);
-  return response.data;
+  return {
+    shareUrl: response.data.sharedPlanUrl || response.data.shareUrl || '',
+  };
 }
 
 /** Get list of editors */

@@ -2,7 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../store/useAuthStore';
 import { savePreferredThemes, PreferredThemeVO } from '../api/themes';
-import { ThemeSelector, ThemeSelectorResult } from '../components/common';
+import ThemeSelector, { ThemeSelectorResult } from '../components/common/ThemeSelector';
 import AuthStack from './AuthStack';
 import AppStack from './AppStack';
 
