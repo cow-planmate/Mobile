@@ -299,21 +299,29 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   }, [destinationCity, days.length]);
 
   useEffect(() => {
-    if (planId) {
-      connect(planId);
-    }
-    return () => {
-      disconnect();
-    };
-  }, [planId, connect, disconnect]); // connect/disconnect are stable (useCallback)
+    if (!planId) return;
 
-  // Disconnect WebSocket when navigating away (back or forward)
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', () => {
+    connect(planId);
+
+    const unsubscribeFocus = navigation.addListener('focus', () => {
+      connect(planId);
+    });
+
+    const unsubscribeBlur = navigation.addListener('blur', () => {
       disconnect();
     });
-    return unsubscribe;
-  }, [navigation, disconnect]);
+
+    const unsubscribeRemove = navigation.addListener('beforeRemove', () => {
+      disconnect();
+    });
+
+    return () => {
+      unsubscribeFocus();
+      unsubscribeBlur();
+      unsubscribeRemove();
+      disconnect();
+    };
+  }, [planId, connect, disconnect, navigation]);
 
   // Fetch place recommendations via PlacesContext
   useEffect(() => {

@@ -245,6 +245,11 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     target: any,
     eventId?: string,
   ) => {
+    if (!client || !client.connected) {
+      console.warn('[WS] Cannot publish — STOMP client is not connected.');
+      return;
+    }
+
     let payload: any = {};
     const destination = `/app/${planId}`;
 
@@ -304,7 +309,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     target: any,
     eventId?: string,
   ) => {
-    if (!stompClient.current || !isConnected || !currentPlanId.current) {
+    if (!stompClient.current || !stompClient.current.connected || !isConnected || !currentPlanId.current) {
       console.warn(
         '[WS] Not connected yet — queuing message:',
         action,
