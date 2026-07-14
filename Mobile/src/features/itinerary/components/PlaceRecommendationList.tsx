@@ -312,6 +312,11 @@ export default function PlaceRecommendationList({
   const isSearchReady =
     selectedTab === '검색' && normalizedSearchQuery.length >= 2;
 
+  // Reset pet friendly filter on mount
+  useEffect(() => {
+    setPetFriendly(false);
+  }, [setPetFriendly]);
+
   // ─── Pull-to-refresh ───
   const handleRefresh = useCallback(async () => {
     if (!planId || isRefreshing) return;
@@ -696,55 +701,37 @@ export default function PlaceRecommendationList({
                 onPress={() => setSelectedTab(tab)}
                 style={[
                   plStyles.tab,
-                  isSelected && { borderBottomColor: tabColor },
+                  {
+                    backgroundColor: '#FFFFFF',
+                    borderTopLeftRadius: 8,
+                    borderTopRightRadius: 8,
+                    borderWidth: 1,
+                    borderColor: '#E5E7EB',
+                    borderBottomWidth: 0,
+                    marginBottom: -1,
+                  },
+                  isSelected && {
+                    backgroundColor: tabColor,
+                    borderColor: tabColor,
+                  },
                 ]}
               >
-                <View style={plStyles.tabInner}>
-                  <View
-                    style={[
-                      plStyles.tabDot,
-                      isSelected
-                        ? TAB_DOT_ACTIVE_STYLES[tab]
-                        : plStyles.tabDotInactive,
-                    ]}
-                  />
-                  <Text
-                    style={[
-                      plStyles.tabText,
-                      isSelected && { color: tabColor, fontFamily: FONTS.bold },
-                    ]}
-                  >
-                    {tab}
-                  </Text>
-                </View>
+                <Text
+                  style={[
+                    plStyles.tabText,
+                    { fontSize: 13 },
+                    isSelected && { color: '#FFFFFF', fontFamily: FONTS.bold },
+                  ]}
+                >
+                  {tab}
+                </Text>
               </TouchableOpacity>
             );
           },
         )}
       </View>
 
-      {/* Pet Friendly Filter Toggle */}
-      <View style={plStyles.filterContainer}>
-        <View style={plStyles.filterLabelRow}>
-          <Text style={plStyles.filterLabelText}>🐾 반려동물 동반 장소만 보기</Text>
-          <Text style={plStyles.filterSubText}>공모전 핵심: 펫 프렌들리 필터링</Text>
-        </View>
-        <TouchableOpacity
-          style={[
-            plStyles.filterToggle,
-            isPetFriendly ? plStyles.filterToggleActive : plStyles.filterToggleInactive,
-          ]}
-          onPress={() => setPetFriendly(!isPetFriendly)}
-          activeOpacity={0.8}
-        >
-          <View
-            style={[
-              plStyles.filterToggleBall,
-              isPetFriendly ? plStyles.filterToggleBallActive : plStyles.filterToggleBallInactive,
-            ]}
-          />
-        </TouchableOpacity>
-      </View>
+
 
       {/* Place List */}
       <FlatList
@@ -794,17 +781,16 @@ const plStyles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 4,
+    paddingBottom: 0,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 8,
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    justifyContent: 'center',
   },
   tabSelected: {
     borderBottomColor: '#1344FF',
