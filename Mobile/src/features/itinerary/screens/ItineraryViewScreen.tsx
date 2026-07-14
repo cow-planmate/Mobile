@@ -281,13 +281,10 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const selectedDay = days[selectedDayIndex];
 
   useEffect(() => {
-    if (selectedDay && selectedDay.places.length > 0 && scrollRef.current) {
-      const firstPlace = selectedDay.places[0];
-      const startMinutes = timeToMinutes(firstPlace.startTime);
-      const yOffset = startMinutes * MINUTE_HEIGHT;
-      scrollRef.current.scrollTo({ y: yOffset, animated: true });
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ y: 0, animated: false });
     }
-  }, [selectedDay]);
+  }, [selectedDayIndex]);
 
   const { gridHours, offsetMinutes, endHour } = useMemo(() => {
     const startTimeStr = selectedDay?.startTime || '09:00:00';

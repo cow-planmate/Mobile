@@ -206,6 +206,12 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   const selectedDay = days[selectedDayIndex];
 
   useEffect(() => {
+    if (timelineScrollRef.current) {
+      timelineScrollRef.current.scrollTo({ y: 0, animated: false });
+    }
+  }, [selectedDayIndex]);
+
+  useEffect(() => {
     if (lastAddedPlaceId && selectedDay && timelineScrollRef.current) {
       const newPlace = selectedDay.places.find(p => p.id === lastAddedPlaceId);
       if (newPlace) {
