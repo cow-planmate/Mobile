@@ -8,7 +8,7 @@ import {
   FlatList,
   StatusBar,
 } from 'react-native';
-import { Search, ThumbsUp, MessageSquare, Eye, PenSquare, Flame } from 'lucide-react-native';
+import { Search, ThumbsUp, MessageSquare, Eye, PenSquare, Flame, Lock } from 'lucide-react-native';
 import FastImage from 'react-native-fast-image';
 import { styles, COLORS } from './CommunityScreen.styles';
 import { normalize } from '../../../utils/normalize';
@@ -308,22 +308,37 @@ export default function CommunityScreenView({
         onNavigateProfile={onNavigateProfile}
       />
 
+      <View style={{ flex: 1, position: 'relative' }}>
+        {/* Existing FlatList wrapped in opacity and disabled pointer events */}
+        <View style={{ flex: 1, opacity: 0.15 }} pointerEvents="none">
+          {/* 게시글 리스트 */}
+          <FlatList
+            data={posts}
+            renderItem={renderPostItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.postList}
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={renderListHeader}
+            ListFooterComponent={renderListFooter}
+            ListEmptyComponent={
+              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 40, paddingBottom: 60 }}>
+                <Text style={{ color: '#9CA3AF', fontSize: 14 }}>게시글이 존재하지 않습니다</Text>
+              </View>
+            }
+          />
+        </View>
 
-      {/* 게시글 리스트 */}
-      <FlatList
-        data={posts}
-        renderItem={renderPostItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.postList}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={renderListHeader}
-        ListFooterComponent={renderListFooter}
-        ListEmptyComponent={
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 40, paddingBottom: 60 }}>
-            <Text style={{ color: '#9CA3AF', fontSize: 14 }}>게시글이 존재하지 않습니다</Text>
+        {/* 🔒 Lock & Mosaic Overlay */}
+        <View style={styles.lockOverlay} pointerEvents="box-none">
+          <View style={styles.lockContainer}>
+            <View style={styles.lockIconWrapper}>
+              <Lock size={28} color="#FFFFFF" strokeWidth={2.2} />
+            </View>
+            <Text style={styles.lockTitle}>준비 중인 기능입니다</Text>
+            <Text style={styles.lockSubtitle}>조금만 기다려 주세요! 멋진 커뮤니티 기능으로 찾아뵙겠습니다.</Text>
           </View>
-        }
-      />
+        </View>
+      </View>
 
       {/* 알림 초대 수락/거절 모달 */}
       <NotificationModal

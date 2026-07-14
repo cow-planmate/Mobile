@@ -9,6 +9,7 @@ import {
   Pressable,
   Dimensions,
   StatusBar,
+  Alert,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -64,7 +65,7 @@ const Header: React.FC<HeaderProps> = ({
           navigation.navigate('Profile');
         }
       } else if (action === 'social') {
-        navigation.navigate('Social');
+        Alert.alert('알림', '소셜 기능은 준비 중입니다.');
       } else if (action === 'logout') {
         void logout();
       }

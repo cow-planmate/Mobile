@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Search, LayoutGrid, List, SlidersHorizontal, X, MapPin } from 'lucide-react-native';
+import { Search, LayoutGrid, List, SlidersHorizontal, X, MapPin, Lock } from 'lucide-react-native';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { Header, NotificationModal } from '../../../components/common';
@@ -185,100 +185,116 @@ export default function TravelFeedScreen() {
         onNavigateProfile={onNavigateProfile}
       />
       
-      {/* 🔍 1행 통합 컨트롤 바 (검색창 + 레이아웃 + 필터) */}
-      <View style={styles.controlRowContainer}>
-        <View style={styles.searchBar}>
-          <Search size={18} color="#9CA3AF" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="제목, 지역, 작성자로 검색..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor="#9CA3AF"
-            clearButtonMode="while-editing"
-          />
-        </View>
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
-          activeOpacity={0.8}
-        >
-          {viewMode === 'list' ? (
-            <LayoutGrid size={20} color="#4B5563" />
-          ) : (
-            <List size={20} color="#4B5563" />
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.iconButton,
-            isFilterApplied && styles.iconButtonActive
-          ]}
-          onPress={openFilterModal}
-          activeOpacity={0.8}
-        >
-          <SlidersHorizontal size={20} color={isFilterApplied ? '#1344FF' : '#4B5563'} />
-          {isFilterApplied && <View style={styles.activeFilterDot} />}
-        </TouchableOpacity>
-      </View>
-
-      {/* 🏷️ 가로 스크롤 태그 필터 바 */}
-      <View style={styles.tagBarContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tagBarContent}
-        >
-          <TouchableOpacity
-            style={[
-              styles.tagChip,
-              selectedTag === null && styles.tagChipActive
-            ]}
-            onPress={() => setSelectedTag(null)}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[
-                styles.tagText,
-                selectedTag === null && styles.tagTextActive
-              ]}
-            >
-              전체
-            </Text>
-          </TouchableOpacity>
-          {tags.map((tag) => (
+      <View style={{ flex: 1, position: 'relative' }}>
+        {/* 🔍 Existing content wrapped in opacity and disabled pointer events */}
+        <View style={{ flex: 1, opacity: 0.15 }} pointerEvents="none">
+          {/* 🔍 1행 통합 컨트롤 바 (검색창 + 레이아웃 + 필터) */}
+          <View style={styles.controlRowContainer}>
+            <View style={styles.searchBar}>
+              <Search size={18} color="#9CA3AF" style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="제목, 지역, 작성자로 검색..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholderTextColor="#9CA3AF"
+                clearButtonMode="while-editing"
+              />
+            </View>
             <TouchableOpacity
-              key={tag}
-              style={[
-                styles.tagChip,
-                selectedTag === tag && styles.tagChipActive
-              ]}
-              onPress={() => setSelectedTag(tag)}
+              style={styles.iconButton}
+              onPress={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
               activeOpacity={0.8}
             >
-              <Text
-                style={[
-                  styles.tagText,
-                  selectedTag === tag && styles.tagTextActive
-                ]}
-              >
-                {tag}
-              </Text>
+              {viewMode === 'list' ? (
+                <LayoutGrid size={20} color="#4B5563" />
+              ) : (
+                <List size={20} color="#4B5563" />
+              )}
             </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+            <TouchableOpacity
+              style={[
+                styles.iconButton,
+                isFilterApplied && styles.iconButtonActive
+              ]}
+              onPress={openFilterModal}
+              activeOpacity={0.8}
+            >
+              <SlidersHorizontal size={20} color={isFilterApplied ? '#1344FF' : '#4B5563'} />
+              {isFilterApplied && <View style={styles.activeFilterDot} />}
+            </TouchableOpacity>
+          </View>
 
-      <View style={styles.content}>
-        <TravelFeedList
-          onItemPress={handleFeedItemPress}
-          searchQuery={searchQuery}
-          selectedTag={selectedTag}
-          viewMode={viewMode}
-          sortBy={sortBy}
-          filterRegion={filterRegion}
-          filterDuration={filterDuration}
-        />
+          {/* 🏷️ 가로 스크롤 태그 필터 바 */}
+          <View style={styles.tagBarContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tagBarContent}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.tagChip,
+                  selectedTag === null && styles.tagChipActive
+                ]}
+                onPress={() => setSelectedTag(null)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.tagText,
+                    selectedTag === null && styles.tagTextActive
+                  ]}
+                >
+                  전체
+                </Text>
+              </TouchableOpacity>
+              {tags.map((tag) => (
+                <TouchableOpacity
+                  key={tag}
+                  style={[
+                    styles.tagChip,
+                    selectedTag === tag && styles.tagChipActive
+                  ]}
+                  onPress={() => setSelectedTag(tag)}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.tagText,
+                      selectedTag === tag && styles.tagTextActive
+                    ]}
+                  >
+                    {tag}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          <View style={styles.content}>
+            <TravelFeedList
+              onItemPress={handleFeedItemPress}
+              searchQuery={searchQuery}
+              selectedTag={selectedTag}
+              viewMode={viewMode}
+              sortBy={sortBy}
+              filterRegion={filterRegion}
+              filterDuration={filterDuration}
+            />
+          </View>
+        </View>
+
+        {/* 🔒 Lock & Mosaic Overlay */}
+        <View style={styles.lockOverlay} pointerEvents="box-none">
+          <View style={styles.lockContainer}>
+            <View style={styles.lockIconWrapper}>
+              <Lock size={28} color="#FFFFFF" strokeWidth={2.2} />
+            </View>
+            <Text style={styles.lockTitle}>준비 중인 기능입니다</Text>
+            <Text style={styles.lockSubtitle}>조금만 기다려 주세요! 멋진 피드 기능으로 찾아뵙겠습니다.</Text>
+          </View>
+        </View>
       </View>
 
 
@@ -708,5 +724,50 @@ const styles = StyleSheet.create({
   mapView: {
     flex: 1,
     borderRadius: 0,
+  },
+  lockOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(248, 249, 250, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  lockContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    width: '100%',
+    maxWidth: 320,
+  },
+  lockIconWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#9CA3AF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  lockTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  lockSubtitle: {
+    fontSize: 13,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });

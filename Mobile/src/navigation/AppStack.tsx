@@ -107,6 +107,7 @@ const CommunityTabIcon = ({ color, size }: { color: string; size: number }) => (
 function MainTabs() {
   return (
     <Tab.Navigator
+      initialRouteName="ScheduleTab"
       screenOptions={() => ({
         headerShown: false,
         tabBarActiveTintColor: '#1344FF',

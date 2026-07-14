@@ -210,52 +210,39 @@ const ItineraryCardItem = ({
       </View>
 
       {/* 체크리스트 영역 */}
-      <View style={styles.checklistContainer}>
+      <View style={[styles.checklistContainer, { opacity: 0.6 }]} pointerEvents="none">
         <View style={styles.checklistHeader}>
-          <Text style={styles.checklistTitle}>CHECK LIST</Text>
-          <Text style={styles.checklistProgressText}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Lock size={12} color="#9CA3AF" style={{ marginRight: 6 }} />
+            <Text style={[styles.checklistTitle, { color: '#9CA3AF' }]}>CHECK LIST (준비중)</Text>
+          </View>
+          <Text style={[styles.checklistProgressText, { color: '#9CA3AF' }]}>
             {completedCount}/{tasks.length}
           </Text>
         </View>
 
         {tasks.map(task => (
-          <TouchableOpacity
+          <View
             key={task.id}
             style={styles.taskItemRow}
-            onPress={() => {
-              if (!isEditMode) {
-                toggleTask(task.id);
-              }
-            }}
-            activeOpacity={isEditMode ? 1.0 : 0.8}
           >
             {task.checked ? (
-              <CheckCircle2 size={16} color={themeColor} style={{ marginRight: 8 }} />
+              <CheckCircle2 size={16} color="#9CA3AF" style={{ marginRight: 8 }} />
             ) : (
               <Circle size={16} color="#D1D5DB" style={{ marginRight: 8 }} />
             )}
             <Text
               style={[
                 styles.taskText,
+                { color: '#9CA3AF' },
                 task.checked && styles.taskTextCompleted,
               ]}
               numberOfLines={1}
             >
               {task.text}
             </Text>
-          </TouchableOpacity>
+          </View>
         ))}
-
-        {/* 할 일 추가 버튼 */}
-        {!isEditMode && (
-          <TouchableOpacity
-            style={styles.addTaskButton}
-            onPress={addTask}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.addTaskButtonText}>+ 할 일 추가</Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* 공유 일정 전용 SHARED 코너 배지 */}
@@ -611,9 +598,9 @@ export default function ProfileScreenView({
             <View style={styles.profileTextInfo}>
               <View style={styles.nicknameRow}>
                 <Text style={styles.nicknameText}>{user.name || '사용자'}</Text>
-                <View style={styles.levelBadge}>
-                  <Award size={10} color="#FFFFFF" />
-                  <Text style={styles.levelBadgeText}>LV.1 • 여행 입문자</Text>
+                <View style={[styles.levelBadge, { backgroundColor: '#9CA3AF' }]}>
+                  <Lock size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
+                  <Text style={styles.levelBadgeText}>LV.1 • 준비중</Text>
                 </View>
               </View>
 
@@ -632,11 +619,11 @@ export default function ProfileScreenView({
           {/* 경험치 프로그레스 바 */}
           <View style={styles.experienceSection}>
             <View style={styles.experienceLabelRow}>
-              <Text style={styles.experienceTitle}>현재 경험치</Text>
-              <Text style={styles.experienceValue}>10 / 100 EXP</Text>
+              <Text style={[styles.experienceTitle, { color: '#9CA3AF' }]}>현재 경험치 (준비중)</Text>
+              <Text style={[styles.experienceValue, { color: '#9CA3AF' }]}>0 / 100 EXP</Text>
             </View>
-            <View style={styles.progressBarTrack}>
-              <View style={[styles.progressBarFill, { width: '10%' }]} />
+            <View style={[styles.progressBarTrack, { backgroundColor: '#E5E7EB' }]}>
+              <View style={[styles.progressBarFill, { width: '0%', backgroundColor: '#9CA3AF' }]} />
             </View>
           </View>
 
@@ -673,43 +660,43 @@ export default function ProfileScreenView({
         </View>
 
         {/* ── 2. 내 업적 카드 ── */}
-        <View style={styles.achievementCard}>
+        <View style={[styles.achievementCard, { opacity: 0.6 }]} pointerEvents="none">
           <View style={styles.achievementHeader}>
             <View style={styles.achievementTitleRow}>
-              <Award size={18} color="#1344FF" />
-              <Text style={styles.achievementTitle}>내 업적</Text>
+              <Award size={18} color="#9CA3AF" />
+              <Text style={[styles.achievementTitle, { color: '#9CA3AF' }]}>내 업적 (준비중)</Text>
             </View>
-            <View style={styles.achievementProgressBadge}>
-              <Text style={styles.achievementProgressText}>3 / 5 달성</Text>
+            <View style={[styles.achievementProgressBadge, { backgroundColor: '#E5E7EB' }]}>
+              <Text style={[styles.achievementProgressText, { color: '#9CA3AF' }]}>0 / 5 달성</Text>
             </View>
           </View>
 
           <View style={styles.badgeList}>
-            {/* 업적 1: 첫 걸음 (활성) */}
-            <View style={[styles.achievementBadge, { backgroundColor: '#FEF3C7' }]}>
-              <Trophy size={11} color="#D97706" />
-              <Text style={[styles.badgeText, { color: '#D97706' }]}>첫 걸음</Text>
+            {/* 업적 1 */}
+            <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
+              <Lock size={11} color="#9CA3AF" />
+              <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>첫 걸음</Text>
             </View>
 
-            {/* 업적 2: 계획의 달인 (활성) */}
-            <View style={[styles.achievementBadge, { backgroundColor: '#DBEAFE' }]}>
-              <Trophy size={11} color="#2563EB" />
-              <Text style={[styles.badgeText, { color: '#2563EB' }]}>계획의 달인</Text>
+            {/* 업적 2 */}
+            <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
+              <Lock size={11} color="#9CA3AF" />
+              <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>계획의 달인</Text>
             </View>
 
-            {/* 업적 3: 열혈 리뷰어 (활성) */}
-            <View style={[styles.achievementBadge, { backgroundColor: '#FCE7F3' }]}>
-              <Trophy size={11} color="#DB2777" />
-              <Text style={[styles.badgeText, { color: '#DB2777' }]}>열혈 리뷰어</Text>
+            {/* 업적 3 */}
+            <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
+              <Lock size={11} color="#9CA3AF" />
+              <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>열혈 리뷰어</Text>
             </View>
 
-            {/* 업적 4: 베스트 파트너 (비활성) */}
+            {/* 업적 4 */}
             <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
               <Lock size={11} color="#9CA3AF" />
               <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>베스트 파트너</Text>
             </View>
 
-            {/* 업적 5: 전국 제패 (비활성) */}
+            {/* 업적 5 */}
             <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
               <Lock size={11} color="#9CA3AF" />
               <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>전국 제패</Text>
