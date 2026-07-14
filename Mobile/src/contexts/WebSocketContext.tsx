@@ -77,6 +77,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<UserPresence[]>([]);
   const stompClient = useRef<Client | null>(null);
+  const activeSocket = useRef<any>(null);
   const currentPlanId = useRef<string | null>(null);
   const messageListeners = useRef<Set<(msg: any) => void>>(new Set());
   const messageQueue = useRef<
@@ -116,7 +117,11 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const client = new Client({
       // SockJS 지원을 위해 factory 사용
-      webSocketFactory: () => new SockJS(wsUrl),
+      webSocketFactory: () => {
+        const socket = new SockJS(wsUrl);
+        activeSocket.current = socket;
+        return socket;
+      },
       connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
       debug: str => {
         console.log('[WS Debug]', str);
@@ -224,9 +229,18 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const disconnect = useCallback(() => {
     if (stompClient.current) {
-      // deactivate() sends STOMP DISCONNECT frame and closes the connection
-      stompClient.current.deactivate();
+      // deactivate({ force: true }) immediately closes the socket connection
+      stompClient.current.deactivate({ force: true });
       stompClient.current = null;
+    }
+    if (activeSocket.current) {
+      try {
+        console.log('[WS] Force closing active SockJS socket...');
+        activeSocket.current.close();
+      } catch (e) {
+        console.warn('[WS] Failed to close active socket:', e);
+      }
+      activeSocket.current = null;
     }
     setIsConnected(false);
     setOnlineUsers([]);

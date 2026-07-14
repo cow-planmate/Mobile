@@ -9,6 +9,7 @@ import {
   ScrollView,
   Pressable,
   StyleSheet,
+  AppState,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { TabActions } from '@react-navigation/native';
@@ -230,6 +231,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
             onPress: () => {
               isBackingRef.current = true;
               setIsBacking(true);
+              disconnect();
 
               const timer = setTimeout(() => {
                 setIsBacking(false);
@@ -315,10 +317,21 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       disconnect();
     });
 
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active') {
+        connect(planId);
+      } else if (nextAppState === 'background' || nextAppState === 'inactive') {
+        disconnect();
+      }
+    };
+
+    const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
+
     return () => {
       unsubscribeFocus();
       unsubscribeBlur();
       unsubscribeRemove();
+      appStateSubscription.remove();
       disconnect();
     };
   }, [planId, connect, disconnect, navigation]);
