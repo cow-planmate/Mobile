@@ -11,6 +11,7 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
+import Svg, { Rect, Defs, Pattern, Circle } from 'react-native-svg';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Search, LayoutGrid, List, SlidersHorizontal, X, MapPin, Lock } from 'lucide-react-native';
@@ -52,7 +53,7 @@ export default function TravelFeedScreen() {
   const [isNotificationModalVisible, setNotificationModalVisible] = useState(false);
   const [isMapModalVisible, setMapModalVisible] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<PendingInvitation[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
 
   // 임시 필터 상태
   const [tempSortBy, setTempSortBy] = useState('최신순');
@@ -187,7 +188,7 @@ export default function TravelFeedScreen() {
       
       <View style={{ flex: 1, position: 'relative' }}>
         {/* 🔍 Existing content wrapped in opacity and disabled pointer events */}
-        <View style={{ flex: 1, opacity: 0.15 }} pointerEvents="none">
+        <View style={{ flex: 1 }} pointerEvents="none">
           {/* 🔍 1행 통합 컨트롤 바 (검색창 + 레이아웃 + 필터) */}
           <View style={styles.controlRowContainer}>
             <View style={styles.searchBar}>
@@ -286,7 +287,19 @@ export default function TravelFeedScreen() {
         </View>
 
         {/* 🔒 Lock & Mosaic Overlay */}
-        <View style={styles.lockOverlay} pointerEvents="box-none">
+        <View style={styles.lockOverlay}>
+          <Svg style={StyleSheet.absoluteFill}>
+            <Defs>
+              <Pattern id="frosted" width="4" height="4" patternUnits="userSpaceOnUse">
+                <Circle cx="1" cy="1" r="0.8" fill="rgba(255, 255, 255, 0.7)" />
+                <Circle cx="3" cy="3" r="0.5" fill="rgba(230, 230, 230, 0.4)" />
+                <Circle cx="2" cy="0" r="0.4" fill="rgba(255, 255, 255, 0.5)" />
+                <Circle cx="0" cy="2" r="0.6" fill="rgba(200, 200, 200, 0.3)" />
+              </Pattern>
+            </Defs>
+            <Rect width="100%" height="100%" fill="url(#frosted)" />
+          </Svg>
+
           <View style={styles.lockContainer}>
             <View style={styles.lockIconWrapper}>
               <Lock size={28} color="#FFFFFF" strokeWidth={2.2} />
@@ -727,7 +740,7 @@ const styles = StyleSheet.create({
   },
   lockOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(248, 249, 250, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.82)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,

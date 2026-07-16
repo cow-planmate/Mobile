@@ -7,11 +7,12 @@ import {
   ScrollView,
   FlatList,
   StatusBar,
+  StyleSheet,
 } from 'react-native';
 import { Search, ThumbsUp, MessageSquare, Eye, PenSquare, Flame, Lock } from 'lucide-react-native';
 import FastImage from 'react-native-fast-image';
-import { styles, COLORS } from './CommunityScreen.styles';
-import { normalize } from '../../../utils/normalize';
+import Svg, { Rect, Defs, Pattern, Circle } from 'react-native-svg';
+import { styles } from './CommunityScreen.styles';
 import { Header, NotificationModal } from '../../../components/common';
 
 export interface Post {
@@ -309,8 +310,8 @@ export default function CommunityScreenView({
       />
 
       <View style={{ flex: 1, position: 'relative' }}>
-        {/* Existing FlatList wrapped in opacity and disabled pointer events */}
-        <View style={{ flex: 1, opacity: 0.15 }} pointerEvents="none">
+        {/* Existing FlatList with pointer events disabled */}
+        <View style={{ flex: 1 }} pointerEvents="none">
           {/* 게시글 리스트 */}
           <FlatList
             data={posts}
@@ -329,7 +330,19 @@ export default function CommunityScreenView({
         </View>
 
         {/* 🔒 Lock & Mosaic Overlay */}
-        <View style={styles.lockOverlay} pointerEvents="box-none">
+        <View style={styles.lockOverlay}>
+          <Svg style={StyleSheet.absoluteFill}>
+            <Defs>
+              <Pattern id="frosted" width="4" height="4" patternUnits="userSpaceOnUse">
+                <Circle cx="1" cy="1" r="0.8" fill="rgba(255, 255, 255, 0.7)" />
+                <Circle cx="3" cy="3" r="0.5" fill="rgba(230, 230, 230, 0.4)" />
+                <Circle cx="2" cy="0" r="0.4" fill="rgba(255, 255, 255, 0.5)" />
+                <Circle cx="0" cy="2" r="0.6" fill="rgba(200, 200, 200, 0.3)" />
+              </Pattern>
+            </Defs>
+            <Rect width="100%" height="100%" fill="url(#frosted)" />
+          </Svg>
+
           <View style={styles.lockContainer}>
             <View style={styles.lockIconWrapper}>
               <Lock size={28} color="#FFFFFF" strokeWidth={2.2} />

@@ -406,7 +406,7 @@ export const styles = StyleSheet.create({
   },
   lockOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(248, 249, 250, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.82)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: normalize(24),
