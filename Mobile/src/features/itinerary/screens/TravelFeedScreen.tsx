@@ -26,6 +26,7 @@ import {
   acceptInvitation,
   rejectInvitation,
 } from '../../../api/trips';
+import { normalize } from '../../../utils/normalize';
 
 const REGION_COORDINATES: Record<string, { lat: number; lng: number; name: string }> = {
   '서울': { lat: 37.5665, lng: 126.9780, name: '서울' },
@@ -743,12 +744,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.82)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: normalize(24),
   },
   lockContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 28,
+    borderRadius: normalize(24),
+    padding: normalize(28),
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -759,28 +760,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F3F4F6',
     width: '100%',
-    maxWidth: 320,
+    maxWidth: normalize(320),
   },
   lockIconWrapper: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: normalize(56),
+    height: normalize(56),
+    borderRadius: normalize(28),
     backgroundColor: '#9CA3AF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: normalize(16),
   },
   lockTitle: {
-    fontSize: 18,
+    fontSize: normalize(18),
     fontWeight: '700',
     color: '#111827',
-    marginBottom: 8,
+    marginBottom: normalize(8),
     textAlign: 'center',
   },
   lockSubtitle: {
-    fontSize: 13,
+    fontSize: normalize(13),
     color: '#6B7280',
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: normalize(18),
   },
 });
