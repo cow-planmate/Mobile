@@ -181,7 +181,7 @@ export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
           var customOverlay = new kakao.maps.CustomOverlay({
             position: position,
             content: markerContent,
-            yAnchor: 1.3
+            yAnchor: 2.2
           });
           customOverlay.setMap(map);
 
@@ -224,9 +224,39 @@ export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
             strokeWeight: 3,
             strokeColor: '#1344FF',
             strokeOpacity: 0.35,
-            strokeStyle: 'solid'
+            strokeStyle: 'dash'
           });
           polyline.setMap(map);
+
+          // 점선 가운데 화살표 추가
+          for (var i = 0; i < places.length - 1; i++) {
+            var p1 = places[i];
+            var p2 = places[i + 1];
+            
+            var midLat = (p1.lat + p2.lat) / 2;
+            var midLng = (p1.lng + p2.lng) / 2;
+            var midPosition = new kakao.maps.LatLng(midLat, midLng);
+
+            // 각도 계산 (화면 좌표계를 기준으로 시계방향 회전각도 산출)
+            var dy = p1.lat - p2.lat;
+            var dx = p2.lng - p1.lng;
+            var angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+            var arrowContent =
+              '<div style="transform: rotate(' + angle + 'deg); display: flex; align-items: center; justify-content: center; width: 28px; height: 28px;">' +
+                '<svg width="22" height="22" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+                  '<path d="M3 2L7 5L3 8" stroke="#1344FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.8"/>' +
+                '</svg>' +
+              '</div>';
+
+            var arrowOverlay = new kakao.maps.CustomOverlay({
+              position: midPosition,
+              content: arrowContent,
+              xAnchor: 0.5,
+              yAnchor: 0.5
+            });
+            arrowOverlay.setMap(map);
+          }
         }
 
         // 영역 조절
