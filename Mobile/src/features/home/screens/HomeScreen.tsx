@@ -20,13 +20,22 @@ import {
   useFcmNotifications,
 } from '../../../hooks/useFcmNotifications';
 import { AirplaneLoading } from '../../../components/common';
+import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
 
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 const INVITATION_REFRESH_INTERVAL_MS = 15000;
 
+const parseDestinationName = (destination?: string) => {
+  const normalized = destination?.trim() || '';
+  if (!normalized) return '';
+  const parts = normalized.split(/\s+/).filter(Boolean);
+  return parts.length <= 1 ? normalized : parts.slice(1).join(' ');
+};
+
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const user = useAuthStore((state) => state.user);
   const { showAlert } = useAlert();
+  const createFullPlanMutation = useCreateFullPlan();
 
   const [isCreating, setIsCreating] = useState(false);
 
@@ -208,7 +217,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     return `${formatDate(startDate)} ~ ${formatDate(endDate)}`;
   };
 
-  const handleCreateItinerary = () => {
+  const handleCreateItinerary = async () => {
     if (!isFormValid) {
       return;
     }
@@ -222,21 +231,75 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       return;
     }
 
+    if (!startDate || !endDate) {
+      return;
+    }
+
     setIsCreating(true);
 
-    setTimeout(() => {
+    try {
+      const formatDateLocal = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+
+      const timetableVOs: { date: string; timeTableStartTime: string; timeTableEndTime: string }[] = [];
+      const currentDate = new Date(start);
+
+      while (currentDate.getTime() <= end.getTime()) {
+        timetableVOs.push({
+          date: formatDateLocal(currentDate),
+          timeTableStartTime: '09:00:00',
+          timeTableEndTime: '20:00:00',
+        });
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      const defaultPlanName = parseDestinationName(destination) || '나의 일정';
+
+      const result = await createFullPlanMutation.mutateAsync({
+        planFrame: {
+          planName: defaultPlanName,
+          departure: 'SEOUL',
+          transportationCategoryId: transport === '자동차' ? 1 : 0,
+          travelId: travelId || 1,
+          adultCount: adults ?? 1,
+          childCount: children ?? 0,
+        },
+        timetables: timetableVOs,
+        timetablePlaceBlocks: [],
+      });
+
+      const newPlanId = result?.planId;
+
       setIsCreating(false);
+
       navigation.navigate('ItineraryEditor', {
+        planId: newPlanId,
         departure: 'SEOUL',
         destination,
         travelId: travelId || 0,
-        startDate: startDate?.toISOString() ?? new Date().toISOString(),
-        endDate: endDate?.toISOString() ?? new Date().toISOString(),
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
         adults: adults ?? 1,
         children: children ?? 0,
         transport: transport || '대중교통',
       });
-    }, 1200);
+    } catch (error) {
+      console.error('일정 사전 저장 실패:', error);
+      setIsCreating(false);
+      showAlert({
+        title: '오류',
+        message: '일정 생성에 실패했습니다. 다시 시도해주세요.',
+      });
+    }
   };
 
   const openSearchModal = () => {
