@@ -28,6 +28,8 @@ const meta = {
     passwordRequirements: { hasMinLength: false, hasCombination: false },
     isPasswordMatch: false,
     isNextButtonEnabled: false,
+    isAgreed: false,
+    onChangeAgreement: () => {},
     onChange: () => {},
     onSendEmail: () => {},
     onVerifyCode: () => {},

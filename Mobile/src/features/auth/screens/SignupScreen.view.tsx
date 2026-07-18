@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,9 @@ import {
   Platform,
   KeyboardAvoidingView,
   ScrollView,
+  Modal,
 } from 'react-native';
-import { ArrowLeft, Eye, EyeOff, Check } from 'lucide-react-native';
+import { ArrowLeft, Eye, EyeOff, Check, X } from 'lucide-react-native';
 import { styles, COLORS, normalize } from './SignupScreen.styles';
 
 export const PasswordRequirement = React.memo(
@@ -34,6 +35,76 @@ export const PasswordRequirement = React.memo(
   ),
 );
 
+const PrivacyPolicyModal = ({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) => (
+  <Modal
+    visible={visible}
+    transparent
+    animationType="fade"
+    onRequestClose={onClose}
+  >
+    <Pressable style={styles.privacyOverlay} onPress={onClose}>
+      <Pressable style={styles.privacyModal} onPress={e => e.stopPropagation()}>
+        <View style={styles.privacyHeader}>
+          <Text style={styles.privacyTitle}>개인정보 수집·이용 동의</Text>
+          <TouchableOpacity onPress={onClose}>
+            <X size={20} color={COLORS.darkGray} />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          style={styles.privacyScroll}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.privacySectionTitle}>1. 수집·이용 목적</Text>
+          <Text style={styles.privacyBullet}>• 회원 관리 및 서비스 제공</Text>
+          <Text style={styles.privacyBullet}>• 문의 대응 및 공지사항 전달</Text>
+          <Text style={styles.privacyBullet}>
+            • 맞춤형 서비스 제공 및 이벤트 안내
+          </Text>
+
+          <Text style={styles.privacySectionTitle}>
+            2. 수집하는 개인정보 항목
+          </Text>
+          <Text style={styles.privacyBullet}>
+            • 필수 항목: 이메일, 비밀번호, 닉네임, 나이, 성별
+          </Text>
+
+          <Text style={styles.privacySectionTitle}>
+            3. 개인정보 보유·이용 기간
+          </Text>
+          <Text style={styles.privacyBullet}>
+            • 회원 탈퇴 시 지체 없이 파기
+          </Text>
+          <Text style={styles.privacyBullet}>
+            • 단, 관련 법령에 따라 보존이 필요한 경우 해당 기간 동안 보관
+          </Text>
+
+          <Text style={styles.privacySectionTitle}>
+            4. 동의 거부 권리 및 불이익 안내
+          </Text>
+          <Text style={styles.privacyBullet}>
+            • 회원가입 시 필수 항목 동의를 거부할 경우 회원가입이 불가합니다.
+          </Text>
+          <Text style={styles.privacyBullet}>
+            • 선택 항목은 동의하지 않아도 회원가입은 가능하며, 일부 서비스
+            이용이 제한될 수 있습니다.
+          </Text>
+        </ScrollView>
+
+        <TouchableOpacity style={styles.privacyCloseButton} onPress={onClose}>
+          <Text style={styles.privacyCloseButtonText}>확인</Text>
+        </TouchableOpacity>
+      </Pressable>
+    </Pressable>
+  </Modal>
+);
+
 export interface SignupScreenViewProps {
   step: number;
   totalSteps: number;
@@ -50,6 +121,8 @@ export interface SignupScreenViewProps {
   passwordRequirements: { hasMinLength: boolean; hasCombination: boolean };
   isPasswordMatch: boolean;
   isNextButtonEnabled: boolean;
+  isAgreed: boolean;
+  onChangeAgreement?: (agreed: boolean) => void;
   onChange: (name: string, value: string) => void;
   onSendEmail: () => void;
   onVerifyCode: () => void;
@@ -82,6 +155,8 @@ export const SignupScreenView = ({
   passwordRequirements,
   isPasswordMatch,
   isNextButtonEnabled,
+  isAgreed,
+  onChangeAgreement,
   onChange,
   onSendEmail,
   onVerifyCode,
@@ -95,6 +170,7 @@ export const SignupScreenView = ({
   setIsConfirmPasswordVisible,
   formatTime,
 }: SignupScreenViewProps) => {
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const step1FooterLabel = isEmailVerified
     ? '다음'
     : showVerificationInput
@@ -433,6 +509,37 @@ export const SignupScreenView = ({
                   </View>
                 </View>
               </View>
+
+              {/* 개인정보 수집 및 이용 동의 */}
+              <View style={styles.privacyAgreementContainer}>
+                <TouchableOpacity
+                  testID="agreement-checkbox"
+                  style={styles.checkboxWrapper}
+                  onPress={() => onChangeAgreement?.(!isAgreed)}
+                  activeOpacity={0.8}
+                >
+                  <View
+                    style={[
+                      styles.checkbox,
+                      isAgreed && styles.checkboxActive,
+                    ]}
+                  >
+                    {isAgreed && <Check size={normalize(12)} color={COLORS.white} />}
+                  </View>
+                  <Text style={styles.agreementText}>
+                    <Text
+                      style={styles.agreementLink}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        setShowPrivacyModal(true);
+                      }}
+                    >
+                      개인정보 수집 및 이용
+                    </Text>
+                    에 동의합니다 <Text style={styles.requiredText}>(필수)</Text>
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </>
           )}
         </ScrollView>
@@ -514,6 +621,11 @@ export const SignupScreenView = ({
           </TouchableOpacity>
         )}
       </View>
+
+      <PrivacyPolicyModal
+        visible={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+      />
     </SafeAreaView>
   );
 };

@@ -42,6 +42,7 @@ export default function SignupScreen() {
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] =
     useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAgreed, setIsAgreed] = useState(false);
 
   const [showVerificationInput, setShowVerificationInput] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -248,11 +249,12 @@ export default function SignupScreen() {
       !form.password ||
       !form.nickname ||
       !form.age ||
-      !form.gender
+      !form.gender ||
+      !isAgreed
     ) {
       Toast.show({
         type: 'error',
-        text1: '모든 정보를 입력하고 인증을 완료해주세요.',
+        text1: '모든 정보를 입력하고 개인정보 동의를 완료해주세요.',
         position: 'top',
         visibilityTime: 2500,
       });
@@ -365,8 +367,9 @@ export default function SignupScreen() {
     if (step === 1) return isEmailVerified;
     if (step === 2) return isPasswordStepValid;
     if (step === 3) return isNicknameVerified;
+    if (step === 4) return !!form.age && !!form.gender && isAgreed;
     return true;
-  }, [step, isEmailVerified, isPasswordStepValid, isNicknameVerified]);
+  }, [step, isEmailVerified, isPasswordStepValid, isNicknameVerified, form.age, form.gender, isAgreed]);
 
   return (
     <SignupScreenView
@@ -385,6 +388,8 @@ export default function SignupScreen() {
       passwordRequirements={passwordRequirements}
       isPasswordMatch={isPasswordMatch}
       isNextButtonEnabled={isNextButtonEnabled}
+      isAgreed={isAgreed}
+      onChangeAgreement={setIsAgreed}
       onChange={handleChange}
       onSendEmail={handleSendEmail}
       onVerifyCode={handleVerifyCode}
