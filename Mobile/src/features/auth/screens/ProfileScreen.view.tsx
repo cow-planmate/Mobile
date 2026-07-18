@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Pressable,
   TextInput,
   Alert,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -36,6 +37,7 @@ import {
   CalendarDays,
   Check,
   ChevronLeft,
+  ChevronDown,
 } from 'lucide-react-native';
 import FastImage from 'react-native-fast-image';
 import gravatarUrl from '../../../utils/gravatarUrl';
@@ -302,15 +304,59 @@ export default function ProfileScreenView({
   scrollToItinerary,
 }: ProfileScreenViewProps) {
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [tempNickname, setTempNickname] = useState('');
   const [tempAge, setTempAge] = useState('');
   const [tempGender, setTempGender] = useState('');
+  const isNicknameUnchanged = tempNickname === user.name;
   const [plans, setPlans] = useState<any[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPlanIds, setSelectedPlanIds] = useState<string[]>([]);
   const scrollRef = React.useRef<ScrollView>(null);
   const [itineraryY, setItineraryY] = useState(0);
+
+  // 스크롤 및 페이드 상태 관련 State
+  const [showBottomFade, setShowBottomFade] = useState(false);
+  const contentHeightRef = useRef(0);
+  const layoutHeightRef = useRef(0);
+  
+  // 힌트 화살표 애니메이션 객체
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (editModalVisible && showBottomFade) {
+      // 스크롤 유도 바운싱 애니메이션 루프 시작
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(bounceAnim, {
+            toValue: 6,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(bounceAnim, {
+            toValue: 0,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      bounceAnim.setValue(0);
+    }
+  }, [editModalVisible, showBottomFade, bounceAnim]);
+
+  // 바닥 감지 및 스크롤 가능 여부 체크 헬퍼
+  const checkScrollState = (contentHeight: number, layoutHeight: number, offsetY: number) => {
+    const isScrollable = contentHeight > layoutHeight + 5;
+    const isCloseToBottom = layoutHeight + offsetY >= contentHeight - 25;
+    setShowBottomFade(isScrollable && !isCloseToBottom);
+  };
+
+  const handleScroll = (event: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    checkScrollState(contentSize.height, layoutMeasurement.height, contentOffset.y);
+  };
 
   React.useEffect(() => {
     if (scrollToItinerary && itineraryY > 0) {
@@ -494,13 +540,13 @@ export default function ProfileScreenView({
   const defaultThemes = ['해수욕장', '호텔', '한식', '고기집', '이자카야'];
   const displayThemes = themeNames.length > 0 ? themeNames : defaultThemes;
 
-  const insets = useSafeAreaInsets();
-
   const handleOpenEditModal = () => {
     setTempNickname(user.name);
     setTempAge(user.age === '미설정' ? '' : user.age.toString());
     setTempGender(user.gender);
     setEditModalVisible(true);
+    // 모달이 열릴 때 스크롤 상태 초기화
+    setShowBottomFade(false);
   };
 
   const handleSaveProfile = async () => {
@@ -948,6 +994,16 @@ export default function ProfileScreenView({
               contentContainerStyle={styles.editDialogBody} 
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              scrollEventThrottle={16}
+              onScroll={handleScroll}
+              onContentSizeChange={(width, height) => {
+                contentHeightRef.current = height;
+                checkScrollState(contentHeightRef.current, layoutHeightRef.current, 0);
+              }}
+              onLayout={(event) => {
+                layoutHeightRef.current = event.nativeEvent.layout.height;
+                checkScrollState(contentHeightRef.current, layoutHeightRef.current, 0);
+              }}
             >
               <Text style={styles.editDialogTitle}>프로필 수정</Text>
               <Text style={styles.editDialogSubtitle}>나를 표현하는 정보를 변경해보세요</Text>
@@ -975,7 +1031,7 @@ export default function ProfileScreenView({
                     placeholderTextColor="#9CA3AF"
                   />
                   <TouchableOpacity 
-                    style={styles.checkButton}
+                    style={[styles.checkButton, isNicknameUnchanged && { opacity: 0.5 }]}
                     onPress={() => {
                       if (!tempNickname.trim()) {
                         Toast.show({
@@ -991,9 +1047,10 @@ export default function ProfileScreenView({
                         });
                       }
                     }}
+                    disabled={isNicknameUnchanged}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.checkButtonText}>중복 확인</Text>
+                    <Text style={[styles.checkButtonText, isNicknameUnchanged && { color: '#9CA3AF' }]}>중복 확인</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1022,14 +1079,14 @@ export default function ProfileScreenView({
                       onPress={() => setTempGender('남자')}
                       activeOpacity={0.9}
                     >
-                      <Text style={[styles.genderOptionText, tempGender === '남자' && styles.genderOptionActiveText]}>남성</Text>
+                      <Text style={[styles.genderOptionText, tempGender === '남자' && styles.genderOptionActiveText]}>남자</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
                       style={[styles.genderOptionButton, tempGender === '여자' && styles.genderOptionActive]}
                       onPress={() => setTempGender('여자')}
                       activeOpacity={0.9}
                     >
-                      <Text style={[styles.genderOptionText, tempGender === '여자' && styles.genderOptionActiveText]}>여성</Text>
+                      <Text style={[styles.genderOptionText, tempGender === '여자' && styles.genderOptionActiveText]}>여자</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -1085,12 +1142,24 @@ export default function ProfileScreenView({
               </TouchableOpacity>
             </ScrollView>
 
-            {/* 스크롤 유도를 위한 하단 반투명 그라데이션 페이드 레이어 */}
-            <LinearGradient
-              colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.95)', '#FFFFFF']}
-              style={styles.fadeOverlay}
-              pointerEvents="none"
-            />
+            {/* 동적으로 나타나고 유도 화살표가 적용된 하단 그라데이션 레이어 */}
+            {showBottomFade && (
+              <View style={styles.fadeOverlayContainer} pointerEvents="none">
+                <LinearGradient
+                  colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.95)', '#FFFFFF']}
+                  style={styles.fadeOverlay}
+                />
+                <Animated.View 
+                  style={[
+                    styles.scrollHintContainer,
+                    { transform: [{ translateY: bounceAnim }] }
+                  ]}
+                >
+                  <ChevronDown size={14} color="#1344FF" />
+                  <Text style={styles.scrollHintText}>더 보려면 스크롤</Text>
+                </Animated.View>
+              </View>
+            )}
 
             {/* 스크롤 영역 밖 하단에 항시 고정된 변경사항 저장하기 버튼 */}
             <View style={styles.fixedBottomArea}>

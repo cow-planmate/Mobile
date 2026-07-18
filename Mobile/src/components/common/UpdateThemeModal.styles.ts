@@ -69,7 +69,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   summaryScroll: {
-    maxHeight: 200,
+    maxHeight: 350,
     marginBottom: 16,
   },
   summaryContainer: {

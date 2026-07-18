@@ -31,7 +31,7 @@ export const styles = StyleSheet.create({
   modalView: {
     width: '92%',
     maxWidth: 420,
-    maxHeight: '70%',
+    maxHeight: '85%',
     backgroundColor: COLORS.white,
     borderRadius: 16,
     padding: 24,
@@ -127,6 +127,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scrollContent: {
-    flexGrow: 0,
+    flexGrow: 1,
+    flexShrink: 1,
   },
 });

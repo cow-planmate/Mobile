@@ -29,18 +29,24 @@ const PasswordInput = ({
   placeholder: string;
 }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
   return (
     <View style={styles.inputGroup}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.passwordContainer}>
-        <TextInput
-          style={styles.input}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={COLORS.placeholder}
-          secureTextEntry={!isPasswordVisible}
-        />
+      <View style={[styles.passwordContainer, isFocused && styles.inputFocused]}>
+        <View style={styles.passwordContent}>
+          <Text style={styles.label}>{label}</Text>
+          <TextInput
+            style={styles.input}
+            value={value}
+            onChangeText={onChangeText}
+            placeholder={placeholder}
+            placeholderTextColor={COLORS.placeholder}
+            secureTextEntry={!isPasswordVisible}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+          />
+        </View>
         <TouchableOpacity
           style={styles.eyeIcon}
           onPress={() => setIsPasswordVisible(!isPasswordVisible)}

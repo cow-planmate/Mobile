@@ -1,5 +1,7 @@
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 import { normalize } from '../../../utils/normalize';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const COLORS = {
   primary: '#1344FF',
@@ -280,8 +282,8 @@ export const styles = StyleSheet.create({
   editDialogCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: normalize(24),
-    width: '90%',
-    height: '70%',
+    width: SCREEN_WIDTH * 0.9,
+    height: normalize(500),
     overflow: 'hidden',
     elevation: 10,
     shadowColor: '#000',
@@ -435,12 +437,12 @@ export const styles = StyleSheet.create({
     borderRadius: normalize(10),
   },
   genderOptionActive: {
-    backgroundColor: '#FFFFFF',
-    elevation: 1,
+    backgroundColor: '#1344FF',
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   genderOptionText: {
     fontSize: normalize(13),
@@ -448,7 +450,7 @@ export const styles = StyleSheet.create({
     fontWeight: '500',
   },
   genderOptionActiveText: {
-    color: '#1344FF',
+    color: '#FFFFFF',
     fontWeight: 'bold',
   },
   actionNavButton: {
@@ -510,12 +512,40 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   fadeOverlay: {
+    width: '100%',
+    height: normalize(45),
+  },
+  fadeOverlayContainer: {
     position: 'absolute',
     bottom: normalize(80),
     left: 0,
     right: 0,
-    height: normalize(40),
+    height: normalize(45),
     zIndex: 2,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  scrollHintContainer: {
+    position: 'absolute',
+    bottom: normalize(2),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: normalize(4),
+    backgroundColor: 'rgba(19, 68, 255, 0.08)',
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(3),
+    borderRadius: normalize(10),
+  },
+  scrollHintText: {
+    fontSize: normalize(10),
+    fontWeight: 'bold',
+    color: '#1344FF',
+  },
+  keyboardAvoidingWrapper: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   fixedBottomArea: {
     paddingHorizontal: normalize(24),
