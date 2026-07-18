@@ -30,7 +30,7 @@ if ((TextInput as any).defaultProps == null) {
 }
 (TextInput as any).defaultProps.allowFontScaling = false;
 
-const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && false;
+const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && true;
 
 /* ── Toast Styles ── */
 const toastStyles = StyleSheet.create({
