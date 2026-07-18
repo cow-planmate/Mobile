@@ -12,3 +12,13 @@ jest.mock('react-native-toast-message', () => ({
     hide: jest.fn(),
   },
 }));
+
+jest.mock('react-native-linear-gradient', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return class LinearGradient extends React.Component {
+    render() {
+      return <View {...this.props}>{this.props.children}</View>;
+    }
+  };
+});

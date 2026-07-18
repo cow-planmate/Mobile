@@ -1,4 +1,5 @@
 import React, { useCallback, createContext, useContext, useMemo, useState, useRef } from 'react';
+import LinearGradient from 'react-native-linear-gradient';
 import {
   View,
   Text,
@@ -1139,6 +1140,12 @@ export default function ItineraryEditorScreenView({
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const [inputWidth, setInputWidth] = useState(120);
+  const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
+  const [dayScrollLayoutWidth, setDayScrollLayoutWidth] = useState(0);
+  const [dayScrollX, setDayScrollX] = useState(0);
+  const isDayScrollable = dayScrollContentWidth > dayScrollLayoutWidth;
+  const showLeftFade = isDayScrollable && dayScrollX > 5;
+  const showRightFade = isDayScrollable && dayScrollX < dayScrollContentWidth - dayScrollLayoutWidth - 5;
 
   React.useEffect(() => {
     const keyboardDidHideListener = Keyboard.addListener(
@@ -1297,13 +1304,17 @@ export default function ItineraryEditorScreenView({
         </View>
       </View>
 
-      <View style={styles.dayTabsWrapper}>
+      <View style={[styles.dayTabsWrapper, { position: 'relative' }]}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.dayTabsContainer}
           style={styles.dayTabsScroll}
-          fadingEdgeLength={40}
+          onContentSizeChange={(w) => setDayScrollContentWidth(w)}
+          onLayout={(e) => setDayScrollLayoutWidth(e.nativeEvent.layout.width)}
+          onScroll={(e) => setDayScrollX(e.nativeEvent.contentOffset.x)}
+          scrollEventThrottle={16}
+          clipToPadding={false}
         >
           {days.map((day, index) => {
             const isSelected = selectedDayIndex === index;
@@ -1347,6 +1358,42 @@ export default function ItineraryEditorScreenView({
         >
           <FontAwesomeIcon icon={faCalendarDays} color="#6B7280" size={22} />
         </TouchableOpacity>
+
+        {/* 좌측 페이드 */}
+        {showLeftFade && (
+          <LinearGradient
+            colors={['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 24,
+              zIndex: 10,
+            }}
+            pointerEvents="none"
+          />
+        )}
+
+        {/* 우측 페이드 */}
+        {showRightFade && (
+          <LinearGradient
+            colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.95)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{
+              position: 'absolute',
+              right: 44, // dayEditButton 제외 영역
+              top: 0,
+              bottom: 0,
+              width: 24,
+              zIndex: 10,
+            }}
+            pointerEvents="none"
+          />
+        )}
       </View>
 
       {pendingPlace && (
