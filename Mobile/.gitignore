@@ -86,3 +86,10 @@ yarn-error.log
 .env.production.local
 *storybook.log
 storybook-static
+
+# docs directory
+docs/
+
+# CocoaPods Lock
+ios/Podfile.lock
+
