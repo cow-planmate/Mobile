@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { MapPin } from 'lucide-react-native';
+import { KAKAO_APP_KEY } from '@env';
 
 export interface MapPlace {
   id: string;
@@ -16,8 +17,6 @@ interface KakaoMapViewProps {
   places: MapPlace[];
   style?: object;
 }
-
-const KAKAO_APP_KEY = '30ab34e9ea2ce39848e8aab28a16cdbd';
 
 export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
   const validPlaces = useMemo(
