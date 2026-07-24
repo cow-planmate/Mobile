@@ -35,11 +35,12 @@ export default function ProfileScreen({ route }: any) {
       const data = response.data;
 
       let genderStr = '미설정';
-      if (data.gender === 0) genderStr = '남자';
-      else if (data.gender === 1) genderStr = '여자';
+      if (data.gender === 'MALE') genderStr = '남자';
+      else if (data.gender === 'FEMALE') genderStr = '여자';
+      else if (data.gender === 'OTHER') genderStr = '기타';
 
-      const myPlansRaw = (data.myPlanVOs || []).map((p: any) => ({ ...p, isShared: false }));
-      const editablePlansRaw = (data.editablePlanVOs || []).map((p: any) => ({ ...p, isShared: true }));
+      const myPlansRaw = (data.myPlans || []).map((p: any) => ({ ...p, isShared: false }));
+      const editablePlansRaw = (data.editablePlans || []).map((p: any) => ({ ...p, isShared: true }));
       const allPlansRaw = [...myPlansRaw, ...editablePlansRaw];
 
       const plansWithDates = await Promise.all(
@@ -74,10 +75,12 @@ export default function ProfileScreen({ route }: any) {
       setUser({
         name: data.nickname || '이름 없음',
         email: data.email || '',
-        age: data.age ? data.age.toString() : '미설정',
+        age: data.birthdate
+          ? (new Date().getFullYear() - new Date(data.birthdate).getFullYear()).toString()
+          : '미설정',
         gender: genderStr,
         preferredThemes: data.preferredThemes || [],
-        socialLogin: data.socialLogin || false,
+        socialLogin: data.isSocialLogin || false,
         myPlans: plansWithDates,
       });
     } catch (error) {
@@ -120,8 +123,12 @@ export default function ProfileScreen({ route }: any) {
 
   const handleUpdateAge = async (newAge: string) => {
     try {
-      await axios.patch(resolveApiUrl('/api/user/age'), {
-        age: parseInt(newAge, 10),
+      const currentYear = new Date().getFullYear();
+      const birthYear = currentYear - parseInt(newAge, 10);
+      const birthdate = `${birthYear}-01-01`;
+
+      await axios.patch(resolveApiUrl('/api/user/birthdate'), {
+        birthdate,
       });
       setUser(prev => ({ ...prev, age: newAge }));
       Toast.show({
@@ -143,9 +150,12 @@ export default function ProfileScreen({ route }: any) {
 
   const handleUpdateGender = async (newGender: string) => {
     try {
-      const genderInt = newGender === '남자' ? 0 : 1;
+      let genderEnum = 'OTHER';
+      if (newGender === '남자') genderEnum = 'MALE';
+      else if (newGender === '여자') genderEnum = 'FEMALE';
+
       await axios.patch(resolveApiUrl('/api/user/gender'), {
-        gender: genderInt,
+        gender: genderEnum,
       });
       setUser(prev => ({
         ...prev,
@@ -250,7 +260,11 @@ export default function ProfileScreen({ route }: any) {
                 },
               );
 
-              if (response.status === 200) {
+              if (response.status >= 200 && response.status < 300) {
+                useAuthStore.getState().setUser(null);
+                delete axios.defaults.headers.common.Authorization;
+                await AsyncStorage.multiRemove(['user', 'accessToken', 'refreshToken']);
+
                 showAlert({
                   title: '탈퇴 완료',
                   message: '회원 탈퇴가 완료되었습니다.',
@@ -261,7 +275,6 @@ export default function ProfileScreen({ route }: any) {
                     },
                   ],
                 });
-                await logout();
               }
             } catch (error) {
               console.error('Resign Error:', error);

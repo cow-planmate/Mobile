@@ -36,7 +36,7 @@ const PlaceSearchResultItem = ({
         {item.name}
       </Text>
       <Text style={styles.resultMeta} numberOfLines={1}>
-        {item.type} · ⭐ {item.rating > 0 ? item.rating : '-'}
+        {item.type} · ⭐ {(item.rating && item.rating > 0) ? item.rating : '-'}
       </Text>
       <Text style={styles.addressText} numberOfLines={1}>
         {item.address}

@@ -19,6 +19,8 @@ export interface PlaceVO {
   ylocation?: number;
   photoUrl: string;
   iconUrl: string;
+  contentTypeId?: string;
+  copyrightDivCd?: string;
 }
 
 export interface PlacesResponse {
@@ -42,7 +44,7 @@ export interface PlaceBlockVO {
   placeCategoryId: number;
   placeCategory?: number;
   placeName: string;
-  placeRating: number;
+  placeRating?: number;
   placeAddress: string;
   placeLink?: string;
   placeId: string;
@@ -56,6 +58,9 @@ export interface PlaceBlockVO {
   xlocation?: number;
   ylocation?: number;
   memo?: string;
+  placeContentTypeId?: string;
+  placeThumbnailUrl?: string;
+  placeCopyrightDivCd?: string;
 }
 
 export interface PlanFrameVO {
@@ -127,7 +132,7 @@ export async function createPlan(
 export async function createFullPlan(
   payload: FullPlanPayload,
 ): Promise<{ planId: string }> {
-  const response = await axios.post(`/api/plan/create`, payload);
+  const response = await axios.post(`/api/plan/full`, payload);
   return response.data;
 }
 
@@ -140,46 +145,85 @@ export async function requestEditAccess(planId: string): Promise<void> {
 // Place Recommendation APIs
 // ────────────────────────────────────────────────
 
+// PlaceSummaryDto -> PlaceVO adapter helper
+function mapSummaryToVO(summary: any): PlaceVO {
+  const categoryEnumMap: Record<string, number> = {
+    ATTRACTION: 0,
+    ACCOMMODATION: 1,
+    RESTAURANT: 2,
+  };
+  return {
+    placeId: summary.contentId || '',
+    categoryId: categoryEnumMap[summary.category] ?? 4,
+    url: '',
+    name: summary.title || '',
+    formatted_address: summary.addr1 || '',
+    rating: 0,
+    xLocation: summary.longitude ?? 0,
+    yLocation: summary.latitude ?? 0,
+    photoUrl: summary.thumbnailUrl || '',
+    iconUrl: '',
+    contentTypeId: summary.contentTypeId || '',
+    copyrightDivCd: summary.copyrightDivCd || '',
+  };
+}
+
 /** Fetch recommended places for a plan by category */
 export async function fetchCategoryPlaces(
-  planId: string,
+  destinationId: number,
   category: 'tour' | 'lodging' | 'restaurant',
+  page: number = 1,
+  size: number = 20,
 ): Promise<PlacesResponse> {
-  const response = await axios.get(`/api/plan/${planId}/${category}`);
-  return response.data;
+  const categoryEnumMap = {
+    tour: 'ATTRACTION',
+    lodging: 'ACCOMMODATION',
+    restaurant: 'RESTAURANT',
+  };
+  const response = await axios.get('/api/place', {
+    params: {
+      destinationId,
+      category: categoryEnumMap[category],
+      page,
+      size,
+    },
+  });
+  const data = response.data;
+  const placesVO = (data.places || []).map((p: any) => mapSummaryToVO(p));
+  return {
+    places: placesVO,
+    totalCount: data.totalCount,
+    page: data.page,
+    size: data.size,
+    hasNext: data.hasNext,
+  };
 }
 
 /** Fetch recommended tour places for a plan */
-export const fetchTourPlaces = (planId: string) => fetchCategoryPlaces(planId, 'tour');
+export const fetchTourPlaces = (destinationId: number) => fetchCategoryPlaces(destinationId, 'tour');
 
 /** Fetch recommended lodging places for a plan */
-export const fetchLodgingPlaces = (planId: string) => fetchCategoryPlaces(planId, 'lodging');
+export const fetchLodgingPlaces = (destinationId: number) => fetchCategoryPlaces(destinationId, 'lodging');
 
 /** Fetch recommended restaurant places for a plan */
-export const fetchRestaurantPlaces = (planId: string) => fetchCategoryPlaces(planId, 'restaurant');
+export const fetchRestaurantPlaces = (destinationId: number) => fetchCategoryPlaces(destinationId, 'restaurant');
 
 /** Fetch recommended places by category (no auth) */
 export async function fetchCategoryPlacesNoAuth(
   categoryType: 'tour' | 'lodging' | 'restaurant',
-  category: string,
-  name: string,
+  destinationId: number,
 ): Promise<PlacesResponse> {
-  const response = await axios.get(
-    `/api/plan/${categoryType}/${encodeURIComponent(
-      category,
-    )}/${encodeURIComponent(name)}`,
-  );
-  return response.data;
+  return fetchCategoryPlaces(destinationId, categoryType);
 }
 
 /** Fetch recommended tour places (no auth) */
-export const fetchTourPlacesNoAuth = (category: string, name: string) => fetchCategoryPlacesNoAuth('tour', category, name);
+export const fetchTourPlacesNoAuth = (destinationId: number) => fetchCategoryPlacesNoAuth('tour', destinationId);
 
 /** Fetch recommended lodging places (no auth) */
-export const fetchLodgingPlacesNoAuth = (category: string, name: string) => fetchCategoryPlacesNoAuth('lodging', category, name);
+export const fetchLodgingPlacesNoAuth = (destinationId: number) => fetchCategoryPlacesNoAuth('lodging', destinationId);
 
 /** Fetch recommended restaurant places (no auth) */
-export const fetchRestaurantPlacesNoAuth = (category: string, name: string) => fetchCategoryPlacesNoAuth('restaurant', category, name);
+export const fetchRestaurantPlacesNoAuth = (destinationId: number) => fetchCategoryPlacesNoAuth('restaurant', destinationId);
 
 // ────────────────────────────────────────────────
 // Place Search & Pagination APIs
@@ -333,7 +377,7 @@ export interface TravelDestination {
 
 /** Get available travel destinations */
 export async function fetchTravelDestinations(): Promise<TravelDestination[]> {
-  const response = await axios.get('/api/travel');
+  const response = await axios.get('/api/destination');
   return response.data;
 }
 

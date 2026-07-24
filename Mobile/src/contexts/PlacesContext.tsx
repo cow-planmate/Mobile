@@ -40,11 +40,10 @@ export interface PlacesState {
 
 interface PlacesContextType extends PlacesState {
   /** Fetch all recommended places for a plan (tour, lodging, restaurant) */
-  fetchAllRecommendations: (planId: string) => Promise<void>;
+  fetchAllRecommendations: (destinationId: number) => Promise<void>;
   /** Fetch all recommended places without auth */
   fetchAllRecommendationsNoAuth: (
-    category: string,
-    name: string,
+    destinationId: number,
   ) => Promise<void>;
   /** Search places */
   doSearchPlaces: (
@@ -81,9 +80,9 @@ export function PlacesProvider({children}: PropsWithChildren) {
   const [isLoading, setIsLoading] = useState(false);
   const [isPetFriendly, setPetFriendly] = useState(false);
 
-  const fetchAllRecommendations = useCallback(async (planId: string) => {
+  const fetchAllRecommendations = useCallback(async (destinationId: number) => {
     setIsLoading(true);
-    if (planId === 123) {
+    if (destinationId === 123) {
       setTour([
         {
           placeId: 'tour-1',
@@ -136,17 +135,17 @@ export function PlacesProvider({children}: PropsWithChildren) {
 
     try {
       const [tourData, lodgingData, restaurantData] = await Promise.all([
-        fetchTourPlaces(planId),
-        fetchLodgingPlaces(planId),
-        fetchRestaurantPlaces(planId),
+        fetchTourPlaces(destinationId),
+        fetchLodgingPlaces(destinationId),
+        fetchRestaurantPlaces(destinationId),
       ]);
 
       setTour(tourData.places || []);
-      setTourNext(tourData.nextPageTokens || []);
+      setTourNext([]);
       setLodging(lodgingData.places || []);
-      setLodgingNext(lodgingData.nextPageTokens || []);
+      setLodgingNext([]);
       setRestaurant(restaurantData.places || []);
-      setRestaurantNext(restaurantData.nextPageTokens || []);
+      setRestaurantNext([]);
     } catch (err) {
       console.error('Failed to fetch recommendations:', err);
     } finally {
@@ -155,21 +154,21 @@ export function PlacesProvider({children}: PropsWithChildren) {
   }, []);
 
   const fetchAllRecommendationsNoAuth = useCallback(
-    async (category: string, name: string) => {
+    async (destinationId: number) => {
       setIsLoading(true);
       try {
         const [tourData, lodgingData, restaurantData] = await Promise.all([
-          fetchTourPlacesNoAuth(category, name),
-          fetchLodgingPlacesNoAuth(category, name),
-          fetchRestaurantPlacesNoAuth(category, name),
+          fetchTourPlacesNoAuth(destinationId),
+          fetchLodgingPlacesNoAuth(destinationId),
+          fetchRestaurantPlacesNoAuth(destinationId),
         ]);
 
         setTour(tourData.places || []);
-        setTourNext(tourData.nextPageTokens || []);
+        setTourNext([]);
         setLodging(lodgingData.places || []);
-        setLodgingNext(lodgingData.nextPageTokens || []);
+        setLodgingNext([]);
         setRestaurant(restaurantData.places || []);
-        setRestaurantNext(restaurantData.nextPageTokens || []);
+        setRestaurantNext([]);
       } catch (err) {
         console.error('Failed to fetch recommendations (no auth):', err);
       } finally {

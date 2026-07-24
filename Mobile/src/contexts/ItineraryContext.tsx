@@ -142,7 +142,6 @@ const mapToTimetablePlaceBlockDto = (
     placeCategory: categoryId, // Added for Web compat
     placeName: place.name,
     placeAddress: place.address,
-    placeRating: place.rating,
     placeLink: place.place_url || '',
     xLocation: place.longitude,
     yLocation: place.latitude,
@@ -155,6 +154,9 @@ const mapToTimetablePlaceBlockDto = (
     endTime: endTime,
     blockStartTime: startTime,
     blockEndTime: endTime,
+    placeContentTypeId: place.contentTypeId || null,
+    placeThumbnailUrl: place.imageUrl || null,
+    placeCopyrightDivCd: place.copyrightDivCd || null,
   };
 };
 
@@ -250,11 +252,12 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                       ),
                       endTime: parseTime(respVO.endTime ?? respVO.blockEndTime),
                       address: respVO.placeAddress,
-                      rating: respVO.placeRating,
                       latitude: respVO.yLocation ?? respVO.ylocation ?? 0,
                       longitude: respVO.xLocation ?? respVO.xlocation ?? 0,
-                      imageUrl: respVO.photoUrl || respVO.placeLink,
+                      imageUrl: respVO.photoUrl || respVO.placeLink || respVO.placeThumbnailUrl || '',
                       categoryId: normalizeCategoryId(rawCategoryId),
+                      contentTypeId: respVO.placeContentTypeId || '',
+                      copyrightDivCd: respVO.placeCopyrightDivCd || '',
                     };
                     dayToUpdate.places = resolveConflictsAndSort([
                       ...dayToUpdate.places,

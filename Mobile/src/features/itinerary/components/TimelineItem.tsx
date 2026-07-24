@@ -24,12 +24,14 @@ export type Place = {
   startTime: string;
   endTime: string;
   address: string;
-  rating: number;
+  rating?: number;
   imageUrl: string;
   latitude: number;
   longitude: number;
   memo?: string;
   place_url?: string;
+  contentTypeId?: string;
+  copyrightDivCd?: string;
 };
 
 type TimelineItemProps = {

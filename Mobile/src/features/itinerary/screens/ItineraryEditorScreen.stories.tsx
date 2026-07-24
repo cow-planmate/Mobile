@@ -149,7 +149,7 @@ const meta = {
     const { fetchAllRecommendations } = usePlaces();
 
     React.useEffect(() => {
-      fetchAllRecommendations('123');
+      fetchAllRecommendations(123);
     }, [fetchAllRecommendations]);
 
     const handleAddPlace = (newPlace: any) => {

@@ -349,22 +349,23 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   // Fetch place recommendations via PlacesContext
   useEffect(() => {
-    if (planId) {
-      fetchAllRecommendations(planId);
-    } else if (destination) {
-      // No planId yet — use NoAuth API with destination name
-      const { category, name } = parseDestination(destination);
-      fetchAllRecommendationsNoAuth(category, name);
+    const destId = route.params.travelId || planMetadata?.travelId;
+    if (destId) {
+      if (planId) {
+        fetchAllRecommendations(destId);
+      } else {
+        fetchAllRecommendationsNoAuth(destId);
+      }
     }
     return () => {
       resetPlaces();
     };
   }, [
     planId,
-    destination,
+    route.params.travelId,
+    planMetadata?.travelId,
     fetchAllRecommendations,
     fetchAllRecommendationsNoAuth,
-    parseDestination,
     resetPlaces,
   ]);
 
@@ -681,7 +682,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
             date: dateStr,
             placeCategoryId: categoryId,
             placeName: place.name || '',
-            placeRating: place.rating || 0,
             placeAddress: place.address || '',
             placeLink: place.place_url || '',
             placeId: place.placeRefId || '',
@@ -693,6 +693,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
             blockEndTime: endTime,
             xLocation: place.longitude || 0,
             yLocation: place.latitude || 0,
+            placeContentTypeId: place.contentTypeId || null,
+            placeThumbnailUrl: place.imageUrl || null,
+            placeCopyrightDivCd: place.copyrightDivCd || null,
           };
         });
       });
@@ -790,6 +793,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         onRedo={handleRedo}
         participantsCount={onlineUsers.length}
         planId={planId ?? null}
+        travelId={route.params.travelId || planMetadata?.travelId || null}
         detailPlace={detailPlace}
         isDetailVisible={isDetailVisible}
         onOpenDetail={handleOpenDetail}

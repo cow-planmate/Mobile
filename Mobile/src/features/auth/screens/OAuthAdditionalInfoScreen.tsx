@@ -118,11 +118,16 @@ export default function OAuthAdditionalInfoScreen({
     }
 
     try {
+      const currentYear = new Date().getFullYear();
+      const birthYear = currentYear - ageNum;
+      const birthdate = `${birthYear}-01-01`;
+      const genderEnum = gender === 0 ? 'MALE' : 'FEMALE';
+
       await oauthComplete({
         signupId,
         email: needEmail ? email.trim() : null,
-        age: ageNum,
-        gender,
+        birthdate,
+        gender: genderEnum,
       });
       Toast.show({
         type: 'success',
