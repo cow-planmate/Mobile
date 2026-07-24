@@ -191,22 +191,12 @@ export default function ProfileScreen({ route }: any) {
 
   const handleUpdatePassword = async (current: string, newPass: string) => {
     try {
-      const verifyResponse = await axios.post(
+      await axios.post(
         resolveApiUrl('/api/auth/password/verify'),
         {
           password: current,
         },
       );
-
-      if (!verifyResponse.data.passwordVerified) {
-        Toast.show({
-          type: 'error',
-          text1: '현재 비밀번호가 일치하지 않습니다.',
-          position: 'top',
-          visibilityTime: 2500,
-        });
-        return;
-      }
 
       await changePassword(current, newPass, newPass);
 
