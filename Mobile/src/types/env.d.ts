@@ -13,6 +13,5 @@ export interface SimplePlanVO {
 export interface PreferredThemeVO {
   preferredThemeId: number;
   preferredThemeName: string;
-  preferredThemeCategoryId: number;
-  preferredThemeCategoryName: string;
+  category: 'ATTRACTION' | 'ACCOMMODATION' | 'RESTAURANT';
 }

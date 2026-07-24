@@ -5,8 +5,7 @@ import { API_URL } from '@env';
 export interface PreferredThemeVO {
   preferredThemeId: number;
   preferredThemeName: string;
-  preferredThemeCategoryId: number;
-  preferredThemeCategoryName: string;
+  category: 'ATTRACTION' | 'ACCOMMODATION' | 'RESTAURANT';
 }
 
 // 전체 테마 목록 조회 응답
@@ -62,6 +61,12 @@ export const savePreferredThemes = async (
   return response.data;
 };
 
+const CATEGORY_ID_TO_ENUM: Record<number, 'ATTRACTION' | 'ACCOMMODATION' | 'RESTAURANT'> = {
+  0: 'ATTRACTION',
+  1: 'ACCOMMODATION',
+  2: 'RESTAURANT',
+};
+
 /**
  * 선호 테마 카테고리별 변경 (내 일정)
  * PATCH /api/user/preferredThemes
@@ -70,9 +75,18 @@ export const changePreferredThemes = async (
   categoryId: number,
   themeIds: number[],
 ): Promise<ChangePreferredThemesResponse> => {
+  const categoryEnum = CATEGORY_ID_TO_ENUM[categoryId];
+  if (!categoryEnum) {
+    throw new Error(`Invalid categoryId: ${categoryId}`);
+  }
+
   const response = await axios.patch<ChangePreferredThemesResponse>(
     '/api/user/preferredThemes',
-    { preferredThemeCategoryId: categoryId, preferredThemeIds: themeIds },
+    {
+      themeUpdates: {
+        [categoryEnum]: themeIds,
+      },
+    },
   );
   return response.data;
 };
