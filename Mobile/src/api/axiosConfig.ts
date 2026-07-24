@@ -122,8 +122,8 @@ axios.interceptors.response.use(
       try {
         const refreshToken = await AsyncStorage.getItem('refreshToken');
         if (refreshToken) {
-          const response = await axios.get('/api/auth/token', {
-            params: { refreshToken },
+          const response = await axios.post('/api/auth/token', {
+            refreshToken,
           });
 
           const newAccessToken = response.data.accessToken;

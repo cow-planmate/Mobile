@@ -166,6 +166,8 @@ function placeVOToPlace(
     imageUrl: p.photoUrl || p.iconUrl || '',
     latitude: p.yLocation ?? p.ylocation ?? 0,
     longitude: p.xLocation ?? p.xlocation ?? 0,
+    contentTypeId: p.contentTypeId || '',
+    copyrightDivCd: p.copyrightDivCd || '',
   };
 }
 
@@ -278,12 +280,14 @@ const PlaceMapModal = React.memo(
 interface PlaceRecommendationListProps {
   planId: string | null;
   destination?: string;
+  travelId: number | null;
   onAddPlace: (place: Omit<Place, 'startTime' | 'endTime'>) => void;
 }
 
 export default function PlaceRecommendationList({
   planId,
   destination,
+  travelId,
   onAddPlace,
 }: PlaceRecommendationListProps) {
   const {
@@ -319,14 +323,15 @@ export default function PlaceRecommendationList({
 
   // ─── Pull-to-refresh ───
   const handleRefresh = useCallback(async () => {
-    if (!planId || isRefreshing) return;
+    const destId = travelId || planId;
+    if (!destId || isRefreshing) return;
     setIsRefreshing(true);
     try {
-      await fetchAllRecommendations(planId);
+      await fetchAllRecommendations(Number(destId));
     } finally {
       setIsRefreshing(false);
     }
-  }, [planId, isRefreshing, fetchAllRecommendations]);
+  }, [planId, travelId, isRefreshing, fetchAllRecommendations]);
 
   // ─── Debounced search ───
   const handleSearchSubmit = useCallback(() => {

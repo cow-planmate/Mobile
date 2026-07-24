@@ -129,11 +129,12 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
                   startTime: parseTime(pb.startTime ?? pb.blockStartTime),
                   endTime: parseTime(pb.endTime ?? pb.blockEndTime),
                   address: pb.placeAddress,
-                  rating: pb.placeRating,
                   latitude: pb.yLocation ?? pb.ylocation ?? 0,
                   longitude: pb.xLocation ?? pb.xlocation ?? 0,
-                  imageUrl: pb.photoUrl || pb.placeLink || '',
+                  imageUrl: pb.photoUrl || pb.placeLink || pb.placeThumbnailUrl || '',
                   categoryId: normalizedCategoryId,
+                  contentTypeId: pb.placeContentTypeId || '',
+                  copyrightDivCd: pb.placeCopyrightDivCd || '',
                 };
               });
 

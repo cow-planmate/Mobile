@@ -31,7 +31,7 @@ interface PlaceBlockVO {
   placeCategory?: number;
   placeName: string;
   placeTheme: string;
-  placeRating: number;
+  placeRating?: number;
   placeAddress: string;
   placeLink?: string;
   photoUrl?: string;
@@ -45,6 +45,9 @@ interface PlaceBlockVO {
   xlocation?: number;
   ylocation?: number;
   memo?: string;
+  placeContentTypeId?: string;
+  placeThumbnailUrl?: string;
+  placeCopyrightDivCd?: string;
 }
 
 interface PlanFrameVO {
@@ -197,14 +200,15 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
               name: pb.placeName,
               address: pb.placeAddress,
               type: categoryMapping(categoryId) as any,
-              rating: pb.placeRating || 0,
               startTime: parseTime(pb.startTime ?? pb.blockStartTime),
               endTime: parseTime(pb.endTime ?? pb.blockEndTime),
               latitude: pb.yLocation ?? pb.ylocation ?? 0,
               longitude: pb.xLocation ?? pb.xlocation ?? 0,
-              imageUrl: pb.photoUrl || pb.placeLink || '',
+              imageUrl: pb.photoUrl || pb.placeLink || pb.placeThumbnailUrl || '',
               memo: pb.memo || '',
               place_url: pb.placeLink || '',
+              contentTypeId: pb.placeContentTypeId || '',
+              copyrightDivCd: pb.placeCopyrightDivCd || '',
             };
           });
 

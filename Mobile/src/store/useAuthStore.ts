@@ -23,8 +23,8 @@ interface AuthState {
   oauthComplete: (data: {
     signupId: string;
     email: string | null;
-    age: number;
-    gender: number;
+    birthdate: string;
+    gender: string;
   }) => Promise<void>;
 }
 

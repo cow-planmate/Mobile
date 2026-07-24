@@ -912,6 +912,7 @@ export const EditorStateContext = createContext<{
   handleAddPlace: any;
   planId: any;
   destination: any;
+  travelId?: any;
   onUndo: any;
   onRedo: any;
   pendingPlace: any;
@@ -1008,13 +1009,14 @@ const TimelineTabScreen = React.memo(() => {
 const AddPlaceTabScreen = React.memo(() => {
   const state = useContext(EditorStateContext);
   if (!state) return null;
-  const { handleAddPlace, planId, destination } = state;
+  const { handleAddPlace, planId, destination, travelId } = state;
 
   return (
     <PlaceRecommendationList
       onAddPlace={handleAddPlace}
       planId={planId}
       destination={destination}
+      travelId={travelId}
     />
   );
 });
@@ -1065,6 +1067,7 @@ export interface ItineraryEditorScreenViewProps {
   participantsCount: number;
   // New props for detail popup & recommendations
   planId: string | null;
+  travelId?: number | null;
   detailPlace: Place | null;
   isDetailVisible: boolean;
   onOpenDetail: (place: Place) => void;
@@ -1119,6 +1122,7 @@ export default function ItineraryEditorScreenView({
   onRedo,
   participantsCount,
   planId,
+  travelId,
   detailPlace,
   isDetailVisible,
   onOpenDetail,
@@ -1174,6 +1178,7 @@ export default function ItineraryEditorScreenView({
       handleAddPlace,
       planId,
       destination,
+      travelId,
       onUndo,
       onRedo,
       pendingPlace,
@@ -1196,6 +1201,7 @@ export default function ItineraryEditorScreenView({
     handleAddPlace,
     planId,
     destination,
+    travelId,
     onUndo,
     onRedo,
     pendingPlace,

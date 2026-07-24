@@ -82,7 +82,8 @@ const ForgotPasswordScreen = () => {
         },
       );
 
-      if (response.data.verificationSent) {
+      // v2 returns 204 No Content on success
+      if (response.status >= 200 && response.status < 300) {
         showAlert({
           title: '발송 완료',
           message: '인증번호가 이메일로 전송되었습니다.',
@@ -127,11 +128,10 @@ const ForgotPasswordScreen = () => {
         },
       );
 
-      const isVerified =
-        response.data.emailVerified || response.data.verifySuccess;
+      const token = response.data.verificationToken || response.data.token;
+      const isVerified = !!token && response.status >= 200 && response.status < 300;
 
       if (isVerified) {
-        const token = response.data.token || response.data.verificationToken;
         Toast.show({
           type: 'success',
           text1: '이메일 인증이 완료되었습니다.',
@@ -183,11 +183,8 @@ const ForgotPasswordScreen = () => {
     try {
       await axios.post(
         '/api/auth/password/email',
-        {},
         {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
+          verificationToken: authToken,
         },
       );
 
