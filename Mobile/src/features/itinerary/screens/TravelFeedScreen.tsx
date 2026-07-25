@@ -86,9 +86,7 @@ export default function TravelFeedScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    void fetchPendingRequests();
-  }, [fetchPendingRequests]);
+
 
   useFocusEffect(
     useCallback(() => {

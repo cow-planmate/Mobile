@@ -20,10 +20,7 @@ import {
   IS_FCM_RUNTIME_ENABLED,
   useFcmNotifications,
 } from '../../../hooks/useFcmNotifications';
-import { resolveApiUrl } from '../../../utils/apiUrl';
 import { MENU_OPTIONS, SHARED_MENU_OPTIONS } from './MyScheduleScreen.view';
-
-const INVITATION_REFRESH_INTERVAL_MS = 15000;
 
 export default function MyScheduleScreen() {
   const navigation =
@@ -69,9 +66,7 @@ export default function MyScheduleScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    void fetchPendingRequests();
-  }, [fetchPendingRequests]);
+
 
   useFocusEffect(
     useCallback(() => {
@@ -109,21 +104,7 @@ export default function MyScheduleScreen() {
     };
   }, [appState, fetchPendingRequests, user]);
 
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
 
-    const intervalId = setInterval(() => {
-      if (appState === 'active') {
-        void fetchPendingRequests(true);
-      }
-    }, INVITATION_REFRESH_INTERVAL_MS);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [appState, fetchPendingRequests, user]);
 
   const handleAccept = async (requestId: number) => {
     try {
