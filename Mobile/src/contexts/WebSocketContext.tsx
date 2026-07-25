@@ -79,6 +79,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const stompClient = useRef<Client | null>(null);
   const activeSocket = useRef<any>(null);
   const currentPlanId = useRef<string | null>(null);
+  const isConnectingRef = useRef<boolean>(false);
   const messageListeners = useRef<Set<(msg: any) => void>>(new Set());
   const messageQueue = useRef<
     Array<{
@@ -102,11 +103,15 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const connect = useCallback(async (planId: string) => {
+    if (isConnectingRef.current && currentPlanId.current === planId) {
+      return;
+    }
     if (stompClient.current && stompClient.current.active) {
       if (currentPlanId.current === planId) return; // 이미 같은 방에 연결됨
       disconnect();
     }
 
+    isConnectingRef.current = true;
     currentPlanId.current = planId;
 
     // Frontend와 동일하게 SockJS URL에 토큰 포함 (JwtHandshakeInterceptor 인증)
@@ -130,6 +135,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       onConnect: frame => {
+        isConnectingRef.current = false;
         console.log('WebSocket Connected:', frame);
         setIsConnected(true);
 
@@ -213,10 +219,12 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         );
       },
       onStompError: frame => {
+        isConnectingRef.current = false;
         console.error('Broker reported error: ' + frame.headers.message);
         console.error('Additional details: ' + frame.body);
       },
       onWebSocketClose: () => {
+        isConnectingRef.current = false;
         console.log('WebSocket Connection Closed');
         setIsConnected(false);
       },
@@ -228,6 +236,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const disconnect = useCallback(() => {
+    isConnectingRef.current = false;
     if (stompClient.current) {
       // deactivate({ force: true }) immediately closes the socket connection
       stompClient.current.deactivate({ force: true });

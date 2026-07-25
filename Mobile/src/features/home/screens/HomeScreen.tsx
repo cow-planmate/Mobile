@@ -249,8 +249,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         planFrame: {
           planName: defaultPlanName,
           departure: 'SEOUL',
-          transportationCategoryId: transport === '자동차' ? 1 : 0,
+          destinationId: travelId || 1,
           travelId: travelId || 1,
+          transportationType: transport === '자동차' ? 'PRIVATE' : 'PUBLIC',
+          transportationCategoryId: transport === '자동차' ? 1 : 0,
           adultCount: adults ?? 1,
           childCount: children ?? 0,
         },
