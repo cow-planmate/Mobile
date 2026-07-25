@@ -134,17 +134,17 @@ export default function SearchLocationModal({
 
     const fullLocation = `${selectedParentRegion} ${selectedSubRegion}`;
 
-    // 1. First, check if any travel matches the sub-region (e.g. "제주시" -> "제주")
-    let matched = rawDestinations.find(d => isRegionMatch(d.travelName, selectedSubRegion));
+    // 1. First, check if any travel matches the parent region (e.g. "서울특별시" -> "서울")
+    let matched = rawDestinations.find(d => isRegionMatch(d.travelName, selectedParentRegion));
 
-    // 2. Next, check if any travel matches the parent region (e.g. "제주특별자치도" -> "제주")
-    if (!matched) {
-      matched = rawDestinations.find(d => isRegionMatch(d.travelName, selectedParentRegion));
-    }
-
-    // 3. Fallback to check the fullLocation
+    // 2. Next, check if any travel matches the full location (e.g. "제주특별자치도 제주시")
     if (!matched) {
       matched = rawDestinations.find(d => isRegionMatch(d.travelName, fullLocation));
+    }
+
+    // 3. Fallback to check the sub-region (e.g. "제주시" -> "제주")
+    if (!matched) {
+      matched = rawDestinations.find(d => isRegionMatch(d.travelName, selectedSubRegion));
     }
 
     const travelId = matched ? matched.travelId : -1;
