@@ -153,10 +153,10 @@ export default function MyScheduleScreen() {
   const fetchPlans = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/user/profile');
+      const response = await axios.get(resolveApiUrl('/api/user/profile'));
       const data = response.data;
-      setMyItineraries(data.myPlanVOs || []);
-      setSharedItineraries(data.editablePlanVOs || []);
+      setMyItineraries(data.myPlans || data.myPlanVOs || []);
+      setSharedItineraries(data.editablePlans || data.editablePlanVOs || []);
     } catch (error) {
       console.error('Failed to fetch plans:', error);
       showAlert({ title: '오류', message: '일정을 불러오는데 실패했습니다.' });
