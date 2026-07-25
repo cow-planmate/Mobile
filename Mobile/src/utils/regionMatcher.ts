@@ -62,11 +62,17 @@ export function isRegionMatch(name1: string, name2: string): boolean {
   const bases1 = words1.map(getRegionBase).filter(b => b.length > 0);
   const bases2 = words2.map(getRegionBase).filter(b => b.length > 0);
 
-  // Check if any base word from the first input matches/contains or is contained by a base word in the second
+  // Check if any base word from the first input matches or is safely contained
   for (const b1 of bases1) {
     for (const b2 of bases2) {
-      if (b1.includes(b2) || b2.includes(b1)) {
+      if (b1 === b2) {
         return true;
+      }
+      // Require exact match if either base is short (<= 2 chars) to avoid false substring matches like "동대문" matching "대구"
+      if (b1.length > 2 && b2.length > 2) {
+        if (b1.includes(b2) || b2.includes(b1)) {
+          return true;
+        }
       }
     }
   }

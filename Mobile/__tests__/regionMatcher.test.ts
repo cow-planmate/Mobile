@@ -40,10 +40,13 @@ describe('regionMatcher', () => {
       expect(isRegionMatch('서울특별시 강남구', '서울')).toBe(true);
     });
 
-    it('should not match unrelated regions', () => {
+    it('should not match unrelated regions with substring overlap like 동대문구 and 대구', () => {
       expect(isRegionMatch('서울특별시 강남구', '강릉')).toBe(false);
       expect(isRegionMatch('전라남도 강진군', '강릉')).toBe(false);
       expect(isRegionMatch('제주특별자치도 제주시', '서귀포시')).toBe(false);
+      expect(isRegionMatch('동대문구', '대구')).toBe(false);
+      expect(isRegionMatch('대구', '동대문구')).toBe(false);
+      expect(isRegionMatch('해운대구', '대구')).toBe(false);
     });
   });
 });
