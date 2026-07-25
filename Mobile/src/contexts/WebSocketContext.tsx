@@ -253,7 +253,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
    */
   const sendMessageInternal = (
     client: Client,
-    planId: number,
+    planId: string | number,
     action: string,
     targetName: string,
     target: any,

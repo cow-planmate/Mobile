@@ -10,6 +10,7 @@ interface UseFcmNotificationsParams {
 }
 
 const FCM_TOKEN_STORAGE_KEY = 'fcmToken';
+const FCM_TOKEN_LAST_SYNCED_KEY = 'lastSyncedFcmToken';
 export const IS_FCM_RUNTIME_ENABLED = true;
 
 const getMessaging = () => {
@@ -74,16 +75,24 @@ const isInvitationMessage = (remoteMessage: any): boolean => {
   return INVITATION_HINTS.some((hint: string) => joined.includes(hint));
 };
 
-const syncFcmToken = async (token: string) => {
+const syncFcmToken = async (token: string, force: boolean = false) => {
   const endpoint = resolveFcmTokenRegisterUrl();
   if (!endpoint) {
     return;
   }
 
   try {
+    if (!force) {
+      const lastSynced = await AsyncStorage.getItem(FCM_TOKEN_LAST_SYNCED_KEY);
+      if (lastSynced === token) {
+        return;
+      }
+    }
+
     await axios.post(endpoint, {
       fcmToken: token,
     });
+    await AsyncStorage.setItem(FCM_TOKEN_LAST_SYNCED_KEY, token);
     console.log('[FCM] Token synced to backend');
   } catch (error) {
     console.log('[FCM] Token sync skipped/failed:', error);
@@ -95,6 +104,11 @@ export function useFcmNotifications({
   onInvitationPush,
 }: UseFcmNotificationsParams) {
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
+  const onInvitationPushRef = useRef(onInvitationPush);
+
+  useEffect(() => {
+    onInvitationPushRef.current = onInvitationPush;
+  }, [onInvitationPush]);
 
   useEffect(() => {
     if (!enabled) {
@@ -115,12 +129,13 @@ export function useFcmNotifications({
         seenMessageIdsRef.current.add(messageId);
       }
 
-      if (!onInvitationPush) {
+      const callback = onInvitationPushRef.current;
+      if (!callback) {
         return;
       }
 
       if (isInvitationMessage(remoteMessage)) {
-        await onInvitationPush();
+        await callback();
       }
     };
 
@@ -149,7 +164,7 @@ export function useFcmNotifications({
         async (newToken: string) => {
           await AsyncStorage.setItem(FCM_TOKEN_STORAGE_KEY, newToken);
           console.log('[FCM] Token refreshed');
-          await syncFcmToken(newToken);
+          await syncFcmToken(newToken, true);
         },
       );
 
@@ -189,5 +204,6 @@ export function useFcmNotifications({
         unsubscribeOnOpen();
       }
     };
-  }, [enabled, onInvitationPush]);
+  }, [enabled]);
 }
+
