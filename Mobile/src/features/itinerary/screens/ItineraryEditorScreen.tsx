@@ -284,9 +284,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     if (!destinationCity || days.length === 0) {
-      if (days.length > 0 && !destinationCity) {
-        setIsWeatherLoading(false);
-      }
+      setIsWeatherLoading(false);
       return;
     }
 
@@ -974,7 +972,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         transport={planMetadata ? (planMetadata.transportationCategoryId === 1 ? '자동차' : '대중교통') : (route.params.transport || '대중교통')}
       />
       <Modal
-        visible={isInitialLoading || days.length === 0 || isSaving || isBacking || isWeatherLoading}
+        visible={isInitialLoading || days.length === 0 || isSaving || isBacking}
         transparent={false}
         animationType="fade"
         onRequestClose={() => {}}

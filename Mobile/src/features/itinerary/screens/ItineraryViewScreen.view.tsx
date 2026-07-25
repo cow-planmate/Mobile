@@ -486,12 +486,12 @@ export default function ItineraryViewScreenView({
         planId={planId ?? ''}
       />
       <Modal
-        visible={days.length === 0 || isBacking || isWeatherLoading}
+        visible={days.length === 0 || isBacking}
         transparent={false}
         animationType="fade"
         onRequestClose={() => {}}
       >
-        {days.length === 0 || isWeatherLoading ? (
+        {days.length === 0 ? (
           <AirplaneLoading />
         ) : (
           <View style={{ flex: 1, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' }}>

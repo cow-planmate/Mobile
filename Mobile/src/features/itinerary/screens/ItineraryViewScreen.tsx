@@ -238,7 +238,10 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
 
   // Fetch weather when destination and days are available
   useEffect(() => {
-    if (!destinationCity || days.length === 0) return;
+    if (!destinationCity || days.length === 0) {
+      setIsWeatherLoading(false);
+      return;
+    }
     setIsWeatherLoading(true);
     const startDate = formatDateLocal(days[0].date);
     const endDate = formatDateLocal(days[days.length - 1].date);
