@@ -184,17 +184,28 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
           };
 
           const places: Place[] = blocks.map(pb => {
-            const categoryId = (pb.placeCategoryId ??
-              pb.placeCategory ??
-              4) as number;
+            const blockCat = (pb as any).blockCategory;
+            const contentTypeIdStr = String(pb.placeContentTypeId || '');
+            const rawCategoryId = (pb.placeCategoryId ?? pb.placeCategory) as number;
 
-            // Normalize categoryId to 0-4 range
+            // Resolve normalized categoryId (0:관광지, 1:숙소, 2:식당, 3:직접추가, 4:검색)
             const normalizedCategoryId = (() => {
-              if ([0, 1, 2, 3, 4].includes(categoryId)) return categoryId;
-              if ([12, 14, 15, 28].includes(categoryId)) return 0;
-              if (categoryId === 32) return 1;
-              if (categoryId === 39) return 2;
-              return 4;
+              if (blockCat === 'ATTRACTION' || contentTypeIdStr === '12' || [0, 12, 14, 15, 28].includes(rawCategoryId)) return 0;
+              if (blockCat === 'ACCOMMODATION' || contentTypeIdStr === '32' || rawCategoryId === 1 || rawCategoryId === 32) return 1;
+              if (blockCat === 'RESTAURANT' || contentTypeIdStr === '39' || rawCategoryId === 2 || rawCategoryId === 39) return 2;
+              if (blockCat === 'FREE' || rawCategoryId === 3) return 3;
+              if (blockCat === 'SEARCH' || rawCategoryId === 4) return 4;
+              return [0, 1, 2, 3, 4].includes(rawCategoryId) ? rawCategoryId : 4;
+            })();
+
+            const typeName = (() => {
+              switch (normalizedCategoryId) {
+                case 0: return '관광지';
+                case 1: return '숙소';
+                case 2: return '식당';
+                case 3: return '직접 추가';
+                default: return '검색';
+              }
             })();
 
             return {
@@ -203,11 +214,11 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
               placeRefId: pb.placeId,
               name: pb.placeName,
               address: pb.placeAddress,
-              type: categoryMapping(categoryId) as any,
+              type: typeName as any,
               startTime: parseTime(pb.startTime ?? pb.blockStartTime),
               endTime: parseTime(pb.endTime ?? pb.blockEndTime),
-              latitude: pb.yLocation ?? pb.ylocation ?? 0,
-              longitude: pb.xLocation ?? pb.xlocation ?? 0,
+              latitude: pb.latitude ?? pb.yLocation ?? pb.ylocation ?? 0,
+              longitude: pb.longitude ?? pb.xLocation ?? pb.xlocation ?? 0,
               imageUrl: pb.photoUrl || pb.placeLink || pb.placeThumbnailUrl || '',
               memo: pb.memo || '',
               place_url: pb.placeLink || '',
@@ -223,7 +234,16 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
             timetableId: ttId,
           };
         });
-        setDays(fetchedDays);
+
+        // Only override days with fetchedDays if fetchedDays has places, or if current days is empty
+        setDays(prevDays => {
+          const hasFetchedPlaces = fetchedDays.some(d => d.places.length > 0);
+          const hasPrevPlaces = prevDays.some(d => d.places.length > 0);
+          if (hasFetchedPlaces || !hasPrevPlaces) {
+            return fetchedDays;
+          }
+          return prevDays;
+        });
       }
     } catch (error) {
       console.error('Failed to fetch plan:', error);
@@ -233,7 +253,10 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   }, [planId, buildWeatherCity]);
 
   useEffect(() => {
-    if (initialDays.length === 0 && planId) {
+    if (initialDays.length > 0) {
+      setDays(initialDays);
+    }
+    if (planId) {
       fetchCompletePlan();
     } else if (initialDays.length === 0 && !planId) {
       setIsWeatherLoading(false);

@@ -243,29 +243,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
-      const defaultPlanName = parseDestinationName(destination) || '나의 일정';
-
-      const result = await createFullPlanMutation.mutateAsync({
-        planFrame: {
-          planName: defaultPlanName,
-          departure: 'SEOUL',
-          destinationId: travelId || 1,
-          travelId: travelId || 1,
-          transportationType: transport === '자동차' ? 'PRIVATE' : 'PUBLIC',
-          transportationCategoryId: transport === '자동차' ? 1 : 0,
-          adultCount: adults ?? 1,
-          childCount: children ?? 0,
-        },
-        timetables: timetableVOs,
-        timetablePlaceBlocks: [],
-      });
-
-      const newPlanId = result?.planId;
-
       setIsCreating(false);
 
       navigation.navigate('ItineraryEditor', {
-        planId: newPlanId,
         departure: 'SEOUL',
         destination,
         travelId: travelId || 0,
@@ -276,11 +256,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         transport: transport || '대중교통',
       });
     } catch (error) {
-      console.error('일정 사전 저장 실패:', error);
+      console.error('일정 생성 준비 실패:', error);
       setIsCreating(false);
       showAlert({
         title: '오류',
-        message: '일정 생성에 실패했습니다. 다시 시도해주세요.',
+        message: '일정 생성 화면으로 이동할 수 없습니다. 다시 시도해주세요.',
       });
     }
   };
