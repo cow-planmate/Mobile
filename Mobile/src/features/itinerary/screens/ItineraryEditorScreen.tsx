@@ -275,7 +275,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const [isWeatherLoading, setIsWeatherLoading] = useState(true);
 
   useEffect(() => {
-    if (planMetadata?.travelCategoryName || planMetadata?.travelName) {
+    const metaAny = planMetadata as any;
+    if (metaAny?.destinationName) {
+      setDestinationCity(metaAny.destinationName);
+    } else if (planMetadata?.travelCategoryName || planMetadata?.travelName) {
       setDestinationCity(
         buildWeatherCity(planMetadata.travelCategoryName, planMetadata.travelName),
       );

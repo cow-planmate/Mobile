@@ -148,7 +148,11 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         setTripName(planFrame.planName);
       }
       setDestinationCity(
-        buildWeatherCity(planFrame?.travelCategoryName, planFrame?.travelName),
+        (planFrame as any)?.destinationName ||
+          buildWeatherCity(
+            planFrame?.travelCategoryName,
+            planFrame?.travelName,
+          ),
       );
 
       const categoryMapping = (
