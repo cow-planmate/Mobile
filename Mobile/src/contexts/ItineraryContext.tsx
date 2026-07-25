@@ -90,6 +90,33 @@ const normalizeCategoryId = (
   }
 };
 
+const categoryToBlockCategory = (categoryId: number): string => {
+  switch (categoryId) {
+    case 0: return 'ATTRACTION';
+    case 1: return 'ACCOMMODATION';
+    case 2: return 'RESTAURANT';
+    case 3: return 'FREE';
+    case 4: return 'SEARCH';
+    default: return 'SEARCH';
+  }
+};
+
+const blockCategoryToCategoryId = (blockCategory?: string, rawCategoryId?: any): number => {
+  if (typeof rawCategoryId === 'number' && [0, 1, 2, 3, 4].includes(rawCategoryId)) {
+    return rawCategoryId;
+  }
+  if (blockCategory) {
+    switch (blockCategory.toUpperCase()) {
+      case 'ATTRACTION': return 0;
+      case 'ACCOMMODATION': return 1;
+      case 'RESTAURANT': return 2;
+      case 'FREE': return 3;
+      case 'SEARCH': return 4;
+    }
+  }
+  return 4;
+};
+
 const mapToTimetablePlaceBlockDto = (
   place: Place,
   timetableId?: number,
@@ -98,8 +125,6 @@ const mapToTimetablePlaceBlockDto = (
   // Remap category IDs to backend table IDs (0:관광지, 1:숙소, 2:식당, 3:직접추가, 4:검색)
   let categoryId = place.categoryId ?? 4;
 
-  // If the category is already 0, 1, 2, 3, 4, we keep it.
-  // Otherwise, we map based on the raw ID from various sources or the type string.
   if (![0, 1, 2, 3, 4].includes(categoryId)) {
     if ([12, 14, 15, 28].includes(categoryId)) {
       categoryId = 0; // 관광지
@@ -108,7 +133,6 @@ const mapToTimetablePlaceBlockDto = (
     } else if (categoryId === 39) {
       categoryId = 2; // 식당
     } else {
-      // Final fallback to the type string provided by the Search API / Editor
       switch (place.type) {
         case '관광지':
           categoryId = 0;
@@ -133,23 +157,24 @@ const mapToTimetablePlaceBlockDto = (
 
   return {
     blockId: !isNaN(Number(place.id)) ? Number(place.id) : null,
-    timetablePlaceBlockId: !isNaN(Number(place.id)) ? Number(place.id) : null, // Added for Web compat
+    timetablePlaceBlockId: !isNaN(Number(place.id)) ? Number(place.id) : null,
     timeTableId: timetableId,
-    timetableId: timetableId, // Added for Web compat
-    date: date, // Added date for Backend mapping
+    timetableId: timetableId,
+    date: date,
     placeId: place.placeRefId,
     placeCategoryId: categoryId,
-    placeCategory: categoryId, // Added for Web compat
+    placeCategory: categoryId,
+    blockCategory: categoryToBlockCategory(categoryId),
     placeName: place.name,
     placeAddress: place.address,
-    placeLink: place.place_url || '',
+    latitude: place.latitude,
+    longitude: place.longitude,
     xLocation: place.longitude,
     yLocation: place.latitude,
-    xlocation: place.longitude, // Added for Web compat
-    ylocation: place.latitude, // Added for Web compat
+    xlocation: place.longitude,
+    ylocation: place.latitude,
     photoUrl: place.imageUrl,
     memo: place.memo || '',
-    // Aligned field names for both REST and WebSocket DTOs
     startTime: startTime,
     endTime: endTime,
     blockStartTime: startTime,
@@ -240,8 +265,10 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                     realId &&
                     !dayToUpdate.places.some(p => p.id === realId)
                   ) {
-                    const rawCategoryId =
-                      respVO.placeCategoryId ?? respVO.placeCategory ?? 4;
+                    const rawCategoryId = blockCategoryToCategoryId(
+                      respVO.blockCategory,
+                      respVO.placeCategoryId ?? respVO.placeCategory,
+                    );
                     const newPlace: Place = {
                       id: realId,
                       placeRefId: respVO.placeId,
@@ -252,9 +279,9 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                       ),
                       endTime: parseTime(respVO.endTime ?? respVO.blockEndTime),
                       address: respVO.placeAddress,
-                      latitude: respVO.yLocation ?? respVO.ylocation ?? 0,
-                      longitude: respVO.xLocation ?? respVO.xlocation ?? 0,
-                      imageUrl: respVO.photoUrl || respVO.placeLink || respVO.placeThumbnailUrl || '',
+                      latitude: respVO.latitude ?? respVO.yLocation ?? respVO.ylocation ?? 0,
+                      longitude: respVO.longitude ?? respVO.xLocation ?? respVO.xlocation ?? 0,
+                      imageUrl: respVO.photoUrl || respVO.placeThumbnailUrl || respVO.placeLink || '',
                       categoryId: normalizeCategoryId(rawCategoryId),
                       contentTypeId: respVO.placeContentTypeId || '',
                       copyrightDivCd: respVO.placeCopyrightDivCd || '',
