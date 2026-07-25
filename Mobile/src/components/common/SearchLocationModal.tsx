@@ -20,7 +20,7 @@ import {
 
 import { styles, COLORS } from './SearchLocationModal.styles';
 import { TARGET_REGIONS, SUB_REGIONS } from '../../constants/regions';
-import { isRegionMatch } from '../../utils/regionMatcher';
+import { isRegionMatch, getRegionBase } from '../../utils/regionMatcher';
 import { resolveApiUrl } from '../../utils/apiUrl';
 
 interface DestinationDto {
@@ -70,14 +70,14 @@ export default function SearchLocationModal({
     setIsLoading(true);
     try {
       const response = await axios.get(resolveApiUrl('/api/destination'));
-      const rawDestinationsList: DestinationDto[] =
+      const rawList: DestinationDto[] =
         response.data.destinations || response.data.travels || [];
 
       if (__DEV__) {
-        console.log('Fetched Destinations:', rawDestinationsList);
+        console.log('Fetched Destinations:', rawList);
       }
 
-      const serverData: TravelVO[] = rawDestinationsList.map((item: any) => ({
+      const serverData: TravelVO[] = rawList.map((item: any) => ({
         travelId: item.destinationId ?? item.travelId ?? -1,
         travelName: item.destinationName ?? item.travelName ?? '',
         travelCategoryId: item.travelCategoryId ?? 0,
@@ -87,12 +87,17 @@ export default function SearchLocationModal({
 
       setRawDestinations(serverData);
 
-      const formattedList = TARGET_REGIONS.map((regionName) => {
-        const matched = serverData.find(item => isRegionMatch(item.travelName, regionName));
-
+      // Filter parent regions to only those that match or whose sub-regions match backend destinations
+      const formattedList = TARGET_REGIONS.filter(parentName => {
+        const isDirectMatch = serverData.some(dest => isRegionMatch(dest.travelName, parentName));
+        if (isDirectMatch) return true;
+        const subRegions = SUB_REGIONS[parentName] || [];
+        return subRegions.some(sub => serverData.some(dest => isRegionMatch(dest.travelName, sub)));
+      }).map(parentName => {
+        const matched = serverData.find(item => isRegionMatch(item.travelName, parentName));
         return {
           travelId: matched ? matched.travelId : -1,
-          travelName: regionName,
+          travelName: parentName,
           travelImg: matched?.travelImg,
           travelCategoryId: matched ? matched.travelCategoryId : 0,
           travelCategoryName: matched ? matched.travelCategoryName : '',
@@ -129,6 +134,28 @@ export default function SearchLocationModal({
     setSelectedSubRegion(subRegion);
   };
 
+  /** Helper to get sub regions supported by current rawDestinations */
+  const getSupportedSubRegions = (parentRegion: string): string[] => {
+    const rawSubs = SUB_REGIONS[parentRegion] || [];
+    if (rawDestinations.length === 0) return rawSubs;
+
+    // Check if parent region itself is a direct single-city destination (e.g. 서울, 부산, 대구, 인천, 광주, 대전)
+    const isDirectParentDest = rawDestinations.some(d => {
+      const baseD = getRegionBase(d.travelName);
+      const baseP = getRegionBase(parentRegion);
+      return baseD.length > 0 && baseD === baseP;
+    });
+
+    if (isDirectParentDest) {
+      return rawSubs;
+    }
+
+    // For province categories (도 단위), strictly filter to only sub-regions matching backend destinations
+    return rawSubs.filter(sub =>
+      rawDestinations.some(d => isRegionMatch(d.travelName, sub)),
+    );
+  };
+
   const handleConfirmDestination = () => {
     if (!selectedParentRegion || !selectedSubRegion) return;
 
@@ -137,14 +164,14 @@ export default function SearchLocationModal({
     // 1. First, check if any travel matches the parent region (e.g. "서울특별시" -> "서울")
     let matched = rawDestinations.find(d => isRegionMatch(d.travelName, selectedParentRegion));
 
-    // 2. Next, check if any travel matches the full location (e.g. "제주특별자치도 제주시")
-    if (!matched) {
-      matched = rawDestinations.find(d => isRegionMatch(d.travelName, fullLocation));
-    }
-
-    // 3. Fallback to check the sub-region (e.g. "제주시" -> "제주")
+    // 2. Next, check if any travel matches the sub-region (e.g. "공주시" -> "공주", "가평군" -> "가평")
     if (!matched) {
       matched = rawDestinations.find(d => isRegionMatch(d.travelName, selectedSubRegion));
+    }
+
+    // 3. Fallback to check the full location
+    if (!matched) {
+      matched = rawDestinations.find(d => isRegionMatch(d.travelName, fullLocation));
     }
 
     const travelId = matched ? matched.travelId : -1;
@@ -216,7 +243,7 @@ export default function SearchLocationModal({
                   </Text>
                 </View>
                 <View style={styles.chipContainer}>
-                  {(SUB_REGIONS[selectedParentRegion] || []).map(subRegion => {
+                  {getSupportedSubRegions(selectedParentRegion).map(subRegion => {
                     const isSelected = selectedSubRegion === subRegion;
                     return (
                       <TouchableOpacity
