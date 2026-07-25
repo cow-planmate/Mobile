@@ -21,12 +21,18 @@ import {
 import { styles, COLORS } from './SearchLocationModal.styles';
 import { TARGET_REGIONS, SUB_REGIONS } from '../../constants/regions';
 import { isRegionMatch } from '../../utils/regionMatcher';
+import { resolveApiUrl } from '../../utils/apiUrl';
+
+interface DestinationDto {
+  destinationId: number;
+  destinationName: string;
+}
 
 interface TravelVO {
   travelId: number;
   travelName: string;
-  travelCategoryId: number;
-  travelCategoryName: string;
+  travelCategoryId?: number;
+  travelCategoryName?: string;
   travelImg?: string;
 }
 
@@ -63,12 +69,21 @@ export default function SearchLocationModal({
   const fetchDestinations = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('/api/travel');
-      const serverData: TravelVO[] = response.data.travels || [];
+      const response = await axios.get(resolveApiUrl('/api/destination'));
+      const rawDestinationsList: DestinationDto[] =
+        response.data.destinations || response.data.travels || [];
 
       if (__DEV__) {
-        console.log('Fetched Travels:', serverData);
+        console.log('Fetched Destinations:', rawDestinationsList);
       }
+
+      const serverData: TravelVO[] = rawDestinationsList.map((item: any) => ({
+        travelId: item.destinationId ?? item.travelId ?? -1,
+        travelName: item.destinationName ?? item.travelName ?? '',
+        travelCategoryId: item.travelCategoryId ?? 0,
+        travelCategoryName: item.travelCategoryName ?? '',
+        travelImg: item.travelImg,
+      }));
 
       setRawDestinations(serverData);
 
