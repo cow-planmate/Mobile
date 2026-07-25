@@ -169,27 +169,13 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
       await viewComponent.props.onCreateItinerary();
     });
 
-    // 3. Verify mutateAsync is called with correct arguments
-    expect(mockMutateAsync).toHaveBeenCalledWith(
-      expect.objectContaining({
-        planFrame: expect.objectContaining({
-          planName: '제주도',
-          departure: 'SEOUL',
-          transportationCategoryId: 0,
-          travelId: 3,
-          adultCount: 1,
-          childCount: 0,
-        }),
-      })
-    );
-
-    // 4. Verify navigate to ItineraryEditor is called with newPlanId
+    // 3. Verify navigate to ItineraryEditor is called with selected parameters
     expect(mockNavigate).toHaveBeenCalledWith(
       'ItineraryEditor',
       expect.objectContaining({
-        planId: 'new-plan-123',
         destination: '제주도',
         travelId: 3,
+        departure: 'SEOUL',
       })
     );
   });

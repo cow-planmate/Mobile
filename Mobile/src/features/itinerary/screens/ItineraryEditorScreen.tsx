@@ -640,7 +640,48 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     // Disconnect WebSocket immediately when completing
     disconnect();
 
-    // If plan already exists (editing from MySchedule), just navigate to view
+    // Calculate allBlocks from current days
+    const timetableVOs = days.map(day => ({
+      date: formatDateLocal(day.date),
+      timeTableStartTime: '09:00:00',
+      timeTableEndTime: '20:00:00',
+    }));
+
+    const allBlocks = days.flatMap(day => {
+      const dateStr = formatDateLocal(day.date);
+      return day.places.map(place => {
+        const categoryId = normalizeCategoryId(place.categoryId, place.type);
+        const startTime =
+          place.startTime.length === 5
+            ? place.startTime + ':00'
+            : place.startTime;
+        const endTime =
+          place.endTime.length === 5 ? place.endTime + ':00' : place.endTime;
+        return {
+          blockId: null,
+          timeTableId: 0,
+          date: dateStr,
+          placeCategoryId: categoryId,
+          placeName: place.name || '',
+          placeAddress: place.address || '',
+          placeLink: place.place_url || '',
+          placeId: place.placeRefId || '',
+          photoUrl: place.imageUrl || null,
+          memo: place.memo || '',
+          startTime,
+          endTime,
+          blockStartTime: startTime,
+          blockEndTime: endTime,
+          xLocation: place.longitude || 0,
+          yLocation: place.latitude || 0,
+          placeContentTypeId: place.contentTypeId || null,
+          placeThumbnailUrl: place.imageUrl || null,
+          placeCopyrightDivCd: place.copyrightDivCd || null,
+        };
+      });
+    });
+
+    // If plan already exists (editing from MySchedule or pre-created from Home), update title and navigate to view
     if (route.params.planId) {
       try {
         if (tripName) {
@@ -665,6 +706,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         startDate: route.params.startDate,
         endDate: route.params.endDate,
       });
+      setIsSaving(false);
       return;
     }
 
