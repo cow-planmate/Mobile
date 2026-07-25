@@ -149,9 +149,7 @@ export default function CommunityScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    void fetchPendingRequests();
-  }, [fetchPendingRequests]);
+
 
   useFocusEffect(
     useCallback(() => {

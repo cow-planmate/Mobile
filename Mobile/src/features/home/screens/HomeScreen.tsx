@@ -21,10 +21,7 @@ import {
 } from '../../../hooks/useFcmNotifications';
 import { AirplaneLoading } from '../../../components/common';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
-
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
-const INVITATION_REFRESH_INTERVAL_MS = 15000;
-
 const parseDestinationName = (destination?: string) => {
   const normalized = destination?.trim() || '';
   if (!normalized) return '';
@@ -98,9 +95,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     }
   }, []);
 
-  useEffect(() => {
-    void fetchPendingRequests();
-  }, [fetchPendingRequests]);
+
 
   // 화면 포커스 시 알림 자동 갱신
   useFocusEffect(
@@ -139,21 +134,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     };
   }, [appState, fetchPendingRequests, user]);
 
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
 
-    const intervalId = setInterval(() => {
-      if (appState === 'active') {
-        void fetchPendingRequests();
-      }
-    }, INVITATION_REFRESH_INTERVAL_MS);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [appState, fetchPendingRequests, user]);
 
   const handleAccept = async (requestId: number) => {
     try {
