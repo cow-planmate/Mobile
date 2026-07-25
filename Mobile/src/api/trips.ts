@@ -93,13 +93,15 @@ export interface CreatePlanPayload {
 
 export interface FullPlanPayload {
   planFrame: {
-    planId?: string;
-    planName?: string;
-    departure: string;
-    transportationCategoryId: number;
-    travelId: number;
+    destinationId?: number;
+    travelId?: number;
+    transportationType?: 'PUBLIC' | 'PRIVATE';
+    transportationCategoryId?: number;
     adultCount: number;
     childCount: number;
+    planId?: string;
+    planName?: string;
+    departure?: string;
   };
   timetables: {
     timetableId?: number;
@@ -116,7 +118,7 @@ export interface FullPlanPayload {
 
 /** Fetch full plan data (plan frame + timetables + place blocks) */
 export async function fetchPlan(planId: string): Promise<PlanResponse> {
-  const response = await axios.get(`/api/plan/${planId}`);
+  const response = await axios.get(resolveApiUrl(`/api/plan/${planId}`));
   return response.data;
 }
 
@@ -124,7 +126,7 @@ export async function fetchPlan(planId: string): Promise<PlanResponse> {
 export async function createPlan(
   payload: CreatePlanPayload,
 ): Promise<{ planId: string }> {
-  const response = await axios.post(`/api/plan`, payload);
+  const response = await axios.post(resolveApiUrl(`/api/plan`), payload);
   return response.data;
 }
 
@@ -132,7 +134,59 @@ export async function createPlan(
 export async function createFullPlan(
   payload: FullPlanPayload,
 ): Promise<{ planId: string }> {
-  const response = await axios.post(`/api/plan/full`, payload);
+  const destinationId =
+    payload.planFrame.destinationId ?? payload.planFrame.travelId ?? 1;
+  const transportationType =
+    payload.planFrame.transportationType ??
+    (payload.planFrame.transportationCategoryId === 1 ? 'PRIVATE' : 'PUBLIC');
+
+  const categoryMap: Record<number | string, string> = {
+    0: 'ATTRACTION',
+    1: 'ACCOMMODATION',
+    2: 'RESTAURANT',
+    3: 'FREE',
+    4: 'SEARCH',
+    ATTRACTION: 'ATTRACTION',
+    ACCOMMODATION: 'ACCOMMODATION',
+    RESTAURANT: 'RESTAURANT',
+    FREE: 'FREE',
+    SEARCH: 'SEARCH',
+  };
+
+  const formattedPayload = {
+    planFrame: {
+      destinationId,
+      travelId: destinationId,
+      transportationType,
+      transportationCategoryId:
+        payload.planFrame.transportationCategoryId ??
+        (transportationType === 'PRIVATE' ? 1 : 0),
+      adultCount: payload.planFrame.adultCount ?? 1,
+      childCount: payload.planFrame.childCount ?? 0,
+      departure: payload.planFrame.departure || 'SEOUL',
+      planName: payload.planFrame.planName || '나의 일정',
+    },
+    timetables: payload.timetables || [],
+    timetablePlaceBlocks: (payload.timetablePlaceBlocks || []).map(
+      (block: any) => {
+        const blockCategory =
+          block.blockCategory ||
+          categoryMap[block.placeCategoryId] ||
+          'ATTRACTION';
+        return {
+          ...block,
+          blockCategory,
+          latitude: block.latitude ?? block.yLocation ?? block.ylocation ?? 0,
+          longitude: block.longitude ?? block.xLocation ?? block.xlocation ?? 0,
+        };
+      },
+    ),
+  };
+
+  const response = await axios.post(
+    resolveApiUrl('/api/plan/full'),
+    formattedPayload,
+  );
   return response.data;
 }
 
