@@ -93,15 +93,18 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
                   return '12:00';
                 };
 
-                const categoryId = pb.placeCategoryId ?? pb.placeCategory ?? 4;
+                const blockCat = (pb as any).blockCategory;
+                const contentTypeIdStr = String(pb.placeContentTypeId || '');
+                const rawCategoryId = (pb.placeCategoryId ?? pb.placeCategory) as number;
 
-                // Normalize categoryId to 0-4 range
+                // Resolve normalized categoryId (0:관광지, 1:숙소, 2:식당, 3:직접추가, 4:검색)
                 const normalizedCategoryId = (() => {
-                  if ([0, 1, 2, 3, 4].includes(categoryId)) return categoryId;
-                  if ([12, 14, 15, 28].includes(categoryId)) return 0;
-                  if (categoryId === 32) return 1;
-                  if (categoryId === 39) return 2;
-                  return 4;
+                  if (blockCat === 'ATTRACTION' || contentTypeIdStr === '12' || [0, 12, 14, 15, 28].includes(rawCategoryId)) return 0;
+                  if (blockCat === 'ACCOMMODATION' || contentTypeIdStr === '32' || rawCategoryId === 1 || rawCategoryId === 32) return 1;
+                  if (blockCat === 'RESTAURANT' || contentTypeIdStr === '39' || rawCategoryId === 2 || rawCategoryId === 39) return 2;
+                  if (blockCat === 'FREE' || rawCategoryId === 3) return 3;
+                  if (blockCat === 'SEARCH' || rawCategoryId === 4) return 4;
+                  return [0, 1, 2, 3, 4].includes(rawCategoryId) ? rawCategoryId : 4;
                 })();
 
                 const categoryMapping = (
@@ -113,9 +116,9 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
                   | '직접 추가'
                   | '검색'
                   | '기타' => {
-                  if ([0, 12, 14, 15, 28].includes(id)) return '관광지';
-                  if (id === 1 || id === 32) return '숙소';
-                  if (id === 2 || id === 39) return '식당';
+                  if (id === 0) return '관광지';
+                  if (id === 1) return '숙소';
+                  if (id === 2) return '식당';
                   if (id === 3) return '직접 추가';
                   if (id === 4) return '검색';
                   return '기타';
@@ -125,7 +128,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
                   id: pb.blockId?.toString() || pb.placeId,
                   placeRefId: pb.placeId,
                   name: pb.placeName,
-                  type: categoryMapping(categoryId),
+                  type: categoryMapping(normalizedCategoryId),
                   startTime: parseTime(pb.startTime ?? pb.blockStartTime),
                   endTime: parseTime(pb.endTime ?? pb.blockEndTime),
                   address: pb.placeAddress,
