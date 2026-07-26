@@ -24,6 +24,7 @@ import { Place } from '../components/TimelineItem';
 import { useWebSocket } from '../../../contexts/WebSocketContext';
 import { useItinerary, Day } from '../../../contexts/ItineraryContext';
 import { usePlaces } from '../../../contexts/PlacesContext';
+import { useAuthStore } from '../../../store/useAuthStore';
 import { useItineraryEditor } from '../../../hooks/useItineraryEditor';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
@@ -58,6 +59,7 @@ const formatDateLocal = (date: Date): string => {
 
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const { showAlert } = useAlert();
+  const currentUser = useAuthStore(state => state.user);
   let queryClient: any = null;
   try {
     queryClient = useQueryClient();
@@ -696,10 +698,14 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       });
     });
 
-    // If plan already exists (editing from MySchedule or pre-created from Home), update title and navigate to view
+    // If plan already exists (editing from MySchedule or pre-created from Home), update title for owner and navigate to view
     if (route.params.planId) {
-      try {
-        if (tripName) {
+      const ownerIdLower = String(planMetadata?.user?.userId || '').toLowerCase();
+      const currentUserIdLower = String(currentUser?.userId || '').toLowerCase();
+      const isOwner = !ownerIdLower || ownerIdLower === currentUserIdLower;
+
+      if (isOwner && tripName) {
+        try {
           const token = await AsyncStorage.getItem('accessToken');
           const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
           await axios.patch(
@@ -707,9 +713,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
             { planName: tripName },
             config,
           );
+        } catch (err: any) {
+          if (err.response?.status !== 403) {
+            console.error('Failed to update plan title on complete:', err);
+          }
         }
-      } catch (err) {
-        console.error('Failed to update plan title on complete:', err);
       }
 
       if (queryClient) {
@@ -944,14 +952,25 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
                   </Text>
                 </View>
               ) : (
-                onlineUsers.map(user => {
-                  const initial =
-                    user.userNickname?.charAt(0) ||
-                    user.userInfo?.nickname?.charAt(0) ||
-                    '?';
+                onlineUsers.map((user, idx) => {
+                  const name =
+                    user.userNickname ||
+                    user.userInfo?.nickname ||
+                    '사용자';
+                  const initial = name.charAt(0) || '?';
+                  const userUidLower = String(user.uid || '').toLowerCase();
+                  const ownerIdLower = String(planMetadata?.user?.userId || '').toLowerCase();
+
+                  const isMe =
+                    !!currentUser &&
+                    String(currentUser.userId || '').toLowerCase() === userUidLower;
+                  const isOwner =
+                    (!!ownerIdLower && userUidLower === ownerIdLower) ||
+                    (!!planMetadata?.user?.nickname &&
+                      planMetadata.user.nickname === name);
 
                   return (
-                    <View key={user.uid} style={modalStyles.participantRow}>
+                    <View key={user.uid || `user-${idx}`} style={modalStyles.participantRow}>
                       <View style={modalStyles.participantAvatar}>
                         {user.avatarUrl ? (
                           <FastImage
@@ -966,11 +985,17 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
                         )}
                       </View>
                       <View style={modalStyles.participantInfo}>
-                        <Text style={modalStyles.participantName}>
-                          {user.userNickname ||
-                            user.userInfo?.nickname ||
-                            '사용자'}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Text style={modalStyles.participantName}>
+                            {name}
+                          </Text>
+                          {isMe && (
+                            <Text style={{ fontSize: 11, color: '#1344FF', fontWeight: '600' }}>(나)</Text>
+                          )}
+                          {isOwner && (
+                            <Text style={{ fontSize: 11, color: '#D97706', fontWeight: '600' }}>[소유자]</Text>
+                          )}
+                        </View>
                         <Text style={modalStyles.participantStatus}>
                           현재 일정에 접속 중
                         </Text>

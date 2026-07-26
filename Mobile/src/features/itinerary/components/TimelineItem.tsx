@@ -63,7 +63,22 @@ const TimelineItem = React.memo(function TimelineItem({
     timeToMinutes(item.endTime) - timeToMinutes(item.startTime);
   const isCompact = durationMinutes < IS_COMPACT_VIEW_THRESHOLD_MINUTES;
 
-  const categoryId = item.categoryId ?? 4;
+  const resolveCatId = () => {
+    if (typeof item.categoryId === 'number' && [0, 1, 2, 3, 4].includes(item.categoryId)) {
+      return item.categoryId;
+    }
+    const catStr = String(item.category || '');
+    const typeStr = String(item.type || '');
+
+    if (typeStr === '관광지' || catStr === 'ATTRACTION') return 0;
+    if (typeStr === '숙소' || catStr === 'ACCOMMODATION') return 1;
+    if (typeStr === '식당' || catStr === 'RESTAURANT') return 2;
+    if (typeStr === '직접 추가' || catStr === 'FREE') return 3;
+    if (typeStr === '검색' || catStr === 'SEARCH') return 4;
+    return 4;
+  };
+
+  const categoryId = resolveCatId();
   const categoryColor =
     CATEGORY_COLORS[categoryId as keyof typeof CATEGORY_COLORS] ||
     CATEGORY_COLORS[4];

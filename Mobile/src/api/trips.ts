@@ -1,6 +1,15 @@
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@env';
 import { resolveApiUrl } from '../utils/apiUrl';
+
+async function getAuthToken(): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem('accessToken');
+  } catch (_error) {
+    return null;
+  }
+}
 
 // ────────────────────────────────────────────────
 // Types
@@ -190,10 +199,7 @@ export async function createFullPlan(
   return response.data;
 }
 
-/** Request edit access */
-export async function requestEditAccess(planId: string): Promise<void> {
-  await axios.post(`/api/plan/${planId}/request-access`);
-}
+
 
 // ────────────────────────────────────────────────
 // Place Recommendation APIs
@@ -349,20 +355,61 @@ export async function fetchWeatherRecommendations(
 // Share & Collaboration APIs
 // ────────────────────────────────────────────────
 
+/** Get plan share status (isShared: boolean) */
+export async function getShareStatus(planId: string): Promise<{ isShared: boolean }> {
+  const token = await getAuthToken();
+  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  const response = await axios.get(resolveApiUrl(`/api/plan/${planId}/share`), config);
+  return { isShared: !!response.data?.isShared };
+}
+
+/** Update plan share status (isShared: boolean) */
+export async function updateShareStatus(planId: string, isShared: boolean): Promise<void> {
+  const token = await getAuthToken();
+  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  await axios.patch(resolveApiUrl(`/api/plan/${planId}/share`), { isShared }, config);
+}
+
+/** Request edit access for plan */
+export async function requestEditAccess(planId: string): Promise<{ collaborationRequestId: number }> {
+  const token = await getAuthToken();
+  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  const response = await axios.post(resolveApiUrl(`/api/plan/${planId}/request-access`), {}, config);
+  return { collaborationRequestId: response.data?.collaborationRequestId };
+}
+
 /** Get share URL */
 export async function getShareUrl(
   planId: string,
-): Promise<{ shareUrl: string }> {
-  const response = await axios.get(`/api/plan/${planId}/share`);
+): Promise<{ shareUrl: string; isShared?: boolean }> {
+  let isShared = true;
+  try {
+    const status = await getShareStatus(planId);
+    isShared = status.isShared;
+  } catch (e) {
+    console.log('Failed to fetch share status:', e);
+  }
   return {
-    shareUrl: response.data.sharedPlanUrl || response.data.shareUrl || '',
+    shareUrl: `https://planmate.bapdodi.cloud/share/${planId}`,
+    isShared,
   };
 }
 
 /** Get list of editors */
-export async function getEditors(planId: string): Promise<any[]> {
-  const response = await axios.get(`/api/plan/${planId}/editors`);
-  return response.data;
+export async function getEditors(planId: string): Promise<{ userId: string; nickname: string }[]> {
+  const token = await getAuthToken();
+  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  const response = await axios.get(resolveApiUrl(`/api/plan/${planId}/editors`), config);
+  const data = response?.data;
+  const rawEditors = Array.isArray(data)
+    ? data
+    : data && typeof data === 'object' && 'editors' in data && Array.isArray(data.editors)
+    ? data.editors
+    : [];
+  return rawEditors.map((e: any) => ({
+    userId: String(e?.userId ?? ''),
+    nickname: String(e?.nickname ?? ''),
+  }));
 }
 
 /** Invite an editor by nickname */
@@ -370,22 +417,30 @@ export async function inviteEditor(
   planId: string,
   nickname: string,
 ): Promise<void> {
-  await axios.post(resolveApiUrl(`/api/plan/${planId}/invite`), {
-    receiverNickname: nickname,
-  });
+  const token = await getAuthToken();
+  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  await axios.post(
+    resolveApiUrl(`/api/plan/${planId}/invite`),
+    { receiverNickname: nickname },
+    config,
+  );
 }
 
 /** Remove an editor */
 export async function removeEditor(
   planId: string,
-  userId: string,
+  userId: string | number,
 ): Promise<void> {
-  await axios.delete(`/api/plan/${planId}/editors/${userId}`);
+  const token = await getAuthToken();
+  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  await axios.delete(resolveApiUrl(`/api/plan/${planId}/editors/${userId}`), config);
 }
 
 /** Leave as editor */
 export async function leaveAsEditor(planId: string): Promise<void> {
-  await axios.delete(`/api/plan/${planId}/editor/me`);
+  const token = await getAuthToken();
+  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  await axios.delete(resolveApiUrl(`/api/plan/${planId}/editor/me`), config);
 }
 
 /** Get pending invitations */
@@ -402,7 +457,15 @@ export async function getPendingInvitations(): Promise<PendingInvitation[]> {
   const response = await axios.get(
     resolveApiUrl('/api/collaboration-requests/pending'),
   );
-  return (response.data.pendingRequests || []) as PendingInvitation[];
+  const rawList = response.data.requests || response.data.pendingRequests || [];
+  return rawList.map((item: any) => ({
+    requestId: item.collaborationRequestId ?? item.requestId,
+    senderId: item.senderId,
+    senderNickname: item.senderNickname,
+    planId: item.planId,
+    planName: item.planName,
+    type: item.type,
+  })) as PendingInvitation[];
 }
 
 /** Accept invitation */

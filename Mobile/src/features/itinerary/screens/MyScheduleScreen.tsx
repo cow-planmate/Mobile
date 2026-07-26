@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { SimplePlanVO } from '../../../types/env';
 import { AppStackParamList } from '../../../navigation/types';
+import Toast from 'react-native-toast-message';
 import MyScheduleScreenView from './MyScheduleScreen.view';
 import { useAlert } from '../../../contexts/AlertContext';
 import { useAuthStore } from '../../../store/useAuthStore';
@@ -70,6 +71,16 @@ export default function MyScheduleScreen() {
 
 
 
+  const handleInvitationReceived = useCallback(async () => {
+    await fetchPendingRequests(true);
+    Toast.show({
+      type: 'info',
+      text1: '새로운 일정 초대가 도착했습니다.',
+      position: 'top',
+      visibilityTime: 3000,
+    });
+  }, [fetchPendingRequests]);
+
   useFocusEffect(
     useCallback(() => {
       void fetchPendingRequests();
@@ -78,12 +89,12 @@ export default function MyScheduleScreen() {
 
   useInvitationSse({
     enabled: !!user,
-    onInvitationEvent: () => fetchPendingRequests(true),
+    onInvitationEvent: handleInvitationReceived,
   });
 
   useFcmNotifications({
     enabled: !!user && IS_FCM_RUNTIME_ENABLED,
-    onInvitationPush: () => fetchPendingRequests(true),
+    onInvitationPush: handleInvitationReceived,
   });
 
   useEffect(() => {

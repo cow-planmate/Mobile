@@ -109,6 +109,9 @@ export function useInvitationSse({
     const onOpen = () => {
       reconnectDelayRef.current = INITIAL_RECONNECT_DELAY_MS;
       console.log('[SSE] Invitation stream connected');
+      Promise.resolve(onInvitationEventRef.current()).catch(error => {
+        console.log('[SSE] Invitation re-sync failed:', error);
+      });
     };
 
     const handleIncomingEvent = (event: {

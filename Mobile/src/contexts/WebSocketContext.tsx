@@ -113,6 +113,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
     isConnectingRef.current = true;
     currentPlanId.current = planId;
+    setOnlineUsers([]);
 
     // Frontend와 동일하게 SockJS URL에 토큰 포함 (JwtHandshakeInterceptor 인증)
     const token = await AsyncStorage.getItem('accessToken');
@@ -196,18 +197,27 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
               if (payload.users) {
                 // Normalize: ensure uid/userNickname are present at top level
                 const normalized = payload.users.map(u => {
-                  const email = u.userInfo?.email;
+                  const rawUid = u.uid || (u as any).userId || (u as any).id || '';
+                  const uidStr = String(rawUid).toLowerCase();
+                  const nicknameStr =
+                    u.userNickname ||
+                    u.userInfo?.nickname ||
+                    (u as any).nickname ||
+                    '참여자';
+                  const email = u.userInfo?.email || (u as any).email;
                   const url = email ? gravatarUrl(email) : undefined;
-                  // Prefetch the avatar image for instant display
                   if (url) {
                     Image.prefetch(url).catch(() => {});
                   }
                   return {
                     ...u,
-                    uid: u.uid || '',
-                    userNickname: u.userNickname || u.userInfo?.nickname || '',
+                    uid: uidStr,
+                    userNickname: nicknameStr,
                     avatarUrl: url,
-                    userInfo: u.userInfo || { nickname: u.userNickname },
+                    userInfo: {
+                      nickname: nicknameStr,
+                      email: email,
+                    },
                   };
                 });
                 setOnlineUsers(normalized);
@@ -217,6 +227,13 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
             }
           },
         );
+
+        // Send an initial ping message to register session in backend PresenceStorage
+        setTimeout(() => {
+          if (client.connected) {
+            sendMessageInternal(client, planId, 'update', 'plan', { planId });
+          }
+        }, 300);
       },
       onStompError: frame => {
         isConnectingRef.current = false;

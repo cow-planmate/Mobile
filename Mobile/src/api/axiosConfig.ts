@@ -5,11 +5,16 @@ import { API_URL } from '@env';
 const normalizedApiUrl = API_URL.trim().replace(/\/+$/, '');
 
 // axios 기본 설정
-axios.defaults.baseURL = normalizedApiUrl;
-axios.defaults.timeout = 30000; // 30초 타임아웃
-axios.defaults.headers.common['Content-Type'] = 'application/json';
+if (axios && axios.defaults) {
+  axios.defaults.baseURL = normalizedApiUrl;
+  axios.defaults.timeout = 30000; // 30초 타임아웃
+  if (axios.defaults.headers && axios.defaults.headers.common) {
+    axios.defaults.headers.common['Content-Type'] = 'application/json';
+  }
+}
 
 // 요청 인터셉터: 토큰 자동 추가 및 요청 로깅
+if (axios && axios.interceptors && axios.interceptors.request) {
 axios.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     // 로그인/회원가입 등 인증이 필요없는 요청은 토큰 추가하지 않음
@@ -70,6 +75,7 @@ const processQueue = (error: any, token: string | null = null) => {
 };
 
 // 응답 인터셉터: 응답 로깅 및 토큰 갱신
+if (axios && axios.interceptors && axios.interceptors.response) {
 axios.interceptors.response.use(
   response => {
     // 개발 환경에서 응답 로깅
@@ -166,5 +172,7 @@ axios.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+}
+}
 
 export default axios;

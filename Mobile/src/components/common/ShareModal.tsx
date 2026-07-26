@@ -10,11 +10,14 @@ import {
   Pressable,
   Share,
   NativeModules,
+  Switch,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { X } from 'lucide-react-native';
 import {
   getShareUrl,
+  getShareStatus,
+  updateShareStatus,
   inviteEditor,
   getEditors,
   removeEditor,
@@ -47,6 +50,7 @@ export default function ShareModal({
   const [shareLink, setShareLink] = useState('');
   const [nickname, setNickname] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isShared, setIsShared] = useState(true);
   const [editors, setEditors] = useState<any[]>([]);
 
   useEffect(() => {
@@ -59,13 +63,35 @@ export default function ShareModal({
   const fetchShareLink = async () => {
     if (isMock) {
       setShareLink('https://planmate.cow/share/mock-trip-123');
+      setIsShared(true);
       return;
     }
     try {
       const response = await getShareUrl(planId);
       setShareLink(response.shareUrl);
+      if (typeof response.isShared === 'boolean') {
+        setIsShared(response.isShared);
+      }
     } catch (error) {
       console.error('Failed to fetch share link:', error);
+    }
+  };
+
+  const handleToggleShare = async (newValue: boolean) => {
+    setIsShared(newValue);
+    if (isMock) return;
+    try {
+      await updateShareStatus(planId, newValue);
+      Toast.show({
+        type: 'success',
+        text1: newValue ? '일정 공유가 활성화되었습니다.' : '일정이 비공개로 변경되었습니다.',
+        position: 'top',
+        visibilityTime: 1500,
+      });
+    } catch (error) {
+      console.error('Failed to update share status:', error);
+      setIsShared(!newValue);
+      showAlert({ title: '오류', message: '공유 상태 변경에 실패했습니다.' });
     }
   };
 
@@ -136,10 +162,7 @@ export default function ShareModal({
     }
     try {
       const response = await getEditors(planId);
-      const editorsList = Array.isArray(response)
-        ? response
-        : (response as any).editors || [];
-      setEditors(editorsList);
+      setEditors(Array.isArray(response) ? response : []);
     } catch (error) {
       console.error('Failed to fetch editors:', error);
     }
@@ -163,12 +186,20 @@ export default function ShareModal({
         setNickname('');
         fetchEditors();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Invite failed:', error);
-      showAlert({
-        title: '오류',
-        message: '사용자를 초대하지 못했습니다. 닉네임을 확인해주세요.',
-      });
+      const isConflict = error?.response?.status === 409;
+      if (isConflict) {
+        showAlert({
+          title: '초대 대기 중',
+          message: '이미 초대를 보낸 사용자입니다. 상대방의 수락을 기다려주세요.',
+        });
+      } else {
+        showAlert({
+          title: '오류',
+          message: '사용자를 초대하지 못했습니다. 닉네임을 확인해주세요.',
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -222,7 +253,15 @@ export default function ShareModal({
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.label}>공유 링크 (읽기 전용)</Text>
+            <View style={styles.switchRow}>
+              <Text style={styles.label}>공유 활성화 (읽기 전용)</Text>
+              <Switch
+                value={isShared}
+                onValueChange={handleToggleShare}
+                trackColor={{ false: '#D1D5DB', true: COLORS.primary }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
             <View style={styles.linkContainer}>
               <TextInput
                 style={styles.linkInput}
@@ -472,5 +511,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: FONTS.semibold,
     color: '#111827',
+  },
+  switchRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
 });

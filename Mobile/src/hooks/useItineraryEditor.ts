@@ -19,7 +19,12 @@ const parseDestinationName = (destination?: string) => {
 };
 
 export const useItineraryEditor = (route: any, _navigation: any) => {
-  const { sendMessage, isConnected } = useWebSocket();
+  const {
+    sendMessage,
+    isConnected,
+    subscribeToMessages,
+    unsubscribeFromMessages,
+  } = useWebSocket();
   const { showAlert } = useAlert();
   const {
     days,
@@ -47,11 +52,111 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   const isInitialized = useRef(false);
   const timelineScrollRef = useRef<ScrollView>(null);
 
+  const daysRef = useRef(days);
+  daysRef.current = days;
+
   useEffect(() => {
     if (isConnected) {
       sendMessage('update', 'presence', { dayIndex: selectedDayIndex });
     }
   }, [selectedDayIndex, isConnected, sendMessage]);
+
+  useEffect(() => {
+    const handleWsMessage = (msg: any) => {
+      if (!msg) return;
+
+      const data = msg.data || msg;
+      const entity = data.entity || msg.target;
+      const action = data.action || msg.type;
+
+      // Handle real-time timetableplaceblock changes from backend
+      if (entity === 'timetableplaceblock' && data.timeTablePlaceBlockDtos) {
+        const blocks = data.timeTablePlaceBlockDtos;
+        if (Array.isArray(blocks) && blocks.length > 0) {
+          setDays(prevDays => {
+            return prevDays.map(day => {
+              const updatedPlaces = [...day.places];
+              let hasChanged = false;
+
+              blocks.forEach((pb: any) => {
+                const pbDateStr = pb.date ? String(pb.date).substring(0, 10) : '';
+                const dayDateStr = day.date ? day.date.toISOString().substring(0, 10) : '';
+
+                if (!pbDateStr || pbDateStr === dayDateStr) {
+                  const placeIdStr = String(pb.blockId || pb.timetablePlaceBlockId || pb.placeId);
+                  const existingIdx = updatedPlaces.findIndex(p => p.id === placeIdStr);
+
+                  if (action === 'delete') {
+                    if (existingIdx !== -1) {
+                      updatedPlaces.splice(existingIdx, 1);
+                      hasChanged = true;
+                    }
+                  } else {
+                    const parseTimeStr = (t: any) => {
+                      if (typeof t === 'string') return t.substring(0, 5);
+                      return '09:00';
+                    };
+                    const startT = parseTimeStr(pb.startTime || pb.blockStartTime);
+                    const endT = parseTimeStr(pb.endTime || pb.blockEndTime);
+
+                    const blockCat = (pb as any).blockCategory;
+                    const contentTypeIdStr = String(pb.placeContentTypeId || '');
+                    const rawCatId = (pb.placeCategoryId ?? pb.placeCategory) as number;
+
+                    let catId = 4;
+                    if (blockCat === 'ATTRACTION' || contentTypeIdStr === '12' || [0, 12, 14, 15, 28].includes(rawCatId)) catId = 0;
+                    else if (blockCat === 'ACCOMMODATION' || contentTypeIdStr === '32' || rawCatId === 1 || rawCatId === 32) catId = 1;
+                    else if (blockCat === 'RESTAURANT' || contentTypeIdStr === '39' || rawCatId === 2 || rawCatId === 39) catId = 2;
+                    else if (blockCat === 'FREE' || rawCatId === 3) catId = 3;
+                    else if (blockCat === 'SEARCH' || rawCatId === 4) catId = 4;
+                    else if ([0, 1, 2, 3, 4].includes(rawCatId)) catId = rawCatId;
+
+                    const catNames: Record<number, any> = { 0: '관광지', 1: '숙소', 2: '식당', 3: '직접 추가', 4: '검색' };
+
+                    const placeItem: Place = {
+                      id: placeIdStr,
+                      name: pb.placeName || '장소',
+                      address: pb.placeAddress || '',
+                      photoUrl: pb.photoUrl || pb.placeThumbnailUrl || null,
+                      memo: pb.memo || '',
+                      category: pb.blockCategory || 'ATTRACTION',
+                      categoryId: catId,
+                      type: catNames[catId] || '기타',
+                      startTime: startT,
+                      endTime: endT,
+                      longitude: pb.longitude || pb.xLocation || pb.xlocation || 0,
+                      latitude: pb.latitude || pb.yLocation || pb.ylocation || 0,
+                      contentTypeId: pb.placeContentTypeId || null,
+                      imageUrl: pb.photoUrl || pb.placeThumbnailUrl || null,
+                      copyrightDivCd: pb.placeCopyrightDivCd || null,
+                    };
+
+                    if (existingIdx !== -1) {
+                      updatedPlaces[existingIdx] = placeItem;
+                    } else {
+                      updatedPlaces.push(placeItem);
+                    }
+                    hasChanged = true;
+                  }
+                }
+              });
+
+              if (!hasChanged) return day;
+              return {
+                ...day,
+                places: resolveConflictsAndSort(updatedPlaces),
+              };
+            });
+          });
+        }
+      }
+    };
+
+    subscribeToMessages(handleWsMessage);
+    return () => {
+      unsubscribeFromMessages(handleWsMessage);
+    };
+  }, [subscribeToMessages, unsubscribeFromMessages, setDays]);
 
   const formatDate = (date: Date) => {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
