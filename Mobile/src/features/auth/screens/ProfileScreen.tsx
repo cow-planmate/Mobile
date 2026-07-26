@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAlert } from '../../../contexts/AlertContext';
 import Toast from 'react-native-toast-message';
 import axios from 'axios';
@@ -47,7 +48,8 @@ export default function ProfileScreen({ route }: any) {
         allPlansRaw.map(async (plan: any) => {
           try {
             const planDetailRes = await axios.get(resolveApiUrl(`/api/plan/${plan.planId}`));
-            const { timetables } = planDetailRes.data;
+            const { planFrame, timetables } = planDetailRes.data;
+            const latestName = planFrame?.planName || plan.planName;
             if (timetables && timetables.length > 0) {
               const sorted = [...timetables].sort(
                 (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
@@ -61,10 +63,15 @@ export default function ProfileScreen({ route }: any) {
               };
               return {
                 ...plan,
+                planName: latestName,
                 startDate: formatDateStr(sorted[0].date),
                 endDate: formatDateStr(sorted[sorted.length - 1].date),
               };
             }
+            return {
+              ...plan,
+              planName: latestName,
+            };
           } catch (e) {
             console.log(`Failed to fetch dates for plan ${plan.planId}:`, e);
           }
@@ -94,9 +101,11 @@ export default function ProfileScreen({ route }: any) {
     }
   }, []);
 
-  useEffect(() => {
-    fetchUserProfile();
-  }, [fetchUserProfile]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserProfile();
+    }, [fetchUserProfile]),
+  );
 
   const handleUpdateNickname = async (newNickname: string) => {
     try {

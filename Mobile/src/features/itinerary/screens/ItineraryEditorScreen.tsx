@@ -25,6 +25,7 @@ import { useWebSocket } from '../../../contexts/WebSocketContext';
 import { useItinerary, Day } from '../../../contexts/ItineraryContext';
 import { usePlaces } from '../../../contexts/PlacesContext';
 import { useItineraryEditor } from '../../../hooks/useItineraryEditor';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
 import { timeToMinutes, dateToTime } from '../../../utils/timeUtils';
 import {
@@ -57,6 +58,12 @@ const formatDateLocal = (date: Date): string => {
 
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const { showAlert } = useAlert();
+  let queryClient: any = null;
+  try {
+    queryClient = useQueryClient();
+  } catch (e) {
+    // Graceful fallback for test environments without QueryClientProvider
+  }
   const createFullPlanMutation = useCreateFullPlan();
   const {
     days,
@@ -426,10 +433,21 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     }
   }, [detailPlace, handleDeletePlace]);
 
-  const handleSaveTripName = useCallback(() => {
+  const handleSaveTripName = useCallback(async () => {
     setIsEditingTripName(false);
     if (tripName && planId) {
-      sendMessage('update', 'plan', { planId, title: tripName });
+      sendMessage('update', 'plan', { planId, title: tripName, planName: tripName });
+      try {
+        const token = await AsyncStorage.getItem('accessToken');
+        const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+        await axios.patch(
+          resolveApiUrl(`/api/plan/${planId}/name`),
+          { planName: tripName },
+          config,
+        );
+      } catch (err) {
+        console.error('Failed to update plan title on edit:', err);
+      }
     }
   }, [planId, sendMessage, setIsEditingTripName, tripName]);
 
@@ -632,13 +650,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
     // If editing existing plan, send the final trip name update via WebSocket before disconnecting
     if (route.params.planId && tripName) {
-      sendMessage('update', 'plan', { planId: route.params.planId, title: tripName });
+      sendMessage('update', 'plan', { planId: route.params.planId, title: tripName, planName: tripName });
       // Brief delay to allow websocket frame transmission
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-
-    // Disconnect WebSocket immediately when completing
-    disconnect();
 
     // Calculate allBlocks from current days
     const timetableVOs = days.map(day => ({
@@ -685,13 +700,23 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     if (route.params.planId) {
       try {
         if (tripName) {
-          await axios.patch(resolveApiUrl(`/api/plan/${route.params.planId}/name`), {
-            planName: tripName,
-          });
+          const token = await AsyncStorage.getItem('accessToken');
+          const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+          await axios.patch(
+            resolveApiUrl(`/api/plan/${route.params.planId}/name`),
+            { planName: tripName },
+            config,
+          );
         }
       } catch (err) {
         console.error('Failed to update plan title on complete:', err);
       }
+
+      if (queryClient) {
+        void queryClient.invalidateQueries({ queryKey: ['myPlans'] });
+        void queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      }
+      disconnect();
 
       navigation.navigate('ItineraryView', {
         days,
@@ -783,13 +808,19 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       // 생성이 끝난 직후 신규 planId에 대해 즉각 이름 변경 PATCH API를 추가 호출하여 동기화합니다.
       if (newPlanId && tripName) {
         try {
-          await axios.patch(resolveApiUrl(`/api/plan/${newPlanId}/name`), {
-            planName: tripName,
-          });
+          const token = await AsyncStorage.getItem('accessToken');
+          const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+          await axios.patch(
+            resolveApiUrl(`/api/plan/${newPlanId}/name`),
+            { planName: tripName },
+            config,
+          );
         } catch (patchErr) {
           console.error('Failed to patch plan name after creation:', patchErr);
         }
       }
+
+      disconnect();
 
       navigation.navigate('ItineraryView', {
         days,

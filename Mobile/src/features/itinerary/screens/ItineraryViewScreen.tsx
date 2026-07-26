@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 import { ScrollView } from 'react-native';
 import axios from 'axios';
+import { resolveApiUrl } from '../../../utils/apiUrl';
 import { API_URL } from '@env';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
@@ -139,13 +140,16 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const fetchCompletePlan = useCallback(async () => {
     if (!planId) return;
     try {
+      const token = await AsyncStorage.getItem('accessToken');
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
       const response = await axios.get<GetCompletePlanResponse>(
-        `/api/plan/${planId}`,
+        resolveApiUrl(`/api/plan/${planId}`),
+        config,
       );
       const { planFrame, placeBlocks, timetables } = response.data;
 
       if (planFrame?.planName) {
-        setTripName(planFrame.planName);
+        setTripName(prev => (prev ? prev : planFrame.planName));
       }
       setDestinationCity(
         (planFrame as any)?.destinationName ||
@@ -403,7 +407,18 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       endHour={endHour}
       handleConfirm={handleConfirm}
       goBack={handleGoBack}
-      handleEdit={() => navigation.navigate('ItineraryEditor', { planId })}
+      handleEdit={() =>
+        navigation.navigate('ItineraryEditor', {
+          planId,
+          tripName,
+          destination: destinationCity || routeDestination,
+          departure,
+          travelId,
+          transport,
+          adults,
+          children,
+        })
+      }
       planId={planId}
       weatherMap={weatherMap}
       tripName={tripName}

@@ -3,6 +3,8 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppState, AppStateStatus } from 'react-native';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { resolveApiUrl } from '../../../utils/apiUrl';
 import { SimplePlanVO } from '../../../types/env';
 import { AppStackParamList } from '../../../navigation/types';
 import MyScheduleScreenView from './MyScheduleScreen.view';
@@ -202,9 +204,13 @@ export default function MyScheduleScreen() {
   const handleRenameTitle = async (newTitle: string) => {
     if (!selectedPlan) return;
     try {
-      await axios.patch(`/api/plan/${selectedPlan.planId}/name`, {
-        planName: newTitle,
-      });
+      const token = await AsyncStorage.getItem('accessToken');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.patch(
+        resolveApiUrl(`/api/plan/${selectedPlan.planId}/name`),
+        { planName: newTitle },
+        { headers },
+      );
       setMyItineraries(prev =>
         prev.map(p =>
           p.planId === selectedPlan.planId ? { ...p, planName: newTitle } : p,
@@ -235,7 +241,9 @@ export default function MyScheduleScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await axios.delete(`/api/plan/${planId}`);
+              const token = await AsyncStorage.getItem('accessToken');
+              const headers = token ? { Authorization: `Bearer ${token}` } : {};
+              await axios.delete(resolveApiUrl(`/api/plan/${planId}`), { headers });
               setMyItineraries(prev => prev.filter(p => p.planId !== planId));
               showAlert({ title: '성공', message: '일정이 삭제되었습니다.' });
             } catch (e) {
@@ -296,6 +304,7 @@ export default function MyScheduleScreen() {
   const navigateToEditor = (plan: SimplePlanVO) => {
     navigation.navigate('ItineraryEditor', {
       planId: plan.planId,
+      tripName: plan.planName,
     });
   };
 

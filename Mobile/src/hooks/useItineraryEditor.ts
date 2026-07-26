@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ScrollView } from 'react-native';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { resolveApiUrl } from '../utils/apiUrl';
 import { API_URL } from '@env';
 import { useItinerary, Day, Place } from '../contexts/ItineraryContext';
 import { useWebSocket } from '../contexts/WebSocketContext';
@@ -29,7 +31,9 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     setLastAddedPlaceId,
   } = useItinerary();
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-  const [tripName, setTripName] = useState(parseDestinationName(route.params?.destination) || '');
+  const [tripName, setTripName] = useState(
+    route.params?.tripName || parseDestinationName(route.params?.destination) || '',
+  );
   const [isEditingTripName, setIsEditingTripName] = useState(false);
   const [planMetadata, setPlanMetadata] = useState<any>(null);
 
@@ -67,12 +71,17 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
       }
 
       try {
+        const token = await AsyncStorage.getItem('accessToken');
+        const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
         const response = await axios.get(
-          `/api/plan/${route.params.planId}`,
+          resolveApiUrl(`/api/plan/${route.params.planId}`),
+          config,
         );
         const { planFrame, placeBlocks, timetables } = response.data;
 
-        setTripName(planFrame.planName || '');
+        if (planFrame?.planName) {
+          setTripName(planFrame.planName);
+        }
         setPlanMetadata(planFrame);
 
         if (timetables && timetables.length > 0) {
