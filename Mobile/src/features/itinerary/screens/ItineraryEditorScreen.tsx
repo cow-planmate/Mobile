@@ -698,14 +698,35 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       });
     });
 
-    // If plan already exists (editing from MySchedule or pre-created from Home), update title for owner and navigate to view
+    // If plan already exists (editing from MySchedule or pre-created from Home), update plan and navigate to view
     if (route.params.planId) {
-      const ownerIdLower = String(planMetadata?.user?.userId || '').toLowerCase();
-      const currentUserIdLower = String(currentUser?.userId || '').toLowerCase();
-      const isOwner = !ownerIdLower || ownerIdLower === currentUserIdLower;
+      if (isSaving) return;
+      setIsSaving(true);
 
-      if (isOwner && tripName) {
-        try {
+      try {
+        await createFullPlanMutation.mutateAsync({
+          planFrame: {
+            planId: route.params.planId,
+            planName: tripName || '나의 일정',
+            departure: route.params.departure || 'SEOUL',
+            destinationId: route.params.travelId || 1,
+            travelId: route.params.travelId || 1,
+            transportationType:
+              route.params.transport === '자동차' ? 'PRIVATE' : 'PUBLIC',
+            transportationCategoryId:
+              route.params.transport === '자동차' ? 1 : 0,
+            adultCount: route.params.adults || 1,
+            childCount: route.params.children || 0,
+          },
+          timetables: timetableVOs,
+          timetablePlaceBlocks: allBlocks,
+        });
+
+        const ownerIdLower = String(planMetadata?.user?.userId || '').toLowerCase();
+        const currentUserIdLower = String(currentUser?.userId || '').toLowerCase();
+        const isOwner = !ownerIdLower || ownerIdLower === currentUserIdLower;
+
+        if (isOwner && tripName) {
           const token = await AsyncStorage.getItem('accessToken');
           const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
           await axios.patch(
@@ -713,10 +734,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
             { planName: tripName },
             config,
           );
-        } catch (err: any) {
-          if (err.response?.status !== 403) {
-            console.error('Failed to update plan title on complete:', err);
-          }
+        }
+      } catch (err: any) {
+        if (err.response?.status !== 403) {
+          console.error('Failed to sync plan details on complete:', err);
         }
       }
 

@@ -169,10 +169,12 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
       await viewComponent.props.onCreateItinerary();
     });
 
-    // 3. Verify navigate to ItineraryEditor is called with selected parameters
+    // 3. Verify mutateAsync is called and navigate to ItineraryEditor is called with planId
+    expect(mockMutateAsync).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith(
       'ItineraryEditor',
       expect.objectContaining({
+        planId: 'new-plan-123',
         destination: '제주도',
         travelId: 3,
         departure: 'SEOUL',

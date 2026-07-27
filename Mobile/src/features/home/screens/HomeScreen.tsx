@@ -243,9 +243,27 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
+      const result = await createFullPlanMutation.mutateAsync({
+        planFrame: {
+          planName: `${destination} 여행`,
+          departure: 'SEOUL',
+          destinationId: travelId,
+          travelId: travelId,
+          transportationType: transport === '자동차' ? 'PRIVATE' : 'PUBLIC',
+          transportationCategoryId: transport === '자동차' ? 1 : 0,
+          adultCount: adults ?? 1,
+          childCount: children ?? 0,
+        },
+        timetables: timetableVOs,
+        timetablePlaceBlocks: [],
+      });
+
+      const newPlanId = result?.planId;
+
       setIsCreating(false);
 
       navigation.navigate('ItineraryEditor', {
+        planId: newPlanId,
         departure: 'SEOUL',
         destination,
         travelId: travelId || 0,
@@ -260,7 +278,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       setIsCreating(false);
       showAlert({
         title: '오류',
-        message: '일정 생성 화면으로 이동할 수 없습니다. 다시 시도해주세요.',
+        message: '일정 생성에 실패했습니다. 다시 시도해주세요.',
       });
     }
   };
