@@ -377,7 +377,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   // Fetch place recommendations via PlacesContext
   useEffect(() => {
     const destId =
-      route.params.destinationId ||
+      (route.params as any)?.destinationId ||
       route.params.travelId ||
       (planMetadata as any)?.destinationId ||
       planMetadata?.travelId;
@@ -395,7 +395,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       fetchedDestIdRef.current = null;
     };
   }, [
-    route.params.destinationId,
+    (route.params as any)?.destinationId,
     route.params.travelId,
     (planMetadata as any)?.destinationId,
     planMetadata?.travelId,

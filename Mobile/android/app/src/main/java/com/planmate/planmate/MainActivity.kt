@@ -1,7 +1,8 @@
 // android/app/src/main/java/com/planmate/planmate/MainActivity.kt
 package com.planmate.planmate
 
-import android.os.Bundle // 1. import 추가
+import android.os.Bundle
+import androidx.core.view.WindowCompat
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
@@ -22,9 +23,8 @@ class MainActivity : ReactActivity() {
   override fun createReactActivityDelegate(): ReactActivityDelegate =
       DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
 
-  // 2. 이 함수 전체를 추가합니다.
-  // (react-native-gesture-handler에 필요)
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(null)
+    WindowCompat.setDecorFitsSystemWindows(window, false)
   }
 }
