@@ -117,6 +117,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const [destinationCity, setDestinationCity] = useState(
     routeDestination || '',
   );
+  const [isWeatherLoading, setIsWeatherLoading] = useState(true);
 
   const buildWeatherCity = useCallback(
     (travelCategoryName?: string, travelName?: string) => {
@@ -219,18 +220,22 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     } catch (error) {
       console.error('Failed to fetch plan:', error);
       showAlert({ title: '오류', message: '일정을 불러오는데 실패했습니다.' });
+      setIsWeatherLoading(false);
     }
   }, [planId, buildWeatherCity]);
 
   useEffect(() => {
     if (initialDays.length === 0 && planId) {
       fetchCompletePlan();
+    } else if (initialDays.length === 0 && !planId) {
+      setIsWeatherLoading(false);
     }
   }, [planId, fetchCompletePlan, initialDays.length]);
 
   // Fetch weather when destination and days are available
   useEffect(() => {
     if (!destinationCity || days.length === 0) return;
+    setIsWeatherLoading(true);
     const startDate = formatDateLocal(days[0].date);
     const endDate = formatDateLocal(days[days.length - 1].date);
     fetchWeatherRecommendations(destinationCity, startDate, endDate)
@@ -241,7 +246,12 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         });
         setWeatherMap(map);
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('Failed to fetch weather:', err);
+      })
+      .finally(() => {
+        setIsWeatherLoading(false);
+      });
   }, [destinationCity, days.length]);
 
   useEffect(() => {
@@ -350,6 +360,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       weatherMap={weatherMap}
       tripName={tripName}
       isBacking={isBacking}
+      isWeatherLoading={isWeatherLoading}
     />
   );
 }

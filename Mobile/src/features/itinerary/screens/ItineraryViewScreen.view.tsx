@@ -251,6 +251,7 @@ export interface ItineraryViewScreenViewProps {
   weatherMap: Record<string, SimpleWeatherInfo>;
   tripName: string;
   isBacking: boolean;
+  isWeatherLoading: boolean;
 }
 
 export default function ItineraryViewScreenView({
@@ -272,6 +273,7 @@ export default function ItineraryViewScreenView({
   weatherMap,
   tripName,
   isBacking,
+  isWeatherLoading,
 }: ItineraryViewScreenViewProps) {
   const insets = useSafeAreaInsets();
   const selectedDay = days[selectedDayIndex];
@@ -484,12 +486,12 @@ export default function ItineraryViewScreenView({
         planId={planId ?? ''}
       />
       <Modal
-        visible={days.length === 0 || isBacking}
+        visible={days.length === 0 || isBacking || isWeatherLoading}
         transparent={false}
         animationType="fade"
         onRequestClose={() => {}}
       >
-        {days.length === 0 ? (
+        {days.length === 0 || isWeatherLoading ? (
           <AirplaneLoading />
         ) : (
           <View style={{ flex: 1, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' }}>

@@ -272,6 +272,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const [weatherMap, setWeatherMap] = useState<
     Record<string, SimpleWeatherInfo>
   >({});
+  const [isWeatherLoading, setIsWeatherLoading] = useState(true);
 
   useEffect(() => {
     if (planMetadata?.travelCategoryName || planMetadata?.travelName) {
@@ -282,7 +283,14 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   }, [planMetadata, buildWeatherCity]);
 
   useEffect(() => {
-    if (!destinationCity || days.length === 0) return;
+    if (!destinationCity || days.length === 0) {
+      if (days.length > 0 && !destinationCity) {
+        setIsWeatherLoading(false);
+      }
+      return;
+    }
+
+    setIsWeatherLoading(true);
 
     const startDate = formatDateLocal(days[0].date);
     const endDate = formatDateLocal(days[days.length - 1].date);
@@ -297,6 +305,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       })
       .catch(() => {
         // weather is non-critical – silently ignore
+      })
+      .finally(() => {
+        setIsWeatherLoading(false);
       });
   }, [destinationCity, days.length]);
 
@@ -958,7 +969,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         transport={planMetadata ? (planMetadata.transportationCategoryId === 1 ? '자동차' : '대중교통') : (route.params.transport || '대중교통')}
       />
       <Modal
-        visible={isInitialLoading || days.length === 0 || isSaving || isBacking}
+        visible={isInitialLoading || days.length === 0 || isSaving || isBacking || isWeatherLoading}
         transparent={false}
         animationType="fade"
         onRequestClose={() => {}}

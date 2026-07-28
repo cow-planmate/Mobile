@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import EventSource, { MessageEvent } from 'react-native-sse';
-import { INVITATION_SSE_URL } from '@env';
 
 import { resolveApiUrl } from '../utils/apiUrl';
 
@@ -23,12 +22,6 @@ interface UseInvitationSseParams {
 }
 
 const resolveSseUrl = (): string => {
-  const configuredUrl = INVITATION_SSE_URL?.trim();
-
-  if (configuredUrl && configuredUrl.includes('/api/sse/subscribe')) {
-    return resolveApiUrl(configuredUrl);
-  }
-
   const baseUrl =
     typeof axios.defaults.baseURL === 'string' ? axios.defaults.baseURL : '';
 

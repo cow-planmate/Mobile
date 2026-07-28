@@ -110,6 +110,8 @@ const meta = {
         description: '흐림',
       },
     },
+    isBacking: false,
+    isWeatherLoading: false,
   },
   render: function Render(args) {
     const [selectedDayIndex, setSelectedDayIndex] = React.useState(args.selectedDayIndex);

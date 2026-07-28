@@ -2,12 +2,7 @@ import { useEffect, useRef } from 'react';
 import { PermissionsAndroid, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import {
-  API_URL as API_URL_ENV,
-  FCM_RUNTIME_ENABLED as FCM_RUNTIME_ENABLED_ENV,
-  FCM_TOKEN_REGISTER_URL as FCM_TOKEN_REGISTER_URL_ENV,
-  INVITATION_PUSH_TYPES as INVITATION_PUSH_TYPES_ENV,
-} from '@env';
+import { API_URL as API_URL_ENV } from '@env';
 
 interface UseFcmNotificationsParams {
   enabled: boolean;
@@ -15,11 +10,7 @@ interface UseFcmNotificationsParams {
 }
 
 const FCM_TOKEN_STORAGE_KEY = 'fcmToken';
-export const IS_FCM_RUNTIME_ENABLED =
-  (FCM_RUNTIME_ENABLED_ENV || '').trim().toLowerCase() === 'true';
-const FCM_TOKEN_REGISTER_URL = FCM_TOKEN_REGISTER_URL_ENV;
-const INVITATION_PUSH_TYPES =
-  INVITATION_PUSH_TYPES_ENV || 'invite,invitation,collaboration,초대';
+export const IS_FCM_RUNTIME_ENABLED = true;
 
 const getMessaging = () => {
   try {
@@ -31,20 +22,21 @@ const getMessaging = () => {
   }
 };
 
-const INVITATION_HINTS: string[] = INVITATION_PUSH_TYPES.split(',')
-  .map((token: string) => token.trim().toLowerCase())
-  .filter(Boolean);
+const INVITATION_HINTS = [
+  'invite',
+  'invitation',
+  'collaboration',
+  '초대',
+  '요청',
+  '수락',
+  '거절',
+];
 
 const resolveFcmTokenRegisterUrl = (): string | null => {
-  if (FCM_TOKEN_REGISTER_URL && FCM_TOKEN_REGISTER_URL.trim().length > 0) {
-    return FCM_TOKEN_REGISTER_URL.trim();
-  }
-
   if (API_URL_ENV && API_URL_ENV.trim().length > 0) {
     const baseUrl = API_URL_ENV.trim().replace(/\/+$/, '');
     return `${baseUrl}/api/user/fcm-token`;
   }
-
   return null;
 };
 
