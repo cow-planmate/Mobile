@@ -164,150 +164,163 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     return `${month}.${day}.`;
   };
 
+  const prevIsConnectedRef = useRef(isConnected);
+
+  const initDaysFromDates = useCallback(() => {
+    if (!route.params?.startDate || !route.params?.endDate) return;
+    const start = new Date(route.params.startDate);
+    const end = new Date(route.params.endDate);
+
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    const tripDays: Day[] = [];
+    let currentDate = new Date(start);
+    let dayCounter = 1;
+
+    while (currentDate.getTime() <= end.getTime()) {
+      tripDays.push({
+        date: new Date(currentDate),
+        dayNumber: dayCounter,
+        places: [],
+      });
+
+      currentDate.setDate(currentDate.getDate() + 1);
+      dayCounter++;
+    }
+    setDays(tripDays);
+  }, [route.params?.startDate, route.params?.endDate, setDays]);
+
+  const fetchPlanDetails = useCallback(async () => {
+    if (!route.params?.planId) {
+      initDaysFromDates();
+      return;
+    }
+
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      const response = await axios.get(
+        resolveApiUrl(`/api/plan/${route.params.planId}`),
+        config,
+      );
+      const { planFrame, placeBlocks, timetables } = response.data;
+
+      if (planFrame?.planName) {
+        setTripName(planFrame.planName);
+      }
+      setPlanMetadata(planFrame);
+
+      if (timetables && timetables.length > 0) {
+        const newDays: Day[] = timetables.map((tt: any, index: number) => {
+          const date = new Date(tt.date);
+
+          const ttId = tt.timetableId ?? tt.timeTableId;
+          const ttDateStr = tt.date ? String(tt.date).substring(0, 10) : '';
+
+          const dayPlaces = (placeBlocks || [])
+            .filter((pb: any) => {
+              const pbTtId = pb.timeTableId ?? pb.timetableId ?? pb.time_table_id;
+              if (pbTtId !== undefined && pbTtId !== null && ttId !== undefined && ttId !== null) {
+                if (String(pbTtId) === String(ttId)) return true;
+              }
+              const pbDateStr = pb.date ? String(pb.date).substring(0, 10) : '';
+              if (pbDateStr && ttDateStr && pbDateStr === ttDateStr) return true;
+              return false;
+            })
+            .map((pb: any) => {
+              const parseTime = (time: any) => {
+                if (typeof time === 'string') return time.substring(0, 5);
+                if (time && typeof time.hour === 'number') {
+                  return `${String(time.hour).padStart(2, '0')}:${String(
+                    time.minute,
+                  ).padStart(2, '0')}`;
+                }
+                return '12:00';
+              };
+
+              const blockCat = (pb as any).blockCategory;
+              const contentTypeIdStr = String(pb.placeContentTypeId || '');
+              const rawCategoryId = (pb.placeCategoryId ?? pb.placeCategory) as number;
+
+              // Resolve normalized categoryId (0:관광지, 1:숙소, 2:식당, 3:직접추가, 4:검색)
+              const normalizedCategoryId = (() => {
+                if (blockCat === 'ATTRACTION' || contentTypeIdStr === '12' || [0, 12, 14, 15, 28].includes(rawCategoryId)) return 0;
+                if (blockCat === 'ACCOMMODATION' || contentTypeIdStr === '32' || rawCategoryId === 1 || rawCategoryId === 32) return 1;
+                if (blockCat === 'RESTAURANT' || contentTypeIdStr === '39' || rawCategoryId === 2 || rawCategoryId === 39) return 2;
+                if (blockCat === 'FREE' || rawCategoryId === 3) return 3;
+                if (blockCat === 'SEARCH' || rawCategoryId === 4) return 4;
+                return [0, 1, 2, 3, 4].includes(rawCategoryId) ? rawCategoryId : 4;
+              })();
+
+              const categoryMapping = (
+                id: number,
+              ):
+                | '관광지'
+                | '숙소'
+                | '식당'
+                | '직접 추가'
+                | '검색'
+                | '기타' => {
+                if (id === 0) return '관광지';
+                if (id === 1) return '숙소';
+                if (id === 2) return '식당';
+                if (id === 3) return '직접 추가';
+                if (id === 4) return '검색';
+                return '기타';
+              };
+
+              const realBlockId = pb.blockId ?? pb.timetablePlaceBlockId ?? pb.id;
+
+              return {
+                id: realBlockId !== undefined && realBlockId !== null ? String(realBlockId) : (pb.placeId ? String(pb.placeId) : `place_${Date.now()}_${Math.random()}`),
+                placeRefId: pb.placeId || '',
+                name: pb.placeName || '장소',
+                type: categoryMapping(normalizedCategoryId),
+                startTime: parseTime(pb.startTime ?? pb.blockStartTime),
+                endTime: parseTime(pb.endTime ?? pb.blockEndTime),
+                address: pb.placeAddress || '',
+                latitude: pb.latitude ?? pb.yLocation ?? pb.ylocation ?? 0,
+                longitude: pb.longitude ?? pb.xLocation ?? pb.xlocation ?? 0,
+                imageUrl: pb.photoUrl || pb.placeThumbnailUrl || pb.placeLink || '',
+                categoryId: normalizedCategoryId,
+                contentTypeId: pb.placeContentTypeId || '',
+                copyrightDivCd: pb.placeCopyrightDivCd || '',
+              };
+            });
+
+          return {
+            timetableId: ttId,
+            date: date,
+            dayNumber: index + 1,
+            places: resolveConflictsAndSort(dayPlaces),
+          };
+        });
+        setDays(newDays);
+      } else {
+        initDaysFromDates();
+      }
+    } catch (error) {
+      console.error('Failed to fetch plan:', error);
+      initDaysFromDates();
+    }
+  }, [route.params?.planId, initDaysFromDates, setDays]);
+
+  // Initial fetch on mount
   useEffect(() => {
     if (isInitialized.current) return;
-
-    const fetchPlanDetails = async () => {
-      isInitialized.current = true;
-      if (!route.params?.planId) {
-        // Fallback for new plan creation flow (client-side only init)
-        initDaysFromDates();
-        return;
-      }
-
-      try {
-        const token = await AsyncStorage.getItem('accessToken');
-        const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-        const response = await axios.get(
-          resolveApiUrl(`/api/plan/${route.params.planId}`),
-          config,
-        );
-        const { planFrame, placeBlocks, timetables } = response.data;
-
-        if (planFrame?.planName) {
-          setTripName(planFrame.planName);
-        }
-        setPlanMetadata(planFrame);
-
-        if (timetables && timetables.length > 0) {
-          const newDays: Day[] = timetables.map((tt: any, index: number) => {
-            const date = new Date(tt.date);
-
-            const ttId = tt.timetableId ?? tt.timeTableId;
-            const dayPlaces = placeBlocks
-              .filter((pb: any) => (pb.timeTableId ?? pb.timetableId) === ttId)
-              .map((pb: any) => {
-                const parseTime = (time: any) => {
-                  if (typeof time === 'string') return time.substring(0, 5);
-                  if (time && typeof time.hour === 'number') {
-                    return `${String(time.hour).padStart(2, '0')}:${String(
-                      time.minute,
-                    ).padStart(2, '0')}`;
-                  }
-                  return '12:00';
-                };
-
-                const blockCat = (pb as any).blockCategory;
-                const contentTypeIdStr = String(pb.placeContentTypeId || '');
-                const rawCategoryId = (pb.placeCategoryId ?? pb.placeCategory) as number;
-
-                // Resolve normalized categoryId (0:관광지, 1:숙소, 2:식당, 3:직접추가, 4:검색)
-                const normalizedCategoryId = (() => {
-                  if (blockCat === 'ATTRACTION' || contentTypeIdStr === '12' || [0, 12, 14, 15, 28].includes(rawCategoryId)) return 0;
-                  if (blockCat === 'ACCOMMODATION' || contentTypeIdStr === '32' || rawCategoryId === 1 || rawCategoryId === 32) return 1;
-                  if (blockCat === 'RESTAURANT' || contentTypeIdStr === '39' || rawCategoryId === 2 || rawCategoryId === 39) return 2;
-                  if (blockCat === 'FREE' || rawCategoryId === 3) return 3;
-                  if (blockCat === 'SEARCH' || rawCategoryId === 4) return 4;
-                  return [0, 1, 2, 3, 4].includes(rawCategoryId) ? rawCategoryId : 4;
-                })();
-
-                const categoryMapping = (
-                  id: number,
-                ):
-                  | '관광지'
-                  | '숙소'
-                  | '식당'
-                  | '직접 추가'
-                  | '검색'
-                  | '기타' => {
-                  if (id === 0) return '관광지';
-                  if (id === 1) return '숙소';
-                  if (id === 2) return '식당';
-                  if (id === 3) return '직접 추가';
-                  if (id === 4) return '검색';
-                  return '기타';
-                };
-
-                return {
-                  id: pb.blockId?.toString() || pb.placeId,
-                  placeRefId: pb.placeId,
-                  name: pb.placeName,
-                  type: categoryMapping(normalizedCategoryId),
-                  startTime: parseTime(pb.startTime ?? pb.blockStartTime),
-                  endTime: parseTime(pb.endTime ?? pb.blockEndTime),
-                  address: pb.placeAddress,
-                  latitude: pb.yLocation ?? pb.ylocation ?? 0,
-                  longitude: pb.xLocation ?? pb.xlocation ?? 0,
-                  imageUrl: pb.photoUrl || pb.placeLink || pb.placeThumbnailUrl || '',
-                  categoryId: normalizedCategoryId,
-                  contentTypeId: pb.placeContentTypeId || '',
-                  copyrightDivCd: pb.placeCopyrightDivCd || '',
-                };
-              });
-
-            return {
-              timetableId: ttId,
-              date: date,
-              dayNumber: index + 1,
-              places: resolveConflictsAndSort(dayPlaces),
-            };
-          });
-          setDays(newDays);
-        } else {
-          initDaysFromDates();
-        }
-      } catch (error) {
-        console.error('Failed to fetch plan:', error);
-        showAlert({
-          title: '오류',
-          message: '일정 정보를 불러오는데 실패했습니다.',
-        });
-        initDaysFromDates();
-      }
-    };
-
-    const initDaysFromDates = () => {
-      if (!route.params.startDate || !route.params.endDate) return;
-      const start = new Date(route.params.startDate);
-      const end = new Date(route.params.endDate);
-
-      start.setHours(0, 0, 0, 0);
-      end.setHours(0, 0, 0, 0);
-
-      const tripDays: Day[] = [];
-      let currentDate = new Date(start);
-      let dayCounter = 1;
-
-      while (currentDate.getTime() <= end.getTime()) {
-        tripDays.push({
-          date: new Date(currentDate),
-          dayNumber: dayCounter,
-          places: [],
-        });
-
-        currentDate.setDate(currentDate.getDate() + 1);
-        dayCounter++;
-      }
-      setDays(tripDays);
-    };
-
+    isInitialized.current = true;
     fetchPlanDetails();
-  }, [
-    route.params.planId,
-    route.params.startDate,
-    route.params.endDate,
-    setDays,
-  ]);
+  }, [fetchPlanDetails]);
+
+  // Re-sync plan data when WebSocket reconnects (false -> true)
+  useEffect(() => {
+    if (!prevIsConnectedRef.current && isConnected) {
+      console.log('[WebSocket Reconnect] Re-fetching latest plan details for sync...');
+      void fetchPlanDetails();
+    }
+    prevIsConnectedRef.current = isConnected;
+  }, [isConnected, fetchPlanDetails]);
 
   // Note: We can't easily move the render functions for header options here because they return JSX.
   // But we can move the logic that sets the options.
@@ -414,5 +427,6 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     handleAddPlace,
     selectedDay,
     planMetadata,
+    fetchPlanDetails,
   };
 };

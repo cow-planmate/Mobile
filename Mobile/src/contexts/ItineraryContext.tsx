@@ -193,13 +193,25 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
   const handleWebSocketMessage = useCallback(
     (msg: any) => {
-      // msg structure: { type: 'create' | 'update' | ..., target: 'timetableplaceblock' | ..., data: any, eventId?: string }
-      const { type, target, data, eventId } = msg;
+      if (!msg) return;
 
-      if (target === 'timetableplaceblock') {
-        const dataList =
-          data.timeTablePlaceBlockDtos || data.timetableplaceblocks;
-        if (!dataList || !Array.isArray(dataList)) return;
+      // Extract properties supporting both legacy (type, target, data) and backend-v2 (action, entity, timeTablePlaceBlockDtos) STOMP formats
+      const action = msg.action || msg.type;
+      const entity = msg.entity || msg.target;
+      const eventId = msg.eventId;
+
+      if (entity === 'timetableplaceblock') {
+        const rawDataList =
+          msg.timeTablePlaceBlockDtos ||
+          msg.timetableplaceblocks ||
+          (msg.data ? (msg.data.timeTablePlaceBlockDtos || msg.data.timetableplaceblocks || msg.data) : null);
+
+        const dataList = Array.isArray(rawDataList)
+          ? rawDataList
+          : rawDataList
+          ? [rawDataList]
+          : [];
+        if (dataList.length === 0) return;
 
         dataList.forEach((respVO: any) => {
           const timetableId = respVO.timeTableId || respVO.timetableId;
@@ -209,15 +221,23 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
               : null;
 
           setDays(prevDays => {
-            let dayIndex = prevDays.findIndex(
-              d => d.timetableId === timetableId,
-            );
+            let dayIndex = -1;
+
+            if (timetableId !== undefined && timetableId !== null) {
+              dayIndex = prevDays.findIndex(
+                d => String(d.timetableId) === String(timetableId),
+              );
+            }
 
             if (dayIndex === -1 && respVO.date) {
-              const targetDateStr = respVO.date.split('T')[0];
-              dayIndex = prevDays.findIndex(
-                d => d.date.toISOString().split('T')[0] === targetDateStr
-              );
+              const targetDateStr = String(respVO.date).split('T')[0];
+              dayIndex = prevDays.findIndex(d => {
+                const year = d.date.getFullYear();
+                const month = String(d.date.getMonth() + 1).padStart(2, '0');
+                const date = String(d.date.getDate()).padStart(2, '0');
+                const localDateStr = `${year}-${month}-${date}`;
+                return localDateStr === targetDateStr;
+              });
             }
 
             if (dayIndex === -1) return prevDays;
@@ -229,74 +249,69 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
               dayToUpdate.timetableId = timetableId;
             }
 
-            if (type === 'create') {
-              // If we have an eventId (tempId), try to find the placeholder
-              if (eventId) {
-                const tempIndex = dayToUpdate.places.findIndex(
-                  p => p.id === eventId,
-                );
-                if (tempIndex !== -1) {
-                  // Update the placeholder with real ID and potentially server data
-                  const existingPlaces = [...dayToUpdate.places];
+            const targetId = realId || eventId;
 
-                  if (realId) {
-                    existingPlaces[tempIndex] = {
-                      ...existingPlaces[tempIndex],
-                      id: realId,
-                    };
+            if (action === 'create') {
+              const tempIndex = eventId
+                ? dayToUpdate.places.findIndex(p => p.id === eventId)
+                : -1;
 
-                    setLastAddedPlaceId(prev =>
-                      prev === eventId ? realId : prev,
-                    );
-                  }
-                  dayToUpdate.places = existingPlaces;
-                } else {
-                  const parseTime = (time: any) => {
-                    if (typeof time === 'string') return time.substring(0, 5);
-                    if (time && typeof time.hour === 'number') {
-                      return `${String(time.hour).padStart(2, '0')}:${String(
-                        time.minute,
-                      ).padStart(2, '0')}`;
-                    }
-                    return '12:00';
+              if (tempIndex !== -1) {
+                const existingPlaces = [...dayToUpdate.places];
+                if (realId) {
+                  existingPlaces[tempIndex] = {
+                    ...existingPlaces[tempIndex],
+                    id: realId,
                   };
-
-                  if (
-                    realId &&
-                    !dayToUpdate.places.some(p => p.id === realId)
-                  ) {
-                    const rawCategoryId = blockCategoryToCategoryId(
-                      respVO.blockCategory,
-                      respVO.placeCategoryId ?? respVO.placeCategory,
-                    );
-                    const newPlace: Place = {
-                      id: realId,
-                      placeRefId: respVO.placeId,
-                      name: respVO.placeName,
-                      type: categoryMapping(rawCategoryId),
-                      startTime: parseTime(
-                        respVO.startTime ?? respVO.blockStartTime,
-                      ),
-                      endTime: parseTime(respVO.endTime ?? respVO.blockEndTime),
-                      address: respVO.placeAddress,
-                      latitude: respVO.latitude ?? respVO.yLocation ?? respVO.ylocation ?? 0,
-                      longitude: respVO.longitude ?? respVO.xLocation ?? respVO.xlocation ?? 0,
-                      imageUrl: respVO.photoUrl || respVO.placeThumbnailUrl || respVO.placeLink || '',
-                      categoryId: normalizeCategoryId(rawCategoryId),
-                      contentTypeId: respVO.placeContentTypeId || '',
-                      copyrightDivCd: respVO.placeCopyrightDivCd || '',
-                    };
-                    dayToUpdate.places = resolveConflictsAndSort([
-                      ...dayToUpdate.places,
-                      newPlace,
-                    ]);
+                  setLastAddedPlaceId(prev => (prev === eventId ? realId : prev));
+                }
+                dayToUpdate.places = existingPlaces;
+              } else {
+                const parseTime = (time: any) => {
+                  if (typeof time === 'string') return time.substring(0, 5);
+                  if (time && typeof time.hour === 'number') {
+                    return `${String(time.hour).padStart(2, '0')}:${String(
+                      time.minute,
+                    ).padStart(2, '0')}`;
                   }
+                  return '12:00';
+                };
+
+                const placeIdToUse = targetId || `place_${Date.now()}_${Math.random()}`;
+
+                if (!dayToUpdate.places.some(p => p.id === placeIdToUse || (realId && p.id === realId))) {
+                  const rawCategoryId = blockCategoryToCategoryId(
+                    respVO.blockCategory,
+                    respVO.placeCategoryId ?? respVO.placeCategory,
+                  );
+                  const newPlace: Place = {
+                    id: placeIdToUse,
+                    placeRefId: respVO.placeId || '',
+                    name: respVO.placeName || '장소',
+                    type: categoryMapping(rawCategoryId),
+                    startTime: parseTime(
+                      respVO.startTime ?? respVO.blockStartTime,
+                    ),
+                    endTime: parseTime(respVO.endTime ?? respVO.blockEndTime),
+                    address: respVO.placeAddress || '',
+                    latitude: respVO.latitude ?? respVO.yLocation ?? respVO.ylocation ?? 0,
+                    longitude: respVO.longitude ?? respVO.xLocation ?? respVO.xlocation ?? 0,
+                    imageUrl: respVO.photoUrl || respVO.placeThumbnailUrl || respVO.placeLink || '',
+                    categoryId: normalizeCategoryId(rawCategoryId),
+                    contentTypeId: respVO.placeContentTypeId || '',
+                    copyrightDivCd: respVO.placeCopyrightDivCd || '',
+                  };
+                  dayToUpdate.places = resolveConflictsAndSort([
+                    ...dayToUpdate.places,
+                    newPlace,
+                  ]);
                 }
               }
-            } else if (type === 'update') {
-              if (realId) {
+            } else if (action === 'update') {
+              const lookupId = realId || eventId;
+              if (lookupId) {
                 const placeIndex = dayToUpdate.places.findIndex(
-                  p => p.id === realId,
+                  p => p.id === lookupId,
                 );
                 if (placeIndex !== -1) {
                   const parseTime = (time: any) => {
@@ -329,14 +344,15 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                   };
                   dayToUpdate.places = resolveConflictsAndSort(
                     existingPlaces,
-                    realId,
+                    lookupId,
                   );
                 }
               }
-            } else if (type === 'delete') {
-              if (realId) {
+            } else if (action === 'delete') {
+              const lookupId = realId || eventId;
+              if (lookupId) {
                 dayToUpdate.places = dayToUpdate.places.filter(
-                  p => p.id !== realId,
+                  p => p.id !== lookupId,
                 );
               }
             }

@@ -87,6 +87,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     handleAddPlace,
     selectedDay,
     planMetadata,
+    fetchPlanDetails,
   } = useItineraryEditor(route, navigation);
 
   const [activeTab, setActiveTab] = useState<'타임라인' | '장소추가'>('타임라인');
@@ -340,6 +341,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
     const unsubscribeFocus = navigation.addListener('focus', () => {
       connect(planId);
+      void fetchPlanDetails();
     });
 
     const unsubscribeBlur = navigation.addListener('blur', () => {
@@ -353,6 +355,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active') {
         connect(planId);
+        void fetchPlanDetails();
       } else if (nextAppState === 'background' || nextAppState === 'inactive') {
         disconnect();
       }
@@ -367,7 +370,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       appStateSubscription.remove();
       disconnect();
     };
-  }, [planId, connect, disconnect, navigation]);
+  }, [planId, connect, disconnect, navigation, fetchPlanDetails]);
+
+  const fetchedDestIdRef = useRef<number | null>(null);
 
   // Fetch place recommendations via PlacesContext
   useEffect(() => {
@@ -376,7 +381,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       route.params.travelId ||
       (planMetadata as any)?.destinationId ||
       planMetadata?.travelId;
-    if (destId) {
+
+    if (destId && fetchedDestIdRef.current !== destId) {
+      fetchedDestIdRef.current = destId;
       if (planId) {
         fetchAllRecommendations(destId);
       } else {
@@ -385,11 +392,13 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     }
     return () => {
       resetPlaces();
+      fetchedDestIdRef.current = null;
     };
   }, [
     route.params.destinationId,
     route.params.travelId,
-    planMetadata,
+    (planMetadata as any)?.destinationId,
+    planMetadata?.travelId,
     planId,
     fetchAllRecommendations,
     fetchAllRecommendationsNoAuth,
@@ -698,30 +707,12 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       });
     });
 
-    // If plan already exists (editing from MySchedule or pre-created from Home), update plan and navigate to view
+    // If plan already exists (editing from MySchedule or pre-created from Home), update title for owner and navigate to view
     if (route.params.planId) {
       if (isSaving) return;
       setIsSaving(true);
 
       try {
-        await createFullPlanMutation.mutateAsync({
-          planFrame: {
-            planId: route.params.planId,
-            planName: tripName || '나의 일정',
-            departure: route.params.departure || 'SEOUL',
-            destinationId: route.params.travelId || 1,
-            travelId: route.params.travelId || 1,
-            transportationType:
-              route.params.transport === '자동차' ? 'PRIVATE' : 'PUBLIC',
-            transportationCategoryId:
-              route.params.transport === '자동차' ? 1 : 0,
-            adultCount: route.params.adults || 1,
-            childCount: route.params.children || 0,
-          },
-          timetables: timetableVOs,
-          timetablePlaceBlocks: allBlocks,
-        });
-
         const ownerIdLower = String(planMetadata?.user?.userId || '').toLowerCase();
         const currentUserIdLower = String(currentUser?.userId || '').toLowerCase();
         const isOwner = !ownerIdLower || ownerIdLower === currentUserIdLower;
@@ -737,7 +728,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         }
       } catch (err: any) {
         if (err.response?.status !== 403) {
-          console.error('Failed to sync plan details on complete:', err);
+          console.error('Failed to update plan title on complete:', err);
         }
       }
 
