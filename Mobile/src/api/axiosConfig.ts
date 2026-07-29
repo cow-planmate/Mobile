@@ -41,11 +41,8 @@ axios.interceptors.request.use(
           : config.url;
 
       console.log(
-        `🚀 API Request: ${config.method?.toUpperCase()} ${fullUrl}`,
-        {
-          headers: config.headers,
-          data: JSON.stringify(config.data),
-        },
+        `\x1b[36m[API REQ]\x1b[0m ${config.method?.toUpperCase()} ${fullUrl}`,
+        config.data ? { data: config.data } : '',
       );
     }
 
@@ -53,7 +50,7 @@ axios.interceptors.request.use(
   },
   (error: AxiosError) => {
     if (__DEV__) {
-      console.error('❌ Request Error:', error);
+      console.error('\x1b[31m[API REQ ERR]\x1b[0m', error);
     }
     return Promise.reject(error);
   },
@@ -78,24 +75,21 @@ const processQueue = (error: any, token: string | null = null) => {
 if (axios && axios.interceptors && axios.interceptors.response) {
 axios.interceptors.response.use(
   response => {
-    // 개발 환경에서 응답 로깅
     if (__DEV__) {
-      console.log('✅ API Response:', {
-        url: response.config.url,
-        status: response.status,
-        data: response.data,
-      });
+      console.log(`\x1b[32m[API RES]\x1b[0m ${response.status} ${response.config.url}`);
     }
     return response;
   },
   async (error: AxiosError) => {
     if (__DEV__) {
-      console.error('❌ API Error:', {
-        url: error.config?.url,
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message,
-      });
+      const resData = error.response?.data as any;
+      const statusCode = error.response?.status || 'FAIL';
+      const errCode = resData?.code || 'UNKNOWN';
+      const errMsg = resData?.message || error.message;
+
+      console.error(
+        `\x1b[31m[API ERR]\x1b[0m ${statusCode} [${errCode}] ${errMsg} (${error.config?.url})`,
+      );
     }
 
     const originalRequest = error.config as InternalAxiosRequestConfig & {
