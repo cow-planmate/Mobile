@@ -87,6 +87,11 @@ const formatDateLocal = (date: Date): string => {
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 
+/**
+ * 완공된 여행 일정표 조회 및 날씨/경로 요약 확인 화면 컨테이너 컴포넌트
+ *
+ * @param props route 라우트 파라미터 및 navigation 프로퍼티
+ */
 export default function ItineraryViewScreen({ route, navigation }: Props) {
   const { showAlert } = useAlert();
   const {

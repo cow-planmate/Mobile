@@ -25,6 +25,9 @@ import {
 } from '../../../hooks/useFcmNotifications';
 import { MENU_OPTIONS, SHARED_MENU_OPTIONS } from './MyScheduleScreen.view';
 
+/**
+ * 내 일정 목록 및 협업 일정 리스트 관리 화면 컨테이너 컴포넌트
+ */
 export default function MyScheduleScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<AppStackParamList>>();

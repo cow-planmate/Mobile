@@ -37,6 +37,9 @@ const REGION_COORDINATES: Record<string, { lat: number; lng: number; name: strin
   '전주': { lat: 35.8242, lng: 127.1480, name: '전주' },
 };
 
+/**
+ * 여행 피드 피드 목록 및 지역 검색/지도 탐색 화면 컨테이너 컴포넌트
+ */
 export default function TravelFeedScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { showAlert } = useAlert();

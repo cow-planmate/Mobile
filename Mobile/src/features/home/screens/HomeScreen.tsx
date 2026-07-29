@@ -29,6 +29,11 @@ const parseDestinationName = (destination?: string) => {
   return parts.length <= 1 ? normalized : parts.slice(1).join(' ');
 };
 
+/**
+ * 메인 대시보드 홈 화면 컨테이너 컴포넌트
+ *
+ * @param props navigation 프로퍼티
+ */
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const user = useAuthStore((state) => state.user);
   const { showAlert } = useAlert();

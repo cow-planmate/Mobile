@@ -1,4 +1,2 @@
-// Export public API for places feature
+// 장소 관리 기능 모듈 공개 API 내보내기
 export { default as MapScreen } from './screens/MapScreen';
-
-

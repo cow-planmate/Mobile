@@ -59,6 +59,9 @@ const MOCK_CHATS: ChatRoom[] = [
   },
 ];
 
+/**
+ * 소셜 친구 목록 및 채팅방 리스트 화면 컨테이너 컴포넌트
+ */
 export default function SocialScreen() {
   const navigation = useNavigation();
   const { showAlert } = useAlert();

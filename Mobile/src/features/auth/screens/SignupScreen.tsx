@@ -13,12 +13,18 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import Toast from 'react-native-toast-message';
 
+/**
+ * 타이머 남은 시간을 'M:SS' 포맷으로 변환하는 헬퍼 함수
+ */
 const formatTime = (seconds: number) => {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
   return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 };
 
+/**
+ * 이메일 인증, 비밀번호 입력, 닉네임 검증 및 회원가입 단계별 폼 컨테이너 컴포넌트
+ */
 export default function SignupScreen() {
   const navigation = useNavigation<any>();
   const login = useAuthStore((state) => state.login);

@@ -6,6 +6,9 @@ import ThemeSelector, { ThemeSelectorResult } from '../components/common/ThemeSe
 import AuthStack from './AuthStack';
 import AppStack from './AppStack';
 
+/**
+ * 최상위 루트 네비게이션 스택 타입 정의
+ */
 export type RootStackParamList = {
   Auth: undefined;
   App: undefined;
@@ -13,6 +16,9 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+/**
+ * 인증 상태(로그인 여부)에 따라 인증 스택과 메인 앱 스택을 분기하는 최상위 네비게이터
+ */
 export default function AppNavigator() {
   const user = useAuthStore((state) => state.user);
   const needsThemeSelection = useAuthStore((state) => state.needsThemeSelection);

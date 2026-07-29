@@ -11,6 +11,9 @@ import { MINUTE_HEIGHT } from '../features/itinerary/screens/ItineraryEditorScre
 import { useAlert } from '../contexts/AlertContext';
 import Toast from 'react-native-toast-message';
 
+/**
+ * 여행지 명칭에서 시/도 단위 접두사를 제거하고 도시명을 추출합니다.
+ */
 const parseDestinationName = (destination?: string) => {
   const normalized = destination?.trim() || '';
   if (!normalized) return '';
@@ -18,6 +21,12 @@ const parseDestinationName = (destination?: string) => {
   return parts.length <= 1 ? normalized : parts.slice(1).join(' ');
 };
 
+/**
+ * 일정 편집 화면의 상태 관리, 실시간 WebSocket동기화 및 장소 편집 로직을 제공하는 커스텀 훅
+ *
+ * @param route 네비게이션 라우트 파라미터
+ * @param _navigation 네비게이션 객체
+ */
 export const useItineraryEditor = (route: any, _navigation: any) => {
   const {
     sendMessage,
@@ -69,7 +78,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
       const entity = data.entity || msg.target;
       const action = data.action || msg.type;
 
-      // Handle real-time timetableplaceblock changes from backend
+      // 백엔드로부터 실시간 타임테이블 장소 블록 변경 이벤트 수신
       if (entity === 'timetableplaceblock' && data.timeTablePlaceBlockDtos) {
         const blocks = data.timeTablePlaceBlockDtos;
         if (Array.isArray(blocks) && blocks.length > 0) {
@@ -243,7 +252,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
               const contentTypeIdStr = String(pb.placeContentTypeId || '');
               const rawCategoryId = (pb.placeCategoryId ?? pb.placeCategory) as number;
 
-              // Resolve normalized categoryId (0:관광지, 1:숙소, 2:식당, 3:직접추가, 4:검색)
+              // 정규화된 카테고리 ID 분류 (0:관광지, 1:숙소, 2:식당, 3:직접추가, 4:검색)
               const normalizedCategoryId = (() => {
                 if (blockCat === 'ATTRACTION' || contentTypeIdStr === '12' || [0, 12, 14, 15, 28].includes(rawCategoryId)) return 0;
                 if (blockCat === 'ACCOMMODATION' || contentTypeIdStr === '32' || rawCategoryId === 1 || rawCategoryId === 32) return 1;
@@ -301,38 +310,26 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
         initDaysFromDates();
       }
     } catch (error) {
-      console.error('Failed to fetch plan:', error);
+      console.error('일정 정보 조회 실패:', error);
       initDaysFromDates();
     }
   }, [route.params?.planId, initDaysFromDates, setDays]);
 
-  // Initial fetch on mount
+  // 마운트 시 초기 일정 조회
   useEffect(() => {
     if (isInitialized.current) return;
     isInitialized.current = true;
     fetchPlanDetails();
   }, [fetchPlanDetails]);
 
-  // Re-sync plan data when WebSocket reconnects (false -> true)
+  // 웹소켓 재연결 시 최신 일정 동기화를 위해 다시 조회
   useEffect(() => {
     if (!prevIsConnectedRef.current && isConnected) {
-      console.log('[WebSocket Reconnect] Re-fetching latest plan details for sync...');
+      console.log('[웹소켓 재연결] 최신 일정 정보를 다시 조회하여 동기화합니다...');
       void fetchPlanDetails();
     }
     prevIsConnectedRef.current = isConnected;
   }, [isConnected, fetchPlanDetails]);
-
-  // Note: We can't easily move the render functions for header options here because they return JSX.
-  // But we can move the logic that sets the options.
-  // However, the header options depend on state and setters which are inside the hook.
-  // So we can keep the useLayoutEffect here, but we need to return the render functions or just set options here.
-  // Setting options here is fine. But we need to import React to return JSX if we want to define the components here.
-  // Or we can just pass the state to the component and let the component handle the header.
-  // But the original code had useLayoutEffect inside the component.
-  // Let's keep useLayoutEffect here but we need to handle the JSX.
-  // Since this is a hook, returning JSX is not standard but we can set navigation options.
-  // But we need React.createElement or similar if we are in a .ts file, or make it .tsx.
-  // I'll make this file .tsx to support JSX in navigation options.
 
   const selectedDay = days[selectedDayIndex];
 
@@ -350,13 +347,14 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
         const minHour = Math.floor(timeToMinutes(dayStartTimeStr) / 60);
         const offsetMinutes = minHour * 60;
         
-        // Calculate correct relative Y offset by subtracting timeline start offset
+        // 타임라인 시작 위치 오프셋을 차감하여 적절한 상대 Y 위치로 스크롤
         const yOffset = Math.max(0, (timeToMinutes(newPlace.startTime) - offsetMinutes) * MINUTE_HEIGHT);
         timelineScrollRef.current.scrollTo({ y: yOffset, animated: true });
         setLastAddedPlaceId(null);
       }
     }
   }, [lastAddedPlaceId, selectedDay, setLastAddedPlaceId]);
+
 
   const handleEditTime = useCallback(
     (placeId: string, type: 'startTime' | 'endTime', time: string) => {

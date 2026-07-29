@@ -57,6 +57,11 @@ const formatDateLocal = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+/**
+ * 일정표 타임라인 편집, 장소 배치/수정, 실시간 소켓 동기화 화면 컨테이너 컴포넌트
+ *
+ * @param props route 라우트 파라미터 및 navigation 프로퍼티
+ */
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const { showAlert } = useAlert();
   const currentUser = useAuthStore(state => state.user);
