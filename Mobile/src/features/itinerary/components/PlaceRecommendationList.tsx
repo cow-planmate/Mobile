@@ -321,17 +321,18 @@ export default function PlaceRecommendationList({
     setPetFriendly(false);
   }, [setPetFriendly]);
 
-  // ─── Pull-to-refresh ───
+  // ─── 당겨서 새로고침 ───
   const handleRefresh = useCallback(async () => {
     const destId = travelId || planId;
     if (!destId || isRefreshing) return;
     setIsRefreshing(true);
     try {
-      await fetchAllRecommendations(Number(destId));
+      await fetchAllRecommendations(Number(destId), true);
     } finally {
       setIsRefreshing(false);
     }
   }, [planId, travelId, isRefreshing, fetchAllRecommendations]);
+
 
   // ─── Debounced search ───
   const handleSearchSubmit = useCallback(() => {

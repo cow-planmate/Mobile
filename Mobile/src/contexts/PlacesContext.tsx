@@ -4,8 +4,10 @@ import React, {
   useContext,
   useCallback,
   useMemo,
+  useRef,
   PropsWithChildren,
 } from 'react';
+
 import {
   PlaceVO,
   fetchTourPlaces,
@@ -39,26 +41,28 @@ export interface PlacesState {
 }
 
 interface PlacesContextType extends PlacesState {
-  /** Fetch all recommended places for a plan (tour, lodging, restaurant) */
-  fetchAllRecommendations: (destinationId: number) => Promise<void>;
-  /** Fetch all recommended places without auth */
+  /** 일정 추천 장소(관광지, 숙소, 식당) 전체 조회 (force: true 시 강제 갱신) */
+  fetchAllRecommendations: (destinationId: number, force?: boolean) => Promise<void>;
+  /** 비인증 추천 장소 전체 조회 */
   fetchAllRecommendationsNoAuth: (
     destinationId: number,
+    force?: boolean,
   ) => Promise<void>;
-  /** Search places */
+  /** 키워드 장소 검색 */
   doSearchPlaces: (
     planIdOrNull: string | null,
     query: string,
   ) => Promise<void>;
-  /** Load more places for a category using pagination tokens */
+  /** 장소 카테고리별 다음 페이지 추가 조회 */
   loadMorePlaces: (
     field: 'tour' | 'lodging' | 'restaurant' | 'search',
   ) => Promise<void>;
-  /** Reset all places */
+  /** 전체 장소 상태 초기화 */
   resetPlaces: () => void;
-  /** Set pet friendly filtering state */
+  /** 반려동물 동반 필터링 상태 설정 */
   setPetFriendly: (val: boolean) => void;
 }
+
 
 const PlacesContext = createContext<PlacesContextType | undefined>(undefined);
 
@@ -80,81 +84,110 @@ export function PlacesProvider({children}: PropsWithChildren) {
   const [isLoading, setIsLoading] = useState(false);
   const [isPetFriendly, setPetFriendly] = useState(false);
 
-  const fetchAllRecommendations = useCallback(async (destinationId: number) => {
-    setIsLoading(true);
-    if (destinationId === 123) {
-      setTour([
-        {
-          placeId: 'tour-1',
-          name: '협재 해수욕장',
-          categoryId: 0,
-          formatted_address: '제주특별자치도 제주시 한림읍 협재리 2497-1',
-          rating: 4.6,
-          photoUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200',
-          yLocation: 33.3940,
-          xLocation: 126.2397,
-        },
-        {
-          placeId: 'tour-2',
-          name: '한라산 국립공원',
-          categoryId: 0,
-          formatted_address: '제주특별자치도 제주시 해안동',
-          rating: 4.8,
-          photoUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200',
-          yLocation: 33.3617,
-          xLocation: 126.5292,
-        },
-      ]);
-      setLodging([
-        {
-          placeId: 'lodging-1',
-          name: '제주 신라호텔',
-          categoryId: 1,
-          formatted_address: '제주특별자치도 서귀포시 중문관광로72번길 75',
-          rating: 4.7,
-          photoUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200',
-          yLocation: 33.2475,
-          xLocation: 126.4082,
-        },
-      ]);
-      setRestaurant([
-        {
-          placeId: 'restaurant-1',
-          name: '오는정김밥',
-          categoryId: 2,
-          formatted_address: '제주특별자치도 서귀포시 동문동로 2',
-          rating: 4.3,
-          photoUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=200',
-          yLocation: 33.2505,
-          xLocation: 126.5684,
-        },
-      ]);
-      setIsLoading(false);
-      return;
-    }
+  const lastFetchedDestRef = useRef<{
+    destinationId: number | null;
+    isFetching: boolean;
+  }>({ destinationId: null, isFetching: false });
 
-    try {
-      const [tourData, lodgingData, restaurantData] = await Promise.all([
-        fetchTourPlaces(destinationId),
-        fetchLodgingPlaces(destinationId),
-        fetchRestaurantPlaces(destinationId),
-      ]);
+  const fetchAllRecommendations = useCallback(
+    async (destinationId: number, force: boolean = false) => {
+      // 동일한 destinationId에 대한 중복 및 동시 조회 요청 방지 가드
+      if (
+        !force &&
+        (lastFetchedDestRef.current.isFetching ||
+          lastFetchedDestRef.current.destinationId === destinationId)
+      ) {
+        return;
+      }
 
-      setTour(tourData.places || []);
-      setTourNext([]);
-      setLodging(lodgingData.places || []);
-      setLodgingNext([]);
-      setRestaurant(restaurantData.places || []);
-      setRestaurantNext([]);
-    } catch (err) {
-      console.error('Failed to fetch recommendations:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      lastFetchedDestRef.current = { destinationId, isFetching: true };
+      setIsLoading(true);
+      if (destinationId === 123) {
+        setTour([
+          {
+            placeId: 'tour-1',
+            name: '협재 해수욕장',
+            categoryId: 0,
+            formatted_address: '제주특별자치도 제주시 한림읍 협재리 2497-1',
+            rating: 4.6,
+            photoUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200',
+            yLocation: 33.3940,
+            xLocation: 126.2397,
+          },
+          {
+            placeId: 'tour-2',
+            name: '한라산 국립공원',
+            categoryId: 0,
+            formatted_address: '제주특별자치도 제주시 해안동',
+            rating: 4.8,
+            photoUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200',
+            yLocation: 33.3617,
+            xLocation: 126.5292,
+          },
+        ]);
+        setLodging([
+          {
+            placeId: 'lodging-1',
+            name: '제주 신라호텔',
+            categoryId: 1,
+            formatted_address: '제주특별자치도 서귀포시 중문관광로72번길 75',
+            rating: 4.7,
+            photoUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200',
+            yLocation: 33.2475,
+            xLocation: 126.4082,
+          },
+        ]);
+        setRestaurant([
+          {
+            placeId: 'restaurant-1',
+            name: '오는정김밥',
+            categoryId: 2,
+            formatted_address: '제주특별자치도 서귀포시 동문동로 2',
+            rating: 4.3,
+            photoUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=200',
+            yLocation: 33.2505,
+            xLocation: 126.5684,
+          },
+        ]);
+        lastFetchedDestRef.current.isFetching = false;
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const [tourData, lodgingData, restaurantData] = await Promise.all([
+          fetchTourPlaces(destinationId),
+          fetchLodgingPlaces(destinationId),
+          fetchRestaurantPlaces(destinationId),
+        ]);
+
+        setTour(tourData.places || []);
+        setTourNext([]);
+        setLodging(lodgingData.places || []);
+        setLodgingNext([]);
+        setRestaurant(restaurantData.places || []);
+        setRestaurantNext([]);
+      } catch (err) {
+        console.error('추천 장소 조회 실패:', err);
+      } finally {
+        lastFetchedDestRef.current.isFetching = false;
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
 
   const fetchAllRecommendationsNoAuth = useCallback(
-    async (destinationId: number) => {
+    async (destinationId: number, force: boolean = false) => {
+      if (
+        !force &&
+        (lastFetchedDestRef.current.isFetching ||
+          lastFetchedDestRef.current.destinationId === destinationId)
+      ) {
+        return;
+      }
+
+      lastFetchedDestRef.current = { destinationId, isFetching: true };
       setIsLoading(true);
       try {
         const [tourData, lodgingData, restaurantData] = await Promise.all([
@@ -170,13 +203,15 @@ export function PlacesProvider({children}: PropsWithChildren) {
         setRestaurant(restaurantData.places || []);
         setRestaurantNext([]);
       } catch (err) {
-        console.error('Failed to fetch recommendations (no auth):', err);
+        console.error('추천 장소 조회 실패 (비인증):', err);
       } finally {
+        lastFetchedDestRef.current.isFetching = false;
         setIsLoading(false);
       }
     },
     [],
   );
+
 
   const doSearchPlaces = useCallback(
     async (planIdOrNull: string | null, query: string) => {
