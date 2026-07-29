@@ -19,8 +19,8 @@ import {
 } from 'lucide-react-native';
 
 import { styles, COLORS } from './SearchLocationModal.styles';
-import { TARGET_REGIONS, SUB_REGIONS } from '../../constants/regions';
-import { isRegionMatch, getRegionBase } from '../../utils/regionMatcher';
+import { DESTINATIONS_28, REGION_GROUPS } from '../../constants/regions';
+import { isRegionMatch } from '../../utils/regionMatcher';
 import { resolveApiUrl } from '../../utils/apiUrl';
 
 interface DestinationDto {
@@ -31,6 +31,7 @@ interface DestinationDto {
 interface TravelVO {
   travelId: number;
   travelName: string;
+  region?: string;
   travelCategoryId?: number;
   travelCategoryName?: string;
   travelImg?: string;
@@ -47,21 +48,17 @@ export default function SearchLocationModal({
   visible,
   onClose,
   onSelect,
+  currentValue,
 }: Props) {
-  const [destinationList, setDestinationList] = useState<TravelVO[]>([]);
-  const [rawDestinations, setRawDestinations] = useState<TravelVO[]>([]);
+  const [destinations, setDestinations] = useState<TravelVO[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<string>('전체');
+  const [selectedDestination, setSelectedDestination] = useState<TravelVO | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedParentRegion, setSelectedParentRegion] = useState<
-    string | null
-  >(null);
-  const [selectedSubRegion, setSelectedSubRegion] = useState<string | null>(
-    null,
-  );
 
   useEffect(() => {
     if (visible) {
-      setSelectedParentRegion(null);
-      setSelectedSubRegion(null);
+      setSelectedGroup('전체');
+      setSelectedDestination(null);
       fetchDestinations();
     }
   }, [visible]);
@@ -77,117 +74,84 @@ export default function SearchLocationModal({
         console.log('Fetched Destinations:', rawList);
       }
 
-      const serverData: TravelVO[] = rawList.map((item: any) => ({
-        travelId: item.destinationId ?? item.travelId ?? -1,
-        travelName: item.destinationName ?? item.travelName ?? '',
-        travelCategoryId: item.travelCategoryId ?? 0,
-        travelCategoryName: item.travelCategoryName ?? '',
-        travelImg: item.travelImg,
-      }));
-
-      setRawDestinations(serverData);
-
-      // Filter parent regions to only those that match or whose sub-regions match backend destinations
-      const formattedList = TARGET_REGIONS.filter(parentName => {
-        const isDirectMatch = serverData.some(dest => isRegionMatch(dest.travelName, parentName));
-        if (isDirectMatch) return true;
-        const subRegions = SUB_REGIONS[parentName] || [];
-        return subRegions.some(sub => serverData.some(dest => isRegionMatch(dest.travelName, sub)));
-      }).map(parentName => {
-        const matched = serverData.find(item => isRegionMatch(item.travelName, parentName));
+      let serverData: TravelVO[] = rawList.map((item: any) => {
+        const dId = item.destinationId ?? item.travelId ?? -1;
+        const dName = item.destinationName ?? item.travelName ?? '';
+        const fallbackObj = DESTINATIONS_28.find(d => isRegionMatch(d.name, dName));
         return {
-          travelId: matched ? matched.travelId : -1,
-          travelName: parentName,
-          travelImg: matched?.travelImg,
-          travelCategoryId: matched ? matched.travelCategoryId : 0,
-          travelCategoryName: matched ? matched.travelCategoryName : '',
+          travelId: dId,
+          travelName: dName,
+          region: fallbackObj?.region || '기타',
+          travelCategoryId: item.travelCategoryId ?? 0,
+          travelCategoryName: item.travelCategoryName ?? '',
+          travelImg: item.travelImg,
         };
       });
 
-      setDestinationList(formattedList);
+      // If server data is empty or partial, fallback to 28 full list
+      if (serverData.length === 0) {
+        serverData = DESTINATIONS_28.map(d => ({
+          travelId: d.id,
+          travelName: d.name,
+          region: d.region,
+        }));
+      }
+
+      setDestinations(serverData);
+
+      // Pre-select based on currentValue if provided
+      if (currentValue) {
+        const initialMatch = serverData.find(d => isRegionMatch(d.travelName, currentValue));
+        if (initialMatch) {
+          setSelectedDestination(initialMatch);
+        }
+      }
     } catch (error) {
       console.error('Failed to fetch destinations:', error);
 
-      const fallbackList = TARGET_REGIONS.map((name, index) => ({
-        travelId: index,
-        travelName: name,
-        travelCategoryId: 0,
-        travelCategoryName: '',
+      const fallbackList: TravelVO[] = DESTINATIONS_28.map(d => ({
+        travelId: d.id,
+        travelName: d.name,
+        region: d.region,
       }));
-      setDestinationList(fallbackList);
+      setDestinations(fallbackList);
+
+      if (currentValue) {
+        const initialMatch = fallbackList.find(d => isRegionMatch(d.travelName, currentValue));
+        if (initialMatch) {
+          setSelectedDestination(initialMatch);
+        }
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleParentRegionClick = (regionName: string) => {
-    if (selectedParentRegion === regionName) {
-      setSelectedParentRegion(null);
-      setSelectedSubRegion(null);
-    } else {
-      setSelectedParentRegion(regionName);
-      setSelectedSubRegion(null);
-    }
-  };
-
-  const handleSubRegionSelect = (parentRegion: string, subRegion: string) => {
-    setSelectedSubRegion(subRegion);
-  };
-
-  /** Helper to get sub regions supported by current rawDestinations */
-  const getSupportedSubRegions = (parentRegion: string): string[] => {
-    const rawSubs = SUB_REGIONS[parentRegion] || [];
-    if (rawDestinations.length === 0) return rawSubs;
-
-    // Check if parent region itself is a direct single-city destination (e.g. 서울, 부산, 대구, 인천, 광주, 대전)
-    const isDirectParentDest = rawDestinations.some(d => {
-      const baseD = getRegionBase(d.travelName);
-      const baseP = getRegionBase(parentRegion);
-      return baseD.length > 0 && baseD === baseP;
-    });
-
-    if (isDirectParentDest) {
-      return rawSubs;
-    }
-
-    // For province categories (도 단위), strictly filter to only sub-regions matching backend destinations
-    return rawSubs.filter(sub =>
-      rawDestinations.some(d => isRegionMatch(d.travelName, sub)),
-    );
+  const handleDestinationSelect = (item: TravelVO) => {
+    setSelectedDestination(item);
   };
 
   const handleConfirmDestination = () => {
-    if (!selectedParentRegion || !selectedSubRegion) return;
-
-    const fullLocation = `${selectedParentRegion} ${selectedSubRegion}`;
-
-    // 1. First, check if any travel matches the parent region (e.g. "서울특별시" -> "서울")
-    let matched = rawDestinations.find(d => isRegionMatch(d.travelName, selectedParentRegion));
-
-    // 2. Next, check if any travel matches the sub-region (e.g. "공주시" -> "공주", "가평군" -> "가평")
-    if (!matched) {
-      matched = rawDestinations.find(d => isRegionMatch(d.travelName, selectedSubRegion));
-    }
-
-    // 3. Fallback to check the full location
-    if (!matched) {
-      matched = rawDestinations.find(d => isRegionMatch(d.travelName, fullLocation));
-    }
-
-    const travelId = matched ? matched.travelId : -1;
+    if (!selectedDestination) return;
 
     if (__DEV__) {
       console.log(
-        `Selection: ${fullLocation}, Mapped ID: ${travelId}, Matched Name: ${matched?.travelName}`,
+        `Selection: ${selectedDestination.travelName}, Mapped ID: ${selectedDestination.travelId}`,
       );
     }
 
-    onSelect(fullLocation, travelId);
+    onSelect(selectedDestination.travelName, selectedDestination.travelId);
     onClose();
   };
 
+  const filteredDestinations = selectedGroup === '전체'
+    ? destinations
+    : destinations.filter(d => d.region === selectedGroup);
+
   const title = '여행지 선택';
-  const subtitle = '여행할 지역을 선택해주세요';
+  const subtitle = '여행할 지역을 선택해주세요 (28개 도시)';
+
+  const isConfirmDisabled = !selectedDestination;
 
   const renderDestinationContent = () => (
     <View style={styles.destinationWrapper}>
@@ -203,20 +167,52 @@ export default function SearchLocationModal({
           </View>
         ) : (
           <>
-            {/* 상위 지역 칩 */}
+            {/* 권역 선택 카테고리 칩 */}
             <View style={styles.chipSectionContainer}>
               <View style={styles.sectionHeader}>
                 <Map size={16} color={COLORS.primary} strokeWidth={1.5} />
-                <Text style={styles.sectionTitle}>지역 선택</Text>
+                <Text style={styles.sectionTitle}>권역 필터</Text>
               </View>
               <View style={styles.chipContainer}>
-                {destinationList.map(item => {
-                  const isSelected = selectedParentRegion === item.travelName;
+                {REGION_GROUPS.map(group => {
+                  const isSelected = selectedGroup === group;
                   return (
                     <TouchableOpacity
-                      key={item.travelName}
+                      key={group}
                       style={[styles.chip, isSelected && styles.chipSelected]}
-                      onPress={() => handleParentRegionClick(item.travelName)}
+                      onPress={() => setSelectedGroup(group)}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.chipText,
+                          isSelected && styles.chipTextSelected,
+                        ]}
+                      >
+                        {group}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* 28개 여행지 목록 칩 */}
+            <View style={styles.chipSectionContainer}>
+              <View style={styles.sectionHeader}>
+                <MapPin size={16} color={COLORS.primary} strokeWidth={1.5} />
+                <Text style={styles.sectionTitle}>
+                  여행지 목록 ({filteredDestinations.length}개)
+                </Text>
+              </View>
+              <View style={styles.chipContainer}>
+                {filteredDestinations.map(item => {
+                  const isSelected = selectedDestination?.travelId === item.travelId;
+                  return (
+                    <TouchableOpacity
+                      key={item.travelId > 0 ? item.travelId : item.travelName}
+                      style={[styles.chip, isSelected && styles.chipSelected]}
+                      onPress={() => handleDestinationSelect(item)}
                       activeOpacity={0.7}
                     >
                       <Text
@@ -232,42 +228,6 @@ export default function SearchLocationModal({
                 })}
               </View>
             </View>
-
-            {/* 하위 지역 칩 */}
-            {selectedParentRegion && (
-              <View style={styles.chipSectionContainer}>
-                <View style={styles.sectionHeader}>
-                  <MapPin size={16} color={COLORS.primary} strokeWidth={1.5} />
-                  <Text style={styles.sectionTitle}>
-                    {selectedParentRegion}
-                  </Text>
-                </View>
-                <View style={styles.chipContainer}>
-                  {getSupportedSubRegions(selectedParentRegion).map(subRegion => {
-                    const isSelected = selectedSubRegion === subRegion;
-                    return (
-                      <TouchableOpacity
-                        key={subRegion}
-                        style={[styles.chip, isSelected && styles.chipSelected]}
-                        onPress={() =>
-                          handleSubRegionSelect(selectedParentRegion, subRegion)
-                        }
-                        activeOpacity={0.7}
-                      >
-                        <Text
-                          style={[
-                            styles.chipText,
-                            isSelected && styles.chipTextSelected,
-                          ]}
-                        >
-                          {subRegion}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-            )}
           </>
         )}
       </ScrollView>
@@ -277,22 +237,20 @@ export default function SearchLocationModal({
         <Pressable
           style={[
             styles.confirmButton,
-            !(selectedParentRegion && selectedSubRegion) &&
-              styles.confirmButtonDisabled,
+            isConfirmDisabled && styles.confirmButtonDisabled,
           ]}
           onPress={handleConfirmDestination}
-          disabled={!(selectedParentRegion && selectedSubRegion)}
+          disabled={isConfirmDisabled}
         >
           <Text
             style={[
               styles.confirmButtonText,
-              !(selectedParentRegion && selectedSubRegion) &&
-                styles.confirmButtonTextDisabled,
+              isConfirmDisabled && styles.confirmButtonTextDisabled,
             ]}
           >
-            {selectedSubRegion
-              ? `${selectedParentRegion} ${selectedSubRegion} 선택`
-              : '지역을 선택해주세요'}
+            {selectedDestination
+              ? `${selectedDestination.travelName} 선택`
+              : '여행지를 선택해주세요'}
           </Text>
         </Pressable>
       </View>
