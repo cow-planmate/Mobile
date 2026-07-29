@@ -341,12 +341,18 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       });
   }, [destinationCity, days.length]);
 
+  const hasInitialFetchedRef = useRef(false);
+
   useEffect(() => {
     if (!planId) return;
 
     const unsubscribeFocus = navigation.addListener('focus', () => {
       connect(planId);
-      void fetchPlanDetails();
+      if (hasInitialFetchedRef.current) {
+        void fetchPlanDetails();
+      } else {
+        hasInitialFetchedRef.current = true;
+      }
     });
 
     const unsubscribeBlur = navigation.addListener('blur', () => {
@@ -376,6 +382,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       disconnect();
     };
   }, [planId, connect, disconnect, navigation, fetchPlanDetails]);
+
 
   const fetchedDestIdRef = useRef<number | null>(null);
 

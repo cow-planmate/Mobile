@@ -322,14 +322,6 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     fetchPlanDetails();
   }, [fetchPlanDetails]);
 
-  // 웹소켓 재연결 시 최신 일정 동기화를 위해 다시 조회
-  useEffect(() => {
-    if (!prevIsConnectedRef.current && isConnected) {
-      console.log('[웹소켓 재연결] 최신 일정 정보를 다시 조회하여 동기화합니다...');
-      void fetchPlanDetails();
-    }
-    prevIsConnectedRef.current = isConnected;
-  }, [isConnected, fetchPlanDetails]);
 
   const selectedDay = days[selectedDayIndex];
 
