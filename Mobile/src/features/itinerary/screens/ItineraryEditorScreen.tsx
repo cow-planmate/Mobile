@@ -252,15 +252,20 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
                 setIsBacking(false);
                 navigation.dispatch(e.data.action);
                 isBackingRef.current = false;
-              }, 1200);
+              }, 100);
             },
           },
         ],
       });
     });
 
-    return unsubscribe;
-  }, [navigation, days.length, isSaving, showAlert]);
+    return () => {
+      unsubscribe();
+    };
+  }, [days.length, disconnect, isSaving, navigation, showAlert]);
+
+
+
 
   // ── Undo/Redo History state ──
   const [history, setHistory] = useState<Day[][]>([]);
@@ -359,10 +364,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       disconnect();
     });
 
-    const unsubscribeRemove = navigation.addListener('beforeRemove', () => {
-      disconnect();
-    });
-
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active') {
         connect(planId);
@@ -377,11 +378,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     return () => {
       unsubscribeFocus();
       unsubscribeBlur();
-      unsubscribeRemove();
       appStateSubscription.remove();
       disconnect();
     };
   }, [planId, connect, disconnect, navigation, fetchPlanDetails]);
+
 
 
   const fetchedDestIdRef = useRef<number | null>(null);
