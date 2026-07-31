@@ -3,6 +3,8 @@ import {
   minutesToTime,
   timeToMinutes,
   formatDateLocal,
+  DEFAULT_DAY_START,
+  DEFAULT_DAY_END,
 } from '../src/utils/timeUtils';
 
 describe('resolveConflictsAndSort', () => {
@@ -112,6 +114,34 @@ describe('minutesToTime', () => {
   it('출력은 항상 HH:mm 형식이다', () => {
     [-100, 0, 61, 719, 1439, 1440, 5000].forEach(m => {
       expect(minutesToTime(m)).toMatch(/^\d{2}:\d{2}$/);
+    });
+  });
+});
+
+describe('하루 운영시간 기본값', () => {
+  it('그리드 폴백과 충돌 해결 상한이 같은 상수를 쓴다', () => {
+    expect(DEFAULT_DAY_START).toBe('09:00:00');
+    expect(DEFAULT_DAY_END).toBe('20:00:00');
+  });
+
+  it('기본 상한을 넘겨도 블록이 20:00을 넘지 않는다', () => {
+    // Day.endTime이 비어 폴백이 적용되는 경우를 재현한다.
+    const places = [
+      { id: '1', startTime: '18:00', endTime: '19:30' },
+      { id: '2', startTime: '18:30', endTime: '20:00' },
+      { id: '3', startTime: '19:00', endTime: '20:00' },
+    ];
+
+    const result = resolveConflictsAndSort(
+      places,
+      '1',
+      timeToMinutes(DEFAULT_DAY_END),
+    );
+
+    result.forEach(p => {
+      expect(timeToMinutes(p.endTime)).toBeLessThanOrEqual(
+        timeToMinutes(DEFAULT_DAY_END),
+      );
     });
   });
 });

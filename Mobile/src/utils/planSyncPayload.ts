@@ -5,6 +5,8 @@
  * 필드명이 하나라도 어긋나면 값이 조용히 폐기된다. 키 이름은 서버 DTO와 정확히 일치해야 한다.
  */
 
+import { DEFAULT_DAY_START, DEFAULT_DAY_END } from './timeUtils';
+
 /** 서버 blockId가 확정되기 전 로컬에서만 쓰는 임시 장소 ID의 접두사 */
 export const TEMP_PLACE_ID_PREFIX = 'place_';
 
@@ -52,7 +54,7 @@ export const buildTimeTableDto = ({
 }: TimeTableDtoInput) => ({
   timeTableId: timetableId ?? null,
   date: dateString,
-  timeTableStartTime: toLocalTime(startTime) || '09:00:00',
-  timeTableEndTime: toLocalTime(endTime) || '20:00:00',
+  timeTableStartTime: toLocalTime(startTime) || DEFAULT_DAY_START,
+  timeTableEndTime: toLocalTime(endTime) || DEFAULT_DAY_END,
   planId,
 });

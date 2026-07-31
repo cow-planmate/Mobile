@@ -258,6 +258,120 @@ describe('임시 ID 전송 보류 (F-5)', () => {
   });
 });
 
+describe('운영시간 상한 폴백 (N-2)', () => {
+  it('Day.endTime이 없어도 밀려난 블록이 20:00을 넘지 않는다', () => {
+    mount([
+      {
+        timetableId: 101,
+        date: new Date(2026, 7, 1),
+        dayNumber: 1,
+        // startTime/endTime 없음 — 폴백 경로
+        places: [
+          place('2001', '18:00', '19:00'),
+          place('2002', '19:00', '20:00'),
+        ] as any,
+      },
+    ]);
+
+    // 2001을 19:30까지 늘리면 2002가 뒤로 밀린다.
+    act(() => {
+      ctx.updatePlaceTimes(0, '2001', '18:00', '19:30');
+    });
+    flushTimers();
+
+    ctx.days[0].places.forEach(p => {
+      const [h, m] = p.endTime.split(':').map(Number);
+      expect(h * 60 + m).toBeLessThanOrEqual(20 * 60);
+    });
+  });
+
+  it('Day.endTime이 있으면 그 값을 상한으로 쓴다', () => {
+    mount([
+      {
+        timetableId: 101,
+        date: new Date(2026, 7, 1),
+        dayNumber: 1,
+        startTime: '09:00:00',
+        endTime: '22:00:00',
+        places: [
+          place('3001', '20:00', '21:00'),
+          place('3002', '21:00', '22:00'),
+        ] as any,
+      },
+    ]);
+
+    act(() => {
+      ctx.updatePlaceTimes(0, '3001', '20:00', '21:30');
+    });
+    flushTimers();
+
+    const pushed = ctx.days[0].places.find(p => p.id === '3002')!;
+    const [h, m] = pushed.endTime.split(':').map(Number);
+    expect(h * 60 + m).toBeLessThanOrEqual(22 * 60);
+    expect(h * 60 + m).toBeGreaterThan(20 * 60);
+  });
+});
+
+describe('시간 역전 보정 (N-3)', () => {
+  it('종료가 시작보다 이르면 최소 15분으로 보정해 전송한다', () => {
+    mount();
+
+    act(() => {
+      ctx.updatePlaceTimes(0, '1002', '11:00', '10:00');
+    });
+    flushTimers();
+
+    const target = ctx.days[0].places.find(p => p.id === '1002')!;
+    expect(target.startTime).toBe('11:00');
+    expect(target.endTime).toBe('11:15');
+
+    const sent = blockSends().find(c => c[2].blockId === 1002);
+    expect(sent![2].blockStartTime).toBe('11:00:00');
+    expect(sent![2].blockEndTime).toBe('11:15:00');
+  });
+
+  it('종료가 시작과 같아도 보정한다', () => {
+    mount();
+
+    act(() => {
+      ctx.updatePlaceTimes(0, '1002', '11:00', '11:00');
+    });
+    flushTimers();
+
+    const target = ctx.days[0].places.find(p => p.id === '1002')!;
+    expect(target.endTime).toBe('11:15');
+  });
+
+  it('updatePlaceDetails 경로도 동일하게 보정한다', () => {
+    mount();
+
+    act(() => {
+      ctx.updatePlaceDetails(0, '1003', {
+        startTime: '14:00',
+        endTime: '13:00',
+      });
+    });
+    flushTimers();
+
+    const target = ctx.days[0].places.find(p => p.id === '1003')!;
+    expect(target.startTime).toBe('14:00');
+    expect(target.endTime).toBe('14:15');
+  });
+
+  it('정상 범위는 그대로 둔다', () => {
+    mount();
+
+    act(() => {
+      ctx.updatePlaceTimes(0, '1002', '11:00', '12:30');
+    });
+    flushTimers();
+
+    const target = ctx.days[0].places.find(p => p.id === '1002')!;
+    expect(target.startTime).toBe('11:00');
+    expect(target.endTime).toBe('12:30');
+  });
+});
+
 describe('blockId 판별 (F-18)', () => {
   it('숫자형 외부 placeId가 blockId로 새지 않는다', () => {
     mount([

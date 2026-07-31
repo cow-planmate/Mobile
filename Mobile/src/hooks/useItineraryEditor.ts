@@ -1,11 +1,28 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+} from 'react';
 import { ScrollView } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { resolveApiUrl } from '../utils/apiUrl';
 import { API_URL } from '@env';
-import { useItinerary, Day, Place } from '../contexts/ItineraryContext';
-import { timeToMinutes, minutesToTime, resolveConflictsAndSort } from '../utils/timeUtils';
+import {
+  useItinerary,
+  Day,
+  Place,
+  isFetchAtLeastAsComplete,
+} from '../contexts/ItineraryContext';
+import {
+  timeToMinutes,
+  minutesToTime,
+  resolveConflictsAndSort,
+  DEFAULT_DAY_START,
+  DEFAULT_DAY_END,
+} from '../utils/timeUtils';
 import { createTempPlaceId } from '../utils/planSyncPayload';
 import { MINUTE_HEIGHT } from '../features/itinerary/screens/ItineraryEditorScreen.styles';
 import { useAlert } from '../contexts/AlertContext';
@@ -32,6 +49,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   const {
     days,
     setDays,
+    resetItinerary,
     deletePlaceFromDay,
     addPlaceToDay,
     updatePlaceTimes,
@@ -54,6 +72,8 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
 
   const isInitialized = useRef(false);
   const timelineScrollRef = useRef<ScrollView>(null);
+  /** days에 이미 담겨 있는 일정의 planId. 다른 plan의 응답과 비교하지 않기 위한 기준. */
+  const loadedPlanIdRef = useRef<string | null>(null);
 
   const daysRef = useRef(days);
   daysRef.current = days;
@@ -80,6 +100,8 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
       tripDays.push({
         date: new Date(currentDate),
         dayNumber: dayCounter,
+        startTime: DEFAULT_DAY_START,
+        endTime: DEFAULT_DAY_END,
         places: [],
       });
 
@@ -94,6 +116,11 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
       initDaysFromDates();
       return;
     }
+
+    const targetPlanId = String(route.params.planId);
+    // 아래 stale 가드는 "같은 plan을 재조회할 때"만 의미가 있다. 다른 plan을
+    // 처음 불러오는 중이라면 로컬 days는 비교 대상이 아니라 남은 찌꺼기다.
+    const isSamePlan = loadedPlanIdRef.current === targetPlanId;
 
     try {
       const token = await AsyncStorage.getItem('accessToken');
@@ -196,18 +223,53 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
             timetableId: ttId,
             date: date,
             dayNumber: index + 1,
+            // 서버가 내려주는 운영시간을 반영해야 타임라인 그리드 범위와
+            // 충돌 해결 상한이 실제 일정과 일치한다.
+            startTime: tt.timeTableStartTime || DEFAULT_DAY_START,
+            endTime: tt.timeTableEndTime || DEFAULT_DAY_END,
             places: resolveConflictsAndSort(dayPlaces),
           };
         });
-        setDays(newDays);
+        // 방금 편집한 내용이 아직 DB에 반영되지 않은 시점의 재조회는
+        // 로컬보다 적은 place를 가진 stale 응답일 수 있다. 그 경우 무시한다.
+        // 단 다른 plan을 처음 불러오는 중이면 무조건 받아들인다. 그러지 않으면
+        // 장소가 0개인 새 일정이 이전 일정보다 "덜 완전"하다고 판정돼 폐기된다.
+        setDays(prevDays =>
+          !isSamePlan || isFetchAtLeastAsComplete(newDays, prevDays)
+            ? newDays
+            : prevDays,
+        );
+        loadedPlanIdRef.current = targetPlanId;
       } else {
         initDaysFromDates();
+        loadedPlanIdRef.current = targetPlanId;
       }
     } catch (error) {
       console.error('일정 정보 조회 실패:', error);
       initDaysFromDates();
+      loadedPlanIdRef.current = targetPlanId;
     }
   }, [route.params?.planId, initDaysFromDates, setDays]);
+
+  /**
+   * 편집 대상 plan이 바뀌면 조회 전에 먼저 전역 일정 상태를 비웁니다.
+   *
+   * 레이아웃 이펙트는 항상 일반 이펙트보다 먼저 실행되므로, 소스 순서와 무관하게
+   * 아래 초기 조회보다 앞서 리셋된다. 조회 뒤에 비우면 응답을 덮어써 버린다.
+   *
+   * scopedPlanIdRef는 "이 화면이 어느 plan을 다루는지"이고 loadedPlanIdRef는
+   * "days에 실제로 담긴 plan"이라 갱신 시점이 다르다. 하나로 합치면 최초 조회가
+   * 같은 plan 재조회로 오인돼 stale 가드에 걸린다.
+   */
+  const scopedPlanIdRef = useRef<string | null | undefined>(undefined);
+  useLayoutEffect(() => {
+    const nextPlanId =
+      route.params?.planId != null ? String(route.params.planId) : null;
+    if (scopedPlanIdRef.current === nextPlanId) return;
+    scopedPlanIdRef.current = nextPlanId;
+    isInitialized.current = false;
+    resetItinerary();
+  }, [route.params?.planId, resetItinerary]);
 
   // 마운트 시 초기 일정 조회
   useEffect(() => {

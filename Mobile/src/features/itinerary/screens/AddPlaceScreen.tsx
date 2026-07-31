@@ -1,20 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
-import { useItinerary } from '../../../contexts/ItineraryContext';
+import {
+  useItinerary,
+  categoryMapping,
+} from '../../../contexts/ItineraryContext';
 import { useSearchPlaces } from '../../../hooks/usePlanQueries';
 import { PlaceVO } from '../../../api/trips';
 import AddPlaceScreenView from './AddPlaceScreen.view';
 import { Place } from '../components/TimelineItem';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'AddPlace'>;
-
-function getCategoryType(categoryId: number): Place['type'] {
-  if (categoryId === 1) return '관광지';
-  if (categoryId === 2) return '숙소';
-  if (categoryId === 3) return '식당';
-  return '기타';
-}
 
 export default function AddPlaceScreen({ route, navigation }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,7 +52,7 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
     return data.places.map((p: PlaceVO) => ({
       id: p.placeId,
       name: p.name,
-      type: getCategoryType(p.categoryId),
+      type: categoryMapping(p.categoryId),
       categoryId: p.categoryId,
       address: p.formatted_address,
       rating: p.rating,

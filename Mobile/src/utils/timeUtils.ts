@@ -1,4 +1,11 @@
 /**
+ * 하루 운영시간 기본값. 타임라인 그리드 범위와 충돌 해결 상한이
+ * 같은 값을 써야 그리드 밖으로 밀려나 보이지 않는 블록이 생기지 않는다.
+ */
+export const DEFAULT_DAY_START = '09:00:00';
+export const DEFAULT_DAY_END = '20:00:00';
+
+/**
  * 'HH:mm' 포맷의 시간 문자열을 분(minute) 단위 숫자로 변환합니다.
  */
 export const timeToMinutes = (time: string) => {

@@ -28,6 +28,44 @@ interface PendingBlockSync {
   dateString: string;
 }
 
+/** 모든 날짜에 걸친 장소 총개수. */
+export const countPlaces = (days: Day[]): number =>
+  days.reduce((sum, d) => sum + d.places.length, 0);
+
+/**
+ * 서버 조회 결과로 로컬 상태를 덮어써도 되는지 판단합니다.
+ *
+ * 서버는 편집을 Redis 캐시에만 반영하고 DB에는 주기 동기화(수십 초) 또는
+ * 마지막 세션 종료 후 지연 동기화 시점에만 반영합니다. 방금 편집을 마치고
+ * 화면을 이동해 조회하면, 이 지연 구간에 걸려 REST 응답이 로컬보다 적은
+ * place 개수를 가진 stale 스냅샷일 수 있습니다. 그런 응답으로 전체를
+ * 덮어쓰면 방금 저장한 내용이 화면에서 사라집니다.
+ *
+ * 그래서 "이미 알고 있는 것보다 적지 않을 때만" 서버 응답을 신뢰합니다.
+ * 로컬이 비어 있으면(최초 진입) 항상 서버 응답을 받아들입니다.
+ */
+export const isFetchAtLeastAsComplete = (
+  fetched: Day[],
+  current: Day[],
+): boolean => countPlaces(fetched) >= countPlaces(current);
+
+/** 블록 최소 길이(분). resolveConflictsAndSort의 스냅 단위와 동일하게 둔다. */
+const MIN_BLOCK_MINUTES = 15;
+
+/**
+ * 종료가 시작보다 이르거나 같으면 최소 길이로 보정합니다.
+ * duration이 음수가 되면 시간 충돌 해결의 밀어내기 계산이 역방향으로 붕괴합니다.
+ */
+const ensureValidRange = (
+  startTime: string,
+  endTime: string,
+): { startTime: string; endTime: string } => {
+  const start = timeToMinutes(startTime);
+  const end = timeToMinutes(endTime);
+  if (end > start) return { startTime, endTime };
+  return { startTime, endTime: minutesToTime(start + MIN_BLOCK_MINUTES) };
+};
+
 /**
  * 시간이 실제로 바뀐 블록만 골라냅니다.
  * 그날 전체를 전송하면 동시 편집 중인 다른 사용자의 변경까지 옛 값으로 덮어씁니다.
@@ -47,6 +85,7 @@ import {
   minutesToTime,
   resolveConflictsAndSort,
   formatDateLocal,
+  DEFAULT_DAY_END,
 } from '../utils/timeUtils';
 import {
   createTempPlaceId,
@@ -60,6 +99,7 @@ interface ItineraryContextType {
   setDays: React.Dispatch<React.SetStateAction<Day[]>>;
   lastAddedPlaceId: string | null;
   setLastAddedPlaceId: React.Dispatch<React.SetStateAction<string | null>>;
+  resetItinerary: () => void;
   addPlaceToDay: (
     dayIndex: number,
     place: Omit<Place, 'startTime' | 'endTime'> & { startTime?: string; endTime?: string },
@@ -85,7 +125,11 @@ const ItineraryContext = createContext<ItineraryContextType | undefined>(
   undefined,
 );
 
-const categoryMapping = (
+/**
+ * categoryId를 표시용 라벨로 변환합니다.
+ * 0=관광지 기준이며, `api/trips.ts`의 `categoryEnumMap`(ATTRACTION→0)과 같은 규칙입니다.
+ */
+export const categoryMapping = (
   id: number,
 ): '관광지' | '숙소' | '식당' | '직접 추가' | '검색' | '기타' => {
   if ([0, 12, 14, 15, 28].includes(id)) return '관광지';
@@ -227,6 +271,21 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
   // 서버가 blockId를 확정하기 전인 블록의 update/delete 보류분. key는 임시 ID.
   const pendingBlockSyncRef = useRef<Map<string, PendingBlockSync>>(new Map());
+
+  /**
+   * 다른 plan으로 진입할 때 이전 일정 상태를 비웁니다.
+   *
+   * Provider가 앱 루트에 상주해 days가 앱 수명 내내 유지되므로, 초기화하지 않으면
+   * 새로 만든 일정 화면에 직전 일정의 날짜·장소가 그대로 남는다. 남은 days의
+   * timetableId는 이전 plan 소속이라 편집 시 남의 일정을 덮어쓸 수도 있다.
+   *
+   * days만 비우면 임시 ID로 보류 중인 전송분이 새 방으로 flush되므로 함께 정리한다.
+   */
+  const resetItinerary = useCallback(() => {
+    setDays([]);
+    setLastAddedPlaceId(null);
+    pendingBlockSyncRef.current.clear();
+  }, []);
 
   /**
    * 블록 변경을 전송합니다. blockId가 아직 없으면 서버가 create 응답으로
@@ -557,10 +616,12 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         id: newId,
         placeRefId: placeData.id,
         categoryId: normalizeCategoryId(placeData.categoryId, placeData.type),
-        startTime: placeData.startTime || '12:00',
-        endTime: placeData.endTime || '13:00',
         latitude: placeData.latitude ?? 0,
         longitude: placeData.longitude ?? 0,
+        ...ensureValidRange(
+          placeData.startTime || '12:00',
+          placeData.endTime || '13:00',
+        ),
       };
 
       const updatedDays = [...prevDays];
@@ -573,7 +634,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       dayToUpdate.places = resolveConflictsAndSort(
         newPlacesList,
         placeToAdd.id,
-        dayToUpdate.endTime ? timeToMinutes(dayToUpdate.endTime) : undefined,
+        timeToMinutes(dayToUpdate.endTime || DEFAULT_DAY_END),
       );
       updatedDays[dayIndex] = dayToUpdate;
 
@@ -661,16 +722,15 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       const updatedDays = [...prevDays];
       const dayToUpdate = { ...updatedDays[dayIndex] };
 
+      const safeRange = ensureValidRange(newStartTime, newEndTime);
       const newPlacesList = dayToUpdate.places.map(p =>
-        p.id === placeId
-          ? { ...p, startTime: newStartTime, endTime: newEndTime }
-          : { ...p },
+        p.id === placeId ? { ...p, ...safeRange } : { ...p },
       );
 
       dayToUpdate.places = resolveConflictsAndSort(
         newPlacesList,
         placeId,
-        dayToUpdate.endTime ? timeToMinutes(dayToUpdate.endTime) : undefined,
+        timeToMinutes(dayToUpdate.endTime || DEFAULT_DAY_END),
       );
       updatedDays[dayIndex] = dayToUpdate;
 
@@ -746,12 +806,21 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       const updatedDays = [...prevDays];
       const dayToUpdate = { ...updatedDays[dayIndex] };
 
-      const newPlacesList = dayToUpdate.places.map(p =>
-        p.id === placeId ? { ...p, ...updates } : { ...p },
-      );
+      const newPlacesList = dayToUpdate.places.map(p => {
+        if (p.id !== placeId) return { ...p };
+        const merged = { ...p, ...updates };
+        return {
+          ...merged,
+          ...ensureValidRange(merged.startTime, merged.endTime),
+        };
+      });
 
       if (isTimeChanged) {
-        dayToUpdate.places = resolveConflictsAndSort(newPlacesList, placeId);
+        dayToUpdate.places = resolveConflictsAndSort(
+          newPlacesList,
+          placeId,
+          timeToMinutes(dayToUpdate.endTime || DEFAULT_DAY_END),
+        );
       } else {
         dayToUpdate.places = newPlacesList;
       }
@@ -795,6 +864,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setDays,
     lastAddedPlaceId,
     setLastAddedPlaceId,
+    resetItinerary,
     addPlaceToDay,
     deletePlaceFromDay,
     updatePlaceTimes,
@@ -803,6 +873,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
   }), [
     days,
     lastAddedPlaceId,
+    resetItinerary,
     addPlaceToDay,
     deletePlaceFromDay,
     updatePlaceTimes,

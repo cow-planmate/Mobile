@@ -11,6 +11,7 @@ import {
 import DatePicker from 'react-native-date-picker';
 import { X } from 'lucide-react-native';
 import { theme } from '../../../theme/theme';
+import { useAlert } from '../../../contexts/AlertContext';
 
 const COLORS = theme.colors;
 const FONTS = {
@@ -35,6 +36,7 @@ export default function PlaceEditModal({
   onSave,
   onDelete,
 }: PlaceEditModalProps) {
+  const { showAlert } = useAlert();
   const [memo, setMemo] = useState('');
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date());
@@ -66,6 +68,18 @@ export default function PlaceEditModal({
         .toString()
         .padStart(2, '0')}:00`;
     };
+
+    // 종료가 시작보다 이르면 duration이 음수가 되어 시간 충돌 해결이 붕괴한다.
+    if (
+      startTime.getHours() * 60 + startTime.getMinutes() >=
+      endTime.getHours() * 60 + endTime.getMinutes()
+    ) {
+      showAlert({
+        title: '시간 설정 오류',
+        message: '종료 시간은 시작 시간보다 늦어야 합니다.',
+      });
+      return;
+    }
 
     onSave({
       ...place,

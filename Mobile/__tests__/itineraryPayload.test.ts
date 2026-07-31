@@ -72,6 +72,41 @@ describe('buildTimeTableDto', () => {
   });
 });
 
+describe('운영시간 update 페이로드 (N-1)', () => {
+  const planId = '0199a1b2-c3d4-7e5f-8901-234567890abc';
+
+  it('기존 timetable의 시간 변경도 동일한 DTO 키로 만들어진다', () => {
+    const dto = buildTimeTableDto({
+      timetableId: 77,
+      dateString: '2026-08-01',
+      startTime: '08:00:00',
+      endTime: '22:00:00',
+      planId,
+    });
+
+    expect(dto).toEqual({
+      timeTableId: 77,
+      date: '2026-08-01',
+      timeTableStartTime: '08:00:00',
+      timeTableEndTime: '22:00:00',
+      planId,
+    });
+  });
+
+  it('사용자가 지정한 시간이 기본값으로 덮이지 않는다', () => {
+    const dto = buildTimeTableDto({
+      timetableId: 77,
+      dateString: '2026-08-01',
+      startTime: '06:30',
+      endTime: '23:00',
+      planId,
+    });
+
+    expect(dto.timeTableStartTime).toBe('06:30:00');
+    expect(dto.timeTableEndTime).toBe('23:00:00');
+  });
+});
+
 describe('toLocalTime', () => {
   it('HH:mm은 초를 붙이고 HH:mm:ss는 그대로 둔다', () => {
     expect(toLocalTime('09:00')).toBe('09:00:00');

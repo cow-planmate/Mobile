@@ -206,6 +206,7 @@ const mockWebSocket = {
   disconnect: jest.fn(),
   onlineUsers: [],
   sendMessage: jest.fn(),
+  isConnected: false,
 };
 jest.mock('../src/contexts/WebSocketContext', () => ({
   useWebSocket: () => mockWebSocket,
@@ -249,6 +250,7 @@ const mockItineraryEditor = {
   handleAddPlace: jest.fn(),
   selectedDay: null as any,
   planMetadata: {},
+  fetchPlanDetails: jest.fn(),
 };
 jest.mock('../src/hooks/useItineraryEditor', () => ({
   useItineraryEditor: () => mockItineraryEditor,
@@ -494,6 +496,7 @@ describe('ItineraryEditorScreen Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    mockWebSocket.isConnected = false;
   });
 
   afterEach(() => {
@@ -505,7 +508,8 @@ describe('ItineraryEditorScreen Component', () => {
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
 
-    const mockAddListener = jest.fn();
+    // addListener는 항상 unsubscribe 함수를 반환한다(React Navigation 계약).
+    const mockAddListener = jest.fn(() => jest.fn());
     const mockDispatch = jest.fn();
     const mockNavigation = {
       addListener: mockAddListener,
@@ -589,7 +593,8 @@ describe('ItineraryEditorScreen Component', () => {
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
 
-    const mockAddListener = jest.fn();
+    // addListener는 항상 unsubscribe 함수를 반환한다(React Navigation 계약).
+    const mockAddListener = jest.fn(() => jest.fn());
     const mockNavigation = {
       addListener: mockAddListener,
       goBack: jest.fn(),
@@ -642,5 +647,52 @@ describe('ItineraryEditorScreen Component', () => {
     // It should NOT call preventDefault or showAlert, letting the native transition go through
     expect(mockPreventDefault).not.toHaveBeenCalled();
     expect(mockShowAlert).not.toHaveBeenCalled();
+  });
+
+  it('화면 전환 없이 소켓만 끊겼다 재연결되면 자동으로 재조회한다', async () => {
+    mockItineraryEditor.days = mockDays;
+    mockItineraryEditor.selectedDay = mockDays[0];
+    mockWebSocket.isConnected = true;
+
+    const mockNavigation = {
+      addListener: jest.fn(() => jest.fn()),
+      goBack: jest.fn(),
+      navigate: jest.fn(),
+      dispatch: jest.fn(),
+      setParams: jest.fn(),
+    } as any;
+
+    const mockRoute = {
+      params: { planId: 'plan-123', destination: '제주도' },
+    } as any;
+
+    let rendererInstance: renderer.ReactTestRenderer | undefined;
+
+    // 연결된 상태로 마운트 — 최초 연결 시점에는 재조회하지 않아야 한다.
+    await act(async () => {
+      rendererInstance = renderer.create(
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+      );
+    });
+    expect(mockItineraryEditor.fetchPlanDetails).not.toHaveBeenCalled();
+
+    // blur/appstate를 거치지 않고 소켓만 예기치 않게 끊김
+    mockWebSocket.isConnected = false;
+    await act(async () => {
+      rendererInstance!.update(
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+      );
+    });
+    expect(mockItineraryEditor.fetchPlanDetails).not.toHaveBeenCalled();
+
+    // 서버가 자동 재연결
+    mockWebSocket.isConnected = true;
+    await act(async () => {
+      rendererInstance!.update(
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+      );
+    });
+
+    expect(mockItineraryEditor.fetchPlanDetails).toHaveBeenCalledTimes(1);
   });
 });

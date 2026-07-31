@@ -31,6 +31,13 @@ Object.assign(global as any, {
  */
 const ROOM_READY_FALLBACK_MS = 2000;
 
+/**
+ * graceful 종료(DISCONNECT 프레임 전송)를 기다리는 최대 시간(ms).
+ * 이 시간을 넘기면 소켓을 강제로 닫는다. RN이 백그라운드로 전환되며
+ * JS 스레드가 정지하면 프레임이 나가지 못한 채 남을 수 있다.
+ */
+const DISCONNECT_TIMEOUT_MS = 1500;
+
 interface UserPresence {
   uid: string;
   userNickname: string;
@@ -181,7 +188,9 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       debug: str => {
         console.log('[WS Debug]', str);
       },
-      reconnectDelay: 5000,
+      // 서버가 메시지 처리 중 예외를 만나면 STOMP ERROR 프레임 후 세션을 닫는다(핸들러
+      // 예외 처리 미구현). 동시 편집 중 간헐적으로 발생하므로 재연결 지연을 짧게 둔다.
+      reconnectDelay: 3000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       onConnect: frame => {
@@ -297,20 +306,47 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       clearTimeout(readyFallbackTimer.current);
       readyFallbackTimer.current = null;
     }
-    if (stompClient.current) {
-      // deactivate({ force: true }) immediately closes the socket connection
-      stompClient.current.deactivate({ force: true });
-      stompClient.current = null;
-    }
-    if (activeSocket.current) {
+    // 참조를 먼저 떼어내 재진입 시 같은 소켓을 두 번 닫지 않도록 한다.
+    const client = stompClient.current;
+    const socket = activeSocket.current;
+    stompClient.current = null;
+    activeSocket.current = null;
+
+    if (client) {
+      // force: true는 DISCONNECT 프레임을 보내지 않고 소켓을 폐기한다.
+      // 그러면 서버가 SessionDisconnectEvent를 즉시 발행하지 못해
+      // 다른 참여자의 접속자 목록에서 늦게 사라진다.
+      // 정상 종료 시퀀스를 태우되, 프레임 전송이 지연되면 강제로 닫는다.
+      const hardClose = setTimeout(() => {
+        try {
+          socket?.close();
+        } catch (e) {
+          console.warn('[WS] Failed to close active socket:', e);
+        }
+      }, DISCONNECT_TIMEOUT_MS);
+
+      // deactivate()는 정상적으로는 Promise를 반환하지만, 테스트 더블 등
+      // Promise를 반환하지 않는 구현이 섞여 있을 수 있어 방어적으로 감싼다.
+      Promise.resolve(client.deactivate())
+        .catch(e => {
+          console.warn('[WS] Graceful deactivate failed:', e);
+        })
+        .finally(() => {
+          clearTimeout(hardClose);
+          try {
+            socket?.close();
+          } catch (e) {
+            console.warn('[WS] Failed to close active socket:', e);
+          }
+        });
+    } else if (socket) {
       try {
-        console.log('[WS] Force closing active SockJS socket...');
-        activeSocket.current.close();
+        socket.close();
       } catch (e) {
         console.warn('[WS] Failed to close active socket:', e);
       }
-      activeSocket.current = null;
     }
+
     setIsConnected(false);
     setOnlineUsers([]);
     currentPlanId.current = null;

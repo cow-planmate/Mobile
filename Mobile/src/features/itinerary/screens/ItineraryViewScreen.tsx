@@ -14,7 +14,14 @@ import { AppStackParamList } from '../../../navigation/types';
 import { Place } from '../components/TimelineItem';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MINUTE_HEIGHT } from './ItineraryViewScreen.styles';
-import { Day } from '../../../contexts/ItineraryContext';
+import {
+  DEFAULT_DAY_START,
+  DEFAULT_DAY_END,
+} from '../../../utils/timeUtils';
+import {
+  Day,
+  isFetchAtLeastAsComplete,
+} from '../../../contexts/ItineraryContext';
 import {
   SimpleWeatherInfo,
   fetchWeatherRecommendations,
@@ -67,7 +74,13 @@ interface GetCompletePlanResponse {
   message: string;
   planFrame: PlanFrameVO;
   placeBlocks: PlaceBlockVO[];
-  timetables: { timetableId?: number; timeTableId?: number; date: string }[];
+  timetables: {
+    timetableId?: number;
+    timeTableId?: number;
+    date: string;
+    timeTableStartTime?: string;
+    timeTableEndTime?: string;
+  }[];
 }
 
 const timeToMinutes = (time: string) => {
@@ -239,20 +252,20 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
           return {
             date: new Date(tt.date),
             dayNumber: index + 1,
+            startTime: tt.timeTableStartTime || DEFAULT_DAY_START,
+            endTime: tt.timeTableEndTime || DEFAULT_DAY_END,
             places: places,
             timetableId: ttId,
           };
         });
 
-        // Only override days with fetchedDays if fetchedDays has places, or if current days is empty
-        setDays(prevDays => {
-          const hasFetchedPlaces = fetchedDays.some(d => d.places.length > 0);
-          const hasPrevPlaces = prevDays.some(d => d.places.length > 0);
-          if (hasFetchedPlaces || !hasPrevPlaces) {
-            return fetchedDays;
-          }
-          return prevDays;
-        });
+        // 편집 직후 곧바로 조회하면 서버 DB가 아직 최신 편집을 반영하기 전(주기/지연 동기화 대기 중)일 수 있다.
+        // 그 stale 응답이 방금 저장한 로컬 데이터보다 place가 적으면 무시하고 로컬을 유지한다.
+        setDays(prevDays =>
+          isFetchAtLeastAsComplete(fetchedDays, prevDays)
+            ? fetchedDays
+            : prevDays,
+        );
       }
     } catch (error) {
       console.error('Failed to fetch plan:', error);
@@ -354,8 +367,8 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   }, [selectedDayIndex]);
 
   const { gridHours, offsetMinutes, endHour } = useMemo(() => {
-    const startTimeStr = selectedDay?.startTime || '09:00:00';
-    const endTimeStr = selectedDay?.endTime || '20:00:00';
+    const startTimeStr = selectedDay?.startTime || DEFAULT_DAY_START;
+    const endTimeStr = selectedDay?.endTime || DEFAULT_DAY_END;
     const minHour = Math.floor(timeToMinutes(startTimeStr) / 60);
     const endMin = timeToMinutes(endTimeStr);
     const maxHour = Math.ceil(endMin / 60);

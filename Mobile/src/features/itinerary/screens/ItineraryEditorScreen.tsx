@@ -32,8 +32,13 @@ import {
   timeToMinutes,
   dateToTime,
   formatDateLocal,
+  DEFAULT_DAY_START,
+  DEFAULT_DAY_END,
 } from '../../../utils/timeUtils';
-import { buildTimeTableDto } from '../../../utils/planSyncPayload';
+import {
+  buildTimeTableDto,
+  toLocalTime,
+} from '../../../utils/planSyncPayload';
 import {
   SimpleWeatherInfo,
   fetchWeatherRecommendations,
@@ -45,6 +50,16 @@ import PlaceEditModal from '../components/PlaceEditModal';
 import KakaoMapView from '../components/KakaoMapView';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faMap, faUsers, faXmark } from '@fortawesome/free-solid-svg-icons';
+
+/**
+ * 화면이 blur된 뒤 실제로 연결을 끊기까지의 유예 시간(ms).
+ *
+ * 서버는 참여자 제거를 STOMP 세션 종료 이벤트에만 의존하고, 종료를 놓친 세션은
+ * presence 캐시에 최대 1시간 남는다. 목록은 userId로 중복을 제거하므로 유령이
+ * 하나만 있어도 사용자가 계속 접속 중으로 보인다. 끊고 붙이는 횟수 자체가
+ * 위험이므로, 장소 추가 화면 왕복 같은 짧은 이탈은 연결을 유지해 흡수한다.
+ */
+const BLUR_DISCONNECT_GRACE_MS = 60000;
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
@@ -88,6 +103,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   const [activeTab, setActiveTab] = useState<'타임라인' | '장소추가'>('타임라인');
   const [isSaving, setIsSaving] = useState(false);
+  const isSavingRef = useRef(false);
   const [pendingPlace, setPendingPlace] = useState<any>(null);
   const [previewStartTime, setPreviewStartTime] = useState<string | null>(null);
   const [previewEndTime, setPreviewEndTime] = useState<string | null>(null);
@@ -149,7 +165,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     return () => clearTimeout(timer);
   }, []);
 
-  const { updatePlaceMemo, updatePlaceDetails, setDays } = useItinerary();
+  const { updatePlaceDetails, setDays } = useItinerary();
   const { connect, disconnect, onlineUsers, sendMessage, isConnected } =
     useWebSocket();
   const {
@@ -324,22 +340,50 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const hasInitialFetchedRef = useRef(false);
   const isConnectedRef = useRef(isConnected);
   isConnectedRef.current = isConnected;
+  // blur/background로 우리가 의도적으로 끊은 경우를 표시한다. 이 경우는
+  // focus/active 핸들러가 이미 재조회를 처리하므로 아래 자동 복구 effect가
+  // 중복 실행되지 않도록 구분해야 한다.
+  const intentionalDisconnectRef = useRef(false);
+  // fetchPlanDetails는 route.params(startDate/endDate)가 바뀌면 identity가 바뀐다.
+  // 아래 연결 관리 effect의 의존성에 두면 타임라인 시간대를 수정하는 것만으로
+  // cleanup의 disconnect()가 실행되는데, 화면은 이미 포커스 상태라 focus 이벤트가
+  // 다시 오지 않아 재연결되지 않는다. ref로 우회해 최신 함수만 참조한다.
+  const fetchPlanDetailsRef = useRef(fetchPlanDetails);
+  fetchPlanDetailsRef.current = fetchPlanDetails;
+  // blur 후 유예 중인 연결 종료. 돌아오면 취소한다(BLUR_DISCONNECT_GRACE_MS 참고).
+  const pendingBlurDisconnectRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!planId) return;
 
     /**
-     * GET /api/plan/{id}는 실시간 캐시를 보지 않고 DB만 읽는다(PlanService TODO).
-     * 편집분은 최대 30초 뒤에야 DB에 반영되므로, 연결이 살아 있는 상태에서
-     * 재조회하면 방금 한 편집을 낡은 데이터로 덮어쓴다.
+     * GET /api/plan/{id}는 PlanSnapshotReader가 Redis 캐시를 우선 읽지만,
+     * 세션이 완전히 종료돼 캐시가 비워진 뒤에는 DB로 폴백하며 DB 반영에는
+     * 지연이 있다(주기 동기화/disconnect 동기화). 연결이 살아있는 상태에서
+     * 재조회하면 방금 한 편집을 낡은 데이터로 덮어쓸 수 있으므로,
      * 세션이 끊겼다 다시 붙는 경우에만 재조회한다.
      */
     const resyncIfDisconnected = () => {
       if (isConnectedRef.current) return;
-      void fetchPlanDetails();
+      void fetchPlanDetailsRef.current();
     };
 
+    const cancelPendingBlurDisconnect = () => {
+      if (pendingBlurDisconnectRef.current) {
+        clearTimeout(pendingBlurDisconnectRef.current);
+        pendingBlurDisconnectRef.current = null;
+      }
+    };
+
+    // effect가 다시 돌면 cleanup에서 연결이 끊긴다. 이미 포커스된 화면에는
+    // focus 이벤트가 오지 않으므로 여기서 직접 붙인다. connect는 같은 방이면
+    // no-op이라 focus 핸들러와 중복 호출돼도 안전하다.
+    connect(planId);
+
     const unsubscribeFocus = navigation.addListener('focus', () => {
+      cancelPendingBlurDisconnect();
       connect(planId);
       if (hasInitialFetchedRef.current) {
         resyncIfDisconnected();
@@ -348,15 +392,31 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       }
     });
 
+    // 즉시 끊지 않는다. 장소 추가 화면에 다녀오는 것만으로 세션이 하나 더 생기고,
+    // 그 종료가 유실되면 참여자 목록에 유령으로 남는다. 유예 안에 돌아오면 유지한다.
     const unsubscribeBlur = navigation.addListener('blur', () => {
-      disconnect();
+      cancelPendingBlurDisconnect();
+      pendingBlurDisconnectRef.current = setTimeout(() => {
+        pendingBlurDisconnectRef.current = null;
+        intentionalDisconnectRef.current = true;
+        disconnect();
+      }, BLUR_DISCONNECT_GRACE_MS);
     });
 
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active') {
+        // 블러 상태에서 복귀한 경우엔 되붙이지 않는다. 붙였다가 유예 타이머가
+        // 뒤늦게 끊으면 세션만 하나 더 남긴 꼴이 된다.
+        if (!navigation.isFocused()) return;
+        cancelPendingBlurDisconnect();
         connect(planId);
         resyncIfDisconnected();
-      } else if (nextAppState === 'background' || nextAppState === 'inactive') {
+      } else if (nextAppState === 'background') {
+        // 'inactive'는 알림 센터를 내리거나 앱 전환기를 띄우는 등 실제 이탈이
+        // 아닌 전이에서도 발생한다. 그때마다 끊으면 복귀할 때 세션이 새로 생기고,
+        // 직전 세션은 종료가 서버에 닿지 못해 유령으로 남기 쉽다.
+        cancelPendingBlurDisconnect();
+        intentionalDisconnectRef.current = true;
         disconnect();
       }
     };
@@ -364,12 +424,38 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
 
     return () => {
+      cancelPendingBlurDisconnect();
       unsubscribeFocus();
       unsubscribeBlur();
       appStateSubscription.remove();
       disconnect();
     };
-  }, [planId, connect, disconnect, navigation, fetchPlanDetails]);
+    // fetchPlanDetails는 의존성에서 제외한다(위 ref 주석 참고).
+  }, [planId, connect, disconnect, navigation]);
+
+  const wasConnectedRef = useRef(false);
+  const awaitingAutoResyncRef = useRef(false);
+
+  useEffect(() => {
+    if (isConnected) {
+      if (awaitingAutoResyncRef.current) {
+        // 화면 전환 없이 소켓만 끊겼다 서버가 자동 재연결한 경우.
+        // 끊긴 동안 보낸 메시지가 서버 예외로 유실됐을 수 있어 재조회로 맞춘다.
+        awaitingAutoResyncRef.current = false;
+        void fetchPlanDetailsRef.current();
+      }
+      wasConnectedRef.current = true;
+    } else {
+      if (wasConnectedRef.current && !intentionalDisconnectRef.current) {
+        awaitingAutoResyncRef.current = true;
+      }
+      intentionalDisconnectRef.current = false;
+      wasConnectedRef.current = false;
+    }
+    // isConnected 전이에만 반응해야 한다. fetchPlanDetails를 의존성에 두면
+    // 같은 isConnected 값으로 effect가 다시 돌면서 intentionalDisconnectRef를
+    // 지워 버려 의도적 종료가 자동 재연결 대기로 오인된다.
+  }, [isConnected]);
 
 
 
@@ -485,20 +571,13 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   }, [planId, sendMessage]);
 
   /**
-   * 다시 실행은 비활성화 상태다.
+   * 다시 실행은 지원하지 않아 핸들러를 전달하지 않는다(버튼이 비활성으로 렌더된다).
    * 서버 HistoryService.publishChange가 redo 시 항상 afterData를 싣는데,
    * DELETE 기록의 afterData는 null이라 삭제 redo가 대상 ID 없는 페이로드를
    * 브로드캐스트한다. 클라이언트가 어느 블록인지 알 수 없어 서버와 어긋난다.
    * 서버가 DELETE redo에 beforeData의 ID를 실어주면 해제할 수 있다.
    */
-  const handleRedo = useCallback(() => {
-    Toast.show({
-      type: 'info',
-      text1: '다시 실행은 현재 지원하지 않습니다.',
-      position: 'top',
-      visibilityTime: 2000,
-    });
-  }, []);
+  const handleRedo = undefined;
 
   const onConfirmScheduleEdit = (updatedDays: any[]) => {
     if (updatedDays.length > 0) {
@@ -552,6 +631,36 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
             sendMessage('delete', 'timetable', removedTimetables);
           }
         }
+
+        // 날짜는 그대로이고 운영시간만 바뀐 경우. 이 전송이 없으면 로컬만 바뀌고
+        // 재진입 시 서버 값으로 되돌아간다.
+        const changedTimetables = days
+          .filter(d => d.timetableId !== undefined && d.timetableId !== null)
+          .map(d => {
+            const dateStr = formatDateLocal(d.date);
+            const updated = updatedDays.find(
+              ud => formatDateLocal(ud.date) === dateStr,
+            );
+            if (!updated) return null;
+            if (
+              toLocalTime(updated.startTime) === toLocalTime(d.startTime) &&
+              toLocalTime(updated.endTime) === toLocalTime(d.endTime)
+            ) {
+              return null;
+            }
+            return buildTimeTableDto({
+              timetableId: d.timetableId,
+              dateString: dateStr,
+              startTime: updated.startTime,
+              endTime: updated.endTime,
+              planId,
+            });
+          })
+          .filter(Boolean);
+
+        if (changedTimetables.length > 0) {
+          sendMessage('update', 'timetable', changedTimetables);
+        }
       }
 
       // Update days (add new days, delete removed days, and sync existing days)
@@ -580,17 +689,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         });
       });
 
-      const firstDay = updatedDays[0].date;
-      const lastDay = updatedDays[updatedDays.length - 1].date;
-
       setScheduleEditVisible(false);
-
-      setTimeout(() => {
-        navigation.setParams({
-          startDate: firstDay.toISOString(),
-          endDate: lastDay.toISOString(),
-        });
-      }, 300);
+      // startDate/endDate는 planId가 없을 때 초기 날짜 골격을 만드는 용도라
+      // 여기서 되돌려 쓸 필요가 없다. setParams로 갱신하면 fetchPlanDetails의
+      // identity만 바뀌어 불필요한 재조회와 재연결을 유발한다.
     }
   };
 
@@ -661,6 +763,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   };
 
   const onComplete = async () => {
+    // 중복 방지 가드는 WS 전송보다 먼저 걸어야 연타 시 프레임이 중복되지 않는다.
+    // state는 리렌더 전까지 갱신되지 않으므로 ref로 판단한다.
+    if (isSavingRef.current) return;
+    isSavingRef.current = true;
+    setIsSaving(true);
     isCompletingRef.current = true;
 
     // If editing existing plan, send the final trip name update via WebSocket before disconnecting
@@ -713,9 +820,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
     // If plan already exists (editing from MySchedule or pre-created from Home), update title for owner and navigate to view
     if (route.params.planId) {
-      if (isSaving) return;
-      setIsSaving(true);
-
       try {
         const ownerIdLower = String(planMetadata?.user?.userId || '').toLowerCase();
         const currentUserIdLower = String(currentUser?.userId || '').toLowerCase();
@@ -755,14 +859,12 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         startDate: route.params.startDate,
         endDate: route.params.endDate,
       });
+      isSavingRef.current = false;
       setIsSaving(false);
       return;
     }
 
     // New plan: create on server, then navigate to view with planId
-    if (isSaving) return;
-    setIsSaving(true);
-
     try {
       const token = await AsyncStorage.getItem('accessToken');
       const config = token
@@ -771,8 +873,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
       const timetableVOs = days.map(day => ({
         date: formatDateLocal(day.date),
-        timeTableStartTime: '09:00:00',
-        timeTableEndTime: '20:00:00',
+        timeTableStartTime: toLocalTime(day.startTime) || DEFAULT_DAY_START,
+        timeTableEndTime: toLocalTime(day.endTime) || DEFAULT_DAY_END,
       }));
 
       const allBlocks = days.flatMap(day => {
@@ -864,6 +966,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       showAlert({ title: '오류', message: '일정 저장에 실패했습니다.' });
       isCompletingRef.current = false;
     } finally {
+      isSavingRef.current = false;
       setIsSaving(false);
     }
   };
