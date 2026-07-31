@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
 } from 'react';
 import { Place } from '../features/itinerary/components/TimelineItem';
 export type { Place };
@@ -20,7 +21,38 @@ export interface Day {
   places: Place[];
 }
 
-import { timeToMinutes, minutesToTime, resolveConflictsAndSort } from '../utils/timeUtils';
+interface PendingBlockSync {
+  action: 'update' | 'delete';
+  place: Place;
+  timetableId: number;
+  dateString: string;
+}
+
+/**
+ * 시간이 실제로 바뀐 블록만 골라냅니다.
+ * 그날 전체를 전송하면 동시 편집 중인 다른 사용자의 변경까지 옛 값으로 덮어씁니다.
+ */
+const pickTimeChanged = (before: Place[], after: Place[]): Place[] => {
+  const prevById = new Map(before.map(p => [p.id, p]));
+  return after.filter(p => {
+    const prev = prevById.get(p.id);
+    return (
+      !prev || prev.startTime !== p.startTime || prev.endTime !== p.endTime
+    );
+  });
+};
+
+import {
+  timeToMinutes,
+  minutesToTime,
+  resolveConflictsAndSort,
+  formatDateLocal,
+} from '../utils/timeUtils';
+import {
+  createTempPlaceId,
+  isTempPlaceId,
+  resolveBlockId,
+} from '../utils/planSyncPayload';
 
 
 interface ItineraryContextType {
@@ -155,9 +187,11 @@ const mapToTimetablePlaceBlockDto = (
   const endTime =
     place.endTime.length === 5 ? place.endTime + ':00' : place.endTime;
 
+  const blockId = resolveBlockId(place.id);
+
   return {
-    blockId: !isNaN(Number(place.id)) ? Number(place.id) : null,
-    timetablePlaceBlockId: !isNaN(Number(place.id)) ? Number(place.id) : null,
+    blockId,
+    timetablePlaceBlockId: blockId,
     timeTableId: timetableId,
     timetableId: timetableId,
     date: date,
@@ -191,6 +225,62 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
   const { sendMessage, subscribeToMessages, unsubscribeFromMessages } =
     useWebSocket();
 
+  // 서버가 blockId를 확정하기 전인 블록의 update/delete 보류분. key는 임시 ID.
+  const pendingBlockSyncRef = useRef<Map<string, PendingBlockSync>>(new Map());
+
+  /**
+   * 블록 변경을 전송합니다. blockId가 아직 없으면 서버가 create 응답으로
+   * 실제 ID를 돌려줄 때까지 보류합니다. ID 없이 보낸 update는 서버에서
+   * 예외로 통째 폐기되고, delete는 조용히 무시됩니다.
+   */
+  const sendBlockSync = useCallback(
+    (
+      action: 'update' | 'delete',
+      place: Place,
+      timetableId: number,
+      dateString: string,
+    ) => {
+      if (isTempPlaceId(place.id)) {
+        const prev = pendingBlockSyncRef.current.get(place.id);
+        if (prev?.action === 'delete') return; // 삭제가 이미 예약된 블록
+        pendingBlockSyncRef.current.set(place.id, {
+          action,
+          place,
+          timetableId,
+          dateString,
+        });
+        return;
+      }
+
+      sendMessage(
+        action,
+        'timetableplaceblock',
+        mapToTimetablePlaceBlockDto(place, timetableId, dateString),
+      );
+    },
+    [sendMessage],
+  );
+
+  /** 임시 ID가 실제 blockId로 확정된 시점에 보류분을 재작성해 전송합니다. */
+  const flushPendingBlockSync = useCallback(
+    (tempId: string, realId: string) => {
+      const pending = pendingBlockSyncRef.current.get(tempId);
+      if (!pending) return;
+      pendingBlockSyncRef.current.delete(tempId);
+
+      sendMessage(
+        pending.action,
+        'timetableplaceblock',
+        mapToTimetablePlaceBlockDto(
+          { ...pending.place, id: realId },
+          pending.timetableId,
+          pending.dateString,
+        ),
+      );
+    },
+    [sendMessage],
+  );
+
   const handleWebSocketMessage = useCallback(
     (msg: any) => {
       if (!msg) return;
@@ -220,6 +310,11 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
               ? String(respVO.blockId || respVO.timetablePlaceBlockId)
               : null;
 
+          // 임시 ID로 보류해 둔 update/delete를 확정된 blockId로 재전송
+          if (action === 'create' && realId && isTempPlaceId(eventId)) {
+            flushPendingBlockSync(eventId, realId);
+          }
+
           setDays(prevDays => {
             let dayIndex = -1;
 
@@ -231,13 +326,9 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
             if (dayIndex === -1 && respVO.date) {
               const targetDateStr = String(respVO.date).split('T')[0];
-              dayIndex = prevDays.findIndex(d => {
-                const year = d.date.getFullYear();
-                const month = String(d.date.getMonth() + 1).padStart(2, '0');
-                const date = String(d.date.getDate()).padStart(2, '0');
-                const localDateStr = `${year}-${month}-${date}`;
-                return localDateStr === targetDateStr;
-              });
+              dayIndex = prevDays.findIndex(
+                d => formatDateLocal(d.date) === targetDateStr,
+              );
             }
 
             if (dayIndex === -1) return prevDays;
@@ -361,9 +452,77 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
             return updatedDays;
           });
         });
+      } else if (entity === 'timetable') {
+        // undo/redo 브로드캐스트는 payload 키가 '{entity}s'(=timetables)다.
+        const rawDataList =
+          msg.timeTableDtos ||
+          (msg.data
+            ? msg.data.timeTableDtos || msg.data.timetables || msg.data
+            : null);
+
+        const dataList = Array.isArray(rawDataList)
+          ? rawDataList
+          : rawDataList
+          ? [rawDataList]
+          : [];
+        if (dataList.length === 0) return;
+
+        setDays(prevDays => {
+          let nextDays = [...prevDays];
+          let changed = false;
+
+          dataList.forEach((respVO: any) => {
+            const timetableId = respVO.timeTableId ?? respVO.timetableId;
+            const dateStr = respVO.date
+              ? String(respVO.date).split('T')[0]
+              : null;
+
+            if (action === 'delete') {
+              if (timetableId === undefined || timetableId === null) return;
+              const idx = nextDays.findIndex(
+                d => String(d.timetableId) === String(timetableId),
+              );
+              if (idx !== -1) {
+                nextDays.splice(idx, 1);
+                changed = true;
+              }
+              return;
+            }
+
+            if (!dateStr) return;
+
+            const idx = nextDays.findIndex(
+              d => formatDateLocal(d.date) === dateStr,
+            );
+
+            if (idx !== -1) {
+              // 서버가 확정한 timetableId를 주입해야 이후 블록 편집이 전송된다.
+              if (String(nextDays[idx].timetableId) !== String(timetableId)) {
+                nextDays[idx] = { ...nextDays[idx], timetableId };
+                changed = true;
+              }
+            } else {
+              const [y, m, d] = dateStr.split('-').map(Number);
+              nextDays.push({
+                timetableId,
+                date: new Date(y, m - 1, d),
+                dayNumber: 0,
+                startTime: respVO.timeTableStartTime || '09:00:00',
+                endTime: respVO.timeTableEndTime || '20:00:00',
+                places: [],
+              });
+              changed = true;
+            }
+          });
+
+          if (!changed) return prevDays;
+
+          nextDays.sort((a, b) => a.date.getTime() - b.date.getTime());
+          return nextDays.map((d, i) => ({ ...d, dayNumber: i + 1 }));
+        });
       }
     },
-    [setDays],
+    [setDays, flushPendingBlockSync],
   );
 
   useEffect(() => {
@@ -381,7 +540,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     dayIndex: number,
     placeData: Omit<Place, 'startTime' | 'endTime'> & { startTime?: string; endTime?: string },
   ) => {
-    const newId = `place_${Date.now()}_${Math.random()}`;
+    const newId = createTempPlaceId();
 
     let finalPlace: Place | undefined;
     let dayTimetableId: number | undefined;
@@ -420,8 +579,12 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
       finalPlace = dayToUpdate.places.find(p => p.id === newId);
       dayTimetableId = dayToUpdate.timetableId;
-      dayDateString = dayToUpdate.date.toISOString().split('T')[0];
-      otherPlacesToSync = dayToUpdate.places.filter(p => p.id !== newId);
+      dayDateString = formatDateLocal(dayToUpdate.date);
+      // 신규 블록에 밀려 시간이 바뀐 기존 블록만 동기화한다.
+      otherPlacesToSync = pickTimeChanged(
+        prevDays[dayIndex].places,
+        dayToUpdate.places,
+      ).filter(p => p.id !== newId);
 
       return updatedDays;
     });
@@ -441,22 +604,12 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
           newId,
         );
 
-        if (otherPlacesToSync.length > 0) {
-          otherPlacesToSync.forEach(p => {
-            sendMessage(
-              'update',
-              'timetableplaceblock',
-              mapToTimetablePlaceBlockDto(
-                p,
-                dayTimetableId!,
-                dayDateString!,
-              ),
-            );
-          });
-        }
+        otherPlacesToSync.forEach(p => {
+          sendBlockSync('update', p, dayTimetableId!, dayDateString!);
+        });
       }
     }, 0);
-  }, [sendMessage]);
+  }, [sendMessage, sendBlockSync]);
 
   const deletePlaceFromDay = useCallback((dayIndex: number, placeId: string) => {
     let placeToDelete: Place | undefined;
@@ -477,7 +630,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       updatedDays[dayIndex] = dayToUpdate;
 
       dayTimetableId = dayToUpdate.timetableId;
-      dayDateString = dayToUpdate.date.toISOString().split('T')[0];
+      dayDateString = formatDateLocal(dayToUpdate.date);
 
       return updatedDays;
     });
@@ -486,18 +639,10 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
     setTimeout(() => {
       if (placeToDelete && dayTimetableId && dayDateString) {
-        sendMessage(
-          'delete',
-          'timetableplaceblock',
-          mapToTimetablePlaceBlockDto(
-            placeToDelete,
-            dayTimetableId,
-            dayDateString,
-          ),
-        );
+        sendBlockSync('delete', placeToDelete, dayTimetableId, dayDateString);
       }
     }, 0);
-  }, [sendMessage]);
+  }, [sendBlockSync]);
 
   const updatePlaceTimes = useCallback((
     dayIndex: number,
@@ -529,9 +674,12 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       );
       updatedDays[dayIndex] = dayToUpdate;
 
-      placesToSync = dayToUpdate.places;
+      placesToSync = pickTimeChanged(
+        prevDays[dayIndex].places,
+        dayToUpdate.places,
+      );
       dayTimetableId = dayToUpdate.timetableId;
-      dayDateString = dayToUpdate.date.toISOString().split('T')[0];
+      dayDateString = formatDateLocal(dayToUpdate.date);
 
       return updatedDays;
     });
@@ -539,21 +687,13 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setLastAddedPlaceId(null);
 
     setTimeout(() => {
-      if (dayTimetableId && dayDateString && placesToSync.length > 0) {
+      if (dayTimetableId && dayDateString) {
         placesToSync.forEach(p => {
-          sendMessage(
-            'update',
-            'timetableplaceblock',
-            mapToTimetablePlaceBlockDto(
-              p,
-              dayTimetableId!,
-              dayDateString!,
-            ),
-          );
+          sendBlockSync('update', p, dayTimetableId!, dayDateString!);
         });
       }
     }, 0);
-  }, [sendMessage]);
+  }, [sendBlockSync]);
 
   const updatePlaceMemo = useCallback((dayIndex: number, placeId: string, memo: string) => {
     let finalPlace: Place | undefined;
@@ -574,25 +714,17 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
       finalPlace = dayToUpdate.places.find(p => p.id === placeId);
       dayTimetableId = dayToUpdate.timetableId;
-      dayDateString = dayToUpdate.date.toISOString().split('T')[0];
+      dayDateString = formatDateLocal(dayToUpdate.date);
 
       return updatedDays;
     });
 
     setTimeout(() => {
       if (finalPlace && dayTimetableId && dayDateString) {
-        sendMessage(
-          'update',
-          'timetableplaceblock',
-          mapToTimetablePlaceBlockDto(
-            finalPlace,
-            dayTimetableId,
-            dayDateString,
-          ),
-        );
+        sendBlockSync('update', finalPlace, dayTimetableId, dayDateString);
       }
     }, 0);
-  }, [sendMessage]);
+  }, [sendBlockSync]);
 
   const updatePlaceDetails = useCallback((
     dayIndex: number,
@@ -626,10 +758,23 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
       updatedDays[dayIndex] = dayToUpdate;
 
-      placesToSync = dayToUpdate.places;
       singlePlaceToSync = dayToUpdate.places.find(p => p.id === placeId);
+
+      if (isTimeChanged) {
+        // 시간이 밀린 블록 + 편집 대상 블록(메모/이름 등도 함께 바뀔 수 있음)
+        const shifted = pickTimeChanged(
+          prevDays[dayIndex].places,
+          dayToUpdate.places,
+        );
+        placesToSync = shifted.some(p => p.id === placeId)
+          ? shifted
+          : [...shifted, ...(singlePlaceToSync ? [singlePlaceToSync] : [])];
+      } else {
+        placesToSync = singlePlaceToSync ? [singlePlaceToSync] : [];
+      }
+
       dayTimetableId = dayToUpdate.timetableId;
-      dayDateString = dayToUpdate.date.toISOString().split('T')[0];
+      dayDateString = formatDateLocal(dayToUpdate.date);
 
       return updatedDays;
     });
@@ -638,32 +783,12 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
     setTimeout(() => {
       if (dayTimetableId && dayDateString) {
-        if (isTimeChanged) {
-          placesToSync.forEach(p => {
-            sendMessage(
-              'update',
-              'timetableplaceblock',
-              mapToTimetablePlaceBlockDto(
-                p,
-                dayTimetableId!,
-                dayDateString!,
-              ),
-            );
-          });
-        } else if (singlePlaceToSync) {
-          sendMessage(
-            'update',
-            'timetableplaceblock',
-            mapToTimetablePlaceBlockDto(
-              singlePlaceToSync,
-              dayTimetableId,
-              dayDateString,
-            ),
-          );
-        }
+        placesToSync.forEach(p => {
+          sendBlockSync('update', p, dayTimetableId!, dayDateString!);
+        });
       }
     }, 0);
-  }, [sendMessage]);
+  }, [sendBlockSync]);
 
   const contextValue = useMemo(() => ({
     days,

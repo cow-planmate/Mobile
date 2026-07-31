@@ -20,6 +20,17 @@ export const timeToDate = (time: string) => {
 };
 
 /**
+ * Date 객체를 로컬 타임존 기준 'YYYY-MM-DD' 문자열로 변환합니다.
+ * toISOString()은 UTC로 변환되어 KST 자정 기준 하루가 밀리므로 사용하지 않습니다.
+ */
+export const formatDateLocal = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+/**
  * Date 객체에서 'HH:mm' 형태의 24시간제 시간 문자열을 추출합니다.
  */
 export const dateToTime = (date: Date) => {
@@ -29,12 +40,20 @@ export const dateToTime = (date: Date) => {
   });
 };
 
+/** 하루 안에서 표현 가능한 최대 분 (23:45) */
+export const MAX_MINUTES_IN_DAY = 23 * 60 + 45;
+
 /**
  * 분 단위 숫자를 15분 스냅 단위의 'HH:mm' 시간 문자열로 변환합니다.
+ * 하루 범위를 벗어난 입력은 클램프합니다. 음수나 1440 이상을 % 24로 접으면
+ * '-1:-30' / '00:00' 같은 값이 만들어져 서버 LocalTime 파싱이 실패합니다.
  */
 export const minutesToTime = (totalMinutes: number) => {
-  const snappedMinutes = Math.round(totalMinutes / 15) * 15;
-  const hours = Math.floor(snappedMinutes / 60) % 24;
+  const snappedMinutes = Math.min(
+    Math.max(Math.round(totalMinutes / 15) * 15, 0),
+    MAX_MINUTES_IN_DAY,
+  );
+  const hours = Math.floor(snappedMinutes / 60);
   const minutes = snappedMinutes % 60;
   return `${hours.toString().padStart(2, '0')}:${minutes
     .toString()
@@ -61,7 +80,11 @@ export const resolveConflictsAndSort = <T extends ConflictableItem>(
   anchorItemId: string | null = null,
   maxEndMinutesOverride?: number,
 ): T[] => {
-  const MAX_END_MINUTES = maxEndMinutesOverride ?? 23 * 60 + 45; // 하루 최대 종료 시간 제한 (23:45)
+  // 하루 최대 종료 시간 제한. override가 24:00(1440)으로 들어와도 표현 가능 범위로 잘라낸다.
+  const MAX_END_MINUTES = Math.min(
+    maxEndMinutesOverride ?? MAX_MINUTES_IN_DAY,
+    MAX_MINUTES_IN_DAY,
+  );
 
   // 원본 객체 직접 변경 방지를 위한 딥 카피 및 시작 시간 기준 정렬
   const sortedPlaces = places.map(p => ({ ...p })).sort(
@@ -119,8 +142,11 @@ export const resolveConflictsAndSort = <T extends ConflictableItem>(
 
     if (currEnd > lastStartTime) {
       const currDuration = currEnd - timeToMinutes(curr.startTime);
-      curr.endTime = minutesToTime(lastStartTime);
-      curr.startTime = minutesToTime(lastStartTime - currDuration);
+      // 0시 이전으로 밀리지 않도록 하한을 두고, 하한에 걸리면 최소 길이(15분)를 보장한다.
+      const newStart = Math.max(lastStartTime - currDuration, 0);
+      const newEnd = Math.max(lastStartTime, newStart + 15);
+      curr.startTime = minutesToTime(newStart);
+      curr.endTime = minutesToTime(newEnd);
       lastStartTime = timeToMinutes(curr.startTime);
     } else {
       lastStartTime = timeToMinutes(curr.startTime);

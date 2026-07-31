@@ -25,6 +25,12 @@ Object.assign(global as any, {
   TextDecoder: TextEncoding.TextDecoder,
 });
 
+/**
+ * presence 브로드캐스트를 기다리는 최대 시간(ms).
+ * 서버 sharedsync.presence.broadcast-delay 기본값이 1000ms이므로 그보다 넉넉히 잡는다.
+ */
+const ROOM_READY_FALLBACK_MS = 2000;
+
 interface UserPresence {
   uid: string;
   userNickname: string;
@@ -89,6 +95,42 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       eventId?: string;
     }>
   >([]);
+  /**
+   * 서버는 presence 채널 SUBSCRIBE를 처리해 세션↔룸 매핑을 등록한 뒤에야
+   * /app/{planId} 메시지를 수용하고, 그 전 메시지는 예외 없이 버린다.
+   * 매핑 확립 전에는 전송하지 않고 큐에 쌓아 둔다.
+   */
+  const isRoomReadyRef = useRef<boolean>(false);
+  const readyFallbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** 현재 큐에 쌓인 메시지가 속한 planId. 다른 방으로 옮기면 큐를 버리는 판단에 쓴다. */
+  const queuedPlanId = useRef<string | null>(null);
+
+  /**
+   * 세션↔룸 매핑이 확립된 시점에 큐를 비웁니다. 여러 번 호출되어도 안전합니다.
+   */
+  const markRoomReady = useCallback((client: Client, planId: string) => {
+    if (readyFallbackTimer.current) {
+      clearTimeout(readyFallbackTimer.current);
+      readyFallbackTimer.current = null;
+    }
+    if (isRoomReadyRef.current) return;
+    isRoomReadyRef.current = true;
+
+    if (messageQueue.current.length === 0) return;
+    console.log(`[WS] Flushing ${messageQueue.current.length} queued messages`);
+    const queued = [...messageQueue.current];
+    messageQueue.current = [];
+    queued.forEach(msg => {
+      sendMessageInternal(
+        client,
+        planId,
+        msg.action,
+        msg.targetName,
+        msg.target,
+        msg.eventId,
+      );
+    });
+  }, []);
 
   const subscribeToMessages = useCallback((callback: (msg: any) => void) => {
     messageListeners.current.add(callback);
@@ -111,7 +153,14 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       disconnect();
     }
 
+    // 다른 방으로 옮겨가는 경우에만 큐를 버린다. 같은 방 재연결이면 미전송분을 살린다.
+    if (queuedPlanId.current && queuedPlanId.current !== planId) {
+      messageQueue.current = [];
+      queuedPlanId.current = null;
+    }
+
     isConnectingRef.current = true;
+    isRoomReadyRef.current = false;
     currentPlanId.current = planId;
     setOnlineUsers([]);
 
@@ -139,28 +188,6 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         isConnectingRef.current = false;
         console.log('WebSocket Connected:', frame);
         setIsConnected(true);
-
-        // Flush queued messages that were sent before connection was established
-        if (messageQueue.current.length > 0) {
-          console.log(
-            `[WS] Flushing ${messageQueue.current.length} queued messages`,
-          );
-          const queuedMessages = [...messageQueue.current];
-          messageQueue.current = [];
-          queuedMessages.forEach(msg => {
-            // Use setTimeout to ensure subscriptions are set up first
-            setTimeout(() => {
-              sendMessageInternal(
-                client,
-                planId,
-                msg.action,
-                msg.targetName,
-                msg.target,
-                msg.eventId,
-              );
-            }, 100);
-          });
-        }
 
         const topics = [`/topic/${planId}`];
 
@@ -222,18 +249,22 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
                 });
                 setOnlineUsers(normalized);
               }
+
+              // presence 브로드캐스트 수신 = 서버가 세션↔룸 매핑을 등록했다는 신호
+              markRoomReady(client, planId);
             } catch (e) {
               console.error('Failed to parse presence message:', e);
             }
           },
         );
 
-        // Send an initial ping message to register session in backend PresenceStorage
-        setTimeout(() => {
-          if (client.connected) {
-            sendMessageInternal(client, planId, 'update', 'plan', { planId });
-          }
-        }, 300);
+        // presence 브로드캐스트(broadcast-delay 기본 1초)가 유실될 경우의 폴백
+        if (readyFallbackTimer.current) {
+          clearTimeout(readyFallbackTimer.current);
+        }
+        readyFallbackTimer.current = setTimeout(() => {
+          markRoomReady(client, planId);
+        }, ROOM_READY_FALLBACK_MS);
       },
       onStompError: frame => {
         isConnectingRef.current = false;
@@ -244,6 +275,13 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         isConnectingRef.current = false;
         console.log('WebSocket Connection Closed');
         setIsConnected(false);
+        // 소켓이 끊기면 서버 세션도 사라진다. 자동 재연결 후에는 새 세션이
+        // presence를 다시 구독해 매핑될 때까지 전송을 보류해야 한다.
+        isRoomReadyRef.current = false;
+        if (readyFallbackTimer.current) {
+          clearTimeout(readyFallbackTimer.current);
+          readyFallbackTimer.current = null;
+        }
       },
     });
 
@@ -254,6 +292,11 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const disconnect = useCallback(() => {
     isConnectingRef.current = false;
+    isRoomReadyRef.current = false;
+    if (readyFallbackTimer.current) {
+      clearTimeout(readyFallbackTimer.current);
+      readyFallbackTimer.current = null;
+    }
     if (stompClient.current) {
       // deactivate({ force: true }) immediately closes the socket connection
       stompClient.current.deactivate({ force: true });
@@ -271,7 +314,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsConnected(false);
     setOnlineUsers([]);
     currentPlanId.current = null;
-    messageQueue.current = [];
+    // 큐는 비우지 않는다. 화면 이탈/백그라운드 전환 시 미전송 편집이 사라지면
+    // 롤백 경로가 없어 사용자에게는 저장된 것처럼 보인 채 유실된다.
   }, []);
 
   /**
@@ -292,6 +336,15 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
     let payload: any = {};
     const destination = `/app/${planId}`;
+
+    // undo/redo는 서버가 action만 보고 세션별 히스토리를 되감으므로 entity가 없다.
+    if (action === 'undo' || action === 'redo') {
+      client.publish({
+        destination,
+        body: JSON.stringify({ action }),
+      });
+      return;
+    }
 
     switch (targetName) {
       case 'timetableplaceblock':
@@ -349,25 +402,24 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     target: any,
     eventId?: string,
   ) => {
-    if (!stompClient.current || !stompClient.current.connected || !isConnected || !currentPlanId.current) {
+    const planId = currentPlanId.current;
+    const client = stompClient.current;
+
+    // 연결 여부는 React state(isConnected)가 아니라 클라이언트 실제 상태로 판단한다.
+    // state 반영이 한 틱 늦어 실제로는 전송 가능한 메시지가 큐에 갇히는 것을 막는다.
+    if (!client || !client.connected || !planId || !isRoomReadyRef.current) {
       console.warn(
-        '[WS] Not connected yet — queuing message:',
+        '[WS] Room not ready — queuing message:',
         action,
         targetName,
       );
+      queuedPlanId.current = planId ?? queuedPlanId.current;
       messageQueue.current.push({ action, targetName, target, eventId });
       return;
     }
 
-    sendMessageInternal(
-      stompClient.current,
-      currentPlanId.current,
-      action,
-      targetName,
-      target,
-      eventId,
-    );
-  }, [isConnected]);
+    sendMessageInternal(client, planId, action, targetName, target, eventId);
+  }, []);
 
   useEffect(() => {
     // 컴포넌트 언마운트 시 연결 해제

@@ -22,13 +22,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppStackParamList } from '../../../navigation/types';
 import { Place } from '../components/TimelineItem';
 import { useWebSocket } from '../../../contexts/WebSocketContext';
-import { useItinerary, Day } from '../../../contexts/ItineraryContext';
+import { useItinerary } from '../../../contexts/ItineraryContext';
 import { usePlaces } from '../../../contexts/PlacesContext';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useItineraryEditor } from '../../../hooks/useItineraryEditor';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
-import { timeToMinutes, dateToTime } from '../../../utils/timeUtils';
+import {
+  timeToMinutes,
+  dateToTime,
+  formatDateLocal,
+} from '../../../utils/timeUtils';
+import { buildTimeTableDto } from '../../../utils/planSyncPayload';
 import {
   SimpleWeatherInfo,
   fetchWeatherRecommendations,
@@ -42,20 +47,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faMap, faUsers, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
-
-const cloneDaysWithDates = (daysList: Day[]): Day[] => {
-  return JSON.parse(JSON.stringify(daysList)).map((day: any) => ({
-    ...day,
-    date: new Date(day.date),
-  }));
-};
-
-const formatDateLocal = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
 /**
  * 일정표 타임라인 편집, 장소 배치/수정, 실시간 소켓 동기화 화면 컨테이너 컴포넌트
@@ -159,7 +150,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   }, []);
 
   const { updatePlaceMemo, updatePlaceDetails, setDays } = useItinerary();
-  const { connect, disconnect, onlineUsers, sendMessage } = useWebSocket();
+  const { connect, disconnect, onlineUsers, sendMessage, isConnected } =
+    useWebSocket();
   const {
     fetchAllRecommendations,
     fetchAllRecommendationsNoAuth,
@@ -267,26 +259,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
 
 
-  // ── Undo/Redo History state ──
-  const [history, setHistory] = useState<Day[][]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const isSystemUpdate = useRef(false);
-
-  useEffect(() => {
-    if (days.length === 0) return;
-
-    if (isSystemUpdate.current) {
-      isSystemUpdate.current = false;
-      return;
-    }
-
-    const clonedDays = cloneDaysWithDates(days);
-    setHistory(prev => {
-      const nextHistory = prev.slice(0, historyIndex + 1);
-      return [...nextHistory, clonedDays];
-    });
-    setHistoryIndex(prev => prev + 1);
-  }, [days]);
+  // ── Undo ──
+  // 되돌리기는 서버 히스토리(history:undo:{planId}:{sessionId})를 사용한다.
+  // 로컬 스냅샷 방식은 원격 수신분까지 함께 되감아 다른 참여자의 편집을 되돌린다.
 
   // ── Weather state ──
   const [weatherMap, setWeatherMap] = useState<
@@ -347,14 +322,27 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   }, [destinationCity, days.length]);
 
   const hasInitialFetchedRef = useRef(false);
+  const isConnectedRef = useRef(isConnected);
+  isConnectedRef.current = isConnected;
 
   useEffect(() => {
     if (!planId) return;
 
+    /**
+     * GET /api/plan/{id}는 실시간 캐시를 보지 않고 DB만 읽는다(PlanService TODO).
+     * 편집분은 최대 30초 뒤에야 DB에 반영되므로, 연결이 살아 있는 상태에서
+     * 재조회하면 방금 한 편집을 낡은 데이터로 덮어쓴다.
+     * 세션이 끊겼다 다시 붙는 경우에만 재조회한다.
+     */
+    const resyncIfDisconnected = () => {
+      if (isConnectedRef.current) return;
+      void fetchPlanDetails();
+    };
+
     const unsubscribeFocus = navigation.addListener('focus', () => {
       connect(planId);
       if (hasInitialFetchedRef.current) {
-        void fetchPlanDetails();
+        resyncIfDisconnected();
       } else {
         hasInitialFetchedRef.current = true;
       }
@@ -367,7 +355,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active') {
         connect(planId);
-        void fetchPlanDetails();
+        resyncIfDisconnected();
       } else if (nextAppState === 'background' || nextAppState === 'inactive') {
         disconnect();
       }
@@ -487,37 +475,30 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setMapPreviewVisible(false);
   }, []);
 
+  /**
+   * 서버 히스토리에 되돌리기를 요청한다. 결과는 /topic/{planId} 브로드캐스트로
+   * 돌아와 다른 참여자에게도 동일하게 반영된다. 로컬 상태는 직접 건드리지 않는다.
+   */
   const handleUndo = useCallback(() => {
-    if (historyIndex > 0) {
-      isSystemUpdate.current = true;
-      const prevDays = history[historyIndex - 1];
-      setDays(cloneDaysWithDates(prevDays));
-      setHistoryIndex(prev => prev - 1);
-    } else {
-      Toast.show({
-        type: 'info',
-        text1: '되돌릴 일정이 없습니다.',
-        position: 'top',
-        visibilityTime: 2000,
-      });
-    }
-  }, [history, historyIndex, setDays]);
+    if (!planId) return;
+    sendMessage('undo', 'history', null);
+  }, [planId, sendMessage]);
 
+  /**
+   * 다시 실행은 비활성화 상태다.
+   * 서버 HistoryService.publishChange가 redo 시 항상 afterData를 싣는데,
+   * DELETE 기록의 afterData는 null이라 삭제 redo가 대상 ID 없는 페이로드를
+   * 브로드캐스트한다. 클라이언트가 어느 블록인지 알 수 없어 서버와 어긋난다.
+   * 서버가 DELETE redo에 beforeData의 ID를 실어주면 해제할 수 있다.
+   */
   const handleRedo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      isSystemUpdate.current = true;
-      const nextDays = history[historyIndex + 1];
-      setDays(cloneDaysWithDates(nextDays));
-      setHistoryIndex(prev => prev + 1);
-    } else {
-      Toast.show({
-        type: 'info',
-        text1: '다시 실행할 일정이 없습니다.',
-        position: 'top',
-        visibilityTime: 2000,
-      });
-    }
-  }, [history, historyIndex, setDays]);
+    Toast.show({
+      type: 'info',
+      text1: '다시 실행은 현재 지원하지 않습니다.',
+      position: 'top',
+      visibilityTime: 2000,
+    });
+  }, []);
 
   const onConfirmScheduleEdit = (updatedDays: any[]) => {
     if (updatedDays.length > 0) {
@@ -531,35 +512,45 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       const addedDates = [...newDates].filter(d => !oldDates.has(d));
       const removedDates = [...oldDates].filter(d => !newDates.has(d));
 
-      if (addedDates.length > 0) {
-        const newTimetables = addedDates.map(dateStr => {
-          const matched = updatedDays.find(
-            ud => formatDateLocal(ud.date) === dateStr,
-          );
-          return {
-            timetableId: 0,
-            date: dateStr,
-            startTime: matched?.startTime || '09:00:00',
-            endTime: matched?.endTime || '20:00:00',
-          };
-        });
-        sendMessage('create', 'timetable', newTimetables);
-      }
+      if (!planId) {
+        console.warn('[Schedule] planId 없음 — timetable 동기화를 건너뜁니다.');
+      } else {
+        if (addedDates.length > 0) {
+          const newTimetables = addedDates.map(dateStr => {
+            const matched = updatedDays.find(
+              ud => formatDateLocal(ud.date) === dateStr,
+            );
+            return buildTimeTableDto({
+              dateString: dateStr,
+              startTime: matched?.startTime,
+              endTime: matched?.endTime,
+              planId,
+            });
+          });
+          sendMessage('create', 'timetable', newTimetables);
+        }
 
-      if (removedDates.length > 0) {
-        const removedTimetables = days
-          .filter(d =>
-            removedDates.includes(formatDateLocal(d.date)),
-          )
-          .map(d => ({
-            timetableId: d.timetableId,
-            date: formatDateLocal(d.date),
-            startTime: d.startTime || '09:00:00',
-            endTime: d.endTime || '20:00:00',
-          }));
+        if (removedDates.length > 0) {
+          const removedTimetables = days
+            .filter(
+              d =>
+                removedDates.includes(formatDateLocal(d.date)) &&
+                d.timetableId !== undefined &&
+                d.timetableId !== null,
+            )
+            .map(d =>
+              buildTimeTableDto({
+                timetableId: d.timetableId,
+                dateString: formatDateLocal(d.date),
+                startTime: d.startTime,
+                endTime: d.endTime,
+                planId,
+              }),
+            );
 
-        if (removedTimetables.length > 0) {
-          sendMessage('delete', 'timetable', removedTimetables);
+          if (removedTimetables.length > 0) {
+            sendMessage('delete', 'timetable', removedTimetables);
+          }
         }
       }
 

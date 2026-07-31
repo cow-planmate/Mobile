@@ -5,8 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { resolveApiUrl } from '../utils/apiUrl';
 import { API_URL } from '@env';
 import { useItinerary, Day, Place } from '../contexts/ItineraryContext';
-import { useWebSocket } from '../contexts/WebSocketContext';
 import { timeToMinutes, minutesToTime, resolveConflictsAndSort } from '../utils/timeUtils';
+import { createTempPlaceId } from '../utils/planSyncPayload';
 import { MINUTE_HEIGHT } from '../features/itinerary/screens/ItineraryEditorScreen.styles';
 import { useAlert } from '../contexts/AlertContext';
 import Toast from 'react-native-toast-message';
@@ -28,12 +28,6 @@ const parseDestinationName = (destination?: string) => {
  * @param _navigation 네비게이션 객체
  */
 export const useItineraryEditor = (route: any, _navigation: any) => {
-  const {
-    sendMessage,
-    isConnected,
-    subscribeToMessages,
-    unsubscribeFromMessages,
-  } = useWebSocket();
   const { showAlert } = useAlert();
   const {
     days,
@@ -64,116 +58,11 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   const daysRef = useRef(days);
   daysRef.current = days;
 
-  useEffect(() => {
-    if (isConnected) {
-      sendMessage('update', 'presence', { dayIndex: selectedDayIndex });
-    }
-  }, [selectedDayIndex, isConnected, sendMessage]);
-
-  useEffect(() => {
-    const handleWsMessage = (msg: any) => {
-      if (!msg) return;
-
-      const data = msg.data || msg;
-      const entity = data.entity || msg.target;
-      const action = data.action || msg.type;
-
-      // 백엔드로부터 실시간 타임테이블 장소 블록 변경 이벤트 수신
-      if (entity === 'timetableplaceblock' && data.timeTablePlaceBlockDtos) {
-        const blocks = data.timeTablePlaceBlockDtos;
-        if (Array.isArray(blocks) && blocks.length > 0) {
-          setDays(prevDays => {
-            return prevDays.map(day => {
-              const updatedPlaces = [...day.places];
-              let hasChanged = false;
-
-              blocks.forEach((pb: any) => {
-                const pbDateStr = pb.date ? String(pb.date).substring(0, 10) : '';
-                const dayDateStr = day.date ? day.date.toISOString().substring(0, 10) : '';
-
-                if (!pbDateStr || pbDateStr === dayDateStr) {
-                  const placeIdStr = String(pb.blockId || pb.timetablePlaceBlockId || pb.placeId);
-                  const existingIdx = updatedPlaces.findIndex(p => p.id === placeIdStr);
-
-                  if (action === 'delete') {
-                    if (existingIdx !== -1) {
-                      updatedPlaces.splice(existingIdx, 1);
-                      hasChanged = true;
-                    }
-                  } else {
-                    const parseTimeStr = (t: any) => {
-                      if (typeof t === 'string') return t.substring(0, 5);
-                      return '09:00';
-                    };
-                    const startT = parseTimeStr(pb.startTime || pb.blockStartTime);
-                    const endT = parseTimeStr(pb.endTime || pb.blockEndTime);
-
-                    const blockCat = (pb as any).blockCategory;
-                    const contentTypeIdStr = String(pb.placeContentTypeId || '');
-                    const rawCatId = (pb.placeCategoryId ?? pb.placeCategory) as number;
-
-                    let catId = 4;
-                    if (blockCat === 'ATTRACTION' || contentTypeIdStr === '12' || [0, 12, 14, 15, 28].includes(rawCatId)) catId = 0;
-                    else if (blockCat === 'ACCOMMODATION' || contentTypeIdStr === '32' || rawCatId === 1 || rawCatId === 32) catId = 1;
-                    else if (blockCat === 'RESTAURANT' || contentTypeIdStr === '39' || rawCatId === 2 || rawCatId === 39) catId = 2;
-                    else if (blockCat === 'FREE' || rawCatId === 3) catId = 3;
-                    else if (blockCat === 'SEARCH' || rawCatId === 4) catId = 4;
-                    else if ([0, 1, 2, 3, 4].includes(rawCatId)) catId = rawCatId;
-
-                    const catNames: Record<number, any> = { 0: '관광지', 1: '숙소', 2: '식당', 3: '직접 추가', 4: '검색' };
-
-                    const placeItem: Place = {
-                      id: placeIdStr,
-                      name: pb.placeName || '장소',
-                      address: pb.placeAddress || '',
-                      photoUrl: pb.photoUrl || pb.placeThumbnailUrl || null,
-                      memo: pb.memo || '',
-                      category: pb.blockCategory || 'ATTRACTION',
-                      categoryId: catId,
-                      type: catNames[catId] || '기타',
-                      startTime: startT,
-                      endTime: endT,
-                      longitude: pb.longitude || pb.xLocation || pb.xlocation || 0,
-                      latitude: pb.latitude || pb.yLocation || pb.ylocation || 0,
-                      contentTypeId: pb.placeContentTypeId || null,
-                      imageUrl: pb.photoUrl || pb.placeThumbnailUrl || null,
-                      copyrightDivCd: pb.placeCopyrightDivCd || null,
-                    };
-
-                    if (existingIdx !== -1) {
-                      updatedPlaces[existingIdx] = placeItem;
-                    } else {
-                      updatedPlaces.push(placeItem);
-                    }
-                    hasChanged = true;
-                  }
-                }
-              });
-
-              if (!hasChanged) return day;
-              return {
-                ...day,
-                places: resolveConflictsAndSort(updatedPlaces),
-              };
-            });
-          });
-        }
-      }
-    };
-
-    subscribeToMessages(handleWsMessage);
-    return () => {
-      unsubscribeFromMessages(handleWsMessage);
-    };
-  }, [subscribeToMessages, unsubscribeFromMessages, setDays]);
-
   const formatDate = (date: Date) => {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
     return `${month}.${day}.`;
   };
-
-  const prevIsConnectedRef = useRef(isConnected);
 
   const initDaysFromDates = useCallback(() => {
     if (!route.params?.startDate || !route.params?.endDate) return;
@@ -282,7 +171,12 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
               const realBlockId = pb.blockId ?? pb.timetablePlaceBlockId ?? pb.id;
 
               return {
-                id: realBlockId !== undefined && realBlockId !== null ? String(realBlockId) : (pb.placeId ? String(pb.placeId) : `place_${Date.now()}_${Math.random()}`),
+                // blockId가 없으면 서버에 존재하지 않는 블록이므로 임시 ID를 부여한다.
+                // 외부 placeId(숫자 문자열)를 blockId로 쓰면 남의 블록을 덮어쓴다.
+                id:
+                  realBlockId !== undefined && realBlockId !== null
+                    ? String(realBlockId)
+                    : createTempPlaceId(),
                 placeRefId: pb.placeId || '',
                 name: pb.placeName || '장소',
                 type: categoryMapping(normalizedCategoryId),
