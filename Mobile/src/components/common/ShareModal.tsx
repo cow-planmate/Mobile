@@ -257,7 +257,7 @@ export default function ShareModal({
           <View style={styles.section}>
             {isOwner && (
               <View style={styles.switchRow}>
-                <Text style={styles.label}>공유 활성화 (읽기 전용)</Text>
+                <Text style={styles.label}>일정 공유 허용</Text>
                 <Switch
                   value={isShared}
                   onValueChange={handleToggleShare}

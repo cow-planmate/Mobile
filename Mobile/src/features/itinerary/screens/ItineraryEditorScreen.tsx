@@ -821,7 +821,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     // If plan already exists (editing from MySchedule or pre-created from Home), update title for owner and navigate to view
     if (route.params.planId) {
       try {
-        const ownerIdLower = String(planMetadata?.user?.userId || '').toLowerCase();
+        const ownerIdLower = String(planMetadata?.user?.userId || planMetadata?.ownerId || '').toLowerCase();
         const currentUserIdLower = String(currentUser?.userId || '').toLowerCase();
         const isOwner = !ownerIdLower || ownerIdLower === currentUserIdLower;
 
@@ -1078,7 +1078,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
                     '사용자';
                   const initial = name.charAt(0) || '?';
                   const userUidLower = String(user.uid || '').toLowerCase();
-                  const ownerIdLower = String(planMetadata?.user?.userId || '').toLowerCase();
+                  const ownerIdLower = String(planMetadata?.user?.userId || planMetadata?.ownerId || '').toLowerCase();
 
                   const isMe =
                     !!currentUser &&
@@ -1172,7 +1172,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         visible={isShareModalVisible}
         onClose={() => setShareModalVisible(false)}
         planId={planId as string}
-        isOwner={!planMetadata?.user?.userId || String(planMetadata.user.userId).toLowerCase() === String(currentUser?.userId || '').toLowerCase()}
+        isOwner={!(planMetadata?.user?.userId || planMetadata?.ownerId) || String(planMetadata?.user?.userId || planMetadata?.ownerId).toLowerCase() === String(currentUser?.userId || '').toLowerCase()}
       />
       {editingPlace && (
         <PlaceEditModal
