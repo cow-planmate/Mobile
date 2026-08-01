@@ -1,6 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '@env';
+import { API_URL, WEB_URL } from '@env';
 import { resolveApiUrl } from '../utils/apiUrl';
 
 /**
@@ -433,7 +433,7 @@ export async function getShareUrl(
     console.log('Failed to fetch share status:', e);
   }
   return {
-    shareUrl: `https://planmate.bapdodi.cloud/share/${planId}`,
+    shareUrl: `${WEB_URL}/create?id=${planId}`,
     isShared,
   };
 }
