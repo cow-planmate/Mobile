@@ -63,6 +63,12 @@ export type CommunityStackParamList = {
   CommunityDetail: {
     postId: string;
   };
+  CommunityCreate:
+    | {
+        /** 목록에서 보고 있던 게시판을 미리 선택한다 */
+        category?: 'free' | 'qna' | 'mate' | 'recommend';
+      }
+    | undefined;
 };
 
 export type MapStackParamList = {

@@ -73,6 +73,12 @@ export const styles = StyleSheet.create({
     elevation: 2,
   },
 
+  searchIcon: {
+    marginRight: normalize(8),
+  },
+  writeIcon: {
+    marginRight: normalize(4),
+  },
   searchInput: {
     flex: 1,
     fontSize: normalize(13),
@@ -289,12 +295,6 @@ export const styles = StyleSheet.create({
     color: '#111827',
     marginBottom: normalize(4),
   },
-  postContent: {
-    fontSize: normalize(12),
-    color: '#6B7280',
-    lineHeight: normalize(17),
-    marginBottom: normalize(8),
-  },
   postMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -368,85 +368,29 @@ export const styles = StyleSheet.create({
     color: '#6B7280',
   },
 
-  /* ── Pagination Styles ── */
-  listFooterPagination: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: normalize(20),
-    gap: normalize(8),
+  statIcon: {
+    marginRight: normalize(2),
   },
-  pageButton: {
-    width: normalize(28),
-    height: normalize(28),
-    borderRadius: normalize(6),
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pageButtonActive: {
-    backgroundColor: '#1344FF',
-    borderColor: '#1344FF',
-  },
-  pageText: {
-    fontSize: normalize(12),
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  pageTextActive: {
-    color: '#FFFFFF',
+  statTextLikes: {
+    color: '#3B82F6',
     fontWeight: 'bold',
   },
-  pageEllipsis: {
-    fontSize: normalize(12),
-    color: '#9CA3AF',
-    marginHorizontal: normalize(4),
-  },
-  lockOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.82)',
-    justifyContent: 'center',
+
+  /* ── List states ── */
+  listFooterLoading: {
+    paddingVertical: normalize(20),
     alignItems: 'center',
-    paddingHorizontal: normalize(24),
   },
-  lockContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: normalize(24),
-    padding: normalize(28),
+  listStateBox: {
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    width: '100%',
-    maxWidth: normalize(320),
+    paddingTop: normalize(48),
+    paddingBottom: normalize(60),
   },
-  lockIconWrapper: {
-    width: normalize(56),
-    height: normalize(56),
-    borderRadius: normalize(28),
-    backgroundColor: '#9CA3AF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: normalize(16),
-  },
-  lockTitle: {
-    fontSize: normalize(18),
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: normalize(8),
-    textAlign: 'center',
-  },
-  lockSubtitle: {
+  listStateText: {
     fontSize: normalize(13),
-    color: '#6B7280',
+    color: '#9CA3AF',
     textAlign: 'center',
-    lineHeight: normalize(18),
+    lineHeight: normalize(19),
   },
 });

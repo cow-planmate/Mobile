@@ -8,7 +8,11 @@ import TravelFeedScreen from '../features/itinerary/screens/TravelFeedScreen';
 import ProfileScreen from '../features/auth/screens/ProfileScreen';
 import ThemeSettingsScreen from '../features/auth/screens/ThemeSettingsScreen';
 import ChangePasswordScreen from '../features/auth/screens/ChangePasswordScreen';
-import { CommunityScreen } from '../features/community';
+import {
+  CommunityScreen,
+  PostCreateScreen,
+  PostDetailScreen,
+} from '../features/community';
 import { SocialScreen } from '../features/social';
 
 import {
@@ -87,6 +91,14 @@ function CommunityStack() {
       <CommunityStackNavigator.Screen
         name="CommunityMain"
         component={CommunityScreen}
+      />
+      <CommunityStackNavigator.Screen
+        name="CommunityDetail"
+        component={PostDetailScreen}
+      />
+      <CommunityStackNavigator.Screen
+        name="CommunityCreate"
+        component={PostCreateScreen}
       />
     </CommunityStackNavigator.Navigator>
   );
