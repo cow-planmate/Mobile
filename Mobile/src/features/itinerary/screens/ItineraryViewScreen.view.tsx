@@ -15,7 +15,7 @@ import {
   faCheck,
 } from '@fortawesome/free-solid-svg-icons';
 import { Map as MapOutlineIcon, ChevronLeft } from 'lucide-react-native';
-import KakaoMapView from '../components/KakaoMapView';
+import RouteMapSection from '../components/RouteMapSection';
 import { ShareModal, AirplaneLoading, LoadingSpinner } from '../../../components/common';
 import TimelineItem, {
   Place,
@@ -420,7 +420,7 @@ export default function ItineraryViewScreenView({
       {isMapVisible && (
         <View style={styles.mapContainer}>
           <View style={styles.mapInner}>
-            <KakaoMapView
+            <RouteMapSection
               places={
                 selectedDay?.places.map(place => ({
                   id: place.id,

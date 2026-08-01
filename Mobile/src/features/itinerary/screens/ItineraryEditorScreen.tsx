@@ -47,7 +47,7 @@ import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { styles } from './ItineraryEditorScreen.styles';
 import { ShareModal, PlanInfoModal, AirplaneLoading } from '../../../components/common';
 import PlaceEditModal from '../components/PlaceEditModal';
-import KakaoMapView from '../components/KakaoMapView';
+import RouteMapSection from '../components/RouteMapSection';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faMap, faUsers, faXmark } from '@fortawesome/free-solid-svg-icons';
 
@@ -1153,7 +1153,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           </View>
 
           <View style={modalStyles.mapBody}>
-            <KakaoMapView
+            <RouteMapSection
               places={
                 selectedDay?.places.map(place => ({
                   id: place.id,
