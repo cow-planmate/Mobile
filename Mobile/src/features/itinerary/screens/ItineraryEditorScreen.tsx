@@ -1172,6 +1172,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         visible={isShareModalVisible}
         onClose={() => setShareModalVisible(false)}
         planId={planId as string}
+        isOwner={!planMetadata?.user?.userId || String(planMetadata.user.userId).toLowerCase() === String(currentUser?.userId || '').toLowerCase()}
       />
       {editingPlace && (
         <PlaceEditModal

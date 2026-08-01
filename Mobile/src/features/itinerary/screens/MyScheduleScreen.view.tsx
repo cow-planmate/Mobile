@@ -294,6 +294,7 @@ export default function MyScheduleScreenView({
         visible={shareModalVisible}
         onClose={() => setShareModalVisible(false)}
         planId={selectedPlan?.planId ?? ''}
+        isOwner={menuOptions !== SHARED_MENU_OPTIONS}
       />
 
       <NotificationModal

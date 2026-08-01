@@ -38,6 +38,7 @@ interface ShareModalProps {
   onClose: () => void;
   planId: string;
   isMock?: boolean;
+  isOwner?: boolean;
 }
 
 export default function ShareModal({
@@ -45,6 +46,7 @@ export default function ShareModal({
   onClose,
   planId,
   isMock = false,
+  isOwner = true,
 }: ShareModalProps) {
   const { showAlert } = useAlert();
   const [shareLink, setShareLink] = useState('');
@@ -253,15 +255,17 @@ export default function ShareModal({
           </View>
 
           <View style={styles.section}>
-            <View style={styles.switchRow}>
-              <Text style={styles.label}>공유 활성화 (읽기 전용)</Text>
-              <Switch
-                value={isShared}
-                onValueChange={handleToggleShare}
-                trackColor={{ false: '#D1D5DB', true: COLORS.primary }}
-                thumbColor="#FFFFFF"
-              />
-            </View>
+            {isOwner && (
+              <View style={styles.switchRow}>
+                <Text style={styles.label}>공유 활성화 (읽기 전용)</Text>
+                <Switch
+                  value={isShared}
+                  onValueChange={handleToggleShare}
+                  trackColor={{ false: '#D1D5DB', true: COLORS.primary }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+            )}
             <View style={styles.linkContainer}>
               <TextInput
                 style={styles.linkInput}
@@ -320,12 +324,14 @@ export default function ShareModal({
                     </View>
                     <Text style={styles.editorName}>{editor.nickname}</Text>
                   </View>
-                  <TouchableOpacity
-                    onPress={() => handleRemoveEditor(editor.userId)}
-                    style={styles.removeButton}
-                  >
-                    <Text style={styles.removeButtonText}>삭제</Text>
-                  </TouchableOpacity>
+                  {isOwner && (
+                    <TouchableOpacity
+                      onPress={() => handleRemoveEditor(editor.userId)}
+                      style={styles.removeButton}
+                    >
+                      <Text style={styles.removeButtonText}>삭제</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               ))}
             </View>
