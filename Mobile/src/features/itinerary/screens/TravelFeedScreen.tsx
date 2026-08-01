@@ -11,10 +11,9 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
-import Svg, { Rect, Defs, Pattern, Circle } from 'react-native-svg';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Search, LayoutGrid, List, SlidersHorizontal, X, MapPin, Lock } from 'lucide-react-native';
+import { Search, LayoutGrid, List, SlidersHorizontal, X, MapPin } from 'lucide-react-native';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { Header, NotificationModal } from '../../../components/common';
@@ -26,7 +25,28 @@ import {
   acceptInvitation,
   rejectInvitation,
 } from '../../../api/trips';
-import { normalize } from '../../../utils/normalize';
+import { useFeedPosts } from '../../community/hooks/queries';
+import { formatDuration } from '../../community/services/communityApi';
+import { resolveAvatarUrl } from '../../community/utils/avatar';
+import { FeedFilterParams } from '../../community/types';
+
+/** 썸네일이 없는 여행기에 쓸 대체 이미지 */
+const FEED_FALLBACK_IMAGE =
+  'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=800';
+
+/** 화면의 기간 필터 → 서버 파라미터 */
+const DURATION_RANGES: Record<string, { minDays?: number; maxDays?: number }> = {
+  '1일': { minDays: 1, maxDays: 1 },
+  '2-3일': { minDays: 2, maxDays: 3 },
+  '4일 이상': { minDays: 4 },
+};
+
+/** 화면의 정렬 → 서버 파라미터 */
+const SORT_PARAMS: Record<string, string> = {
+  최신순: 'latest',
+  인기순: 'views',
+  좋아요순: 'likes',
+};
 
 const REGION_COORDINATES: Record<string, { lat: number; lng: number; name: string }> = {
   '서울': { lat: 37.5665, lng: 126.9780, name: '서울' },
@@ -70,6 +90,60 @@ export default function TravelFeedScreen() {
   const sortOptions = ['최신순', '인기순', '좋아요순'];
 
   const isFilterApplied = filterRegion !== '전체' || filterDuration !== '전체' || sortBy !== '최신순';
+
+  // 검색어를 매 글자마다 서버로 보내지 않는다
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  /** 화면의 한국어 필터를 서버 파라미터로 옮긴다 */
+  const feedFilters: FeedFilterParams = useMemo(() => {
+    const duration = DURATION_RANGES[filterDuration];
+    return {
+      region: filterRegion === '전체' ? undefined : filterRegion,
+      minDays: duration?.minDays,
+      maxDays: duration?.maxDays,
+      tag: selectedTag ?? undefined,
+      sort: SORT_PARAMS[sortBy] ?? 'latest',
+      q: debouncedQuery || undefined,
+    };
+  }, [filterRegion, filterDuration, selectedTag, sortBy, debouncedQuery]);
+
+  const feedQuery = useFeedPosts(feedFilters);
+
+  /** 서버 응답을 목록 카드가 기대하는 형태로 옮긴다 */
+  const feedItems: TravelFeedItem[] = useMemo(
+    () =>
+      (feedQuery.data?.pages ?? [])
+        .flatMap(page => page.items)
+        .map(post => ({
+          id: String(post.id),
+          title: post.title,
+          description: post.description ?? '',
+          author: post.author,
+          authorAvatar:
+            resolveAvatarUrl(post.authorImage, post.authorAvatarHash, 100) ?? '',
+          thumbnailUrl: post.image ?? FEED_FALLBACK_IMAGE,
+          createdAt: post.createdAt,
+          likes: post.likes,
+          dislikes: post.dislikes,
+          comments: post.comments,
+          views: post.views,
+          forks: post.forks ?? 0,
+          tags: post.tags ?? [],
+          location: post.location ?? post.region ?? '',
+          duration: formatDuration(post.durationDays),
+        })),
+    [feedQuery.data],
+  );
+
+  const handleLoadMore = useCallback(() => {
+    if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) {
+      void feedQuery.fetchNextPage();
+    }
+  }, [feedQuery]);
 
   const fetchPendingRequests = useCallback(async (silent = false) => {
     try {
@@ -136,10 +210,7 @@ export default function TravelFeedScreen() {
   };
 
   const handleFeedItemPress = (item: TravelFeedItem) => {
-    showAlert({
-      title: '여행기 상세',
-      message: `'${item.title}' 상세 페이지는 준비 중입니다.`,
-    });
+    navigation.navigate('FeedDetail', { postId: item.id });
   };
 
 
@@ -277,39 +348,21 @@ export default function TravelFeedScreen() {
 
           <View style={styles.content}>
             <TravelFeedList
+              items={feedItems}
               onItemPress={handleFeedItemPress}
-              searchQuery={searchQuery}
-              selectedTag={selectedTag}
               viewMode={viewMode}
-              sortBy={sortBy}
-              filterRegion={filterRegion}
-              filterDuration={filterDuration}
+              isLoading={feedQuery.isLoading}
+              isLoadingMore={feedQuery.isFetchingNextPage}
+              isRefreshing={
+                feedQuery.isRefetching && !feedQuery.isFetchingNextPage
+              }
+              isFiltered={isFilterApplied || !!debouncedQuery || !!selectedTag}
+              onRefresh={() => feedQuery.refetch()}
+              onLoadMore={handleLoadMore}
             />
           </View>
         </View>
 
-        {/* 🔒 Lock & Mosaic Overlay */}
-        <View style={styles.lockOverlay}>
-          <Svg style={StyleSheet.absoluteFill}>
-            <Defs>
-              <Pattern id="frosted" width="4" height="4" patternUnits="userSpaceOnUse">
-                <Circle cx="1" cy="1" r="0.8" fill="rgba(255, 255, 255, 0.7)" />
-                <Circle cx="3" cy="3" r="0.5" fill="rgba(230, 230, 230, 0.4)" />
-                <Circle cx="2" cy="0" r="0.4" fill="rgba(255, 255, 255, 0.5)" />
-                <Circle cx="0" cy="2" r="0.6" fill="rgba(200, 200, 200, 0.3)" />
-              </Pattern>
-            </Defs>
-            <Rect width="100%" height="100%" fill="url(#frosted)" />
-          </Svg>
-
-          <View style={styles.lockContainer}>
-            <View style={styles.lockIconWrapper}>
-              <Lock size={28} color="#FFFFFF" strokeWidth={2.2} />
-            </View>
-            <Text style={styles.lockTitle}>준비 중인 기능입니다</Text>
-            <Text style={styles.lockSubtitle}>조금만 기다려 주세요! 멋진 피드 기능으로 찾아뵙겠습니다.</Text>
-          </View>
-        </View>
       </View>
 
 
@@ -739,50 +792,5 @@ const styles = StyleSheet.create({
   mapView: {
     flex: 1,
     borderRadius: 0,
-  },
-  lockOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.82)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: normalize(24),
-  },
-  lockContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: normalize(24),
-    padding: normalize(28),
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    width: '100%',
-    maxWidth: normalize(320),
-  },
-  lockIconWrapper: {
-    width: normalize(56),
-    height: normalize(56),
-    borderRadius: normalize(28),
-    backgroundColor: '#9CA3AF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: normalize(16),
-  },
-  lockTitle: {
-    fontSize: normalize(18),
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: normalize(8),
-    textAlign: 'center',
-  },
-  lockSubtitle: {
-    fontSize: normalize(13),
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: normalize(18),
   },
 });

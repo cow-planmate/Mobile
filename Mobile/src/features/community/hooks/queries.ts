@@ -11,6 +11,8 @@ import {
   deleteComment,
   deletePost,
   fetchComments,
+  fetchFeedPosts,
+  fetchFeedRegionCounts,
   fetchHotPosts,
   fetchMyStats,
   fetchPost,
@@ -22,8 +24,11 @@ import {
   updateComment,
   updatePost,
 } from '../services/communityApi';
+import { forkItinerary } from '../services/forkItinerary';
 import {
   CreatePostPayload,
+  FeedFilterParams,
+  Itinerary,
   MateStatus,
   ReactionType,
 } from '../types';
@@ -61,6 +66,26 @@ export const usePosts = (category: string, sort = 'latest', q = '') =>
     getNextPageParam: lastPage =>
       lastPage.page + 1 < lastPage.totalPages ? lastPage.page + 1 : undefined,
     staleTime: 30_000,
+  });
+
+/** 여행기(FEED) 목록 — 지역·기간·태그 필터는 서버가 처리한다 */
+export const useFeedPosts = (filters: FeedFilterParams, size = 12) =>
+  useInfiniteQuery({
+    queryKey: ['community', 'posts', 'feed', filters, size] as const,
+    queryFn: ({ pageParam }) =>
+      fetchFeedPosts(pageParam as number, size, filters),
+    initialPageParam: 0,
+    getNextPageParam: lastPage =>
+      lastPage.page + 1 < lastPage.totalPages ? lastPage.page + 1 : undefined,
+    staleTime: 30_000,
+  });
+
+/** 여행기 지역별 글 수 */
+export const useFeedRegionCounts = () =>
+  useQuery({
+    queryKey: ['community', 'feed-regions'],
+    queryFn: fetchFeedRegionCounts,
+    staleTime: 60_000,
   });
 
 /** 게시판별 핫글 */
@@ -253,6 +278,34 @@ export const useUpdateAnswered = (postId: number | string) => {
     onSuccess: () => {
       void invalidate.post(postId);
       void invalidate.lists();
+    },
+  });
+};
+
+/**
+ * 여행기 가져가기.
+ * 스냅샷으로 새 플랜을 만든 뒤 포크를 집계하므로, 성공하면 내 일정 목록과
+ * 여행기 집계가 모두 바뀐다.
+ */
+export const useForkItinerary = (postId: number | string) => {
+  const invalidate = useInvalidate();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      itinerary,
+      startDate,
+      title,
+    }: {
+      itinerary: Itinerary;
+      startDate: Date;
+      title: string;
+    }) => forkItinerary(postId, itinerary, startDate, title),
+    onSuccess: () => {
+      void invalidate.post(postId);
+      void invalidate.lists();
+      void queryClient.invalidateQueries({ queryKey: ['myPlans'] });
+      void queryClient.invalidateQueries({ queryKey: ['userProfile'] });
     },
   });
 };

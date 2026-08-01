@@ -42,6 +42,10 @@ export interface PlaceVO {
 export interface PlacesResponse {
   places: PlaceVO[];
   nextPageTokens?: string[];
+  totalCount?: number;
+  page?: number;
+  size?: number;
+  hasNext?: boolean;
 }
 
 /** 일정 타임테이블 VO */
@@ -286,30 +290,32 @@ export async function fetchCategoryPlaces(
 }
 
 /** 관광지 추천 목록 조회 */
-export const fetchTourPlaces = (destinationId: number) => fetchCategoryPlaces(destinationId, 'tour');
+export const fetchTourPlaces = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlaces(destinationId, 'tour', page, size);
 
 /** 숙소 추천 목록 조회 */
-export const fetchLodgingPlaces = (destinationId: number) => fetchCategoryPlaces(destinationId, 'lodging');
+export const fetchLodgingPlaces = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlaces(destinationId, 'lodging', page, size);
 
 /** 음식점 추천 목록 조회 */
-export const fetchRestaurantPlaces = (destinationId: number) => fetchCategoryPlaces(destinationId, 'restaurant');
+export const fetchRestaurantPlaces = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlaces(destinationId, 'restaurant', page, size);
 
 /** 카테고리별 추천 장소 목록 조회 (비인증) */
 export async function fetchCategoryPlacesNoAuth(
   categoryType: 'tour' | 'lodging' | 'restaurant',
   destinationId: number,
+  page: number = 1,
+  size: number = 20,
 ): Promise<PlacesResponse> {
-  return fetchCategoryPlaces(destinationId, categoryType);
+  return fetchCategoryPlaces(destinationId, categoryType, page, size);
 }
 
 /** 관광지 추천 목록 조회 (비인증) */
-export const fetchTourPlacesNoAuth = (destinationId: number) => fetchCategoryPlacesNoAuth('tour', destinationId);
+export const fetchTourPlacesNoAuth = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlacesNoAuth('tour', destinationId, page, size);
 
 /** 숙소 추천 목록 조회 (비인증) */
-export const fetchLodgingPlacesNoAuth = (destinationId: number) => fetchCategoryPlacesNoAuth('lodging', destinationId);
+export const fetchLodgingPlacesNoAuth = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlacesNoAuth('lodging', destinationId, page, size);
 
 /** 음식점 추천 목록 조회 (비인증) */
-export const fetchRestaurantPlacesNoAuth = (destinationId: number) => fetchCategoryPlacesNoAuth('restaurant', destinationId);
+export const fetchRestaurantPlacesNoAuth = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlacesNoAuth('restaurant', destinationId, page, size);
 
 // ────────────────────────────────────────────────
 // 장소 검색 및 페이징 API

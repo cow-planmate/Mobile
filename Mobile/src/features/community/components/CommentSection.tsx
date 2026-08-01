@@ -10,6 +10,7 @@ import {
 import { CornerDownRight, MessageCircle, Send } from 'lucide-react-native';
 import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
+import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import {
@@ -85,7 +86,7 @@ export default function CommentSection({
     } catch (error) {
       showAlert({
         title: '댓글 등록 실패',
-        message: (error as Error).message,
+        message: getBackendErrorMessage(error),
         type: 'error',
       });
     }
@@ -102,7 +103,7 @@ export default function CommentSection({
     } catch (error) {
       showAlert({
         title: '답글 등록 실패',
-        message: (error as Error).message,
+        message: getBackendErrorMessage(error),
         type: 'error',
       });
     }
@@ -119,7 +120,7 @@ export default function CommentSection({
     } catch (error) {
       showAlert({
         title: '댓글 수정 실패',
-        message: (error as Error).message,
+        message: getBackendErrorMessage(error),
         type: 'error',
       });
     }
@@ -143,7 +144,7 @@ export default function CommentSection({
             } catch (error) {
               showAlert({
                 title: '댓글 삭제 실패',
-                message: (error as Error).message,
+                message: getBackendErrorMessage(error),
                 type: 'error',
               });
             }

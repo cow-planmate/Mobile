@@ -6,12 +6,15 @@ import {
   CommunityPostDetail,
   CommunityPostSummary,
   CreatePostPayload,
+  FeedFilterParams,
+  ForkResult,
   MateParticipation,
   MateStatus,
   MyStats,
   PageData,
   ReactionResult,
   ReactionType,
+  RegionCount,
 } from '../types';
 
 /**
@@ -35,14 +38,23 @@ const url = (path: string) => resolveApiUrl(`/api/community${path}`);
 /**
  * createdAt을 상대시간으로 바꾸고 원본 ISO를 createdAtIso에 보존한다.
  * 화면은 "3시간 전"을 쓰고, 정렬·비교가 필요하면 ISO를 쓴다.
+ *
+ * 작성·수정 API는 본문 없이 201/204만 돌려줄 수도 있다. 그때 여기서 예외가
+ * 나면 저장은 됐는데 앱에는 실패로 보이므로, 변환할 게 없으면 받은 값을
+ * 그대로 통과시킨다.
  */
-const mapCreatedAt = <T extends { createdAt: string }>(
+const mapCreatedAt = <T extends { createdAt?: string }>(
   item: T,
-): T & { createdAtIso: string } => ({
-  ...item,
-  createdAtIso: item.createdAt,
-  createdAt: timeAgo(item.createdAt),
-});
+): T & { createdAtIso?: string } => {
+  if (!item || typeof item !== 'object' || typeof item.createdAt !== 'string') {
+    return item;
+  }
+  return {
+    ...item,
+    createdAtIso: item.createdAt,
+    createdAt: timeAgo(item.createdAt),
+  };
+};
 
 const mapPage = <T extends { createdAt: string }>(page: PageData<T>) => ({
   ...page,
@@ -76,6 +88,55 @@ export async function fetchPosts(
 
   const response = await axios.get(url('/posts'), { params });
   return mapPage(response.data);
+}
+
+/**
+ * 여행기(FEED) 목록 조회.
+ *
+ * 일반 게시판과 같은 엔드포인트지만 지역·기간·태그 필터를 서버가 처리한다.
+ * 빈 값은 아예 보내지 않아야 서버가 "전체"로 해석한다.
+ */
+export async function fetchFeedPosts(
+  page: number,
+  size: number,
+  filters: FeedFilterParams = {},
+): Promise<PageData<CommunityPostSummary>> {
+  const params: Record<string, string> = {
+    category: 'feed',
+    page: String(page),
+    size: String(size),
+    sort: filters.sort ?? 'latest',
+  };
+  if (filters.region) params.region = filters.region;
+  if (filters.minDays !== undefined) params.minDays = String(filters.minDays);
+  if (filters.maxDays !== undefined) params.maxDays = String(filters.maxDays);
+  if (filters.tag) params.tag = filters.tag;
+  if (filters.q && filters.q.trim()) params.q = filters.q.trim();
+
+  const response = await axios.get(url('/posts'), { params });
+  return mapPage(response.data);
+}
+
+/** 여행기 지역별 글 수 (필터 칩에 개수를 붙이는 용도) */
+export async function fetchFeedRegionCounts(): Promise<RegionCount[]> {
+  const response = await axios.get(url('/posts/regions'), {
+    params: { category: 'feed' },
+  });
+  return response.data ?? [];
+}
+
+/** 여행기 가져가기 집계 (실제 플랜 복제는 forkItinerary가 담당한다) */
+export async function forkPost(
+  postId: number | string,
+): Promise<ForkResult> {
+  const response = await axios.post(url(`/posts/${postId}/fork`));
+  return response.data;
+}
+
+/** durationDays → "N박 M일" 표기 (1일 여행은 "1일") */
+export function formatDuration(durationDays?: number): string {
+  if (!durationDays || durationDays < 1) return '';
+  return durationDays === 1 ? '1일' : `${durationDays - 1}박 ${durationDays}일`;
 }
 
 /** 게시판별 인기 게시글 (핫글) */

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import FastImage from 'react-native-fast-image';
 import {
   View,
@@ -33,143 +33,39 @@ export interface TravelFeedItem {
   duration: string;
 }
 
-const generateMockFeedData = (page: number, limit: number = 10): TravelFeedItem[] => {
-  const startIndex = (page - 1) * limit;
-  const mockTagsList = [
-    ['#뚜벅이최적화', '#동선낭비없는'],
-    ['#여유로운P', '#극한의J'],
-    ['#뚜벅이최적화', '#극한의J'],
-    ['#여유로운P', '#동선낭비없는'],
-  ];
-  const landscapeImages = [
-    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=400&fit=crop', // 해변
-    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=400&fit=crop', // 산
-    'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&h=400&fit=crop', // 안개 낀 강
-    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&h=400&fit=crop', // 요세미티 계곡
-    'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=600&h=400&fit=crop', // 호수와 산
-    'https://images.unsplash.com/photo-1472214222541-d510753a4907?w=600&h=400&fit=crop', // 초원
-    'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=600&h=400&fit=crop', // 숲길
-    'https://images.unsplash.com/photo-1433832597046-4f10e10ac764?w=600&h=400&fit=crop', // 열기구와 풍경
-  ];
-  return Array.from({ length: limit }).map((_, index) => {
-    const currentId = startIndex + index + 1;
-    const id = currentId.toString();
-    return {
-      id,
-      title: currentId % 3 === 1 ? '서울 3박 4일 완벽 여행 코스' : `나만 알고 싶은 인생 여행지 #${id}`,
-      description: currentId % 3 === 1 ? '경복궁, 북촌한옥마을, 명동까지 핫플 다 담았어요!' : '상세 일정 및 꿀팁, 맛집 정보가 가득 포함된 알찬 코스입니다.',
-      author: `여행러_${id}`,
-      authorAvatar: `https://picsum.photos/id/${(currentId * 3) % 70}/100/100`,
-      thumbnailUrl: landscapeImages[currentId % landscapeImages.length],
-      createdAt: `${Math.floor((currentId * 1.5) % 6) + 1}일 전`,
-      likes: ((currentId * 12) % 150) + 5,
-      dislikes: ((currentId * 2) % 15) + 1,
-      comments: ((currentId * 3) % 40) + 1,
-      views: ((currentId * 110) % 1800) + 80,
-      forks: ((currentId * 15) % 90) + 5,
-      tags: mockTagsList[currentId % 4],
-      location: ['서울', '부산', '제주도', '강릉', '경주', '전주'][currentId % 6],
-      duration: ['1일', '2박 3일', '3박 4일', '4일 이상'][currentId % 4],
-    };
-  });
-};
-
 interface TravelFeedListProps {
+  /** 표시할 여행기 목록 (조회·필터는 화면이 담당한다) */
+  items: TravelFeedItem[];
   onItemPress?: (item: TravelFeedItem) => void;
-  searchQuery?: string;
-  selectedTag?: string | null;
   viewMode?: 'list' | 'grid';
-  sortBy?: string;
-  filterRegion?: string;
-  filterDuration?: string;
+  /** 첫 조회 중 */
+  isLoading?: boolean;
+  /** 다음 페이지를 불러오는 중 */
+  isLoadingMore?: boolean;
+  isRefreshing?: boolean;
+  /** 필터/검색이 걸린 상태인지 — 빈 목록 문구를 가른다 */
+  isFiltered?: boolean;
+  onRefresh?: () => void;
+  onLoadMore?: () => void;
 }
 
+/**
+ * 여행기 목록 (표시 전용).
+ *
+ * 조회·필터·페이지네이션은 서버가 처리하고 화면(TravelFeedScreen)이 관리한다.
+ * 이 컴포넌트는 받은 목록을 그리는 일만 한다.
+ */
 export default function TravelFeedList({
+  items,
   onItemPress,
-  searchQuery = '',
-  selectedTag = null,
   viewMode = 'list',
-  sortBy = '최신순',
-  filterRegion = '전체',
-  filterDuration = '전체',
+  isLoading = false,
+  isLoadingMore = false,
+  isRefreshing = false,
+  isFiltered = false,
+  onRefresh,
+  onLoadMore,
 }: TravelFeedListProps) {
-  const [feeds, setFeeds] = useState<TravelFeedItem[]>([]);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-
-  // Filter feeds based on search query, selected tag, region, and duration
-  const processedFeeds = feeds.filter(
-    (item) =>
-      // Search filter
-      (item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       item.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       item.author.toLowerCase().includes(searchQuery.toLowerCase())) &&
-      // Tag filter
-      (selectedTag === null || item.tags.includes(selectedTag)) &&
-      // Region filter
-      (filterRegion === '전체' || item.location === filterRegion) &&
-      // Duration filter
-      (filterDuration === '전체' ||
-       (filterDuration === '1일' && item.createdAt === '1일 전') ||
-       (filterDuration === '2-3일' && (item.createdAt === '2일 전' || item.createdAt === '3일 전')) ||
-       (filterDuration === '4일 이상' && (item.createdAt.includes('4일') || item.createdAt.includes('5일') || item.createdAt.includes('주') || item.createdAt.includes('달'))))
-  );
-
-  // Apply sorting
-  if (sortBy === '인기순') {
-    processedFeeds.sort((a, b) => (b.likes + b.comments) - (a.likes + a.comments));
-  } else if (sortBy === '좋아요순') {
-    processedFeeds.sort((a, b) => b.likes - a.likes);
-  } else if (sortBy === '최신순') {
-    processedFeeds.sort((a, b) => parseInt(b.id) - parseInt(a.id));
-  }
-
-  // Mock API Call
-  const fetchFeeds = useCallback(async (pageNumber: number, isRefresh = false) => {
-    if (loading) return;
-    setLoading(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      const newFeeds = generateMockFeedData(pageNumber, 10);
-      
-      if (isRefresh) {
-        setFeeds(newFeeds);
-        setHasMore(true);
-      } else {
-        setFeeds((prev) => [...prev, ...newFeeds]);
-      }
-      
-      if (pageNumber >= 5) {
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error('Failed to fetch travel feeds:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [loading]);
-
-  useEffect(() => {
-    fetchFeeds(1, true);
-  }, []);
-
-  const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    setPage(1);
-    fetchFeeds(1, true);
-  }, [fetchFeeds]);
-
-  const handleLoadMore = useCallback(() => {
-    if (!loading && hasMore) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchFeeds(nextPage);
-    }
-  }, [loading, hasMore, page, fetchFeeds]);
-
   const renderItem = useCallback(({ item }: { item: TravelFeedItem }) => {
     const isActualGrid = viewMode === 'grid';
     
@@ -325,43 +221,50 @@ export default function TravelFeedList({
   }, [onItemPress, viewMode]);
 
   const renderFooter = useCallback(() => {
-    if (!loading) return null;
+    if (!isLoadingMore) return null;
     return (
       <View style={styles.footerLoading}>
         <ActivityIndicator size="small" color={COLORS.primary} />
       </View>
     );
-  }, [loading]);
+  }, [isLoadingMore]);
 
   const renderEmpty = useCallback(() => {
-    if (loading && processedFeeds.length === 0) return null;
-    const isFiltered = searchQuery || selectedTag !== null || filterRegion !== '전체' || filterDuration !== '전체';
+    if (isLoading) {
+      return (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="small" color={COLORS.primary} />
+        </View>
+      );
+    }
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyText}>
-          {isFiltered ? '검색 결과와 일치하는 여행기가 없습니다.' : '등록된 여행기가 없습니다.'}
+          {isFiltered
+            ? '검색 결과와 일치하는 여행기가 없습니다.'
+            : '등록된 여행기가 없습니다.'}
         </Text>
       </View>
     );
-  }, [loading, processedFeeds.length, searchQuery, selectedTag, filterRegion, filterDuration]);
+  }, [isLoading, isFiltered]);
 
   return (
     <View style={styles.container}>
       <FlashList
         key={viewMode}
         numColumns={1}
-        data={processedFeeds}
+        data={items}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         estimatedItemSize={340}
-        onEndReached={handleLoadMore}
+        onEndReached={onLoadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={renderFooter}
         ListEmptyComponent={renderEmpty}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
             colors={[COLORS.primary]}
             tintColor={COLORS.primary}
           />

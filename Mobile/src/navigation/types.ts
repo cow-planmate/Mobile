@@ -8,6 +8,10 @@ export type TabParamList = {
 
 export type FeedStackParamList = {
   FeedMain: undefined;
+  FeedDetail: {
+    /** 커뮤니티 여행기(category=feed) 게시글 ID */
+    postId: string;
+  };
 };
 
 export type ScheduleStackParamList = {

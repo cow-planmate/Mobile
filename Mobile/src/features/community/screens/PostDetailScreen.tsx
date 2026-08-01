@@ -21,6 +21,7 @@ import {
   Users,
 } from 'lucide-react-native';
 import { normalize } from '../../../utils/normalize';
+import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CommunityStackParamList } from '../../../navigation/types';
@@ -73,7 +74,7 @@ export default function PostDetailScreen() {
     } catch (error) {
       showAlert({
         title: '반응 등록 실패',
-        message: (error as Error).message,
+        message: getBackendErrorMessage(error),
         type: 'error',
       });
     }
@@ -97,7 +98,7 @@ export default function PostDetailScreen() {
             } catch (error) {
               showAlert({
                 title: '삭제 실패',
-                message: (error as Error).message,
+                message: getBackendErrorMessage(error),
                 type: 'error',
               });
             }
@@ -116,7 +117,7 @@ export default function PostDetailScreen() {
       await joinMate.mutateAsync();
       showAlert({ title: '참여 완료', message: '메이트로 참여했어요!', type: 'success' });
     } catch (error) {
-      const message = (error as Error).message ?? '';
+      const message = getBackendErrorMessage(error);
       if (message.includes('이미 참여')) {
         showAlert({
           title: '이미 참여 중',
@@ -133,7 +134,7 @@ export default function PostDetailScreen() {
                 } catch (leaveError) {
                   showAlert({
                     title: '참여 취소 실패',
-                    message: (leaveError as Error).message,
+                    message: getBackendErrorMessage(leaveError),
                     type: 'error',
                   });
                 }

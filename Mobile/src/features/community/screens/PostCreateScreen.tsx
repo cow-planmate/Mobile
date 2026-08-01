@@ -14,6 +14,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChevronLeft } from 'lucide-react-native';
 import { normalize } from '../../../utils/normalize';
+import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CommunityStackParamList } from '../../../navigation/types';
 import { BOARDS, BoardKey } from '../constants/levels';
@@ -74,11 +75,18 @@ export default function PostCreateScreen() {
 
     try {
       const created = await createPost.mutateAsync(payload);
-      navigation.replace('CommunityDetail', { postId: String(created.id) });
+      // 서버가 작성 응답에 게시글을 담아주면 바로 상세로 보낸다.
+      // 본문 없이 성공만 알려주는 경우도 있으므로, id가 없으면 목록으로
+      // 돌아간다 — 목록은 이미 무효화되어 새 글이 올라와 있다.
+      if (created?.id != null) {
+        navigation.replace('CommunityDetail', { postId: String(created.id) });
+      } else {
+        navigation.goBack();
+      }
     } catch (error) {
       showAlert({
         title: '등록 실패',
-        message: (error as Error).message,
+        message: getBackendErrorMessage(error),
         type: 'error',
       });
     }

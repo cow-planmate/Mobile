@@ -68,6 +68,88 @@ export interface CommunityPostDetail extends CommunityPostSummary {
   contentText: string;
   updatedAt?: string;
   myReaction?: ReactionType | null;
+  // FEED(여행기) 전용
+  itinerary?: Itinerary | null;
+  sourcePlanId?: string;
+  myFork?: boolean;
+}
+
+// ────────────────────────────────────────────────
+// 여행기(FEED) 일정 스냅샷
+// ────────────────────────────────────────────────
+
+/**
+ * 여행기에 박아두는 플랜 스냅샷.
+ * "가져가기"가 이 스냅샷만으로 새 플랜을 만들기 때문에, POST /api/plan/full이
+ * 요구하는 정보를 빠짐없이 담아야 한다. 구 스키마 게시글에는 없으므로 전부
+ * optional이며, plan이 없으면 가져가기가 불가능하다.
+ */
+export interface ItineraryPlanSnapshot {
+  destinationId: number;
+  destinationName?: string | null;
+  transportationType: string;
+  adultCount?: number | null;
+  childCount?: number | null;
+}
+
+/** 일정 스냅샷의 장소 블록 하나 */
+export interface ItineraryItem {
+  /** 블록 시작 시각 HH:mm */
+  time: string;
+  place: string;
+  description?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  /** BlockCategory (ATTRACTION/ACCOMMODATION/RESTAURANT/FREE/SEARCH) */
+  category?: string | null;
+  photoUrl?: string | null;
+  /** 블록 종료 시각 HH:mm */
+  endTime?: string | null;
+  placeId?: string | null;
+  placeContentTypeId?: string | null;
+  placeAddress?: string | null;
+  placeCopyrightDivCd?: string | null;
+  /** 작성자가 "메모도 함께 공개"를 켠 경우에만 존재 */
+  memo?: string | null;
+}
+
+/** 일정 스냅샷의 하루 */
+export interface ItineraryDay {
+  day: number;
+  /** 원본 여행 날짜 (가져갈 때는 사용자가 고른 시작일로 시프트된다) */
+  date?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  items: ItineraryItem[];
+}
+
+/** 여행기에 담긴 일정 스냅샷 */
+export interface Itinerary {
+  plan?: ItineraryPlanSnapshot | null;
+  days: ItineraryDay[];
+}
+
+/** 가져가기 집계 결과 */
+export interface ForkResult {
+  forks: number;
+  myFork: boolean;
+}
+
+/** 여행기 목록 필터 */
+export interface FeedFilterParams {
+  region?: string;
+  minDays?: number;
+  maxDays?: number;
+  tag?: string;
+  /** latest | likes | views | forks */
+  sort?: string;
+  q?: string;
+}
+
+/** 지역별 여행기 수 */
+export interface RegionCount {
+  region: string;
+  count: number;
 }
 
 /** 댓글 (대댓글이면 parentId가 채워진다) */

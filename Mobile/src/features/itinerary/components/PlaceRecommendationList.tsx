@@ -299,6 +299,9 @@ export default function PlaceRecommendationList({
     lodgingNext,
     restaurantNext,
     searchNext,
+    tourHasNext,
+    lodgingHasNext,
+    restaurantHasNext,
     isLoading,
     doSearchPlaces,
     loadMorePlaces,
@@ -429,23 +432,23 @@ export default function PlaceRecommendationList({
     return rawData;
   };
 
-  const getTabTokens = (): string[] => {
+  const checkHasMoreData = (): boolean => {
     switch (selectedTab) {
       case '관광지':
-        return tourNext;
+        return tourHasNext;
       case '숙소':
-        return lodgingNext;
+        return lodgingHasNext;
       case '식당':
-        return restaurantNext;
+        return restaurantHasNext;
       case '검색':
-        return isSearchReady ? searchNext : [];
+        return isSearchReady ? searchNext.length > 0 : false;
       default:
-        return [];
+        return false;
     }
   };
 
   const tabData = getTabData();
-  const hasMoreData = getTabTokens().length > 0;
+  const hasMoreData = checkHasMoreData();
 
   const handleLoadMore = () => {
     if (!hasMoreData || isLoading) return;

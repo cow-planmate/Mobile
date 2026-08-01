@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAlert } from '../../../contexts/AlertContext';
+import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -76,7 +77,7 @@ export default function CommunityScreen() {
       } catch (error) {
         showAlert({
           title: '초대 수락 실패',
-          message: (error as Error).message,
+          message: getBackendErrorMessage(error),
           type: 'error',
         });
       }
@@ -92,7 +93,7 @@ export default function CommunityScreen() {
       } catch (error) {
         showAlert({
           title: '초대 거절 실패',
-          message: (error as Error).message,
+          message: getBackendErrorMessage(error),
           type: 'error',
         });
       }
