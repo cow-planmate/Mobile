@@ -50,19 +50,19 @@ export default function WeatherHeader({
           <View style={styles.tempBlock}>
             <Text style={styles.tempLabel}>최저</Text>
             <Text style={[styles.tempValue, { color: theme.colors.primary }]}>
-              {Math.round(weather.temp_min)}°C
+              {Math.round(weather.tempMin)}°C
             </Text>
           </View>
           <View style={styles.tempBlock}>
             <Text style={styles.tempLabel}>최고</Text>
             <Text style={[styles.tempValue, { color: theme.colors.danger }]}>
-              {Math.round(weather.temp_max)}°C
+              {Math.round(weather.tempMax)}°C
             </Text>
           </View>
           <View style={styles.tempBlock}>
             <Text style={styles.tempLabel}>체감</Text>
             <Text style={[styles.tempValue, { color: theme.colors.text }]}>
-              {Math.round(weather.feels_like || weather.temp_max)}°C
+              {Math.round(weather.feelsLike || weather.tempMax)}°C
             </Text>
           </View>
         </View>

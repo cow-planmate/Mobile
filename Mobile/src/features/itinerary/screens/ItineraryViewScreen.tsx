@@ -15,7 +15,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
-  eachDateString,
   formatDateLocal,
   timeToMinutes,
 } from '../../../utils/timeUtils';
@@ -26,7 +25,7 @@ import {
 import {
   PlaceBlockVO,
   SimpleWeatherInfo,
-  fetchWeatherRecommendations,
+  fetchWeather,
 } from '../../../api/trips';
 import { useAlert } from '../../../contexts/AlertContext';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
@@ -97,6 +96,10 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const [weatherMap, setWeatherMap] = useState<
     Record<string, SimpleWeatherInfo>
   >({});
+  /** 날씨 조회 기준 여행지 ID. 서버는 도시명이 아니라 destinationId를 받는다. */
+  const [weatherDestinationId, setWeatherDestinationId] = useState<number | null>(
+    route.params?.travelId ?? null,
+  );
   const [destinationCity, setDestinationCity] = useState(
     routeDestination || '',
   );
@@ -126,6 +129,12 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         config,
       );
       const { planFrame, placeBlocks, timetables } = response.data;
+
+      const planDestinationId =
+        (planFrame as any)?.destinationId ?? planFrame?.travelId ?? null;
+      if (planDestinationId != null) {
+        setWeatherDestinationId(Number(planDestinationId));
+      }
 
       if (planFrame?.planName) {
         setTripName(prev => (prev ? prev : planFrame.planName));
@@ -242,7 +251,8 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
 
   // Fetch weather when destination and days are available
   useEffect(() => {
-    if (!destinationCity || !weatherRangeStart || !weatherRangeEnd) {
+    if (!weatherDestinationId || !weatherRangeStart || !weatherRangeEnd) {
+      setWeatherMap({});
       setIsWeatherLoading(false);
       return;
     }
@@ -253,7 +263,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     // 기간이 연달아 바뀌면 먼저 보낸 응답이 나중에 도착해 최신 결과를 덮어쓸 수 있다.
     let cancelled = false;
 
-    fetchWeatherRecommendations(destinationCity, startDate, endDate)
+    fetchWeather(weatherDestinationId, startDate, endDate)
       .then(res => {
         if (cancelled) return;
         const map: Record<string, SimpleWeatherInfo> = {};
@@ -264,20 +274,11 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         }
         setWeatherMap(map);
       })
-      .catch(() => {
+      .catch(error => {
         if (cancelled) return;
-        // Fallback: assign mock weather data for each day if backend API fails/is incomplete
-        const fallbackMap: Record<string, SimpleWeatherInfo> = {};
-        eachDateString(startDate, endDate).forEach(dateStr => {
-          fallbackMap[dateStr] = {
-            date: dateStr,
-            temp_min: 18,
-            temp_max: 26,
-            feels_like: 23,
-            description: '맑음',
-          };
-        });
-        setWeatherMap(fallbackMap);
+        // 실패 시 고정값을 채우면 조회가 계속 실패해도 정상처럼 보인다. 비워 둔다.
+        console.warn('날씨 조회 실패:', error);
+        setWeatherMap({});
       })
       .finally(() => {
         if (cancelled) return;
@@ -287,7 +288,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [destinationCity, weatherRangeStart, weatherRangeEnd]);
+  }, [weatherDestinationId, weatherRangeStart, weatherRangeEnd]);
 
   useEffect(() => {
     navigation.setOptions({

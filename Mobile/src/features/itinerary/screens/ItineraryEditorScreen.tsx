@@ -27,7 +27,6 @@ import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
 import {
   timeToMinutes,
   dateToTime,
-  eachDateString,
   formatDateLocal,
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
@@ -38,7 +37,7 @@ import {
 } from '../../../utils/planSyncPayload';
 import {
   SimpleWeatherInfo,
-  fetchWeatherRecommendations,
+  fetchWeather,
 } from '../../../api/trips';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { ShareModal, PlanInfoModal, AirplaneLoading } from '../../../components/common';
@@ -198,24 +197,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   } = usePlaces();
   const planId = route.params.planId;
   const destination = route.params.destination;
-  const [destinationCity, setDestinationCity] = useState(
-    route.params.destination || '',
-  );
-
-  const buildWeatherCity = useCallback(
-    (travelCategoryName?: string, travelName?: string) => {
-      const category = travelCategoryName?.trim() || '';
-      const name = travelName?.trim() || '';
-
-      if (category && name) {
-        return `${category} ${name}`;
-      }
-
-      return category || name || '';
-    },
-    [],
-  );
-
   const [isScheduleEditVisible, setScheduleEditVisible] = useState(false);
   const [isShareModalVisible, setShareModalVisible] = useState(false);
   const [isPlaceEditModalVisible, setPlaceEditModalVisible] = useState(false);
@@ -287,25 +268,23 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     Record<string, SimpleWeatherInfo>
   >({});
 
-  useEffect(() => {
-    const metaAny = planMetadata as any;
-    if (metaAny?.destinationName) {
-      setDestinationCity(metaAny.destinationName);
-    } else if (planMetadata?.travelCategoryName || planMetadata?.travelName) {
-      setDestinationCity(
-        buildWeatherCity(planMetadata.travelCategoryName, planMetadata.travelName),
-      );
-    }
-  }, [planMetadata, buildWeatherCity]);
-
   // 날씨 조회 범위. 날짜 문자열로 좁혀 두면 장소를 편집할 때마다 재조회하지 않고,
   // 일정 기간이 실제로 바뀔 때만(일수가 그대로여도) 다시 조회한다.
   const weatherRangeStart = days.length > 0 ? formatDateLocal(days[0].date) : '';
   const weatherRangeEnd =
     days.length > 0 ? formatDateLocal(days[days.length - 1].date) : '';
 
+  /** 날씨 조회 기준 여행지. 서버는 도시명이 아니라 destinationId를 받는다. */
+  const weatherDestinationId =
+    (route.params as any)?.destinationId ||
+    route.params.travelId ||
+    (planMetadata as any)?.destinationId ||
+    planMetadata?.travelId ||
+    null;
+
   useEffect(() => {
-    if (!destinationCity || !weatherRangeStart || !weatherRangeEnd) {
+    if (!weatherDestinationId || !weatherRangeStart || !weatherRangeEnd) {
+      setWeatherMap({});
       return;
     }
 
@@ -315,7 +294,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     // 기간이 연달아 바뀌면 먼저 보낸 응답이 나중에 도착해 최신 결과를 덮어쓸 수 있다.
     let cancelled = false;
 
-    fetchWeatherRecommendations(destinationCity, startDate, endDate)
+    fetchWeather(Number(weatherDestinationId), startDate, endDate)
       .then(res => {
         if (cancelled) return;
         const map: Record<string, SimpleWeatherInfo> = {};
@@ -326,26 +305,18 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         }
         setWeatherMap(map);
       })
-      .catch(() => {
+      .catch(error => {
         if (cancelled) return;
-        // Fallback: assign mock weather data for each day if backend API fails/is incomplete
-        const fallbackMap: Record<string, SimpleWeatherInfo> = {};
-        eachDateString(startDate, endDate).forEach(dateStr => {
-          fallbackMap[dateStr] = {
-            date: dateStr,
-            temp_min: 18,
-            temp_max: 26,
-            feels_like: 23,
-            description: '맑음',
-          };
-        });
-        setWeatherMap(fallbackMap);
+        // 예전에는 실패 시 고정값(18°/26°/맑음)을 채워 넣어, 조회가 계속 실패해도
+        // 정상처럼 보였다. 이제는 비워 두어 날씨 영역 자체가 표시되지 않게 한다.
+        console.warn('날씨 조회 실패:', error);
+        setWeatherMap({});
       });
 
     return () => {
       cancelled = true;
     };
-  }, [destinationCity, weatherRangeStart, weatherRangeEnd]);
+  }, [weatherDestinationId, weatherRangeStart, weatherRangeEnd]);
 
   const hasInitialFetchedRef = useRef(false);
   const isConnectedRef = useRef(isConnected);

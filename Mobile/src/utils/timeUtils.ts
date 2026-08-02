@@ -47,26 +47,6 @@ export const dateToTime = (date: Date) => {
   });
 };
 
-/**
- * 'YYYY-MM-DD' 시작~종료(포함) 사이의 로컬 날짜 문자열 목록.
- */
-export const eachDateString = (
-  startDate: string,
-  endDate: string,
-): string[] => {
-  const result: string[] = [];
-  const [sy, sm, sd] = startDate.split('-').map(Number);
-  const [ey, em, ed] = endDate.split('-').map(Number);
-  const cursor = new Date(sy, sm - 1, sd);
-  const last = new Date(ey, em - 1, ed);
-
-  while (cursor.getTime() <= last.getTime()) {
-    result.push(formatDateLocal(cursor));
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  return result;
-};
-
 /** 하루 안에서 표현 가능한 최대 분 (23:45) */
 export const MAX_MINUTES_IN_DAY = 23 * 60 + 45;
 

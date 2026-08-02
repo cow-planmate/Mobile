@@ -114,16 +114,16 @@ const meta = {
     weatherMap: {
       '2024-08-01': {
         date: '2024-08-01',
-        temp_min: 24,
-        temp_max: 32,
-        feels_like: 30,
+        tempMin: 24,
+        tempMax: 32,
+        feelsLike: 30,
         description: '맑음',
       },
       '2024-08-02': {
         date: '2024-08-02',
-        temp_min: 22,
-        temp_max: 28,
-        feels_like: 26,
+        tempMin: 22,
+        tempMax: 28,
+        feelsLike: 26,
         description: '구름 많음',
       },
     },

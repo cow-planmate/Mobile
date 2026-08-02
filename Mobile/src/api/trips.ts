@@ -358,13 +358,19 @@ export async function fetchNextPlaces(
 // 날씨 정보 API
 // ────────────────────────────────────────────────
 
-/** 일자별 날씨 요약 정보 */
+/**
+ * 일자별 날씨 요약 정보.
+ * 서버 WeatherDayDto와 필드명을 맞춘다(camelCase).
+ */
 export interface SimpleWeatherInfo {
+  /** 'YYYY-MM-DD' */
   date: string;
   description: string;
-  temp_min: number;
-  temp_max: number;
-  feels_like: number;
+  tempMin: number;
+  tempMax: number;
+  feelsLike: number;
+  /** 실측/예보 등 데이터 출처 구분 (서버가 내려주는 경우에만) */
+  dataSource?: string;
 }
 
 /** 날씨 정보 응답 객체 */
@@ -374,20 +380,22 @@ export interface WeatherResponse {
 }
 
 /**
- * 도시 및 일자 범위 기반 날씨 추천 정보 조회
- * @param city 도시명
- * @param startDate 시작일
- * @param endDate 종료일
+ * 여행지·기간 기반 날씨 조회.
+ *
+ * 서버는 GET /api/weather에 destinationId·startDate·endDate를 쿼리로 받는다.
+ * (예전에는 도시명을 POST로 보냈는데 그 경로는 존재하지 않아 항상 실패했다)
+ *
+ * @param destinationId 여행지 ID (planFrame.destinationId)
+ * @param startDate 'YYYY-MM-DD'
+ * @param endDate 'YYYY-MM-DD'
  */
-export async function fetchWeatherRecommendations(
-  city: string,
+export async function fetchWeather(
+  destinationId: number,
   startDate: string,
   endDate: string,
 ): Promise<WeatherResponse> {
-  const response = await axios.post(`/api/weather/recommendations`, {
-    city,
-    start_date: startDate,
-    end_date: endDate,
+  const response = await axios.get<WeatherResponse>('/api/weather', {
+    params: { destinationId, startDate, endDate },
   });
   return response.data;
 }
