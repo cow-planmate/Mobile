@@ -1,4 +1,4 @@
-import { StyleSheet, Platform, Dimensions, PixelRatio } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
 

@@ -16,19 +16,10 @@ import {
   ShareModal,
   UpdateValueModal,
 } from '../../../components/common';
-import {
-  Calendar,
-  MoreVertical,
-  MapPin,
-  Users,
-  FolderOpen,
-  CalendarDays,
-  Plus,
-} from 'lucide-react-native';
+import { MoreVertical, Plus } from 'lucide-react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faT,
-  faUser,
   faPen,
   faShare,
   faTrash,
@@ -36,7 +27,7 @@ import {
   faCalendarAlt,
 } from '@fortawesome/free-solid-svg-icons';
 import { SimplePlanVO } from '../../../types/env';
-import { styles, COLORS, FONTS } from './MyScheduleScreen.styles';
+import { styles, COLORS } from './MyScheduleScreen.styles';
 
 export const MENU_OPTIONS = [
   { label: '제목 바꾸기', action: 'rename', icon: faT },

@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
-import {
-  useItinerary,
-  categoryMapping,
-} from '../../../contexts/ItineraryContext';
+import { categoryMapping } from '../../../contexts/ItineraryContext';
 import { useSearchPlaces } from '../../../hooks/usePlanQueries';
 import { PlaceVO } from '../../../api/trips';
 import AddPlaceScreenView from './AddPlaceScreen.view';
@@ -19,8 +16,9 @@ export default function AddPlaceScreen({ route, navigation }: Props) {
     '관광지',
   );
 
-  const { addPlaceToDay } = useItinerary();
-  const { dayIndex, destination, planId } = route.params || {};
+  // 장소는 여기서 바로 추가하지 않고 pendingPlace로 편집 화면에 돌려보낸다.
+  // ItineraryContext를 구독하면 days가 바뀔 때마다 이 화면까지 재렌더된다.
+  const { destination, planId } = route.params || {};
 
   // Formulate search keyword
   const effectiveQuery = useMemo(() => {

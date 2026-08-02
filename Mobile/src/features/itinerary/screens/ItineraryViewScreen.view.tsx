@@ -25,7 +25,6 @@ import { SimpleWeatherInfo } from '../../../api/trips';
 import WeatherHeader from '../components/weather/WeatherHeader';
 import {
   styles,
-  COLORS,
   HOUR_HEIGHT,
   MINUTE_HEIGHT,
   MIN_ITEM_HEIGHT,
@@ -51,21 +50,6 @@ const formatDate = (date: Date) => {
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
   return `${month}.${day}`;
-};
-
-const getDayMeta = (places: Place[]) => {
-  if (!places || places.length === 0) return '';
-  const count = places.length;
-  let totalMin = 0;
-  places.forEach(p => {
-    const s = timeToMinutes(p.startTime);
-    const e = timeToMinutes(p.endTime);
-    if (e > s) totalMin += e - s;
-  });
-  const h = Math.floor(totalMin / 60);
-  const m = totalMin % 60;
-  const timeStr = h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
-  return `${count}개소 ${timeStr}`;
 };
 
 type ToolbarButtonVariant =
@@ -344,7 +328,6 @@ export default function ItineraryViewScreenView({
           onLayout={(e) => setDayScrollLayoutWidth(e.nativeEvent.layout.width)}
           onScroll={(e) => setDayScrollX(e.nativeEvent.contentOffset.x)}
           scrollEventThrottle={16}
-          clipToPadding={false}
         >
           {days.map((day, index) => {
             const isSelected = selectedDayIndex === index;

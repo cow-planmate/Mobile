@@ -24,7 +24,6 @@ import {
   faUmbrellaBeach,
   faUtensils,
 } from '@fortawesome/free-solid-svg-icons';
-import { API_URL } from '@env';
 import { X } from 'lucide-react-native';
 import { Place } from './TimelineItem';
 import KakaoMapView from './KakaoMapView';
@@ -62,15 +61,19 @@ const TAB_COLORS: { [key in PlaceTab]: string } = {
   검색: '#6b7280',
 };
 
-const TAB_DOT_ACTIVE_STYLES: Record<PlaceTab, { backgroundColor: string }> = {
-  관광지: { backgroundColor: '#84cc16' },
-  숙소: { backgroundColor: '#f97316' },
-  식당: { backgroundColor: '#3b82f6' },
-  '직접 추가': { backgroundColor: '#8b5cf6' },
-  검색: { backgroundColor: '#6b7280' },
-};
-
 type PlaceTab = '관광지' | '숙소' | '식당' | '직접 추가' | '검색';
+
+/** 탭 라벨 → PlacesContext의 페이지네이션 필드 */
+const TAB_TO_PLACES_FIELD: Record<
+  PlaceTab,
+  'tour' | 'lodging' | 'restaurant' | 'search'
+> = {
+  관광지: 'tour',
+  숙소: 'lodging',
+  식당: 'restaurant',
+  '직접 추가': 'search',
+  검색: 'search',
+};
 
 type EmptyStateConfig = {
   icon: IconDefinition;
@@ -295,9 +298,6 @@ export default function PlaceRecommendationList({
     lodging,
     restaurant,
     search,
-    tourNext,
-    lodgingNext,
-    restaurantNext,
     searchNext,
     tourHasNext,
     lodgingHasNext,
@@ -450,18 +450,10 @@ export default function PlaceRecommendationList({
   const tabData = getTabData();
   const hasMoreData = checkHasMoreData();
 
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     if (!hasMoreData || isLoading) return;
-    const fieldMap: {
-      [key: string]: 'tour' | 'lodging' | 'restaurant' | 'search';
-    } = {
-      관광지: 'tour',
-      숙소: 'lodging',
-      식당: 'restaurant',
-      검색: 'search',
-    };
-    loadMorePlaces(fieldMap[selectedTab]);
-  };
+    loadMorePlaces(TAB_TO_PLACES_FIELD[selectedTab]);
+  }, [hasMoreData, isLoading, loadMorePlaces, selectedTab]);
 
   // ─── Map modal state ───
   const [mapPlace, setMapPlace] = useState<PlaceVO | null>(null);

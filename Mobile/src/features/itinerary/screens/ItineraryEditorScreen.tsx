@@ -27,6 +27,7 @@ import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
 import {
   timeToMinutes,
   dateToTime,
+  eachDateString,
   formatDateLocal,
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
@@ -55,21 +56,6 @@ import { faMap, faUsers, faXmark } from '@fortawesome/free-solid-svg-icons';
  * 위험이므로, 장소 추가 화면 왕복 같은 짧은 이탈은 연결을 유지해 흡수한다.
  */
 const BLUR_DISCONNECT_GRACE_MS = 60000;
-
-/** 'YYYY-MM-DD' 시작~종료(포함) 사이의 날짜 문자열 목록. */
-const eachDateString = (startDate: string, endDate: string): string[] => {
-  const result: string[] = [];
-  const [sy, sm, sd] = startDate.split('-').map(Number);
-  const [ey, em, ed] = endDate.split('-').map(Number);
-  const cursor = new Date(sy, sm - 1, sd);
-  const last = new Date(ey, em - 1, ed);
-
-  while (cursor.getTime() <= last.getTime()) {
-    result.push(formatDateLocal(cursor));
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  return result;
-};
 
 /**
  * Normalize raw categoryId to 0-4 range used by backend.
@@ -237,9 +223,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const [isParticipantsVisible, setParticipantsVisible] = useState(false);
   const [isMapPreviewVisible, setMapPreviewVisible] = useState(false);
 
-  // Detail popup state
-  const [detailPlace, setDetailPlace] = useState<Place | null>(null);
-  const [isDetailVisible, setDetailVisible] = useState(false);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
@@ -522,9 +505,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     };
   }, [resetPlaces]);
 
-  // Detail popup handlers
   const handleOpenDetail = useCallback((place: Place) => {
-    setDetailPlace(place);
     setEditingPlace(place);
     setPlaceEditModalVisible(true);
   }, []);
@@ -546,7 +527,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
       setPlaceEditModalVisible(false);
       setEditingPlace(null);
-      setDetailPlace(null);
     },
     [updatePlaceDetails, selectedDayIndex],
   );
@@ -941,7 +921,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         onCancelPlacement={handleCancelPlacement}
         onCancelPreview={handleCancelPreview}
         selectedDay={selectedDay}
-        onlineUsers={onlineUsers}
         isScheduleEditVisible={isScheduleEditVisible}
         setScheduleEditVisible={setScheduleEditVisible}
         onConfirmScheduleEdit={onConfirmScheduleEdit}
@@ -956,13 +935,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         participantsCount={onlineUsers.length}
         planId={planId ?? null}
         travelId={route.params.travelId || planMetadata?.travelId || null}
-        detailPlace={detailPlace}
-        isDetailVisible={isDetailVisible}
         onOpenDetail={handleOpenDetail}
-        onCloseDetail={() => {
-          setDetailVisible(false);
-          setDetailPlace(null);
-        }}
         weatherMap={weatherMap}
         onOpenPlanInfo={() => setPlanInfoVisible(true)}
         onGoBack={handleGoBack}

@@ -8,15 +8,16 @@ import React, {
 import { ScrollView } from 'react-native';
 import axios from 'axios';
 import { resolveApiUrl } from '../../../utils/apiUrl';
-import { API_URL } from '@env';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
 import { Place } from '../components/TimelineItem';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MINUTE_HEIGHT } from './ItineraryViewScreen.styles';
 import {
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
+  eachDateString,
+  formatDateLocal,
+  timeToMinutes,
 } from '../../../utils/timeUtils';
 import {
   Day,
@@ -28,7 +29,6 @@ import {
 } from '../../../api/trips';
 import { useAlert } from '../../../contexts/AlertContext';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
-import { AirplaneLoading } from '../../../components/common';
 // DTO Interfaces
 interface PlaceBlockVO {
   blockId?: number;
@@ -82,21 +82,6 @@ interface GetCompletePlanResponse {
     timeTableEndTime?: string;
   }[];
 }
-
-const timeToMinutes = (time: string) => {
-  if (!time || typeof time !== 'string' || !time.includes(':')) {
-    return 0;
-  }
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + minutes;
-};
-
-const formatDateLocal = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 
@@ -176,17 +161,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
             planFrame?.travelName,
           ),
       );
-
-      const categoryMapping = (
-        id: number | undefined,
-      ): '관광지' | '숙소' | '식당' | '직접 추가' | '검색' | '기타' => {
-        if ([0, 12, 14, 15, 28].includes(id ?? -1)) return '관광지';
-        if (id === 1 || id === 32) return '숙소';
-        if (id === 2 || id === 39) return '식당';
-        if (id === 3) return '직접 추가';
-        if (id === 4) return '검색';
-        return '기타';
-      };
 
       if (timetables && timetables.length > 0) {
         const fetchedDays: Day[] = timetables.map((tt, index) => {
@@ -285,17 +259,27 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     }
   }, [planId, fetchCompletePlan, initialDays.length]);
 
+  // 날씨 조회 범위. 일수가 같아도 날짜가 바뀌면 다시 조회해야 한다.
+  const weatherRangeStart = days.length > 0 ? formatDateLocal(days[0].date) : '';
+  const weatherRangeEnd =
+    days.length > 0 ? formatDateLocal(days[days.length - 1].date) : '';
+
   // Fetch weather when destination and days are available
   useEffect(() => {
-    if (!destinationCity || days.length === 0) {
+    if (!destinationCity || !weatherRangeStart || !weatherRangeEnd) {
       setIsWeatherLoading(false);
       return;
     }
     setIsWeatherLoading(true);
-    const startDate = formatDateLocal(days[0].date);
-    const endDate = formatDateLocal(days[days.length - 1].date);
+
+    const startDate = weatherRangeStart;
+    const endDate = weatherRangeEnd;
+    // 기간이 연달아 바뀌면 먼저 보낸 응답이 나중에 도착해 최신 결과를 덮어쓸 수 있다.
+    let cancelled = false;
+
     fetchWeatherRecommendations(destinationCity, startDate, endDate)
       .then(res => {
+        if (cancelled) return;
         const map: Record<string, SimpleWeatherInfo> = {};
         if (res && Array.isArray(res.weather)) {
           res.weather.forEach(w => {
@@ -305,10 +289,10 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         setWeatherMap(map);
       })
       .catch(() => {
+        if (cancelled) return;
         // Fallback: assign mock weather data for each day if backend API fails/is incomplete
         const fallbackMap: Record<string, SimpleWeatherInfo> = {};
-        days.forEach(day => {
-          const dateStr = formatDateLocal(day.date);
+        eachDateString(startDate, endDate).forEach(dateStr => {
           fallbackMap[dateStr] = {
             date: dateStr,
             temp_min: 18,
@@ -320,9 +304,14 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         setWeatherMap(fallbackMap);
       })
       .finally(() => {
+        if (cancelled) return;
         setIsWeatherLoading(false);
       });
-  }, [destinationCity, days.length]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [destinationCity, weatherRangeStart, weatherRangeEnd]);
 
   useEffect(() => {
     navigation.setOptions({

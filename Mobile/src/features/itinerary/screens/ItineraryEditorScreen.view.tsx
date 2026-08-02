@@ -1,4 +1,4 @@
-import React, { useCallback, createContext, useContext, useMemo, useState, useRef } from 'react';
+import React, { useCallback, createContext, useContext, useMemo, useState } from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import {
   View,
@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { TabActions, useNavigation } from '@react-navigation/native';
+import { TabActions } from '@react-navigation/native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -42,8 +42,8 @@ import {
 import {
   timeToMinutes,
   timeToDate,
-  dateToTime,
   minutesToTime,
+  formatDateLocal,
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
 } from '../../../utils/timeUtils';
@@ -54,7 +54,6 @@ import {
   faMapPin,
   faCheck,
   faCircleInfo,
-  faLocationDot,
   faRedo,
   faUserPlus,
   faUndo,
@@ -360,7 +359,7 @@ const DraggableTimelineItem = React.memo(({
       height.value = withSpring(newHeight);
     }
     previewHeight.value = newHeight;
-  }, [place.startTime, place.endTime, offsetMinutes, top, height]);
+  }, [place.startTime, place.endTime, offsetMinutes, top, height, previewHeight]);
 
   const startY = useSharedValue(0);
   const startHeight = useSharedValue(0);
@@ -461,7 +460,7 @@ const DraggableTimelineItem = React.memo(({
         }
       }
     })
-    .onEnd(event => {
+    .onEnd(() => {
       isDragging.value = 0;
       dragOpacity.value = withSpring(1);
       dragScale.value = withSpring(1);
@@ -755,7 +754,6 @@ const TimelineComponent = React.memo(
       setPreviewStartTime?: (time: string | null) => void;
       setPreviewEndTime?: (time: string | null) => void;
       onConfirmPlacement?: () => void;
-      onCancelPlacement?: () => void;
       onCancelPreview?: () => void;
     }
   >(
@@ -773,7 +771,6 @@ const TimelineComponent = React.memo(
         setPreviewStartTime,
         setPreviewEndTime,
         onConfirmPlacement,
-        onCancelPlacement,
         onCancelPreview,
       },
       ref,
@@ -976,7 +973,6 @@ export const EditorStateContext = createContext<{
   setPreviewStartTime: any;
   setPreviewEndTime: any;
   onConfirmPlacement: any;
-  onCancelPlacement: any;
   onCancelPreview: any;
 } | null>(null);
 
@@ -999,11 +995,12 @@ const TimelineTabScreen = React.memo(() => {
     setPreviewStartTime,
     setPreviewEndTime,
     onConfirmPlacement,
-    onCancelPlacement,
     onCancelPreview,
   } = state;
 
-  const localDateStr = selectedDay ? selectedDay.date.toISOString().split('T')[0] : '';
+  // toISOString()은 UTC 기준이라 KST 자정에 만들어진 Date에서 하루가 밀린다.
+  // weatherMap의 키는 로컬 날짜이므로 formatDateLocal로 맞춰야 조회가 어긋나지 않는다.
+  const localDateStr = selectedDay ? formatDateLocal(selectedDay.date) : '';
   const currentWeather = selectedDay ? weatherMap[localDateStr] : undefined;
 
   return (
@@ -1035,7 +1032,6 @@ const TimelineTabScreen = React.memo(() => {
         setPreviewStartTime={setPreviewStartTime}
         setPreviewEndTime={setPreviewEndTime}
         onConfirmPlacement={onConfirmPlacement}
-        onCancelPlacement={onCancelPlacement}
         onCancelPreview={onCancelPreview}
       />
 
@@ -1117,7 +1113,6 @@ export interface ItineraryEditorScreenViewProps {
   handleDeletePlace: (placeId: string) => void;
   handleAddPlace: (place: Omit<Place, 'startTime' | 'endTime'>) => void;
   selectedDay: Day | null;
-  onlineUsers: any[];
   isScheduleEditVisible: boolean;
   setScheduleEditVisible: (v: boolean) => void;
   onConfirmScheduleEdit: (updatedDays: any[]) => void;
@@ -1133,12 +1128,8 @@ export interface ItineraryEditorScreenViewProps {
   // New props for detail popup & recommendations
   planId: string | null;
   travelId?: number | null;
-  detailPlace: Place | null;
-  isDetailVisible: boolean;
   onOpenDetail: (place: Place) => void;
-  onCloseDetail: () => void;
   weatherMap: Record<string, SimpleWeatherInfo>;
-  initialTabName?: string;
   onOpenPlanInfo: () => void;
   onGoBack?: () => void;
   activeTab?: '타임라인' | '장소추가';
@@ -1173,7 +1164,6 @@ export default function ItineraryEditorScreenView({
   handleDeletePlace,
   handleAddPlace,
   selectedDay,
-  onlineUsers,
   isScheduleEditVisible,
   setScheduleEditVisible,
   onConfirmScheduleEdit,
@@ -1188,12 +1178,8 @@ export default function ItineraryEditorScreenView({
   participantsCount,
   planId,
   travelId,
-  detailPlace,
-  isDetailVisible,
   onOpenDetail,
-  onCloseDetail,
   weatherMap,
-  initialTabName,
   onOpenPlanInfo,
   pendingPlace,
   previewStartTime,
@@ -1206,7 +1192,6 @@ export default function ItineraryEditorScreenView({
   activeTab,
   setActiveTab,
 }: ItineraryEditorScreenViewProps) {
-  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const [inputWidth, setInputWidth] = useState(120);
   const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
@@ -1252,7 +1237,6 @@ export default function ItineraryEditorScreenView({
       setPreviewStartTime,
       setPreviewEndTime,
       onConfirmPlacement,
-      onCancelPlacement,
       onCancelPreview,
     };
   }, [
@@ -1275,7 +1259,6 @@ export default function ItineraryEditorScreenView({
     setPreviewStartTime,
     setPreviewEndTime,
     onConfirmPlacement,
-    onCancelPlacement,
     onCancelPreview,
   ]);
 
@@ -1385,7 +1368,6 @@ export default function ItineraryEditorScreenView({
           onLayout={(e) => setDayScrollLayoutWidth(e.nativeEvent.layout.width)}
           onScroll={(e) => setDayScrollX(e.nativeEvent.contentOffset.x)}
           scrollEventThrottle={16}
-          clipToPadding={false}
         >
           {days.map((day, index) => {
             const isSelected = selectedDayIndex === index;

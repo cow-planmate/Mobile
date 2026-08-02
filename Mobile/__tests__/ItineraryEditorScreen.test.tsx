@@ -332,7 +332,6 @@ describe('ItineraryEditorScreenView Component', () => {
             handleDeletePlace={() => {}}
             handleAddPlace={() => {}}
             selectedDay={mockDays[selectedDayIndex]}
-            onlineUsers={[]}
             isScheduleEditVisible={false}
             setScheduleEditVisible={() => {}}
             onConfirmScheduleEdit={() => {}}
@@ -346,10 +345,7 @@ describe('ItineraryEditorScreenView Component', () => {
             onRedo={() => {}}
             participantsCount={0}
             planId={null}
-            detailPlace={null}
-            isDetailVisible={false}
             onOpenDetail={() => {}}
-            onCloseDetail={() => {}}
             weatherMap={{}}
             onOpenPlanInfo={() => {}}
             onGoBack={() => {}}
@@ -434,7 +430,6 @@ describe('ItineraryEditorScreenView Component', () => {
           handleDeletePlace={() => {}}
           handleAddPlace={() => {}}
           selectedDay={mockDays[0]}
-          onlineUsers={[]}
           isScheduleEditVisible={false}
           setScheduleEditVisible={() => {}}
           onConfirmScheduleEdit={() => {}}
@@ -448,10 +443,7 @@ describe('ItineraryEditorScreenView Component', () => {
           onRedo={mockRedo}
           participantsCount={0}
           planId={null}
-          detailPlace={null}
-          isDetailVisible={false}
           onOpenDetail={() => {}}
-          onCloseDetail={() => {}}
           weatherMap={{}}
           onOpenPlanInfo={() => {}}
           onGoBack={() => {}}
