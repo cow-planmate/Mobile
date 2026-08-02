@@ -2,7 +2,22 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@env';
 
-const normalizedApiUrl = API_URL.trim().replace(/\/+$/, '');
+const normalizedApiUrl = (API_URL ?? '').trim().replace(/\/+$/, '');
+
+if (!normalizedApiUrl && __DEV__) {
+  console.warn('[axiosConfig] API_URL이 비어 있습니다. .env 설정을 확인하세요.');
+}
+
+/** 토큰을 자동으로 첨부하지 않는 경로 (인증 불필요 · 토큰 재발급 포함) */
+const NO_AUTH_PATHS = [
+  '/api/auth/login',
+  '/api/auth/token',
+  '/api/auth/email/verification',
+  '/api/auth/register/nickname/verify',
+];
+
+const matchesPath = (url: string | undefined, paths: string[]) =>
+  paths.some(path => url?.includes(path));
 
 // axios 기본 설정
 if (axios && axios.defaults) {
@@ -18,15 +33,11 @@ if (axios && axios.interceptors && axios.interceptors.request) {
 axios.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     // 로그인/회원가입 등 인증이 필요없는 요청은 토큰 추가하지 않음
-    const noAuthPaths = [
-      '/api/auth/login',
-      '/api/auth/email/verification',
-      '/api/auth/register/nickname/verify',
-    ];
+    const isNoAuthPath = matchesPath(config.url, NO_AUTH_PATHS);
 
-    const isNoAuthPath = noAuthPaths.some(path => config.url?.includes(path));
-
-    if (!isNoAuthPath && !config.headers.Authorization) {
+    if (isNoAuthPath) {
+      delete config.headers.Authorization;
+    } else if (!config.headers.Authorization) {
       const token = await AsyncStorage.getItem('accessToken');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -97,12 +108,17 @@ axios.interceptors.response.use(
     };
 
     // 401 에러이고 재시도하지 않은 요청인 경우 토큰 갱신 시도
+    // (절대 URL로 호출되는 경우가 있어 includes로 비교한다)
     if (
       error.response?.status === 401 &&
+      originalRequest &&
       !originalRequest._retry &&
-      originalRequest.url !== '/api/auth/login' &&
-      originalRequest.url !== '/api/auth/token'
+      !matchesPath(originalRequest.url, ['/api/auth/login', '/api/auth/token'])
     ) {
+      // 큐에 넣기 전에 재시도 표시를 해야 재발급 후 재요청이 또 401을 받았을 때
+      // 무한 재발급 루프에 빠지지 않는다.
+      originalRequest._retry = true;
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -116,7 +132,6 @@ axios.interceptors.response.use(
           });
       }
 
-      originalRequest._retry = true;
       isRefreshing = true;
 
       try {
@@ -131,10 +146,9 @@ axios.interceptors.response.use(
             await AsyncStorage.setItem('accessToken', newAccessToken);
             axios.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-            
+
             processQueue(null, newAccessToken);
-            isRefreshing = false;
-            
+
             return axios(originalRequest);
           }
         }
@@ -157,9 +171,10 @@ axios.interceptors.response.use(
         }
         
         processQueue(refreshError, null);
-        isRefreshing = false;
-        
+
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 

@@ -1,3 +1,6 @@
+// 다른 모듈보다 먼저 로드되어야 한다 (Text/TextInput 폰트 스케일링 기본값 주입)
+import './src/utils/fontScalingGuard';
+
 import { AppRegistry } from 'react-native';
 import App from './App';
 import { name as appName } from './app.json';

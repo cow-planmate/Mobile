@@ -1,3 +1,10 @@
+// .env는 저장소에 포함되지 않으므로 테스트에서는 고정값을 사용한다.
+jest.mock('@env', () => ({
+  API_URL: 'http://localhost:8080',
+  KAKAO_APP_KEY: 'test-kakao-app-key',
+  WEB_URL: 'http://localhost:3000',
+}), { virtual: true });
+
 jest.mock('@react-native-clipboard/clipboard', () => ({
   setString: jest.fn(),
   getString: jest.fn(() => Promise.resolve('')),

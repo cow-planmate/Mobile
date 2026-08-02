@@ -19,6 +19,8 @@ export interface User {
 interface AuthState {
   user: User | null;
   isLoading: boolean;
+  /** 앱 시작 시 저장소 복원이 끝나기 전까지 true (로그인 화면 깜빡임 방지) */
+  isInitializing: boolean;
   needsThemeSelection: boolean;
   setNeedsThemeSelection: (val: boolean) => void;
   setUser: (user: User | null) => void;
@@ -42,14 +44,17 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isLoading: false,
+  isInitializing: true,
   needsThemeSelection: false,
   setNeedsThemeSelection: (val) => set({ needsThemeSelection: val }),
   setUser: (user) => set({ user }),
 
   initialize: async () => {
     try {
-      const userJson = await AsyncStorage.getItem('user');
-      const token = await AsyncStorage.getItem('accessToken');
+      const [[, userJson], [, token]] = await AsyncStorage.multiGet([
+        'user',
+        'accessToken',
+      ]);
 
       if (userJson && token) {
         set({ user: JSON.parse(userJson) });
@@ -57,6 +62,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
     } catch (error) {
       console.error('Failed to initialize auth store:', error);
+    } finally {
+      set({ isInitializing: false });
     }
   },
 
