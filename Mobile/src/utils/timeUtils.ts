@@ -93,10 +93,28 @@ export const resolveConflictsAndSort = <T extends ConflictableItem>(
     MAX_MINUTES_IN_DAY,
   );
 
-  // 원본 객체 직접 변경 방지를 위한 딥 카피 및 시작 시간 기준 정렬
+  // 원본 객체 직접 변경 방지를 위한 얕은 복사 및 시작 시간 기준 정렬
+  const originals = new Map(places.map(p => [p.id, p]));
   const sortedPlaces = places.map(p => ({ ...p })).sort(
     (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
   );
+
+  /**
+   * 시간이 그대로인 항목은 원본 참조를 되돌려 준다.
+   *
+   * 항상 새 객체를 반환하면 한 블록만 옮겨도 그날의 모든 블록이 새 참조가 되어
+   * 타임라인 아이템(React.memo)이 전부 다시 렌더된다. 드래그 중에는 이 비용이
+   * 프레임에 그대로 드러난다.
+   */
+  const preserveUnchanged = (result: T[]): T[] =>
+    result.map(p => {
+      const original = originals.get(p.id);
+      return original &&
+        original.startTime === p.startTime &&
+        original.endTime === p.endTime
+        ? original
+        : p;
+    });
 
   const anchorIndex = anchorItemId
     ? sortedPlaces.findIndex(p => p.id === anchorItemId)
@@ -118,7 +136,7 @@ export const resolveConflictsAndSort = <T extends ConflictableItem>(
         curr.endTime = minutesToTime(Math.max(newEnd, newStart + 15));
       }
     }
-    return sortedPlaces;
+    return preserveUnchanged(sortedPlaces);
   }
 
   const anchor = sortedPlaces[anchorIndex];
@@ -160,7 +178,7 @@ export const resolveConflictsAndSort = <T extends ConflictableItem>(
     }
   }
 
-  return sortedPlaces;
+  return preserveUnchanged(sortedPlaces);
 };
 
 

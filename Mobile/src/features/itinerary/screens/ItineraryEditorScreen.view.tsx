@@ -286,7 +286,13 @@ const TimeGridBackground = React.memo(
   },
 );
 
-const DraggableTimelineItem = ({
+/**
+ * 콜백은 place를 인자로 받는 형태로 둔다.
+ * 부모에서 `() => onDeletePlace(place.id)` 같은 인라인 함수를 넘기면 매 렌더마다
+ * prop 참조가 바뀌어 React.memo가 무력화되고, 블록 하나를 드래그할 때마다
+ * 그날의 모든 타임라인 아이템(제스처 핸들러 포함)이 다시 만들어진다.
+ */
+const DraggableTimelineItem = React.memo(({
   place,
   offsetMinutes,
   maxEndMinutes,
@@ -302,14 +308,18 @@ const DraggableTimelineItem = ({
   offsetMinutes: number;
   maxEndMinutes: number;
   minStartMinutes: number;
-  onDelete: () => void;
-  onEditTime: (type: 'startTime' | 'endTime') => void;
+  onDelete: (placeId: string) => void;
+  onEditTime: (
+    placeId: string,
+    type: 'startTime' | 'endTime',
+    time: string,
+  ) => void;
   onDragEnd: (
     placeId: string,
     newStartMinutes: number,
     newEndMinutes: number,
   ) => void;
-  onPress?: () => void;
+  onPress?: (place: Place) => void;
   onOverflow?: () => void;
   scrollRef?: React.RefObject<ScrollView | null>;
 }) => {
@@ -366,15 +376,32 @@ const DraggableTimelineItem = ({
   const dragOpacity = useSharedValue(1);
   const dragScale = useSharedValue(1);
 
+  const placeId = place.id;
+
   const handleDeleteWithAnim = React.useCallback(() => {
     exitScale.value = withTiming(0.8, { duration: 250 });
     exitTranslateX.value = withTiming(400, { duration: 250 });
     exitOpacity.value = withTiming(0, { duration: 250 }, (finished) => {
       if (finished) {
-        runOnJS(onDelete)();
+        runOnJS(onDelete)(placeId);
       }
     });
-  }, [onDelete, exitOpacity, exitScale, exitTranslateX]);
+  }, [onDelete, placeId, exitOpacity, exitScale, exitTranslateX]);
+
+  const handleEditTime = React.useCallback(
+    (type: 'startTime' | 'endTime') => {
+      onEditTime(
+        placeId,
+        type,
+        type === 'startTime' ? place.startTime : place.endTime,
+      );
+    },
+    [onEditTime, placeId, place.startTime, place.endTime],
+  );
+
+  const handlePress = React.useCallback(() => {
+    onPress?.(place);
+  }, [onPress, place]);
 
   // Auto-scroll helper
   const scrollIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(
@@ -676,8 +703,8 @@ const DraggableTimelineItem = ({
             <TimelineItem
               item={place}
               onDelete={handleDeleteWithAnim}
-              onEditTime={onEditTime}
-              onPress={onPress}
+              onEditTime={handleEditTime}
+              onPress={handlePress}
               style={styles.flex1}
             />
           </Animated.View>
@@ -701,7 +728,8 @@ const DraggableTimelineItem = ({
       </Animated.View>
     </>
   );
-};
+});
+DraggableTimelineItem.displayName = 'DraggableTimelineItem';
 
 const TimelineComponent = React.memo(
   React.forwardRef<
@@ -837,16 +865,10 @@ const TimelineComponent = React.memo(
                     offsetMinutes={offsetMinutes}
                     maxEndMinutes={maxEndMinutes}
                     minStartMinutes={minStartMinutes}
-                    onDelete={() => onDeletePlace(place.id)}
-                    onEditTime={type =>
-                      onEditPlaceTime(
-                        place.id,
-                        type,
-                        type === 'startTime' ? place.startTime : place.endTime,
-                      )
-                    }
+                    onDelete={onDeletePlace}
+                    onEditTime={onEditPlaceTime}
                     onDragEnd={onUpdatePlaceTimes}
-                    onPress={() => onPressPlace?.(place)}
+                    onPress={onPressPlace}
                     onOverflow={showOverflowBanner}
                     scrollRef={ref as React.RefObject<ScrollView | null>}
                   />

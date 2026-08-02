@@ -7,9 +7,7 @@ import {
 } from 'react';
 import { ScrollView } from 'react-native';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { resolveApiUrl } from '../utils/apiUrl';
-import { API_URL } from '@env';
 import {
   useItinerary,
   Day,
@@ -25,7 +23,6 @@ import {
 } from '../utils/timeUtils';
 import { createTempPlaceId } from '../utils/planSyncPayload';
 import { MINUTE_HEIGHT } from '../features/itinerary/screens/ItineraryEditorScreen.styles';
-import { useAlert } from '../contexts/AlertContext';
 import Toast from 'react-native-toast-message';
 
 /**
@@ -39,13 +36,21 @@ const parseDestinationName = (destination?: string) => {
 };
 
 /**
+ * 'MM.DD.' 표기. 렌더마다 새로 만들면 뷰의 메모이제이션이 깨지므로 모듈 스코프에 둔다.
+ */
+const formatDate = (date: Date) => {
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${month}.${day}.`;
+};
+
+/**
  * 일정 편집 화면의 상태 관리, 실시간 WebSocket동기화 및 장소 편집 로직을 제공하는 커스텀 훅
  *
  * @param route 네비게이션 라우트 파라미터
  * @param _navigation 네비게이션 객체
  */
 export const useItineraryEditor = (route: any, _navigation: any) => {
-  const { showAlert } = useAlert();
   const {
     days,
     setDays,
@@ -74,15 +79,6 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   const timelineScrollRef = useRef<ScrollView>(null);
   /** days에 이미 담겨 있는 일정의 planId. 다른 plan의 응답과 비교하지 않기 위한 기준. */
   const loadedPlanIdRef = useRef<string | null>(null);
-
-  const daysRef = useRef(days);
-  daysRef.current = days;
-
-  const formatDate = (date: Date) => {
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${month}.${day}.`;
-  };
 
   const initDaysFromDates = useCallback(() => {
     if (!route.params?.startDate || !route.params?.endDate) return;
@@ -123,11 +119,9 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     const isSamePlan = loadedPlanIdRef.current === targetPlanId;
 
     try {
-      const token = await AsyncStorage.getItem('accessToken');
-      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      // 토큰은 axios 요청 인터셉터가 붙인다.
       const response = await axios.get(
         resolveApiUrl(`/api/plan/${route.params.planId}`),
-        config,
       );
       const { planFrame, placeBlocks, timetables } = response.data;
 

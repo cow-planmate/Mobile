@@ -12,13 +12,9 @@ import {
   AppState,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { TabActions } from '@react-navigation/native';
 import { useAlert } from '../../../contexts/AlertContext';
-import Toast from 'react-native-toast-message';
 import axios from 'axios';
 import { resolveApiUrl } from '../../../utils/apiUrl';
-import { API_URL } from '@env';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppStackParamList } from '../../../navigation/types';
 import { Place } from '../components/TimelineItem';
 import { useWebSocket } from '../../../contexts/WebSocketContext';
@@ -44,7 +40,6 @@ import {
   fetchWeatherRecommendations,
 } from '../../../api/trips';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
-import { styles } from './ItineraryEditorScreen.styles';
 import { ShareModal, PlanInfoModal, AirplaneLoading } from '../../../components/common';
 import PlaceEditModal from '../components/PlaceEditModal';
 import RouteMapSection from '../components/RouteMapSection';
@@ -61,6 +56,45 @@ import { faMap, faUsers, faXmark } from '@fortawesome/free-solid-svg-icons';
  */
 const BLUR_DISCONNECT_GRACE_MS = 60000;
 
+/** 'YYYY-MM-DD' 시작~종료(포함) 사이의 날짜 문자열 목록. */
+const eachDateString = (startDate: string, endDate: string): string[] => {
+  const result: string[] = [];
+  const [sy, sm, sd] = startDate.split('-').map(Number);
+  const [ey, em, ed] = endDate.split('-').map(Number);
+  const cursor = new Date(sy, sm - 1, sd);
+  const last = new Date(ey, em - 1, ed);
+
+  while (cursor.getTime() <= last.getTime()) {
+    result.push(formatDateLocal(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return result;
+};
+
+/**
+ * Normalize raw categoryId to 0-4 range used by backend.
+ */
+const normalizeCategoryId = (
+  rawId: number | undefined,
+  type?: string,
+): number => {
+  const id = rawId ?? 4;
+  if ([0, 1, 2, 3, 4].includes(id)) return id;
+  if ([12, 14, 15, 28].includes(id)) return 0;
+  if (id === 32) return 1;
+  if (id === 39) return 2;
+  switch (type) {
+    case '관광지':
+      return 0;
+    case '숙소':
+      return 1;
+    case '식당':
+      return 2;
+    default:
+      return 4;
+  }
+};
+
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
 /**
@@ -73,6 +107,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const currentUser = useAuthStore(state => state.user);
   let queryClient: any = null;
   try {
+    // useQueryClient는 Provider가 없으면 예외를 던진다. 내부적으로 useContext를
+    // 먼저 호출하므로 훅 호출 순서는 어느 경로에서도 동일하다.
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     queryClient = useQueryClient();
   } catch (e) {
     // Graceful fallback for test environments without QueryClientProvider
@@ -193,23 +230,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     [],
   );
 
-  const parseDestination = useCallback((value?: string) => {
-    const normalized = value?.trim() || '';
-    if (!normalized) {
-      return { category: '', name: '' };
-    }
-
-    const parts = normalized.split(/\s+/).filter(Boolean);
-    if (parts.length <= 1) {
-      return { category: normalized, name: normalized };
-    }
-
-    return {
-      category: parts[0],
-      name: parts.slice(1).join(' '),
-    };
-  }, []);
-
   const [isScheduleEditVisible, setScheduleEditVisible] = useState(false);
   const [isShareModalVisible, setShareModalVisible] = useState(false);
   const [isPlaceEditModalVisible, setPlaceEditModalVisible] = useState(false);
@@ -256,7 +276,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
               setIsBacking(true);
               disconnect();
 
-              const timer = setTimeout(() => {
+              setTimeout(() => {
                 setIsBacking(false);
                 navigation.dispatch(e.data.action);
                 isBackingRef.current = false;
@@ -283,7 +303,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const [weatherMap, setWeatherMap] = useState<
     Record<string, SimpleWeatherInfo>
   >({});
-  const [isWeatherLoading, setIsWeatherLoading] = useState(true);
 
   useEffect(() => {
     const metaAny = planMetadata as any;
@@ -296,19 +315,26 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     }
   }, [planMetadata, buildWeatherCity]);
 
+  // 날씨 조회 범위. 날짜 문자열로 좁혀 두면 장소를 편집할 때마다 재조회하지 않고,
+  // 일정 기간이 실제로 바뀔 때만(일수가 그대로여도) 다시 조회한다.
+  const weatherRangeStart = days.length > 0 ? formatDateLocal(days[0].date) : '';
+  const weatherRangeEnd =
+    days.length > 0 ? formatDateLocal(days[days.length - 1].date) : '';
+
   useEffect(() => {
-    if (!destinationCity || days.length === 0) {
-      setIsWeatherLoading(false);
+    if (!destinationCity || !weatherRangeStart || !weatherRangeEnd) {
       return;
     }
 
-    setIsWeatherLoading(true);
+    const startDate = weatherRangeStart;
+    const endDate = weatherRangeEnd;
 
-    const startDate = formatDateLocal(days[0].date);
-    const endDate = formatDateLocal(days[days.length - 1].date);
+    // 기간이 연달아 바뀌면 먼저 보낸 응답이 나중에 도착해 최신 결과를 덮어쓸 수 있다.
+    let cancelled = false;
 
     fetchWeatherRecommendations(destinationCity, startDate, endDate)
       .then(res => {
+        if (cancelled) return;
         const map: Record<string, SimpleWeatherInfo> = {};
         if (res && Array.isArray(res.weather)) {
           res.weather.forEach(w => {
@@ -318,10 +344,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         setWeatherMap(map);
       })
       .catch(() => {
+        if (cancelled) return;
         // Fallback: assign mock weather data for each day if backend API fails/is incomplete
         const fallbackMap: Record<string, SimpleWeatherInfo> = {};
-        days.forEach(day => {
-          const dateStr = formatDateLocal(day.date);
+        eachDateString(startDate, endDate).forEach(dateStr => {
           fallbackMap[dateStr] = {
             date: dateStr,
             temp_min: 18,
@@ -331,11 +357,12 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           };
         });
         setWeatherMap(fallbackMap);
-      })
-      .finally(() => {
-        setIsWeatherLoading(false);
       });
-  }, [destinationCity, days.length]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [destinationCity, weatherRangeStart, weatherRangeEnd]);
 
   const hasInitialFetchedRef = useRef(false);
   const isConnectedRef = useRef(isConnected);
@@ -461,36 +488,39 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   const fetchedDestIdRef = useRef<number | null>(null);
 
+  const recommendationDestId =
+    (route.params as any)?.destinationId ||
+    route.params.travelId ||
+    (planMetadata as any)?.destinationId ||
+    planMetadata?.travelId ||
+    null;
+
   // Fetch place recommendations via PlacesContext
   useEffect(() => {
-    const destId =
-      (route.params as any)?.destinationId ||
-      route.params.travelId ||
-      (planMetadata as any)?.destinationId ||
-      planMetadata?.travelId;
+    if (!recommendationDestId) return;
+    if (fetchedDestIdRef.current === recommendationDestId) return;
 
-    if (destId && fetchedDestIdRef.current !== destId) {
-      fetchedDestIdRef.current = destId;
-      if (planId) {
-        fetchAllRecommendations(destId);
-      } else {
-        fetchAllRecommendationsNoAuth(destId);
-      }
+    fetchedDestIdRef.current = recommendationDestId;
+    if (planId) {
+      fetchAllRecommendations(recommendationDestId);
+    } else {
+      fetchAllRecommendationsNoAuth(recommendationDestId);
     }
+  }, [
+    recommendationDestId,
+    planId,
+    fetchAllRecommendations,
+    fetchAllRecommendationsNoAuth,
+  ]);
+
+  // 정리는 언마운트에서만 한다. 이전에는 의존성이 하나라도 바뀌면 cleanup이 돌아
+  // planMetadata가 도착하는 순간 목록을 비우고 추천 3종을 처음부터 다시 조회했다.
+  useEffect(() => {
     return () => {
       resetPlaces();
       fetchedDestIdRef.current = null;
     };
-  }, [
-    (route.params as any)?.destinationId,
-    route.params.travelId,
-    (planMetadata as any)?.destinationId,
-    planMetadata?.travelId,
-    planId,
-    fetchAllRecommendations,
-    fetchAllRecommendationsNoAuth,
-    resetPlaces,
-  ]);
+  }, [resetPlaces]);
 
   // Detail popup handlers
   const handleOpenDetail = useCallback((place: Place) => {
@@ -521,27 +551,14 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     [updatePlaceDetails, selectedDayIndex],
   );
 
-  const handleDeleteFromDetail = useCallback(() => {
-    if (detailPlace) {
-      handleDeletePlace(detailPlace.id);
-      setDetailVisible(false);
-      setDetailPlace(null);
-      setPlaceEditModalVisible(false); // Also close our new modal if open
-      setEditingPlace(null);
-    }
-  }, [detailPlace, handleDeletePlace]);
-
   const handleSaveTripName = useCallback(async () => {
     setIsEditingTripName(false);
     if (tripName && planId) {
       sendMessage('update', 'plan', { planId, title: tripName, planName: tripName });
       try {
-        const token = await AsyncStorage.getItem('accessToken');
-        const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
         await axios.patch(
           resolveApiUrl(`/api/plan/${planId}/name`),
           { planName: tripName },
-          config,
         );
       } catch (err) {
         console.error('Failed to update plan title on edit:', err);
@@ -738,30 +755,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
 
 
-  /**
-   * Normalize raw categoryId to 0-4 range used by backend.
-   */
-  const normalizeCategoryId = (
-    rawId: number | undefined,
-    type?: string,
-  ): number => {
-    const id = rawId ?? 4;
-    if ([0, 1, 2, 3, 4].includes(id)) return id;
-    if ([12, 14, 15, 28].includes(id)) return 0;
-    if (id === 32) return 1;
-    if (id === 39) return 2;
-    switch (type) {
-      case '관광지':
-        return 0;
-      case '숙소':
-        return 1;
-      case '식당':
-        return 2;
-      default:
-        return 4;
-    }
-  };
-
   const onComplete = async () => {
     // 중복 방지 가드는 WS 전송보다 먼저 걸어야 연타 시 프레임이 중복되지 않는다.
     // state는 리렌더 전까지 갱신되지 않으므로 ref로 판단한다.
@@ -777,47 +770,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    // Calculate allBlocks from current days
-    const timetableVOs = days.map(day => ({
-      date: formatDateLocal(day.date),
-      timeTableStartTime: '09:00:00',
-      timeTableEndTime: '20:00:00',
-    }));
-
-    const allBlocks = days.flatMap(day => {
-      const dateStr = formatDateLocal(day.date);
-      return day.places.map(place => {
-        const categoryId = normalizeCategoryId(place.categoryId, place.type);
-        const startTime =
-          place.startTime.length === 5
-            ? place.startTime + ':00'
-            : place.startTime;
-        const endTime =
-          place.endTime.length === 5 ? place.endTime + ':00' : place.endTime;
-        return {
-          blockId: null,
-          timeTableId: 0,
-          date: dateStr,
-          placeCategoryId: categoryId,
-          placeName: place.name || '',
-          placeAddress: place.address || '',
-          placeLink: place.place_url || '',
-          placeId: place.placeRefId || '',
-          photoUrl: place.imageUrl || null,
-          memo: place.memo || '',
-          startTime,
-          endTime,
-          blockStartTime: startTime,
-          blockEndTime: endTime,
-          xLocation: place.longitude || 0,
-          yLocation: place.latitude || 0,
-          placeContentTypeId: place.contentTypeId || null,
-          placeThumbnailUrl: place.imageUrl || null,
-          placeCopyrightDivCd: place.copyrightDivCd || null,
-        };
-      });
-    });
-
     // If plan already exists (editing from MySchedule or pre-created from Home), update title for owner and navigate to view
     if (route.params.planId) {
       try {
@@ -826,12 +778,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         const isOwner = !ownerIdLower || ownerIdLower === currentUserIdLower;
 
         if (isOwner && tripName) {
-          const token = await AsyncStorage.getItem('accessToken');
-          const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
           await axios.patch(
             resolveApiUrl(`/api/plan/${route.params.planId}/name`),
             { planName: tripName },
-            config,
           );
         }
       } catch (err: any) {
@@ -866,11 +815,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
     // New plan: create on server, then navigate to view with planId
     try {
-      const token = await AsyncStorage.getItem('accessToken');
-      const config = token
-        ? { headers: { Authorization: `Bearer ${token}` } }
-        : {};
-
       const timetableVOs = days.map(day => ({
         date: formatDateLocal(day.date),
         timeTableStartTime: toLocalTime(day.startTime) || DEFAULT_DAY_START,
@@ -934,12 +878,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       // 생성이 끝난 직후 신규 planId에 대해 즉각 이름 변경 PATCH API를 추가 호출하여 동기화합니다.
       if (newPlanId && tripName) {
         try {
-          const token = await AsyncStorage.getItem('accessToken');
-          const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
           await axios.patch(
             resolveApiUrl(`/api/plan/${newPlanId}/name`),
             { planName: tripName },
-            config,
           );
         } catch (patchErr) {
           console.error('Failed to patch plan name after creation:', patchErr);

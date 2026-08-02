@@ -626,10 +626,8 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
       const updatedDays = [...prevDays];
       const dayToUpdate = { ...updatedDays[dayIndex] };
-      const newPlacesList = [
-        ...dayToUpdate.places.map(p => ({ ...p })),
-        placeToAdd,
-      ];
+      // resolveConflictsAndSort가 내부에서 복사하므로 여기서 또 복사하지 않는다.
+      const newPlacesList = [...dayToUpdate.places, placeToAdd];
 
       dayToUpdate.places = resolveConflictsAndSort(
         newPlacesList,
@@ -723,8 +721,10 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       const dayToUpdate = { ...updatedDays[dayIndex] };
 
       const safeRange = ensureValidRange(newStartTime, newEndTime);
+      // 바뀐 블록만 새 객체로 만든다. 나머지는 참조를 유지해야
+      // resolveConflictsAndSort가 변경 없는 블록의 참조를 그대로 되돌려 줄 수 있다.
       const newPlacesList = dayToUpdate.places.map(p =>
-        p.id === placeId ? { ...p, ...safeRange } : { ...p },
+        p.id === placeId ? { ...p, ...safeRange } : p,
       );
 
       dayToUpdate.places = resolveConflictsAndSort(
@@ -768,7 +768,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       const dayToUpdate = { ...updatedDays[dayIndex] };
 
       dayToUpdate.places = dayToUpdate.places.map(p =>
-        p.id === placeId ? { ...p, memo } : { ...p },
+        p.id === placeId ? { ...p, memo } : p,
       );
       updatedDays[dayIndex] = dayToUpdate;
 
@@ -807,7 +807,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       const dayToUpdate = { ...updatedDays[dayIndex] };
 
       const newPlacesList = dayToUpdate.places.map(p => {
-        if (p.id !== placeId) return { ...p };
+        if (p.id !== placeId) return p;
         const merged = { ...p, ...updates };
         return {
           ...merged,
