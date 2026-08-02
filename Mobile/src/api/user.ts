@@ -48,3 +48,28 @@ export async function changeProfileVisibility(
     profilePublic,
   });
 }
+
+/** 타인에게 노출되는 공개 프로필 (개인정보는 서버가 응답에서 제외한다) */
+export interface PublicUserProfile {
+  userId: string;
+  nickname: string;
+  profileImageUrl: string;
+  preferredThemes: { preferredThemeId: number; preferredThemeName: string; category: string }[];
+  myPlanCount: number;
+  editablePlanCount: number;
+}
+
+/**
+ * 다른 사용자의 공개 프로필 조회.
+ *
+ * 상대가 프로필을 비공개로 두면 403(USER_002)이 온다. 호출부에서 구분해
+ * 안내해야 하므로 예외는 그대로 전달한다.
+ */
+export async function fetchPublicProfile(
+  targetUserId: string,
+): Promise<PublicUserProfile> {
+  const response = await axios.get<PublicUserProfile>(
+    resolveApiUrl(`/api/user/profile/${targetUserId}`),
+  );
+  return response.data;
+}

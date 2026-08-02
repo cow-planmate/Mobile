@@ -33,6 +33,7 @@ import { resolveAvatarUrl } from '../utils/avatar';
 import PostContentView from '../components/PostContentView';
 import CommentSection from '../components/CommentSection';
 import UserAvatar from '../components/UserAvatar';
+import PublicProfileModal from '../components/PublicProfileModal';
 import LevelBadge from '../components/LevelBadge';
 import { ReactionType } from '../types';
 import { styles, COLORS } from './FeedDetailScreen.styles';
@@ -50,6 +51,7 @@ export default function FeedDetailScreen() {
   const user = useAuthStore(state => state.user);
   const isLoggedIn = !!user;
 
+  const [isAuthorProfileVisible, setAuthorProfileVisible] = useState(false);
   const [selectedDay, setSelectedDay] = useState(0);
   const [isDateModalVisible, setDateModalVisible] = useState(false);
 
@@ -215,12 +217,20 @@ export default function FeedDetailScreen() {
           </View>
 
           <View style={styles.metaRow}>
-            <UserAvatar
-              name={post.author}
-              imageUrl={resolveAvatarUrl(post.authorImage, post.authorAvatarHash)}
-              size={normalize(24)}
-            />
-            <Text style={styles.metaAuthor}>{post.author}</Text>
+            {/* 작성자를 누르면 공개 프로필을 보여준다 */}
+            <TouchableOpacity
+              style={styles.authorTouchable}
+              onPress={() => setAuthorProfileVisible(true)}
+              activeOpacity={0.7}
+              hitSlop={6}
+            >
+              <UserAvatar
+                name={post.author}
+                imageUrl={resolveAvatarUrl(post.authorImage, post.authorAvatarHash)}
+                size={normalize(24)}
+              />
+              <Text style={styles.metaAuthor}>{post.author}</Text>
+            </TouchableOpacity>
             <LevelBadge level={post.level} />
             <Text style={styles.metaText}>· {post.createdAt}</Text>
             <View style={styles.metaStat}>
@@ -374,6 +384,13 @@ export default function FeedDetailScreen() {
         </View>
 
         <CommentSection postId={post.id} commentCount={post.comments} />
+
+      <PublicProfileModal
+        visible={isAuthorProfileVisible}
+        onClose={() => setAuthorProfileVisible(false)}
+        userId={post.userId ?? null}
+        fallbackName={post.author}
+      />
       </ScrollView>
 
       <CalendarModal

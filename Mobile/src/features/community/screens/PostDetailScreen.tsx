@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -37,6 +37,7 @@ import {
 import PostContentView from '../components/PostContentView';
 import CommentSection from '../components/CommentSection';
 import UserAvatar from '../components/UserAvatar';
+import PublicProfileModal from '../components/PublicProfileModal';
 import LevelBadge from '../components/LevelBadge';
 import { ReactionType } from '../types';
 import { styles, COLORS } from './PostDetailScreen.styles';
@@ -49,6 +50,7 @@ export default function PostDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<DetailRoute>();
   const { showAlert } = useAlert();
+  const [isAuthorProfileVisible, setAuthorProfileVisible] = useState(false);
 
   const postId = route.params?.postId;
   const user = useAuthStore(state => state.user);
@@ -241,13 +243,21 @@ export default function PostDetailScreen() {
           <Text style={styles.title}>{post.title}</Text>
 
           <View style={styles.metaRow}>
-            <UserAvatar
-              name={post.author}
-              imageUrl={post.authorImage}
-              avatarHash={post.authorAvatarHash}
-              size={normalize(24)}
-            />
-            <Text style={styles.metaAuthor}>{post.author}</Text>
+            {/* 작성자를 누르면 공개 프로필을 보여준다 */}
+            <TouchableOpacity
+              style={styles.authorTouchable}
+              onPress={() => setAuthorProfileVisible(true)}
+              activeOpacity={0.7}
+              hitSlop={6}
+            >
+              <UserAvatar
+                name={post.author}
+                imageUrl={post.authorImage}
+                avatarHash={post.authorAvatarHash}
+                size={normalize(24)}
+              />
+              <Text style={styles.metaAuthor}>{post.author}</Text>
+            </TouchableOpacity>
             <LevelBadge level={post.level} />
             <Text style={styles.metaText}>· {post.createdAt}</Text>
             <View style={styles.metaViews}>
@@ -403,6 +413,13 @@ export default function PostDetailScreen() {
         )}
 
         <CommentSection postId={post.id} commentCount={post.comments} />
+
+      <PublicProfileModal
+        visible={isAuthorProfileVisible}
+        onClose={() => setAuthorProfileVisible(false)}
+        userId={post.userId ?? null}
+        fallbackName={post.author}
+      />
       </ScrollView>
     </View>
   );

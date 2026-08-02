@@ -105,6 +105,12 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: normalize(6),
   },
+  /** 작성자 아바타 + 닉네임을 함께 누를 수 있게 묶는다 */
+  authorTouchable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(6),
+  },
   metaAuthor: {
     fontSize: normalize(12),
     fontFamily: theme.typography.fontFamily.semibold,
