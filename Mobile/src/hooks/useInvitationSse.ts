@@ -6,6 +6,18 @@ import EventSource, { MessageEvent } from 'react-native-sse';
 import { resolveApiUrl } from '../utils/apiUrl';
 
 const DEFAULT_INVITATION_SSE_PATH = '/api/sse/subscribe';
+
+/**
+ * 개발 전용 로그.
+ *
+ * 연결이 불안정하면 error/close 핸들러와 지수 백오프 재연결이 반복되며
+ * 로그가 계속 쌓인다. RN에서 console.log는 브리지를 타므로 릴리스에서는 끈다.
+ */
+const sseLog = (...args: unknown[]) => {
+  if (__DEV__) {
+    console.log(...args);
+  }
+};
 const INITIAL_RECONNECT_DELAY_MS = 1000;
 const MAX_RECONNECT_DELAY_MS = 30000;
 const CUSTOM_EVENT_TYPES = [
@@ -76,7 +88,7 @@ export function useInvitationSse({
 
       reconnectTimerRef.current = setTimeout(() => {
         connect().catch(error => {
-          console.log('[SSE] Reconnect attempt failed:', error);
+          sseLog('[SSE] Reconnect attempt failed:', error);
         });
       }, delay);
 
@@ -113,9 +125,9 @@ export function useInvitationSse({
 
     const onOpen = () => {
       reconnectDelayRef.current = INITIAL_RECONNECT_DELAY_MS;
-      console.log('[SSE] 초대 스트림에 연결되었습니다.');
+      sseLog('[SSE] 초대 스트림에 연결되었습니다.');
       Promise.resolve(onInvitationEventRef.current()).catch(error => {
-        console.log('[SSE] 초대 목록 재동기화 실패:', error);
+        sseLog('[SSE] 초대 목록 재동기화 실패:', error);
       });
     };
 
@@ -144,7 +156,7 @@ export function useInvitationSse({
       }
 
       Promise.resolve(onInvitationEventRef.current()).catch(error => {
-        console.log('[SSE] 초대 이벤트 핸들러 실행 실패:', error);
+        sseLog('[SSE] 초대 이벤트 핸들러 실행 실패:', error);
       });
     };
 
@@ -175,7 +187,7 @@ export function useInvitationSse({
           ? String((event as { xhrState: unknown }).xhrState)
           : 'unknown';
 
-      console.log(
+      sseLog(
         `[SSE] 초대 스트림 오류: status=${xhrStatus}, state=${xhrState}`,
       );
 
@@ -191,7 +203,7 @@ export function useInvitationSse({
     };
 
     const onClose = () => {
-      console.log('[SSE] 초대 스트림 연결 끊김. 재연결 시도 중...');
+      sseLog('[SSE] 초대 스트림 연결 끊김. 재연결 시도 중...');
       disconnect();
       scheduleReconnect(connect);
     };
@@ -213,7 +225,7 @@ export function useInvitationSse({
 
     if (enabled) {
       connect().catch(error => {
-        console.log('[SSE] Initial connection failed:', error);
+        sseLog('[SSE] Initial connection failed:', error);
       });
       return () => {
         shouldReconnectRef.current = false;

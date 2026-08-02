@@ -32,6 +32,18 @@ interface KakaoMapViewProps {
   style?: object;
 }
 
+/**
+ * <script> 안에 안전하게 넣을 수 있는 JSON 문자열을 만든다.
+ *
+ * 장소 이름 같은 서버 문자열에 '</script>'가 들어 있으면 스크립트 태그가 그
+ * 자리에서 닫혀 지도가 통째로 깨진다. U+2028/2029도 파서에 따라 문제가 된다.
+ */
+const toScriptSafeJson = (value: unknown): string =>
+  JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+
 export default function KakaoMapView({
   places,
   routePath,
@@ -62,8 +74,8 @@ export default function KakaoMapView({
       return;
     }
 
-    const pathJson = JSON.stringify(routePath ?? []);
-    const lanesJson = JSON.stringify(transitLanes ?? []);
+    const pathJson = toScriptSafeJson(routePath ?? []);
+    const lanesJson = toScriptSafeJson(transitLanes ?? []);
 
     webViewRef.current.injectJavaScript(`
       if (window.__setRoute) { window.__setRoute(${pathJson}); }
@@ -86,7 +98,7 @@ export default function KakaoMapView({
   }, [pushOverlays]);
 
   const html = useMemo(() => {
-    const placesJson = JSON.stringify(
+    const placesJson = toScriptSafeJson(
       validPlaces.map((p, idx) => ({
         id: p.id,
         name: p.name,
