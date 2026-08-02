@@ -90,14 +90,6 @@ export interface PlanFrameVO {
   transportationCategoryId: number;
 }
 
-/** 일정 조회 전체 응답 */
-export interface PlanResponse {
-  message: string;
-  planFrame: PlanFrameVO;
-  placeBlocks: PlaceBlockVO[];
-  timetables: TimetableVO[];
-}
-
 /** 일정 생성 요청 페이로드 */
 export interface CreatePlanPayload {
   departure: string;
@@ -133,20 +125,6 @@ export interface FullPlanPayload {
 // ────────────────────────────────────────────────
 // 일정 관리 API
 // ────────────────────────────────────────────────
-
-/**
- * 일정 상세 조회.
- *
- * GET /api/plan/{id}는 권한 검사가 없어 planId만 알면 누구나 열람할 수 있다.
- * /complete는 비공개 일정이면 인증과 멤버십을 검증하고, 공개(isShared) 일정은
- * 비로그인도 조회할 수 있다. 응답 형태는 두 엔드포인트가 동일하다.
- */
-export async function fetchPlan(planId: string): Promise<PlanResponse> {
-  const response = await axios.get(
-    resolveApiUrl(`/api/plan/${planId}/complete`),
-  );
-  return response.data;
-}
 
 /**
  * 신규 일정 생성
@@ -420,12 +398,6 @@ export async function updateShareStatus(planId: string, isShared: boolean): Prom
   await axios.patch(resolveApiUrl(`/api/plan/${planId}/share`), { isShared });
 }
 
-/** 일정 편집 권한 요청 */
-export async function requestEditAccess(planId: string): Promise<{ collaborationRequestId: number }> {
-  const response = await axios.post(resolveApiUrl(`/api/plan/${planId}/request-access`), {});
-  return { collaborationRequestId: response.data?.collaborationRequestId };
-}
-
 /** 일정 공유 URL 조회 */
 export async function getShareUrl(
   planId: string,
@@ -538,32 +510,5 @@ export async function rejectInvitation(requestId: number): Promise<void> {
   );
 }
 
-// ────────────────────────────────────────────────
-// 여행지 정보 API
-// ────────────────────────────────────────────────
 
-/** 여행지 정보 인터페이스 */
-export interface TravelDestination {
-  travelId: number;
-  travelName: string;
-  travelCategoryName: string;
-}
-
-/** 선택 가능한 여행지 목록 조회 */
-export async function fetchTravelDestinations(): Promise<TravelDestination[]> {
-  const response = await axios.get('/api/destination');
-  return response.data;
-}
-
-// ────────────────────────────────────────────────
-// 출발지 검색 API
-// ────────────────────────────────────────────────
-
-/** 출발지 검색 */
-export async function searchDeparture(query: string): Promise<any[]> {
-  const response = await axios.post(`/api/departure`, {
-    departureQuery: query,
-  });
-  return response.data;
-}
 
