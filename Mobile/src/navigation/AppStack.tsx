@@ -14,7 +14,6 @@ import {
   PostCreateScreen,
   PostDetailScreen,
 } from '../features/community';
-import { SocialScreen } from '../features/social';
 
 import {
   TabParamList,
@@ -182,7 +181,6 @@ export default function AppStack() {
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="ThemeSettings" component={ThemeSettingsScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-      <Stack.Screen name="Social" component={SocialScreen} />
       <Stack.Screen
         name="ItineraryEditor"
         component={ItineraryEditorScreen}
