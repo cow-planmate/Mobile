@@ -119,6 +119,8 @@ interface ItineraryContextType {
       Pick<Place, 'startTime' | 'endTime' | 'memo' | 'name' | 'address'>
     >,
   ) => void;
+  /** 하루의 방문 순서를 주어진 ID 순서로 재배치 */
+  reorderPlacesInDay: (dayIndex: number, orderedPlaceIds: string[]) => void;
 }
 
 const ItineraryContext = createContext<ItineraryContextType | undefined>(
@@ -859,6 +861,74 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     }, 0);
   }, [sendBlockSync]);
 
+  /**
+   * 하루의 방문 순서를 재배치한다.
+   *
+   * 기존 시간대(시작·종료 쌍)를 시간순 그대로 두고, 그 슬롯에 새 순서의 장소를
+   * 채워 넣는다. 시간대 자체는 바뀌지 않으므로 겹침이 새로 생기지 않는다.
+   * 시간이 실제로 달라진 블록만 서버에 전송한다.
+   */
+  const reorderPlacesInDay = useCallback(
+    (dayIndex: number, orderedPlaceIds: string[]) => {
+      let placesToSync: Place[] = [];
+      let dayTimetableId: number | undefined;
+      let dayDateString: string | undefined;
+
+      setDays(prevDays => {
+        const day = prevDays[dayIndex];
+        if (!day || orderedPlaceIds.length === 0) {
+          return prevDays;
+        }
+
+        const byId = new Map(day.places.map(p => [p.id, p]));
+        const reordered = orderedPlaceIds
+          .map(id => byId.get(id))
+          .filter((p): p is Place => !!p);
+
+        // 요청한 ID 집합이 그날 블록과 정확히 일치할 때만 적용한다.
+        if (reordered.length !== day.places.length) {
+          return prevDays;
+        }
+
+        // 원래 시간대를 시간순으로 모아 새 순서에 그대로 씌운다.
+        const slots = day.places
+          .map(p => ({ startTime: p.startTime, endTime: p.endTime }))
+          .sort(
+            (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
+          );
+
+        const nextPlaces = reordered.map((place, i) => {
+          const slot = slots[i];
+          if (place.startTime === slot.startTime && place.endTime === slot.endTime) {
+            return place;
+          }
+          return { ...place, ...slot };
+        });
+
+        const updatedDays = [...prevDays];
+        const dayToUpdate = { ...day, places: nextPlaces };
+        updatedDays[dayIndex] = dayToUpdate;
+
+        placesToSync = pickTimeChanged(day.places, nextPlaces);
+        dayTimetableId = dayToUpdate.timetableId;
+        dayDateString = formatDateLocal(dayToUpdate.date);
+
+        return updatedDays;
+      });
+
+      setLastAddedPlaceId(null);
+
+      setTimeout(() => {
+        if (dayTimetableId && dayDateString) {
+          placesToSync.forEach(p => {
+            sendBlockSync('update', p, dayTimetableId!, dayDateString!);
+          });
+        }
+      }, 0);
+    },
+    [sendBlockSync],
+  );
+
   const contextValue = useMemo(() => ({
     days,
     setDays,
@@ -870,6 +940,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     updatePlaceTimes,
     updatePlaceMemo,
     updatePlaceDetails,
+    reorderPlacesInDay,
   }), [
     days,
     lastAddedPlaceId,
@@ -879,6 +950,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     updatePlaceTimes,
     updatePlaceMemo,
     updatePlaceDetails,
+    reorderPlacesInDay,
   ]);
 
   return (

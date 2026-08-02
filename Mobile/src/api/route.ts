@@ -34,6 +34,25 @@ export interface RouteResponse {
 /** 이동 수단 프로필 */
 export type RouteProfile = 'driving' | 'foot';
 
+/** 방문 순서 최적화의 구간별 이동 정보 */
+export interface RouteTripLeg {
+  /** 구간 이동 거리(m) */
+  distance: number;
+  /** 구간 소요 시간(초) */
+  duration: number;
+}
+
+/** 방문 순서 최적화 응답 */
+export interface RouteTripResponse {
+  /** 방문 순서대로 나열한 **입력 좌표의 인덱스** 목록 (예: [0, 2, 1, 3]) */
+  visitOrder: number[];
+  /** 총 이동 거리(m) */
+  totalDistance: number;
+  /** 총 소요 시간(초) */
+  totalDuration: number;
+  legs: RouteTripLeg[];
+}
+
 /** 좌표 쌍별 소요시간/거리 매트릭스 응답 */
 export interface RouteTableResponse {
   /** NxN 소요 시간(초). 도달 불가 구간은 null */
@@ -166,6 +185,30 @@ export async function fetchRouteTable(
   const response = await axios.post(resolveApiUrl('/api/route/table'), {
     waypoints,
     profile,
+  });
+  return response.data;
+}
+
+/**
+ * 방문 순서를 최적화합니다.
+ *
+ * 서버는 첫 좌표를 출발지로 고정하고 나머지의 최적 순서를 계산해
+ * **입력 배열 기준 인덱스 목록**(visitOrder)을 돌려준다. 좌표 자체를 재정렬해
+ * 주는 것이 아니므로 호출부가 인덱스로 원본을 재배치해야 한다.
+ *
+ * @param waypoints 방문할 좌표 목록 (첫 좌표 = 출발지)
+ * @param profile 이동 수단 (기본 driving)
+ * @param roundtrip 출발지로 되돌아오는 왕복 여부
+ */
+export async function fetchRouteTrip(
+  waypoints: RoutePoint[],
+  profile: RouteProfile = 'driving',
+  roundtrip: boolean = false,
+): Promise<RouteTripResponse> {
+  const response = await axios.post(resolveApiUrl('/api/route/trip'), {
+    waypoints,
+    profile,
+    roundtrip,
   });
   return response.data;
 }

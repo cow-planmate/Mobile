@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAlert } from '../../../contexts/AlertContext';
+import Toast from 'react-native-toast-message';
 import axios from 'axios';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { AppStackParamList } from '../../../navigation/types';
@@ -187,7 +188,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     return () => clearTimeout(timer);
   }, []);
 
-  const { updatePlaceDetails, setDays } = useItinerary();
+  const { updatePlaceDetails, setDays, reorderPlacesInDay } = useItinerary();
   const { connect, disconnect, onlineUsers, sendMessage, isConnected } =
     useWebSocket();
   const {
@@ -520,6 +521,20 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const handleOpenParticipants = useCallback(() => {
     setParticipantsVisible(true);
   }, []);
+
+  /** 지도에서 계산한 방문 순서를 현재 선택된 날짜에 반영한다. */
+  const handleApplyOptimizedOrder = useCallback(
+    (orderedPlaceIds: string[]) => {
+      reorderPlacesInDay(selectedDayIndex, orderedPlaceIds);
+      Toast.show({
+        type: 'success',
+        text1: '방문 순서를 최적화했습니다.',
+        position: 'top',
+        visibilityTime: 2000,
+      });
+    },
+    [reorderPlacesInDay, selectedDayIndex],
+  );
 
   const handleOpenMap = useCallback(() => {
     setMapPreviewVisible(true);
@@ -1039,6 +1054,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
           <View style={modalStyles.mapBody}>
             <RouteMapSection
+              onApplyOptimizedOrder={handleApplyOptimizedOrder}
               places={
                 selectedDay?.places.map(place => ({
                   id: place.id,

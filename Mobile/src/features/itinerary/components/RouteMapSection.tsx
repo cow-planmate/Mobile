@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Route as RouteIcon } from 'lucide-react-native';
+import { Route as RouteIcon, Wand2 } from 'lucide-react-native';
 import KakaoMapView, { MapPlace, MapTransitLane } from './KakaoMapView';
 import RouteSegmentSheet from './RouteSegmentSheet';
 import {
@@ -9,14 +9,23 @@ import {
   useSegmentInfo,
   useTransitLane,
 } from '../hooks/useRouteQueries';
-import { isRouteFallback, RoutePoint } from '../../../api/route';
+import { fetchRouteTrip, isRouteFallback, RoutePoint } from '../../../api/route';
 import { laneColor } from '../constants/transit';
 import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
+import { useAlert } from '../../../contexts/AlertContext';
 
 interface RouteMapSectionProps {
   /** 방문 순서대로 정렬된 장소 목록 */
   places: MapPlace[];
+  /**
+   * 방문 순서 최적화 결과를 적용할 콜백.
+   *
+   * 서버는 좌표를 재정렬해 주지 않고 **입력 인덱스 순서**만 돌려주므로,
+   * 여기서는 그 순서대로 재배치한 장소 ID 목록을 넘긴다.
+   * 넘기지 않으면 최적화 버튼이 표시되지 않는다.
+   */
+  onApplyOptimizedOrder?: (orderedPlaceIds: string[]) => void;
   style?: object;
 }
 
@@ -33,8 +42,11 @@ const hasValidPosition = (place: MapPlace) =>
  */
 export default function RouteMapSection({
   places,
+  onApplyOptimizedOrder,
   style,
 }: RouteMapSectionProps) {
+  const { showAlert } = useAlert();
+  const [isOptimizing, setOptimizing] = useState(false);
   const validPlaces = useMemo(() => places.filter(hasValidPosition), [places]);
 
   const points: RoutePoint[] = useMemo(
@@ -93,6 +105,60 @@ export default function RouteMapSection({
     [validPlaces],
   );
 
+  /**
+   * 방문 순서 최적화.
+   * 첫 장소는 출발지로 고정되며, 결과 인덱스로 원본 목록을 재배치해 넘긴다.
+   */
+  const handleOptimizeOrder = useCallback(async () => {
+    if (!onApplyOptimizedOrder || points.length < 3 || isOptimizing) {
+      return;
+    }
+    setOptimizing(true);
+    try {
+      const result = await fetchRouteTrip(points);
+      const order = result?.visitOrder ?? [];
+
+      // 인덱스가 하나라도 범위를 벗어나면 재배치가 어긋나므로 적용하지 않는다.
+      const isUsable =
+        order.length === validPlaces.length &&
+        order.every(i => Number.isInteger(i) && i >= 0 && i < validPlaces.length);
+
+      if (!isUsable) {
+        showAlert({
+          title: '순서 최적화 실패',
+          message: '경로를 계산하지 못했습니다. 잠시 후 다시 시도해주세요.',
+          type: 'error',
+        });
+        return;
+      }
+
+      const orderedIds = order.map(i => validPlaces[i].id);
+      const isUnchanged = orderedIds.every(
+        (id, i) => id === validPlaces[i].id,
+      );
+
+      if (isUnchanged) {
+        showAlert({
+          title: '이미 최적 순서예요',
+          message: '지금 순서가 가장 짧은 동선입니다.',
+          type: 'info',
+        });
+        return;
+      }
+
+      onApplyOptimizedOrder(orderedIds);
+    } catch (e) {
+      console.warn('순서 최적화 실패:', e);
+      showAlert({
+        title: '순서 최적화 실패',
+        message: '경로를 계산하지 못했습니다. 잠시 후 다시 시도해주세요.',
+        type: 'error',
+      });
+    } finally {
+      setOptimizing(false);
+    }
+  }, [onApplyOptimizedOrder, points, validPlaces, isOptimizing, showAlert]);
+
   return (
     <View style={[sectionStyles.container, style]}>
       <KakaoMapView
@@ -109,6 +175,20 @@ export default function RouteMapSection({
         >
           <RouteIcon size={normalize(13)} color={theme.colors.primary} />
           <Text style={sectionStyles.segmentButtonText}>구간 정보</Text>
+        </TouchableOpacity>
+      )}
+
+      {onApplyOptimizedOrder && points.length >= 3 && (
+        <TouchableOpacity
+          style={sectionStyles.optimizeButton}
+          onPress={handleOptimizeOrder}
+          disabled={isOptimizing}
+          activeOpacity={0.85}
+        >
+          <Wand2 size={normalize(13)} color={theme.colors.primary} />
+          <Text style={sectionStyles.segmentButtonText}>
+            {isOptimizing ? '계산 중...' : '순서 최적화'}
+          </Text>
         </TouchableOpacity>
       )}
 
@@ -134,6 +214,25 @@ const sectionStyles = StyleSheet.create({
     position: 'absolute',
     top: normalize(12),
     left: normalize(12),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(5),
+    paddingHorizontal: normalize(12),
+    paddingVertical: normalize(7),
+    borderRadius: theme.borderRadius.round,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  optimizeButton: {
+    position: 'absolute',
+    top: normalize(12),
+    right: normalize(12),
     flexDirection: 'row',
     alignItems: 'center',
     gap: normalize(5),
