@@ -15,7 +15,6 @@ import {
   UserProfile,
   USER_PROFILE_QUERY_KEY,
 } from '../../../hooks/useUserProfile';
-
 const EMPTY_PROFILE: UserProfile = {
   name: '',
   email: '',
@@ -226,10 +225,52 @@ export default function ProfileScreen({ route }: any) {
     });
   };
 
+  /**
+   * 일정 제목 변경. 성공하면 프로필 캐시의 해당 항목만 갈아끼워
+   * N+1 재조회 없이 화면에 즉시 반영한다.
+   */
+  const handleRenamePlan = useCallback(
+    async (planId: string, newName: string) => {
+      const trimmed = newName.trim();
+      if (!trimmed) return;
+
+      try {
+        await axios.patch(resolveApiUrl(`/api/plan/${planId}/name`), {
+          planName: trimmed,
+        });
+        queryClient.setQueryData<UserProfile>(USER_PROFILE_QUERY_KEY, prev =>
+          prev
+            ? {
+                ...prev,
+                myPlans: prev.myPlans.map(p =>
+                  p.planId === planId ? { ...p, planName: trimmed } : p,
+                ),
+              }
+            : prev,
+        );
+        Toast.show({
+          type: 'success',
+          text1: '일정 제목이 변경되었습니다.',
+          position: 'top',
+          visibilityTime: 2500,
+        });
+      } catch (e) {
+        Toast.show({
+          type: 'error',
+          text1: '제목 변경에 실패했습니다.',
+          position: 'top',
+          visibilityTime: 2500,
+        });
+      }
+    },
+    [queryClient],
+  );
+
   return (
     <ProfileScreenView
       loading={isLoading}
       user={user}
+      onRenamePlan={handleRenamePlan}
       isThemeModalVisible={isThemeModalVisible}
       setThemeModalVisible={setThemeModalVisible}
       isPasswordModalVisible={isPasswordModalVisible}

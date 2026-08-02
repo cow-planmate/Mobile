@@ -16,10 +16,24 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-import { LoadingSpinner, UpdatePasswordModal, UpdateThemeModal } from '../../../components/common';
+import {
+  LoadingSpinner,
+  MenuModal,
+  ShareModal,
+  UpdatePasswordModal,
+  UpdateThemeModal,
+  UpdateValueModal,
+} from '../../../components/common';
 import axios from 'axios';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { leaveAsEditor } from '../../../api/trips';
+import {
+  faT,
+  faPen,
+  faShare,
+  faTrash,
+  faUserMinus,
+} from '@fortawesome/free-solid-svg-icons';
 
 import {
   User,
@@ -36,6 +50,7 @@ import {
   Check,
   ChevronLeft,
   ChevronDown,
+  MoreVertical,
 } from 'lucide-react-native';
 import FastImage from 'react-native-fast-image';
 import gravatarUrl from '../../../utils/gravatarUrl';
@@ -69,6 +84,27 @@ interface PlanItem {
 
 
 
+/** 내가 만든 일정의 설정 메뉴 */
+export const PLAN_MENU_OPTIONS = [
+  { label: '제목 바꾸기', action: 'rename', icon: faT },
+  { label: '수정하기', action: 'edit', icon: faPen },
+  { label: '공유 및 초대', action: 'share', icon: faShare },
+  { label: '삭제하기', action: 'delete', icon: faTrash, isDestructive: true },
+];
+
+/** 편집 권한만 받은 일정의 설정 메뉴 (삭제 대신 권한 포기) */
+export const SHARED_PLAN_MENU_OPTIONS = [
+  { label: '제목 바꾸기', action: 'rename', icon: faT },
+  { label: '수정하기', action: 'edit', icon: faPen },
+  { label: '공유 및 초대', action: 'share', icon: faShare },
+  {
+    label: '편집 권한 포기하기',
+    action: 'leave',
+    icon: faUserMinus,
+    isDestructive: true,
+  },
+];
+
 /**
  * '준비중' 체크리스트 미리보기 항목.
  * pointerEvents="none"로 잠겨 있어 변하지 않으므로 카드마다 state로 들고 있지 않는다.
@@ -81,14 +117,14 @@ const PREVIEW_TASKS = [
 
 const ItineraryCardItem = ({
   plan,
-  onDelete,
+  onOpenMenu,
   navigation,
   isEditMode,
   isSelected,
   onSelectToggle,
 }: {
   plan: PlanItem;
-  onDelete: (id: string, isShared: boolean) => void;
+  onOpenMenu: (plan: PlanItem) => void;
   navigation: any;
   isEditMode: boolean;
   isSelected: boolean;
@@ -147,7 +183,7 @@ const ItineraryCardItem = ({
           : (pressed ? { borderColor: themeColor, borderWidth: 2, backgroundColor: '#F3F4F6' } : null)
       ]}
     >
-      {/* 카드 상단 배지 및 삭제 버튼 */}
+      {/* 카드 상단 배지 및 설정 버튼 */}
       <View style={styles.cardHeaderRow}>
         <View style={styles.badgeRow}>
           {isEditMode && (
@@ -170,12 +206,13 @@ const ItineraryCardItem = ({
           <Text style={styles.statusText}>예정됨</Text>
         </View>
         {!isEditMode && (
-          <TouchableOpacity 
-            onPress={() => onDelete(plan.planId, !!plan.isShared)} 
+          <TouchableOpacity
+            onPress={() => onOpenMenu(plan)}
             activeOpacity={0.7}
+            hitSlop={8}
             style={plan.isShared ? { marginTop: normalize(16) } : null}
           >
-            <Trash2 size={16} color="#9CA3AF" />
+            <MoreVertical size={18} color="#9CA3AF" />
           </TouchableOpacity>
         )}
       </View>
@@ -249,6 +286,8 @@ interface ProfileScreenViewProps {
   handleUpdateTheme: () => void;
   handleUpdatePassword: (cur: string, n: string) => void;
   handleResign: () => void;
+  /** 일정 제목 변경 (서버 반영 + 프로필 캐시 갱신은 컨테이너가 담당) */
+  onRenamePlan: (planId: string, newName: string) => Promise<void>;
   scrollToItinerary?: boolean;
 }
 
@@ -265,6 +304,7 @@ export default function ProfileScreenView({
   handleUpdateTheme,
   handleUpdatePassword,
   handleResign,
+  onRenamePlan,
   scrollToItinerary,
 }: ProfileScreenViewProps) {
   const navigation = useNavigation<any>();
@@ -337,6 +377,49 @@ export default function ProfileScreenView({
       setPlans(user.myPlans);
     }
   }, [user]);
+
+  // ── 일정 카드 설정 메뉴 ──
+  const [menuPlan, setMenuPlan] = useState<PlanItem | null>(null);
+  const [isPlanMenuVisible, setPlanMenuVisible] = useState(false);
+  const [isRenameVisible, setRenameVisible] = useState(false);
+  const [isPlanShareVisible, setPlanShareVisible] = useState(false);
+
+  const handleOpenPlanMenu = (plan: PlanItem) => {
+    setMenuPlan(plan);
+    setPlanMenuVisible(true);
+  };
+
+  const handlePlanMenuSelect = (action: string) => {
+    setPlanMenuVisible(false);
+    if (!menuPlan) return;
+
+    switch (action) {
+      case 'rename':
+        setRenameVisible(true);
+        break;
+      case 'edit':
+        navigation.navigate('ItineraryEditor', { planId: menuPlan.planId });
+        break;
+      case 'share':
+        setPlanShareVisible(true);
+        break;
+      case 'delete':
+      case 'leave':
+        handleDeletePlan(menuPlan.planId, !!menuPlan.isShared);
+        break;
+    }
+  };
+
+  const handleConfirmRename = async (newName: string) => {
+    if (!menuPlan) return;
+    await onRenamePlan(menuPlan.planId, newName);
+    setPlans(prev =>
+      prev.map(p =>
+        p.planId === menuPlan.planId ? { ...p, planName: newName.trim() } : p,
+      ),
+    );
+    setRenameVisible(false);
+  };
 
   const handleDeletePlan = (planId: string, isShared: boolean) => {
     if (isShared) {
@@ -804,7 +887,7 @@ export default function ProfileScreenView({
                     <ItineraryCardItem 
                       key={plan.planId} 
                       plan={plan} 
-                      onDelete={handleDeletePlan}
+                      onOpenMenu={handleOpenPlanMenu}
                       navigation={navigation}
                       isEditMode={isEditMode}
                       isSelected={isSelected}
@@ -896,12 +979,15 @@ export default function ProfileScreenView({
                       </View>
 
                       {!isEditMode ? (
-                        <TouchableOpacity 
-                          onPress={() => handleDeletePlan(plan.planId, isPastShared)} 
+                        <TouchableOpacity
+                          onPress={() =>
+                            handleOpenPlanMenu({ ...plan, isShared: isPastShared })
+                          }
                           activeOpacity={0.7}
+                          hitSlop={8}
                           style={{ padding: 4 }}
                         >
-                          <Trash2 size={14} color="#9CA3AF" />
+                          <MoreVertical size={16} color="#9CA3AF" />
                         </TouchableOpacity>
                       ) : (
                         <View style={styles.pastPlanBadge}>
@@ -1181,6 +1267,35 @@ export default function ProfileScreenView({
         onClose={() => setPasswordModalVisible(false)}
         onConfirm={handleUpdatePassword}
       />
+
+      {/* ── 일정 카드 설정 메뉴 ── */}
+      <MenuModal
+        visible={isPlanMenuVisible}
+        title={menuPlan?.planName ?? '일정 설정'}
+        options={
+          menuPlan?.isShared ? SHARED_PLAN_MENU_OPTIONS : PLAN_MENU_OPTIONS
+        }
+        onClose={() => setPlanMenuVisible(false)}
+        onSelect={handlePlanMenuSelect}
+      />
+
+      <UpdateValueModal
+        visible={isRenameVisible}
+        title="제목 바꾸기"
+        label="일정 제목"
+        initialValue={menuPlan?.planName ?? ''}
+        onClose={() => setRenameVisible(false)}
+        onConfirm={handleConfirmRename}
+      />
+
+      {menuPlan && (
+        <ShareModal
+          visible={isPlanShareVisible}
+          onClose={() => setPlanShareVisible(false)}
+          planId={menuPlan.planId}
+          isOwner={!menuPlan.isShared}
+        />
+      )}
     </View>
   );
 }
