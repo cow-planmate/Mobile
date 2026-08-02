@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, View, Text, Pressable, TouchableOpacity } from 'react-native';
+import { Modal, View, Text, TouchableOpacity } from 'react-native';
 import { X, Minus, Plus } from 'lucide-react-native';
 
 import { styles, COLORS } from './PaxModal.styles';

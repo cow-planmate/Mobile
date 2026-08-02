@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { API_URL } from '@env';
 
 // Request/Response 타입 정의 (백엔드 DTO 기반)
 

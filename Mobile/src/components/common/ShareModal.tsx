@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -16,7 +16,6 @@ import Toast from 'react-native-toast-message';
 import { X } from 'lucide-react-native';
 import {
   getShareUrl,
-  getShareStatus,
   updateShareStatus,
   inviteEditor,
   getEditors,
@@ -55,14 +54,7 @@ export default function ShareModal({
   const [isShared, setIsShared] = useState(true);
   const [editors, setEditors] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (visible && planId) {
-      fetchShareLink();
-      fetchEditors();
-    }
-  }, [visible, planId]);
-
-  const fetchShareLink = async () => {
+  const fetchShareLink = useCallback(async () => {
     if (isMock) {
       setShareLink('https://planmate.cow/share/mock-trip-123');
       setIsShared(true);
@@ -77,7 +69,7 @@ export default function ShareModal({
     } catch (error) {
       console.error('Failed to fetch share link:', error);
     }
-  };
+  }, [isMock, planId]);
 
   const handleToggleShare = async (newValue: boolean) => {
     setIsShared(newValue);
@@ -99,26 +91,9 @@ export default function ShareModal({
 
   const handleCopyLink = () => {
     if (!shareLink) return;
-    
-    // 1. 웹 브라우저 환경 (navigator.clipboard) 대응
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(shareLink)
-        .then(() => {
-          Toast.show({
-            type: 'success',
-            text1: '링크가 복사되었습니다.',
-            position: 'top',
-            visibilityTime: 1500,
-          });
-        })
-        .catch((err) => {
-          console.warn('Web clipboard copy failed:', err);
-          handleShareLink();
-        });
-      return;
-    }
-    
-    // 2. 모바일 네이티브 환경 대응
+
+    // RN에는 navigator.clipboard가 없다. 네이티브 모듈을 먼저 쓰고,
+    // 모듈이 링크되지 않은 환경에서는 공유 시트로 대체한다.
     const hasNativeClipboard = !!NativeModules.RNCClipboard;
     if (hasNativeClipboard) {
       try {
@@ -136,7 +111,6 @@ export default function ShareModal({
       }
     }
     
-    // 3. 둘 다 지원되지 않는 환경에서는 Share API로 대체
     console.warn('Native RNCClipboard module not available. Falling back to native Share API.');
     handleShareLink();
   };
@@ -152,14 +126,16 @@ export default function ShareModal({
     }
   };
 
-  const fetchEditors = async () => {
+  const fetchEditors = useCallback(async () => {
     if (isMock) {
-      if (editors.length === 0) {
-        setEditors([
-          { userId: 1, nickname: '홍길동' },
-          { userId: 2, nickname: '김철수' },
-        ]);
-      }
+      setEditors(prev =>
+        prev.length === 0
+          ? [
+              { userId: 1, nickname: '홍길동' },
+              { userId: 2, nickname: '김철수' },
+            ]
+          : prev,
+      );
       return;
     }
     try {
@@ -168,7 +144,14 @@ export default function ShareModal({
     } catch (error) {
       console.error('Failed to fetch editors:', error);
     }
-  };
+  }, [isMock, planId]);
+
+  useEffect(() => {
+    if (visible && planId) {
+      void fetchShareLink();
+      void fetchEditors();
+    }
+  }, [visible, planId, fetchShareLink, fetchEditors]);
 
   const handleInvite = async () => {
     if (!nickname.trim()) {

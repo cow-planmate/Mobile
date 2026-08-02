@@ -100,7 +100,7 @@ export default function ThemeSelector({
     } finally {
       setLoading(false);
     }
-  }, [initialSelections]);
+  }, [initialSelections, showAlert]);
 
   useEffect(() => {
     if (visible) {

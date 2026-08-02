@@ -40,7 +40,6 @@ export default function UpdateThemeModal({
   onConfirm,
 }: UpdateThemeModalProps) {
   const { showAlert } = useAlert();
-  const [currentThemes, setCurrentThemes] = useState<PreferredThemeVO[]>([]);
   const [selectedThemes, setSelectedThemes] = useState<ThemeSelectorResult>({});
   const [isSelectorVisible, setSelectorVisible] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -51,8 +50,6 @@ export default function UpdateThemeModal({
       setLoading(true);
       const response = await axios.get(resolveApiUrl('/api/user/profile'));
       const themes: PreferredThemeVO[] = response.data.preferredThemes || [];
-      setCurrentThemes(themes);
-
       // 카테고리별로 그룹화
       const grouped: ThemeSelectorResult = {};
       themes.forEach(t => {

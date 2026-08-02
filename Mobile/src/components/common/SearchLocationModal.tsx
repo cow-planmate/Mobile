@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   View,
   Text,
@@ -11,7 +12,6 @@ import {
   ScrollView,
 } from 'react-native';
 import axios from 'axios';
-import { API_URL } from '@env';
 import {
   X,
   MapPin,
@@ -44,88 +44,84 @@ type Props = {
   currentValue?: string;
 };
 
+/** 서버 응답과 폴백을 합쳐 화면에서 쓰는 형태로 정규화한다. */
+const toTravelVO = (item: any): TravelVO => {
+  const dId = item.destinationId ?? item.travelId ?? -1;
+  const dName = item.destinationName ?? item.travelName ?? '';
+  const fallbackObj = DESTINATIONS_28.find(d => isRegionMatch(d.name, dName));
+  return {
+    travelId: dId,
+    travelName: dName,
+    region: fallbackObj?.region || '기타',
+    travelCategoryId: item.travelCategoryId ?? 0,
+    travelCategoryName: item.travelCategoryName ?? '',
+    travelImg: item.travelImg,
+  };
+};
+
+const FALLBACK_DESTINATIONS: TravelVO[] = DESTINATIONS_28.map(d => ({
+  travelId: d.id,
+  travelName: d.name,
+  region: d.region,
+}));
+
+const fetchDestinations = async (): Promise<TravelVO[]> => {
+  try {
+    const response = await axios.get(resolveApiUrl('/api/destination'));
+    const rawList: DestinationDto[] =
+      response.data.destinations || response.data.travels || [];
+
+    const serverData = rawList.map(toTravelVO);
+    // 서버가 빈 목록을 주면 내장 28개 목록으로 대체한다.
+    return serverData.length > 0 ? serverData : FALLBACK_DESTINATIONS;
+  } catch (error) {
+    console.error('Failed to fetch destinations:', error);
+    return FALLBACK_DESTINATIONS;
+  }
+};
+
+/**
+ * 여행지 목록.
+ *
+ * 28개 고정 데이터라 사실상 변하지 않는데 모달을 열 때마다 다시 불러오고 있었다.
+ * 앱 실행 중에는 캐시를 재사용한다.
+ */
+const useDestinations = (enabled: boolean) =>
+  useQuery({
+    queryKey: ['destinations'],
+    queryFn: fetchDestinations,
+    enabled,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60,
+  });
+
 export default function SearchLocationModal({
   visible,
   onClose,
   onSelect,
   currentValue,
 }: Props) {
-  const [destinations, setDestinations] = useState<TravelVO[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string>('전체');
   const [selectedDestination, setSelectedDestination] = useState<TravelVO | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+
+  const { data, isLoading } = useDestinations(visible);
+  const destinations = data ?? [];
 
   useEffect(() => {
     if (visible) {
       setSelectedGroup('전체');
       setSelectedDestination(null);
-      fetchDestinations();
     }
   }, [visible]);
 
-  const fetchDestinations = async () => {
-    setIsLoading(true);
-    try {
-      const response = await axios.get(resolveApiUrl('/api/destination'));
-      const rawList: DestinationDto[] =
-        response.data.destinations || response.data.travels || [];
-
-      if (__DEV__) {
-        console.log('Fetched Destinations:', rawList);
-      }
-
-      let serverData: TravelVO[] = rawList.map((item: any) => {
-        const dId = item.destinationId ?? item.travelId ?? -1;
-        const dName = item.destinationName ?? item.travelName ?? '';
-        const fallbackObj = DESTINATIONS_28.find(d => isRegionMatch(d.name, dName));
-        return {
-          travelId: dId,
-          travelName: dName,
-          region: fallbackObj?.region || '기타',
-          travelCategoryId: item.travelCategoryId ?? 0,
-          travelCategoryName: item.travelCategoryName ?? '',
-          travelImg: item.travelImg,
-        };
-      });
-
-      // If server data is empty or partial, fallback to 28 full list
-      if (serverData.length === 0) {
-        serverData = DESTINATIONS_28.map(d => ({
-          travelId: d.id,
-          travelName: d.name,
-          region: d.region,
-        }));
-      }
-
-      setDestinations(serverData);
-
-      // Pre-select based on currentValue if provided
-      if (currentValue) {
-        const initialMatch = serverData.find(d => isRegionMatch(d.travelName, currentValue));
-        if (initialMatch) {
-          setSelectedDestination(initialMatch);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch destinations:', error);
-
-      const fallbackList: TravelVO[] = DESTINATIONS_28.map(d => ({
-        travelId: d.id,
-        travelName: d.name,
-        region: d.region,
-      }));
-      setDestinations(fallbackList);
-
-      if (currentValue) {
-        const initialMatch = fallbackList.find(d => isRegionMatch(d.travelName, currentValue));
-        if (initialMatch) {
-          setSelectedDestination(initialMatch);
-        }
-      }
-    } finally {
-      setIsLoading(false);
+  // 목록이 준비되면 현재 값과 일치하는 항목을 미리 골라 둔다.
+  useEffect(() => {
+    if (!visible || !currentValue || !data) return;
+    const initialMatch = data.find(d => isRegionMatch(d.travelName, currentValue));
+    if (initialMatch) {
+      setSelectedDestination(initialMatch);
     }
-  };
+  }, [visible, currentValue, data]);
 
   const handleDestinationSelect = (item: TravelVO) => {
     setSelectedDestination(item);

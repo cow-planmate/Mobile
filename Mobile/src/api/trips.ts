@@ -1,6 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL, WEB_URL } from '@env';
+import { WEB_URL } from '@env';
 import { resolveApiUrl } from '../utils/apiUrl';
 
 /**

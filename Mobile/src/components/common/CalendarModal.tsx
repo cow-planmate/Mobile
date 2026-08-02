@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Modal, View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { Modal, View, Text, TouchableOpacity } from 'react-native';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { styles, COLORS } from './CalendarModal.styles';
 

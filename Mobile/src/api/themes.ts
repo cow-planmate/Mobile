@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { API_URL } from '@env';
 
 // 선호 테마 VO (백엔드 PreferredThemeVO 기반)
 export interface PreferredThemeVO {

@@ -15,7 +15,7 @@ export function useCreatePlan() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreatePlanPayload) => createPlan(payload),
-    onSuccess: (data) => {
+    onSuccess: () => {
       // 일정 목록 갱신을 위한 쿼리 캐시 무효화
       void queryClient.invalidateQueries({ queryKey: ['myPlans'] });
       void queryClient.invalidateQueries({ queryKey: ['userProfile'] });
