@@ -739,9 +739,11 @@ export default function PlaceRecommendationList({
         data={tabData}
         keyExtractor={(item, index) => `${item.placeId}_${index}`}
         renderItem={renderPlaceItem}
-        ListEmptyComponent={renderEmpty}
-        ListHeaderComponent={renderHeader}
-        ListFooterComponent={renderFooter}
+        // 컴포넌트가 아니라 엘리먼트로 넘긴다. 함수로 넘기면 렌더마다 타입이 바뀌어
+        // 헤더가 통째로 리마운트되고, 헤더 안의 검색 TextInput이 포커스를 잃는다.
+        ListEmptyComponent={renderEmpty()}
+        ListHeaderComponent={renderHeader()}
+        ListFooterComponent={renderFooter()}
         contentContainerStyle={plStyles.listContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

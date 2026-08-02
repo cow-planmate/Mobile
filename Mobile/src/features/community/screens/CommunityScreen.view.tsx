@@ -133,6 +133,13 @@ export default function CommunityScreenView({
     [onPostPress],
   );
 
+  /**
+   * 아래 세 개는 FlatList에 **엘리먼트**로 넘긴다.
+   *
+   * 컴포넌트(함수)로 넘기면 렌더마다 함수 identity가 바뀌어 React가 다른 타입으로
+   * 보고 헤더 전체를 언마운트 후 다시 마운트한다. 헤더에 검색 TextInput이 있어
+   * 한 글자 입력할 때마다 포커스와 키보드가 사라졌다.
+   */
   const renderListHeader = () => (
     <View style={styles.listHeaderContainer}>
       {/* 게시판 탭 */}
@@ -323,9 +330,9 @@ export default function CommunityScreenView({
         keyExtractor={item => String(item.id)}
         contentContainerStyle={styles.postList}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={renderListHeader}
-        ListFooterComponent={renderListFooter}
-        ListEmptyComponent={renderEmpty}
+        ListHeaderComponent={renderListHeader()}
+        ListFooterComponent={renderListFooter()}
+        ListEmptyComponent={renderEmpty()}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.4}
         refreshControl={
