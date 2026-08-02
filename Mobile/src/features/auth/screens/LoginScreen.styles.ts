@@ -75,6 +75,11 @@ export const styles = StyleSheet.create({
     includeFontPadding: false,
     height: normalize(28),
   },
+  /** 입력값이 유효하지 않을 때의 테두리 강조. 정의가 없어 적용되지 않았다. */
+  inputError: {
+    borderColor: COLORS.error,
+    borderWidth: 1,
+  },
   passwordContainer: {
     width: '100%',
     minHeight: normalize(68),

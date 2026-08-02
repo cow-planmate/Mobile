@@ -11,7 +11,7 @@ import {
 import axios from 'axios';
 import { Map, Bed, UtensilsCrossed, X } from 'lucide-react-native';
 import { PreferredThemeVO, changePreferredThemes } from '../../api/themes';
-import ThemeSelector, { ThemeSelectorResult } from './ThemeSelector';
+import ThemeSelector, { ThemeSelectorResult, CATEGORY_MAP } from './ThemeSelector';
 import { styles, COLORS } from './UpdateThemeModal.styles';
 import { useAlert } from '../../contexts/AlertContext';
 import { resolveApiUrl } from '../../utils/apiUrl';
@@ -50,13 +50,19 @@ export default function UpdateThemeModal({
       setLoading(true);
       const response = await axios.get(resolveApiUrl('/api/user/profile'));
       const themes: PreferredThemeVO[] = response.data.preferredThemes || [];
-      // 카테고리별로 그룹화
+      // 카테고리별로 그룹화.
+      // 서버 응답에는 카테고리 ID가 없고 category enum만 있으므로 CATEGORY_MAP으로 변환한다.
+      // 예전에는 존재하지 않는 preferredThemeCategoryId로 묶어 모든 테마가
+      // 'undefined' 키 하나에 몰렸고, 저장 시 Number('undefined') = NaN이 되어
+      // 항상 실패했다.
       const grouped: ThemeSelectorResult = {};
       themes.forEach(t => {
-        if (!grouped[t.preferredThemeCategoryId]) {
-          grouped[t.preferredThemeCategoryId] = [];
+        const categoryId = CATEGORY_MAP[t.category]?.id;
+        if (categoryId === undefined) return;
+        if (!grouped[categoryId]) {
+          grouped[categoryId] = [];
         }
-        grouped[t.preferredThemeCategoryId].push(t);
+        grouped[categoryId].push(t);
       });
       setSelectedThemes(grouped);
     } catch (error) {

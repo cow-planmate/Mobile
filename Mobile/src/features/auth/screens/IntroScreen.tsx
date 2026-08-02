@@ -2,9 +2,9 @@ import React from 'react';
 import IntroScreenView from './IntroScreen.view';
 import { useNavigation } from '@react-navigation/native';
 import { AuthStackParamList } from '../../../navigation/types';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-type IntroScreenNavigationProp = StackNavigationProp<
+type IntroScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
   'Intro'
 >;

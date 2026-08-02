@@ -156,7 +156,7 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
 
     expect(renderer).toBeDefined();
 
-    const viewComponent = renderer?.root.findByType(require('../src/features/home/screens/HomeScreen.view').HomeScreenView);
+    const viewComponent = renderer!.root.findByType(require('../src/features/home/screens/HomeScreen.view').HomeScreenView);
     expect(viewComponent).toBeTruthy();
 
     // 1. Select destination to satisfy validations

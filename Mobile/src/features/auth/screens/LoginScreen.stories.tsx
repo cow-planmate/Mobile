@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { LoginScreenView } from './LoginScreen.view';
 
@@ -25,7 +24,7 @@ const meta = {
 
 export default meta;
 
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<typeof LoginScreenView>;
 
 export const Default: Story = {};
 

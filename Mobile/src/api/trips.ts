@@ -61,6 +61,12 @@ export interface PlaceBlockVO {
   endTime: any;
   blockStartTime?: any;
   blockEndTime?: any;
+  /**
+   * 서버(TimetablePlaceBlockDetailDto)가 내려주는 좌표.
+   * 아래 x/yLocation 계열은 WebSocket 페이로드 등 다른 경로의 표기라 함께 둔다.
+   */
+  latitude?: number;
+  longitude?: number;
   xLocation?: number;
   yLocation?: number;
   xlocation?: number;

@@ -137,7 +137,7 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
     expect(renderer).toBeDefined();
 
     // Check if the inner view component receives isWeatherLoading as true initially
-    const viewComponent = renderer?.root.findByType(
+    const viewComponent = renderer!.root.findByType(
       require('../src/features/itinerary/screens/ItineraryViewScreen.view').default
     );
     expect(viewComponent.props.isWeatherLoading).toBe(true);

@@ -40,7 +40,7 @@ const Header: React.FC<HeaderProps> = ({
   const logout = useAuthStore((state) => state.logout);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 16 });
-  const profileRef = useRef<TouchableOpacity>(null);
+  const profileRef = useRef<React.ComponentRef<typeof TouchableOpacity>>(null);
 
   const handleProfilePress = () => {
     profileRef.current?.measure((x, y, width, height, pageX, pageY) => {

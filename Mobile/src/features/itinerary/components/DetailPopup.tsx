@@ -153,7 +153,7 @@ export default function DetailPopup({
                     {categoryName}
                   </Text>
                 </View>
-                {place.rating > 0 && (
+                {(place.rating ?? 0) > 0 && (
                   <Text style={popupStyles.ratingText}>⭐ {place.rating}</Text>
                 )}
               </View>

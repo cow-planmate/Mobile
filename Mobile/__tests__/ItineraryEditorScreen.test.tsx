@@ -272,6 +272,8 @@ const mockDays: Day[] = [
         latitude: 33.5113,
         longitude: 126.493,
         category: '교통',
+        type: '기타' as const,
+        imageUrl: '',
       },
     ],
   },
@@ -290,6 +292,8 @@ const mockDays: Day[] = [
         latitude: 33.4623,
         longitude: 126.3106,
         category: '음식점',
+        type: '식당' as const,
+        imageUrl: '',
       },
     ],
   },
@@ -371,32 +375,32 @@ describe('ItineraryEditorScreenView Component', () => {
     expect(rendererInstance).toBeDefined();
 
     // Verify day 1 places (제주국제공항) are initially rendered in the Timeline tab screen
-    const timelineScreenDay1 = rendererInstance?.root.findByProps({
+    const timelineScreenDay1 = rendererInstance!.root.findByProps({
       testID: 'mock-tab-screen-타임라인',
     });
     expect(timelineScreenDay1.findByProps({ testID: 'timeline-item-1' })).toBeTruthy();
     expect(() => timelineScreenDay1.findByProps({ testID: 'timeline-item-2' })).toThrow();
 
     // Trigger state change (switch to day 2)
-    const btnDay2 = rendererInstance?.root.findByProps({ testID: 'btn-day-2' });
+    const btnDay2 = rendererInstance!.root.findByProps({ testID: 'btn-day-2' });
     await act(async () => {
       btnDay2.props.onPress();
     });
 
     // Verify day 2 places (애월 카페거리) are now rendered and day 1 places are gone, indicating Context was successfully updated
-    const timelineScreenDay2 = rendererInstance?.root.findByProps({
+    const timelineScreenDay2 = rendererInstance!.root.findByProps({
       testID: 'mock-tab-screen-타임라인',
     });
     expect(timelineScreenDay2.findByProps({ testID: 'timeline-item-2' })).toBeTruthy();
     expect(() => timelineScreenDay2.findByProps({ testID: 'timeline-item-1' })).toThrow();
 
     // Trigger state change back (switch to day 1)
-    const btnDay1 = rendererInstance?.root.findByProps({ testID: 'btn-day-1' });
+    const btnDay1 = rendererInstance!.root.findByProps({ testID: 'btn-day-1' });
     await act(async () => {
       btnDay1.props.onPress();
     });
 
-    const timelineScreenDay1Again = rendererInstance?.root.findByProps({
+    const timelineScreenDay1Again = rendererInstance!.root.findByProps({
       testID: 'mock-tab-screen-타임라인',
     });
     expect(timelineScreenDay1Again.findByProps({ testID: 'timeline-item-1' })).toBeTruthy();
@@ -461,7 +465,7 @@ describe('ItineraryEditorScreenView Component', () => {
 
     expect(rendererInstance).toBeDefined();
 
-    const timelineScreen = rendererInstance?.root.findByProps({
+    const timelineScreen = rendererInstance!.root.findByProps({
       testID: 'mock-tab-screen-타임라인',
     });
 
@@ -501,7 +505,7 @@ describe('ItineraryEditorScreen Component', () => {
     mockItineraryEditor.selectedDay = mockDays[0];
 
     // addListener는 항상 unsubscribe 함수를 반환한다(React Navigation 계약).
-    const mockAddListener = jest.fn(() => jest.fn());
+    const mockAddListener = jest.fn<() => jest.Mock, [string, (...args: any[]) => void]>(() => jest.fn());
     const mockDispatch = jest.fn();
     const mockNavigation = {
       addListener: mockAddListener,
@@ -544,7 +548,7 @@ describe('ItineraryEditorScreen Component', () => {
     };
 
     await act(async () => {
-      beforeRemoveHandler(mockEvent);
+      beforeRemoveHandler!(mockEvent);
     });
 
     // Alert should have been prevented
@@ -586,7 +590,7 @@ describe('ItineraryEditorScreen Component', () => {
     mockItineraryEditor.selectedDay = mockDays[0];
 
     // addListener는 항상 unsubscribe 함수를 반환한다(React Navigation 계약).
-    const mockAddListener = jest.fn(() => jest.fn());
+    const mockAddListener = jest.fn<() => jest.Mock, [string, (...args: any[]) => void]>(() => jest.fn());
     const mockNavigation = {
       addListener: mockAddListener,
       goBack: jest.fn(),
@@ -611,7 +615,7 @@ describe('ItineraryEditorScreen Component', () => {
     });
 
     // Find ItineraryEditorScreenView to call onComplete
-    const viewComponent = rendererInstance?.root.findByType(ItineraryEditorScreenView);
+    const viewComponent = rendererInstance!.root.findByType(ItineraryEditorScreenView);
     expect(viewComponent).toBeDefined();
 
     // Trigger completion
@@ -633,7 +637,7 @@ describe('ItineraryEditorScreen Component', () => {
     };
 
     await act(async () => {
-      beforeRemoveHandler(mockEvent);
+      beforeRemoveHandler!(mockEvent);
     });
 
     // It should NOT call preventDefault or showAlert, letting the native transition go through

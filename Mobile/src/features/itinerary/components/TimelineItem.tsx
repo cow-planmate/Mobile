@@ -32,6 +32,8 @@ export type Place = {
   place_url?: string;
   contentTypeId?: string;
   copyrightDivCd?: string;
+  /** 서버 원본 카테고리 enum(ATTRACTION 등). 정규화 전 값이 실려 올 수 있다. */
+  category?: string;
 };
 
 type TimelineItemProps = {

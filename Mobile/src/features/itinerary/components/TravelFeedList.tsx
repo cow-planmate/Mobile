@@ -256,7 +256,6 @@ export default function TravelFeedList({
         data={items}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        estimatedItemSize={340}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={renderFooter}

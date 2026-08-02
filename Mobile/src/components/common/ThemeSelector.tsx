@@ -14,7 +14,14 @@ import { useAlert } from '../../contexts/AlertContext';
 
 const MAX_PER_CATEGORY = 5;
 
-const CATEGORY_MAP: Record<PreferredThemeVO['category'], { id: number; name: string }> = {
+/**
+ * 서버가 내려주는 category enum ↔ 앱에서 쓰는 카테고리 ID.
+ * PreferredThemeVO에는 카테고리 ID 필드가 없으므로 이 표로만 변환한다.
+ */
+export const CATEGORY_MAP: Record<
+  PreferredThemeVO['category'],
+  { id: number; name: string }
+> = {
   ATTRACTION: { id: 0, name: '관광지' },
   ACCOMMODATION: { id: 1, name: '숙소' },
   RESTAURANT: { id: 2, name: '식당' },

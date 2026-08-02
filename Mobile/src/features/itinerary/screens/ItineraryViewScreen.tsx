@@ -24,40 +24,13 @@ import {
   isFetchAtLeastAsComplete,
 } from '../../../contexts/ItineraryContext';
 import {
+  PlaceBlockVO,
   SimpleWeatherInfo,
   fetchWeatherRecommendations,
 } from '../../../api/trips';
 import { useAlert } from '../../../contexts/AlertContext';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
 // DTO Interfaces
-interface PlaceBlockVO {
-  blockId?: number;
-  timetablePlaceBlockId?: number;
-  timeTableId: number;
-  timetableId?: number;
-  placeCategoryId: number;
-  placeCategory?: number;
-  placeName: string;
-  placeTheme: string;
-  placeRating?: number;
-  placeAddress: string;
-  placeLink?: string;
-  photoUrl?: string;
-  placeId: string;
-  startTime: any;
-  endTime: any;
-  blockStartTime?: any;
-  blockEndTime?: any;
-  xLocation?: number;
-  yLocation?: number;
-  xlocation?: number;
-  ylocation?: number;
-  memo?: string;
-  placeContentTypeId?: string;
-  placeThumbnailUrl?: string;
-  placeCopyrightDivCd?: string;
-}
-
 interface PlanFrameVO {
   planId: number;
   planName: string;

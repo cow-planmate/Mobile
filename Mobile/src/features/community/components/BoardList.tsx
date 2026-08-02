@@ -166,7 +166,6 @@ export default function BoardList({ onItemPress }: BoardListProps) {
         data={posts}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        estimatedItemSize={140}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.4}
         ListFooterComponent={renderFooter}

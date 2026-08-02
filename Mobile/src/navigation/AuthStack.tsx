@@ -35,7 +35,6 @@ export default function AuthStack() {
         component={SignupScreen}
         options={{
           headerTitle: '',
-          headerBackTitleVisible: false,
         }}
       />
       <Stack.Screen
