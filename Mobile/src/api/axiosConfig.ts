@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@env';
+import { LOGOUT_CLEARED_KEYS } from '../constants/storageKeys';
 
 const normalizedApiUrl = (API_URL ?? '').trim().replace(/\/+$/, '');
 
@@ -159,7 +160,7 @@ axios.interceptors.response.use(
         }
         
         // 저장된 토큰 및 유저 정보 제거
-        await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
+        await AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS);
         delete axios.defaults.headers.common.Authorization;
         
         // Zustand auth store 상태 업데이트 (동적 로드를 통해 순환 참조 방지)

@@ -74,11 +74,13 @@ jest.mock('lucide-react-native', () => {
   };
 });
 
-jest.mock('../src/contexts/AlertContext', () => ({
-  useAlert: () => ({
-    showAlert: jest.fn(),
-  }),
-}));
+// 실제 AlertProvider는 showAlert 참조를 고정한다. 목도 동일하게 고정해야
+// 이 참조에 의존하는 콜백/이펙트가 매 렌더 재실행되지 않는다.
+// (팩토리 밖 변수를 참조하면 호이스팅으로 TDZ에 걸리므로 안에서 만든다)
+jest.mock('../src/contexts/AlertContext', () => {
+  const value = { showAlert: jest.fn() };
+  return { useAlert: () => value };
+});
 
 // Mock KakaoMapView to avoid syntax or layout errors in tests
 jest.mock('../src/features/itinerary/components/KakaoMapView', () => {

@@ -1,20 +1,6 @@
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WEB_URL } from '@env';
 import { resolveApiUrl } from '../utils/apiUrl';
-
-/**
- * 로컬 저장소에서 저장된 JWT 액세스 토큰을 조회합니다.
- *
- * @returns 액세스 토큰 문자열 또는 null
- */
-async function getAuthToken(): Promise<string | null> {
-  try {
-    return await AsyncStorage.getItem('accessToken');
-  } catch (_error) {
-    return null;
-  }
-}
 
 // ────────────────────────────────────────────────
 // 타입 정의
@@ -406,24 +392,18 @@ export async function fetchWeatherRecommendations(
 
 /** 일정 공유 상태 조회 */
 export async function getShareStatus(planId: string): Promise<{ isShared: boolean }> {
-  const token = await getAuthToken();
-  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-  const response = await axios.get(resolveApiUrl(`/api/plan/${planId}/share`), config);
+  const response = await axios.get(resolveApiUrl(`/api/plan/${planId}/share`));
   return { isShared: !!response.data?.isShared };
 }
 
 /** 일정 공유 상태 변경 */
 export async function updateShareStatus(planId: string, isShared: boolean): Promise<void> {
-  const token = await getAuthToken();
-  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-  await axios.patch(resolveApiUrl(`/api/plan/${planId}/share`), { isShared }, config);
+  await axios.patch(resolveApiUrl(`/api/plan/${planId}/share`), { isShared });
 }
 
 /** 일정 편집 권한 요청 */
 export async function requestEditAccess(planId: string): Promise<{ collaborationRequestId: number }> {
-  const token = await getAuthToken();
-  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-  const response = await axios.post(resolveApiUrl(`/api/plan/${planId}/request-access`), {}, config);
+  const response = await axios.post(resolveApiUrl(`/api/plan/${planId}/request-access`), {});
   return { collaborationRequestId: response.data?.collaborationRequestId };
 }
 
@@ -446,9 +426,7 @@ export async function getShareUrl(
 
 /** 편집자 목록 조회 */
 export async function getEditors(planId: string): Promise<{ userId: string; nickname: string }[]> {
-  const token = await getAuthToken();
-  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-  const response = await axios.get(resolveApiUrl(`/api/plan/${planId}/editors`), config);
+  const response = await axios.get(resolveApiUrl(`/api/plan/${planId}/editors`));
   const data = response?.data;
   const rawEditors = Array.isArray(data)
     ? data
@@ -466,13 +444,9 @@ export async function inviteEditor(
   planId: string,
   nickname: string,
 ): Promise<void> {
-  const token = await getAuthToken();
-  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-  await axios.post(
-    resolveApiUrl(`/api/plan/${planId}/invite`),
-    { receiverNickname: nickname },
-    config,
-  );
+  await axios.post(resolveApiUrl(`/api/plan/${planId}/invite`), {
+    receiverNickname: nickname,
+  });
 }
 
 /** 편집자 권한 해제 */
@@ -480,16 +454,12 @@ export async function removeEditor(
   planId: string,
   userId: string | number,
 ): Promise<void> {
-  const token = await getAuthToken();
-  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-  await axios.delete(resolveApiUrl(`/api/plan/${planId}/editors/${userId}`), config);
+  await axios.delete(resolveApiUrl(`/api/plan/${planId}/editors/${userId}`));
 }
 
 /** 편집자 나가기 */
 export async function leaveAsEditor(planId: string): Promise<void> {
-  const token = await getAuthToken();
-  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-  await axios.delete(resolveApiUrl(`/api/plan/${planId}/editor/me`), config);
+  await axios.delete(resolveApiUrl(`/api/plan/${planId}/editor/me`));
 }
 
 /** 대기 중인 초대 요청 인터페이스 */

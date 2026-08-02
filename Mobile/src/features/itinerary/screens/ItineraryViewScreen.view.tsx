@@ -235,6 +235,7 @@ export interface ItineraryViewScreenViewProps {
   weatherMap: Record<string, SimpleWeatherInfo>;
   tripName: string;
   isBacking: boolean;
+  /** 컨테이너가 전달하는 날씨 로딩 상태. 현재 뷰는 표시에 사용하지 않는다. */
   isWeatherLoading: boolean;
 }
 
@@ -257,7 +258,6 @@ export default function ItineraryViewScreenView({
   weatherMap,
   tripName,
   isBacking,
-  isWeatherLoading,
 }: ItineraryViewScreenViewProps) {
   const insets = useSafeAreaInsets();
   const selectedDay = days[selectedDayIndex];

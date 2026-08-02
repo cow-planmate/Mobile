@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react';
 import { PermissionsAndroid, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { API_URL as API_URL_ENV } from '@env';
+import { resolveApiUrl } from '../utils/apiUrl';
+import { FCM_STORAGE_KEYS } from '../constants/storageKeys';
 
 /** FCM 푸시 알림 훅 파라미터 인터페이스 */
 interface UseFcmNotificationsParams {
@@ -10,9 +11,17 @@ interface UseFcmNotificationsParams {
   onInvitationPush?: () => void | Promise<void>;
 }
 
-const FCM_TOKEN_STORAGE_KEY = 'fcmToken';
-const FCM_TOKEN_LAST_SYNCED_KEY = 'lastSyncedFcmToken';
+const [FCM_TOKEN_STORAGE_KEY, FCM_TOKEN_LAST_SYNCED_KEY] = FCM_STORAGE_KEYS;
 export const IS_FCM_RUNTIME_ENABLED = true;
+
+/** 최근 처리한 메시지 ID 보관 개수 상한 (중복 처리 방지용) */
+const SEEN_MESSAGE_ID_LIMIT = 200;
+
+const fcmLog = (...args: unknown[]) => {
+  if (__DEV__) {
+    console.log(...args);
+  }
+};
 
 /**
  * FCM 모듈 지연 로드 (앱 기동 시 네이티브 모듈 미연결로 인한 크래시 방지)
@@ -35,15 +44,6 @@ const INVITATION_HINTS = [
   '수락',
   '거절',
 ];
-
-/** FCM 토큰 등록 엔드포인트 URL 생성 */
-const resolveFcmTokenRegisterUrl = (): string | null => {
-  if (API_URL_ENV && API_URL_ENV.trim().length > 0) {
-    const baseUrl = API_URL_ENV.trim().replace(/\/+$/, '');
-    return `${baseUrl}/api/user/fcm-token`;
-  }
-  return null;
-};
 
 /** Android 13(API 33) 이상 알림 권한 요청 */
 const requestAndroidNotificationPermission = async (): Promise<boolean> => {
@@ -83,11 +83,6 @@ const isInvitationMessage = (remoteMessage: any): boolean => {
 
 /** FCM 토큰 백엔드 동기화 */
 const syncFcmToken = async (token: string, force: boolean = false) => {
-  const endpoint = resolveFcmTokenRegisterUrl();
-  if (!endpoint) {
-    return;
-  }
-
   try {
     if (!force) {
       const lastSynced = await AsyncStorage.getItem(FCM_TOKEN_LAST_SYNCED_KEY);
@@ -96,13 +91,13 @@ const syncFcmToken = async (token: string, force: boolean = false) => {
       }
     }
 
-    await axios.post(endpoint, {
+    await axios.post(resolveApiUrl('/api/user/fcm-token'), {
       fcmToken: token,
     });
     await AsyncStorage.setItem(FCM_TOKEN_LAST_SYNCED_KEY, token);
-    console.log('[FCM] 백엔드로 토큰 동기화 완료');
+    fcmLog('[FCM] 백엔드로 토큰 동기화 완료');
   } catch (error) {
-    console.log('[FCM] 토큰 동기화 실패 또는 건너뜀:', error);
+    fcmLog('[FCM] 토큰 동기화 실패 또는 건너뜀:', error);
   }
 };
 
@@ -136,6 +131,13 @@ export function useFcmNotifications({
       }
 
       if (messageId) {
+        // 장시간 실행 시 무한히 커지지 않도록 오래된 것부터 버린다.
+        if (seenMessageIdsRef.current.size >= SEEN_MESSAGE_ID_LIMIT) {
+          const oldest = seenMessageIdsRef.current.values().next().value;
+          if (oldest !== undefined) {
+            seenMessageIdsRef.current.delete(oldest);
+          }
+        }
         seenMessageIdsRef.current.add(messageId);
       }
 
@@ -157,7 +159,7 @@ export function useFcmNotifications({
 
       const permissionGranted = await requestAndroidNotificationPermission();
       if (!permissionGranted) {
-        console.log('[FCM] 알림 권한이 거부되었습니다.');
+        fcmLog('[FCM] 알림 권한이 거부되었습니다.');
         return;
       }
 
@@ -166,21 +168,21 @@ export function useFcmNotifications({
       const token = await messaging().getToken();
       if (token) {
         await AsyncStorage.setItem(FCM_TOKEN_STORAGE_KEY, token);
-        console.log('[FCM] 토큰 발급 완료');
+        fcmLog('[FCM] 토큰 발급 완료');
         await syncFcmToken(token);
       }
 
       unsubscribeOnTokenRefresh = messaging().onTokenRefresh(
         async (newToken: string) => {
           await AsyncStorage.setItem(FCM_TOKEN_STORAGE_KEY, newToken);
-          console.log('[FCM] 토큰 갱신 완료');
+          fcmLog('[FCM] 토큰 갱신 완료');
           await syncFcmToken(newToken, true);
         },
       );
 
       unsubscribeOnMessage = messaging().onMessage(
         async (remoteMessage: any) => {
-          console.log('[FCM] 포그라운드 메시지 수신:', remoteMessage.data);
+          fcmLog('[FCM] 포그라운드 메시지 수신:', remoteMessage.data);
           await handleInvitationMessage(remoteMessage);
         },
       );
@@ -198,7 +200,7 @@ export function useFcmNotifications({
     };
 
     initialize().catch(error => {
-      console.log('[FCM] 초기화 실패:', error);
+      fcmLog('[FCM] 초기화 실패:', error);
     });
 
     return () => {

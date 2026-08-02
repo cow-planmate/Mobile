@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { resolveApiUrl } from '../utils/apiUrl';
+import { LOGOUT_CLEARED_KEYS } from '../constants/storageKeys';
 import '../api/axiosConfig';
 
 /**
@@ -230,7 +231,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } finally {
       set({ user: null });
       delete axios.defaults.headers.common.Authorization;
-      await AsyncStorage.multiRemove(['user', 'accessToken', 'refreshToken']);
+      await AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS);
       set({ isLoading: false });
     }
   },

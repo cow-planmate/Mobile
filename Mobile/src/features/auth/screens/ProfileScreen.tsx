@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../../../store/useAuthStore';
 import ProfileScreenView from './ProfileScreen.view';
 import { resolveApiUrl } from '../../../utils/apiUrl';
+import { LOGOUT_CLEARED_KEYS } from '../../../constants/storageKeys';
 import { changePassword } from '../../../api/auth';
 import {
   useUserProfile,
@@ -199,7 +200,7 @@ export default function ProfileScreen({ route }: any) {
               if (response.status >= 200 && response.status < 300) {
                 useAuthStore.getState().setUser(null);
                 delete axios.defaults.headers.common.Authorization;
-                await AsyncStorage.multiRemove(['user', 'accessToken', 'refreshToken']);
+                await AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS);
 
                 showAlert({
                   title: '탈퇴 완료',

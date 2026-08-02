@@ -83,6 +83,9 @@ interface GetCompletePlanResponse {
   }[];
 }
 
+/** route.params.days 기본값. 인라인 []는 렌더마다 새 배열이라 이펙트가 매번 돈다. */
+const EMPTY_DAYS: Day[] = [];
+
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 
 /**
@@ -93,7 +96,7 @@ type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 export default function ItineraryViewScreen({ route, navigation }: Props) {
   const { showAlert } = useAlert();
   const {
-    days: initialDays = [],
+    days: initialDays = EMPTY_DAYS,
     tripName: initialTripName = '',
     departure,
     destination: routeDestination,
@@ -246,7 +249,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       showAlert({ title: '오류', message: '일정을 불러오는데 실패했습니다.' });
       setIsWeatherLoading(false);
     }
-  }, [planId, buildWeatherCity]);
+  }, [planId, buildWeatherCity, showAlert]);
 
   useEffect(() => {
     if (initialDays.length > 0) {
@@ -257,7 +260,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     } else if (initialDays.length === 0 && !planId) {
       setIsWeatherLoading(false);
     }
-  }, [planId, fetchCompletePlan, initialDays.length]);
+  }, [planId, fetchCompletePlan, initialDays]);
 
   // 날씨 조회 범위. 일수가 같아도 날짜가 바뀌면 다시 조회해야 한다.
   const weatherRangeStart = days.length > 0 ? formatDateLocal(days[0].date) : '';
