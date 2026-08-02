@@ -31,6 +31,25 @@ const mergePlaces = (prev: PlaceVO[], newPlaces: PlaceVO[]) => {
   return [...prev, ...filtered];
 };
 
+/**
+ * Storybook 등 서버 없이 화면을 띄울 때 쓰는 데모 여행지 ID.
+ * 실제 destination은 1~28이라 충돌하지 않는다.
+ */
+const DEMO_DESTINATION_ID = 123;
+
+/** 데모 픽스처. __DEV__ 분기 안에서만 쓰이므로 릴리스 번들에서는 제거된다. */
+const demoPlace = (p: Partial<PlaceVO> & Pick<PlaceVO, 'placeId' | 'name'>): PlaceVO => ({
+  categoryId: 0,
+  url: '',
+  formatted_address: '',
+  rating: 0,
+  xLocation: 0,
+  yLocation: 0,
+  photoUrl: '',
+  iconUrl: '',
+  ...p,
+});
+
 // ────────────────────────────────────────────────
 // Types
 // ────────────────────────────────────────────────
@@ -128,52 +147,47 @@ export function PlacesProvider({children}: PropsWithChildren) {
 
       lastFetchedDestRef.current = { destinationId, isFetching: true };
       setIsLoading(true);
-      if (destinationId === 123) {
+
+      if (__DEV__ && destinationId === DEMO_DESTINATION_ID) {
         setTour([
-          {
+          demoPlace({
             placeId: 'tour-1',
             name: '협재 해수욕장',
-            categoryId: 0,
             formatted_address: '제주특별자치도 제주시 한림읍 협재리 2497-1',
             rating: 4.6,
-            photoUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200',
-            yLocation: 33.3940,
+            yLocation: 33.394,
             xLocation: 126.2397,
-          },
-          {
+          }),
+          demoPlace({
             placeId: 'tour-2',
             name: '한라산 국립공원',
-            categoryId: 0,
             formatted_address: '제주특별자치도 제주시 해안동',
             rating: 4.8,
-            photoUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200',
             yLocation: 33.3617,
             xLocation: 126.5292,
-          },
+          }),
         ]);
         setLodging([
-          {
+          demoPlace({
             placeId: 'lodging-1',
             name: '제주 신라호텔',
             categoryId: 1,
             formatted_address: '제주특별자치도 서귀포시 중문관광로72번길 75',
             rating: 4.7,
-            photoUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200',
             yLocation: 33.2475,
             xLocation: 126.4082,
-          },
+          }),
         ]);
         setRestaurant([
-          {
+          demoPlace({
             placeId: 'restaurant-1',
             name: '오는정김밥',
             categoryId: 2,
             formatted_address: '제주특별자치도 서귀포시 동문동로 2',
             rating: 4.3,
-            photoUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=200',
             yLocation: 33.2505,
             xLocation: 126.5684,
-          },
+          }),
         ]);
         setTourPage(1);
         setTourHasNext(false);
@@ -209,6 +223,9 @@ export function PlacesProvider({children}: PropsWithChildren) {
         setRestaurantHasNext(!!restaurantData.hasNext);
       } catch (err) {
         console.error('추천 장소 조회 실패:', err);
+        // 실패한 destinationId를 "조회 완료"로 남겨두면 이후 재진입 시
+        // 중복 가드에 걸려 영영 다시 조회하지 않는다.
+        lastFetchedDestRef.current.destinationId = null;
       } finally {
         lastFetchedDestRef.current.isFetching = false;
         setIsLoading(false);
@@ -252,6 +269,7 @@ export function PlacesProvider({children}: PropsWithChildren) {
         setRestaurantHasNext(!!restaurantData.hasNext);
       } catch (err) {
         console.error('추천 장소 조회 실패 (비인증):', err);
+        lastFetchedDestRef.current.destinationId = null;
       } finally {
         lastFetchedDestRef.current.isFetching = false;
         setIsLoading(false);
@@ -264,21 +282,6 @@ export function PlacesProvider({children}: PropsWithChildren) {
   const doSearchPlaces = useCallback(
     async (planIdOrNull: string | null, query: string) => {
       setIsLoading(true);
-      if (planIdOrNull === 123) {
-        setSearch([
-          {
-            placeId: 'search-1',
-            name: `${query} 맛집`,
-            categoryId: 2,
-            formatted_address: `제주 제주시 ${query}로 12`,
-            rating: 4.5,
-            yLocation: 33.5113,
-            xLocation: 126.4930,
-          },
-        ]);
-        setIsLoading(false);
-        return;
-      }
       try {
         const result = planIdOrNull
           ? await searchPlaces(planIdOrNull, query)

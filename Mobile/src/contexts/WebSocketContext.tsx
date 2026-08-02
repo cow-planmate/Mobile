@@ -10,7 +10,6 @@ import React, {
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { Image } from 'react-native';
-import { API_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import gravatarUrl from '../utils/gravatarUrl';
@@ -38,6 +37,19 @@ const ROOM_READY_FALLBACK_MS = 2000;
  */
 const DISCONNECT_TIMEOUT_MS = 1500;
 
+/**
+ * 개발 전용 로그.
+ *
+ * STOMP debug 콜백은 하트비트를 포함한 모든 프레임마다 호출된다(4초 주기 + 편집 이벤트마다).
+ * RN에서 console.log는 브리지를 타므로 릴리스 빌드에서 그대로 두면
+ * 동시 편집 중 눈에 띄는 프레임 드랍과 불필요한 사용자 데이터 노출로 이어진다.
+ */
+const wsLog = (...args: unknown[]) => {
+  if (__DEV__) {
+    console.log(...args);
+  }
+};
+
 interface UserPresence {
   uid: string;
   userNickname: string;
@@ -53,13 +65,6 @@ interface PresenceMessage {
   uid: string;
   userNickname: string;
   users: UserPresence[];
-}
-
-// Defined ActionData structure
-interface ActionData<T = any> {
-  action: string;
-  targetName: string;
-  target: T;
 }
 
 interface WebSocketContextType {
@@ -109,6 +114,17 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
    */
   const isRoomReadyRef = useRef<boolean>(false);
   const readyFallbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * connect() 호출 세대 번호.
+   *
+   * connect는 토큰 조회를 await하므로, 그 사이에 다른 plan으로 connect가 다시
+   * 불리면 두 호출이 모두 await를 통과해 STOMP 클라이언트를 각각 만든다.
+   * 먼저 만들어진 클라이언트는 stompClient 참조가 덮어써지며 연결된 채로 누수된다.
+   * 세대 번호가 어긋난 뒤늦은 호출은 클라이언트를 만들지 않고 중단한다.
+   */
+  const connectGenerationRef = useRef(0);
+  /** 이미 prefetch한 아바타 URL. presence 브로드캐스트마다 중복 요청하지 않기 위함. */
+  const prefetchedAvatarsRef = useRef<Set<string>>(new Set());
   /** 현재 큐에 쌓인 메시지가 속한 planId. 다른 방으로 옮기면 큐를 버리는 판단에 쓴다. */
   const queuedPlanId = useRef<string | null>(null);
 
@@ -124,7 +140,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     isRoomReadyRef.current = true;
 
     if (messageQueue.current.length === 0) return;
-    console.log(`[WS] Flushing ${messageQueue.current.length} queued messages`);
+    wsLog(`[WS] Flushing ${messageQueue.current.length} queued messages`);
     const queued = [...messageQueue.current];
     messageQueue.current = [];
     queued.forEach(msg => {
@@ -166,6 +182,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       queuedPlanId.current = null;
     }
 
+    const generation = ++connectGenerationRef.current;
+
     isConnectingRef.current = true;
     isRoomReadyRef.current = false;
     currentPlanId.current = planId;
@@ -173,6 +191,12 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Frontend와 동일하게 SockJS URL에 토큰 포함 (JwtHandshakeInterceptor 인증)
     const token = await AsyncStorage.getItem('accessToken');
+
+    // await 사이에 더 최근의 connect가 시작되었으면 이 호출은 폐기한다.
+    if (generation !== connectGenerationRef.current) {
+      return;
+    }
+
     const wsUrl = token
       ? resolveApiUrl(`/ws?token=${encodeURIComponent(token)}`)
       : resolveApiUrl('/ws');
@@ -185,9 +209,11 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         return socket;
       },
       connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
-      debug: str => {
-        console.log('[WS Debug]', str);
-      },
+      debug: __DEV__
+        ? str => {
+            console.log('[WS Debug]', str);
+          }
+        : () => {},
       // 서버가 메시지 처리 중 예외를 만나면 STOMP ERROR 프레임 후 세션을 닫는다(핸들러
       // 예외 처리 미구현). 동시 편집 중 간헐적으로 발생하므로 재연결 지연을 짧게 둔다.
       reconnectDelay: 3000,
@@ -195,7 +221,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       heartbeatOutgoing: 4000,
       onConnect: frame => {
         isConnectingRef.current = false;
-        console.log('WebSocket Connected:', frame);
+        wsLog('WebSocket Connected:', frame);
         setIsConnected(true);
 
         const topics = [`/topic/${planId}`];
@@ -204,7 +230,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
           client.subscribe(topic, (message: IMessage) => {
             try {
               const body = JSON.parse(message.body);
-              console.log(`[Data Recv] ${topic}:`, body);
+              wsLog(`[Data Recv] ${topic}:`, body);
               // Web format: { entity: "...", action: "...", ... }
               const entity = body.entity;
               const action = body.action;
@@ -227,7 +253,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
           (message: IMessage) => {
             try {
               const payload: PresenceMessage = JSON.parse(message.body);
-              console.log('[Presence]:', payload);
+              wsLog('[Presence]:', payload);
 
               // "users": [ ... ] 배열로 현재 접속자 목록을 덮어씌움
               if (payload.users) {
@@ -242,7 +268,10 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
                     '참여자';
                   const email = u.userInfo?.email || (u as any).email;
                   const url = email ? gravatarUrl(email) : undefined;
-                  if (url) {
+                  // presence는 참여자가 드나들 때마다 전체 목록을 다시 보낸다.
+                  // 이미 요청한 아바타를 매번 다시 prefetch하지 않는다.
+                  if (url && !prefetchedAvatarsRef.current.has(url)) {
+                    prefetchedAvatarsRef.current.add(url);
                     Image.prefetch(url).catch(() => {});
                   }
                   return {
@@ -282,7 +311,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       },
       onWebSocketClose: () => {
         isConnectingRef.current = false;
-        console.log('WebSocket Connection Closed');
+        wsLog('WebSocket Connection Closed');
         setIsConnected(false);
         // 소켓이 끊기면 서버 세션도 사라진다. 자동 재연결 후에는 새 세션이
         // presence를 다시 구독해 매핑될 때까지 전송을 보류해야 한다.
@@ -300,6 +329,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const disconnect = useCallback(() => {
+    // 진행 중인 connect가 있다면 뒤늦게 클라이언트를 만들지 못하게 무효화한다.
+    connectGenerationRef.current += 1;
     isConnectingRef.current = false;
     isRoomReadyRef.current = false;
     if (readyFallbackTimer.current) {
@@ -420,7 +451,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       )}`;
     }
 
-    console.log(`[WS Send] Dest: ${destination}`, JSON.stringify(payload));
+    wsLog(`[WS Send] Dest: ${destination}`, JSON.stringify(payload));
 
     client.publish({
       destination: destination,
@@ -444,11 +475,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     // 연결 여부는 React state(isConnected)가 아니라 클라이언트 실제 상태로 판단한다.
     // state 반영이 한 틱 늦어 실제로는 전송 가능한 메시지가 큐에 갇히는 것을 막는다.
     if (!client || !client.connected || !planId || !isRoomReadyRef.current) {
-      console.warn(
-        '[WS] Room not ready — queuing message:',
-        action,
-        targetName,
-      );
+      wsLog('[WS] Room not ready — queuing message:', action, targetName);
       queuedPlanId.current = planId ?? queuedPlanId.current;
       messageQueue.current.push({ action, targetName, target, eventId });
       return;
@@ -462,7 +489,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       disconnect();
     };
-  }, []);
+  }, [disconnect]);
 
   const contextValue = useMemo(() => ({
     isConnected,
