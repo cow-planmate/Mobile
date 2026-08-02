@@ -17,6 +17,10 @@ export interface ProfilePlan {
 export interface UserProfile {
   name: string;
   email: string;
+  /** 서버에 올린 프로필 이미지. 없으면 앱이 Gravatar로 대체한다. */
+  profileImageUrl: string;
+  /** 다른 사용자에게 프로필을 공개할지 */
+  profilePublic: boolean;
   /** 'YYYY-MM-DD'. 미설정이면 빈 문자열. 표시용 나이는 birthdate에서 파생한다. */
   birthdate: string;
   gender: string;
@@ -116,6 +120,8 @@ const fetchUserProfile = async (): Promise<UserProfile> => {
   return {
     name: data.nickname || '이름 없음',
     email: data.email || '',
+    profileImageUrl: data.profileImageUrl || '',
+    profilePublic: data.profilePublic ?? true,
     birthdate: data.birthdate ? String(data.birthdate).substring(0, 10) : '',
     gender: GENDER_LABELS[data.gender] ?? '미설정',
     preferredThemes: data.preferredThemes || [],

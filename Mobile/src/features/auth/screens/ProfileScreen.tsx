@@ -10,6 +10,7 @@ import ProfileScreenView from './ProfileScreen.view';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { LOGOUT_CLEARED_KEYS } from '../../../constants/storageKeys';
 import { changePassword } from '../../../api/auth';
+import { changeProfileVisibility } from '../../../api/user';
 import {
   useUserProfile,
   UserProfile,
@@ -18,6 +19,8 @@ import {
 const EMPTY_PROFILE: UserProfile = {
   name: '',
   email: '',
+  profileImageUrl: '',
+  profilePublic: true,
   birthdate: '',
   gender: '',
   preferredThemes: [],
@@ -266,11 +269,21 @@ export default function ProfileScreen({ route }: any) {
     [queryClient],
   );
 
+  /** 프로필 공개 여부 변경. 실패는 뷰가 스위치를 되돌리도록 예외를 그대로 던진다. */
+  const handleChangeProfileVisibility = useCallback(
+    async (profilePublic: boolean) => {
+      await changeProfileVisibility(profilePublic);
+      patchProfile({ profilePublic });
+    },
+    [patchProfile],
+  );
+
   return (
     <ProfileScreenView
       loading={isLoading}
       user={user}
       onRenamePlan={handleRenamePlan}
+      onChangeProfileVisibility={handleChangeProfileVisibility}
       isThemeModalVisible={isThemeModalVisible}
       setThemeModalVisible={setThemeModalVisible}
       isPasswordModalVisible={isPasswordModalVisible}

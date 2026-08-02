@@ -396,6 +396,17 @@ export const styles = StyleSheet.create({
     fontSize: normalize(14),
     color: '#111827',
   },
+  visibilityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: normalize(12),
+  },
+  visibilityDescription: {
+    flex: 1,
+    fontSize: normalize(12),
+    color: '#6B7280',
+  },
   /** textInput 스타일을 터치 가능한 선택 필드로 쓸 때의 정렬 보정 */
   pickerField: {
     justifyContent: 'center',

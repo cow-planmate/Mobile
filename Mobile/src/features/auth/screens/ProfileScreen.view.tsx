@@ -11,6 +11,7 @@ import {
   TextInput,
   Alert,
   Animated,
+  Switch,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -288,6 +289,8 @@ interface ProfileScreenViewProps {
   handleResign: () => void;
   /** 일정 제목 변경 (서버 반영 + 프로필 캐시 갱신은 컨테이너가 담당) */
   onRenamePlan: (planId: string, newName: string) => Promise<void>;
+  /** 프로필 공개 여부 변경 */
+  onChangeProfileVisibility: (profilePublic: boolean) => Promise<void>;
   scrollToItinerary?: boolean;
 }
 
@@ -305,6 +308,7 @@ export default function ProfileScreenView({
   handleUpdatePassword,
   handleResign,
   onRenamePlan,
+  onChangeProfileVisibility,
   scrollToItinerary,
 }: ProfileScreenViewProps) {
   const navigation = useNavigation<any>();
@@ -377,6 +381,12 @@ export default function ProfileScreenView({
       setPlans(user.myPlans);
     }
   }, [user]);
+
+  // 스위치는 즉시 반응해야 하므로 낙관적으로 바꾸고, 실패하면 되돌린다.
+  const [isProfilePublic, setIsProfilePublic] = useState(user.profilePublic);
+  useEffect(() => {
+    setIsProfilePublic(user.profilePublic);
+  }, [user.profilePublic]);
 
   // ── 일정 카드 설정 메뉴 ──
   const [menuPlan, setMenuPlan] = useState<PlanItem | null>(null);
@@ -620,6 +630,27 @@ export default function ProfileScreenView({
   // 나이는 저장하지 않고 생년월일에서 파생해 표시한다.
   const profileAge = toKoreanAge(user.birthdate);
 
+  /**
+   * 아바타 URL. 서버에 올린 프로필 이미지가 있으면 그것을 쓰고,
+   * 없을 때만 이메일 기반 Gravatar로 대체한다.
+   */
+  const avatarUri =
+    user.profileImageUrl || (user.email ? gravatarUrl(user.email, 200) : '');
+
+  const handleToggleProfilePublic = async (next: boolean) => {
+    setIsProfilePublic(next);
+    try {
+      await onChangeProfileVisibility(next);
+    } catch (e) {
+      setIsProfilePublic(!next);
+      Toast.show({
+        type: 'error',
+        text1: '프로필 공개 설정 변경에 실패했습니다.',
+        position: 'top',
+      });
+    }
+  };
+
   const preferredThemes = user.preferredThemes || [];
   const themeNames = preferredThemes.map((t: any) => t.preferredThemeName || t);
   const defaultThemes = ['해수욕장', '호텔', '한식', '고기집', '이자카야'];
@@ -705,9 +736,9 @@ export default function ProfileScreenView({
           <View style={styles.profileHeaderRow}>
             {/* 프로필 이미지 & 설정 버튼 */}
             <View style={styles.avatarContainer}>
-              {user.email ? (
+              {avatarUri ? (
                 <FastImage
-                  source={{ uri: gravatarUrl(user.email, 200), priority: FastImage.priority.normal }}
+                  source={{ uri: avatarUri, priority: FastImage.priority.normal }}
                   style={styles.avatarImage}
                   resizeMode={FastImage.resizeMode.cover}
                 />
@@ -1078,9 +1109,9 @@ export default function ProfileScreenView({
 
               {/* 프로필 이미지 & 카메라 배지 */}
               <View style={styles.avatarEditContainer}>
-                {user.email ? (
+                {avatarUri ? (
                   <FastImage
-                    source={{ uri: gravatarUrl(user.email, 200), priority: FastImage.priority.normal }}
+                    source={{ uri: avatarUri, priority: FastImage.priority.normal }}
                     style={styles.avatarEditImage}
                     resizeMode={FastImage.resizeMode.cover}
                   />
@@ -1238,6 +1269,24 @@ export default function ProfileScreenView({
                     <Text style={styles.actionNavButtonText}>비밀번호 변경</Text>
                     <Settings size={14} color="#9CA3AF" />
                   </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* 프로필 공개 설정 */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>프로필 공개</Text>
+                <View style={styles.visibilityRow}>
+                  <Text style={styles.visibilityDescription}>
+                    {isProfilePublic
+                      ? '다른 사용자가 내 프로필을 볼 수 있어요.'
+                      : '나만 내 프로필을 볼 수 있어요.'}
+                  </Text>
+                  <Switch
+                    value={isProfilePublic}
+                    onValueChange={handleToggleProfilePublic}
+                    trackColor={{ false: '#D1D5DB', true: COLORS.primary }}
+                    thumbColor="#FFFFFF"
+                  />
                 </View>
               </View>
 
