@@ -476,6 +476,23 @@ export async function removeEditor(
   await axios.delete(resolveApiUrl(`/api/plan/${planId}/editors/${userId}`));
 }
 
+/**
+ * 여러 일정을 한 번에 삭제한다.
+ *
+ * 서버는 요청한 ID 중 **내가 소유한** 일정만 삭제하고 실제 삭제된 ID를 돌려준다.
+ * 소유한 일정이 하나도 없으면 403을 던지므로, 소유 일정이 없을 때는 호출하지 않는다.
+ * 편집 권한만 있는 일정은 이 API 대상이 아니라 leaveAsEditor를 써야 한다.
+ *
+ * @returns 실제로 삭제된 일정 ID 목록
+ */
+export async function deletePlans(planIds: string[]): Promise<string[]> {
+  const response = await axios.delete<{ deletedPlanIds: string[] }>(
+    resolveApiUrl('/api/plan'),
+    { data: { planIds } },
+  );
+  return response.data?.deletedPlanIds ?? [];
+}
+
 /** 편집자 나가기 */
 export async function leaveAsEditor(planId: string): Promise<void> {
   await axios.delete(resolveApiUrl(`/api/plan/${planId}/editor/me`));

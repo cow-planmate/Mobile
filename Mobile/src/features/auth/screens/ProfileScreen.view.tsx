@@ -26,7 +26,7 @@ import {
 } from '../../../components/common';
 import axios from 'axios';
 import { resolveApiUrl } from '../../../utils/apiUrl';
-import { leaveAsEditor } from '../../../api/trips';
+import { deletePlans, leaveAsEditor } from '../../../api/trips';
 import {
   faT,
   faPen,
@@ -441,10 +441,12 @@ export default function ProfileScreenView({
                   position: 'top',
                 });
               } catch (e) {
-                setPlans(prev => prev.filter(p => p.planId !== planId));
+                // 실패인데 성공으로 알리고 목록에서 지우면, 서버에는 남아 있는데
+                // 화면에서만 사라져 사용자가 상태를 오해한다.
+                console.error('편집 권한 포기 실패:', e);
                 Toast.show({
-                  type: 'success',
-                  text1: '편집 권한 포기가 완료되었습니다.',
+                  type: 'error',
+                  text1: '편집 권한 포기에 실패했습니다.',
                   position: 'top',
                 });
               }
@@ -471,10 +473,10 @@ export default function ProfileScreenView({
                   position: 'top',
                 });
               } catch (e) {
-                setPlans(prev => prev.filter(p => p.planId !== planId));
+                console.error('일정 삭제 실패:', e);
                 Toast.show({
-                  type: 'success',
-                  text1: '일정이 정상적으로 삭제되었습니다.',
+                  type: 'error',
+                  text1: '일정 삭제에 실패했습니다.',
                   position: 'top',
                 });
               }
@@ -532,39 +534,71 @@ export default function ProfileScreenView({
           text: '확인',
           style: 'destructive',
           onPress: async () => {
-            try {
-              await Promise.all(
-                selectedPlanIds.map(async (planId) => {
-                  const targetPlan = plans.find(p => p.planId === planId);
-                  if (!targetPlan) return;
-                  if (targetPlan.isShared) {
-                    await leaveAsEditor(planId);
-                  } else {
-                    await axios.delete(resolveApiUrl(`/api/plan/${planId}`));
-                  }
-                })
+            const selected = plans.filter(p =>
+              selectedPlanIds.includes(p.planId),
+            );
+            const ownedIds = selected.filter(p => !p.isShared).map(p => p.planId);
+            const sharedIds = selected.filter(p => p.isShared).map(p => p.planId);
+
+            const processedIds: string[] = [];
+            let failed = 0;
+
+            // 내가 소유한 일정은 일괄 삭제 API로 한 번에 처리한다.
+            // 서버가 소유분만 걸러 실제 삭제된 ID를 돌려주므로 그 결과를 신뢰한다.
+            if (ownedIds.length > 0) {
+              try {
+                const deleted = await deletePlans(ownedIds);
+                processedIds.push(...deleted);
+                failed += ownedIds.length - deleted.length;
+              } catch (e) {
+                console.error('일괄 삭제 실패:', e);
+                failed += ownedIds.length;
+              }
+            }
+
+            // 편집 권한만 있는 일정은 일괄 API 대상이 아니라 개별 처리한다.
+            if (sharedIds.length > 0) {
+              const results = await Promise.allSettled(
+                sharedIds.map(id => leaveAsEditor(id)),
               );
-              setPlans(prev => prev.filter(p => !selectedPlanIds.includes(p.planId)));
-              setSelectedPlanIds([]);
-              setIsEditMode(false);
-              Toast.show({
-                type: 'success',
-                text1: '선택한 일정 처리가 완료되었습니다.',
-                position: 'top',
-              });
-            } catch (e) {
-              setPlans(prev => prev.filter(p => !selectedPlanIds.includes(p.planId)));
-              setSelectedPlanIds([]);
-              setIsEditMode(false);
-              Toast.show({
-                type: 'success',
-                text1: '선택한 일정 처리가 완료되었습니다.',
-                position: 'top',
+              results.forEach((r, i) => {
+                if (r.status === 'fulfilled') {
+                  processedIds.push(sharedIds[i]);
+                } else {
+                  failed += 1;
+                }
               });
             }
-          }
-        }
-      ]
+
+            // 실제로 처리된 것만 화면에서 지운다.
+            // 예전에는 실패해도 전부 지우고 성공 토스트를 띄워, 서버에는 남아 있는데
+            // 목록에서는 사라진 것처럼 보였다.
+            if (processedIds.length > 0) {
+              setPlans(prev => prev.filter(p => !processedIds.includes(p.planId)));
+            }
+            setSelectedPlanIds([]);
+            setIsEditMode(false);
+
+            if (failed > 0) {
+              Toast.show({
+                type: processedIds.length > 0 ? 'info' : 'error',
+                text1:
+                  processedIds.length > 0
+                    ? `${processedIds.length}개 처리, ${failed}개 실패했습니다.`
+                    : '선택한 일정을 처리하지 못했습니다.',
+                position: 'top',
+              });
+              return;
+            }
+
+            Toast.show({
+              type: 'success',
+              text1: '선택한 일정 처리가 완료되었습니다.',
+              position: 'top',
+            });
+          },
+        },
+      ],
     );
   };
 
