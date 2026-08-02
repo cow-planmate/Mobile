@@ -6,17 +6,14 @@ const meta = {
   title: 'Screens/Auth/ProfileScreen',
   component: ProfileScreenView,
   render: (args) => {
-    const [nicknameModalVisible, setNicknameModalVisible] = useState(false);
-    const [ageModalVisible, setAgeModalVisible] = useState(false);
-    const [genderModalVisible, setGenderModalVisible] = useState(false);
     const [themeModalVisible, setThemeModalVisible] = useState(false);
     const [passwordModalVisible, setPasswordModalVisible] = useState(false);
 
     const [user, setUser] = useState({
       email: 'hello@example.com',
       name: '홍길동',
-      gender: 'MALE',
-      age: 26,
+      gender: '남자',
+      birthdate: '1999-08-15',
       preferredThemes: ['관광지', '맛집', '카페', '힐링', '휴양'],
     });
 
@@ -24,46 +21,26 @@ const meta = {
       <ProfileScreenView
         {...args}
         user={user}
-        isNicknameModalVisible={nicknameModalVisible}
-        setNicknameModalVisible={setNicknameModalVisible}
-        isAgeModalVisible={ageModalVisible}
-        setAgeModalVisible={setAgeModalVisible}
-        isGenderModalVisible={genderModalVisible}
-        setGenderModalVisible={setGenderModalVisible}
         isThemeModalVisible={themeModalVisible}
         setThemeModalVisible={setThemeModalVisible}
         isPasswordModalVisible={passwordModalVisible}
         setPasswordModalVisible={setPasswordModalVisible}
-        handleUpdateNickname={(name) => {
-          console.log('Update nickname to:', name);
+        handleUpdateNickname={async (name: string) => {
           setUser(prev => ({ ...prev, name }));
-          setNicknameModalVisible(false);
         }}
-        handleUpdateAge={(ageStr) => {
-          const age = parseInt(ageStr, 10) || 0;
-          console.log('Update age to:', age);
-          setUser(prev => ({ ...prev, age }));
-          setAgeModalVisible(false);
+        handleUpdateBirthdate={async (birthdate: string) => {
+          setUser(prev => ({ ...prev, birthdate }));
         }}
-        handleUpdateGender={(gender) => {
-          console.log('Update gender to:', gender);
+        handleUpdateGender={async (gender: string) => {
           setUser(prev => ({ ...prev, gender }));
-          setGenderModalVisible(false);
         }}
-        handleUpdateTheme={() => {
-          console.log('Update preferred themes');
+        handleUpdateTheme={async () => {
           setThemeModalVisible(false);
         }}
-        handleUpdatePassword={(cur, next) => {
-          console.log('Update password from', cur, 'to', next);
+        handleUpdatePassword={async () => {
           setPasswordModalVisible(false);
         }}
-        handleResign={() => {
-          console.log('User resigned');
-        }}
-        logout={() => {
-          console.log('User logged out');
-        }}
+        handleResign={() => {}}
       />
     );
   },

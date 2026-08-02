@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-import { LoadingSpinner, UpdateGenderModal, UpdatePasswordModal, UpdateThemeModal } from '../../../components/common';
+import { LoadingSpinner, UpdatePasswordModal, UpdateThemeModal } from '../../../components/common';
 import axios from 'axios';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { leaveAsEditor } from '../../../api/trips';
@@ -25,7 +25,6 @@ import {
   User,
   Settings,
   Award,
-  Trophy,
   Lock,
   X,
   Camera,
@@ -34,7 +33,6 @@ import {
   Trash2,
   CheckCircle2,
   Circle,
-  CalendarDays,
   Check,
   ChevronLeft,
   ChevronDown,
@@ -42,6 +40,13 @@ import {
 import FastImage from 'react-native-fast-image';
 import gravatarUrl from '../../../utils/gravatarUrl';
 import { normalize } from '../../../utils/normalize';
+import DatePicker from 'react-native-date-picker';
+import {
+  toKoreanAge,
+  formatBirthdate,
+  toBirthdateString,
+  parseBirthdate,
+} from '../../../utils/birthdate';
 import { styles, COLORS } from './ProfileScreen.styles';
 const getFormattedPeriod = (start?: string, end?: string) => {
   if (!start) return '날짜 확인 필요';
@@ -64,6 +69,16 @@ interface PlanItem {
 
 
 
+/**
+ * '준비중' 체크리스트 미리보기 항목.
+ * pointerEvents="none"로 잠겨 있어 변하지 않으므로 카드마다 state로 들고 있지 않는다.
+ */
+const PREVIEW_TASKS = [
+  { id: 1, text: '숙소 예약 확인', checked: true },
+  { id: 2, text: '짐 싸기 완료', checked: false },
+  { id: 3, text: '맛집 리스트 체크', checked: false },
+] as const;
+
 const ItineraryCardItem = ({
   plan,
   onDelete,
@@ -79,11 +94,6 @@ const ItineraryCardItem = ({
   isSelected: boolean;
   onSelectToggle: () => void;
 }) => {
-  const [tasks, setTasks] = useState([
-    { id: 1, text: '숙소 예약 확인', checked: true },
-    { id: 2, text: '짐 싸기 완료', checked: false },
-    { id: 3, text: '맛집 리스트 체크', checked: false },
-  ]);
 
   // D-Day 계산
   const getDDay = (startDateStr?: string) => {
@@ -110,39 +120,7 @@ const ItineraryCardItem = ({
   const dDay = getDDay(plan.startDate);
   const formattedPeriod = getFormattedPeriod(plan.startDate, plan.endDate);
 
-  // 체크 토글
-  const toggleTask = (id: number) => {
-    setTasks(prev =>
-      prev.map(t => (t.id === id ? { ...t, checked: !t.checked } : t))
-    );
-  };
-
-  // 할 일 추가
-  const dummyTaskPool = [
-    '환전하기',
-    '보조배터리 챙기기',
-    '상비약 구매',
-    '카메라 충전',
-    '날씨 체크',
-    '여행자 보험 가입',
-  ];
-
-  const addTask = () => {
-    const nextTaskText = dummyTaskPool[tasks.length % dummyTaskPool.length];
-    const newTask = {
-      id: Date.now(),
-      text: nextTaskText,
-      checked: false,
-    };
-    setTasks(prev => [...prev, newTask]);
-    Toast.show({
-      type: 'success',
-      text1: `할 일이 추가되었습니다: ${nextTaskText}`,
-      position: 'top',
-    });
-  };
-
-  const completedCount = tasks.filter(t => t.checked).length;
+  const completedCount = PREVIEW_TASKS.filter(t => t.checked).length;
   
   // 테마 색상 분기 (공유받은 일정이면 오렌지색, 생성한 일정이면 파란색)
   const themeColor = plan.isShared ? '#F97316' : '#1344FF';
@@ -219,11 +197,11 @@ const ItineraryCardItem = ({
             <Text style={[styles.checklistTitle, { color: '#9CA3AF' }]}>CHECK LIST (준비중)</Text>
           </View>
           <Text style={[styles.checklistProgressText, { color: '#9CA3AF' }]}>
-            {completedCount}/{tasks.length}
+            {completedCount}/{PREVIEW_TASKS.length}
           </Text>
         </View>
 
-        {tasks.map(task => (
+        {PREVIEW_TASKS.map(task => (
           <View
             key={task.id}
             style={styles.taskItemRow}
@@ -261,53 +239,40 @@ const ItineraryCardItem = ({
 interface ProfileScreenViewProps {
   loading: boolean;
   user: any;
-  isNicknameModalVisible: boolean;
-  setNicknameModalVisible: (visible: boolean) => void;
-  isAgeModalVisible: boolean;
-  setAgeModalVisible: (visible: boolean) => void;
-  isGenderModalVisible: boolean;
-  setGenderModalVisible: (visible: boolean) => void;
   isThemeModalVisible: boolean;
   setThemeModalVisible: (visible: boolean) => void;
   isPasswordModalVisible: boolean;
   setPasswordModalVisible: (visible: boolean) => void;
   handleUpdateNickname: (val: string) => Promise<void>;
-  handleUpdateAge: (val: string) => Promise<void>;
+  handleUpdateBirthdate: (val: string) => Promise<void>;
   handleUpdateGender: (val: string) => Promise<void>;
   handleUpdateTheme: () => void;
   handleUpdatePassword: (cur: string, n: string) => void;
   handleResign: () => void;
-  logout: () => void;
   scrollToItinerary?: boolean;
 }
 
 export default function ProfileScreenView({
   loading,
   user,
-  isNicknameModalVisible,
-  setNicknameModalVisible,
-  isAgeModalVisible,
-  setAgeModalVisible,
-  isGenderModalVisible,
-  setGenderModalVisible,
   isThemeModalVisible,
   setThemeModalVisible,
   isPasswordModalVisible,
   setPasswordModalVisible,
   handleUpdateNickname,
-  handleUpdateAge,
+  handleUpdateBirthdate,
   handleUpdateGender,
   handleUpdateTheme,
   handleUpdatePassword,
   handleResign,
-  logout,
   scrollToItinerary,
 }: ProfileScreenViewProps) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [tempNickname, setTempNickname] = useState('');
-  const [tempAge, setTempAge] = useState('');
+  const [tempBirthdate, setTempBirthdate] = useState('');
+  const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
   const [tempGender, setTempGender] = useState('');
   const isNicknameUnchanged = tempNickname === user.name;
   const [plans, setPlans] = useState<any[]>([]);
@@ -535,6 +500,9 @@ export default function ProfileScreenView({
   }
 
   // 선호테마 추출 및 파싱
+  // 나이는 저장하지 않고 생년월일에서 파생해 표시한다.
+  const profileAge = toKoreanAge(user.birthdate);
+
   const preferredThemes = user.preferredThemes || [];
   const themeNames = preferredThemes.map((t: any) => t.preferredThemeName || t);
   const defaultThemes = ['해수욕장', '호텔', '한식', '고기집', '이자카야'];
@@ -542,7 +510,7 @@ export default function ProfileScreenView({
 
   const handleOpenEditModal = () => {
     setTempNickname(user.name);
-    setTempAge(user.age === '미설정' ? '' : user.age.toString());
+    setTempBirthdate(user.birthdate || '');
     setTempGender(user.gender);
     setEditModalVisible(true);
     // 모달이 열릴 때 스크롤 상태 초기화
@@ -565,8 +533,8 @@ export default function ProfileScreenView({
         await handleUpdateNickname(tempNickname);
         hasChange = true;
       }
-      if (tempAge !== (user.age === '미설정' ? '' : user.age.toString())) {
-        await handleUpdateAge(tempAge);
+      if (tempBirthdate && tempBirthdate !== user.birthdate) {
+        await handleUpdateBirthdate(tempBirthdate);
         hasChange = true;
       }
       if (tempGender !== user.gender) {
@@ -655,7 +623,7 @@ export default function ProfileScreenView({
                 <Text style={styles.emailDivider}>|</Text>
                 <View style={styles.genderAgeBadge}>
                   <Text style={styles.genderAgeBadgeText}>
-                    {user.gender || '미설정'} • {user.age === '미설정' ? '미설정' : `${user.age}세`}
+                    {user.gender || '미설정'} • {profileAge === null ? '미설정' : `만 ${profileAge}세`}
                   </Text>
                 </View>
               </View>
@@ -951,6 +919,24 @@ export default function ProfileScreenView({
         </View>
       </ScrollView>
 
+      {/* 생년월일 선택기. 수정 모달 위에 떠야 하므로 형제로 둔다. */}
+      <DatePicker
+        modal
+        mode="date"
+        title="생년월일 선택"
+        confirmText="확인"
+        cancelText="취소"
+        locale="ko"
+        maximumDate={new Date()}
+        open={isBirthdatePickerOpen}
+        date={parseBirthdate(tempBirthdate)}
+        onConfirm={date => {
+          setBirthdatePickerOpen(false);
+          setTempBirthdate(toBirthdateString(date));
+        }}
+        onCancel={() => setBirthdatePickerOpen(false)}
+      />
+
       {/* ── 3. 통합 프로필 수정 모달 ── */}
       <Modal
         visible={editModalVisible}
@@ -1057,17 +1043,26 @@ export default function ProfileScreenView({
 
               {/* 나이 & 성별 가로 배치 */}
               <View style={styles.twoColumnRow}>
-                {/* 나이 */}
+                {/* 생년월일 */}
                 <View style={[styles.inputGroup, { flex: 1, marginRight: 12 }]}>
-                  <Text style={styles.inputLabel}>나이</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={tempAge}
-                    onChangeText={setTempAge}
-                    keyboardType="numeric"
-                    placeholder="나이"
-                    placeholderTextColor="#9CA3AF"
-                  />
+                  <Text style={styles.inputLabel}>생년월일</Text>
+                  <TouchableOpacity
+                    // textInput은 TextInput용이라 높이만 있고 정렬이 없다.
+                    // View로 쓰려면 세로 가운데 정렬을 직접 준다.
+                    style={[styles.textInput, styles.pickerField]}
+                    onPress={() => setBirthdatePickerOpen(true)}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.pickerFieldText,
+                        !tempBirthdate && styles.pickerFieldPlaceholder,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {tempBirthdate ? formatBirthdate(tempBirthdate) : '선택'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
 
                 {/* 성별 */}

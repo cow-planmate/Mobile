@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
-import { API_URL } from '@env';
 import { ForgotPasswordScreenView } from './ForgotPasswordScreen.view';
 import { useAlert } from '../../../contexts/AlertContext';
 import Toast from 'react-native-toast-message';
@@ -51,7 +50,7 @@ const ForgotPasswordScreen = () => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isTimerActive, timeLeft]);
+  }, [isTimerActive, timeLeft, showAlert]);
 
   const resetVerification = () => {
     setShowVerificationInput(false);

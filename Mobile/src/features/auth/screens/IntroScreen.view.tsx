@@ -6,7 +6,6 @@ import {
   SafeAreaView,
   Image,
 } from 'react-native';
-import Svg, { Path, Circle } from 'react-native-svg';
 import { styles } from './IntroScreen.styles';
 
 interface IntroScreenViewProps {

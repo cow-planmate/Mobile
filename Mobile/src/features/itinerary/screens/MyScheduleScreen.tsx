@@ -3,7 +3,6 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppState, AppStateStatus } from 'react-native';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { SimplePlanVO } from '../../../types/env';
 import { AppStackParamList } from '../../../navigation/types';
@@ -11,6 +10,8 @@ import Toast from 'react-native-toast-message';
 import MyScheduleScreenView from './MyScheduleScreen.view';
 import { useAlert } from '../../../contexts/AlertContext';
 import { useAuthStore } from '../../../store/useAuthStore';
+import { useQueryClient } from '@tanstack/react-query';
+import { USER_PROFILE_QUERY_KEY } from '../../../hooks/useUserProfile';
 import {
   acceptInvitation,
   getPendingInvitations,
@@ -33,6 +34,7 @@ export default function MyScheduleScreen() {
     useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const { showAlert } = useAlert();
   const user = useAuthStore((state) => state.user);
+  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(true);
   const [myItineraries, setMyItineraries] = useState<SimplePlanVO[]>([]);
@@ -160,13 +162,7 @@ export default function MyScheduleScreen() {
     navigation.navigate('Profile');
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchPlans();
-    }, []),
-  );
-
-  const fetchPlans = async () => {
+  const fetchPlans = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get(resolveApiUrl('/api/user/profile'));
@@ -179,7 +175,13 @@ export default function MyScheduleScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showAlert]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void fetchPlans();
+    }, [fetchPlans]),
+  );
 
   const handleMenuPress = (plan: SimplePlanVO) => {
     setSelectedPlan(plan);
@@ -218,12 +220,9 @@ export default function MyScheduleScreen() {
   const handleRenameTitle = async (newTitle: string) => {
     if (!selectedPlan) return;
     try {
-      const token = await AsyncStorage.getItem('accessToken');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       await axios.patch(
         resolveApiUrl(`/api/plan/${selectedPlan.planId}/name`),
         { planName: newTitle },
-        { headers },
       );
       setMyItineraries(prev =>
         prev.map(p =>
@@ -235,6 +234,7 @@ export default function MyScheduleScreen() {
           p.planId === selectedPlan.planId ? { ...p, planName: newTitle } : p,
         ),
       );
+      void queryClient.invalidateQueries({ queryKey: USER_PROFILE_QUERY_KEY });
       showAlert({ title: '성공', message: '일정 제목이 변경되었습니다.' });
       setRenameModalVisible(false);
     } catch (e) {
@@ -255,10 +255,11 @@ export default function MyScheduleScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const token = await AsyncStorage.getItem('accessToken');
-              const headers = token ? { Authorization: `Bearer ${token}` } : {};
-              await axios.delete(resolveApiUrl(`/api/plan/${planId}`), { headers });
+              await axios.delete(resolveApiUrl(`/api/plan/${planId}`));
               setMyItineraries(prev => prev.filter(p => p.planId !== planId));
+              void queryClient.invalidateQueries({
+                queryKey: USER_PROFILE_QUERY_KEY,
+              });
               showAlert({ title: '성공', message: '일정이 삭제되었습니다.' });
             } catch (e) {
               console.error('Delete plan failed:', e);

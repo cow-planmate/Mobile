@@ -396,6 +396,17 @@ export const styles = StyleSheet.create({
     fontSize: normalize(14),
     color: '#111827',
   },
+  /** textInput 스타일을 터치 가능한 선택 필드로 쓸 때의 정렬 보정 */
+  pickerField: {
+    justifyContent: 'center',
+  },
+  pickerFieldText: {
+    fontSize: normalize(14),
+    color: '#111827',
+  },
+  pickerFieldPlaceholder: {
+    color: '#9CA3AF',
+  },
   textInputDisabled: {
     backgroundColor: '#F3F4F6',
     color: '#9CA3AF',

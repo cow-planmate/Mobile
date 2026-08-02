@@ -7,7 +7,6 @@ import React, {
 } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
-import { API_URL } from '@env';
 import { SignupScreenView } from './SignupScreen.view';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
