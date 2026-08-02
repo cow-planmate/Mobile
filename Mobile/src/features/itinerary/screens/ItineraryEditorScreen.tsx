@@ -340,7 +340,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     if (!planId) return;
 
     /**
-     * GET /api/plan/{id}는 PlanSnapshotReader가 Redis 캐시를 우선 읽지만,
+     * GET /api/plan/{id}/complete는 PlanSnapshotReader가 Redis 캐시를 우선 읽지만,
      * 세션이 완전히 종료돼 캐시가 비워진 뒤에는 DB로 폴백하며 DB 반영에는
      * 지연이 있다(주기 동기화/disconnect 동기화). 연결이 살아있는 상태에서
      * 재조회하면 방금 한 편집을 낡은 데이터로 덮어쓸 수 있으므로,

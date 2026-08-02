@@ -135,11 +135,16 @@ export interface FullPlanPayload {
 // ────────────────────────────────────────────────
 
 /**
- * 일정 상세 데이터 조회 (기본 프레임 + 타임테이블 + 장소 블록)
- * @param planId 일정 ID
+ * 일정 상세 조회.
+ *
+ * GET /api/plan/{id}는 권한 검사가 없어 planId만 알면 누구나 열람할 수 있다.
+ * /complete는 비공개 일정이면 인증과 멤버십을 검증하고, 공개(isShared) 일정은
+ * 비로그인도 조회할 수 있다. 응답 형태는 두 엔드포인트가 동일하다.
  */
 export async function fetchPlan(planId: string): Promise<PlanResponse> {
-  const response = await axios.get(resolveApiUrl(`/api/plan/${planId}`));
+  const response = await axios.get(
+    resolveApiUrl(`/api/plan/${planId}/complete`),
+  );
   return response.data;
 }
 

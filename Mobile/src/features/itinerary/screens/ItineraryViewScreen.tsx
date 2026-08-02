@@ -125,7 +125,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       const token = await AsyncStorage.getItem('accessToken');
       const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
       const response = await axios.get<GetCompletePlanResponse>(
-        resolveApiUrl(`/api/plan/${planId}`),
+        resolveApiUrl(`/api/plan/${planId}/complete`),
         config,
       );
       const { planFrame, placeBlocks, timetables } = response.data;

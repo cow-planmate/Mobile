@@ -121,7 +121,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     try {
       // 토큰은 axios 요청 인터셉터가 붙인다.
       const response = await axios.get(
-        resolveApiUrl(`/api/plan/${route.params.planId}`),
+        resolveApiUrl(`/api/plan/${route.params.planId}/complete`),
       );
       const { planFrame, placeBlocks, timetables } = response.data;
 

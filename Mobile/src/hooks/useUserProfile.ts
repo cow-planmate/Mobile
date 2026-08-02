@@ -75,7 +75,9 @@ async function mapWithConcurrency<T, R>(
 /** 일정 상세에서 시작·종료 날짜만 뽑아 채워 넣는다. 실패하면 원본을 그대로 둔다. */
 const withPlanDates = async (plan: ProfilePlan): Promise<ProfilePlan> => {
   try {
-    const { data } = await axios.get(resolveApiUrl(`/api/plan/${plan.planId}`));
+    const { data } = await axios.get(
+      resolveApiUrl(`/api/plan/${plan.planId}/complete`),
+    );
     const timetables = data?.timetables;
     if (!timetables || timetables.length === 0) {
       return plan;
