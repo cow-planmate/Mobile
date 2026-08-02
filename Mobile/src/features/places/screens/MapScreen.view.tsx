@@ -31,7 +31,8 @@ export interface MapScreenViewProps {
   onSelectPlace: (place: MapPlace) => void;
   searchQuery: string;
   onSearchChange: (text: string) => void;
-  onMarkerPress: (place: MapPlace) => void;
+  /** 지도 마커 탭 콜백. 현재 뷰는 목록 선택만 처리한다. */
+  onMarkerPress?: (place: MapPlace) => void;
 }
 
 export default function MapScreenView({
@@ -40,7 +41,6 @@ export default function MapScreenView({
   onSelectPlace,
   searchQuery,
   onSearchChange,
-  onMarkerPress,
 }: MapScreenViewProps) {
   const kakaoPlaces = places.map((p) => ({
     id: p.id,

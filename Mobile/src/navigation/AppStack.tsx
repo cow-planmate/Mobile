@@ -21,6 +21,7 @@ import {
   FeedStackParamList,
   ScheduleStackParamList,
   CommunityStackParamList,
+  AppStackParamList,
 } from './types';
 import { Platform } from 'react-native';
 import { MessageSquare, Compass, PlusCircle } from 'lucide-react-native';
@@ -29,7 +30,7 @@ const FeedStackNavigator = createNativeStackNavigator<FeedStackParamList>();
 const ScheduleStackNavigator = createNativeStackNavigator<ScheduleStackParamList>();
 const CommunityStackNavigator = createNativeStackNavigator<CommunityStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<AppStackParamList>();
 
 const baseTabBarStyle = {
   backgroundColor: '#FFFFFF',

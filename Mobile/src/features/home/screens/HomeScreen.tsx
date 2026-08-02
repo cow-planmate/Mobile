@@ -21,13 +21,8 @@ import {
 } from '../../../hooks/useFcmNotifications';
 import { AirplaneLoading } from '../../../components/common';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
+import { formatDateLocal } from '../../../utils/timeUtils';
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
-const parseDestinationName = (destination?: string) => {
-  const normalized = destination?.trim() || '';
-  if (!normalized) return '';
-  const parts = normalized.split(/\s+/).filter(Boolean);
-  return parts.length <= 1 ? normalized : parts.slice(1).join(' ');
-};
 
 /**
  * 메인 대시보드 홈 화면 컨테이너 컴포넌트
@@ -224,13 +219,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     setIsCreating(true);
 
     try {
-      const formatDateLocal = (date: Date): string => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
-
       const start = new Date(startDate);
       const end = new Date(endDate);
       start.setHours(0, 0, 0, 0);

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useAlert } from '../../../contexts/AlertContext';
 import MapScreenView, { MapPlace } from './MapScreen.view';
 
 const MOCK_PLACES: MapPlace[] = [
@@ -53,7 +52,6 @@ const MOCK_PLACES: MapPlace[] = [
  * 지도 기반 장소 탐색 및 마커 핀 선택 화면 컨테이너 컴포넌트
  */
 export default function MapScreen() {
-  const { showAlert } = useAlert();
   const [selectedPlace, setSelectedPlace] = useState<MapPlace | null>(MOCK_PLACES[0]);
   const [searchQuery, setSearchQuery] = useState('');
 
