@@ -565,7 +565,9 @@ export default function PlaceRecommendationList({
   const renderEmpty = useCallback(() => {
     if (isLoading) return null;
 
-    if (selectedTab === '검색' && normalizedSearchQuery.length < 2) {
+    // 서버에 키워드 검색 엔드포인트가 아직 없어 결과가 비어 있다.
+    // 검색어를 넣었는데 아무 설명 없이 빈 화면이면 앱 오류로 보이므로 상태를 밝힌다.
+    if (selectedTab === '검색') {
       return (
         <View style={plStyles.emptyContainer}>
           <View style={[plStyles.emptyIconWrapper, plStyles.emptyIconSearch]}>
@@ -575,9 +577,12 @@ export default function PlaceRecommendationList({
               color="#9CA3AF"
             />
           </View>
-          <Text style={plStyles.emptyTitle}>장소를 검색해보세요.</Text>
+          <Text style={plStyles.emptyTitle}>장소 검색은 준비 중이에요.</Text>
           <Text style={plStyles.emptySubtitle}>
-            두 글자 이상 입력하면 결과를 바로 확인할 수 있어요.
+            지금은 관광지·숙소·식당 탭에서 추천 장소를 담을 수 있어요.
+          </Text>
+          <Text style={plStyles.emptySubtitle}>
+            찾는 장소가 없다면 '직접 추가' 탭을 이용해보세요.
           </Text>
         </View>
       );
@@ -609,7 +614,7 @@ export default function PlaceRecommendationList({
         )}
       </View>
     );
-  }, [isLoading, selectedTab, normalizedSearchQuery]);
+  }, [isLoading, selectedTab]);
 
   const renderHeader = useCallback(() => {
     if (selectedTab === '검색') {

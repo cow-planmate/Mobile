@@ -61,11 +61,6 @@ export type ScheduleStackParamList = {
     fieldToUpdate: 'departure' | 'destination';
     currentValue: string;
   };
-  AddPlace: {
-    dayIndex: number;
-    destination?: string;
-    planId?: string;
-  };
   Profile: undefined;
   ThemeSettings: undefined;
   ChangePassword: undefined;
