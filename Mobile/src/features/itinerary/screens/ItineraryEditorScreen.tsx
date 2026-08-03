@@ -823,14 +823,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
       const result = await createFullPlanMutation.mutateAsync({
         planFrame: {
-          planName: tripName || '나의 일정',
-          departure: route.params.departure || 'SEOUL',
           destinationId: route.params.travelId || 1,
-          travelId: route.params.travelId || 1,
           transportationType:
             route.params.transport === '자동차' ? 'PRIVATE' : 'PUBLIC',
-          transportationCategoryId:
-            route.params.transport === '자동차' ? 1 : 0,
           adultCount: route.params.adults || 1,
           childCount: route.params.children || 0,
         },

@@ -269,12 +269,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
       const result = await createFullPlanMutation.mutateAsync({
         planFrame: {
-          planName: `${destination} 여행`,
-          departure: 'SEOUL',
           destinationId: travelId,
-          travelId: travelId,
           transportationType: transport === '자동차' ? 'PRIVATE' : 'PUBLIC',
-          transportationCategoryId: transport === '자동차' ? 1 : 0,
           adultCount: adults ?? 1,
           childCount: children ?? 0,
         },

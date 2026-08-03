@@ -93,31 +93,20 @@ export interface PlanFrameVO {
   transportationCategoryId: number;
 }
 
-/** 일정 생성 요청 페이로드 */
-export interface CreatePlanPayload {
-  departure: string;
-  travelId: number;
-  dates: string[];
-  adultCount: number;
-  childCount: number;
-  transportation: number;
-}
-
-/** 전체 일정 저장 페이로드 */
+/**
+ * 전체 일정 저장 페이로드.
+ *
+ * planFrame은 서버 PlanFrameDto와 같은 네 필드뿐이다. 일정 이름은 생성 시
+ * 목적지명으로 정해지므로 여기서 보낼 수 없고, 필요하면 PATCH /name으로 바꾼다.
+ */
 export interface FullPlanPayload {
   planFrame: {
-    destinationId?: number;
-    travelId?: number;
-    transportationType?: 'PUBLIC' | 'PRIVATE';
-    transportationCategoryId?: number;
+    destinationId: number;
+    transportationType: 'PUBLIC' | 'PRIVATE';
     adultCount: number;
     childCount: number;
-    planId?: string;
-    planName?: string;
-    departure?: string;
   };
   timetables: {
-    timetableId?: number;
     date: string;
     timeTableStartTime: string;
     timeTableEndTime: string;
@@ -130,29 +119,12 @@ export interface FullPlanPayload {
 // ────────────────────────────────────────────────
 
 /**
- * 신규 일정 생성
- * @param payload 일정 생성 데이터
- */
-export async function createPlan(
-  payload: CreatePlanPayload,
-): Promise<{ planId: string }> {
-  const response = await axios.post(resolveApiUrl(`/api/plan`), payload);
-  return response.data;
-}
-
-/**
- * 전체 일정 생성 및 저장 (비로그인 저장 포함)
+ * 전체 일정 생성 및 저장
  * @param payload 전체 일정 데이터
  */
 export async function createFullPlan(
   payload: FullPlanPayload,
 ): Promise<{ planId: string }> {
-  const destinationId =
-    payload.planFrame.destinationId ?? payload.planFrame.travelId ?? 1;
-  const transportationType =
-    payload.planFrame.transportationType ??
-    (payload.planFrame.transportationCategoryId === 1 ? 'PRIVATE' : 'PUBLIC');
-
   const categoryMap: Record<number | string, string> = {
     0: 'ATTRACTION',
     1: 'ACCOMMODATION',
@@ -168,16 +140,10 @@ export async function createFullPlan(
 
   const formattedPayload = {
     planFrame: {
-      destinationId,
-      travelId: destinationId,
-      transportationType,
-      transportationCategoryId:
-        payload.planFrame.transportationCategoryId ??
-        (transportationType === 'PRIVATE' ? 1 : 0),
+      destinationId: payload.planFrame.destinationId,
+      transportationType: payload.planFrame.transportationType,
       adultCount: payload.planFrame.adultCount ?? 1,
       childCount: payload.planFrame.childCount ?? 0,
-      departure: payload.planFrame.departure || 'SEOUL',
-      planName: payload.planFrame.planName || '나의 일정',
     },
     timetables: payload.timetables || [],
     timetablePlaceBlocks: (payload.timetablePlaceBlocks || []).map(
