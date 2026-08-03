@@ -1,4 +1,10 @@
 /**
+ * 접미사를 떼고도 남아 있어야 하는 최소 글자 수.
+ * 한 글자로 뭉개진 이름은 서로 다른 지역끼리 쉽게 겹친다.
+ */
+const MIN_BASE_LENGTH = 2;
+
+/**
  * 지역명에서 행정구역 접미사를 제거하고 표준 기본 명칭을 추출합니다.
  *
  * @param word 입력 지역명
@@ -30,19 +36,31 @@ export function getRegionBase(word: string): string {
     }
   }
 
-  // 행정구역 접미사 제거
-  normalized = normalized
-    .replace(/특별자치도$/, '')
-    .replace(/특별자치시$/, '')
-    .replace(/광역시$/, '')
-    .replace(/특별시$/, '')
-    .replace(/특별자치$/, '')
-    .replace(/자치도$/, '')
-    .replace(/자치시$/, '')
-    .replace(/도$/, '')
-    .replace(/시$/, '')
-    .replace(/군$/, '')
-    .replace(/구$/, '');
+  // 행정구역 접미사 제거.
+  //
+  // 다만 접미사를 떼고 나서 한 글자만 남으면 떼지 않는다. '대구'에서 '구'를
+  // 떼면 '대'가 되는데, 이렇게 뭉개진 한 글자는 다른 지역과 쉽게 충돌한다.
+  // '중구'·'남구'처럼 접미사가 곧 이름의 일부인 경우도 마찬가지다.
+  const SUFFIXES = [
+    /특별자치도$/,
+    /특별자치시$/,
+    /광역시$/,
+    /특별시$/,
+    /특별자치$/,
+    /자치도$/,
+    /자치시$/,
+    /도$/,
+    /시$/,
+    /군$/,
+    /구$/,
+  ];
+
+  for (const suffix of SUFFIXES) {
+    const stripped = normalized.replace(suffix, '');
+    if (stripped.length >= MIN_BASE_LENGTH) {
+      normalized = stripped;
+    }
+  }
 
   return normalized;
 }
