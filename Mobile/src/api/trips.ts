@@ -242,24 +242,16 @@ export const fetchLodgingPlaces = (destinationId: number, page: number = 1, size
 /** 음식점 추천 목록 조회 */
 export const fetchRestaurantPlaces = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlaces(destinationId, 'restaurant', page, size);
 
-/** 카테고리별 추천 장소 목록 조회 (비인증) */
-export async function fetchCategoryPlacesNoAuth(
-  categoryType: 'tour' | 'lodging' | 'restaurant',
-  destinationId: number,
-  page: number = 1,
-  size: number = 20,
-): Promise<PlacesResponse> {
-  return fetchCategoryPlaces(destinationId, categoryType, page, size);
-}
-
-/** 관광지 추천 목록 조회 (비인증) */
-export const fetchTourPlacesNoAuth = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlacesNoAuth('tour', destinationId, page, size);
-
-/** 숙소 추천 목록 조회 (비인증) */
-export const fetchLodgingPlacesNoAuth = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlacesNoAuth('lodging', destinationId, page, size);
-
-/** 음식점 추천 목록 조회 (비인증) */
-export const fetchRestaurantPlacesNoAuth = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlacesNoAuth('restaurant', destinationId, page, size);
+/**
+ * 비인증용 별칭.
+ *
+ * GET /api/place는 인증을 선택으로 받으므로(@AuthenticationPrincipal
+ * errorOnInvalidType = false) 요청이 인증 여부와 상관없이 같다. 호출부 이름만
+ * 남겨 두고 실제 동작은 위 함수들과 동일하다.
+ */
+export const fetchTourPlacesNoAuth = fetchTourPlaces;
+export const fetchLodgingPlacesNoAuth = fetchLodgingPlaces;
+export const fetchRestaurantPlacesNoAuth = fetchRestaurantPlaces;
 
 // ────────────────────────────────────────────────
 // 날씨 정보 API
