@@ -68,8 +68,8 @@ const FALLBACK_DESTINATIONS: TravelVO[] = DESTINATIONS_28.map(d => ({
 const fetchDestinations = async (): Promise<TravelVO[]> => {
   try {
     const response = await axios.get(resolveApiUrl('/api/destination'));
-    const rawList: DestinationDto[] =
-      response.data.destinations || response.data.travels || [];
+    // DestinationListResponse는 destinations 하나뿐이다.
+    const rawList: DestinationDto[] = response.data.destinations || [];
 
     const serverData = rawList.map(toTravelVO);
     // 서버가 빈 목록을 주면 내장 28개 목록으로 대체한다.
