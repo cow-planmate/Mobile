@@ -23,8 +23,11 @@ import { AirplaneLoading } from '../../../components/common';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
 import { formatDateLocal } from '../../../utils/timeUtils';
 import {
+  CollaborationRequestResult,
   describeAcceptResult,
   describeRejectResult,
+  describeRequestResultMessage,
+  describeRequestResultTitle,
 } from '../../../utils/collaborationRequest';
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
@@ -108,9 +111,27 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     }, [fetchPendingRequests]),
   );
 
+  /**
+   * 내가 보낸 초대·편집 권한 요청이 처리된 결과.
+   *
+   * 서버가 결과를 보관하지 않아 나중에 조회할 방법이 없다. 이벤트를 받은
+   * 그 자리에서 알리고, 놓치면 그대로 사라진다(FCM 푸시로 한 번 더 온다).
+   */
+  const handleRequestResult = useCallback(
+    (result: CollaborationRequestResult) => {
+      showAlert({
+        title: describeRequestResultTitle(result),
+        message: describeRequestResultMessage(result),
+        type: result.status === 'ACCEPTED' ? 'success' : 'info',
+      });
+    },
+    [showAlert],
+  );
+
   useInvitationSse({
     enabled: !!user,
     onInvitationEvent: () => fetchPendingRequests(),
+    onRequestResult: handleRequestResult,
   });
 
   useFcmNotifications({
