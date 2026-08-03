@@ -1,6 +1,10 @@
 import axios from 'axios';
 import { WEB_URL } from '@env';
 import { resolveApiUrl } from '../utils/apiUrl';
+import {
+  CollaborationRequestType,
+  normalizeCollaborationRequestType,
+} from '../utils/collaborationRequest';
 
 // ────────────────────────────────────────────────
 // 타입 정의
@@ -470,14 +474,19 @@ export async function leaveAsEditor(planId: string): Promise<void> {
   await axios.delete(resolveApiUrl(`/api/plan/${planId}/editor/me`));
 }
 
-/** 대기 중인 초대 요청 인터페이스 */
+/**
+ * 대기 중인 협업 요청.
+ *
+ * type이 INVITE면 내가 남의 일정에 초대받은 것이고, REQUEST면 내 일정의
+ * 편집 권한을 요청받은 것이라 수락/거절의 의미가 반대다.
+ */
 export interface PendingInvitation {
   requestId: number;
   senderId: number;
   senderNickname: string;
   planId: string;
   planName: string;
-  type: string;
+  type: CollaborationRequestType;
 }
 
 /** 대기 중인 초대 목록 조회 */
@@ -492,7 +501,7 @@ export async function getPendingInvitations(): Promise<PendingInvitation[]> {
     senderNickname: item.senderNickname,
     planId: item.planId,
     planName: item.planName,
-    type: item.type,
+    type: normalizeCollaborationRequestType(item.type),
   })) as PendingInvitation[];
 }
 

@@ -22,6 +22,10 @@ import {
 import { AirplaneLoading } from '../../../components/common';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
 import { formatDateLocal } from '../../../utils/timeUtils';
+import {
+  describeAcceptResult,
+  describeRejectResult,
+} from '../../../utils/collaborationRequest';
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
 /**
@@ -136,10 +140,15 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
 
 
+  /** 알림 문구는 초대/편집 권한 요청에 따라 달라지므로 목록에서 종류를 찾는다. */
+  const findRequestType = (requestId: number) =>
+    pendingRequests.find(r => r.requestId === requestId)?.type;
+
   const handleAccept = async (requestId: number) => {
+    const type = findRequestType(requestId);
     try {
       await acceptInvitation(requestId);
-      showAlert({ title: '수락 완료', message: '일정에 참여했습니다.' });
+      showAlert({ title: '수락 완료', message: describeAcceptResult(type) });
       setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
@@ -150,9 +159,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   };
 
   const handleReject = async (requestId: number) => {
+    const type = findRequestType(requestId);
     try {
       await rejectInvitation(requestId);
-      showAlert({ title: '거절 완료', message: '초대를 거절했습니다.' });
+      showAlert({ title: '거절 완료', message: describeRejectResult(type) });
       setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
