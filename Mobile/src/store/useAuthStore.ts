@@ -86,12 +86,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
       );
 
+      // LoginResponse에는 성공 플래그가 없다. 인증 실패는 4xx로 오므로
+      // 여기까지 왔다면 이미 성공이다.
       const data = response.data;
-      if (data.loginSuccess === false) {
-        throw new Error(
-          data.message || '이메일 또는 비밀번호가 올바르지 않습니다.'
-        );
-      }
 
       const {
         accessToken,
