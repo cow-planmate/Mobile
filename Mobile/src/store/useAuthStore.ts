@@ -132,26 +132,30 @@ export const useAuthStore = create<AuthState>((set) => ({
     delete axios.defaults.headers.common.Authorization;
 
     try {
-      const response = await axios.post(
-        resolveApiUrl('/api/oauth/exchange'),
-        null,
-        {
-          params: { code },
-        }
-      );
+      // 서버 OAuthExchangeRequest는 code를 본문으로 받는다(@RequestBody).
+      // 쿼리 파라미터로 보내면 본문이 비어 400이 난다.
+      const response = await axios.post(resolveApiUrl('/api/oauth/exchange'), {
+        code,
+      });
 
-      const { accessToken, refreshToken, nickname } = response.data;
-      axios.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+      // 응답은 일반 로그인과 같은 LoginResponse라 userId·email이 이미 들어 있다.
+      // 따로 프로필을 조회할 필요가 없다.
+      const { accessToken, refreshToken, userId, nickname, email } =
+        response.data;
 
-      let userId = '';
-      try {
-        const profileRes = await axios.get(resolveApiUrl('/api/user/profile'));
-        userId = profileRes.data.userId;
-      } catch (err) {
-        console.warn('Failed to fetch profile during OAuth login', err);
+      // userId는 일정 소유자 판정에 쓰인다. 비어 있는 채로 세션을 만들면
+      // 자기 일정에서도 소유자로 인식되지 않으므로 여기서 끊는다.
+      if (!accessToken || !refreshToken || !userId) {
+        throw new Error('서버 응답 형식이 올바르지 않습니다.');
       }
 
-      const userData: User = { userId, nickname, email: '' };
+      axios.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+
+      const userData: User = {
+        userId,
+        nickname: nickname || '사용자',
+        email: email || '',
+      };
 
       await AsyncStorage.multiSet([
         ['user', JSON.stringify(userData)],
