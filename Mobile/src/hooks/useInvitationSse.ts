@@ -23,6 +23,8 @@ const sseLog = (...args: unknown[]) => {
   }
 };
 const INITIAL_RECONNECT_DELAY_MS = 1000;
+/** 중복 처리 방지용으로 기억해 둘 이벤트 ID 개수 상한 */
+const SEEN_EVENT_ID_LIMIT = 200;
 const MAX_RECONNECT_DELAY_MS = 30000;
 /** 내가 보낸 요청의 처리 결과. 목록 갱신이 아니라 그 자리에서 알려야 한다. */
 const REQUEST_RESULT_EVENT = 'requestResult';
@@ -124,6 +126,14 @@ export function useInvitationSse({
     }
 
     const token = await AsyncStorage.getItem('accessToken');
+
+    // 토큰을 읽는 동안 언마운트(또는 비활성화)됐을 수 있다. 그 사이 cleanup이
+    // 지나갔다면 sourceRef가 아직 비어 있어서, 여기서 스트림을 새로 열면
+    // 아무도 닫을 수 없는 EventSource가 남는다.
+    if (!shouldReconnectRef.current) {
+      return;
+    }
+
     if (!token) {
       scheduleReconnect(connect);
       return;
@@ -158,6 +168,14 @@ export function useInvitationSse({
       }
 
       if (eventId) {
+        // 장시간 실행 시 무한히 커지지 않도록 오래된 것부터 버린다.
+        // (useFcmNotifications의 seenMessageIds와 같은 방식)
+        if (seenEventIdsRef.current.size >= SEEN_EVENT_ID_LIMIT) {
+          const oldest = seenEventIdsRef.current.values().next().value;
+          if (oldest !== undefined) {
+            seenEventIdsRef.current.delete(oldest);
+          }
+        }
         seenEventIdsRef.current.add(eventId);
       }
 
