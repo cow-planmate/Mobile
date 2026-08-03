@@ -275,6 +275,24 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const weatherRangeEnd =
     days.length > 0 ? formatDateLocal(days[days.length - 1].date) : '';
 
+  /**
+   * 실시간 편집(WS)으로 보낼 plan 변경 페이로드를 만든다.
+   *
+   * SharedSync가 캐시를 병합할 때 값이 null인 필드만 건너뛰는데, PlanDto의
+   * adultCount·childCount는 원시 타입 int라 페이로드에서 빠지면 null이 아니라 0으로
+   * 역직렬화된다. 그래서 이름만 담아 보내면 인원수가 0으로 덮어써지고, 그 캐시가
+   * 그대로 DB까지 내려간다. 바꾸지 않는 값이라도 반드시 실제 값을 함께 실어야 한다.
+   */
+  const buildPlanSyncPayload = useCallback(
+    (targetPlanId: string, planName: string) => ({
+      planId: targetPlanId,
+      planName,
+      adultCount: planMetadata?.adultCount ?? route.params.adults ?? 1,
+      childCount: planMetadata?.childCount ?? route.params.children ?? 0,
+    }),
+    [planMetadata, route.params.adults, route.params.children],
+  );
+
   /** 날씨 조회 기준 여행지. 서버는 도시명이 아니라 destinationId를 받는다. */
   const weatherDestinationId =
     (route.params as any)?.destinationId ||
@@ -506,7 +524,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const handleSaveTripName = useCallback(async () => {
     setIsEditingTripName(false);
     if (tripName && planId) {
-      sendMessage('update', 'plan', { planId, title: tripName, planName: tripName });
+      sendMessage('update', 'plan', buildPlanSyncPayload(planId, tripName));
       try {
         await axios.patch(
           resolveApiUrl(`/api/plan/${planId}/name`),
@@ -516,7 +534,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         console.error('Failed to update plan title on edit:', err);
       }
     }
-  }, [planId, sendMessage, setIsEditingTripName, tripName]);
+  }, [buildPlanSyncPayload, planId, sendMessage, setIsEditingTripName, tripName]);
 
   const handleOpenParticipants = useCallback(() => {
     setParticipantsVisible(true);
@@ -731,7 +749,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
     // If editing existing plan, send the final trip name update via WebSocket before disconnecting
     if (route.params.planId && tripName) {
-      sendMessage('update', 'plan', { planId: route.params.planId, title: tripName, planName: tripName });
+      sendMessage(
+        'update',
+        'plan',
+        buildPlanSyncPayload(route.params.planId, tripName),
+      );
       // Brief delay to allow websocket frame transmission
       await new Promise(resolve => setTimeout(resolve, 100));
     }
