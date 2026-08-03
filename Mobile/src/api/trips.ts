@@ -266,6 +266,18 @@ export const fetchRestaurantPlacesNoAuth = (destinationId: number, page: number 
 // ────────────────────────────────────────────────
 
 /**
+ * 날씨 데이터의 출처.
+ *
+ * 여행일이 예보 범위(오늘+15일)를 넘으면 서버가 작년 같은 기간의 실측치로,
+ * 외부 API 호출 자체가 실패하면 계절 평균으로 대체한다. 둘 다 예보가 아니므로
+ * 예보처럼 보여주면 안 된다.
+ */
+export type WeatherDataSource =
+  | 'FORECAST'
+  | 'LAST_YEAR_ACTUAL'
+  | 'SEASONAL_AVERAGE';
+
+/**
  * 일자별 날씨 요약 정보.
  * 서버 WeatherDayDto와 필드명을 맞춘다(camelCase).
  */
@@ -276,8 +288,8 @@ export interface SimpleWeatherInfo {
   tempMin: number;
   tempMax: number;
   feelsLike: number;
-  /** 실측/예보 등 데이터 출처 구분 (서버가 내려주는 경우에만) */
-  dataSource?: string;
+  /** 서버는 항상 채워 보낸다. 구버전 응답 대비로만 optional. */
+  dataSource?: WeatherDataSource;
 }
 
 /** 날씨 정보 응답 객체 */
