@@ -117,10 +117,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       } else {
         throw new Error(data.message || '서버 응답 형식이 올바르지 않습니다.');
       }
-    } catch (error: any) {
-      if (error.response?.data?.message) {
-        throw new Error(error.response.data.message);
-      }
+    } catch (error) {
+      // 원본 에러를 그대로 올린다. Error로 감싸면 응답의 code가 사라져
+      // 호출부가 문구를 문자열로 비교할 수밖에 없다(utils/errorHandler 참고).
       throw error;
     } finally {
       set({ isLoading: false });

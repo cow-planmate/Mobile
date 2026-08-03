@@ -11,6 +11,10 @@ import { SignupScreenView } from './SignupScreen.view';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import Toast from 'react-native-toast-message';
+import { parseBackendError } from '../../../utils/errorHandler';
+
+/** 이미 가입된 이메일일 때 서버가 주는 코드 (AUTH_004) */
+const DUPLICATE_EMAIL_CODE = 'AUTH_004';
 
 /**
  * 타이머 남은 시간을 'M:SS' 포맷으로 변환하는 헬퍼 함수
@@ -142,13 +146,14 @@ export default function SignupScreen() {
         setIsTimerActive(true);
         setTimeLeft(300);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Email Send Error:', error);
-      const status = error.response?.status;
-      const message =
-        error.response?.data?.message || '인증 번호 전송에 실패했습니다.';
+      // 문구가 아니라 에러 코드로 판단한다.
+      // 예전에는 message.includes('exist')를 봤는데 서버 메시지는 한국어라
+      // 이 조건은 한 번도 맞은 적이 없고 상태 코드만 동작하고 있었다.
+      const { code, message } = parseBackendError(error);
 
-      if (message.includes('exist') || status === 409) {
+      if (code === DUPLICATE_EMAIL_CODE) {
         setIsEmailDuplicate(true);
       } else {
         showAlert({ title: '오류', message });

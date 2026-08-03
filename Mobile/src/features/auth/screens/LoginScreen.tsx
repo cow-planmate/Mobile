@@ -4,6 +4,10 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { LoginScreenView } from './LoginScreen.view';
 import { resolveApiUrl } from '../../../utils/apiUrl';
+import { parseBackendError } from '../../../utils/errorHandler';
+
+/** 이메일 또는 비밀번호가 틀렸을 때 서버가 주는 코드 (AUTH_003) */
+const INVALID_CREDENTIALS_CODE = 'AUTH_003';
 
 type LoginScreenProps = {
   navigation: { navigate: (screen: string, params?: any) => void };
@@ -83,15 +87,20 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
     try {
       await login(email, form.password);
-    } catch (e: any) {
-      if (e.message && e.message.includes('올바르지 않습니다')) {
-        setServerError({ field: 'all', message: e.message });
+    } catch (e) {
+      // 문구가 아니라 에러 코드로 판단한다. 백엔드가 메시지를 다듬어도 깨지지 않는다.
+      const { code, message } = parseBackendError(e);
+      const isBadCredentials = code === INVALID_CREDENTIALS_CODE;
+
+      if (isBadCredentials) {
+        setServerError({ field: 'all', message });
       }
+
       Toast.show({
         type: 'error',
-        text1: e.message && e.message.includes('올바르지 않습니다')
+        text1: isBadCredentials
           ? '가입된 정보가 없거나 비밀번호가 맞지 않아요.'
-          : (e.message || '로그인 처리 중 문제가 발생했어요.'),
+          : message,
         position: 'top',
         visibilityTime: 2500,
       });
