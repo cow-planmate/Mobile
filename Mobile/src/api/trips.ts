@@ -28,10 +28,9 @@ export interface PlaceVO {
   copyrightDivCd?: string;
 }
 
-/** 장소 목록 조회 응답 */
+/** 장소 목록 조회 응답 (GET /api/place는 page/size 기반 페이징만 지원한다) */
 export interface PlacesResponse {
   places: PlaceVO[];
-  nextPageTokens?: string[];
   totalCount?: number;
   page?: number;
   size?: number;
@@ -295,51 +294,6 @@ export const fetchLodgingPlacesNoAuth = (destinationId: number, page: number = 1
 
 /** 음식점 추천 목록 조회 (비인증) */
 export const fetchRestaurantPlacesNoAuth = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlacesNoAuth('restaurant', destinationId, page, size);
-
-// ────────────────────────────────────────────────
-// 장소 검색 및 페이징 API
-// ────────────────────────────────────────────────
-
-/**
- * 일정 내 장소 검색
- * @param planId 일정 ID
- * @param query 검색어
- */
-export async function searchPlaces(
-  planId: string,
-  query: string,
-): Promise<PlacesResponse> {
-  const response = await axios.get(
-    `/api/plan/${planId}/place/${encodeURIComponent(query)}`,
-  );
-  return response.data;
-}
-
-/**
- * 장소 검색 (비인증 / 일정 ID 미선택)
- * @param query 검색어
- */
-export async function searchPlacesNoAuth(
-  query: string,
-): Promise<PlacesResponse> {
-  const response = await axios.get(
-    `/api/plan/place/${encodeURIComponent(query)}`,
-  );
-  return response.data;
-}
-
-/**
- * 다음 페이지 장소 목록 추가 조회
- * @param nextPageTokens 페이징 토큰 배열
- */
-export async function fetchNextPlaces(
-  nextPageTokens: string[],
-): Promise<PlacesResponse> {
-  const response = await axios.post(`/api/plan/nextplace`, {
-    nextPageTokens,
-  });
-  return response.data;
-}
 
 // ────────────────────────────────────────────────
 // 날씨 정보 API

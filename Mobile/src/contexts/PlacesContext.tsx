@@ -16,9 +16,6 @@ import {
   fetchTourPlacesNoAuth,
   fetchLodgingPlacesNoAuth,
   fetchRestaurantPlacesNoAuth,
-  searchPlaces,
-  searchPlacesNoAuth,
-  fetchNextPlaces,
 } from '../api/trips';
 
 // ────────────────────────────────────────────────
@@ -58,12 +55,6 @@ export interface PlacesState {
   tour: PlaceVO[];
   lodging: PlaceVO[];
   restaurant: PlaceVO[];
-  search: PlaceVO[];
-
-  tourNext: string[];
-  lodgingNext: string[];
-  restaurantNext: string[];
-  searchNext: string[];
 
   tourPage: number;
   lodgingPage: number;
@@ -85,14 +76,9 @@ interface PlacesContextType extends PlacesState {
     destinationId: number,
     force?: boolean,
   ) => Promise<void>;
-  /** 키워드 장소 검색 */
-  doSearchPlaces: (
-    planIdOrNull: string | null,
-    query: string,
-  ) => Promise<void>;
   /** 장소 카테고리별 다음 페이지 추가 조회 */
   loadMorePlaces: (
-    field: 'tour' | 'lodging' | 'restaurant' | 'search',
+    field: 'tour' | 'lodging' | 'restaurant',
   ) => Promise<void>;
   /** 전체 장소 상태 초기화 */
   resetPlaces: () => void;
@@ -111,12 +97,6 @@ export function PlacesProvider({children}: PropsWithChildren) {
   const [tour, setTour] = useState<PlaceVO[]>([]);
   const [lodging, setLodging] = useState<PlaceVO[]>([]);
   const [restaurant, setRestaurant] = useState<PlaceVO[]>([]);
-  const [search, setSearch] = useState<PlaceVO[]>([]);
-
-  const [tourNext, setTourNext] = useState<string[]>([]);
-  const [lodgingNext, setLodgingNext] = useState<string[]>([]);
-  const [restaurantNext, setRestaurantNext] = useState<string[]>([]);
-  const [searchNext, setSearchNext] = useState<string[]>([]);
 
   const [tourPage, setTourPage] = useState<number>(1);
   const [lodgingPage, setLodgingPage] = useState<number>(1);
@@ -208,17 +188,14 @@ export function PlacesProvider({children}: PropsWithChildren) {
         ]);
 
         setTour(tourData.places || []);
-        setTourNext([]);
         setTourPage(1);
         setTourHasNext(!!tourData.hasNext);
 
         setLodging(lodgingData.places || []);
-        setLodgingNext([]);
         setLodgingPage(1);
         setLodgingHasNext(!!lodgingData.hasNext);
 
         setRestaurant(restaurantData.places || []);
-        setRestaurantNext([]);
         setRestaurantPage(1);
         setRestaurantHasNext(!!restaurantData.hasNext);
       } catch (err) {
@@ -254,17 +231,14 @@ export function PlacesProvider({children}: PropsWithChildren) {
         ]);
 
         setTour(tourData.places || []);
-        setTourNext([]);
         setTourPage(1);
         setTourHasNext(!!tourData.hasNext);
 
         setLodging(lodgingData.places || []);
-        setLodgingNext([]);
         setLodgingPage(1);
         setLodgingHasNext(!!lodgingData.hasNext);
 
         setRestaurant(restaurantData.places || []);
-        setRestaurantNext([]);
         setRestaurantPage(1);
         setRestaurantHasNext(!!restaurantData.hasNext);
       } catch (err) {
@@ -279,47 +253,9 @@ export function PlacesProvider({children}: PropsWithChildren) {
   );
 
 
-  const doSearchPlaces = useCallback(
-    async (planIdOrNull: string | null, query: string) => {
-      setIsLoading(true);
-      try {
-        const result = planIdOrNull
-          ? await searchPlaces(planIdOrNull, query)
-          : await searchPlacesNoAuth(query);
-
-        setSearch(result.places || []);
-        setSearchNext(result.nextPageTokens || []);
-      } catch (err) {
-        console.error('Search failed:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [],
-  );
-
   const loadMorePlaces = useCallback(
-    async (field: 'tour' | 'lodging' | 'restaurant' | 'search') => {
+    async (field: 'tour' | 'lodging' | 'restaurant') => {
       const destId = lastFetchedDestRef.current.destinationId;
-
-      if (field === 'search') {
-        if (!searchNext || searchNext.length === 0) {
-          return;
-        }
-        setIsLoading(true);
-        try {
-          const result = await fetchNextPlaces(searchNext);
-          const newPlaces = result.places || [];
-          const newTokens = result.nextPageTokens || [];
-          setSearch(prev => mergePlaces(prev, newPlaces));
-          setSearchNext(newTokens);
-        } catch (err) {
-          console.error(`Failed to load more search:`, err);
-        } finally {
-          setIsLoading(false);
-        }
-        return;
-      }
 
       if (!destId) return;
 
@@ -354,7 +290,6 @@ export function PlacesProvider({children}: PropsWithChildren) {
       }
     },
     [
-      searchNext,
       tourPage,
       tourHasNext,
       lodgingPage,
@@ -368,11 +303,6 @@ export function PlacesProvider({children}: PropsWithChildren) {
     setTour([]);
     setLodging([]);
     setRestaurant([]);
-    setSearch([]);
-    setTourNext([]);
-    setLodgingNext([]);
-    setRestaurantNext([]);
-    setSearchNext([]);
     setTourPage(1);
     setLodgingPage(1);
     setRestaurantPage(1);
@@ -386,11 +316,6 @@ export function PlacesProvider({children}: PropsWithChildren) {
     tour,
     lodging,
     restaurant,
-    search,
-    tourNext,
-    lodgingNext,
-    restaurantNext,
-    searchNext,
     tourPage,
     lodgingPage,
     restaurantPage,
@@ -401,18 +326,16 @@ export function PlacesProvider({children}: PropsWithChildren) {
     isPetFriendly,
     fetchAllRecommendations,
     fetchAllRecommendationsNoAuth,
-    doSearchPlaces,
     loadMorePlaces,
     resetPlaces,
     setPetFriendly,
   }), [
-    tour, lodging, restaurant, search,
-    tourNext, lodgingNext, restaurantNext, searchNext,
+    tour, lodging, restaurant,
     tourPage, lodgingPage, restaurantPage,
     tourHasNext, lodgingHasNext, restaurantHasNext,
     isLoading, isPetFriendly,
     fetchAllRecommendations, fetchAllRecommendationsNoAuth,
-    doSearchPlaces, loadMorePlaces, resetPlaces, setPetFriendly
+    loadMorePlaces, resetPlaces, setPetFriendly
   ]);
 
   return (
