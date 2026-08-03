@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  StyleProp,
+  ViewStyle,
   ActivityIndicator,
 } from 'react-native';
 import { CornerDownRight, MessageCircle, Send } from 'lucide-react-native';
@@ -28,6 +30,95 @@ interface CommentSectionProps {
   commentCount: number;
 }
 
+/**
+ * 입력 중인 글자를 부모가 아니라 입력창이 직접 들고 있게 한다.
+ *
+ * 예전에는 본문·답글·수정 텍스트가 모두 CommentSection의 state였다. 목록도 같은
+ * 컴포넌트가 그리기 때문에 한 글자 칠 때마다 모든 댓글 행이 다시 렌더됐다.
+ */
+interface CommentComposerProps {
+  placeholder: string;
+  editable?: boolean;
+  submitting?: boolean;
+  /** 답글 입력창은 들여쓰기가 달라 바깥 여백을 따로 받는다. */
+  containerStyle?: StyleProp<ViewStyle>;
+  /** 등록에 성공하면 true. 그때만 입력창을 비운다. */
+  onSubmit: (text: string) => Promise<boolean>;
+}
+
+const CommentComposer = React.memo(function CommentComposer({
+  placeholder,
+  editable = true,
+  submitting = false,
+  containerStyle,
+  onSubmit,
+}: CommentComposerProps) {
+  const [text, setText] = useState('');
+
+  const handlePress = async () => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    if (await onSubmit(trimmed)) {
+      setText('');
+    }
+  };
+
+  return (
+    <View style={containerStyle ?? styles.inputRow}>
+      <TextInput
+        style={styles.input}
+        placeholder={placeholder}
+        placeholderTextColor={theme.colors.textTertiary}
+        value={text}
+        onChangeText={setText}
+        editable={editable}
+        multiline
+      />
+      <TouchableOpacity
+        style={[styles.sendButton, !editable && styles.sendButtonDisabled]}
+        onPress={handlePress}
+        disabled={!editable || submitting}
+      >
+        <Send size={normalize(15)} color={theme.colors.white} />
+      </TouchableOpacity>
+    </View>
+  );
+});
+
+interface CommentEditorProps {
+  initialValue: string;
+  onSubmit: (text: string) => void;
+  onCancel: () => void;
+}
+
+const CommentEditor = React.memo(function CommentEditor({
+  initialValue,
+  onSubmit,
+  onCancel,
+}: CommentEditorProps) {
+  const [text, setText] = useState(initialValue);
+
+  return (
+    <View>
+      <TextInput
+        style={styles.editInput}
+        value={text}
+        onChangeText={setText}
+        multiline
+        autoFocus
+      />
+      <View style={styles.commentActions}>
+        <TouchableOpacity onPress={() => onSubmit(text)} hitSlop={6}>
+          <Text style={styles.actionPrimary}>저장</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onCancel} hitSlop={6}>
+          <Text style={styles.action}>취소</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+});
+
 /** 댓글 목록 + 작성/수정/삭제. 대댓글은 한 단계까지만 지원한다. */
 export default function CommentSection({
   postId,
@@ -37,11 +128,10 @@ export default function CommentSection({
   const user = useAuthStore(state => state.user);
   const isLoggedIn = !!user;
 
-  const [content, setContent] = useState('');
+  // 입력 중인 글자는 각 입력창이 들고 있다. 여기서는 "어느 댓글이 답글/수정
+  // 중인지"만 안다.
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
-  const [replyContent, setReplyContent] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editContent, setEditContent] = useState('');
 
   const { data: commentsPage, isLoading } = useComments(postId);
   const createComment = useCreateComment(postId);
@@ -71,52 +161,57 @@ export default function CommentSection({
     return { topLevel: top, repliesByParent: byParent };
   }, [commentsPage]);
 
-  const requireLogin = () => {
+  const requireLogin = useCallback(() => {
     showAlert({ title: '로그인 필요', message: '로그인 후 이용할 수 있어요.' });
-  };
+  }, [showAlert]);
 
-  const handleSubmit = async () => {
-    if (!isLoggedIn) return requireLogin();
-    const trimmed = content.trim();
-    if (!trimmed) return;
+  const handleSubmit = useCallback(
+    async (text: string) => {
+      if (!isLoggedIn) {
+        requireLogin();
+        return false;
+      }
 
-    try {
-      await createComment.mutateAsync({ content: trimmed });
-      setContent('');
-    } catch (error) {
-      showAlert({
-        title: '댓글 등록 실패',
-        message: getBackendErrorMessage(error),
-        type: 'error',
-      });
-    }
-  };
+      try {
+        await createComment.mutateAsync({ content: text });
+        return true;
+      } catch (error) {
+        showAlert({
+          title: '댓글 등록 실패',
+          message: getBackendErrorMessage(error),
+          type: 'error',
+        });
+        return false;
+      }
+    },
+    [createComment, isLoggedIn, requireLogin, showAlert],
+  );
 
-  const handleReplySubmit = async (parentId: number) => {
-    const trimmed = replyContent.trim();
-    if (!trimmed) return;
+  const handleReplySubmit = useCallback(
+    async (parentId: number, text: string) => {
+      try {
+        await createComment.mutateAsync({ content: text, parentId });
+        setReplyingTo(null);
+        return true;
+      } catch (error) {
+        showAlert({
+          title: '답글 등록 실패',
+          message: getBackendErrorMessage(error),
+          type: 'error',
+        });
+        return false;
+      }
+    },
+    [createComment, showAlert],
+  );
 
-    try {
-      await createComment.mutateAsync({ content: trimmed, parentId });
-      setReplyContent('');
-      setReplyingTo(null);
-    } catch (error) {
-      showAlert({
-        title: '답글 등록 실패',
-        message: getBackendErrorMessage(error),
-        type: 'error',
-      });
-    }
-  };
-
-  const handleEditSubmit = async (commentId: number) => {
-    const trimmed = editContent.trim();
+  const handleEditSubmit = async (commentId: number, text: string) => {
+    const trimmed = text.trim();
     if (!trimmed) return;
 
     try {
       await updateComment.mutateAsync({ commentId, content: trimmed });
       setEditingId(null);
-      setEditContent('');
     } catch (error) {
       showAlert({
         title: '댓글 수정 실패',
@@ -183,29 +278,11 @@ export default function CommentSection({
             </View>
 
             {isEditing ? (
-              <View>
-                <TextInput
-                  style={styles.editInput}
-                  value={editContent}
-                  onChangeText={setEditContent}
-                  multiline
-                  autoFocus
-                />
-                <View style={styles.commentActions}>
-                  <TouchableOpacity
-                    onPress={() => handleEditSubmit(comment.id)}
-                    hitSlop={6}
-                  >
-                    <Text style={styles.actionPrimary}>저장</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setEditingId(null)}
-                    hitSlop={6}
-                  >
-                    <Text style={styles.action}>취소</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+              <CommentEditor
+                initialValue={comment.content}
+                onSubmit={text => handleEditSubmit(comment.id, text)}
+                onCancel={() => setEditingId(null)}
+              />
             ) : (
               <>
                 <Text style={styles.commentText}>{comment.content}</Text>
@@ -216,7 +293,6 @@ export default function CommentSection({
                         setReplyingTo(
                           replyingTo === comment.id ? null : comment.id,
                         );
-                        setReplyContent('');
                         setEditingId(null);
                       }}
                       hitSlop={6}
@@ -229,7 +305,6 @@ export default function CommentSection({
                       <TouchableOpacity
                         onPress={() => {
                           setEditingId(comment.id);
-                          setEditContent(comment.content);
                           setReplyingTo(null);
                         }}
                         hitSlop={6}
@@ -253,23 +328,12 @@ export default function CommentSection({
         </View>
 
         {replyingTo === comment.id && (
-          <View style={styles.replyInputRow}>
-            <TextInput
-              style={styles.input}
-              placeholder="답글을 입력하세요"
-              placeholderTextColor={theme.colors.textTertiary}
-              value={replyContent}
-              onChangeText={setReplyContent}
-              multiline
-            />
-            <TouchableOpacity
-              style={styles.sendButton}
-              onPress={() => handleReplySubmit(comment.id)}
-              disabled={createComment.isPending}
-            >
-              <Send size={normalize(15)} color={theme.colors.white} />
-            </TouchableOpacity>
-          </View>
+          <CommentComposer
+            placeholder="답글을 입력하세요"
+            containerStyle={styles.replyInputRow}
+            submitting={createComment.isPending}
+            onSubmit={text => handleReplySubmit(comment.id, text)}
+          />
         )}
 
         {replies.map(reply => renderComment(reply, true))}
@@ -284,26 +348,14 @@ export default function CommentSection({
         <Text style={styles.headerTitle}>댓글 {commentCount}</Text>
       </View>
 
-      <View style={styles.inputRow}>
-        <TextInput
-          style={styles.input}
-          placeholder={
-            isLoggedIn ? '댓글을 입력하세요' : '로그인 후 댓글을 쓸 수 있어요'
-          }
-          placeholderTextColor={theme.colors.textTertiary}
-          value={content}
-          onChangeText={setContent}
-          editable={isLoggedIn}
-          multiline
-        />
-        <TouchableOpacity
-          style={[styles.sendButton, !isLoggedIn && styles.sendButtonDisabled]}
-          onPress={handleSubmit}
-          disabled={!isLoggedIn || createComment.isPending}
-        >
-          <Send size={normalize(15)} color={theme.colors.white} />
-        </TouchableOpacity>
-      </View>
+      <CommentComposer
+        placeholder={
+          isLoggedIn ? '댓글을 입력하세요' : '로그인 후 댓글을 쓸 수 있어요'
+        }
+        editable={isLoggedIn}
+        submitting={createComment.isPending}
+        onSubmit={handleSubmit}
+      />
 
       {isLoading ? (
         <ActivityIndicator
