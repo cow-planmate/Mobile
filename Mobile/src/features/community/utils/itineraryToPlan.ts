@@ -12,6 +12,8 @@ import { Itinerary, ItineraryDay, ItineraryItem } from '../types';
 const DEFAULT_DAY_START = '09:00';
 const DEFAULT_DAY_END = '20:00';
 const DEFAULT_BLOCK_MINUTES = 30;
+/** 스냅샷에 장소명이 비어 있을 때 대신 넣을 값 */
+const DEFAULT_PLACE_NAME = '이름 없는 장소';
 
 export interface CreatePlanRequestBody {
   planFrame: {
@@ -43,8 +45,11 @@ const toMinutes = (hhmm: string): number => {
   return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
 };
 
+/** 하루의 마지막 분(23:59). 이 뒤로는 같은 날짜에 블록을 둘 수 없다. */
+const DAY_LAST_MINUTE = 23 * 60 + 59;
+
 const toHHmm = (minutes: number): string => {
-  const clamped = Math.max(0, Math.min(23 * 60 + 59, minutes));
+  const clamped = Math.max(0, Math.min(DAY_LAST_MINUTE, minutes));
   const h = String(Math.floor(clamped / 60)).padStart(2, '0');
   const m = String(clamped % 60).padStart(2, '0');
   return `${h}:${m}`;
@@ -62,21 +67,38 @@ const addDays = (start: Date, offset: number): string => {
  * Backend-v2의 validateNoDuplicateBlockTimes는 시작 시각이 같은 블록을 거부하므로,
  * 스냅샷에 겹치는 블록이 있으면 400이 되어 가져가기 전체가 실패한다.
  * 순서를 지키기 위해 겹치는 블록은 앞 블록 종료 시각 뒤로 민다.
+ *
+ * 밀다 보면 자정을 넘길 수 있는데, 그때 시각을 23:59로 잘라내면 여러 블록의
+ * 시작 시각이 23:59로 같아져 막으려던 400이 그대로 난다. 그래서 뒤에 남은
+ * 블록 수만큼 자리를 미리 비워 두고, 다음 블록은 항상 최소 1분 뒤에서 시작시킨다.
  */
 const resolveOverlaps = (
   items: ItineraryItem[],
 ): { start: string; end: string; shifted: boolean }[] => {
   let cursor = -1;
-  return items.map(item => {
+  return items.map((item, index) => {
     const rawStart = toMinutes(item.time);
     const rawEnd = item.endTime
       ? toMinutes(item.endTime)
       : rawStart + DEFAULT_BLOCK_MINUTES;
     const duration = Math.max(rawEnd - rawStart, DEFAULT_BLOCK_MINUTES);
-    const start = Math.max(rawStart, cursor);
-    const end = start + duration;
-    cursor = end;
-    return { start: toHHmm(start), end: toHHmm(end), shifted: start !== rawStart };
+
+    // 남은 블록마다 1분씩은 남겨 둬야 시작 시각이 서로 겹치지 않는다.
+    const latestStart = Math.max(
+      0,
+      DAY_LAST_MINUTE - (items.length - 1 - index),
+    );
+    const start = Math.min(Math.max(rawStart, cursor), latestStart);
+    const end = Math.min(Math.max(start + duration, start), DAY_LAST_MINUTE);
+
+    // 잘려서 길이가 0이 된 블록 뒤에도 다음 시작 시각은 반드시 더 커야 한다.
+    cursor = Math.max(end, start + 1);
+
+    return {
+      start: toHHmm(start),
+      end: toHHmm(end),
+      shifted: start !== rawStart,
+    };
   });
 };
 
@@ -114,7 +136,9 @@ export const buildCreatePlanRequest = (
       return {
         date,
         blockCategory: item.category ?? 'FREE',
-        placeName: item.place,
+        // 서버 placeName은 @NotBlank다. 스냅샷에 빈 이름이 하나라도 있으면
+        // 가져가기 전체가 400으로 실패하므로 여기서 대체한다.
+        placeName: item.place?.trim() || DEFAULT_PLACE_NAME,
         placeId: item.placeId ?? null,
         placeContentTypeId: item.placeContentTypeId ?? null,
         placeAddress: item.placeAddress ?? item.description ?? null,
