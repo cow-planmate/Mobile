@@ -62,10 +62,17 @@ export interface RouteTableResponse {
   profile: string;
 }
 
-/** 대중교통 구간의 경유 정류장 */
+/** 대중교통 구간의 경유 정류장 (TransitStopDto) */
 export interface TransitStop {
-  stationName?: string | null;
-  [key: string]: unknown;
+  /** 구간 내 순번 */
+  index: number | null;
+  stationName: string | null;
+  /** 경도 */
+  x: number | null;
+  /** 위도 */
+  y: number | null;
+  /** 정류장 ARS 번호 (버스 정류장만) */
+  arsID: string | null;
 }
 
 /** 대중교통 경로의 구간별 상세 (노선/승하차 정류장 수준) */
