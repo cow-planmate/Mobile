@@ -8,8 +8,15 @@ import Svg, {
   G,
   SvgProps,
 } from 'react-native-svg';
+import type { StyleProp, ViewStyle } from 'react-native';
 
-const AnimatedG = Animated.createAnimatedComponent(G);
+/**
+ * react-native-svg의 G는 props 타입에 style을 선언하지 않는다.
+ * 런타임에서는 Animated가 style을 적용하므로, 애니메이션 style을 받도록 타입만 넓힌다.
+ */
+const AnimatedG = Animated.createAnimatedComponent(G) as React.ComponentType<
+  React.ComponentProps<typeof G> & { style?: StyleProp<ViewStyle> }
+>;
 
 // ── Reusable primitives ──
 

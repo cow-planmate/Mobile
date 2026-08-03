@@ -3,6 +3,7 @@ import React, {
   useContext,
   useState,
   useCallback,
+  useMemo,
   useRef,
   useEffect,
 } from 'react';
@@ -79,14 +80,30 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
   const [options, setOptions] = useState<AlertOptions | null>(null);
   const queueRef = useRef<AlertOptions[]>([]);
   const pendingCallbackRef = useRef<(() => void) | undefined>(undefined);
+  /**
+   * showAlert의 참조를 고정하기 위한 표시 여부 미러.
+   *
+   * showAlert가 visible state에 의존하면 알림이 열리고 닫힐 때마다 컨텍스트
+   * 값이 새로 만들어져 useAlert를 쓰는 모든 화면(26곳)이 재렌더된다.
+   * 같은 틱에 showAlert가 두 번 호출될 때 state는 아직 갱신되지 않아
+   * 두 번째 알림이 큐에 들어가지 않고 첫 알림을 덮어쓰는 문제도 함께 해결된다.
+   */
+  const visibleRef = useRef(false);
 
   // Animation values
   const backdrop = useSharedValue(0);
   const scale = useSharedValue(0.92);
   const opacity = useSharedValue(0);
 
+  const showAlertInternal = useCallback((opts: AlertOptions) => {
+    visibleRef.current = true;
+    setOptions(opts);
+    setVisible(true);
+  }, []);
+
   // Stable JS callback invoked via runOnJS after animate-out finishes
   const onAnimateOutDone = useCallback(() => {
+    visibleRef.current = false;
     setVisible(false);
     setOptions(null);
     const cb = pendingCallbackRef.current;
@@ -97,7 +114,7 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
       const next = queueRef.current.shift()!;
       setTimeout(() => showAlertInternal(next), 120);
     }
-  }, []);
+  }, [showAlertInternal]);
 
   const animateIn = useCallback(() => {
     backdrop.value = withTiming(1, {
@@ -138,11 +155,6 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
     [backdrop, scale, opacity, onAnimateOutDone],
   );
 
-  const showAlertInternal = useCallback((opts: AlertOptions) => {
-    setOptions(opts);
-    setVisible(true);
-  }, []);
-
   useEffect(() => {
     if (visible && options) {
       // Reset to initial values before animating in
@@ -157,14 +169,17 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
 
   const showAlert = useCallback(
     (opts: AlertOptions) => {
-      if (visible) {
+      if (visibleRef.current) {
         queueRef.current.push(opts);
         return;
       }
       showAlertInternal(opts);
     },
-    [visible, showAlertInternal],
+    [showAlertInternal],
   );
+
+  // showAlert 참조가 고정되므로 컨텍스트 값도 마운트 이후 변하지 않는다.
+  const contextValue = useMemo(() => ({ showAlert }), [showAlert]);
 
   const handlePress = useCallback(
     (button?: AlertButton) => {
@@ -192,7 +207,7 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
   const { Icon, color } = ICON_MAP[alertType];
 
   return (
-    <AlertContext.Provider value={{ showAlert }}>
+    <AlertContext.Provider value={contextValue}>
       {children}
       <Modal
         visible={visible}

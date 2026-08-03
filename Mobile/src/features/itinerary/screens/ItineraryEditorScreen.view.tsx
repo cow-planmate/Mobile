@@ -1,4 +1,4 @@
-import React, { useCallback, createContext, useContext, useMemo, useState, useRef } from 'react';
+import React, { useCallback, createContext, useContext, useMemo, useState } from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import {
   View,
@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { TabActions, useNavigation } from '@react-navigation/native';
+import { TabActions } from '@react-navigation/native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -26,7 +26,6 @@ import TimelineItem, {
   Place,
 } from '../components/TimelineItem';
 import { AirplaneLoading, ScheduleEditModal, TimePickerModal } from '../../../components/common';
-import DetailPopup from '../components/DetailPopup';
 import PlaceRecommendationList from '../components/PlaceRecommendationList';
 import { Day } from '../../../contexts/ItineraryContext';
 import { SimpleWeatherInfo } from '../../../api/trips';
@@ -38,12 +37,15 @@ import {
   MINUTE_HEIGHT,
   MIN_ITEM_HEIGHT,
   GRID_SNAP_HEIGHT,
+  GRID_TOP_OFFSET,
 } from './ItineraryEditorScreen.styles';
 import {
   timeToMinutes,
   timeToDate,
-  dateToTime,
   minutesToTime,
+  formatDateLocal,
+  DEFAULT_DAY_START,
+  DEFAULT_DAY_END,
 } from '../../../utils/timeUtils';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
@@ -52,7 +54,6 @@ import {
   faMapPin,
   faCheck,
   faCircleInfo,
-  faLocationDot,
   faRedo,
   faUserPlus,
   faUndo,
@@ -284,10 +285,17 @@ const TimeGridBackground = React.memo(
   },
 );
 
-const DraggableTimelineItem = ({
+/**
+ * 콜백은 place를 인자로 받는 형태로 둔다.
+ * 부모에서 `() => onDeletePlace(place.id)` 같은 인라인 함수를 넘기면 매 렌더마다
+ * prop 참조가 바뀌어 React.memo가 무력화되고, 블록 하나를 드래그할 때마다
+ * 그날의 모든 타임라인 아이템(제스처 핸들러 포함)이 다시 만들어진다.
+ */
+const DraggableTimelineItem = React.memo(({
   place,
   offsetMinutes,
   maxEndMinutes,
+  minStartMinutes,
   onDelete,
   onEditTime,
   onDragEnd,
@@ -298,19 +306,26 @@ const DraggableTimelineItem = ({
   place: Place;
   offsetMinutes: number;
   maxEndMinutes: number;
-  onDelete: () => void;
-  onEditTime: (type: 'startTime' | 'endTime') => void;
+  minStartMinutes: number;
+  onDelete: (placeId: string) => void;
+  onEditTime: (
+    placeId: string,
+    type: 'startTime' | 'endTime',
+    time: string,
+  ) => void;
   onDragEnd: (
     placeId: string,
     newStartMinutes: number,
     newEndMinutes: number,
   ) => void;
-  onPress?: () => void;
+  onPress?: (place: Place) => void;
   onOverflow?: () => void;
   scrollRef?: React.RefObject<ScrollView | null>;
 }) => {
-  const GRID_TOP_OFFSET = 40;
-  const MIN_TOP_PX = GRID_TOP_OFFSET;
+  // 하한도 상한(maxEndMinutes)과 동일하게 실제 운영 시작시각 기준으로 잡는다.
+  // 그리드는 시 단위로 내림해 그리므로 offsetMinutes와 어긋날 수 있다.
+  const MIN_TOP_PX =
+    GRID_TOP_OFFSET + (minStartMinutes - offsetMinutes) * MINUTE_HEIGHT;
   const MAX_BOTTOM_PX =
     GRID_TOP_OFFSET + (maxEndMinutes - offsetMinutes) * MINUTE_HEIGHT;
 
@@ -344,7 +359,7 @@ const DraggableTimelineItem = ({
       height.value = withSpring(newHeight);
     }
     previewHeight.value = newHeight;
-  }, [place.startTime, place.endTime, offsetMinutes, top, height]);
+  }, [place.startTime, place.endTime, offsetMinutes, top, height, previewHeight]);
 
   const startY = useSharedValue(0);
   const startHeight = useSharedValue(0);
@@ -360,15 +375,32 @@ const DraggableTimelineItem = ({
   const dragOpacity = useSharedValue(1);
   const dragScale = useSharedValue(1);
 
+  const placeId = place.id;
+
   const handleDeleteWithAnim = React.useCallback(() => {
     exitScale.value = withTiming(0.8, { duration: 250 });
     exitTranslateX.value = withTiming(400, { duration: 250 });
     exitOpacity.value = withTiming(0, { duration: 250 }, (finished) => {
       if (finished) {
-        runOnJS(onDelete)();
+        runOnJS(onDelete)(placeId);
       }
     });
-  }, [onDelete, exitOpacity, exitScale, exitTranslateX]);
+  }, [onDelete, placeId, exitOpacity, exitScale, exitTranslateX]);
+
+  const handleEditTime = React.useCallback(
+    (type: 'startTime' | 'endTime') => {
+      onEditTime(
+        placeId,
+        type,
+        type === 'startTime' ? place.startTime : place.endTime,
+      );
+    },
+    [onEditTime, placeId, place.startTime, place.endTime],
+  );
+
+  const handlePress = React.useCallback(() => {
+    onPress?.(place);
+  }, [onPress, place]);
 
   // Auto-scroll helper
   const scrollIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(
@@ -428,7 +460,7 @@ const DraggableTimelineItem = ({
         }
       }
     })
-    .onEnd(event => {
+    .onEnd(() => {
       isDragging.value = 0;
       dragOpacity.value = withSpring(1);
       dragScale.value = withSpring(1);
@@ -509,13 +541,16 @@ const DraggableTimelineItem = ({
         Math.round((top.value - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
           GRID_SNAP_HEIGHT +
         GRID_TOP_OFFSET;
+      // 하단은 스냅되지 않은 원본이라 그대로 빼면 15분 배수가 깨진다.
+      // 애니메이션 위치와 저장되는 시각이 어긋나지 않도록 높이도 재스냅한다.
       const bottom = startY.value + startHeight.value;
       let finalTop = Math.max(MIN_TOP_PX, snappedTop);
-      let finalHeight = bottom - finalTop;
+      let finalHeight =
+        Math.round((bottom - finalTop) / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
 
       if (finalHeight < MIN_ITEM_HEIGHT) {
         finalHeight = MIN_ITEM_HEIGHT;
-        finalTop = bottom - MIN_ITEM_HEIGHT;
+        finalTop = Math.max(MIN_TOP_PX, bottom - MIN_ITEM_HEIGHT);
       }
 
       top.value = withSpring(finalTop);
@@ -573,7 +608,12 @@ const DraggableTimelineItem = ({
         Math.round(height.value / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
       let finalHeight = Math.max(snappedHeight, MIN_ITEM_HEIGHT);
       if (top.value + finalHeight > MAX_BOTTOM_PX) {
-        finalHeight = MAX_BOTTOM_PX - top.value;
+        // 상한에 맞춰 자를 때도 15분 배수를 유지한다(내림).
+        finalHeight = Math.max(
+          Math.floor((MAX_BOTTOM_PX - top.value) / GRID_SNAP_HEIGHT) *
+            GRID_SNAP_HEIGHT,
+          MIN_ITEM_HEIGHT,
+        );
         if (onOverflow) runOnJS(onOverflow)();
       }
 
@@ -662,8 +702,8 @@ const DraggableTimelineItem = ({
             <TimelineItem
               item={place}
               onDelete={handleDeleteWithAnim}
-              onEditTime={onEditTime}
-              onPress={onPress}
+              onEditTime={handleEditTime}
+              onPress={handlePress}
               style={styles.flex1}
             />
           </Animated.View>
@@ -687,7 +727,8 @@ const DraggableTimelineItem = ({
       </Animated.View>
     </>
   );
-};
+});
+DraggableTimelineItem.displayName = 'DraggableTimelineItem';
 
 const TimelineComponent = React.memo(
   React.forwardRef<
@@ -713,7 +754,6 @@ const TimelineComponent = React.memo(
       setPreviewStartTime?: (time: string | null) => void;
       setPreviewEndTime?: (time: string | null) => void;
       onConfirmPlacement?: () => void;
-      onCancelPlacement?: () => void;
       onCancelPreview?: () => void;
     }
   >(
@@ -731,7 +771,6 @@ const TimelineComponent = React.memo(
         setPreviewStartTime,
         setPreviewEndTime,
         onConfirmPlacement,
-        onCancelPlacement,
         onCancelPreview,
       },
       ref,
@@ -757,26 +796,34 @@ const TimelineComponent = React.memo(
         );
       }, [bannerOpacity, bannerTranslateY]);
 
-      const { gridHours, offsetMinutes, maxEndMinutes, endHour } =
-        React.useMemo(() => {
-          const startTimeStr = selectedDay?.startTime || '09:00:00';
-          const endTimeStr = selectedDay?.endTime || '20:00:00';
-          const minHour = Math.floor(timeToMinutes(startTimeStr) / 60);
-          const endMin = timeToMinutes(endTimeStr);
-          const maxHour = Math.ceil(endMin / 60);
+      const {
+        gridHours,
+        offsetMinutes,
+        maxEndMinutes,
+        minStartMinutes,
+        endHour,
+      } = React.useMemo(() => {
+        const startTimeStr = selectedDay?.startTime || DEFAULT_DAY_START;
+        const endTimeStr = selectedDay?.endTime || DEFAULT_DAY_END;
+        const startMin = timeToMinutes(startTimeStr);
+        const minHour = Math.floor(startMin / 60);
+        const endMin = timeToMinutes(endTimeStr);
+        const maxHour = Math.ceil(endMin / 60);
 
-          const hours = Array.from(
-            { length: maxHour - minHour + 1 },
-            (_, i) => i + minHour,
-          );
-          const offset = minHour * 60;
-          return {
-            gridHours: hours,
-            offsetMinutes: offset,
-            maxEndMinutes: endMin,
-            endHour: maxHour,
-          };
-        }, [selectedDay?.startTime, selectedDay?.endTime]);
+        const hours = Array.from(
+          { length: maxHour - minHour + 1 },
+          (_, i) => i + minHour,
+        );
+        const offset = minHour * 60;
+        return {
+          gridHours: hours,
+          offsetMinutes: offset,
+          maxEndMinutes: endMin,
+          // 그리드는 시(hour) 단위로 내림해 그리지만 드래그 하한은 실제 시작시각이다.
+          minStartMinutes: startMin,
+          endHour: maxHour,
+        };
+      }, [selectedDay?.startTime, selectedDay?.endTime]);
 
       return (
         <View style={styles.tabContentContainer}>
@@ -791,11 +838,13 @@ const TimelineComponent = React.memo(
               onPress={(evt) => {
                 if (!pendingPlace || !setPreviewStartTime || !setPreviewEndTime) return;
                 const clickY = evt.nativeEvent.locationY;
-                const minutes = (clickY - 40) / MINUTE_HEIGHT + offsetMinutes;
+                const minutes =
+                  (clickY - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
                 const snappedMinutes = Math.floor(minutes / 15) * 15;
-                const dayStartMinutes = timeToMinutes(selectedDay?.startTime || '09:00:00');
-                const dayEndMinutes = timeToMinutes(selectedDay?.endTime || '20:00:00');
-                const clampedMinutes = Math.max(dayStartMinutes, Math.min(snappedMinutes, dayEndMinutes - 60));
+                const clampedMinutes = Math.max(
+                  minStartMinutes,
+                  Math.min(snappedMinutes, maxEndMinutes - 60),
+                );
                 
                 const startTimeStr = minutesToTime(clampedMinutes);
                 const endTimeStr = minutesToTime(clampedMinutes + 60);
@@ -812,16 +861,11 @@ const TimelineComponent = React.memo(
                     place={place}
                     offsetMinutes={offsetMinutes}
                     maxEndMinutes={maxEndMinutes}
-                    onDelete={() => onDeletePlace(place.id)}
-                    onEditTime={type =>
-                      onEditPlaceTime(
-                        place.id,
-                        type,
-                        type === 'startTime' ? place.startTime : place.endTime,
-                      )
-                    }
+                    minStartMinutes={minStartMinutes}
+                    onDelete={onDeletePlace}
+                    onEditTime={onEditPlaceTime}
                     onDragEnd={onUpdatePlaceTimes}
-                    onPress={() => onPressPlace?.(place)}
+                    onPress={onPressPlace}
                     onOverflow={showOverflowBanner}
                     scrollRef={ref as React.RefObject<ScrollView | null>}
                   />
@@ -831,8 +875,16 @@ const TimelineComponent = React.memo(
                   <View
                     style={{
                       position: 'absolute',
-                      top: (timeToMinutes(previewStartTime) - offsetMinutes) * MINUTE_HEIGHT + 40,
-                      height: Math.max((timeToMinutes(previewEndTime) - timeToMinutes(previewStartTime)) * MINUTE_HEIGHT, 45),
+                      top:
+                        (timeToMinutes(previewStartTime) - offsetMinutes) *
+                          MINUTE_HEIGHT +
+                        GRID_TOP_OFFSET,
+                      height: Math.max(
+                        (timeToMinutes(previewEndTime) -
+                          timeToMinutes(previewStartTime)) *
+                          MINUTE_HEIGHT,
+                        MIN_ITEM_HEIGHT,
+                      ),
                       left: 60,
                       right: 15,
                       borderWidth: 2,
@@ -912,15 +964,15 @@ export const EditorStateContext = createContext<{
   handleAddPlace: any;
   planId: any;
   destination: any;
+  travelId?: any;
   onUndo: any;
-  onRedo: any;
+  onRedo?: () => void;
   pendingPlace: any;
   previewStartTime: any;
   previewEndTime: any;
   setPreviewStartTime: any;
   setPreviewEndTime: any;
   onConfirmPlacement: any;
-  onCancelPlacement: any;
   onCancelPreview: any;
 } | null>(null);
 
@@ -943,11 +995,12 @@ const TimelineTabScreen = React.memo(() => {
     setPreviewStartTime,
     setPreviewEndTime,
     onConfirmPlacement,
-    onCancelPlacement,
     onCancelPreview,
   } = state;
 
-  const localDateStr = selectedDay ? selectedDay.date.toISOString().split('T')[0] : '';
+  // toISOString()은 UTC 기준이라 KST 자정에 만들어진 Date에서 하루가 밀린다.
+  // weatherMap의 키는 로컬 날짜이므로 formatDateLocal로 맞춰야 조회가 어긋나지 않는다.
+  const localDateStr = selectedDay ? formatDateLocal(selectedDay.date) : '';
   const currentWeather = selectedDay ? weatherMap[localDateStr] : undefined;
 
   return (
@@ -979,7 +1032,6 @@ const TimelineTabScreen = React.memo(() => {
         setPreviewStartTime={setPreviewStartTime}
         setPreviewEndTime={setPreviewEndTime}
         onConfirmPlacement={onConfirmPlacement}
-        onCancelPlacement={onCancelPlacement}
         onCancelPreview={onCancelPreview}
       />
 
@@ -992,13 +1044,23 @@ const TimelineTabScreen = React.memo(() => {
         >
           <FontAwesomeIcon icon={faUndo} color="#111827" size={16} />
         </TouchableOpacity>
+        {/* onRedo 미전달 = 비활성. 서버 HistoryService가 삭제 redo에 대상 ID를
+            싣지 않아 현재 다시 실행을 지원하지 않는다. */}
         <TouchableOpacity
           testID="btn-redo"
-          style={styles.floatingHistoryButton}
+          style={[
+            styles.floatingHistoryButton,
+            !onRedo && styles.floatingHistoryButtonDisabled,
+          ]}
           onPress={onRedo}
+          disabled={!onRedo}
           activeOpacity={0.8}
         >
-          <FontAwesomeIcon icon={faRedo} color="#111827" size={16} />
+          <FontAwesomeIcon
+            icon={faRedo}
+            color={onRedo ? '#111827' : '#9CA3AF'}
+            size={16}
+          />
         </TouchableOpacity>
       </View>
     </View>
@@ -1008,13 +1070,14 @@ const TimelineTabScreen = React.memo(() => {
 const AddPlaceTabScreen = React.memo(() => {
   const state = useContext(EditorStateContext);
   if (!state) return null;
-  const { handleAddPlace, planId, destination } = state;
+  const { handleAddPlace, planId, destination, travelId } = state;
 
   return (
     <PlaceRecommendationList
       onAddPlace={handleAddPlace}
       planId={planId}
       destination={destination}
+      travelId={travelId}
     />
   );
 });
@@ -1050,7 +1113,6 @@ export interface ItineraryEditorScreenViewProps {
   handleDeletePlace: (placeId: string) => void;
   handleAddPlace: (place: Omit<Place, 'startTime' | 'endTime'>) => void;
   selectedDay: Day | null;
-  onlineUsers: any[];
   isScheduleEditVisible: boolean;
   setScheduleEditVisible: (v: boolean) => void;
   onConfirmScheduleEdit: (updatedDays: any[]) => void;
@@ -1061,16 +1123,13 @@ export interface ItineraryEditorScreenViewProps {
   onOpenMap: () => void;
   onOpenShare: () => void;
   onUndo: () => void;
-  onRedo: () => void;
+  onRedo?: () => void;
   participantsCount: number;
   // New props for detail popup & recommendations
   planId: string | null;
-  detailPlace: Place | null;
-  isDetailVisible: boolean;
+  travelId?: number | null;
   onOpenDetail: (place: Place) => void;
-  onCloseDetail: () => void;
   weatherMap: Record<string, SimpleWeatherInfo>;
-  initialTabName?: string;
   onOpenPlanInfo: () => void;
   onGoBack?: () => void;
   activeTab?: '타임라인' | '장소추가';
@@ -1105,7 +1164,6 @@ export default function ItineraryEditorScreenView({
   handleDeletePlace,
   handleAddPlace,
   selectedDay,
-  onlineUsers,
   isScheduleEditVisible,
   setScheduleEditVisible,
   onConfirmScheduleEdit,
@@ -1119,12 +1177,9 @@ export default function ItineraryEditorScreenView({
   onRedo,
   participantsCount,
   planId,
-  detailPlace,
-  isDetailVisible,
+  travelId,
   onOpenDetail,
-  onCloseDetail,
   weatherMap,
-  initialTabName,
   onOpenPlanInfo,
   pendingPlace,
   previewStartTime,
@@ -1137,7 +1192,6 @@ export default function ItineraryEditorScreenView({
   activeTab,
   setActiveTab,
 }: ItineraryEditorScreenViewProps) {
-  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const [inputWidth, setInputWidth] = useState(120);
   const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
@@ -1174,6 +1228,7 @@ export default function ItineraryEditorScreenView({
       handleAddPlace,
       planId,
       destination,
+      travelId,
       onUndo,
       onRedo,
       pendingPlace,
@@ -1182,7 +1237,6 @@ export default function ItineraryEditorScreenView({
       setPreviewStartTime,
       setPreviewEndTime,
       onConfirmPlacement,
-      onCancelPlacement,
       onCancelPreview,
     };
   }, [
@@ -1196,6 +1250,7 @@ export default function ItineraryEditorScreenView({
     handleAddPlace,
     planId,
     destination,
+    travelId,
     onUndo,
     onRedo,
     pendingPlace,
@@ -1204,7 +1259,6 @@ export default function ItineraryEditorScreenView({
     setPreviewStartTime,
     setPreviewEndTime,
     onConfirmPlacement,
-    onCancelPlacement,
     onCancelPreview,
   ]);
 
@@ -1314,7 +1368,6 @@ export default function ItineraryEditorScreenView({
           onLayout={(e) => setDayScrollLayoutWidth(e.nativeEvent.layout.width)}
           onScroll={(e) => setDayScrollX(e.nativeEvent.contentOffset.x)}
           scrollEventThrottle={16}
-          clipToPadding={false}
         >
           {days.map((day, index) => {
             const isSelected = selectedDayIndex === index;
@@ -1476,16 +1529,6 @@ export default function ItineraryEditorScreenView({
         onClose={() => setScheduleEditVisible(false)}
         onConfirm={onConfirmScheduleEdit}
       />
-
-      {/* {detailPlace && (
-        <DetailPopup
-          visible={isDetailVisible}
-          place={detailPlace}
-          onClose={onCloseDetail}
-          onUpdateMemo={onUpdateMemo}
-          onDelete={onDeleteFromDetail}
-        />
-      )} */}
     </View>
   );
 }

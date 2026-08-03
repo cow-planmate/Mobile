@@ -3,6 +3,10 @@ import renderer, { act } from 'react-test-renderer';
 import { PlacesProvider, usePlaces } from '../src/contexts/PlacesContext';
 import { PlaceVO } from '../src/api/trips';
 
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
 // Mock react-native-reanimated to prevent issues during testing
 jest.mock('react-native-reanimated', () => {
   return {

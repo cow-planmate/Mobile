@@ -7,10 +7,23 @@ import {
   TextInput,
   StyleSheet,
   Pressable,
+  ScrollView,
 } from 'react-native';
 import DatePicker from 'react-native-date-picker';
-import { X } from 'lucide-react-native';
+import FastImage from 'react-native-fast-image';
+import { Linking } from 'react-native';
+import { X, Map as MapIcon } from 'lucide-react-native';
 import { theme } from '../../../theme/theme';
+import { useAlert } from '../../../contexts/AlertContext';
+import { CATEGORY_COLORS } from './TimelineItem.styles';
+
+const CATEGORY_NAMES: { [key: number]: string } = {
+  0: '관광지',
+  1: '숙소',
+  2: '식당',
+  3: '직접 추가',
+  4: '검색',
+};
 
 const COLORS = theme.colors;
 const FONTS = {
@@ -35,6 +48,7 @@ export default function PlaceEditModal({
   onSave,
   onDelete,
 }: PlaceEditModalProps) {
+  const { showAlert } = useAlert();
   const [memo, setMemo] = useState('');
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date());
@@ -67,6 +81,18 @@ export default function PlaceEditModal({
         .padStart(2, '0')}:00`;
     };
 
+    // 종료가 시작보다 이르면 duration이 음수가 되어 시간 충돌 해결이 붕괴한다.
+    if (
+      startTime.getHours() * 60 + startTime.getMinutes() >=
+      endTime.getHours() * 60 + endTime.getMinutes()
+    ) {
+      showAlert({
+        title: '시간 설정 오류',
+        message: '종료 시간은 시작 시간보다 늦어야 합니다.',
+      });
+      return;
+    }
+
     onSave({
       ...place,
       memo,
@@ -81,7 +107,27 @@ export default function PlaceEditModal({
     onClose();
   };
 
+  /** 외부 지도 앱으로 연다. place_url이 있으면 그것을, 없으면 좌표를 쓴다. */
+  const handleOpenMap = () => {
+    if (place.place_url) {
+      void Linking.openURL(place.place_url);
+      return;
+    }
+    if (place.latitude && place.longitude) {
+      void Linking.openURL(
+        `https://maps.google.com/?q=${place.latitude},${place.longitude}`,
+      );
+    }
+  };
+
   if (!place) return null;
+
+  const categoryId = place.categoryId ?? 4;
+  const categoryColor =
+    CATEGORY_COLORS[categoryId as keyof typeof CATEGORY_COLORS] ||
+    CATEGORY_COLORS[4];
+  const categoryName = CATEGORY_NAMES[categoryId] || place.type || '기타';
+  const canOpenMap = !!place.place_url || !!(place.latitude && place.longitude);
 
   return (
     <Modal
@@ -99,8 +145,78 @@ export default function PlaceEditModal({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.content}>
-            <Text style={styles.placeName}>{place.name}</Text>
+          <ScrollView
+            style={styles.contentScroll}
+            contentContainerStyle={styles.content}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            {/* ── 장소 정보 ── */}
+            <View style={styles.infoSection}>
+              {place.imageUrl ? (
+                <FastImage
+                  source={{
+                    uri: place.imageUrl,
+                    priority: FastImage.priority.normal,
+                  }}
+                  style={styles.photo}
+                  resizeMode={FastImage.resizeMode.cover}
+                />
+              ) : (
+                <View style={[styles.photo, styles.photoPlaceholder]}>
+                  <Text style={styles.photoPlaceholderText}>
+                    {place.name?.charAt(0) || '?'}
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.infoTextGroup}>
+                <Text style={styles.placeName} numberOfLines={2}>
+                  {place.name}
+                </Text>
+
+                <View style={styles.badgeRow}>
+                  <View
+                    style={[
+                      styles.categoryBadge,
+                      {
+                        backgroundColor: categoryColor.bg,
+                        borderColor: categoryColor.border,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryBadgeText,
+                        { color: categoryColor.border },
+                      ]}
+                    >
+                      {categoryName}
+                    </Text>
+                  </View>
+                  {!!place.rating && place.rating > 0 && (
+                    <Text style={styles.ratingText}>⭐ {place.rating}</Text>
+                  )}
+                </View>
+
+                {!!place.address && (
+                  <Text style={styles.addressText} numberOfLines={2}>
+                    {place.address}
+                  </Text>
+                )}
+              </View>
+            </View>
+
+            {canOpenMap && (
+              <TouchableOpacity
+                style={styles.mapButton}
+                onPress={handleOpenMap}
+                activeOpacity={0.8}
+              >
+                <MapIcon size={15} color="#111827" strokeWidth={1.5} />
+                <Text style={styles.mapButtonText}>지도에서 보기</Text>
+              </TouchableOpacity>
+            )}
 
             <View style={styles.row}>
               <View style={styles.timeContainer}>
@@ -161,7 +277,7 @@ export default function PlaceEditModal({
                 <Text style={styles.buttonText}>저장</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </ScrollView>
 
           <DatePicker
             modal
@@ -204,11 +320,15 @@ const styles = StyleSheet.create({
   },
   container: {
     width: '85%',
+    maxHeight: '85%',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 24,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+  },
+  contentScroll: {
+    flexGrow: 0,
   },
   header: {
     flexDirection: 'row',
@@ -224,11 +344,79 @@ const styles = StyleSheet.create({
   content: {
     gap: 16,
   },
+  infoSection: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  photo: {
+    width: 72,
+    height: 72,
+    borderRadius: 10,
+    backgroundColor: '#F3F4F6',
+  },
+  photoPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  photoPlaceholderText: {
+    fontSize: 24,
+    fontFamily: FONTS.bold,
+    color: '#9CA3AF',
+  },
+  infoTextGroup: {
+    flex: 1,
+    justifyContent: 'center',
+  },
   placeName: {
     fontSize: 16,
     fontFamily: FONTS.semibold,
     color: '#111827',
-    marginBottom: 8,
+    marginBottom: 6,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  categoryBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  categoryBadgeText: {
+    fontSize: 11,
+    fontFamily: FONTS.semibold,
+  },
+  ratingText: {
+    fontSize: 12,
+    fontFamily: FONTS.medium,
+    color: '#6B7280',
+  },
+  addressText: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    color: '#6B7280',
+    lineHeight: 16,
+  },
+  mapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  mapButtonText: {
+    fontSize: 13,
+    fontFamily: FONTS.medium,
+    color: '#111827',
   },
   row: {
     flexDirection: 'row',

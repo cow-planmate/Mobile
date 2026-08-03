@@ -95,7 +95,6 @@ const meta = {
     handleUpdatePlaceTimes: () => {},
     handleDeletePlace: () => {},
     handleAddPlace: () => {},
-    onlineUsers: [],
     isScheduleEditVisible: false,
     setScheduleEditVisible: () => {},
     onConfirmScheduleEdit: () => {},
@@ -111,23 +110,20 @@ const meta = {
     participantsCount: 3,
     planId: '123',
     selectedDay: mockDays[0],
-    detailPlace: null,
-    isDetailVisible: false,
     onOpenDetail: () => {},
-    onCloseDetail: () => {},
     weatherMap: {
       '2024-08-01': {
         date: '2024-08-01',
-        temp_min: 24,
-        temp_max: 32,
-        feels_like: 30,
+        tempMin: 24,
+        tempMax: 32,
+        feelsLike: 30,
         description: '맑음',
       },
       '2024-08-02': {
         date: '2024-08-02',
-        temp_min: 22,
-        temp_max: 28,
-        feels_like: 26,
+        tempMin: 22,
+        tempMax: 28,
+        feelsLike: 26,
         description: '구름 많음',
       },
     },
@@ -139,8 +135,6 @@ const meta = {
     const [tripName, setTripName] = React.useState(args.tripName);
     const [isTimePickerVisible, setTimePickerVisible] = React.useState(args.isTimePickerVisible);
     const [isScheduleEditVisible, setScheduleEditVisible] = React.useState(args.isScheduleEditVisible);
-    const [isDetailVisible, setDetailVisible] = React.useState(args.isDetailVisible);
-    const [detailPlace, setDetailPlace] = React.useState(args.detailPlace);
     const [isPlanInfoVisible, setPlanInfoVisible] = React.useState(false);
     const [isShareModalVisible, setShareModalVisible] = React.useState(false);
     const [isParticipantsVisible, setParticipantsVisible] = React.useState(false);
@@ -149,7 +143,7 @@ const meta = {
     const { fetchAllRecommendations } = usePlaces();
 
     React.useEffect(() => {
-      fetchAllRecommendations('123');
+      fetchAllRecommendations(123);
     }, [fetchAllRecommendations]);
 
     const handleAddPlace = (newPlace: any) => {
@@ -266,13 +260,7 @@ const meta = {
           setTimePickerVisible={setTimePickerVisible}
           isScheduleEditVisible={isScheduleEditVisible}
           setScheduleEditVisible={setScheduleEditVisible}
-          isDetailVisible={isDetailVisible}
-          detailPlace={detailPlace}
-          onOpenDetail={(place) => {
-            setDetailPlace(place);
-            setDetailVisible(true);
-          }}
-          onCloseDetail={() => setDetailVisible(false)}
+          onOpenDetail={() => {}}
           onConfirmScheduleEdit={handleConfirmScheduleEdit}
           onConfirmTimePicker={() => setTimePickerVisible(false)}
           handleAddPlace={handleAddPlace}
@@ -413,7 +401,7 @@ export const Default: Story = {};
 
 export const RecommendationTab: Story = {
   args: {
-    initialTabName: '장소추가',
+    activeTab: '장소추가',
   },
 };
 

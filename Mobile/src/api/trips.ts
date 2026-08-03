@@ -1,11 +1,12 @@
 import axios from 'axios';
-import { API_URL } from '@env';
+import { WEB_URL } from '@env';
 import { resolveApiUrl } from '../utils/apiUrl';
 
 // ────────────────────────────────────────────────
-// Types
+// 타입 정의
 // ────────────────────────────────────────────────
 
+/** 장소 정보 VO */
 export interface PlaceVO {
   placeId: string;
   categoryId: number;
@@ -19,13 +20,21 @@ export interface PlaceVO {
   ylocation?: number;
   photoUrl: string;
   iconUrl: string;
+  contentTypeId?: string;
+  copyrightDivCd?: string;
 }
 
+/** 장소 목록 조회 응답 */
 export interface PlacesResponse {
   places: PlaceVO[];
   nextPageTokens?: string[];
+  totalCount?: number;
+  page?: number;
+  size?: number;
+  hasNext?: boolean;
 }
 
+/** 일정 타임테이블 VO */
 export interface TimetableVO {
   timetableId: number;
   timeTableId?: number;
@@ -34,6 +43,7 @@ export interface TimetableVO {
   timeTableEndTime: string;
 }
 
+/** 타임테이블 장소 블록 VO */
 export interface PlaceBlockVO {
   blockId?: number;
   timetablePlaceBlockId?: number;
@@ -42,7 +52,7 @@ export interface PlaceBlockVO {
   placeCategoryId: number;
   placeCategory?: number;
   placeName: string;
-  placeRating: number;
+  placeRating?: number;
   placeAddress: string;
   placeLink?: string;
   placeId: string;
@@ -51,13 +61,23 @@ export interface PlaceBlockVO {
   endTime: any;
   blockStartTime?: any;
   blockEndTime?: any;
+  /**
+   * 서버(TimetablePlaceBlockDetailDto)가 내려주는 좌표.
+   * 아래 x/yLocation 계열은 WebSocket 페이로드 등 다른 경로의 표기라 함께 둔다.
+   */
+  latitude?: number;
+  longitude?: number;
   xLocation?: number;
   yLocation?: number;
   xlocation?: number;
   ylocation?: number;
   memo?: string;
+  placeContentTypeId?: string;
+  placeThumbnailUrl?: string;
+  placeCopyrightDivCd?: string;
 }
 
+/** 일정 기본 프레임 정보 VO */
 export interface PlanFrameVO {
   planId: string;
   planName: string;
@@ -70,13 +90,7 @@ export interface PlanFrameVO {
   transportationCategoryId: number;
 }
 
-export interface PlanResponse {
-  message: string;
-  planFrame: PlanFrameVO;
-  placeBlocks: PlaceBlockVO[];
-  timetables: TimetableVO[];
-}
-
+/** 일정 생성 요청 페이로드 */
 export interface CreatePlanPayload {
   departure: string;
   travelId: number;
@@ -86,15 +100,18 @@ export interface CreatePlanPayload {
   transportation: number;
 }
 
+/** 전체 일정 저장 페이로드 */
 export interface FullPlanPayload {
   planFrame: {
-    planId?: string;
-    planName?: string;
-    departure: string;
-    transportationCategoryId: number;
-    travelId: number;
+    destinationId?: number;
+    travelId?: number;
+    transportationType?: 'PUBLIC' | 'PRIVATE';
+    transportationCategoryId?: number;
     adultCount: number;
     childCount: number;
+    planId?: string;
+    planName?: string;
+    departure?: string;
   };
   timetables: {
     timetableId?: number;
@@ -106,86 +123,184 @@ export interface FullPlanPayload {
 }
 
 // ────────────────────────────────────────────────
-// Plan APIs
+// 일정 관리 API
 // ────────────────────────────────────────────────
 
-/** Fetch full plan data (plan frame + timetables + place blocks) */
-export async function fetchPlan(planId: string): Promise<PlanResponse> {
-  const response = await axios.get(`/api/plan/${planId}`);
-  return response.data;
-}
-
-/** Create a new plan and return planId */
+/**
+ * 신규 일정 생성
+ * @param payload 일정 생성 데이터
+ */
 export async function createPlan(
   payload: CreatePlanPayload,
 ): Promise<{ planId: string }> {
-  const response = await axios.post(`/api/plan`, payload);
+  const response = await axios.post(resolveApiUrl(`/api/plan`), payload);
   return response.data;
 }
 
-/** Create full plan (non-login save) */
+/**
+ * 전체 일정 생성 및 저장 (비로그인 저장 포함)
+ * @param payload 전체 일정 데이터
+ */
 export async function createFullPlan(
   payload: FullPlanPayload,
 ): Promise<{ planId: string }> {
-  const response = await axios.post(`/api/plan/create`, payload);
-  return response.data;
-}
+  const destinationId =
+    payload.planFrame.destinationId ?? payload.planFrame.travelId ?? 1;
+  const transportationType =
+    payload.planFrame.transportationType ??
+    (payload.planFrame.transportationCategoryId === 1 ? 'PRIVATE' : 'PUBLIC');
 
-/** Request edit access */
-export async function requestEditAccess(planId: string): Promise<void> {
-  await axios.post(`/api/plan/${planId}/request-access`);
-}
+  const categoryMap: Record<number | string, string> = {
+    0: 'ATTRACTION',
+    1: 'ACCOMMODATION',
+    2: 'RESTAURANT',
+    3: 'FREE',
+    4: 'SEARCH',
+    ATTRACTION: 'ATTRACTION',
+    ACCOMMODATION: 'ACCOMMODATION',
+    RESTAURANT: 'RESTAURANT',
+    FREE: 'FREE',
+    SEARCH: 'SEARCH',
+  };
 
-// ────────────────────────────────────────────────
-// Place Recommendation APIs
-// ────────────────────────────────────────────────
+  const formattedPayload = {
+    planFrame: {
+      destinationId,
+      travelId: destinationId,
+      transportationType,
+      transportationCategoryId:
+        payload.planFrame.transportationCategoryId ??
+        (transportationType === 'PRIVATE' ? 1 : 0),
+      adultCount: payload.planFrame.adultCount ?? 1,
+      childCount: payload.planFrame.childCount ?? 0,
+      departure: payload.planFrame.departure || 'SEOUL',
+      planName: payload.planFrame.planName || '나의 일정',
+    },
+    timetables: payload.timetables || [],
+    timetablePlaceBlocks: (payload.timetablePlaceBlocks || []).map(
+      (block: any) => {
+        const blockCategory =
+          block.blockCategory ||
+          categoryMap[block.placeCategoryId] ||
+          'ATTRACTION';
+        return {
+          ...block,
+          blockCategory,
+          latitude: block.latitude ?? block.yLocation ?? block.ylocation ?? 0,
+          longitude: block.longitude ?? block.xLocation ?? block.xlocation ?? 0,
+        };
+      },
+    ),
+  };
 
-/** Fetch recommended places for a plan by category */
-export async function fetchCategoryPlaces(
-  planId: string,
-  category: 'tour' | 'lodging' | 'restaurant',
-): Promise<PlacesResponse> {
-  const response = await axios.get(`/api/plan/${planId}/${category}`);
-  return response.data;
-}
-
-/** Fetch recommended tour places for a plan */
-export const fetchTourPlaces = (planId: string) => fetchCategoryPlaces(planId, 'tour');
-
-/** Fetch recommended lodging places for a plan */
-export const fetchLodgingPlaces = (planId: string) => fetchCategoryPlaces(planId, 'lodging');
-
-/** Fetch recommended restaurant places for a plan */
-export const fetchRestaurantPlaces = (planId: string) => fetchCategoryPlaces(planId, 'restaurant');
-
-/** Fetch recommended places by category (no auth) */
-export async function fetchCategoryPlacesNoAuth(
-  categoryType: 'tour' | 'lodging' | 'restaurant',
-  category: string,
-  name: string,
-): Promise<PlacesResponse> {
-  const response = await axios.get(
-    `/api/plan/${categoryType}/${encodeURIComponent(
-      category,
-    )}/${encodeURIComponent(name)}`,
+  const response = await axios.post(
+    resolveApiUrl('/api/plan/full'),
+    formattedPayload,
   );
   return response.data;
 }
 
-/** Fetch recommended tour places (no auth) */
-export const fetchTourPlacesNoAuth = (category: string, name: string) => fetchCategoryPlacesNoAuth('tour', category, name);
-
-/** Fetch recommended lodging places (no auth) */
-export const fetchLodgingPlacesNoAuth = (category: string, name: string) => fetchCategoryPlacesNoAuth('lodging', category, name);
-
-/** Fetch recommended restaurant places (no auth) */
-export const fetchRestaurantPlacesNoAuth = (category: string, name: string) => fetchCategoryPlacesNoAuth('restaurant', category, name);
-
 // ────────────────────────────────────────────────
-// Place Search & Pagination APIs
+// 장소 추천 API
 // ────────────────────────────────────────────────
 
-/** Search places for a plan */
+/** PlaceSummaryDto 응답 객체를 PlaceVO 타입으로 변환하는 매핑 헬퍼 함수 */
+function mapSummaryToVO(summary: any): PlaceVO {
+  const categoryEnumMap: Record<string, number> = {
+    ATTRACTION: 0,
+    ACCOMMODATION: 1,
+    RESTAURANT: 2,
+  };
+  return {
+    placeId: summary.contentId || '',
+    categoryId: categoryEnumMap[summary.category] ?? 4,
+    url: '',
+    name: summary.title || '',
+    formatted_address: summary.addr1 || '',
+    rating: 0,
+    xLocation: summary.longitude ?? 0,
+    yLocation: summary.latitude ?? 0,
+    photoUrl: summary.thumbnailUrl || '',
+    iconUrl: '',
+    contentTypeId: summary.contentTypeId || '',
+    copyrightDivCd: summary.copyrightDivCd || '',
+  };
+}
+
+/**
+ * 카테고리별 추천 장소 목록 조회
+ * @param destinationId 여행지 ID
+ * @param category 장소 카테고리
+ * @param page 페이지 번호
+ * @param size 요청 개수
+ */
+export async function fetchCategoryPlaces(
+  destinationId: number,
+  category: 'tour' | 'lodging' | 'restaurant',
+  page: number = 1,
+  size: number = 20,
+): Promise<PlacesResponse> {
+  const categoryEnumMap = {
+    tour: 'ATTRACTION',
+    lodging: 'ACCOMMODATION',
+    restaurant: 'RESTAURANT',
+  };
+  const response = await axios.get('/api/place', {
+    params: {
+      destinationId,
+      category: categoryEnumMap[category],
+      page,
+      size,
+    },
+  });
+  const data = response.data;
+  const placesVO = (data.places || []).map((p: any) => mapSummaryToVO(p));
+  return {
+    places: placesVO,
+    totalCount: data.totalCount,
+    page: data.page,
+    size: data.size,
+    hasNext: data.hasNext,
+  };
+}
+
+/** 관광지 추천 목록 조회 */
+export const fetchTourPlaces = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlaces(destinationId, 'tour', page, size);
+
+/** 숙소 추천 목록 조회 */
+export const fetchLodgingPlaces = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlaces(destinationId, 'lodging', page, size);
+
+/** 음식점 추천 목록 조회 */
+export const fetchRestaurantPlaces = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlaces(destinationId, 'restaurant', page, size);
+
+/** 카테고리별 추천 장소 목록 조회 (비인증) */
+export async function fetchCategoryPlacesNoAuth(
+  categoryType: 'tour' | 'lodging' | 'restaurant',
+  destinationId: number,
+  page: number = 1,
+  size: number = 20,
+): Promise<PlacesResponse> {
+  return fetchCategoryPlaces(destinationId, categoryType, page, size);
+}
+
+/** 관광지 추천 목록 조회 (비인증) */
+export const fetchTourPlacesNoAuth = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlacesNoAuth('tour', destinationId, page, size);
+
+/** 숙소 추천 목록 조회 (비인증) */
+export const fetchLodgingPlacesNoAuth = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlacesNoAuth('lodging', destinationId, page, size);
+
+/** 음식점 추천 목록 조회 (비인증) */
+export const fetchRestaurantPlacesNoAuth = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlacesNoAuth('restaurant', destinationId, page, size);
+
+// ────────────────────────────────────────────────
+// 장소 검색 및 페이징 API
+// ────────────────────────────────────────────────
+
+/**
+ * 일정 내 장소 검색
+ * @param planId 일정 ID
+ * @param query 검색어
+ */
 export async function searchPlaces(
   planId: string,
   query: string,
@@ -196,7 +311,10 @@ export async function searchPlaces(
   return response.data;
 }
 
-/** Search places (no auth / no planId) */
+/**
+ * 장소 검색 (비인증 / 일정 ID 미선택)
+ * @param query 검색어
+ */
 export async function searchPlacesNoAuth(
   query: string,
 ): Promise<PlacesResponse> {
@@ -206,7 +324,10 @@ export async function searchPlacesNoAuth(
   return response.data;
 }
 
-/** Load more places with pagination tokens */
+/**
+ * 다음 페이지 장소 목록 추가 조회
+ * @param nextPageTokens 페이징 토큰 배열
+ */
 export async function fetchNextPlaces(
   nextPageTokens: string[],
 ): Promise<PlacesResponse> {
@@ -217,57 +338,99 @@ export async function fetchNextPlaces(
 }
 
 // ────────────────────────────────────────────────
-// Weather API
+// 날씨 정보 API
 // ────────────────────────────────────────────────
 
+/**
+ * 일자별 날씨 요약 정보.
+ * 서버 WeatherDayDto와 필드명을 맞춘다(camelCase).
+ */
 export interface SimpleWeatherInfo {
+  /** 'YYYY-MM-DD' */
   date: string;
   description: string;
-  temp_min: number;
-  temp_max: number;
-  feels_like: number;
+  tempMin: number;
+  tempMax: number;
+  feelsLike: number;
+  /** 실측/예보 등 데이터 출처 구분 (서버가 내려주는 경우에만) */
+  dataSource?: string;
 }
 
+/** 날씨 정보 응답 객체 */
 export interface WeatherResponse {
   weather: SimpleWeatherInfo[];
   recommendation: string;
 }
 
-/** Fetch weather recommendations for a city and date range */
-export async function fetchWeatherRecommendations(
-  city: string,
+/**
+ * 여행지·기간 기반 날씨 조회.
+ *
+ * 서버는 GET /api/weather에 destinationId·startDate·endDate를 쿼리로 받는다.
+ * (예전에는 도시명을 POST로 보냈는데 그 경로는 존재하지 않아 항상 실패했다)
+ *
+ * @param destinationId 여행지 ID (planFrame.destinationId)
+ * @param startDate 'YYYY-MM-DD'
+ * @param endDate 'YYYY-MM-DD'
+ */
+export async function fetchWeather(
+  destinationId: number,
   startDate: string,
   endDate: string,
 ): Promise<WeatherResponse> {
-  const response = await axios.post(`/api/weather/recommendations`, {
-    city,
-    start_date: startDate,
-    end_date: endDate,
+  const response = await axios.get<WeatherResponse>('/api/weather', {
+    params: { destinationId, startDate, endDate },
   });
   return response.data;
 }
 
 // ────────────────────────────────────────────────
-// Share & Collaboration APIs
+// 공유 및 협업 API
 // ────────────────────────────────────────────────
 
-/** Get share URL */
+/** 일정 공유 상태 조회 */
+export async function getShareStatus(planId: string): Promise<{ isShared: boolean }> {
+  const response = await axios.get(resolveApiUrl(`/api/plan/${planId}/share`));
+  return { isShared: !!response.data?.isShared };
+}
+
+/** 일정 공유 상태 변경 */
+export async function updateShareStatus(planId: string, isShared: boolean): Promise<void> {
+  await axios.patch(resolveApiUrl(`/api/plan/${planId}/share`), { isShared });
+}
+
+/** 일정 공유 URL 조회 */
 export async function getShareUrl(
   planId: string,
-): Promise<{ shareUrl: string }> {
-  const response = await axios.get(`/api/plan/${planId}/share`);
+): Promise<{ shareUrl: string; isShared?: boolean }> {
+  let isShared = true;
+  try {
+    const status = await getShareStatus(planId);
+    isShared = status.isShared;
+  } catch (e) {
+    console.log('Failed to fetch share status:', e);
+  }
   return {
-    shareUrl: response.data.sharedPlanUrl || response.data.shareUrl || '',
+    shareUrl: `${WEB_URL}/create?id=${planId}`,
+    isShared,
   };
 }
 
-/** Get list of editors */
-export async function getEditors(planId: string): Promise<any[]> {
-  const response = await axios.get(`/api/plan/${planId}/editors`);
-  return response.data;
+/** 편집자 목록 조회 */
+export async function getEditors(planId: string): Promise<{ userId: string; nickname: string }[]> {
+  const response = await axios.get(resolveApiUrl(`/api/plan/${planId}/editors`));
+  const data = response?.data;
+  const rawEditors = Array.isArray(data)
+    ? data
+    : data && typeof data === 'object' && 'editors' in data && Array.isArray(data.editors)
+    ? data.editors
+    : [];
+  return rawEditors.map((e: any) => ({
+    userId: String(e?.userId ?? ''),
+    nickname: String(e?.nickname ?? ''),
+  }));
 }
 
-/** Invite an editor by nickname */
+/** 닉네임으로 편집자 초청 */
 export async function inviteEditor(
   planId: string,
   nickname: string,
@@ -277,20 +440,37 @@ export async function inviteEditor(
   });
 }
 
-/** Remove an editor */
+/** 편집자 권한 해제 */
 export async function removeEditor(
   planId: string,
-  userId: string,
+  userId: string | number,
 ): Promise<void> {
-  await axios.delete(`/api/plan/${planId}/editors/${userId}`);
+  await axios.delete(resolveApiUrl(`/api/plan/${planId}/editors/${userId}`));
 }
 
-/** Leave as editor */
+/**
+ * 여러 일정을 한 번에 삭제한다.
+ *
+ * 서버는 요청한 ID 중 **내가 소유한** 일정만 삭제하고 실제 삭제된 ID를 돌려준다.
+ * 소유한 일정이 하나도 없으면 403을 던지므로, 소유 일정이 없을 때는 호출하지 않는다.
+ * 편집 권한만 있는 일정은 이 API 대상이 아니라 leaveAsEditor를 써야 한다.
+ *
+ * @returns 실제로 삭제된 일정 ID 목록
+ */
+export async function deletePlans(planIds: string[]): Promise<string[]> {
+  const response = await axios.delete<{ deletedPlanIds: string[] }>(
+    resolveApiUrl('/api/plan'),
+    { data: { planIds } },
+  );
+  return response.data?.deletedPlanIds ?? [];
+}
+
+/** 편집자 나가기 */
 export async function leaveAsEditor(planId: string): Promise<void> {
-  await axios.delete(`/api/plan/${planId}/editor/me`);
+  await axios.delete(resolveApiUrl(`/api/plan/${planId}/editor/me`));
 }
 
-/** Get pending invitations */
+/** 대기 중인 초대 요청 인터페이스 */
 export interface PendingInvitation {
   requestId: number;
   senderId: number;
@@ -300,51 +480,35 @@ export interface PendingInvitation {
   type: string;
 }
 
+/** 대기 중인 초대 목록 조회 */
 export async function getPendingInvitations(): Promise<PendingInvitation[]> {
   const response = await axios.get(
     resolveApiUrl('/api/collaboration-requests/pending'),
   );
-  return (response.data.pendingRequests || []) as PendingInvitation[];
+  const rawList = response.data.requests || response.data.pendingRequests || [];
+  return rawList.map((item: any) => ({
+    requestId: item.collaborationRequestId ?? item.requestId,
+    senderId: item.senderId,
+    senderNickname: item.senderNickname,
+    planId: item.planId,
+    planName: item.planName,
+    type: item.type,
+  })) as PendingInvitation[];
 }
 
-/** Accept invitation */
+/** 초대 승인 */
 export async function acceptInvitation(requestId: number): Promise<void> {
   await axios.post(
     resolveApiUrl(`/api/collaboration-requests/${requestId}/accept`),
   );
 }
 
-/** Reject invitation */
+/** 초대 거절 */
 export async function rejectInvitation(requestId: number): Promise<void> {
   await axios.post(
     resolveApiUrl(`/api/collaboration-requests/${requestId}/reject`),
   );
 }
 
-// ────────────────────────────────────────────────
-// Travel Destinations API
-// ────────────────────────────────────────────────
 
-export interface TravelDestination {
-  travelId: number;
-  travelName: string;
-  travelCategoryName: string;
-}
 
-/** Get available travel destinations */
-export async function fetchTravelDestinations(): Promise<TravelDestination[]> {
-  const response = await axios.get('/api/travel');
-  return response.data;
-}
-
-// ────────────────────────────────────────────────
-// Departure Search API
-// ────────────────────────────────────────────────
-
-/** Search departure locations */
-export async function searchDeparture(query: string): Promise<any[]> {
-  const response = await axios.post(`/api/departure`, {
-    departureQuery: query,
-  });
-  return response.data;
-}

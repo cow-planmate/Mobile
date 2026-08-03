@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -10,11 +10,13 @@ import {
   Pressable,
   Share,
   NativeModules,
+  Switch,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { X } from 'lucide-react-native';
 import {
   getShareUrl,
+  updateShareStatus,
   inviteEditor,
   getEditors,
   removeEditor,
@@ -35,6 +37,7 @@ interface ShareModalProps {
   onClose: () => void;
   planId: string;
   isMock?: boolean;
+  isOwner?: boolean;
 }
 
 export default function ShareModal({
@@ -42,55 +45,55 @@ export default function ShareModal({
   onClose,
   planId,
   isMock = false,
+  isOwner = true,
 }: ShareModalProps) {
   const { showAlert } = useAlert();
   const [shareLink, setShareLink] = useState('');
   const [nickname, setNickname] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isShared, setIsShared] = useState(true);
   const [editors, setEditors] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (visible && planId) {
-      fetchShareLink();
-      fetchEditors();
-    }
-  }, [visible, planId]);
-
-  const fetchShareLink = async () => {
+  const fetchShareLink = useCallback(async () => {
     if (isMock) {
       setShareLink('https://planmate.cow/share/mock-trip-123');
+      setIsShared(true);
       return;
     }
     try {
       const response = await getShareUrl(planId);
       setShareLink(response.shareUrl);
+      if (typeof response.isShared === 'boolean') {
+        setIsShared(response.isShared);
+      }
     } catch (error) {
       console.error('Failed to fetch share link:', error);
+    }
+  }, [isMock, planId]);
+
+  const handleToggleShare = async (newValue: boolean) => {
+    setIsShared(newValue);
+    if (isMock) return;
+    try {
+      await updateShareStatus(planId, newValue);
+      Toast.show({
+        type: 'success',
+        text1: newValue ? '일정 공유가 활성화되었습니다.' : '일정이 비공개로 변경되었습니다.',
+        position: 'top',
+        visibilityTime: 1500,
+      });
+    } catch (error) {
+      console.error('Failed to update share status:', error);
+      setIsShared(!newValue);
+      showAlert({ title: '오류', message: '공유 상태 변경에 실패했습니다.' });
     }
   };
 
   const handleCopyLink = () => {
     if (!shareLink) return;
-    
-    // 1. 웹 브라우저 환경 (navigator.clipboard) 대응
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(shareLink)
-        .then(() => {
-          Toast.show({
-            type: 'success',
-            text1: '링크가 복사되었습니다.',
-            position: 'top',
-            visibilityTime: 1500,
-          });
-        })
-        .catch((err) => {
-          console.warn('Web clipboard copy failed:', err);
-          handleShareLink();
-        });
-      return;
-    }
-    
-    // 2. 모바일 네이티브 환경 대응
+
+    // RN에는 navigator.clipboard가 없다. 네이티브 모듈을 먼저 쓰고,
+    // 모듈이 링크되지 않은 환경에서는 공유 시트로 대체한다.
     const hasNativeClipboard = !!NativeModules.RNCClipboard;
     if (hasNativeClipboard) {
       try {
@@ -108,7 +111,6 @@ export default function ShareModal({
       }
     }
     
-    // 3. 둘 다 지원되지 않는 환경에서는 Share API로 대체
     console.warn('Native RNCClipboard module not available. Falling back to native Share API.');
     handleShareLink();
   };
@@ -124,26 +126,32 @@ export default function ShareModal({
     }
   };
 
-  const fetchEditors = async () => {
+  const fetchEditors = useCallback(async () => {
     if (isMock) {
-      if (editors.length === 0) {
-        setEditors([
-          { userId: 1, nickname: '홍길동' },
-          { userId: 2, nickname: '김철수' },
-        ]);
-      }
+      setEditors(prev =>
+        prev.length === 0
+          ? [
+              { userId: 1, nickname: '홍길동' },
+              { userId: 2, nickname: '김철수' },
+            ]
+          : prev,
+      );
       return;
     }
     try {
       const response = await getEditors(planId);
-      const editorsList = Array.isArray(response)
-        ? response
-        : (response as any).editors || [];
-      setEditors(editorsList);
+      setEditors(Array.isArray(response) ? response : []);
     } catch (error) {
       console.error('Failed to fetch editors:', error);
     }
-  };
+  }, [isMock, planId]);
+
+  useEffect(() => {
+    if (visible && planId) {
+      void fetchShareLink();
+      void fetchEditors();
+    }
+  }, [visible, planId, fetchShareLink, fetchEditors]);
 
   const handleInvite = async () => {
     if (!nickname.trim()) {
@@ -163,12 +171,20 @@ export default function ShareModal({
         setNickname('');
         fetchEditors();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Invite failed:', error);
-      showAlert({
-        title: '오류',
-        message: '사용자를 초대하지 못했습니다. 닉네임을 확인해주세요.',
-      });
+      const isConflict = error?.response?.status === 409;
+      if (isConflict) {
+        showAlert({
+          title: '초대 대기 중',
+          message: '이미 초대를 보낸 사용자입니다. 상대방의 수락을 기다려주세요.',
+        });
+      } else {
+        showAlert({
+          title: '오류',
+          message: '사용자를 초대하지 못했습니다. 닉네임을 확인해주세요.',
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -222,7 +238,17 @@ export default function ShareModal({
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.label}>공유 링크 (읽기 전용)</Text>
+            {isOwner && (
+              <View style={styles.switchRow}>
+                <Text style={styles.label}>일정 공유 허용</Text>
+                <Switch
+                  value={isShared}
+                  onValueChange={handleToggleShare}
+                  trackColor={{ false: '#D1D5DB', true: COLORS.primary }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+            )}
             <View style={styles.linkContainer}>
               <TextInput
                 style={styles.linkInput}
@@ -281,12 +307,14 @@ export default function ShareModal({
                     </View>
                     <Text style={styles.editorName}>{editor.nickname}</Text>
                   </View>
-                  <TouchableOpacity
-                    onPress={() => handleRemoveEditor(editor.userId)}
-                    style={styles.removeButton}
-                  >
-                    <Text style={styles.removeButtonText}>삭제</Text>
-                  </TouchableOpacity>
+                  {isOwner && (
+                    <TouchableOpacity
+                      onPress={() => handleRemoveEditor(editor.userId)}
+                      style={styles.removeButton}
+                    >
+                      <Text style={styles.removeButtonText}>삭제</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               ))}
             </View>
@@ -472,5 +500,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: FONTS.semibold,
     color: '#111827',
+  },
+  switchRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
 });

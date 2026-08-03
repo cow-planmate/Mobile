@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { MapPin } from 'lucide-react-native';
 import { KAKAO_APP_KEY } from '@env';
+import { RoutePoint } from '../../../api/route';
 
 export interface MapPlace {
   id: string;
@@ -13,19 +14,91 @@ export interface MapPlace {
   place_url?: string;
 }
 
+/** 지도에 겹쳐 그릴 대중교통 노선 한 구간 */
+export interface MapTransitLane {
+  color: string;
+  path: RoutePoint[];
+}
+
 interface KakaoMapViewProps {
   places: MapPlace[];
+  /**
+   * 도로를 따라가는 실제 경로 좌표.
+   * 비어 있으면 장소를 잇는 직선(점선 + 화살표)으로 대체된다.
+   */
+  routePath?: RoutePoint[];
+  /** 선택한 대중교통 경로의 노선별 폴리라인 */
+  transitLanes?: MapTransitLane[];
   style?: object;
 }
 
-export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
+/**
+ * <script> 안에 안전하게 넣을 수 있는 JSON 문자열을 만든다.
+ *
+ * 장소 이름 같은 서버 문자열에 '</script>'가 들어 있으면 스크립트 태그가 그
+ * 자리에서 닫혀 지도가 통째로 깨진다. U+2028/2029도 파서에 따라 문제가 된다.
+ */
+const toScriptSafeJson = (value: unknown): string =>
+  JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+
+export default function KakaoMapView({
+  places,
+  routePath,
+  transitLanes,
+  style,
+}: KakaoMapViewProps) {
+  const webViewRef = useRef<WebView>(null);
+  /**
+   * WebView 문서가 로드되기 전에 injectJavaScript를 부르면 아무 일도 일어나지
+   * 않는다. 장소가 바뀌어 HTML이 재생성되면 문서도 다시 로드되므로, 로드 완료
+   * 시점을 추적했다가 그때 최신 경로를 다시 밀어 넣는다.
+   */
+  const isLoadedRef = useRef(false);
+
   const validPlaces = useMemo(
     () => places.filter(p => p.latitude !== 0 && p.longitude !== 0),
     [places],
   );
 
+  /**
+   * 지도에 경로/노선을 반영한다.
+   *
+   * 장소가 바뀔 때만 HTML을 다시 만들고, 경로는 이 함수로 밀어 넣는다.
+   * HTML을 다시 만들면 WebView가 통째로 리로드되어 지도가 깜빡이기 때문이다.
+   */
+  const pushOverlays = useCallback(() => {
+    if (!isLoadedRef.current || !webViewRef.current) {
+      return;
+    }
+
+    const pathJson = toScriptSafeJson(routePath ?? []);
+    const lanesJson = toScriptSafeJson(transitLanes ?? []);
+
+    webViewRef.current.injectJavaScript(`
+      if (window.__setRoute) { window.__setRoute(${pathJson}); }
+      if (window.__setLanes) { window.__setLanes(${lanesJson}); }
+      true;
+    `);
+  }, [routePath, transitLanes]);
+
+  useEffect(() => {
+    pushOverlays();
+  }, [pushOverlays]);
+
+  const handleLoadStart = useCallback(() => {
+    isLoadedRef.current = false;
+  }, []);
+
+  const handleLoadEnd = useCallback(() => {
+    isLoadedRef.current = true;
+    pushOverlays();
+  }, [pushOverlays]);
+
   const html = useMemo(() => {
-    const placesJson = JSON.stringify(
+    const placesJson = toScriptSafeJson(
       validPlaces.map((p, idx) => ({
         id: p.id,
         name: p.name,
@@ -147,6 +220,13 @@ export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
 </head>
 <body>
   <div id="map"></div>
+  <script>
+    // 지도가 준비되기 전에 RN이 경로를 밀어 넣을 수 있다. 그때는 값만 쥐고
+    // 있다가 지도 생성 직후 흘려보낸다.
+    var __pending = { route: null, lanes: null };
+    window.__setRoute = function(path) { __pending.route = path; };
+    window.__setLanes = function(lanes) { __pending.lanes = lanes; };
+  </script>
   <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&libraries=services&autoload=false"></script>
   <script>
     var places = ${placesJson};
@@ -216,7 +296,9 @@ export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
           });
         });
 
-        // 경로 폴리라인 (실선, 반투명)
+        // ── 직선 폴백 (도로 경로가 없을 때만 보인다) ──
+        var straightOverlays = [];
+
         if (linePath.length > 1) {
           var polyline = new kakao.maps.Polyline({
             path: linePath,
@@ -226,12 +308,13 @@ export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
             strokeStyle: 'dash'
           });
           polyline.setMap(map);
+          straightOverlays.push(polyline);
 
           // 점선 가운데 화살표 추가
           for (var i = 0; i < places.length - 1; i++) {
             var p1 = places[i];
             var p2 = places[i + 1];
-            
+
             var midLat = (p1.lat + p2.lat) / 2;
             var midLng = (p1.lng + p2.lng) / 2;
             var midPosition = new kakao.maps.LatLng(midLat, midLng);
@@ -255,8 +338,68 @@ export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
               yAnchor: 0.5
             });
             arrowOverlay.setMap(map);
+            straightOverlays.push(arrowOverlay);
           }
         }
+
+        // ── RN에서 밀어 넣는 경로 레이어 ──
+        var roadPolyline = null;
+        var lanePolylines = [];
+
+        function showStraight(visible) {
+          straightOverlays.forEach(function(overlay) {
+            overlay.setMap(visible ? map : null);
+          });
+        }
+
+        window.__setRoute = function(path) {
+          if (roadPolyline) {
+            roadPolyline.setMap(null);
+            roadPolyline = null;
+          }
+
+          if (!path || path.length < 2) {
+            // 도로 경로가 없으면 직선 폴백으로 되돌린다
+            showStraight(true);
+            return;
+          }
+
+          roadPolyline = new kakao.maps.Polyline({
+            path: path.map(function(p) {
+              return new kakao.maps.LatLng(p.lat, p.lng);
+            }),
+            strokeWeight: 4,
+            strokeColor: '#1344FF',
+            strokeOpacity: 0.6,
+            strokeStyle: 'solid'
+          });
+          roadPolyline.setMap(map);
+          showStraight(false);
+        };
+
+        window.__setLanes = function(lanes) {
+          lanePolylines.forEach(function(line) { line.setMap(null); });
+          lanePolylines = [];
+
+          if (!lanes || lanes.length === 0) {
+            return;
+          }
+
+          lanes.forEach(function(lane) {
+            if (!lane.path || lane.path.length < 2) return;
+            var line = new kakao.maps.Polyline({
+              path: lane.path.map(function(p) {
+                return new kakao.maps.LatLng(p.lat, p.lng);
+              }),
+              strokeWeight: 5,
+              strokeColor: lane.color,
+              strokeOpacity: 0.85,
+              strokeStyle: 'solid'
+            });
+            line.setMap(map);
+            lanePolylines.push(line);
+          });
+        };
 
         // 영역 조절
         if (places.length > 1) {
@@ -265,6 +408,11 @@ export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
           map.setCenter(new kakao.maps.LatLng(places[0].lat, places[0].lng));
           map.setLevel(3);
         }
+
+        // 지도 준비 전에 도착한 경로를 반영
+        if (__pending.route) window.__setRoute(__pending.route);
+        if (__pending.lanes) window.__setLanes(__pending.lanes);
+        __pending = { route: null, lanes: null };
       });
     }
   </script>
@@ -286,6 +434,7 @@ export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
   return (
     <View style={[mapStyles.container, style]}>
       <WebView
+        ref={webViewRef}
         source={{ html }}
         style={mapStyles.webview}
         javaScriptEnabled={true}
@@ -295,6 +444,8 @@ export default function KakaoMapView({ places, style }: KakaoMapViewProps) {
         bounces={false}
         mixedContentMode="always"
         allowsInlineMediaPlayback={true}
+        onLoadStart={handleLoadStart}
+        onLoadEnd={handleLoadEnd}
       />
     </View>
   );

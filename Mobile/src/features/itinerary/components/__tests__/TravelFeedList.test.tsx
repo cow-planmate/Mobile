@@ -73,7 +73,7 @@ describe('TravelFeedList Component', () => {
     let component: any;
     
     await act(async () => {
-      component = renderer.create(<TravelFeedList />);
+      component = renderer.create(<TravelFeedList items={[]} />);
     });
 
     // Run timers to resolve the mock api setTimeout delay

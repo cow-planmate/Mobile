@@ -1,27 +1,44 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@env';
+import { LOGOUT_CLEARED_KEYS } from '../constants/storageKeys';
 
-const normalizedApiUrl = API_URL.trim().replace(/\/+$/, '');
+const normalizedApiUrl = (API_URL ?? '').trim().replace(/\/+$/, '');
+
+if (!normalizedApiUrl && __DEV__) {
+  console.warn('[axiosConfig] API_URL이 비어 있습니다. .env 설정을 확인하세요.');
+}
+
+/** 토큰을 자동으로 첨부하지 않는 경로 (인증 불필요 · 토큰 재발급 포함) */
+const NO_AUTH_PATHS = [
+  '/api/auth/login',
+  '/api/auth/token',
+  '/api/auth/email/verification',
+  '/api/auth/register/nickname/verify',
+];
+
+const matchesPath = (url: string | undefined, paths: string[]) =>
+  paths.some(path => url?.includes(path));
 
 // axios 기본 설정
-axios.defaults.baseURL = normalizedApiUrl;
-axios.defaults.timeout = 30000; // 30초 타임아웃
-axios.defaults.headers.common['Content-Type'] = 'application/json';
+if (axios && axios.defaults) {
+  axios.defaults.baseURL = normalizedApiUrl;
+  axios.defaults.timeout = 30000; // 30초 타임아웃
+  if (axios.defaults.headers && axios.defaults.headers.common) {
+    axios.defaults.headers.common['Content-Type'] = 'application/json';
+  }
+}
 
 // 요청 인터셉터: 토큰 자동 추가 및 요청 로깅
+if (axios && axios.interceptors && axios.interceptors.request) {
 axios.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     // 로그인/회원가입 등 인증이 필요없는 요청은 토큰 추가하지 않음
-    const noAuthPaths = [
-      '/api/auth/login',
-      '/api/auth/email/verification',
-      '/api/auth/register/nickname/verify',
-    ];
+    const isNoAuthPath = matchesPath(config.url, NO_AUTH_PATHS);
 
-    const isNoAuthPath = noAuthPaths.some(path => config.url?.includes(path));
-
-    if (!isNoAuthPath && !config.headers.Authorization) {
+    if (isNoAuthPath) {
+      delete config.headers.Authorization;
+    } else if (!config.headers.Authorization) {
       const token = await AsyncStorage.getItem('accessToken');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -36,11 +53,8 @@ axios.interceptors.request.use(
           : config.url;
 
       console.log(
-        `🚀 API Request: ${config.method?.toUpperCase()} ${fullUrl}`,
-        {
-          headers: config.headers,
-          data: JSON.stringify(config.data),
-        },
+        `\x1b[36m[API REQ]\x1b[0m ${config.method?.toUpperCase()} ${fullUrl}`,
+        config.data ? { data: config.data } : '',
       );
     }
 
@@ -48,7 +62,7 @@ axios.interceptors.request.use(
   },
   (error: AxiosError) => {
     if (__DEV__) {
-      console.error('❌ Request Error:', error);
+      console.error('\x1b[31m[API REQ ERR]\x1b[0m', error);
     }
     return Promise.reject(error);
   },
@@ -70,26 +84,24 @@ const processQueue = (error: any, token: string | null = null) => {
 };
 
 // 응답 인터셉터: 응답 로깅 및 토큰 갱신
+if (axios && axios.interceptors && axios.interceptors.response) {
 axios.interceptors.response.use(
   response => {
-    // 개발 환경에서 응답 로깅
     if (__DEV__) {
-      console.log('✅ API Response:', {
-        url: response.config.url,
-        status: response.status,
-        data: response.data,
-      });
+      console.log(`\x1b[32m[API RES]\x1b[0m ${response.status} ${response.config.url}`);
     }
     return response;
   },
   async (error: AxiosError) => {
     if (__DEV__) {
-      console.error('❌ API Error:', {
-        url: error.config?.url,
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message,
-      });
+      const resData = error.response?.data as any;
+      const statusCode = error.response?.status || 'FAIL';
+      const errCode = resData?.code || 'UNKNOWN';
+      const errMsg = resData?.message || error.message;
+
+      console.error(
+        `\x1b[31m[API ERR]\x1b[0m ${statusCode} [${errCode}] ${errMsg} (${error.config?.url})`,
+      );
     }
 
     const originalRequest = error.config as InternalAxiosRequestConfig & {
@@ -97,12 +109,17 @@ axios.interceptors.response.use(
     };
 
     // 401 에러이고 재시도하지 않은 요청인 경우 토큰 갱신 시도
+    // (절대 URL로 호출되는 경우가 있어 includes로 비교한다)
     if (
       error.response?.status === 401 &&
+      originalRequest &&
       !originalRequest._retry &&
-      originalRequest.url !== '/api/auth/login' &&
-      originalRequest.url !== '/api/auth/token'
+      !matchesPath(originalRequest.url, ['/api/auth/login', '/api/auth/token'])
     ) {
+      // 큐에 넣기 전에 재시도 표시를 해야 재발급 후 재요청이 또 401을 받았을 때
+      // 무한 재발급 루프에 빠지지 않는다.
+      originalRequest._retry = true;
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -116,14 +133,13 @@ axios.interceptors.response.use(
           });
       }
 
-      originalRequest._retry = true;
       isRefreshing = true;
 
       try {
         const refreshToken = await AsyncStorage.getItem('refreshToken');
         if (refreshToken) {
-          const response = await axios.get('/api/auth/token', {
-            params: { refreshToken },
+          const response = await axios.post('/api/auth/token', {
+            refreshToken,
           });
 
           const newAccessToken = response.data.accessToken;
@@ -131,10 +147,9 @@ axios.interceptors.response.use(
             await AsyncStorage.setItem('accessToken', newAccessToken);
             axios.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-            
+
             processQueue(null, newAccessToken);
-            isRefreshing = false;
-            
+
             return axios(originalRequest);
           }
         }
@@ -145,7 +160,7 @@ axios.interceptors.response.use(
         }
         
         // 저장된 토큰 및 유저 정보 제거
-        await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
+        await AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS);
         delete axios.defaults.headers.common.Authorization;
         
         // Zustand auth store 상태 업데이트 (동적 로드를 통해 순환 참조 방지)
@@ -157,14 +172,17 @@ axios.interceptors.response.use(
         }
         
         processQueue(refreshError, null);
-        isRefreshing = false;
-        
+
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
     return Promise.reject(error);
   },
 );
+}
+}
 
 export default axios;

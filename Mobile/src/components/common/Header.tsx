@@ -9,14 +9,13 @@ import {
   Pressable,
   Dimensions,
   StatusBar,
-  Alert,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faUser } from '@fortawesome/free-solid-svg-icons';
 import { faBell } from '@fortawesome/free-regular-svg-icons';
 import { useNavigation } from '@react-navigation/native';
-import { User as UserIcon, Users, LogOut } from 'lucide-react-native';
+import { User as UserIcon, LogOut } from 'lucide-react-native';
 import { useAuthStore } from '../../store/useAuthStore';
 import { normalize } from '../../utils/normalize';
 import gravatarUrl from '../../utils/gravatarUrl';
@@ -40,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({
   const logout = useAuthStore((state) => state.logout);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 16 });
-  const profileRef = useRef<TouchableOpacity>(null);
+  const profileRef = useRef<React.ComponentRef<typeof TouchableOpacity>>(null);
 
   const handleProfilePress = () => {
     profileRef.current?.measure((x, y, width, height, pageX, pageY) => {
@@ -55,7 +54,7 @@ const Header: React.FC<HeaderProps> = ({
     });
   };
 
-  const handleMenuItemPress = (action: 'profile' | 'social' | 'logout') => {
+  const handleMenuItemPress = (action: 'profile' | 'logout') => {
     setMenuVisible(false);
     setTimeout(() => {
       if (action === 'profile') {
@@ -64,8 +63,6 @@ const Header: React.FC<HeaderProps> = ({
         } else {
           navigation.navigate('Profile');
         }
-      } else if (action === 'social') {
-        Alert.alert('알림', '소셜 기능은 준비 중입니다.');
       } else if (action === 'logout') {
         void logout();
       }
@@ -125,14 +122,6 @@ const Header: React.FC<HeaderProps> = ({
             >
               <UserIcon size={16} color="#374151" style={styles.menuIcon} />
               <Text style={styles.menuText}>마이페이지</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.menuItem} 
-              onPress={() => handleMenuItemPress('social')}
-            >
-              <Users size={16} color="#374151" style={styles.menuIcon} />
-              <Text style={styles.menuText}>소셜</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 

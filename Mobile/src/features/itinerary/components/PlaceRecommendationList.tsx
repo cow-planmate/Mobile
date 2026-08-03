@@ -24,7 +24,6 @@ import {
   faUmbrellaBeach,
   faUtensils,
 } from '@fortawesome/free-solid-svg-icons';
-import { API_URL } from '@env';
 import { X } from 'lucide-react-native';
 import { Place } from './TimelineItem';
 import KakaoMapView from './KakaoMapView';
@@ -62,15 +61,19 @@ const TAB_COLORS: { [key in PlaceTab]: string } = {
   검색: '#6b7280',
 };
 
-const TAB_DOT_ACTIVE_STYLES: Record<PlaceTab, { backgroundColor: string }> = {
-  관광지: { backgroundColor: '#84cc16' },
-  숙소: { backgroundColor: '#f97316' },
-  식당: { backgroundColor: '#3b82f6' },
-  '직접 추가': { backgroundColor: '#8b5cf6' },
-  검색: { backgroundColor: '#6b7280' },
-};
-
 type PlaceTab = '관광지' | '숙소' | '식당' | '직접 추가' | '검색';
+
+/** 탭 라벨 → PlacesContext의 페이지네이션 필드 */
+const TAB_TO_PLACES_FIELD: Record<
+  PlaceTab,
+  'tour' | 'lodging' | 'restaurant' | 'search'
+> = {
+  관광지: 'tour',
+  숙소: 'lodging',
+  식당: 'restaurant',
+  '직접 추가': 'search',
+  검색: 'search',
+};
 
 type EmptyStateConfig = {
   icon: IconDefinition;
@@ -166,6 +169,8 @@ function placeVOToPlace(
     imageUrl: p.photoUrl || p.iconUrl || '',
     latitude: p.yLocation ?? p.ylocation ?? 0,
     longitude: p.xLocation ?? p.xlocation ?? 0,
+    contentTypeId: p.contentTypeId || '',
+    copyrightDivCd: p.copyrightDivCd || '',
   };
 }
 
@@ -278,12 +283,14 @@ const PlaceMapModal = React.memo(
 interface PlaceRecommendationListProps {
   planId: string | null;
   destination?: string;
+  travelId: number | null;
   onAddPlace: (place: Omit<Place, 'startTime' | 'endTime'>) => void;
 }
 
 export default function PlaceRecommendationList({
   planId,
   destination,
+  travelId,
   onAddPlace,
 }: PlaceRecommendationListProps) {
   const {
@@ -291,10 +298,10 @@ export default function PlaceRecommendationList({
     lodging,
     restaurant,
     search,
-    tourNext,
-    lodgingNext,
-    restaurantNext,
     searchNext,
+    tourHasNext,
+    lodgingHasNext,
+    restaurantHasNext,
     isLoading,
     doSearchPlaces,
     loadMorePlaces,
@@ -317,16 +324,18 @@ export default function PlaceRecommendationList({
     setPetFriendly(false);
   }, [setPetFriendly]);
 
-  // ─── Pull-to-refresh ───
+  // ─── 당겨서 새로고침 ───
   const handleRefresh = useCallback(async () => {
-    if (!planId || isRefreshing) return;
+    const destId = travelId || planId;
+    if (!destId || isRefreshing) return;
     setIsRefreshing(true);
     try {
-      await fetchAllRecommendations(planId);
+      await fetchAllRecommendations(Number(destId), true);
     } finally {
       setIsRefreshing(false);
     }
-  }, [planId, isRefreshing, fetchAllRecommendations]);
+  }, [planId, travelId, isRefreshing, fetchAllRecommendations]);
+
 
   // ─── Debounced search ───
   const handleSearchSubmit = useCallback(() => {
@@ -423,36 +432,28 @@ export default function PlaceRecommendationList({
     return rawData;
   };
 
-  const getTabTokens = (): string[] => {
+  const checkHasMoreData = (): boolean => {
     switch (selectedTab) {
       case '관광지':
-        return tourNext;
+        return tourHasNext;
       case '숙소':
-        return lodgingNext;
+        return lodgingHasNext;
       case '식당':
-        return restaurantNext;
+        return restaurantHasNext;
       case '검색':
-        return isSearchReady ? searchNext : [];
+        return isSearchReady ? searchNext.length > 0 : false;
       default:
-        return [];
+        return false;
     }
   };
 
   const tabData = getTabData();
-  const hasMoreData = getTabTokens().length > 0;
+  const hasMoreData = checkHasMoreData();
 
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     if (!hasMoreData || isLoading) return;
-    const fieldMap: {
-      [key: string]: 'tour' | 'lodging' | 'restaurant' | 'search';
-    } = {
-      관광지: 'tour',
-      숙소: 'lodging',
-      식당: 'restaurant',
-      검색: 'search',
-    };
-    loadMorePlaces(fieldMap[selectedTab]);
-  };
+    loadMorePlaces(TAB_TO_PLACES_FIELD[selectedTab]);
+  }, [hasMoreData, isLoading, loadMorePlaces, selectedTab]);
 
   // ─── Map modal state ───
   const [mapPlace, setMapPlace] = useState<PlaceVO | null>(null);
@@ -564,7 +565,9 @@ export default function PlaceRecommendationList({
   const renderEmpty = useCallback(() => {
     if (isLoading) return null;
 
-    if (selectedTab === '검색' && normalizedSearchQuery.length < 2) {
+    // 서버에 키워드 검색 엔드포인트가 아직 없어 결과가 비어 있다.
+    // 검색어를 넣었는데 아무 설명 없이 빈 화면이면 앱 오류로 보이므로 상태를 밝힌다.
+    if (selectedTab === '검색') {
       return (
         <View style={plStyles.emptyContainer}>
           <View style={[plStyles.emptyIconWrapper, plStyles.emptyIconSearch]}>
@@ -574,9 +577,12 @@ export default function PlaceRecommendationList({
               color="#9CA3AF"
             />
           </View>
-          <Text style={plStyles.emptyTitle}>장소를 검색해보세요.</Text>
+          <Text style={plStyles.emptyTitle}>장소 검색은 준비 중이에요.</Text>
           <Text style={plStyles.emptySubtitle}>
-            두 글자 이상 입력하면 결과를 바로 확인할 수 있어요.
+            지금은 관광지·숙소·식당 탭에서 추천 장소를 담을 수 있어요.
+          </Text>
+          <Text style={plStyles.emptySubtitle}>
+            찾는 장소가 없다면 '직접 추가' 탭을 이용해보세요.
           </Text>
         </View>
       );
@@ -608,7 +614,7 @@ export default function PlaceRecommendationList({
         )}
       </View>
     );
-  }, [isLoading, selectedTab, normalizedSearchQuery]);
+  }, [isLoading, selectedTab]);
 
   const renderHeader = useCallback(() => {
     if (selectedTab === '검색') {
@@ -738,9 +744,11 @@ export default function PlaceRecommendationList({
         data={tabData}
         keyExtractor={(item, index) => `${item.placeId}_${index}`}
         renderItem={renderPlaceItem}
-        ListEmptyComponent={renderEmpty}
-        ListHeaderComponent={renderHeader}
-        ListFooterComponent={renderFooter}
+        // 컴포넌트가 아니라 엘리먼트로 넘긴다. 함수로 넘기면 렌더마다 타입이 바뀌어
+        // 헤더가 통째로 리마운트되고, 헤더 안의 검색 TextInput이 포커스를 잃는다.
+        ListEmptyComponent={renderEmpty()}
+        ListHeaderComponent={renderHeader()}
+        ListFooterComponent={renderFooter()}
         contentContainerStyle={plStyles.listContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

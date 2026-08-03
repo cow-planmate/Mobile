@@ -69,8 +69,8 @@ describe('Auth Store - Social Login & Complete', () => {
     await store.oauthComplete({
       signupId: 'mock-signup-id',
       email: 'social@example.com',
-      age: 25,
-      gender: 1,
+      birthdate: '1999-01-01',
+      gender: 'MALE',
     });
 
     expect(mockedAxios.post).toHaveBeenCalledWith(
@@ -78,8 +78,8 @@ describe('Auth Store - Social Login & Complete', () => {
       {
         signupId: 'mock-signup-id',
         email: 'social@example.com',
-        age: 25,
-        gender: 1,
+        birthdate: '1999-01-01',
+        gender: 'MALE',
       }
     );
 

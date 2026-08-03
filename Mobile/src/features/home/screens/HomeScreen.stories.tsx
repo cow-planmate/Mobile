@@ -13,7 +13,6 @@ const meta = {
     transport: '',
     dateText: '',
     paxText: '',
-    showErrors: false,
     isFormValid: false,
     isSearchModalVisible: false,
     isCalendarVisible: false,
@@ -101,7 +100,7 @@ const meta = {
 
 export default meta;
 
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<typeof HomeScreenView>;
 
 export const Default: Story = {};
 

@@ -3,13 +3,17 @@ import Toast from 'react-native-toast-message';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { LoginScreenView } from './LoginScreen.view';
-import { API_URL } from '@env';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 
 type LoginScreenProps = {
   navigation: { navigate: (screen: string, params?: any) => void };
 };
 
+/**
+ * 로그인 화면 프레젠테이션 및 폼 인증/SNS OAuth 로그인 컨테이너 컴포넌트
+ *
+ * @param props navigation 네비게이션 프로퍼티
+ */
 export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [focused, setFocused] = useState<string | null>(null);

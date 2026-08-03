@@ -7,39 +7,37 @@ import {
   ScrollView,
   FlatList,
   StatusBar,
-  StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
-import { Search, ThumbsUp, MessageSquare, Eye, PenSquare, Flame, Lock } from 'lucide-react-native';
+import { Search, ThumbsUp, MessageSquare, Eye, PenSquare, Flame } from 'lucide-react-native';
 import FastImage from 'react-native-fast-image';
-import Svg, { Rect, Defs, Pattern, Circle } from 'react-native-svg';
 import { styles } from './CommunityScreen.styles';
 import { Header, NotificationModal } from '../../../components/common';
-
-export interface Post {
-  id: string;
-  title: string;
-  content: string;
-  author: string;
-  level: number;
-  time: string;
-  category: string;
-  likes: number;
-  comments: number;
-  views: number;
-  thumbnail?: string | null;
-}
+import { theme } from '../../../theme/theme';
+import { CommunityPostSummary } from '../types';
+import { BoardKey } from '../constants/levels';
+import LevelBadge from '../components/LevelBadge';
+import UserAvatar from '../components/UserAvatar';
 
 export interface CommunityScreenViewProps {
-  posts: Post[];
-  hotPosts: Post[];
-  categories: string[];
-  selectedCategory: string;
-  onSelectCategory: (category: string) => void;
+  posts: CommunityPostSummary[];
+  hotPosts: CommunityPostSummary[];
+  boards: readonly { key: BoardKey; label: string }[];
+  selectedCategory: BoardKey;
+  onSelectCategory: (category: BoardKey) => void;
   searchQuery: string;
   onSearchChange: (text: string) => void;
   onWritePost: () => void;
   onPostPress: (postId: string) => void;
-  
+
+  isLoading: boolean;
+  isRefreshing: boolean;
+  isFetchingNextPage: boolean;
+  isError: boolean;
+  onRefresh: () => void;
+  onLoadMore: () => void;
+
   // Header & Notification Modal Props
   user?: any;
   pendingRequests: any[];
@@ -47,72 +45,64 @@ export interface CommunityScreenViewProps {
   setNotificationModalVisible: (visible: boolean) => void;
   onNotificationPress: () => void;
   onNavigateProfile: () => void;
-  fetchPendingRequests: (silent?: boolean) => Promise<void>;
+  onAcceptInvitation: (requestId: number) => void;
+  onRejectInvitation: (requestId: number) => void;
 }
 
 export default function CommunityScreenView({
   posts,
   hotPosts,
-  categories,
+  boards,
   selectedCategory,
   onSelectCategory,
   searchQuery,
   onSearchChange,
   onWritePost,
   onPostPress,
+  isLoading,
+  isRefreshing,
+  isFetchingNextPage,
+  isError,
+  onRefresh,
+  onLoadMore,
   user,
   pendingRequests,
   isNotificationModalVisible,
   setNotificationModalVisible,
   onNotificationPress,
   onNavigateProfile,
-  fetchPendingRequests,
+  onAcceptInvitation,
+  onRejectInvitation,
 }: CommunityScreenViewProps) {
+  const selectedLabel =
+    boards.find(board => board.key === selectedCategory)?.label ?? '';
 
-  // 레벨 배지 색상 취득
-  const getLevelBadgeStyle = (level: number) => {
-    const colorMap: { [key: number]: { bg: string; text: string } } = {
-      1: { bg: '#F3F4F6', text: '#6B7280' },
-      2: { bg: '#DBEAFE', text: '#2563EB' },
-      3: { bg: '#E0F2FE', text: '#0369A1' },
-      4: { bg: '#FEF3C7', text: '#D97706' },
-      5: { bg: '#FEE2E2', text: '#EF4444' },
-    };
-    return colorMap[level] || { bg: '#F3F4F6', text: '#6B7280' };
-  };
-
-  // 일반 게시글 렌더링
-  const renderPostItem = useCallback(({ item }: { item: Post }) => {
-    const levelStyle = getLevelBadgeStyle(item.level);
-
-    return (
+  const renderPostItem = useCallback(
+    ({ item }: { item: CommunityPostSummary }) => (
       <TouchableOpacity
         style={styles.postCard}
-        onPress={() => onPostPress(item.id)}
+        onPress={() => onPostPress(String(item.id))}
         activeOpacity={0.8}
       >
         <View style={styles.postLeftSection}>
-          <Text style={styles.postTitle} numberOfLines={1}>{item.title}</Text>
-          <Text style={styles.postContent} numberOfLines={2}>{item.content}</Text>
-          
+          <Text style={styles.postTitle} numberOfLines={2}>
+            {item.title}
+          </Text>
+
           <View style={styles.postMetaRow}>
             <Text style={styles.authorName}>{item.author}</Text>
-            <View style={[styles.levelBadge, { backgroundColor: levelStyle.bg }]}>
-              <Text style={[styles.levelBadgeText, { color: levelStyle.text }]}>
-                Lv.{item.level}
-              </Text>
-            </View>
+            <LevelBadge level={item.level} />
             <Text style={styles.metaDivider}>|</Text>
-            <Text style={styles.postTime}>{item.time}</Text>
+            <Text style={styles.postTime}>{item.createdAt}</Text>
           </View>
         </View>
 
-        {/* 썸네일 영역 */}
+        {/* 썸네일 + 통계 */}
         <View style={styles.postRightSection}>
-          {item.thumbnail ? (
+          {item.image ? (
             <FastImage
               style={styles.thumbnailImage}
-              source={{ uri: item.thumbnail }}
+              source={{ uri: item.image }}
               resizeMode={FastImage.resizeMode.cover}
             />
           ) : (
@@ -121,46 +111,51 @@ export default function CommunityScreenView({
             </View>
           )}
 
-          {/* 좋아요, 댓글, 조회수 통계 누적 */}
           <View style={styles.postStatsOverlay}>
             <View style={styles.statItem}>
-              <ThumbsUp size={11} color="#3B82F6" style={{ marginRight: 2 }} />
-              <Text style={[styles.statText, { color: '#3B82F6', fontWeight: 'bold' }]}>{item.likes}</Text>
+              <ThumbsUp size={11} color="#3B82F6" style={styles.statIcon} />
+              <Text style={[styles.statText, styles.statTextLikes]}>
+                {item.likes}
+              </Text>
             </View>
             <View style={styles.statItem}>
-              <MessageSquare size={11} color="#6B7280" style={{ marginRight: 2 }} />
+              <MessageSquare size={11} color="#6B7280" style={styles.statIcon} />
               <Text style={styles.statText}>{item.comments}</Text>
             </View>
             <View style={styles.statItem}>
-              <Eye size={11} color="#9CA3AF" style={{ marginRight: 2 }} />
+              <Eye size={11} color="#9CA3AF" style={styles.statIcon} />
               <Text style={styles.statText}>{item.views}</Text>
             </View>
           </View>
         </View>
       </TouchableOpacity>
-    );
-  }, [onPostPress]);
+    ),
+    [onPostPress],
+  );
 
-  // 리스트 헤더 영역 (지금 뜨는 핫글, 타이틀)
+  /**
+   * 아래 세 개는 FlatList에 **엘리먼트**로 넘긴다.
+   *
+   * 컴포넌트(함수)로 넘기면 렌더마다 함수 identity가 바뀌어 React가 다른 타입으로
+   * 보고 헤더 전체를 언마운트 후 다시 마운트한다. 헤더에 검색 TextInput이 있어
+   * 한 글자 입력할 때마다 포커스와 키보드가 사라졌다.
+   */
   const renderListHeader = () => (
     <View style={styles.listHeaderContainer}>
-      {/* 카테고리 가로 탭 바 (웹 탭 스타일) */}
+      {/* 게시판 탭 */}
       <View style={styles.tabBarContainer}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabBarScroll}
         >
-          {categories.map((category) => {
-            const isActive = selectedCategory === category;
+          {boards.map(board => {
+            const isActive = selectedCategory === board.key;
             return (
               <TouchableOpacity
-                key={category}
-                style={[
-                  styles.tabBarItem,
-                  isActive && styles.tabBarItemActive,
-                ]}
-                onPress={() => onSelectCategory(category)}
+                key={board.key}
+                style={[styles.tabBarItem, isActive && styles.tabBarItemActive]}
+                onPress={() => onSelectCategory(board.key)}
                 activeOpacity={0.8}
               >
                 <Text
@@ -169,7 +164,7 @@ export default function CommunityScreenView({
                     isActive && styles.tabBarTextActive,
                   ]}
                 >
-                  {category}
+                  {board.label}
                 </Text>
               </TouchableOpacity>
             );
@@ -177,29 +172,30 @@ export default function CommunityScreenView({
         </ScrollView>
       </View>
 
-      {/* 검색 바 & 글쓰기 통합 영역 */}
+      {/* 검색 + 글쓰기 */}
       <View style={styles.searchBarRow}>
         <View style={styles.searchBarContainer}>
-          <Search size={18} color="#9CA3AF" style={{ marginRight: 8 }} />
+          <Search size={18} color="#9CA3AF" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder={`${selectedCategory} 내 검색...`}
+            placeholder={`${selectedLabel} 내 검색...`}
             placeholderTextColor="#9CA3AF"
             value={searchQuery}
             onChangeText={onSearchChange}
+            returnKeyType="search"
           />
         </View>
-        <TouchableOpacity 
-          style={styles.writeButton} 
+        <TouchableOpacity
+          style={styles.writeButton}
           onPress={onWritePost}
           activeOpacity={0.8}
         >
-          <PenSquare size={14} color="#FFFFFF" style={{ marginRight: 4 }} />
+          <PenSquare size={14} color="#FFFFFF" style={styles.writeIcon} />
           <Text style={styles.writeButtonText}>글쓰기</Text>
         </TouchableOpacity>
       </View>
 
-      {/* 핫글 섹션 */}
+      {/* 핫글 */}
       {hotPosts.length > 0 && (
         <View style={styles.hotSectionContainer}>
           <View style={styles.hotHeaderRow}>
@@ -209,15 +205,13 @@ export default function CommunityScreenView({
               </View>
               <View>
                 <Text style={styles.hotTitle}>지금 뜨는 핫글</Text>
-                <Text style={styles.hotSubtitle}>실시간 가장 반응이 뜨거운 게시글입니다</Text>
+                <Text style={styles.hotSubtitle}>
+                  실시간 가장 반응이 뜨거운 게시글입니다
+                </Text>
               </View>
             </View>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text style={styles.hotAllLink}>전체보기</Text>
-            </TouchableOpacity>
           </View>
 
-          {/* 핫글 가로 스크롤 리스트 */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -227,7 +221,7 @@ export default function CommunityScreenView({
               <TouchableOpacity
                 key={post.id}
                 style={styles.hotPostCard}
-                onPress={() => onPostPress(post.id)}
+                onPress={() => onPostPress(String(post.id))}
                 activeOpacity={0.8}
               >
                 <View style={styles.hotCardLeft}>
@@ -237,33 +231,41 @@ export default function CommunityScreenView({
                       <Text style={styles.hotBadgeText}>HOT</Text>
                     </View>
                     <View style={styles.hotViewsWrap}>
-                      <Eye size={10} color="#9CA3AF" style={{ marginRight: 2 }} />
+                      <Eye size={10} color="#9CA3AF" style={styles.statIcon} />
                       <Text style={styles.hotViewsText}>{post.views}</Text>
                     </View>
                   </View>
-                  
-                  <Text style={styles.hotCardTitle} numberOfLines={1}>{post.title}</Text>
-                  
+
+                  <Text style={styles.hotCardTitle} numberOfLines={1}>
+                    {post.title}
+                  </Text>
+
                   <View style={styles.hotCardFooter}>
                     <View style={styles.hotCardAuthorRow}>
-                      <View style={styles.hotAvatar}>
-                        <Text style={styles.hotAvatarText}>{post.author.charAt(0)}</Text>
-                      </View>
+                      <UserAvatar
+                        name={post.author}
+                        imageUrl={post.authorImage}
+                        avatarHash={post.authorAvatarHash}
+                        size={18}
+                      />
                       <Text style={styles.hotAuthorText}>{post.author}</Text>
                     </View>
                     <View style={styles.hotLikesWrap}>
-                      <ThumbsUp size={11} color="#EF4444" style={{ marginRight: 3 }} />
+                      <ThumbsUp
+                        size={11}
+                        color="#EF4444"
+                        style={styles.statIcon}
+                      />
                       <Text style={styles.hotLikesText}>{post.likes}</Text>
                     </View>
                   </View>
                 </View>
 
-                {/* 핫글 썸네일 */}
                 <View style={styles.hotCardRight}>
-                  {post.thumbnail ? (
+                  {post.image ? (
                     <FastImage
                       style={styles.hotThumbnail}
-                      source={{ uri: post.thumbnail }}
+                      source={{ uri: post.image }}
                       resizeMode={FastImage.resizeMode.cover}
                     />
                   ) : (
@@ -280,27 +282,40 @@ export default function CommunityScreenView({
     </View>
   );
 
-  // 리스트 푸터 영역 (페이지네이션)
-  const renderListFooter = () => (
-    <View style={styles.listFooterPagination}>
-      <TouchableOpacity style={[styles.pageButton, styles.pageButtonActive]} activeOpacity={0.8}>
-        <Text style={[styles.pageText, styles.pageTextActive]}>1</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.pageButton} activeOpacity={0.8}>
-        <Text style={styles.pageText}>2</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.pageButton} activeOpacity={0.8}>
-        <Text style={styles.pageText}>3</Text>
-      </TouchableOpacity>
-      <Text style={styles.pageEllipsis}>...</Text>
-    </View>
-  );
+  const renderListFooter = () => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.listFooterLoading}>
+        <ActivityIndicator color={theme.colors.primary} />
+      </View>
+    );
+  };
+
+  const renderEmpty = () => {
+    if (isLoading) {
+      return (
+        <View style={styles.listStateBox}>
+          <ActivityIndicator color={theme.colors.primary} />
+        </View>
+      );
+    }
+    return (
+      <View style={styles.listStateBox}>
+        <Text style={styles.listStateText}>
+          {isError
+            ? '게시글을 불러오지 못했어요.\n아래로 당겨 다시 시도해 주세요.'
+            : searchQuery
+            ? '검색 결과가 없습니다'
+            : '아직 게시글이 없습니다'}
+        </Text>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* 공통 헤더 */}
       <Header
         nickname={user?.nickname}
         email={user?.email}
@@ -309,56 +324,33 @@ export default function CommunityScreenView({
         onNavigateProfile={onNavigateProfile}
       />
 
-      <View style={{ flex: 1, position: 'relative' }}>
-        {/* Existing FlatList with pointer events disabled */}
-        <View style={{ flex: 1 }} pointerEvents="none">
-          {/* 게시글 리스트 */}
-          <FlatList
-            data={posts}
-            renderItem={renderPostItem}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.postList}
-            showsVerticalScrollIndicator={false}
-            ListHeaderComponent={renderListHeader}
-            ListFooterComponent={renderListFooter}
-            ListEmptyComponent={
-              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 40, paddingBottom: 60 }}>
-                <Text style={{ color: '#9CA3AF', fontSize: 14 }}>게시글이 존재하지 않습니다</Text>
-              </View>
-            }
+      <FlatList
+        data={posts}
+        renderItem={renderPostItem}
+        keyExtractor={item => String(item.id)}
+        contentContainerStyle={styles.postList}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={renderListHeader()}
+        ListFooterComponent={renderListFooter()}
+        ListEmptyComponent={renderEmpty()}
+        onEndReached={onLoadMore}
+        onEndReachedThreshold={0.4}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
           />
-        </View>
+        }
+      />
 
-        {/* 🔒 Lock & Mosaic Overlay */}
-        <View style={styles.lockOverlay}>
-          <Svg style={StyleSheet.absoluteFill}>
-            <Defs>
-              <Pattern id="frosted" width="4" height="4" patternUnits="userSpaceOnUse">
-                <Circle cx="1" cy="1" r="0.8" fill="rgba(255, 255, 255, 0.7)" />
-                <Circle cx="3" cy="3" r="0.5" fill="rgba(230, 230, 230, 0.4)" />
-                <Circle cx="2" cy="0" r="0.4" fill="rgba(255, 255, 255, 0.5)" />
-                <Circle cx="0" cy="2" r="0.6" fill="rgba(200, 200, 200, 0.3)" />
-              </Pattern>
-            </Defs>
-            <Rect width="100%" height="100%" fill="url(#frosted)" />
-          </Svg>
-
-          <View style={styles.lockContainer}>
-            <View style={styles.lockIconWrapper}>
-              <Lock size={28} color="#FFFFFF" strokeWidth={2.2} />
-            </View>
-            <Text style={styles.lockTitle}>준비 중인 기능입니다</Text>
-            <Text style={styles.lockSubtitle}>조금만 기다려 주세요! 멋진 커뮤니티 기능으로 찾아뵙겠습니다.</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* 알림 초대 수락/거절 모달 */}
       <NotificationModal
         visible={isNotificationModalVisible}
         onClose={() => setNotificationModalVisible(false)}
-        pendingRequests={pendingRequests}
-        onRefresh={() => fetchPendingRequests(true)}
+        invitations={pendingRequests}
+        onAccept={onAcceptInvitation}
+        onReject={onRejectInvitation}
       />
     </View>
   );

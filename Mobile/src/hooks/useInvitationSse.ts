@@ -6,6 +6,18 @@ import EventSource, { MessageEvent } from 'react-native-sse';
 import { resolveApiUrl } from '../utils/apiUrl';
 
 const DEFAULT_INVITATION_SSE_PATH = '/api/sse/subscribe';
+
+/**
+ * 개발 전용 로그.
+ *
+ * 연결이 불안정하면 error/close 핸들러와 지수 백오프 재연결이 반복되며
+ * 로그가 계속 쌓인다. RN에서 console.log는 브리지를 타므로 릴리스에서는 끈다.
+ */
+const sseLog = (...args: unknown[]) => {
+  if (__DEV__) {
+    console.log(...args);
+  }
+};
 const INITIAL_RECONNECT_DELAY_MS = 1000;
 const MAX_RECONNECT_DELAY_MS = 30000;
 const CUSTOM_EVENT_TYPES = [
@@ -28,6 +40,11 @@ const resolveSseUrl = (): string => {
   return resolveApiUrl(DEFAULT_INVITATION_SSE_PATH, baseUrl);
 };
 
+/**
+ * 실시간 일정 초댓장 및 협업 요청 알림을 위한 SSE(Server-Sent Events) 구독 훅
+ *
+ * @param params enabled 활성화 여부 및 이벤트 수신 콜백 함수
+ */
 export function useInvitationSse({
   enabled,
   onInvitationEvent,
@@ -71,7 +88,7 @@ export function useInvitationSse({
 
       reconnectTimerRef.current = setTimeout(() => {
         connect().catch(error => {
-          console.log('[SSE] Reconnect attempt failed:', error);
+          sseLog('[SSE] Reconnect attempt failed:', error);
         });
       }, delay);
 
@@ -101,14 +118,17 @@ export function useInvitationSse({
         Authorization: `Bearer ${token}`,
       },
       method: 'GET',
-      // Keep the stream open and let server side heartbeat handle liveness.
+      // 스트림 연결 상태를 유지하고 서버 하트비트를 사용하도록 설정
       pollingInterval: 0,
       timeout: 60000,
     });
 
     const onOpen = () => {
       reconnectDelayRef.current = INITIAL_RECONNECT_DELAY_MS;
-      console.log('[SSE] Invitation stream connected');
+      sseLog('[SSE] 초대 스트림에 연결되었습니다.');
+      Promise.resolve(onInvitationEventRef.current()).catch(error => {
+        sseLog('[SSE] 초대 목록 재동기화 실패:', error);
+      });
     };
 
     const handleIncomingEvent = (event: {
@@ -132,11 +152,11 @@ export function useInvitationSse({
       try {
         JSON.parse(rawData);
       } catch (_error) {
-        // Non-JSON heartbeat messages are ignored.
+        // JSON 형태가 아닌 하트비트 메시지는 무시합니다.
       }
 
       Promise.resolve(onInvitationEventRef.current()).catch(error => {
-        console.log('[SSE] Invitation event handler failed:', error);
+        sseLog('[SSE] 초대 이벤트 핸들러 실행 실패:', error);
       });
     };
 
@@ -167,11 +187,11 @@ export function useInvitationSse({
           ? String((event as { xhrState: unknown }).xhrState)
           : 'unknown';
 
-      console.log(
-        `[SSE] Invitation stream error: status=${xhrStatus}, state=${xhrState}`,
+      sseLog(
+        `[SSE] 초대 스트림 오류: status=${xhrStatus}, state=${xhrState}`,
       );
 
-      // If server denies stream access, stop reconnect loop and rely on polling.
+      // 서버에서 권한을 거부(401/403)한 경우 재연결 시도를 중지하고 폴링 방식에 의존
       if (xhrStatus === '401' || xhrStatus === '403') {
         shouldReconnectRef.current = false;
         disconnect();
@@ -183,10 +203,11 @@ export function useInvitationSse({
     };
 
     const onClose = () => {
-      console.log('[SSE] Invitation stream closed. Reconnecting...');
+      sseLog('[SSE] 초대 스트림 연결 끊김. 재연결 시도 중...');
       disconnect();
       scheduleReconnect(connect);
     };
+
 
     source.addEventListener('open', onOpen);
     source.addEventListener('message', onMessage);
@@ -204,7 +225,7 @@ export function useInvitationSse({
 
     if (enabled) {
       connect().catch(error => {
-        console.log('[SSE] Initial connection failed:', error);
+        sseLog('[SSE] Initial connection failed:', error);
       });
       return () => {
         shouldReconnectRef.current = false;

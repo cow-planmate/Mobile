@@ -8,14 +8,19 @@ import TravelFeedScreen from '../features/itinerary/screens/TravelFeedScreen';
 import ProfileScreen from '../features/auth/screens/ProfileScreen';
 import ThemeSettingsScreen from '../features/auth/screens/ThemeSettingsScreen';
 import ChangePasswordScreen from '../features/auth/screens/ChangePasswordScreen';
-import { CommunityScreen } from '../features/community';
-import { SocialScreen } from '../features/social';
+import {
+  CommunityScreen,
+  FeedDetailScreen,
+  PostCreateScreen,
+  PostDetailScreen,
+} from '../features/community';
 
 import {
   TabParamList,
   FeedStackParamList,
   ScheduleStackParamList,
   CommunityStackParamList,
+  AppStackParamList,
 } from './types';
 import { Platform } from 'react-native';
 import { MessageSquare, Compass, PlusCircle } from 'lucide-react-native';
@@ -24,7 +29,7 @@ const FeedStackNavigator = createNativeStackNavigator<FeedStackParamList>();
 const ScheduleStackNavigator = createNativeStackNavigator<ScheduleStackParamList>();
 const CommunityStackNavigator = createNativeStackNavigator<CommunityStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<AppStackParamList>();
 
 const baseTabBarStyle = {
   backgroundColor: '#FFFFFF',
@@ -49,6 +54,10 @@ function FeedStack() {
       <FeedStackNavigator.Screen
         name="FeedMain"
         component={TravelFeedScreen}
+      />
+      <FeedStackNavigator.Screen
+        name="FeedDetail"
+        component={FeedDetailScreen}
       />
     </FeedStackNavigator.Navigator>
   );
@@ -87,6 +96,14 @@ function CommunityStack() {
       <CommunityStackNavigator.Screen
         name="CommunityMain"
         component={CommunityScreen}
+      />
+      <CommunityStackNavigator.Screen
+        name="CommunityDetail"
+        component={PostDetailScreen}
+      />
+      <CommunityStackNavigator.Screen
+        name="CommunityCreate"
+        component={PostCreateScreen}
       />
     </CommunityStackNavigator.Navigator>
   );
@@ -164,7 +181,6 @@ export default function AppStack() {
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="ThemeSettings" component={ThemeSettingsScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-      <Stack.Screen name="Social" component={SocialScreen} />
       <Stack.Screen
         name="ItineraryEditor"
         component={ItineraryEditorScreen}

@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { API_URL } from '@env';
 
 // Request/Response 타입 정의 (백엔드 DTO 기반)
 
@@ -165,11 +164,16 @@ export const verifyEmail = async (
   purpose: 'SIGN_UP' | 'RESET_PASSWORD',
   verificationCode: string,
 ): Promise<EmailVerificationResponse> => {
-  const response = await axios.post<EmailVerificationResponse>(
+  const response = await axios.post<any>(
     '/api/auth/email/verification/confirm',
     { email, purpose, verificationCode },
   );
-  return response.data;
+  const token = response.data.verificationToken || response.data.token;
+  return {
+    emailVerified: !!token,
+    token: token,
+    message: response.data.message || '',
+  };
 };
 
 /**
@@ -209,16 +213,14 @@ export const verifyNickname = async (
 
 /**
  * 토큰 갱신
- * GET /api/auth/token?refreshToken=...
+ * POST /api/auth/token
  */
 export const refreshAccessToken = async (
   refreshToken: string,
 ): Promise<RefreshTokenResponse> => {
-  const response = await axios.get<RefreshTokenResponse>(
+  const response = await axios.post<RefreshTokenResponse>(
     '/api/auth/token',
-    {
-      params: { refreshToken },
-    },
+    { refreshToken },
   );
   return response.data;
 };

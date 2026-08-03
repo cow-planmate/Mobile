@@ -1,11 +1,16 @@
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../store/useAuthStore';
 import { savePreferredThemes, PreferredThemeVO } from '../api/themes';
 import ThemeSelector, { ThemeSelectorResult } from '../components/common/ThemeSelector';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 import AuthStack from './AuthStack';
 import AppStack from './AppStack';
 
+/**
+ * 최상위 루트 네비게이션 스택 타입 정의
+ */
 export type RootStackParamList = {
   Auth: undefined;
   App: undefined;
@@ -13,8 +18,12 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+/**
+ * 인증 상태(로그인 여부)에 따라 인증 스택과 메인 앱 스택을 분기하는 최상위 네비게이터
+ */
 export default function AppNavigator() {
   const user = useAuthStore((state) => state.user);
+  const isInitializing = useAuthStore((state) => state.isInitializing);
   const needsThemeSelection = useAuthStore((state) => state.needsThemeSelection);
   const setNeedsThemeSelection = useAuthStore((state) => state.setNeedsThemeSelection);
 
@@ -38,6 +47,16 @@ export default function AppNavigator() {
     setNeedsThemeSelection(false);
   };
 
+  // 저장소 복원이 끝나기 전에는 스택을 결정하지 않는다.
+  // (로그인 상태인데도 로그인 화면이 잠깐 노출되는 문제 방지)
+  if (isInitializing) {
+    return (
+      <View style={styles.splash}>
+        <LoadingSpinner />
+      </View>
+    );
+  }
+
   return (
     <>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -55,3 +74,10 @@ export default function AppNavigator() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  splash: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+});

@@ -24,6 +24,8 @@ export const HOUR_HEIGHT = 180;
 export const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
 export const MIN_ITEM_HEIGHT = 45;
 export const GRID_SNAP_HEIGHT = HOUR_HEIGHT / 4;
+/** timelineWrapper.paddingVertical(20) + gridContainer.paddingVertical(20) */
+export const GRID_TOP_OFFSET = 40;
 export const BOTTOM_TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 85 : 60;
 
 export const styles = StyleSheet.create({
@@ -610,5 +612,9 @@ export const styles = StyleSheet.create({
     elevation: 2,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+  },
+  floatingHistoryButtonDisabled: {
+    backgroundColor: '#F3F4F6',
+    opacity: 0.5,
   },
 });

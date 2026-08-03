@@ -11,9 +11,9 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
-import { Eye, EyeOff, X } from 'lucide-react-native';
-import Svg, { Path, G, Defs, ClipPath, Rect } from 'react-native-svg';
-import { styles, COLORS, normalize } from './LoginScreen.styles';
+import { X } from 'lucide-react-native';
+import Svg, { Path, Rect } from 'react-native-svg';
+import { styles, COLORS } from './LoginScreen.styles';
 
 /* ── Inline SVG icons for social login ── */
 

@@ -15,7 +15,7 @@ import {
   faCheck,
 } from '@fortawesome/free-solid-svg-icons';
 import { Map as MapOutlineIcon, ChevronLeft } from 'lucide-react-native';
-import KakaoMapView from '../components/KakaoMapView';
+import RouteMapSection from '../components/RouteMapSection';
 import { ShareModal, AirplaneLoading, LoadingSpinner } from '../../../components/common';
 import TimelineItem, {
   Place,
@@ -25,7 +25,6 @@ import { SimpleWeatherInfo } from '../../../api/trips';
 import WeatherHeader from '../components/weather/WeatherHeader';
 import {
   styles,
-  COLORS,
   HOUR_HEIGHT,
   MINUTE_HEIGHT,
   MIN_ITEM_HEIGHT,
@@ -51,21 +50,6 @@ const formatDate = (date: Date) => {
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
   return `${month}.${day}`;
-};
-
-const getDayMeta = (places: Place[]) => {
-  if (!places || places.length === 0) return '';
-  const count = places.length;
-  let totalMin = 0;
-  places.forEach(p => {
-    const s = timeToMinutes(p.startTime);
-    const e = timeToMinutes(p.endTime);
-    if (e > s) totalMin += e - s;
-  });
-  const h = Math.floor(totalMin / 60);
-  const m = totalMin % 60;
-  const timeStr = h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
-  return `${count}개소 ${timeStr}`;
 };
 
 type ToolbarButtonVariant =
@@ -251,6 +235,7 @@ export interface ItineraryViewScreenViewProps {
   weatherMap: Record<string, SimpleWeatherInfo>;
   tripName: string;
   isBacking: boolean;
+  /** 컨테이너가 전달하는 날씨 로딩 상태. 현재 뷰는 표시에 사용하지 않는다. */
   isWeatherLoading: boolean;
 }
 
@@ -273,7 +258,6 @@ export default function ItineraryViewScreenView({
   weatherMap,
   tripName,
   isBacking,
-  isWeatherLoading,
 }: ItineraryViewScreenViewProps) {
   const insets = useSafeAreaInsets();
   const selectedDay = days[selectedDayIndex];
@@ -344,7 +328,6 @@ export default function ItineraryViewScreenView({
           onLayout={(e) => setDayScrollLayoutWidth(e.nativeEvent.layout.width)}
           onScroll={(e) => setDayScrollX(e.nativeEvent.contentOffset.x)}
           scrollEventThrottle={16}
-          clipToPadding={false}
         >
           {days.map((day, index) => {
             const isSelected = selectedDayIndex === index;
@@ -420,7 +403,7 @@ export default function ItineraryViewScreenView({
       {isMapVisible && (
         <View style={styles.mapContainer}>
           <View style={styles.mapInner}>
-            <KakaoMapView
+            <RouteMapSection
               places={
                 selectedDay?.places.map(place => ({
                   id: place.id,
@@ -486,12 +469,12 @@ export default function ItineraryViewScreenView({
         planId={planId ?? ''}
       />
       <Modal
-        visible={days.length === 0 || isBacking || isWeatherLoading}
+        visible={days.length === 0 || isBacking}
         transparent={false}
         animationType="fade"
         onRequestClose={() => {}}
       >
-        {days.length === 0 || isWeatherLoading ? (
+        {days.length === 0 ? (
           <AirplaneLoading />
         ) : (
           <View style={{ flex: 1, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' }}>

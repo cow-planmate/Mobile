@@ -9,26 +9,17 @@ import { PlacesProvider } from './src/contexts/PlacesContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './src/api/queryClient';
-import StorybookUIRoot from './.storybook';
 
 // axios 인터셉터 설정 초기화
 import './src/api/axiosConfig';
 
-import { StyleSheet, StatusBar, View, Text, TextInput } from 'react-native';
+import { StyleSheet, StatusBar, View, Text } from 'react-native';
 import Toast from 'react-native-toast-message';
 import type { ToastConfig } from 'react-native-toast-message';
 import { XCircle, CheckCircle2, Info } from 'lucide-react-native';
 
-// 글로벌 폰트 스케일링 가드 적용 (레이아웃 깨짐 원천 방지)
-if ((Text as any).defaultProps == null) {
-  (Text as any).defaultProps = {};
-}
-(Text as any).defaultProps.allowFontScaling = false;
-
-if ((TextInput as any).defaultProps == null) {
-  (TextInput as any).defaultProps = {};
-}
-(TextInput as any).defaultProps.allowFontScaling = false;
+// 글로벌 폰트 스케일링 가드는 index.js에서 최우선 적용된다.
+// (React 19에서 defaultProps가 제거되어 utils/fontScalingGuard로 대체)
 
 const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && false;
 
@@ -103,6 +94,9 @@ function App() {
   }, [initializeAuth]);
 
   if (SHOW_STORYBOOK) {
+    // Storybook 런타임(+ 모든 *.stories 모듈)이 앱 콜드 스타트에 실행되지 않도록
+    // 정적 import 대신 지연 로드한다.
+    const StorybookUIRoot = require('./.storybook').default;
     return <StorybookUIRoot />;
   }
 

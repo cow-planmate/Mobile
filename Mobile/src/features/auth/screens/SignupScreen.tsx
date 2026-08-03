@@ -7,18 +7,23 @@ import React, {
 } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
-import { API_URL } from '@env';
 import { SignupScreenView } from './SignupScreen.view';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import Toast from 'react-native-toast-message';
 
+/**
+ * 타이머 남은 시간을 'M:SS' 포맷으로 변환하는 헬퍼 함수
+ */
 const formatTime = (seconds: number) => {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
   return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 };
 
+/**
+ * 이메일 인증, 비밀번호 입력, 닉네임 검증 및 회원가입 단계별 폼 컨테이너 컴포넌트
+ */
 export default function SignupScreen() {
   const navigation = useNavigation<any>();
   const login = useAuthStore((state) => state.login);
@@ -126,7 +131,8 @@ export default function SignupScreen() {
         },
       );
 
-      if (response.data.verificationSent) {
+      // v2 returns 204 No Content on success
+      if (response.status >= 200 && response.status < 300) {
         showAlert({
           title: '성공',
           message:
@@ -174,9 +180,8 @@ export default function SignupScreen() {
         },
       );
 
-      const isVerified =
-        response.data.emailVerified || response.data.verifySuccess;
-      const token = response.data.token || response.data.verificationToken;
+      const token = response.data.verificationToken || response.data.token;
+      const isVerified = !!token && response.status >= 200 && response.status < 300;
 
       if (isVerified) {
         showAlert({ title: '성공', message: '이메일 인증이 완료되었습니다.' });
@@ -284,19 +289,20 @@ export default function SignupScreen() {
     try {
       const genderInt = form.gender === 'male' ? 0 : 1;
 
+      const currentYear = new Date().getFullYear();
+      const birthYear = currentYear - ageNum;
+      const birthdate = `${birthYear}-01-01`;
+      const genderEnum = genderInt === 0 ? 'MALE' : 'FEMALE';
+
       await axios.post(
         '/api/auth/register',
         {
+          signupToken: emailAuthToken,
           nickname: form.nickname,
           password: form.password,
-          gender: genderInt,
-          age: ageNum,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${emailAuthToken}`,
-          },
-        },
+          gender: genderEnum,
+          birthdate,
+        }
       );
 
       // 회원가입 성공 → 자동 로그인 후 테마 선택

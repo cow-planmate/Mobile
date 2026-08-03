@@ -7,46 +7,29 @@ import React, {
 } from 'react';
 import { ScrollView } from 'react-native';
 import axios from 'axios';
-import { API_URL } from '@env';
+import { resolveApiUrl } from '../../../utils/apiUrl';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
 import { Place } from '../components/TimelineItem';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MINUTE_HEIGHT } from './ItineraryViewScreen.styles';
-import { Day } from '../../../contexts/ItineraryContext';
 import {
+  DEFAULT_DAY_START,
+  DEFAULT_DAY_END,
+  formatDateLocal,
+  timeToMinutes,
+} from '../../../utils/timeUtils';
+import {
+  Day,
+  isFetchAtLeastAsComplete,
+} from '../../../contexts/ItineraryContext';
+import {
+  PlaceBlockVO,
   SimpleWeatherInfo,
-  fetchWeatherRecommendations,
+  fetchWeather,
 } from '../../../api/trips';
 import { useAlert } from '../../../contexts/AlertContext';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
-import { AirplaneLoading } from '../../../components/common';
 // DTO Interfaces
-interface PlaceBlockVO {
-  blockId?: number;
-  timetablePlaceBlockId?: number;
-  timeTableId: number;
-  timetableId?: number;
-  placeCategoryId: number;
-  placeCategory?: number;
-  placeName: string;
-  placeTheme: string;
-  placeRating: number;
-  placeAddress: string;
-  placeLink?: string;
-  photoUrl?: string;
-  placeId: string;
-  startTime: any;
-  endTime: any;
-  blockStartTime?: any;
-  blockEndTime?: any;
-  xLocation?: number;
-  yLocation?: number;
-  xlocation?: number;
-  ylocation?: number;
-  memo?: string;
-}
-
 interface PlanFrameVO {
   planId: number;
   planName: string;
@@ -63,30 +46,29 @@ interface GetCompletePlanResponse {
   message: string;
   planFrame: PlanFrameVO;
   placeBlocks: PlaceBlockVO[];
-  timetables: { timetableId?: number; timeTableId?: number; date: string }[];
+  timetables: {
+    timetableId?: number;
+    timeTableId?: number;
+    date: string;
+    timeTableStartTime?: string;
+    timeTableEndTime?: string;
+  }[];
 }
 
-const timeToMinutes = (time: string) => {
-  if (!time || typeof time !== 'string' || !time.includes(':')) {
-    return 0;
-  }
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + minutes;
-};
-
-const formatDateLocal = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+/** route.params.days 기본값. 인라인 []는 렌더마다 새 배열이라 이펙트가 매번 돈다. */
+const EMPTY_DAYS: Day[] = [];
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 
+/**
+ * 완공된 여행 일정표 조회 및 날씨/경로 요약 확인 화면 컨테이너 컴포넌트
+ *
+ * @param props route 라우트 파라미터 및 navigation 프로퍼티
+ */
 export default function ItineraryViewScreen({ route, navigation }: Props) {
   const { showAlert } = useAlert();
   const {
-    days: initialDays = [],
+    days: initialDays = EMPTY_DAYS,
     tripName: initialTripName = '',
     departure,
     destination: routeDestination,
@@ -114,6 +96,10 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const [weatherMap, setWeatherMap] = useState<
     Record<string, SimpleWeatherInfo>
   >({});
+  /** 날씨 조회 기준 여행지 ID. 서버는 도시명이 아니라 destinationId를 받는다. */
+  const [weatherDestinationId, setWeatherDestinationId] = useState<number | null>(
+    route.params?.travelId ?? null,
+  );
   const [destinationCity, setDestinationCity] = useState(
     routeDestination || '',
   );
@@ -136,28 +122,30 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const fetchCompletePlan = useCallback(async () => {
     if (!planId) return;
     try {
+      const token = await AsyncStorage.getItem('accessToken');
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
       const response = await axios.get<GetCompletePlanResponse>(
-        `/api/plan/${planId}`,
+        resolveApiUrl(`/api/plan/${planId}/complete`),
+        config,
       );
       const { planFrame, placeBlocks, timetables } = response.data;
 
+      const planDestinationId =
+        (planFrame as any)?.destinationId ?? planFrame?.travelId ?? null;
+      if (planDestinationId != null) {
+        setWeatherDestinationId(Number(planDestinationId));
+      }
+
       if (planFrame?.planName) {
-        setTripName(planFrame.planName);
+        setTripName(prev => (prev ? prev : planFrame.planName));
       }
       setDestinationCity(
-        buildWeatherCity(planFrame?.travelCategoryName, planFrame?.travelName),
+        (planFrame as any)?.destinationName ||
+          buildWeatherCity(
+            planFrame?.travelCategoryName,
+            planFrame?.travelName,
+          ),
       );
-
-      const categoryMapping = (
-        id: number | undefined,
-      ): '관광지' | '숙소' | '식당' | '직접 추가' | '검색' | '기타' => {
-        if ([0, 12, 14, 15, 28].includes(id ?? -1)) return '관광지';
-        if (id === 1 || id === 32) return '숙소';
-        if (id === 2 || id === 39) return '식당';
-        if (id === 3) return '직접 추가';
-        if (id === 4) return '검색';
-        return '기타';
-      };
 
       if (timetables && timetables.length > 0) {
         const fetchedDays: Day[] = timetables.map((tt, index) => {
@@ -177,17 +165,28 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
           };
 
           const places: Place[] = blocks.map(pb => {
-            const categoryId = (pb.placeCategoryId ??
-              pb.placeCategory ??
-              4) as number;
+            const blockCat = (pb as any).blockCategory;
+            const contentTypeIdStr = String(pb.placeContentTypeId || '');
+            const rawCategoryId = (pb.placeCategoryId ?? pb.placeCategory) as number;
 
-            // Normalize categoryId to 0-4 range
+            // Resolve normalized categoryId (0:관광지, 1:숙소, 2:식당, 3:직접추가, 4:검색)
             const normalizedCategoryId = (() => {
-              if ([0, 1, 2, 3, 4].includes(categoryId)) return categoryId;
-              if ([12, 14, 15, 28].includes(categoryId)) return 0;
-              if (categoryId === 32) return 1;
-              if (categoryId === 39) return 2;
-              return 4;
+              if (blockCat === 'ATTRACTION' || contentTypeIdStr === '12' || [0, 12, 14, 15, 28].includes(rawCategoryId)) return 0;
+              if (blockCat === 'ACCOMMODATION' || contentTypeIdStr === '32' || rawCategoryId === 1 || rawCategoryId === 32) return 1;
+              if (blockCat === 'RESTAURANT' || contentTypeIdStr === '39' || rawCategoryId === 2 || rawCategoryId === 39) return 2;
+              if (blockCat === 'FREE' || rawCategoryId === 3) return 3;
+              if (blockCat === 'SEARCH' || rawCategoryId === 4) return 4;
+              return [0, 1, 2, 3, 4].includes(rawCategoryId) ? rawCategoryId : 4;
+            })();
+
+            const typeName = (() => {
+              switch (normalizedCategoryId) {
+                case 0: return '관광지';
+                case 1: return '숙소';
+                case 2: return '식당';
+                case 3: return '직접 추가';
+                default: return '검색';
+              }
             })();
 
             return {
@@ -196,63 +195,100 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
               placeRefId: pb.placeId,
               name: pb.placeName,
               address: pb.placeAddress,
-              type: categoryMapping(categoryId) as any,
-              rating: pb.placeRating || 0,
+              type: typeName as any,
               startTime: parseTime(pb.startTime ?? pb.blockStartTime),
               endTime: parseTime(pb.endTime ?? pb.blockEndTime),
-              latitude: pb.yLocation ?? pb.ylocation ?? 0,
-              longitude: pb.xLocation ?? pb.xlocation ?? 0,
-              imageUrl: pb.photoUrl || pb.placeLink || '',
+              latitude: pb.latitude ?? pb.yLocation ?? pb.ylocation ?? 0,
+              longitude: pb.longitude ?? pb.xLocation ?? pb.xlocation ?? 0,
+              imageUrl: pb.photoUrl || pb.placeLink || pb.placeThumbnailUrl || '',
               memo: pb.memo || '',
               place_url: pb.placeLink || '',
+              contentTypeId: pb.placeContentTypeId || '',
+              copyrightDivCd: pb.placeCopyrightDivCd || '',
             };
           });
 
           return {
             date: new Date(tt.date),
             dayNumber: index + 1,
+            startTime: tt.timeTableStartTime || DEFAULT_DAY_START,
+            endTime: tt.timeTableEndTime || DEFAULT_DAY_END,
             places: places,
             timetableId: ttId,
           };
         });
-        setDays(fetchedDays);
+
+        // 편집 직후 곧바로 조회하면 서버 DB가 아직 최신 편집을 반영하기 전(주기/지연 동기화 대기 중)일 수 있다.
+        // 그 stale 응답이 방금 저장한 로컬 데이터보다 place가 적으면 무시하고 로컬을 유지한다.
+        setDays(prevDays =>
+          isFetchAtLeastAsComplete(fetchedDays, prevDays)
+            ? fetchedDays
+            : prevDays,
+        );
       }
     } catch (error) {
       console.error('Failed to fetch plan:', error);
       showAlert({ title: '오류', message: '일정을 불러오는데 실패했습니다.' });
       setIsWeatherLoading(false);
     }
-  }, [planId, buildWeatherCity]);
+  }, [planId, buildWeatherCity, showAlert]);
 
   useEffect(() => {
-    if (initialDays.length === 0 && planId) {
+    if (initialDays.length > 0) {
+      setDays(initialDays);
+    }
+    if (planId) {
       fetchCompletePlan();
     } else if (initialDays.length === 0 && !planId) {
       setIsWeatherLoading(false);
     }
-  }, [planId, fetchCompletePlan, initialDays.length]);
+  }, [planId, fetchCompletePlan, initialDays]);
+
+  // 날씨 조회 범위. 일수가 같아도 날짜가 바뀌면 다시 조회해야 한다.
+  const weatherRangeStart = days.length > 0 ? formatDateLocal(days[0].date) : '';
+  const weatherRangeEnd =
+    days.length > 0 ? formatDateLocal(days[days.length - 1].date) : '';
 
   // Fetch weather when destination and days are available
   useEffect(() => {
-    if (!destinationCity || days.length === 0) return;
+    if (!weatherDestinationId || !weatherRangeStart || !weatherRangeEnd) {
+      setWeatherMap({});
+      setIsWeatherLoading(false);
+      return;
+    }
     setIsWeatherLoading(true);
-    const startDate = formatDateLocal(days[0].date);
-    const endDate = formatDateLocal(days[days.length - 1].date);
-    fetchWeatherRecommendations(destinationCity, startDate, endDate)
+
+    const startDate = weatherRangeStart;
+    const endDate = weatherRangeEnd;
+    // 기간이 연달아 바뀌면 먼저 보낸 응답이 나중에 도착해 최신 결과를 덮어쓸 수 있다.
+    let cancelled = false;
+
+    fetchWeather(weatherDestinationId, startDate, endDate)
       .then(res => {
+        if (cancelled) return;
         const map: Record<string, SimpleWeatherInfo> = {};
-        res.weather.forEach(w => {
-          map[w.date] = w;
-        });
+        if (res && Array.isArray(res.weather)) {
+          res.weather.forEach(w => {
+            map[w.date] = w;
+          });
+        }
         setWeatherMap(map);
       })
-      .catch((err) => {
-        console.error('Failed to fetch weather:', err);
+      .catch(error => {
+        if (cancelled) return;
+        // 실패 시 고정값을 채우면 조회가 계속 실패해도 정상처럼 보인다. 비워 둔다.
+        console.warn('날씨 조회 실패:', error);
+        setWeatherMap({});
       })
       .finally(() => {
+        if (cancelled) return;
         setIsWeatherLoading(false);
       });
-  }, [destinationCity, days.length]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [weatherDestinationId, weatherRangeStart, weatherRangeEnd]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -297,8 +333,8 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   }, [selectedDayIndex]);
 
   const { gridHours, offsetMinutes, endHour } = useMemo(() => {
-    const startTimeStr = selectedDay?.startTime || '09:00:00';
-    const endTimeStr = selectedDay?.endTime || '20:00:00';
+    const startTimeStr = selectedDay?.startTime || DEFAULT_DAY_START;
+    const endTimeStr = selectedDay?.endTime || DEFAULT_DAY_END;
     const minHour = Math.floor(timeToMinutes(startTimeStr) / 60);
     const endMin = timeToMinutes(endTimeStr);
     const maxHour = Math.ceil(endMin / 60);
@@ -355,7 +391,18 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       endHour={endHour}
       handleConfirm={handleConfirm}
       goBack={handleGoBack}
-      handleEdit={() => navigation.navigate('ItineraryEditor', { planId })}
+      handleEdit={() =>
+        navigation.navigate('ItineraryEditor', {
+          planId,
+          tripName,
+          destination: destinationCity || routeDestination,
+          departure,
+          travelId,
+          transport,
+          adults,
+          children,
+        })
+      }
       planId={planId}
       weatherMap={weatherMap}
       tripName={tripName}

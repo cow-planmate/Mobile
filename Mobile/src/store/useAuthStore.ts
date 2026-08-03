@@ -2,43 +2,60 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { resolveApiUrl } from '../utils/apiUrl';
+import { LOGOUT_CLEARED_KEYS } from '../constants/storageKeys';
 import '../api/axiosConfig';
 
+/**
+ * 로그인한 사용자 세션 정보
+ */
 export interface User {
   userId: string;
   nickname: string;
   email: string;
 }
 
+/**
+ * 인증 및 사용자 세션 상태 관리 인터페이스
+ */
 interface AuthState {
   user: User | null;
   isLoading: boolean;
+  /** 앱 시작 시 저장소 복원이 끝나기 전까지 true (로그인 화면 깜빡임 방지) */
+  isInitializing: boolean;
   needsThemeSelection: boolean;
   setNeedsThemeSelection: (val: boolean) => void;
   setUser: (user: User | null) => void;
+  /** 앱 시작 시 로컬 저장소 토큰 및 사용자 정보 복원 */
   initialize: () => Promise<void>;
+  /** 이메일/비밀번호 로그인 처리 */
   login: (email: string, password: string) => Promise<void>;
+  /** 사용자 로그아웃 처리 */
   logout: () => Promise<void>;
+  /** OAuth 인가 코드로 토큰 교환 로그인 */
   oauthLogin: (code: string) => Promise<void>;
+  /** OAuth 신규 회원 추가 정보 등록 및 로그인 완료 */
   oauthComplete: (data: {
     signupId: string;
     email: string | null;
-    age: number;
-    gender: number;
+    birthdate: string;
+    gender: string;
   }) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isLoading: false,
+  isInitializing: true,
   needsThemeSelection: false,
   setNeedsThemeSelection: (val) => set({ needsThemeSelection: val }),
   setUser: (user) => set({ user }),
 
   initialize: async () => {
     try {
-      const userJson = await AsyncStorage.getItem('user');
-      const token = await AsyncStorage.getItem('accessToken');
+      const [[, userJson], [, token]] = await AsyncStorage.multiGet([
+        'user',
+        'accessToken',
+      ]);
 
       if (userJson && token) {
         set({ user: JSON.parse(userJson) });
@@ -46,6 +63,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
     } catch (error) {
       console.error('Failed to initialize auth store:', error);
+    } finally {
+      set({ isInitializing: false });
     }
   },
 
@@ -212,7 +231,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } finally {
       set({ user: null });
       delete axios.defaults.headers.common.Authorization;
-      await AsyncStorage.multiRemove(['user', 'accessToken', 'refreshToken']);
+      await AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS);
       set({ isLoading: false });
     }
   },

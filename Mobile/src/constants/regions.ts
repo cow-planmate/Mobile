@@ -1,3 +1,36 @@
+export const DESTINATIONS_28 = [
+  { id: 1, name: '서울', region: '수도권' },
+  { id: 2, name: '인천', region: '수도권' },
+  { id: 3, name: '수원', region: '수도권' },
+  { id: 4, name: '가평', region: '수도권' },
+  { id: 5, name: '강릉', region: '강원' },
+  { id: 6, name: '속초', region: '강원' },
+  { id: 7, name: '춘천', region: '강원' },
+  { id: 8, name: '평창', region: '강원' },
+  { id: 9, name: '양양', region: '강원' },
+  { id: 10, name: '대전', region: '충청' },
+  { id: 11, name: '공주', region: '충청' },
+  { id: 12, name: '부여', region: '충청' },
+  { id: 13, name: '태안', region: '충청' },
+  { id: 14, name: '전주', region: '전라' },
+  { id: 15, name: '여수', region: '전라' },
+  { id: 16, name: '순천', region: '전라' },
+  { id: 17, name: '광주', region: '전라' },
+  { id: 18, name: '담양', region: '전라' },
+  { id: 19, name: '목포', region: '전라' },
+  { id: 20, name: '부산', region: '경상' },
+  { id: 21, name: '대구', region: '경상' },
+  { id: 22, name: '경주', region: '경상' },
+  { id: 23, name: '안동', region: '경상' },
+  { id: 24, name: '통영', region: '경상' },
+  { id: 25, name: '거제', region: '경상' },
+  { id: 26, name: '남해', region: '경상' },
+  { id: 27, name: '제주', region: '제주' },
+  { id: 28, name: '서귀포', region: '제주' },
+];
+
+export const REGION_GROUPS = ['전체', '수도권', '강원', '충청', '전라', '경상', '제주'];
+
 export const TARGET_REGIONS = [
   '서울특별시',
   '부산광역시',

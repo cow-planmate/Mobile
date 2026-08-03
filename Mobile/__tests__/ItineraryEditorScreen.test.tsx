@@ -206,6 +206,7 @@ const mockWebSocket = {
   disconnect: jest.fn(),
   onlineUsers: [],
   sendMessage: jest.fn(),
+  isConnected: false,
 };
 jest.mock('../src/contexts/WebSocketContext', () => ({
   useWebSocket: () => mockWebSocket,
@@ -249,6 +250,7 @@ const mockItineraryEditor = {
   handleAddPlace: jest.fn(),
   selectedDay: null as any,
   planMetadata: {},
+  fetchPlanDetails: jest.fn(),
 };
 jest.mock('../src/hooks/useItineraryEditor', () => ({
   useItineraryEditor: () => mockItineraryEditor,
@@ -270,6 +272,8 @@ const mockDays: Day[] = [
         latitude: 33.5113,
         longitude: 126.493,
         category: '교통',
+        type: '기타' as const,
+        imageUrl: '',
       },
     ],
   },
@@ -288,6 +292,8 @@ const mockDays: Day[] = [
         latitude: 33.4623,
         longitude: 126.3106,
         category: '음식점',
+        type: '식당' as const,
+        imageUrl: '',
       },
     ],
   },
@@ -330,7 +336,6 @@ describe('ItineraryEditorScreenView Component', () => {
             handleDeletePlace={() => {}}
             handleAddPlace={() => {}}
             selectedDay={mockDays[selectedDayIndex]}
-            onlineUsers={[]}
             isScheduleEditVisible={false}
             setScheduleEditVisible={() => {}}
             onConfirmScheduleEdit={() => {}}
@@ -344,10 +349,7 @@ describe('ItineraryEditorScreenView Component', () => {
             onRedo={() => {}}
             participantsCount={0}
             planId={null}
-            detailPlace={null}
-            isDetailVisible={false}
             onOpenDetail={() => {}}
-            onCloseDetail={() => {}}
             weatherMap={{}}
             onOpenPlanInfo={() => {}}
             onGoBack={() => {}}
@@ -373,32 +375,32 @@ describe('ItineraryEditorScreenView Component', () => {
     expect(rendererInstance).toBeDefined();
 
     // Verify day 1 places (제주국제공항) are initially rendered in the Timeline tab screen
-    const timelineScreenDay1 = rendererInstance?.root.findByProps({
+    const timelineScreenDay1 = rendererInstance!.root.findByProps({
       testID: 'mock-tab-screen-타임라인',
     });
     expect(timelineScreenDay1.findByProps({ testID: 'timeline-item-1' })).toBeTruthy();
     expect(() => timelineScreenDay1.findByProps({ testID: 'timeline-item-2' })).toThrow();
 
     // Trigger state change (switch to day 2)
-    const btnDay2 = rendererInstance?.root.findByProps({ testID: 'btn-day-2' });
+    const btnDay2 = rendererInstance!.root.findByProps({ testID: 'btn-day-2' });
     await act(async () => {
       btnDay2.props.onPress();
     });
 
     // Verify day 2 places (애월 카페거리) are now rendered and day 1 places are gone, indicating Context was successfully updated
-    const timelineScreenDay2 = rendererInstance?.root.findByProps({
+    const timelineScreenDay2 = rendererInstance!.root.findByProps({
       testID: 'mock-tab-screen-타임라인',
     });
     expect(timelineScreenDay2.findByProps({ testID: 'timeline-item-2' })).toBeTruthy();
     expect(() => timelineScreenDay2.findByProps({ testID: 'timeline-item-1' })).toThrow();
 
     // Trigger state change back (switch to day 1)
-    const btnDay1 = rendererInstance?.root.findByProps({ testID: 'btn-day-1' });
+    const btnDay1 = rendererInstance!.root.findByProps({ testID: 'btn-day-1' });
     await act(async () => {
       btnDay1.props.onPress();
     });
 
-    const timelineScreenDay1Again = rendererInstance?.root.findByProps({
+    const timelineScreenDay1Again = rendererInstance!.root.findByProps({
       testID: 'mock-tab-screen-타임라인',
     });
     expect(timelineScreenDay1Again.findByProps({ testID: 'timeline-item-1' })).toBeTruthy();
@@ -432,7 +434,6 @@ describe('ItineraryEditorScreenView Component', () => {
           handleDeletePlace={() => {}}
           handleAddPlace={() => {}}
           selectedDay={mockDays[0]}
-          onlineUsers={[]}
           isScheduleEditVisible={false}
           setScheduleEditVisible={() => {}}
           onConfirmScheduleEdit={() => {}}
@@ -446,10 +447,7 @@ describe('ItineraryEditorScreenView Component', () => {
           onRedo={mockRedo}
           participantsCount={0}
           planId={null}
-          detailPlace={null}
-          isDetailVisible={false}
           onOpenDetail={() => {}}
-          onCloseDetail={() => {}}
           weatherMap={{}}
           onOpenPlanInfo={() => {}}
           onGoBack={() => {}}
@@ -467,7 +465,7 @@ describe('ItineraryEditorScreenView Component', () => {
 
     expect(rendererInstance).toBeDefined();
 
-    const timelineScreen = rendererInstance?.root.findByProps({
+    const timelineScreen = rendererInstance!.root.findByProps({
       testID: 'mock-tab-screen-타임라인',
     });
 
@@ -494,6 +492,7 @@ describe('ItineraryEditorScreen Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    mockWebSocket.isConnected = false;
   });
 
   afterEach(() => {
@@ -505,7 +504,8 @@ describe('ItineraryEditorScreen Component', () => {
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
 
-    const mockAddListener = jest.fn();
+    // addListener는 항상 unsubscribe 함수를 반환한다(React Navigation 계약).
+    const mockAddListener = jest.fn<() => jest.Mock, [string, (...args: any[]) => void]>(() => jest.fn());
     const mockDispatch = jest.fn();
     const mockNavigation = {
       addListener: mockAddListener,
@@ -548,7 +548,7 @@ describe('ItineraryEditorScreen Component', () => {
     };
 
     await act(async () => {
-      beforeRemoveHandler(mockEvent);
+      beforeRemoveHandler!(mockEvent);
     });
 
     // Alert should have been prevented
@@ -589,7 +589,8 @@ describe('ItineraryEditorScreen Component', () => {
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
 
-    const mockAddListener = jest.fn();
+    // addListener는 항상 unsubscribe 함수를 반환한다(React Navigation 계약).
+    const mockAddListener = jest.fn<() => jest.Mock, [string, (...args: any[]) => void]>(() => jest.fn());
     const mockNavigation = {
       addListener: mockAddListener,
       goBack: jest.fn(),
@@ -614,7 +615,7 @@ describe('ItineraryEditorScreen Component', () => {
     });
 
     // Find ItineraryEditorScreenView to call onComplete
-    const viewComponent = rendererInstance?.root.findByType(ItineraryEditorScreenView);
+    const viewComponent = rendererInstance!.root.findByType(ItineraryEditorScreenView);
     expect(viewComponent).toBeDefined();
 
     // Trigger completion
@@ -636,11 +637,58 @@ describe('ItineraryEditorScreen Component', () => {
     };
 
     await act(async () => {
-      beforeRemoveHandler(mockEvent);
+      beforeRemoveHandler!(mockEvent);
     });
 
     // It should NOT call preventDefault or showAlert, letting the native transition go through
     expect(mockPreventDefault).not.toHaveBeenCalled();
     expect(mockShowAlert).not.toHaveBeenCalled();
+  });
+
+  it('화면 전환 없이 소켓만 끊겼다 재연결되면 자동으로 재조회한다', async () => {
+    mockItineraryEditor.days = mockDays;
+    mockItineraryEditor.selectedDay = mockDays[0];
+    mockWebSocket.isConnected = true;
+
+    const mockNavigation = {
+      addListener: jest.fn(() => jest.fn()),
+      goBack: jest.fn(),
+      navigate: jest.fn(),
+      dispatch: jest.fn(),
+      setParams: jest.fn(),
+    } as any;
+
+    const mockRoute = {
+      params: { planId: 'plan-123', destination: '제주도' },
+    } as any;
+
+    let rendererInstance: renderer.ReactTestRenderer | undefined;
+
+    // 연결된 상태로 마운트 — 최초 연결 시점에는 재조회하지 않아야 한다.
+    await act(async () => {
+      rendererInstance = renderer.create(
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+      );
+    });
+    expect(mockItineraryEditor.fetchPlanDetails).not.toHaveBeenCalled();
+
+    // blur/appstate를 거치지 않고 소켓만 예기치 않게 끊김
+    mockWebSocket.isConnected = false;
+    await act(async () => {
+      rendererInstance!.update(
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+      );
+    });
+    expect(mockItineraryEditor.fetchPlanDetails).not.toHaveBeenCalled();
+
+    // 서버가 자동 재연결
+    mockWebSocket.isConnected = true;
+    await act(async () => {
+      rendererInstance!.update(
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+      );
+    });
+
+    expect(mockItineraryEditor.fetchPlanDetails).toHaveBeenCalledTimes(1);
   });
 });

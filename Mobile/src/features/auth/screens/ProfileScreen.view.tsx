@@ -11,21 +11,35 @@ import {
   TextInput,
   Alert,
   Animated,
+  Switch,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-import { LoadingSpinner, UpdateGenderModal, UpdatePasswordModal, UpdateThemeModal } from '../../../components/common';
+import {
+  LoadingSpinner,
+  MenuModal,
+  ShareModal,
+  UpdatePasswordModal,
+  UpdateThemeModal,
+  UpdateValueModal,
+} from '../../../components/common';
 import axios from 'axios';
 import { resolveApiUrl } from '../../../utils/apiUrl';
-import { leaveAsEditor } from '../../../api/trips';
+import { deletePlans, leaveAsEditor } from '../../../api/trips';
+import {
+  faT,
+  faPen,
+  faShare,
+  faTrash,
+  faUserMinus,
+} from '@fortawesome/free-solid-svg-icons';
 
 import {
   User,
   Settings,
   Award,
-  Trophy,
   Lock,
   X,
   Camera,
@@ -34,14 +48,21 @@ import {
   Trash2,
   CheckCircle2,
   Circle,
-  CalendarDays,
   Check,
   ChevronLeft,
   ChevronDown,
+  MoreVertical,
 } from 'lucide-react-native';
 import FastImage from 'react-native-fast-image';
 import gravatarUrl from '../../../utils/gravatarUrl';
 import { normalize } from '../../../utils/normalize';
+import DatePicker from 'react-native-date-picker';
+import {
+  toKoreanAge,
+  formatBirthdate,
+  toBirthdateString,
+  parseBirthdate,
+} from '../../../utils/birthdate';
 import { styles, COLORS } from './ProfileScreen.styles';
 const getFormattedPeriod = (start?: string, end?: string) => {
   if (!start) return '날짜 확인 필요';
@@ -64,26 +85,52 @@ interface PlanItem {
 
 
 
+/** 내가 만든 일정의 설정 메뉴 */
+export const PLAN_MENU_OPTIONS = [
+  { label: '제목 바꾸기', action: 'rename', icon: faT },
+  { label: '수정하기', action: 'edit', icon: faPen },
+  { label: '공유 및 초대', action: 'share', icon: faShare },
+  { label: '삭제하기', action: 'delete', icon: faTrash, isDestructive: true },
+];
+
+/** 편집 권한만 받은 일정의 설정 메뉴 (삭제 대신 권한 포기) */
+export const SHARED_PLAN_MENU_OPTIONS = [
+  { label: '제목 바꾸기', action: 'rename', icon: faT },
+  { label: '수정하기', action: 'edit', icon: faPen },
+  { label: '공유 및 초대', action: 'share', icon: faShare },
+  {
+    label: '편집 권한 포기하기',
+    action: 'leave',
+    icon: faUserMinus,
+    isDestructive: true,
+  },
+];
+
+/**
+ * '준비중' 체크리스트 미리보기 항목.
+ * pointerEvents="none"로 잠겨 있어 변하지 않으므로 카드마다 state로 들고 있지 않는다.
+ */
+const PREVIEW_TASKS = [
+  { id: 1, text: '숙소 예약 확인', checked: true },
+  { id: 2, text: '짐 싸기 완료', checked: false },
+  { id: 3, text: '맛집 리스트 체크', checked: false },
+] as const;
+
 const ItineraryCardItem = ({
   plan,
-  onDelete,
+  onOpenMenu,
   navigation,
   isEditMode,
   isSelected,
   onSelectToggle,
 }: {
   plan: PlanItem;
-  onDelete: (id: string, isShared: boolean) => void;
+  onOpenMenu: (plan: PlanItem) => void;
   navigation: any;
   isEditMode: boolean;
   isSelected: boolean;
   onSelectToggle: () => void;
 }) => {
-  const [tasks, setTasks] = useState([
-    { id: 1, text: '숙소 예약 확인', checked: true },
-    { id: 2, text: '짐 싸기 완료', checked: false },
-    { id: 3, text: '맛집 리스트 체크', checked: false },
-  ]);
 
   // D-Day 계산
   const getDDay = (startDateStr?: string) => {
@@ -110,39 +157,7 @@ const ItineraryCardItem = ({
   const dDay = getDDay(plan.startDate);
   const formattedPeriod = getFormattedPeriod(plan.startDate, plan.endDate);
 
-  // 체크 토글
-  const toggleTask = (id: number) => {
-    setTasks(prev =>
-      prev.map(t => (t.id === id ? { ...t, checked: !t.checked } : t))
-    );
-  };
-
-  // 할 일 추가
-  const dummyTaskPool = [
-    '환전하기',
-    '보조배터리 챙기기',
-    '상비약 구매',
-    '카메라 충전',
-    '날씨 체크',
-    '여행자 보험 가입',
-  ];
-
-  const addTask = () => {
-    const nextTaskText = dummyTaskPool[tasks.length % dummyTaskPool.length];
-    const newTask = {
-      id: Date.now(),
-      text: nextTaskText,
-      checked: false,
-    };
-    setTasks(prev => [...prev, newTask]);
-    Toast.show({
-      type: 'success',
-      text1: `할 일이 추가되었습니다: ${nextTaskText}`,
-      position: 'top',
-    });
-  };
-
-  const completedCount = tasks.filter(t => t.checked).length;
+  const completedCount = PREVIEW_TASKS.filter(t => t.checked).length;
   
   // 테마 색상 분기 (공유받은 일정이면 오렌지색, 생성한 일정이면 파란색)
   const themeColor = plan.isShared ? '#F97316' : '#1344FF';
@@ -169,7 +184,7 @@ const ItineraryCardItem = ({
           : (pressed ? { borderColor: themeColor, borderWidth: 2, backgroundColor: '#F3F4F6' } : null)
       ]}
     >
-      {/* 카드 상단 배지 및 삭제 버튼 */}
+      {/* 카드 상단 배지 및 설정 버튼 */}
       <View style={styles.cardHeaderRow}>
         <View style={styles.badgeRow}>
           {isEditMode && (
@@ -192,12 +207,13 @@ const ItineraryCardItem = ({
           <Text style={styles.statusText}>예정됨</Text>
         </View>
         {!isEditMode && (
-          <TouchableOpacity 
-            onPress={() => onDelete(plan.planId, !!plan.isShared)} 
+          <TouchableOpacity
+            onPress={() => onOpenMenu(plan)}
             activeOpacity={0.7}
+            hitSlop={8}
             style={plan.isShared ? { marginTop: normalize(16) } : null}
           >
-            <Trash2 size={16} color="#9CA3AF" />
+            <MoreVertical size={18} color="#9CA3AF" />
           </TouchableOpacity>
         )}
       </View>
@@ -219,11 +235,11 @@ const ItineraryCardItem = ({
             <Text style={[styles.checklistTitle, { color: '#9CA3AF' }]}>CHECK LIST (준비중)</Text>
           </View>
           <Text style={[styles.checklistProgressText, { color: '#9CA3AF' }]}>
-            {completedCount}/{tasks.length}
+            {completedCount}/{PREVIEW_TASKS.length}
           </Text>
         </View>
 
-        {tasks.map(task => (
+        {PREVIEW_TASKS.map(task => (
           <View
             key={task.id}
             style={styles.taskItemRow}
@@ -261,53 +277,46 @@ const ItineraryCardItem = ({
 interface ProfileScreenViewProps {
   loading: boolean;
   user: any;
-  isNicknameModalVisible: boolean;
-  setNicknameModalVisible: (visible: boolean) => void;
-  isAgeModalVisible: boolean;
-  setAgeModalVisible: (visible: boolean) => void;
-  isGenderModalVisible: boolean;
-  setGenderModalVisible: (visible: boolean) => void;
   isThemeModalVisible: boolean;
   setThemeModalVisible: (visible: boolean) => void;
   isPasswordModalVisible: boolean;
   setPasswordModalVisible: (visible: boolean) => void;
   handleUpdateNickname: (val: string) => Promise<void>;
-  handleUpdateAge: (val: string) => Promise<void>;
+  handleUpdateBirthdate: (val: string) => Promise<void>;
   handleUpdateGender: (val: string) => Promise<void>;
   handleUpdateTheme: () => void;
   handleUpdatePassword: (cur: string, n: string) => void;
   handleResign: () => void;
-  logout: () => void;
+  /** 일정 제목 변경 (서버 반영 + 프로필 캐시 갱신은 컨테이너가 담당) */
+  onRenamePlan: (planId: string, newName: string) => Promise<void>;
+  /** 프로필 공개 여부 변경 */
+  onChangeProfileVisibility: (profilePublic: boolean) => Promise<void>;
   scrollToItinerary?: boolean;
 }
 
 export default function ProfileScreenView({
   loading,
   user,
-  isNicknameModalVisible,
-  setNicknameModalVisible,
-  isAgeModalVisible,
-  setAgeModalVisible,
-  isGenderModalVisible,
-  setGenderModalVisible,
   isThemeModalVisible,
   setThemeModalVisible,
   isPasswordModalVisible,
   setPasswordModalVisible,
   handleUpdateNickname,
-  handleUpdateAge,
+  handleUpdateBirthdate,
   handleUpdateGender,
   handleUpdateTheme,
   handleUpdatePassword,
   handleResign,
-  logout,
+  onRenamePlan,
+  onChangeProfileVisibility,
   scrollToItinerary,
 }: ProfileScreenViewProps) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [tempNickname, setTempNickname] = useState('');
-  const [tempAge, setTempAge] = useState('');
+  const [tempBirthdate, setTempBirthdate] = useState('');
+  const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
   const [tempGender, setTempGender] = useState('');
   const isNicknameUnchanged = tempNickname === user.name;
   const [plans, setPlans] = useState<any[]>([]);
@@ -373,6 +382,55 @@ export default function ProfileScreenView({
     }
   }, [user]);
 
+  // 스위치는 즉시 반응해야 하므로 낙관적으로 바꾸고, 실패하면 되돌린다.
+  const [isProfilePublic, setIsProfilePublic] = useState(user.profilePublic);
+  useEffect(() => {
+    setIsProfilePublic(user.profilePublic);
+  }, [user.profilePublic]);
+
+  // ── 일정 카드 설정 메뉴 ──
+  const [menuPlan, setMenuPlan] = useState<PlanItem | null>(null);
+  const [isPlanMenuVisible, setPlanMenuVisible] = useState(false);
+  const [isRenameVisible, setRenameVisible] = useState(false);
+  const [isPlanShareVisible, setPlanShareVisible] = useState(false);
+
+  const handleOpenPlanMenu = (plan: PlanItem) => {
+    setMenuPlan(plan);
+    setPlanMenuVisible(true);
+  };
+
+  const handlePlanMenuSelect = (action: string) => {
+    setPlanMenuVisible(false);
+    if (!menuPlan) return;
+
+    switch (action) {
+      case 'rename':
+        setRenameVisible(true);
+        break;
+      case 'edit':
+        navigation.navigate('ItineraryEditor', { planId: menuPlan.planId });
+        break;
+      case 'share':
+        setPlanShareVisible(true);
+        break;
+      case 'delete':
+      case 'leave':
+        handleDeletePlan(menuPlan.planId, !!menuPlan.isShared);
+        break;
+    }
+  };
+
+  const handleConfirmRename = async (newName: string) => {
+    if (!menuPlan) return;
+    await onRenamePlan(menuPlan.planId, newName);
+    setPlans(prev =>
+      prev.map(p =>
+        p.planId === menuPlan.planId ? { ...p, planName: newName.trim() } : p,
+      ),
+    );
+    setRenameVisible(false);
+  };
+
   const handleDeletePlan = (planId: string, isShared: boolean) => {
     if (isShared) {
       Alert.alert(
@@ -393,10 +451,12 @@ export default function ProfileScreenView({
                   position: 'top',
                 });
               } catch (e) {
-                setPlans(prev => prev.filter(p => p.planId !== planId));
+                // 실패인데 성공으로 알리고 목록에서 지우면, 서버에는 남아 있는데
+                // 화면에서만 사라져 사용자가 상태를 오해한다.
+                console.error('편집 권한 포기 실패:', e);
                 Toast.show({
-                  type: 'success',
-                  text1: '편집 권한 포기가 완료되었습니다.',
+                  type: 'error',
+                  text1: '편집 권한 포기에 실패했습니다.',
                   position: 'top',
                 });
               }
@@ -423,10 +483,10 @@ export default function ProfileScreenView({
                   position: 'top',
                 });
               } catch (e) {
-                setPlans(prev => prev.filter(p => p.planId !== planId));
+                console.error('일정 삭제 실패:', e);
                 Toast.show({
-                  type: 'success',
-                  text1: '일정이 정상적으로 삭제되었습니다.',
+                  type: 'error',
+                  text1: '일정 삭제에 실패했습니다.',
                   position: 'top',
                 });
               }
@@ -484,39 +544,71 @@ export default function ProfileScreenView({
           text: '확인',
           style: 'destructive',
           onPress: async () => {
-            try {
-              await Promise.all(
-                selectedPlanIds.map(async (planId) => {
-                  const targetPlan = plans.find(p => p.planId === planId);
-                  if (!targetPlan) return;
-                  if (targetPlan.isShared) {
-                    await leaveAsEditor(planId);
-                  } else {
-                    await axios.delete(resolveApiUrl(`/api/plan/${planId}`));
-                  }
-                })
+            const selected = plans.filter(p =>
+              selectedPlanIds.includes(p.planId),
+            );
+            const ownedIds = selected.filter(p => !p.isShared).map(p => p.planId);
+            const sharedIds = selected.filter(p => p.isShared).map(p => p.planId);
+
+            const processedIds: string[] = [];
+            let failed = 0;
+
+            // 내가 소유한 일정은 일괄 삭제 API로 한 번에 처리한다.
+            // 서버가 소유분만 걸러 실제 삭제된 ID를 돌려주므로 그 결과를 신뢰한다.
+            if (ownedIds.length > 0) {
+              try {
+                const deleted = await deletePlans(ownedIds);
+                processedIds.push(...deleted);
+                failed += ownedIds.length - deleted.length;
+              } catch (e) {
+                console.error('일괄 삭제 실패:', e);
+                failed += ownedIds.length;
+              }
+            }
+
+            // 편집 권한만 있는 일정은 일괄 API 대상이 아니라 개별 처리한다.
+            if (sharedIds.length > 0) {
+              const results = await Promise.allSettled(
+                sharedIds.map(id => leaveAsEditor(id)),
               );
-              setPlans(prev => prev.filter(p => !selectedPlanIds.includes(p.planId)));
-              setSelectedPlanIds([]);
-              setIsEditMode(false);
-              Toast.show({
-                type: 'success',
-                text1: '선택한 일정 처리가 완료되었습니다.',
-                position: 'top',
-              });
-            } catch (e) {
-              setPlans(prev => prev.filter(p => !selectedPlanIds.includes(p.planId)));
-              setSelectedPlanIds([]);
-              setIsEditMode(false);
-              Toast.show({
-                type: 'success',
-                text1: '선택한 일정 처리가 완료되었습니다.',
-                position: 'top',
+              results.forEach((r, i) => {
+                if (r.status === 'fulfilled') {
+                  processedIds.push(sharedIds[i]);
+                } else {
+                  failed += 1;
+                }
               });
             }
-          }
-        }
-      ]
+
+            // 실제로 처리된 것만 화면에서 지운다.
+            // 예전에는 실패해도 전부 지우고 성공 토스트를 띄워, 서버에는 남아 있는데
+            // 목록에서는 사라진 것처럼 보였다.
+            if (processedIds.length > 0) {
+              setPlans(prev => prev.filter(p => !processedIds.includes(p.planId)));
+            }
+            setSelectedPlanIds([]);
+            setIsEditMode(false);
+
+            if (failed > 0) {
+              Toast.show({
+                type: processedIds.length > 0 ? 'info' : 'error',
+                text1:
+                  processedIds.length > 0
+                    ? `${processedIds.length}개 처리, ${failed}개 실패했습니다.`
+                    : '선택한 일정을 처리하지 못했습니다.',
+                position: 'top',
+              });
+              return;
+            }
+
+            Toast.show({
+              type: 'success',
+              text1: '선택한 일정 처리가 완료되었습니다.',
+              position: 'top',
+            });
+          },
+        },
+      ],
     );
   };
 
@@ -535,6 +627,30 @@ export default function ProfileScreenView({
   }
 
   // 선호테마 추출 및 파싱
+  // 나이는 저장하지 않고 생년월일에서 파생해 표시한다.
+  const profileAge = toKoreanAge(user.birthdate);
+
+  /**
+   * 아바타 URL. 서버에 올린 프로필 이미지가 있으면 그것을 쓰고,
+   * 없을 때만 이메일 기반 Gravatar로 대체한다.
+   */
+  const avatarUri =
+    user.profileImageUrl || (user.email ? gravatarUrl(user.email, 200) : '');
+
+  const handleToggleProfilePublic = async (next: boolean) => {
+    setIsProfilePublic(next);
+    try {
+      await onChangeProfileVisibility(next);
+    } catch (e) {
+      setIsProfilePublic(!next);
+      Toast.show({
+        type: 'error',
+        text1: '프로필 공개 설정 변경에 실패했습니다.',
+        position: 'top',
+      });
+    }
+  };
+
   const preferredThemes = user.preferredThemes || [];
   const themeNames = preferredThemes.map((t: any) => t.preferredThemeName || t);
   const defaultThemes = ['해수욕장', '호텔', '한식', '고기집', '이자카야'];
@@ -542,7 +658,7 @@ export default function ProfileScreenView({
 
   const handleOpenEditModal = () => {
     setTempNickname(user.name);
-    setTempAge(user.age === '미설정' ? '' : user.age.toString());
+    setTempBirthdate(user.birthdate || '');
     setTempGender(user.gender);
     setEditModalVisible(true);
     // 모달이 열릴 때 스크롤 상태 초기화
@@ -565,8 +681,8 @@ export default function ProfileScreenView({
         await handleUpdateNickname(tempNickname);
         hasChange = true;
       }
-      if (tempAge !== (user.age === '미설정' ? '' : user.age.toString())) {
-        await handleUpdateAge(tempAge);
+      if (tempBirthdate && tempBirthdate !== user.birthdate) {
+        await handleUpdateBirthdate(tempBirthdate);
         hasChange = true;
       }
       if (tempGender !== user.gender) {
@@ -620,9 +736,9 @@ export default function ProfileScreenView({
           <View style={styles.profileHeaderRow}>
             {/* 프로필 이미지 & 설정 버튼 */}
             <View style={styles.avatarContainer}>
-              {user.email ? (
+              {avatarUri ? (
                 <FastImage
-                  source={{ uri: gravatarUrl(user.email, 200), priority: FastImage.priority.normal }}
+                  source={{ uri: avatarUri, priority: FastImage.priority.normal }}
                   style={styles.avatarImage}
                   resizeMode={FastImage.resizeMode.cover}
                 />
@@ -655,7 +771,7 @@ export default function ProfileScreenView({
                 <Text style={styles.emailDivider}>|</Text>
                 <View style={styles.genderAgeBadge}>
                   <Text style={styles.genderAgeBadgeText}>
-                    {user.gender || '미설정'} • {user.age === '미설정' ? '미설정' : `${user.age}세`}
+                    {user.gender || '미설정'} • {profileAge === null ? '미설정' : `만 ${profileAge}세`}
                   </Text>
                 </View>
               </View>
@@ -836,7 +952,7 @@ export default function ProfileScreenView({
                     <ItineraryCardItem 
                       key={plan.planId} 
                       plan={plan} 
-                      onDelete={handleDeletePlan}
+                      onOpenMenu={handleOpenPlanMenu}
                       navigation={navigation}
                       isEditMode={isEditMode}
                       isSelected={isSelected}
@@ -928,12 +1044,15 @@ export default function ProfileScreenView({
                       </View>
 
                       {!isEditMode ? (
-                        <TouchableOpacity 
-                          onPress={() => handleDeletePlan(plan.planId, isPastShared)} 
+                        <TouchableOpacity
+                          onPress={() =>
+                            handleOpenPlanMenu({ ...plan, isShared: isPastShared })
+                          }
                           activeOpacity={0.7}
+                          hitSlop={8}
                           style={{ padding: 4 }}
                         >
-                          <Trash2 size={14} color="#9CA3AF" />
+                          <MoreVertical size={16} color="#9CA3AF" />
                         </TouchableOpacity>
                       ) : (
                         <View style={styles.pastPlanBadge}>
@@ -950,6 +1069,24 @@ export default function ProfileScreenView({
           </View>
         </View>
       </ScrollView>
+
+      {/* 생년월일 선택기. 수정 모달 위에 떠야 하므로 형제로 둔다. */}
+      <DatePicker
+        modal
+        mode="date"
+        title="생년월일 선택"
+        confirmText="확인"
+        cancelText="취소"
+        locale="ko"
+        maximumDate={new Date()}
+        open={isBirthdatePickerOpen}
+        date={parseBirthdate(tempBirthdate)}
+        onConfirm={date => {
+          setBirthdatePickerOpen(false);
+          setTempBirthdate(toBirthdateString(date));
+        }}
+        onCancel={() => setBirthdatePickerOpen(false)}
+      />
 
       {/* ── 3. 통합 프로필 수정 모달 ── */}
       <Modal
@@ -972,9 +1109,9 @@ export default function ProfileScreenView({
 
               {/* 프로필 이미지 & 카메라 배지 */}
               <View style={styles.avatarEditContainer}>
-                {user.email ? (
+                {avatarUri ? (
                   <FastImage
-                    source={{ uri: gravatarUrl(user.email, 200), priority: FastImage.priority.normal }}
+                    source={{ uri: avatarUri, priority: FastImage.priority.normal }}
                     style={styles.avatarEditImage}
                     resizeMode={FastImage.resizeMode.cover}
                   />
@@ -1057,17 +1194,26 @@ export default function ProfileScreenView({
 
               {/* 나이 & 성별 가로 배치 */}
               <View style={styles.twoColumnRow}>
-                {/* 나이 */}
+                {/* 생년월일 */}
                 <View style={[styles.inputGroup, { flex: 1, marginRight: 12 }]}>
-                  <Text style={styles.inputLabel}>나이</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={tempAge}
-                    onChangeText={setTempAge}
-                    keyboardType="numeric"
-                    placeholder="나이"
-                    placeholderTextColor="#9CA3AF"
-                  />
+                  <Text style={styles.inputLabel}>생년월일</Text>
+                  <TouchableOpacity
+                    // textInput은 TextInput용이라 높이만 있고 정렬이 없다.
+                    // View로 쓰려면 세로 가운데 정렬을 직접 준다.
+                    style={[styles.textInput, styles.pickerField]}
+                    onPress={() => setBirthdatePickerOpen(true)}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.pickerFieldText,
+                        !tempBirthdate && styles.pickerFieldPlaceholder,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {tempBirthdate ? formatBirthdate(tempBirthdate) : '선택'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
 
                 {/* 성별 */}
@@ -1123,6 +1269,24 @@ export default function ProfileScreenView({
                     <Text style={styles.actionNavButtonText}>비밀번호 변경</Text>
                     <Settings size={14} color="#9CA3AF" />
                   </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* 프로필 공개 설정 */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>프로필 공개</Text>
+                <View style={styles.visibilityRow}>
+                  <Text style={styles.visibilityDescription}>
+                    {isProfilePublic
+                      ? '다른 사용자가 내 프로필을 볼 수 있어요.'
+                      : '나만 내 프로필을 볼 수 있어요.'}
+                  </Text>
+                  <Switch
+                    value={isProfilePublic}
+                    onValueChange={handleToggleProfilePublic}
+                    trackColor={{ false: '#D1D5DB', true: COLORS.primary }}
+                    thumbColor="#FFFFFF"
+                  />
                 </View>
               </View>
 
@@ -1186,6 +1350,35 @@ export default function ProfileScreenView({
         onClose={() => setPasswordModalVisible(false)}
         onConfirm={handleUpdatePassword}
       />
+
+      {/* ── 일정 카드 설정 메뉴 ── */}
+      <MenuModal
+        visible={isPlanMenuVisible}
+        title={menuPlan?.planName ?? '일정 설정'}
+        options={
+          menuPlan?.isShared ? SHARED_PLAN_MENU_OPTIONS : PLAN_MENU_OPTIONS
+        }
+        onClose={() => setPlanMenuVisible(false)}
+        onSelect={handlePlanMenuSelect}
+      />
+
+      <UpdateValueModal
+        visible={isRenameVisible}
+        title="제목 바꾸기"
+        label="일정 제목"
+        initialValue={menuPlan?.planName ?? ''}
+        onClose={() => setRenameVisible(false)}
+        onConfirm={handleConfirmRename}
+      />
+
+      {menuPlan && (
+        <ShareModal
+          visible={isPlanShareVisible}
+          onClose={() => setPlanShareVisible(false)}
+          planId={menuPlan.planId}
+          isOwner={!menuPlan.isShared}
+        />
+      )}
     </View>
   );
 }

@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import ItineraryViewScreen from '../src/features/itinerary/screens/ItineraryViewScreen';
-import { fetchWeatherRecommendations } from '../src/api/trips';
+import { fetchWeather } from '../src/api/trips';
 import axios from 'axios';
 
 // Mocking dependencies
@@ -9,9 +9,9 @@ jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 jest.mock('../src/api/trips', () => ({
-  fetchWeatherRecommendations: jest.fn(),
+  fetchWeather: jest.fn(),
 }));
-const mockFetchWeatherRecommendations = fetchWeatherRecommendations as jest.MockedFunction<typeof fetchWeatherRecommendations>;
+const mockFetchWeather = fetchWeather as jest.MockedFunction<typeof fetchWeather>;
 
 const mockNavigate = jest.fn();
 const mockAddListener = jest.fn((event, callback) => {
@@ -74,11 +74,13 @@ jest.mock('lucide-react-native', () => {
   };
 });
 
-jest.mock('../src/contexts/AlertContext', () => ({
-  useAlert: () => ({
-    showAlert: jest.fn(),
-  }),
-}));
+// 실제 AlertProvider는 showAlert 참조를 고정한다. 목도 동일하게 고정해야
+// 이 참조에 의존하는 콜백/이펙트가 매 렌더 재실행되지 않는다.
+// (팩토리 밖 변수를 참조하면 호이스팅으로 TDZ에 걸리므로 안에서 만든다)
+jest.mock('../src/contexts/AlertContext', () => {
+  const value = { showAlert: jest.fn() };
+  return { useAlert: () => value };
+});
 
 // Mock KakaoMapView to avoid syntax or layout errors in tests
 jest.mock('../src/features/itinerary/components/KakaoMapView', () => {
@@ -122,7 +124,7 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
       weatherResolve = resolve;
     });
 
-    mockFetchWeatherRecommendations.mockImplementationOnce(() => weatherPromise as any);
+    mockFetchWeather.mockImplementationOnce(() => weatherPromise as any);
 
     let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
 
@@ -135,7 +137,7 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
     expect(renderer).toBeDefined();
 
     // Check if the inner view component receives isWeatherLoading as true initially
-    const viewComponent = renderer?.root.findByType(
+    const viewComponent = renderer!.root.findByType(
       require('../src/features/itinerary/screens/ItineraryViewScreen.view').default
     );
     expect(viewComponent.props.isWeatherLoading).toBe(true);
@@ -146,9 +148,9 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
         weather: [
           {
             date: '2026-07-24',
-            temp_min: 20,
-            temp_max: 30,
-            feels_like: 25,
+            tempMin: 20,
+            tempMax: 30,
+            feelsLike: 25,
             description: 'Sunny',
           },
         ],

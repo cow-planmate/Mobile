@@ -21,17 +21,14 @@ import {
 } from '../../../hooks/useFcmNotifications';
 import { AirplaneLoading } from '../../../components/common';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
-
+import { formatDateLocal } from '../../../utils/timeUtils';
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
-const INVITATION_REFRESH_INTERVAL_MS = 15000;
 
-const parseDestinationName = (destination?: string) => {
-  const normalized = destination?.trim() || '';
-  if (!normalized) return '';
-  const parts = normalized.split(/\s+/).filter(Boolean);
-  return parts.length <= 1 ? normalized : parts.slice(1).join(' ');
-};
-
+/**
+ * 메인 대시보드 홈 화면 컨테이너 컴포넌트
+ *
+ * @param props navigation 프로퍼티
+ */
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const user = useAuthStore((state) => state.user);
   const { showAlert } = useAlert();
@@ -98,9 +95,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     }
   }, []);
 
-  useEffect(() => {
-    void fetchPendingRequests();
-  }, [fetchPendingRequests]);
+
 
   // 화면 포커스 시 알림 자동 갱신
   useFocusEffect(
@@ -139,21 +134,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     };
   }, [appState, fetchPendingRequests, user]);
 
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
 
-    const intervalId = setInterval(() => {
-      if (appState === 'active') {
-        void fetchPendingRequests();
-      }
-    }, INVITATION_REFRESH_INTERVAL_MS);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [appState, fetchPendingRequests, user]);
 
   const handleAccept = async (requestId: number) => {
     try {
@@ -238,13 +219,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     setIsCreating(true);
 
     try {
-      const formatDateLocal = (date: Date): string => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
-
       const start = new Date(startDate);
       const end = new Date(endDate);
       start.setHours(0, 0, 0, 0);
@@ -262,14 +236,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
-      const defaultPlanName = parseDestinationName(destination) || '나의 일정';
-
       const result = await createFullPlanMutation.mutateAsync({
         planFrame: {
-          planName: defaultPlanName,
+          planName: `${destination} 여행`,
           departure: 'SEOUL',
+          destinationId: travelId,
+          travelId: travelId,
+          transportationType: transport === '자동차' ? 'PRIVATE' : 'PUBLIC',
           transportationCategoryId: transport === '자동차' ? 1 : 0,
-          travelId: travelId || 1,
           adultCount: adults ?? 1,
           childCount: children ?? 0,
         },
@@ -293,7 +267,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         transport: transport || '대중교통',
       });
     } catch (error) {
-      console.error('일정 사전 저장 실패:', error);
+      console.error('일정 생성 준비 실패:', error);
       setIsCreating(false);
       showAlert({
         title: '오류',
