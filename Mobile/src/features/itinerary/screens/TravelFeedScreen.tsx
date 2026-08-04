@@ -270,8 +270,7 @@ export default function TravelFeedScreen() {
       />
       
       <View style={{ flex: 1, position: 'relative' }}>
-        {/* 🔍 Existing content wrapped in opacity and disabled pointer events */}
-        <View style={{ flex: 1 }} pointerEvents="none">
+        <View style={{ flex: 1 }}>
           {/* 🔍 1행 통합 컨트롤 바 (검색창 + 레이아웃 + 필터) */}
           <View style={styles.controlRowContainer}>
             <View style={styles.searchBar}>
