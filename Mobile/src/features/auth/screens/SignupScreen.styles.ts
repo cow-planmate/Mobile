@@ -168,6 +168,10 @@ export const styles = StyleSheet.create({
     includeFontPadding: false,
     textAlignVertical: 'center',
   },
+  /** 값을 고르기 전의 안내 문구 (TextInput의 placeholder 대체) */
+  authInputPlaceholder: {
+    color: COLORS.darkGray,
+  },
   inputFocused: {
     borderColor: COLORS.primary,
     borderWidth: 2,

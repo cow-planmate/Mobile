@@ -12,6 +12,7 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import Toast from 'react-native-toast-message';
 import { parseBackendError } from '../../../utils/errorHandler';
+import { toBirthdateString } from '../../../utils/birthdate';
 
 /** 이미 가입된 이메일일 때 서버가 주는 코드 (AUTH_004) */
 const DUPLICATE_EMAIL_CODE = 'AUTH_004';
@@ -44,7 +45,8 @@ export default function SignupScreen() {
     confirmPassword: '',
     nickname: '',
     gender: '',
-    age: '',
+    /** 'YYYY-MM-DD'. 나이를 받아 역산하면 실제 월·일이 사라진다. */
+    birthdate: '',
   });
 
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -258,7 +260,7 @@ export default function SignupScreen() {
       !isEmailVerified ||
       !form.password ||
       !form.nickname ||
-      !form.age ||
+      !form.birthdate ||
       !form.gender ||
       !isAgreed
     ) {
@@ -279,11 +281,11 @@ export default function SignupScreen() {
       return;
     }
 
-    const ageNum = parseInt(form.age, 10);
-    if (isNaN(ageNum) || ageNum <= 0 || ageNum > 120) {
+    // 서버 birthdate는 @Past다. 오늘 이후 날짜는 여기서 걸러 낸다.
+    if (form.birthdate >= toBirthdateString(new Date())) {
       Toast.show({
         type: 'error',
-        text1: '올바른 나이를 선택해주세요.',
+        text1: '생년월일을 다시 확인해주세요.',
         position: 'top',
         visibilityTime: 2500,
       });
@@ -292,12 +294,8 @@ export default function SignupScreen() {
 
     setIsLoading(true);
     try {
-      const genderInt = form.gender === 'male' ? 0 : 1;
-
-      const currentYear = new Date().getFullYear();
-      const birthYear = currentYear - ageNum;
-      const birthdate = `${birthYear}-01-01`;
-      const genderEnum = genderInt === 0 ? 'MALE' : 'FEMALE';
+      const birthdate = form.birthdate;
+      const genderEnum = form.gender === 'male' ? 'MALE' : 'FEMALE';
 
       await axios.post(
         '/api/auth/register',
@@ -378,9 +376,9 @@ export default function SignupScreen() {
     if (step === 1) return isEmailVerified;
     if (step === 2) return isPasswordStepValid;
     if (step === 3) return isNicknameVerified;
-    if (step === 4) return !!form.age && !!form.gender && isAgreed;
+    if (step === 4) return !!form.birthdate && !!form.gender && isAgreed;
     return true;
-  }, [step, isEmailVerified, isPasswordStepValid, isNicknameVerified, form.age, form.gender, isAgreed]);
+  }, [step, isEmailVerified, isPasswordStepValid, isNicknameVerified, form.birthdate, form.gender, isAgreed]);
 
   return (
     <SignupScreenView

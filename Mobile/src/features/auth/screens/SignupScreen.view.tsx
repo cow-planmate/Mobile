@@ -12,8 +12,14 @@ import {
   ScrollView,
   Modal,
 } from 'react-native';
+import DatePicker from 'react-native-date-picker';
 import { ArrowLeft, Eye, EyeOff, Check, X } from 'lucide-react-native';
 import { styles, COLORS, normalize } from './SignupScreen.styles';
+import {
+  formatBirthdate,
+  parseBirthdate,
+  toBirthdateString,
+} from '../../../utils/birthdate';
 
 export const PasswordRequirement = React.memo(
   ({ met, label }: { met: boolean; label: string }) => (
@@ -171,6 +177,7 @@ export const SignupScreenView = ({
   formatTime,
 }: SignupScreenViewProps) => {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
   const step1FooterLabel = isEmailVerified
     ? '다음'
     : showVerificationInput
@@ -433,30 +440,25 @@ export const SignupScreenView = ({
                 맞춤형 여행 계획을 위해 필요해요.
               </Text>
               <View style={styles.inputGroup}>
-                <View
-                  style={[
-                    styles.authInputContainer,
-                    focusedField === 'age' && styles.inputFocused,
-                  ]}
-                >
-                  <Text style={styles.label}>나이</Text>
-                  <View style={styles.authInputRow}>
-                    <TextInput
-                      style={styles.authInput}
-                      placeholder="나이 입력"
-                      placeholderTextColor={COLORS.darkGray}
-                      value={form.age}
-                      onChangeText={v => onChange('age', v)}
-                      keyboardType="number-pad"
-                      maxLength={3}
-                      editable={!isLoading}
-                      onFocus={() => setFocusedField('age')}
-                      onBlur={() => setFocusedField(null)}
-                    />
-                    {form.age ? (
-                      <Text style={styles.authValue}>세</Text>
-                    ) : null}
-                  </View>
+                <View style={styles.authInputContainer}>
+                  <Text style={styles.label}>생년월일</Text>
+                  <TouchableOpacity
+                    style={styles.authInputRow}
+                    onPress={() => setBirthdatePickerOpen(true)}
+                    disabled={isLoading}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.authInput,
+                        !form.birthdate && styles.authInputPlaceholder,
+                      ]}
+                    >
+                      {form.birthdate
+                        ? formatBirthdate(form.birthdate)
+                        : '생년월일 선택'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -625,6 +627,24 @@ export const SignupScreenView = ({
       <PrivacyPolicyModal
         visible={showPrivacyModal}
         onClose={() => setShowPrivacyModal(false)}
+      />
+
+      {/* 생년월일 선택기. 나이를 받아 역산하면 실제 월·일이 소실된다. */}
+      <DatePicker
+        modal
+        mode="date"
+        title="생년월일 선택"
+        confirmText="확인"
+        cancelText="취소"
+        locale="ko"
+        maximumDate={new Date()}
+        open={isBirthdatePickerOpen}
+        date={parseBirthdate(form.birthdate)}
+        onConfirm={date => {
+          setBirthdatePickerOpen(false);
+          onChange('birthdate', toBirthdateString(date));
+        }}
+        onCancel={() => setBirthdatePickerOpen(false)}
       />
     </SafeAreaView>
   );
