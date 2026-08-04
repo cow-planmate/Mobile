@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { resolveApiUrl } from '../utils/apiUrl';
-import { PreferredThemeVO } from '../types/env';
+import { PreferredThemeVO } from '../api/themes';
 
 /** 프로필 응답의 일정 항목. 서버는 planId/planName만 내려준다. */
 export interface ProfilePlan {
