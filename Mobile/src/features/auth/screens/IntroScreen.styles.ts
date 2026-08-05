@@ -59,29 +59,19 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
     textAlign: 'center',
   },
+  /** 하단 여백은 화면이 insets로 채운다. 여기서 고정하지 않는다. */
   footer: {
-    paddingBottom: normalize(34), // Safe area bottom
     alignItems: 'center',
-  },
-  startButton: {
-    backgroundColor: COLORS.primary,
-    width: '100%',
-    height: normalize(52),
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: normalize(16),
-  },
-  startButtonText: {
-    color: COLORS.white,
-    fontSize: normalize(17),
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-    letterSpacing: 0.2,
   },
   loginPromptContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: normalize(4),
+  },
+  loginActionButton: {
+    minHeight: normalize(48),
+    justifyContent: 'center',
+    paddingHorizontal: normalize(8),
   },
   loginPromptText: {
     fontSize: normalize(14),
@@ -96,6 +86,5 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: normalize(20),
     color: COLORS.primary,
-    marginLeft: normalize(4),
   },
 });

@@ -6,7 +6,8 @@
     "android": "react-native run-android",
     "lint": "eslint .",
     "start": "react-native start",
-    "test": "jest"
+    "test": "jest",
+    "storybook-generate": "sb-rn-get-stories --config-path ./.storybook"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.3.0",
