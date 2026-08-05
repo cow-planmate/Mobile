@@ -103,6 +103,7 @@ export const styles = StyleSheet.create({
   /**
    * 테두리 굵기를 상태와 무관하게 1.5로 고정한다. 포커스될 때만 굵어지면
    * 박스 크기가 함께 바뀌어 입력 중에 글자가 흔들린다.
+   * 색은 AuthFieldBox가 상태에 따라 전환한다.
    */
   authInputContainer: {
     width: '100%',
@@ -115,9 +116,6 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     justifyContent: 'center',
   },
-  inputFocused: { borderColor: COLORS.primary },
-  inputError: { borderColor: COLORS.error },
-  inputVerified: { borderColor: COLORS.success },
   inputLocked: { backgroundColor: COLORS.surface },
 
   label: {
@@ -176,7 +174,6 @@ export const styles = StyleSheet.create({
     minWidth: normalize(84),
   },
   inlineButtonDisabled: { backgroundColor: COLORS.gray },
-  inlineButtonPressed: { backgroundColor: COLORS.primaryDark },
   inlineButtonText: {
     color: COLORS.white,
     fontFamily: FONTS.bold,
@@ -319,7 +316,6 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  genderButtonPressed: { opacity: 0.85 },
   genderButtonText: {
     fontSize: normalize(16),
     fontFamily: FONTS.semibold,
@@ -389,29 +385,6 @@ export const styles = StyleSheet.create({
     paddingTop: normalize(12),
     backgroundColor: COLORS.white,
   },
-  submitButton: {
-    width: '100%',
-    height: normalize(52),
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-  },
-  /**
-   * 아직 못 넘어가는 상태에서도 버튼을 누를 수 있게 둔다.
-   * 회색으로 죽여 두면 무엇이 모자란지 알려줄 기회가 사라진다.
-   */
-  submitButtonMuted: { backgroundColor: COLORS.primary, opacity: 0.55 },
-  submitButtonPressed: { backgroundColor: COLORS.primaryDark },
-  submitButtonText: {
-    fontSize: normalize(17),
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-    lineHeight: normalize(22),
-    color: COLORS.white,
-    letterSpacing: 0.2,
-  },
-
   /* ── Privacy Policy Modal ── */
   privacyOverlay: {
     flex: 1,

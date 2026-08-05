@@ -91,12 +91,6 @@ export const styles = StyleSheet.create({
     includeFontPadding: false,
     height: normalize(28),
   },
-  inputError: {
-    borderColor: COLORS.error,
-  },
-  inputFocused: {
-    borderColor: COLORS.primary,
-  },
   passwordContainer: {
     width: '100%',
     minHeight: normalize(68),
@@ -153,29 +147,9 @@ export const styles = StyleSheet.create({
     lineHeight: normalize(18),
   },
 
-  submitButton: {
-    width: '100%',
-    height: normalize(52),
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
+  /** 버튼 자체는 AuthSubmitButton이 그린다. 여기서는 간격만 준다. */
+  submitButtonSpacing: {
     marginTop: normalize(24),
-  },
-  submitButtonPressed: {
-    backgroundColor: COLORS.primaryDark,
-    transform: [{ scale: 0.99 }],
-  },
-  submitButtonLoading: {
-    backgroundColor: COLORS.primaryDark,
-  },
-  submitButtonText: {
-    fontSize: normalize(17),
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-    lineHeight: normalize(22),
-    color: COLORS.white,
-    letterSpacing: 0.2,
   },
   linksContainer: {
     flexDirection: 'row',
@@ -239,10 +213,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.white,
-  },
-  socialButtonPressed: {
-    backgroundColor: COLORS.surface,
-    transform: [{ scale: 0.96 }],
   },
 
   /* ── Privacy Policy Link ── */

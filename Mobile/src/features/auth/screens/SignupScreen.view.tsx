@@ -28,6 +28,9 @@ import {
   Loader,
 } from 'lucide-react-native';
 import { styles, COLORS, normalize } from './SignupScreen.styles';
+import PressableScale from '../components/PressableScale';
+import AuthSubmitButton from '../components/AuthSubmitButton';
+import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
 import {
   formatBirthdate,
   parseBirthdate,
@@ -286,6 +289,26 @@ export const SignupScreenView = ({
   const emailLocked = showVerificationInput || isEmailVerified;
   const isBusy = isSendingEmail || isVerifying || isSubmitting;
 
+  const fieldState = (invalid: boolean, isFocused: boolean): FieldState =>
+    invalid ? 'error' : isFocused ? 'focus' : 'default';
+
+  const codeState: FieldState = errors.verificationCode
+    ? 'error'
+    : isEmailVerified
+    ? 'success'
+    : focusedField === 'verificationCode'
+    ? 'focus'
+    : 'default';
+
+  const nicknameState: FieldState =
+    errors.nickname || nicknameStatus === 'taken'
+      ? 'error'
+      : nicknameStatus === 'available'
+      ? 'success'
+      : focusedField === 'nickname'
+      ? 'focus'
+      : 'default';
+
   const nicknameHint = () => {
     if (nicknameStatus === 'checking') {
       return (
@@ -361,12 +384,11 @@ export const SignupScreenView = ({
             <>
               <View style={styles.inputGroup}>
                 <View style={styles.fieldRow}>
-                  <View
+                  <AuthFieldBox
+                    state={fieldState(!!errors.email, focusedField === 'email')}
                     style={[
                       styles.authInputContainer,
                       styles.flex1,
-                      focusedField === 'email' && styles.inputFocused,
-                      !!errors.email && styles.inputError,
                       emailLocked && styles.inputLocked,
                     ]}
                   >
@@ -397,16 +419,22 @@ export const SignupScreenView = ({
                         accessibilityLabel="이메일"
                       />
                     )}
-                  </View>
+                  </AuthFieldBox>
 
                   {!emailLocked ? (
-                    <Pressable
-                      style={({ pressed }) => [
+                    <PressableScale
+                      style={[
                         styles.inlineButton,
                         (!isEmailFormatValid || isSendingEmail) &&
                           styles.inlineButtonDisabled,
-                        pressed && styles.inlineButtonPressed,
                       ]}
+                      baseColor={
+                        !isEmailFormatValid || isSendingEmail
+                          ? COLORS.gray
+                          : COLORS.primary
+                      }
+                      pressedColor={COLORS.primaryDark}
+                      scaleTo={0.95}
                       onPress={onSendEmail}
                       disabled={!isEmailFormatValid || isSendingEmail}
                       accessibilityRole="button"
@@ -417,7 +445,7 @@ export const SignupScreenView = ({
                       ) : (
                         <Text style={styles.inlineButtonText}>인증요청</Text>
                       )}
-                    </Pressable>
+                    </PressableScale>
                   ) : (
                     !isEmailVerified && (
                       <Pressable
@@ -439,13 +467,9 @@ export const SignupScreenView = ({
                   style={styles.inputGroup}
                   entering={FadeInDown.duration(220)}
                 >
-                  <View
-                    style={[
-                      styles.authInputContainer,
-                      focusedField === 'verificationCode' && styles.inputFocused,
-                      !!errors.verificationCode && styles.inputError,
-                      isEmailVerified && styles.inputVerified,
-                    ]}
+                  <AuthFieldBox
+                    state={codeState}
+                    style={styles.authInputContainer}
                   >
                     <Text style={styles.label}>인증번호</Text>
                     <View style={styles.authInputRow}>
@@ -486,7 +510,7 @@ export const SignupScreenView = ({
                         </Text>
                       )}
                     </View>
-                  </View>
+                  </AuthFieldBox>
 
                   {!!errors.verificationCode && (
                     <InlineError message={errors.verificationCode} />
@@ -538,12 +562,12 @@ export const SignupScreenView = ({
           {step === 2 && (
             <>
               <View style={styles.inputGroup}>
-                <View
-                  style={[
-                    styles.authInputContainer,
-                    focusedField === 'password' && styles.inputFocused,
-                    !!errors.password && styles.inputError,
-                  ]}
+                <AuthFieldBox
+                  state={fieldState(
+                    !!errors.password,
+                    focusedField === 'password',
+                  )}
+                  style={styles.authInputContainer}
                 >
                   <Text style={styles.label}>비밀번호</Text>
                   <View style={styles.authInputRow}>
@@ -581,7 +605,7 @@ export const SignupScreenView = ({
                       )}
                     </Pressable>
                   </View>
-                </View>
+                </AuthFieldBox>
                 {!!errors.password && <InlineError message={errors.password} />}
                 <View style={styles.requirementsContainer}>
                   <PasswordRequirement
@@ -596,12 +620,12 @@ export const SignupScreenView = ({
               </View>
 
               <View style={styles.inputGroup}>
-                <View
-                  style={[
-                    styles.authInputContainer,
-                    focusedField === 'confirmPassword' && styles.inputFocused,
-                    !!errors.confirmPassword && styles.inputError,
-                  ]}
+                <AuthFieldBox
+                  state={fieldState(
+                    !!errors.confirmPassword,
+                    focusedField === 'confirmPassword',
+                  )}
+                  style={styles.authInputContainer}
                 >
                   <Text style={styles.label}>비밀번호 확인</Text>
                   <View style={styles.authInputRow}>
@@ -640,7 +664,7 @@ export const SignupScreenView = ({
                       )}
                     </Pressable>
                   </View>
-                </View>
+                </AuthFieldBox>
                 {!!errors.confirmPassword && (
                   <InlineError message={errors.confirmPassword} />
                 )}
@@ -656,14 +680,9 @@ export const SignupScreenView = ({
           {/* ══ 3단계: 닉네임 ══ */}
           {step === 3 && (
             <View style={styles.inputGroup}>
-              <View
-                style={[
-                  styles.authInputContainer,
-                  focusedField === 'nickname' && styles.inputFocused,
-                  (!!errors.nickname || nicknameStatus === 'taken') &&
-                    styles.inputError,
-                  nicknameStatus === 'available' && styles.inputVerified,
-                ]}
+              <AuthFieldBox
+                state={nicknameState}
+                style={styles.authInputContainer}
               >
                 <Text style={styles.label}>닉네임</Text>
                 <View style={styles.authInputRow}>
@@ -684,7 +703,7 @@ export const SignupScreenView = ({
                     accessibilityLabel="닉네임"
                   />
                 </View>
-              </View>
+              </AuthFieldBox>
               {!!errors.nickname && <InlineError message={errors.nickname} />}
               {!errors.nickname && nicknameHint()}
             </View>
@@ -694,11 +713,9 @@ export const SignupScreenView = ({
           {step === 4 && (
             <>
               <View style={styles.inputGroup}>
-                <View
-                  style={[
-                    styles.authInputContainer,
-                    !!errors.birthdate && styles.inputError,
-                  ]}
+                <AuthFieldBox
+                  state={errors.birthdate ? 'error' : 'default'}
+                  style={styles.authInputContainer}
                 >
                   <Text style={styles.label}>생년월일</Text>
                   <TouchableOpacity
@@ -720,16 +737,16 @@ export const SignupScreenView = ({
                         : '생년월일 선택'}
                     </Text>
                   </TouchableOpacity>
-                </View>
+                </AuthFieldBox>
                 {!!errors.birthdate && <InlineError message={errors.birthdate} />}
               </View>
 
               <View style={styles.inputGroup}>
-                <View
+                <AuthFieldBox
+                  state={errors.gender ? 'error' : 'default'}
                   style={[
                     styles.authInputContainer,
                     styles.genderInputContainer,
-                    !!errors.gender && styles.inputError,
                   ]}
                 >
                   <Text style={styles.label}>성별</Text>
@@ -740,13 +757,23 @@ export const SignupScreenView = ({
                         { key: 'female', label: '여성' },
                       ] as const
                     ).map(option => (
-                      <Pressable
+                      <PressableScale
                         key={option.key}
-                        style={({ pressed }) => [
+                        style={[
                           styles.genderButton,
                           form.gender === option.key && styles.genderButtonSelected,
-                          pressed && styles.genderButtonPressed,
                         ]}
+                        baseColor={
+                          form.gender === option.key
+                            ? COLORS.primary
+                            : COLORS.white
+                        }
+                        pressedColor={
+                          form.gender === option.key
+                            ? COLORS.primaryDark
+                            : COLORS.surface
+                        }
+                        scaleTo={0.96}
                         onPress={() => onChange('gender', option.key)}
                         accessibilityRole="radio"
                         accessibilityState={{ selected: form.gender === option.key }}
@@ -761,10 +788,10 @@ export const SignupScreenView = ({
                         >
                           {option.label}
                         </Text>
-                      </Pressable>
+                      </PressableScale>
                     ))}
                   </View>
-                </View>
+                </AuthFieldBox>
                 {!!errors.gender && <InlineError message={errors.gender} />}
               </View>
 
@@ -807,25 +834,13 @@ export const SignupScreenView = ({
 
       {/* ── 하단: 주 버튼은 항상 '다음' 하나 ── */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + normalize(16) }]}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.submitButton,
-            !isNextEnabled && styles.submitButtonMuted,
-            pressed && styles.submitButtonPressed,
-          ]}
+        <AuthSubmitButton
+          label={step === totalSteps ? '회원가입 완료' : '다음'}
           onPress={onNextStep}
+          loading={isSubmitting}
+          muted={!isNextEnabled}
           disabled={isBusy}
-          accessibilityRole="button"
-          accessibilityLabel={step === totalSteps ? '회원가입 완료' : '다음'}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color={COLORS.white} />
-          ) : (
-            <Text style={styles.submitButtonText}>
-              {step === totalSteps ? '회원가입 완료' : '다음'}
-            </Text>
-          )}
-        </Pressable>
+        />
       </View>
 
       <PrivacyPolicyModal

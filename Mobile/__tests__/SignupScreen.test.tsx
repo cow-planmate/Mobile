@@ -56,7 +56,17 @@ jest.mock('react-native-reanimated', () => {
   animation.duration = () => animation;
   return {
     __esModule: true,
-    default: { View },
+    default: {
+      View,
+      // PressableScale이 Pressable을 감싸 쓴다. 목에서는 원본을 그대로 돌려준다.
+      createAnimatedComponent: (Component: any) => Component,
+    },
+    useSharedValue: (value: any) => ({ value }),
+    useAnimatedStyle: (fn: any) => fn(),
+    withTiming: (value: any) => value,
+    withSpring: (value: any) => value,
+    interpolateColor: (_v: any, _in: any, output: any[]) => output[0],
+    Easing: { out: () => () => 0, quad: () => 0 },
     FadeInDown: animation,
     FadeOut: animation,
     FadeInRight: animation,

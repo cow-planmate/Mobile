@@ -16,6 +16,9 @@ import { WebView } from 'react-native-webview';
 import { X, Eye, EyeOff, AlertCircle } from 'lucide-react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { styles, COLORS, normalize } from './LoginScreen.styles';
+import PressableScale from '../components/PressableScale';
+import AuthSubmitButton from '../components/AuthSubmitButton';
+import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
 
 /* ── Inline SVG icons for social login ── */
 
@@ -152,6 +155,7 @@ const InlineError = ({ message }: { message: string }) => (
     style={styles.errorRow}
     entering={FadeInDown.duration(180)}
     exiting={FadeOut.duration(120)}
+    accessibilityLiveRegion="polite"
   >
     <AlertCircle
       size={normalize(15)}
@@ -229,8 +233,19 @@ export const LoginScreenView = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusSeq]);
 
-  const emailInvalid = !!errors.email || !!errors.form;
-  const passwordInvalid = !!errors.password || !!errors.form;
+  const fieldState = (
+    invalid: boolean,
+    isFocused: boolean,
+  ): FieldState => (invalid ? 'error' : isFocused ? 'focus' : 'default');
+
+  const emailState = fieldState(
+    !!errors.email || !!errors.form,
+    focused === 'email',
+  );
+  const passwordState = fieldState(
+    !!errors.password || !!errors.form,
+    focused === 'password',
+  );
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -248,13 +263,7 @@ export const LoginScreenView = ({
         <Text style={styles.title}>로그인</Text>
 
         <View style={styles.inputGroup}>
-          <View
-            style={[
-              styles.inputContainer,
-              focused === 'email' && styles.inputFocused,
-              emailInvalid && styles.inputError,
-            ]}
-          >
+          <AuthFieldBox state={emailState} style={styles.inputContainer}>
             <Text style={styles.label}>이메일</Text>
             <TextInput
               ref={emailRef}
@@ -277,18 +286,12 @@ export const LoginScreenView = ({
               placeholderTextColor={COLORS.darkGray}
               accessibilityLabel="이메일"
             />
-          </View>
+          </AuthFieldBox>
           {!!errors.email && <InlineError message={errors.email} />}
         </View>
 
         <View style={styles.inputGroup}>
-          <View
-            style={[
-              styles.passwordContainer,
-              focused === 'password' && styles.inputFocused,
-              passwordInvalid && styles.inputError,
-            ]}
-          >
+          <AuthFieldBox state={passwordState} style={styles.passwordContainer}>
             <View style={styles.passwordContent}>
               <Text style={styles.label}>비밀번호</Text>
               <TextInput
@@ -325,28 +328,17 @@ export const LoginScreenView = ({
                 <Eye size={20} color={COLORS.textSecondary} />
               )}
             </Pressable>
-          </View>
+          </AuthFieldBox>
           {!!errors.password && <InlineError message={errors.password} />}
           {!!errors.form && <InlineError message={errors.form} />}
         </View>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.submitButton,
-            isLoading && styles.submitButtonLoading,
-            pressed && !isLoading && styles.submitButtonPressed,
-          ]}
+        <AuthSubmitButton
+          label="로그인"
           onPress={onLogin}
-          disabled={isLoading}
-          accessibilityRole="button"
-          accessibilityLabel="로그인"
-        >
-          {isLoading ? (
-            <ActivityIndicator color={COLORS.white} />
-          ) : (
-            <Text style={styles.submitButtonText}>로그인</Text>
-          )}
-        </Pressable>
+          loading={isLoading}
+          style={styles.submitButtonSpacing}
+        />
 
         <View style={styles.linksContainer}>
           <Pressable
@@ -367,30 +359,30 @@ export const LoginScreenView = ({
             <View style={styles.socialDividerLine} />
           </View>
           <View style={styles.socialButtons}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.socialButton,
-                pressed && styles.socialButtonPressed,
-              ]}
+            <PressableScale
+              style={styles.socialButton}
+              baseColor={COLORS.white}
+              pressedColor={COLORS.surface}
+              scaleTo={0.94}
               onPress={onGoogleLogin}
               disabled={isLoading}
               accessibilityRole="button"
               accessibilityLabel="Google 계정으로 로그인"
             >
               <GoogleIcon size={28} />
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.socialButton,
-                pressed && styles.socialButtonPressed,
-              ]}
+            </PressableScale>
+            <PressableScale
+              style={styles.socialButton}
+              baseColor={COLORS.white}
+              pressedColor={COLORS.surface}
+              scaleTo={0.94}
               onPress={onNaverLogin}
               disabled={isLoading}
               accessibilityRole="button"
               accessibilityLabel="네이버 계정으로 로그인"
             >
               <NaverIcon size={28} />
-            </Pressable>
+            </PressableScale>
           </View>
         </View>
 
