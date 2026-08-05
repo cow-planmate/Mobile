@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import Toast from 'react-native-toast-message';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
-import { LoginScreenView } from './LoginScreen.view';
+import { LoginScreenView, LoginErrors } from './LoginScreen.view';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { parseBackendError } from '../../../utils/errorHandler';
 
 /** 이메일 또는 비밀번호가 틀렸을 때 서버가 주는 코드 (AUTH_003) */
 const INVALID_CREDENTIALS_CODE = 'AUTH_003';
+
+const EMAIL_REGEX = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$/;
 
 type LoginScreenProps = {
   navigation: { navigate: (screen: string, params?: any) => void };
@@ -21,69 +22,56 @@ type LoginScreenProps = {
 export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [focused, setFocused] = useState<string | null>(null);
-  const [serverError, setServerError] = useState<{
-    field: 'email' | 'password' | 'all' | null;
-    message: string | null;
-  }>({ field: null, message: null });
-  const login = useAuthStore((state) => state.login);
-  const oauthLogin = useAuthStore((state) => state.oauthLogin);
-  const isLoading = useAuthStore((state) => state.isLoading);
+
+  /**
+   * 오류는 필드에 붙여 화면에 계속 띄운다.
+   * 예전에는 2.5초 뒤 사라지는 토스트만 띄우고 테두리만 붉게 남겨서,
+   * 문구를 놓치면 무엇이 잘못됐는지 알 방법이 없었다.
+   */
+  const [errors, setErrors] = useState<LoginErrors>({});
+  const [focusSeq, setFocusSeq] = useState(0);
+
+  const login = useAuthStore(state => state.login);
+  const oauthLogin = useAuthStore(state => state.oauthLogin);
+  const isLoading = useAuthStore(state => state.isLoading);
   const { showAlert } = useAlert();
   const [snsAuthUrl, setSnsAuthUrl] = useState<string | null>(null);
 
-  const isEmailValid =
-    (form.email.length === 0 ||
-      /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$/.test(form.email)) &&
-    serverError.field !== 'email' &&
-    serverError.field !== 'all';
-  const isPasswordValid =
-    (form.password.length === 0 || form.password.length >= 4) &&
-    serverError.field !== 'password' &&
-    serverError.field !== 'all';
-
+  /** 입력을 고치면 그 필드의 오류와 폼 전체 오류를 함께 지운다. */
   const handleChange = (key: 'email' | 'password', value: string) => {
     setForm(prev => ({ ...prev, [key]: value }));
-    if (serverError.field === key || serverError.field === 'all') {
-      setServerError({ field: null, message: null });
-    }
-  };
-
-  const handleClearPassword = () => {
-    setForm(prev => ({ ...prev, password: '' }));
+    setErrors(prev => {
+      if (!prev[key] && !prev.form) return prev;
+      const next = { ...prev };
+      delete next[key];
+      delete next.form;
+      return next;
+    });
   };
 
   const handleLogin = async () => {
     const email = form.email.trim();
-    if (!email || !form.password) {
-      Toast.show({
-        type: 'error',
-        text1: '입력되지 않은 항목이 있어요.',
-        position: 'top',
-        visibilityTime: 2500,
-      });
+    const next: LoginErrors = {};
+
+    if (!email) {
+      next.email = '이메일을 입력해 주세요.';
+    } else if (!EMAIL_REGEX.test(email)) {
+      next.email = '이메일 형식을 확인해 주세요.';
+    }
+
+    // 비밀번호는 길이를 검사하지 않는다. 정책이 바뀌기 전에 가입한 계정을
+    // 클라이언트가 먼저 막아버리기 때문에, 맞고 틀림은 서버가 판단한다.
+    if (!form.password) {
+      next.password = '비밀번호를 입력해 주세요.';
+    }
+
+    if (next.email || next.password) {
+      setErrors(next);
+      setFocusSeq(seq => seq + 1);
       return;
     }
 
-    const emailRegex = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$/;
-    if (!emailRegex.test(email)) {
-      Toast.show({
-        type: 'error',
-        text1: '이메일 형식이 올바르지 않아요.',
-        position: 'top',
-        visibilityTime: 2500,
-      });
-      return;
-    }
-
-    if (form.password.length < 4) {
-      Toast.show({
-        type: 'error',
-        text1: '비밀번호는 최소 4자리 이상이어야 해요.',
-        position: 'top',
-        visibilityTime: 2500,
-      });
-      return;
-    }
+    setErrors({});
 
     try {
       await login(email, form.password);
@@ -92,18 +80,12 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       const { code, message } = parseBackendError(e);
       const isBadCredentials = code === INVALID_CREDENTIALS_CODE;
 
-      if (isBadCredentials) {
-        setServerError({ field: 'all', message });
-      }
-
-      Toast.show({
-        type: 'error',
-        text1: isBadCredentials
-          ? '가입된 정보가 없거나 비밀번호가 맞지 않아요.'
+      setErrors({
+        form: isBadCredentials
+          ? '이메일 또는 비밀번호가 맞지 않아요. 다시 확인해 주세요.'
           : message,
-        position: 'top',
-        visibilityTime: 2500,
       });
+      setFocusSeq(seq => seq + 1);
     }
   };
 
@@ -117,7 +99,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   const handleSnsNavigationStateChange = async (navState: any) => {
     const url = navState.url;
-    if (url.includes('status=SUCCESS') || url.includes('status=NEED_ADDITIONAL_INFO') || url.includes('status=FAIL')) {
+    if (
+      url.includes('status=SUCCESS') ||
+      url.includes('status=NEED_ADDITIONAL_INFO') ||
+      url.includes('status=FAIL')
+    ) {
       setSnsAuthUrl(null);
       // parse query strings
       const queryParams = url.split('?')[1];
@@ -130,12 +116,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             try {
               await oauthLogin(code);
             } catch (e: any) {
-              Toast.show({
-                type: 'error',
-                text1: '소셜 로그인 실패',
-                position: 'top',
-                visibilityTime: 2500,
-              });
+              setErrors({ form: '소셜 로그인에 실패했어요. 다시 시도해 주세요.' });
             }
           }
         } else if (status === 'NEED_ADDITIONAL_INFO') {
@@ -145,10 +126,16 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           if (signupId) {
             navigation.navigate('OAuthAdditionalInfo', { signupId, needEmail });
           } else {
-            showAlert({ title: '오류', message: '가입 세션 정보가 올바르지 않습니다.' });
+            showAlert({
+              title: '오류',
+              message: '가입 세션 정보가 올바르지 않습니다.',
+            });
           }
         } else {
-          showAlert({ title: '오류', message: '소셜 로그인 중 오류가 발생했습니다.' });
+          showAlert({
+            title: '오류',
+            message: '소셜 로그인 중 오류가 발생했습니다.',
+          });
         }
       }
     }
@@ -156,16 +143,15 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   return (
     <LoginScreenView
-      form={form as any}
+      form={form}
+      errors={errors}
+      focusSeq={focusSeq}
       isLoading={isLoading}
       focused={focused}
-      isEmailValid={isEmailValid}
-      isPasswordValid={isPasswordValid}
       onChange={handleChange}
       onLogin={handleLogin}
       onFocus={setFocused}
       onBlur={() => setFocused(null)}
-      onClearPassword={handleClearPassword}
       onNavigateToSignup={() => navigation.navigate('Signup')}
       onNavigateToForgotPassword={() => navigation.navigate('ForgotPassword')}
       onGoogleLogin={handleGoogleLogin}
@@ -176,9 +162,3 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     />
   );
 }
-
-
-
-
-
-

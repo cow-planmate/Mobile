@@ -6,19 +6,21 @@ const meta = {
   component: LoginScreenView,
   args: {
     form: { email: '', password: '' },
+    errors: {},
+    focusSeq: 0,
     isLoading: false,
     focused: null,
-    isEmailValid: true,
-    isPasswordValid: true,
     onChange: () => {},
     onLogin: () => {},
     onFocus: () => {},
     onBlur: () => {},
-    onClearPassword: () => {},
     onNavigateToSignup: () => {},
     onNavigateToForgotPassword: () => {},
     onGoogleLogin: () => {},
     onNaverLogin: () => {},
+    snsAuthUrl: null,
+    onSnsClose: () => {},
+    onSnsNavigationStateChange: () => {},
   },
 } satisfies Meta<typeof LoginScreenView>;
 
@@ -38,7 +40,24 @@ export const TypingEmail: Story = {
 export const InvalidEmail: Story = {
   args: {
     form: { email: 'invalid-email', password: '' },
-    isEmailValid: false,
+    errors: { email: '이메일 형식을 확인해 주세요.' },
+  },
+};
+
+export const EmptyPassword: Story = {
+  args: {
+    form: { email: 'test@example.com', password: '' },
+    errors: { password: '비밀번호를 입력해 주세요.' },
+  },
+};
+
+/** 서버가 자격 증명 불일치를 돌려준 상태. 두 필드가 함께 붉어진다. */
+export const InvalidCredentials: Story = {
+  args: {
+    form: { email: 'test@example.com', password: 'wrongpassword' },
+    errors: {
+      form: '이메일 또는 비밀번호가 맞지 않아요. 다시 확인해 주세요.',
+    },
   },
 };
 

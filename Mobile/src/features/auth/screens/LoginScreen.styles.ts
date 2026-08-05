@@ -27,9 +27,21 @@ export const FONTS = {
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    padding: normalize(24),
     backgroundColor: COLORS.white,
+  },
+  /**
+   * 키보드가 뜨면 화면이 줄어든다. 스크롤이 없으면 아래쪽(소셜 로그인·회원가입
+   * 링크)에 손이 닿지 않으므로 스크롤 안에 담고, 여유가 있을 때만 세로 가운데
+   * 정렬이 되도록 flexGrow로 늘린다.
+   */
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: normalize(24),
+    paddingVertical: normalize(24),
   },
   title: {
     fontSize: normalize(32),
@@ -45,10 +57,14 @@ export const styles = StyleSheet.create({
     width: '100%',
     marginBottom: normalize(14),
   },
+  /**
+   * 테두리 굵기를 상태와 무관하게 1.5로 고정한다. 포커스될 때만 굵어지면
+   * 박스 크기가 함께 바뀌어 입력 중에 글자가 흔들린다.
+   */
   inputContainer: {
     width: '100%',
     minHeight: normalize(68),
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: COLORS.border,
     borderRadius: 8,
     paddingHorizontal: normalize(16),
@@ -57,7 +73,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: {
-    fontSize: normalize(11),
+    fontSize: normalize(12),
     color: COLORS.textSecondary,
     marginBottom: normalize(2),
     fontFamily: FONTS.medium,
@@ -75,18 +91,20 @@ export const styles = StyleSheet.create({
     includeFontPadding: false,
     height: normalize(28),
   },
-  /** 입력값이 유효하지 않을 때의 테두리 강조. 정의가 없어 적용되지 않았다. */
   inputError: {
     borderColor: COLORS.error,
-    borderWidth: 1,
+  },
+  inputFocused: {
+    borderColor: COLORS.primary,
   },
   passwordContainer: {
     width: '100%',
     minHeight: normalize(68),
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: COLORS.border,
     borderRadius: 8,
-    paddingHorizontal: normalize(16),
+    paddingLeft: normalize(16),
+    paddingRight: normalize(4),
     paddingVertical: normalize(10),
     backgroundColor: COLORS.white,
     flexDirection: 'row',
@@ -107,17 +125,34 @@ export const styles = StyleSheet.create({
     includeFontPadding: false,
     height: normalize(28),
   },
-  passwordToggleText: {
-    color: COLORS.textSecondary,
-    fontSize: normalize(14),
-    fontFamily: FONTS.semibold,
-    fontWeight: '600',
-    lineHeight: normalize(20),
+  /** 아이콘 전용 버튼은 48dp를 채운다 (Material / One UI 최소 터치 영역) */
+  eyeButton: {
+    width: normalize(48),
+    height: normalize(48),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  inputFocused: {
-    borderColor: COLORS.primary,
-    borderWidth: 2.5,
+
+  /* ── 인라인 오류 ── */
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: normalize(6),
+    marginTop: normalize(8),
+    paddingHorizontal: normalize(2),
   },
+  errorIcon: {
+    marginTop: normalize(2),
+  },
+  errorText: {
+    flex: 1,
+    color: COLORS.error,
+    fontSize: normalize(13),
+    fontFamily: FONTS.medium,
+    fontWeight: '500',
+    lineHeight: normalize(18),
+  },
+
   submitButton: {
     width: '100%',
     height: normalize(52),
@@ -127,8 +162,12 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     marginTop: normalize(24),
   },
-  submitButtonDisabled: {
-    backgroundColor: COLORS.darkGray,
+  submitButtonPressed: {
+    backgroundColor: COLORS.primaryDark,
+    transform: [{ scale: 0.99 }],
+  },
+  submitButtonLoading: {
+    backgroundColor: COLORS.primaryDark,
   },
   submitButtonText: {
     fontSize: normalize(17),
@@ -143,39 +182,29 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
-    marginTop: normalize(28),
-    gap: normalize(24),
-  },
-  separatorWrapper: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-  },
-  separator: {
-    color: COLORS.darkGray,
-    fontSize: normalize(14),
-    fontFamily: FONTS.regular,
-    fontWeight: '400',
-    lineHeight: normalize(18),
+    marginTop: normalize(20),
   },
   linkButton: {
-    paddingVertical: normalize(6),
-    paddingHorizontal: normalize(12),
-    borderRadius: 8,
+    paddingVertical: normalize(13),
+    paddingHorizontal: normalize(8),
   },
   linkText: {
-    color: COLORS.darkGray,
+    color: COLORS.textSecondary,
     fontSize: normalize(14),
     fontFamily: FONTS.medium,
     fontWeight: '500',
     lineHeight: normalize(18),
   },
+  linkTextStrong: {
+    color: COLORS.primary,
+    fontFamily: FONTS.bold,
+    fontWeight: '700',
+  },
 
   /* ── Social Login ── */
   socialContainer: {
     width: '100%',
-    marginTop: normalize(20),
-    marginBottom: normalize(12),
+    marginTop: normalize(12),
     alignItems: 'center',
   },
   socialDivider: {
@@ -195,7 +224,7 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     fontWeight: '500',
     lineHeight: normalize(16),
-    color: COLORS.darkGray,
+    color: COLORS.textSecondary,
   },
   socialButtons: {
     flexDirection: 'row',
@@ -211,17 +240,26 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.white,
   },
+  socialButtonPressed: {
+    backgroundColor: COLORS.surface,
+    transform: [{ scale: 0.96 }],
+  },
 
   /* ── Privacy Policy Link ── */
+  privacyLinkButton: {
+    alignSelf: 'center',
+    marginTop: normalize(20),
+    paddingVertical: normalize(12),
+    paddingHorizontal: normalize(12),
+  },
   privacyLinkText: {
     fontSize: normalize(12),
     fontFamily: FONTS.regular,
     fontWeight: '400',
     lineHeight: normalize(16),
-    color: COLORS.darkGray,
+    color: COLORS.textSecondary,
     textDecorationLine: 'underline',
     textAlign: 'center',
-    marginBottom: normalize(4),
   },
 
   /* ── Privacy Policy Modal ── */
@@ -252,6 +290,13 @@ export const styles = StyleSheet.create({
     lineHeight: normalize(24),
     color: COLORS.text,
   },
+  privacyCloseIcon: {
+    width: normalize(44),
+    height: normalize(44),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: normalize(-10),
+  },
   privacyScroll: {
     marginBottom: normalize(16),
   },
@@ -270,7 +315,7 @@ export const styles = StyleSheet.create({
     fontWeight: '400',
     color: COLORS.textSecondary,
     lineHeight: normalize(18),
-    marginBottom: normalize(3),
+    marginBottom: normalize(4),
     paddingLeft: normalize(4),
   },
   privacyCloseButton: {
@@ -287,5 +332,31 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: normalize(20),
     color: COLORS.white,
+  },
+
+  /* ── SNS WebView ── */
+  snsContainer: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+  },
+  snsHeader: {
+    height: normalize(52),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingHorizontal: normalize(8),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  snsCloseButton: {
+    width: normalize(48),
+    height: normalize(48),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  snsLoading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
