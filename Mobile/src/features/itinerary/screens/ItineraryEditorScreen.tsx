@@ -39,6 +39,7 @@ import {
 import {
   SimpleWeatherInfo,
   fetchWeather,
+  getShareStatus,
 } from '../../../api/trips';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { ShareModal, PlanInfoModal, AirplaneLoading } from '../../../components/common';
@@ -50,12 +51,14 @@ import { faMap, faUsers, faXmark } from '@fortawesome/free-solid-svg-icons';
 /**
  * 화면이 blur된 뒤 실제로 연결을 끊기까지의 유예 시간(ms).
  *
- * 서버는 참여자 제거를 STOMP 세션 종료 이벤트에만 의존하고, 종료를 놓친 세션은
- * presence 캐시에 최대 1시간 남는다. 목록은 userId로 중복을 제거하므로 유령이
- * 하나만 있어도 사용자가 계속 접속 중으로 보인다. 끊고 붙이는 횟수 자체가
- * 위험이므로, 장소 추가 화면 왕복 같은 짧은 이탈은 연결을 유지해 흡수한다.
+ * 이 화면에서 blur가 나는 경로는 하단 탭 이동과 완료 후 ItineraryView 이동뿐이고,
+ * 후자는 이동 전에 이미 disconnect를 부른다. 장소 추가는 화면 전환이 아니라
+ * 모달이라 blur가 나지 않는다. 즉 유예가 실제로 흡수하는 건 탭을 잘못 눌렀다가
+ * 곧바로 돌아오는 경우 하나뿐이라, 화면 전환 애니메이션보다 조금 길기만 하면 된다.
+ *
+ * 유예가 길면 그만큼 다른 참여자의 접속자 목록에서 늦게 사라진다.
  */
-const BLUR_DISCONNECT_GRACE_MS = 60000;
+const BLUR_DISCONNECT_GRACE_MS = 1000;
 
 /**
  * Normalize raw categoryId to 0-4 range used by backend.
@@ -279,17 +282,35 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
    * 실시간 편집(WS)으로 보낼 plan 변경 페이로드를 만든다.
    *
    * SharedSync가 캐시를 병합할 때 값이 null인 필드만 건너뛰는데, PlanDto의
-   * adultCount·childCount는 원시 타입 int라 페이로드에서 빠지면 null이 아니라 0으로
-   * 역직렬화된다. 그래서 이름만 담아 보내면 인원수가 0으로 덮어써지고, 그 캐시가
-   * 그대로 DB까지 내려간다. 바꾸지 않는 값이라도 반드시 실제 값을 함께 실어야 한다.
+   * adultCount·childCount·isShared는 원시 타입이라 페이로드에서 빠지면 null이 아니라
+   * 0/false로 역직렬화된다. 그래서 이름만 담아 보내면 인원수가 0으로, 공유 여부가
+   * 해제로 덮어써지고, 그 캐시가 그대로 DB까지 내려간다. 바꾸지 않는 값이라도
+   * 반드시 실제 값을 함께 실어야 한다.
+   *
+   * isShared는 GET /api/plan/{id}/complete의 planFrame에 없어 화면이 들고 있지 않다.
+   * 공유 모달에서 언제든 바뀔 수 있는 값이라 캐시해 두면 낡은 값을 실어 보낼 위험이
+   * 있으므로, 보내기 직전에 조회한다. 조회에 실패하면 null을 반환해 WS 전송 자체를
+   * 건너뛴다. 이름 변경은 REST PATCH /api/plan/{id}/name이 DB와 SharedSync 캐시를
+   * 함께 갱신하므로, WS를 건너뛰어도 저장은 되고 다른 참여자 화면 반영만 늦어진다.
    */
   const buildPlanSyncPayload = useCallback(
-    (targetPlanId: string, planName: string) => ({
-      planId: targetPlanId,
-      planName,
-      adultCount: planMetadata?.adultCount ?? route.params.adults ?? 1,
-      childCount: planMetadata?.childCount ?? route.params.children ?? 0,
-    }),
+    async (targetPlanId: string, planName: string) => {
+      let isShared: boolean;
+      try {
+        ({ isShared } = await getShareStatus(targetPlanId));
+      } catch (err) {
+        console.warn('공유 상태 조회 실패로 plan 실시간 전송을 건너뜁니다:', err);
+        return null;
+      }
+
+      return {
+        planId: targetPlanId,
+        planName,
+        adultCount: planMetadata?.adultCount ?? route.params.adults ?? 1,
+        childCount: planMetadata?.childCount ?? route.params.children ?? 0,
+        isShared,
+      };
+    },
     [planMetadata, route.params.adults, route.params.children],
   );
 
@@ -524,7 +545,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const handleSaveTripName = useCallback(async () => {
     setIsEditingTripName(false);
     if (tripName && planId) {
-      sendMessage('update', 'plan', buildPlanSyncPayload(planId, tripName));
+      const planPayload = await buildPlanSyncPayload(planId, tripName);
+      if (planPayload) {
+        sendMessage('update', 'plan', planPayload);
+      }
       try {
         await axios.patch(
           resolveApiUrl(`/api/plan/${planId}/name`),
@@ -749,13 +773,15 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
     // If editing existing plan, send the final trip name update via WebSocket before disconnecting
     if (route.params.planId && tripName) {
-      sendMessage(
-        'update',
-        'plan',
-        buildPlanSyncPayload(route.params.planId, tripName),
+      const planPayload = await buildPlanSyncPayload(
+        route.params.planId,
+        tripName,
       );
-      // Brief delay to allow websocket frame transmission
-      await new Promise(resolve => setTimeout(resolve, 100));
+      if (planPayload) {
+        sendMessage('update', 'plan', planPayload);
+        // Brief delay to allow websocket frame transmission
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
     }
 
     // If plan already exists (editing from MySchedule or pre-created from Home), update title for owner and navigate to view
