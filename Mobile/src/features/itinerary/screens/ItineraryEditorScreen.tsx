@@ -192,8 +192,15 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   }, []);
 
   const { updatePlaceDetails, setDays, reorderPlacesInDay } = useItinerary();
-  const { connect, disconnect, onlineUsers, sendMessage, isConnected } =
-    useWebSocket();
+  const {
+    connect,
+    disconnect,
+    onlineUsers,
+    sendMessage,
+    isConnected,
+    subscribeToMessages,
+    unsubscribeFromMessages,
+  } = useWebSocket();
   const {
     fetchAllRecommendations,
     fetchAllRecommendationsNoAuth,
@@ -478,7 +485,45 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     // 지워 버려 의도적 종료가 자동 재연결 대기로 오인된다.
   }, [isConnected]);
 
+  // 이름 입력 중에는 원격 값을 반영하지 않는다. 내가 타이핑하던 이름이
+  // 남의 편집이나 내 전송의 에코로 되돌아가면 입력이 통째로 날아간다.
+  const isEditingTripNameRef = useRef(isEditingTripName);
+  isEditingTripNameRef.current = isEditingTripName;
 
+  /**
+   * 다른 참여자의 일정 이름 변경을 받아 반영합니다.
+   *
+   * 블록·타임테이블은 ItineraryContext가 처리하지만 일정 이름은 이 화면이 들고 있어
+   * 여기서 따로 구독한다. 리스너는 Set으로 관리되므로 중복 구독이 아니다.
+   */
+  useEffect(() => {
+    const handlePlanMessage = (msg: any) => {
+      if (!msg) return;
+
+      const entity = msg.entity || msg.target;
+      const action = msg.action || msg.type;
+      if (entity !== 'plan' || action === 'delete') return;
+
+      // undo/redo 브로드캐스트는 payload 키가 '{entity}s'(=plans)다.
+      const raw =
+        msg.planDtos ||
+        msg.plans ||
+        (msg.data ? msg.data.planDtos || msg.data.plans : null);
+      const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+
+      const remoteName = list.find((dto: any) => dto?.planName)?.planName;
+      if (!remoteName || isEditingTripNameRef.current) return;
+
+      setTripName((prev: string) =>
+        prev === remoteName ? prev : remoteName,
+      );
+    };
+
+    subscribeToMessages(handlePlanMessage);
+    return () => {
+      unsubscribeFromMessages(handlePlanMessage);
+    };
+  }, [subscribeToMessages, unsubscribeFromMessages, setTripName]);
 
   const fetchedDestIdRef = useRef<number | null>(null);
 

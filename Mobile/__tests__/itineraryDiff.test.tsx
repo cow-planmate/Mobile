@@ -408,6 +408,5 @@ describe('blockId 판별 (F-18)', () => {
     const sends = blockSends();
     expect(sends).toHaveLength(1);
     expect(sends[0][2].blockId).toBe(1001);
-    expect(sends[0][2].timetablePlaceBlockId).toBe(1001);
   });
 });

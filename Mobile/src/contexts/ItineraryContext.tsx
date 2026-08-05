@@ -25,7 +25,6 @@ interface PendingBlockSync {
   action: 'update' | 'delete';
   place: Place;
   timetableId: number;
-  dateString: string;
 }
 
 /** 모든 날짜에 걸친 장소 총개수. */
@@ -195,11 +194,15 @@ const blockCategoryToCategoryId = (blockCategory?: string, rawCategoryId?: any):
   return 4;
 };
 
-const mapToTimetablePlaceBlockDto = (
-  place: Place,
-  timetableId?: number,
-  date?: string,
-) => {
+/**
+ * 서버 TimeTablePlaceBlockDto와 키가 정확히 일치하는 페이로드를 만듭니다.
+ *
+ * DTO는 @JsonIgnoreProperties(ignoreUnknown = true)라 없는 키는 조용히 버려진다.
+ * 예전 백엔드 스키마의 키(xLocation/yLocation, photoUrl, placeCategoryId,
+ * startTime/endTime, date 등)를 함께 실어 보내고 있었는데, 받는 쪽에서 쓰이지 않으면서
+ * 어떤 키가 실제로 반영되는지 읽기 어렵게 만들 뿐이라 걷어냈다.
+ */
+const mapToTimetablePlaceBlockDto = (place: Place, timetableId?: number) => {
   // Remap category IDs to backend table IDs (0:관광지, 1:숙소, 2:식당, 3:직접추가, 4:검색)
   let categoryId = place.categoryId ?? 4;
 
@@ -237,31 +240,19 @@ const mapToTimetablePlaceBlockDto = (
 
   return {
     blockId,
-    timetablePlaceBlockId: blockId,
     timeTableId: timetableId,
-    timetableId: timetableId,
-    date: date,
     placeId: place.placeRefId,
-    placeCategoryId: categoryId,
-    placeCategory: categoryId,
-    blockCategory: categoryToBlockCategory(categoryId),
     placeName: place.name,
-    placeAddress: place.address,
-    latitude: place.latitude,
-    longitude: place.longitude,
-    xLocation: place.longitude,
-    yLocation: place.latitude,
-    xlocation: place.longitude,
-    ylocation: place.latitude,
-    photoUrl: place.imageUrl,
-    memo: place.memo || '',
-    startTime: startTime,
-    endTime: endTime,
-    blockStartTime: startTime,
-    blockEndTime: endTime,
     placeContentTypeId: place.contentTypeId || null,
+    placeAddress: place.address,
     placeThumbnailUrl: place.imageUrl || null,
     placeCopyrightDivCd: place.copyrightDivCd || null,
+    latitude: place.latitude,
+    longitude: place.longitude,
+    blockStartTime: startTime,
+    blockEndTime: endTime,
+    blockCategory: categoryToBlockCategory(categoryId),
+    memo: place.memo || '',
   };
 };
 
@@ -295,12 +286,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
    * 예외로 통째 폐기되고, delete는 조용히 무시됩니다.
    */
   const sendBlockSync = useCallback(
-    (
-      action: 'update' | 'delete',
-      place: Place,
-      timetableId: number,
-      dateString: string,
-    ) => {
+    (action: 'update' | 'delete', place: Place, timetableId: number) => {
       if (isTempPlaceId(place.id)) {
         const prev = pendingBlockSyncRef.current.get(place.id);
         if (prev?.action === 'delete') return; // 삭제가 이미 예약된 블록
@@ -308,7 +294,6 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
           action,
           place,
           timetableId,
-          dateString,
         });
         return;
       }
@@ -316,7 +301,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       sendMessage(
         action,
         'timetableplaceblock',
-        mapToTimetablePlaceBlockDto(place, timetableId, dateString),
+        mapToTimetablePlaceBlockDto(place, timetableId),
       );
     },
     [sendMessage],
@@ -335,7 +320,6 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         mapToTimetablePlaceBlockDto(
           { ...pending.place, id: realId },
           pending.timetableId,
-          pending.dateString,
         ),
       );
     },
@@ -657,16 +641,12 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         sendMessage(
           'create',
           'timetableplaceblock',
-          mapToTimetablePlaceBlockDto(
-            finalPlace,
-            dayTimetableId,
-            dayDateString,
-          ),
+          mapToTimetablePlaceBlockDto(finalPlace, dayTimetableId),
           newId,
         );
 
         otherPlacesToSync.forEach(p => {
-          sendBlockSync('update', p, dayTimetableId!, dayDateString!);
+          sendBlockSync('update', p, dayTimetableId!);
         });
       }
     }, 0);
@@ -700,7 +680,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
     setTimeout(() => {
       if (placeToDelete && dayTimetableId && dayDateString) {
-        sendBlockSync('delete', placeToDelete, dayTimetableId, dayDateString);
+        sendBlockSync('delete', placeToDelete, dayTimetableId);
       }
     }, 0);
   }, [sendBlockSync]);
@@ -751,7 +731,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setTimeout(() => {
       if (dayTimetableId && dayDateString) {
         placesToSync.forEach(p => {
-          sendBlockSync('update', p, dayTimetableId!, dayDateString!);
+          sendBlockSync('update', p, dayTimetableId!);
         });
       }
     }, 0);
@@ -783,7 +763,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
     setTimeout(() => {
       if (finalPlace && dayTimetableId && dayDateString) {
-        sendBlockSync('update', finalPlace, dayTimetableId, dayDateString);
+        sendBlockSync('update', finalPlace, dayTimetableId);
       }
     }, 0);
   }, [sendBlockSync]);
@@ -855,7 +835,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setTimeout(() => {
       if (dayTimetableId && dayDateString) {
         placesToSync.forEach(p => {
-          sendBlockSync('update', p, dayTimetableId!, dayDateString!);
+          sendBlockSync('update', p, dayTimetableId!);
         });
       }
     }, 0);
@@ -921,7 +901,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       setTimeout(() => {
         if (dayTimetableId && dayDateString) {
           placesToSync.forEach(p => {
-            sendBlockSync('update', p, dayTimetableId!, dayDateString!);
+            sendBlockSync('update', p, dayTimetableId!);
           });
         }
       }, 0);

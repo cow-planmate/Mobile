@@ -207,6 +207,8 @@ const mockWebSocket = {
   onlineUsers: [],
   sendMessage: jest.fn(),
   isConnected: false,
+  subscribeToMessages: jest.fn(),
+  unsubscribeFromMessages: jest.fn(),
 };
 jest.mock('../src/contexts/WebSocketContext', () => ({
   useWebSocket: () => mockWebSocket,
