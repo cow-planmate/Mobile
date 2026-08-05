@@ -95,7 +95,7 @@ describe('SignupScreen components & agreement validation', () => {
     expect(renderer).toBeDefined();
   });
 
-  it('renders SignupScreenView step 4 with agreement checkbox correctly', () => {
+  it('renders SignupScreenView step 3 with agreement checkbox correctly', () => {
     const form = {
       email: 'test@example.com',
       verificationCode: '123456',
@@ -121,8 +121,8 @@ describe('SignupScreen components & agreement validation', () => {
     ReactTestRenderer.act(() => {
       view = ReactTestRenderer.create(
         <SignupScreenView
-          step={4}
-          totalSteps={4}
+          step={3}
+          totalSteps={3}
           form={form}
           errors={{}}
           focusSeq={0}

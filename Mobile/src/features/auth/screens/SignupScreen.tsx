@@ -49,7 +49,7 @@ export default function SignupScreen() {
   const { showAlert } = useAlert();
 
   const [step, setStep] = useState(1);
-  const totalSteps = 4;
+  const totalSteps = 3;
 
   const [form, setForm] = useState({
     email: '',
@@ -291,7 +291,7 @@ export default function SignupScreen() {
     setFocusSeq(seq => seq + 1);
   }, []);
 
-  /* ── 3단계: 닉네임 ── */
+  /* ── 3단계: 닉네임 & 내 정보 ── */
 
   /**
    * 입력이 멈추면 중복 검사를 보낸다.
@@ -331,7 +331,7 @@ export default function SignupScreen() {
     return () => clearTimeout(id);
   }, [form.nickname, step]);
 
-  /* ── 4단계: 가입 완료 ── */
+  /* ── 가입 완료 제출 ── */
 
   const handleSignup = useCallback(async () => {
     if (!emailAuthToken) {
@@ -431,8 +431,12 @@ export default function SignupScreen() {
         passwordRequirements.hasCombination &&
         isPasswordMatch
       );
-    if (step === 3) return nicknameStatus === 'available';
-    return !!form.birthdate && !!form.gender && isAgreed;
+    return (
+      nicknameStatus === 'available' &&
+      !!form.birthdate &&
+      !!form.gender &&
+      isAgreed
+    );
   }, [
     step,
     isEmailVerified,
@@ -456,7 +460,7 @@ export default function SignupScreen() {
         return;
       }
     }
-    if (step === 3) {
+    if (step === totalSteps) {
       if (!form.nickname.trim()) {
         setFieldError('nickname', '닉네임을 입력해 주세요.');
         return;
@@ -466,8 +470,6 @@ export default function SignupScreen() {
         return;
       }
       if (nicknameStatus !== 'available') return;
-    }
-    if (step >= 4) {
       void handleSignup();
       return;
     }
@@ -476,6 +478,7 @@ export default function SignupScreen() {
     setFocusSeq(seq => seq + 1);
   }, [
     step,
+    totalSteps,
     passwordRequirements,
     isPasswordMatch,
     form.nickname,

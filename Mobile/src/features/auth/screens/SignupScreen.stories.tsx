@@ -6,7 +6,7 @@ const meta = {
   component: SignupScreenView,
   args: {
     step: 1,
-    totalSteps: 4,
+    totalSteps: 3,
     form: {
       email: '',
       verificationCode: '',
@@ -185,6 +185,21 @@ export const Step3NicknameAvailable: Story = {
   },
 };
 
-export const Step4Info: Story = {
-  args: { step: 4 },
+/** 닉네임 확인이 끝나고 생년월일·성별·약관 동의까지 채운 상태 */
+export const Step3ProfileFilled: Story = {
+  args: {
+    step: 3,
+    form: {
+      email: 'planmate@example.com',
+      verificationCode: '123456',
+      password: 'planmate1!',
+      confirmPassword: 'planmate1!',
+      nickname: '플랜메이트',
+      birthdate: '1998-05-20',
+      gender: 'female',
+    },
+    nicknameStatus: 'available' as const,
+    isAgreed: true,
+    isNextEnabled: true,
+  },
 };

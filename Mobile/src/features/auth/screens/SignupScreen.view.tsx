@@ -201,12 +201,11 @@ export interface SignupScreenViewProps {
   formatTime: (seconds: number) => string;
 }
 
-const STEP_TITLES = ['이메일 인증', '비밀번호 설정', '닉네임 설정', '내 정보 입력'];
+const STEP_TITLES = ['이메일 인증', '비밀번호 설정', '프로필 설정'];
 const STEP_DESCRIPTIONS = [
   '로그인에 사용할 이메일을 인증해주세요.',
   '안전하게 보호할 비밀번호를 만들어 주세요.',
-  '앱에서 사용할 닉네임을 정해주세요.',
-  '맞춤형 여행 계획을 위해 필요해요.',
+  '앱에서 사용할 닉네임과 맞춤형 여행 계획을 위한 정보를 입력해주세요.',
 ];
 
 export const SignupScreenView = ({
@@ -677,41 +676,38 @@ export const SignupScreenView = ({
             </>
           )}
 
-          {/* ══ 3단계: 닉네임 ══ */}
+          {/* ══ 3단계: 닉네임 & 내 정보 ══ */}
           {step === 3 && (
-            <View style={styles.inputGroup}>
-              <AuthFieldBox
-                state={nicknameState}
-                style={styles.authInputContainer}
-              >
-                <Text style={styles.label}>닉네임</Text>
-                <View style={styles.authInputRow}>
-                  <TextInput
-                    ref={nicknameRef}
-                    style={styles.authInput}
-                    placeholder="플랜메이트"
-                    placeholderTextColor={COLORS.textSecondary}
-                    value={form.nickname}
-                    onChangeText={v => onChange('nickname', v)}
-                    autoComplete="username"
-                    importantForAutofill="yes"
-                    returnKeyType="done"
-                    onSubmitEditing={onNextStep}
-                    maxLength={20}
-                    onFocus={() => setFocusedField('nickname')}
-                    onBlur={() => setFocusedField(null)}
-                    accessibilityLabel="닉네임"
-                  />
-                </View>
-              </AuthFieldBox>
-              {!!errors.nickname && <InlineError message={errors.nickname} />}
-              {!errors.nickname && nicknameHint()}
-            </View>
-          )}
-
-          {/* ══ 4단계: 내 정보 ══ */}
-          {step === 4 && (
             <>
+              <View style={styles.inputGroup}>
+                <AuthFieldBox
+                  state={nicknameState}
+                  style={styles.authInputContainer}
+                >
+                  <Text style={styles.label}>닉네임</Text>
+                  <View style={styles.authInputRow}>
+                    <TextInput
+                      ref={nicknameRef}
+                      style={styles.authInput}
+                      placeholder="플랜메이트"
+                      placeholderTextColor={COLORS.textSecondary}
+                      value={form.nickname}
+                      onChangeText={v => onChange('nickname', v)}
+                      autoComplete="username"
+                      importantForAutofill="yes"
+                      returnKeyType="next"
+                      onSubmitEditing={() => setBirthdatePickerOpen(true)}
+                      maxLength={20}
+                      onFocus={() => setFocusedField('nickname')}
+                      onBlur={() => setFocusedField(null)}
+                      accessibilityLabel="닉네임"
+                    />
+                  </View>
+                </AuthFieldBox>
+                {!!errors.nickname && <InlineError message={errors.nickname} />}
+                {!errors.nickname && nicknameHint()}
+              </View>
+
               <View style={styles.inputGroup}>
                 <AuthFieldBox
                   state={errors.birthdate ? 'error' : 'default'}
