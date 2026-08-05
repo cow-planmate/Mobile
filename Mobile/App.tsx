@@ -21,7 +21,7 @@ import { XCircle, CheckCircle2, Info } from 'lucide-react-native';
 // 글로벌 폰트 스케일링 가드는 index.js에서 최우선 적용된다.
 // (React 19에서 defaultProps가 제거되어 utils/fontScalingGuard로 대체)
 
-const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && false;
+const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && true;
 
 /* ── Toast Styles ── */
 const toastStyles = StyleSheet.create({
