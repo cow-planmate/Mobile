@@ -3,7 +3,10 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { LoginScreenView, LoginErrors } from './LoginScreen.view';
 import { resolveApiUrl } from '../../../utils/apiUrl';
-import { parseBackendError } from '../../../utils/errorHandler';
+import {
+  parseBackendError,
+  getDisplayErrorMessage,
+} from '../../../utils/errorHandler';
 
 /** 이메일 또는 비밀번호가 틀렸을 때 서버가 주는 코드 (AUTH_003) */
 const INVALID_CREDENTIALS_CODE = 'AUTH_003';
@@ -77,13 +80,16 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       await login(email, form.password);
     } catch (e) {
       // 문구가 아니라 에러 코드로 판단한다. 백엔드가 메시지를 다듬어도 깨지지 않는다.
-      const { code, message } = parseBackendError(e);
+      const { code } = parseBackendError(e);
       const isBadCredentials = code === INVALID_CREDENTIALS_CODE;
 
       setErrors({
         form: isBadCredentials
           ? '이메일 또는 비밀번호가 맞지 않아요. 다시 확인해 주세요.'
-          : message,
+          : getDisplayErrorMessage(
+              e,
+              '로그인에 실패했어요. 잠시 후 다시 시도해 주세요.',
+            ),
       });
       setFocusSeq(seq => seq + 1);
     }
