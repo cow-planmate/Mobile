@@ -201,18 +201,45 @@ export const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   socialButtons: {
-    flexDirection: 'row',
-    gap: normalize(20),
+    width: '100%',
+    gap: normalize(10),
   },
+  /** One UI 최소 터치 높이(48dp)보다 여유를 둬 라벨과 배지가 눌리기 편하게 한다 */
   socialButton: {
-    width: normalize(48),
-    height: normalize(48),
-    borderRadius: normalize(24),
+    width: '100%',
+    minHeight: normalize(52),
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: COLORS.border,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.white,
+    paddingHorizontal: normalize(16),
+    gap: normalize(10),
+  },
+  socialButtonText: {
+    fontSize: normalize(15),
+    fontFamily: FONTS.medium,
+    fontWeight: '500',
+    lineHeight: normalize(20),
+    color: COLORS.text,
+  },
+  /** 라벨 중앙 정렬을 깨지 않도록 버튼 오른쪽에 절대 위치로 얹는다 */
+  lastUsedBadge: {
+    position: 'absolute',
+    right: normalize(12),
+    backgroundColor: COLORS.surface,
+    borderRadius: 999,
+    paddingHorizontal: normalize(8),
+    paddingVertical: normalize(3),
+  },
+  lastUsedBadgeText: {
+    fontSize: normalize(11),
+    fontFamily: FONTS.medium,
+    fontWeight: '500',
+    lineHeight: normalize(14),
+    color: COLORS.primary,
   },
 
   /* ── Privacy Policy Link ── */

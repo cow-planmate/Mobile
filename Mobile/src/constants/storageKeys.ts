@@ -7,6 +7,12 @@
 
 export const AUTH_STORAGE_KEYS = ['user', 'accessToken', 'refreshToken'];
 
+/**
+ * 마지막으로 로그인에 성공한 수단. 로그인 화면에 '마지막 사용' 표시를 하는
+ * 데 쓴다. 로그아웃해도 다음에 같은 수단을 더 쉽게 찾도록 지우지 않는다.
+ */
+export const LAST_LOGIN_METHOD_KEY = 'lastLoginMethod';
+
 /** FCM 기기 토큰과 중복 전송 방지 표시 */
 export const FCM_STORAGE_KEYS = ['fcmToken', 'lastSyncedFcmToken'];
 

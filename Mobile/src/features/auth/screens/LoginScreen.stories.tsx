@@ -18,6 +18,7 @@ const meta = {
     onNavigateToForgotPassword: () => {},
     onGoogleLogin: () => {},
     onNaverLogin: () => {},
+    lastLoginMethod: null,
     snsAuthUrl: null,
     onSnsClose: () => {},
     onSnsNavigationStateChange: () => {},
@@ -72,5 +73,18 @@ export const LoadingState: Story = {
   args: {
     isLoading: true,
     form: { email: 'test@example.com', password: 'password123' },
+  },
+};
+
+/** 마지막으로 구글로 로그인했던 경우, 소셜 버튼에 '마지막 사용' 배지가 붙는다. */
+export const LastUsedGoogle: Story = {
+  args: {
+    lastLoginMethod: 'google',
+  },
+};
+
+export const LastUsedNaver: Story = {
+  args: {
+    lastLoginMethod: 'naver',
   },
 };

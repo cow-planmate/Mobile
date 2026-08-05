@@ -37,8 +37,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const login = useAuthStore(state => state.login);
   const oauthLogin = useAuthStore(state => state.oauthLogin);
   const isLoading = useAuthStore(state => state.isLoading);
+  const lastLoginMethod = useAuthStore(state => state.lastLoginMethod);
   const { showAlert } = useAlert();
   const [snsAuthUrl, setSnsAuthUrl] = useState<string | null>(null);
+  /** WebView가 성공 콜백으로 돌아왔을 때 어느 제공자였는지 알아야 lastLoginMethod를 기록할 수 있다 */
+  const [snsProvider, setSnsProvider] = useState<'google' | 'naver' | null>(null);
 
   /** 입력을 고치면 그 필드의 오류와 폼 전체 오류를 함께 지운다. */
   const handleChange = (key: 'email' | 'password', value: string) => {
@@ -96,10 +99,12 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   };
 
   const handleGoogleLogin = () => {
+    setSnsProvider('google');
     setSnsAuthUrl(resolveApiUrl('/api/oauth/google'));
   };
 
   const handleNaverLogin = () => {
+    setSnsProvider('naver');
     setSnsAuthUrl(resolveApiUrl('/api/oauth/naver'));
   };
 
@@ -120,7 +125,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           const code = params.get('code');
           if (code) {
             try {
-              await oauthLogin(code);
+              await oauthLogin(code, snsProvider ?? 'google');
             } catch (e: any) {
               setErrors({ form: '소셜 로그인에 실패했어요. 다시 시도해 주세요.' });
             }
@@ -162,6 +167,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       onNavigateToForgotPassword={() => navigation.navigate('ForgotPassword')}
       onGoogleLogin={handleGoogleLogin}
       onNaverLogin={handleNaverLogin}
+      lastLoginMethod={lastLoginMethod}
       snsAuthUrl={snsAuthUrl}
       onSnsClose={() => setSnsAuthUrl(null)}
       onSnsNavigationStateChange={handleSnsNavigationStateChange}

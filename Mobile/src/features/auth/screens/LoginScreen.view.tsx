@@ -190,6 +190,8 @@ export interface LoginScreenViewProps {
   onNavigateToForgotPassword: () => void;
   onGoogleLogin: () => void;
   onNaverLogin: () => void;
+  /** 가장 최근에 로그인을 성공시킨 수단. 해당 버튼에 '마지막 사용' 배지를 띄운다 */
+  lastLoginMethod: 'email' | 'google' | 'naver' | null;
   snsAuthUrl: string | null;
   onSnsClose: () => void;
   onSnsNavigationStateChange: (navState: any) => void;
@@ -209,6 +211,7 @@ export const LoginScreenView = ({
   onNavigateToForgotPassword,
   onGoogleLogin,
   onNaverLogin,
+  lastLoginMethod,
   snsAuthUrl,
   onSnsClose,
   onSnsNavigationStateChange,
@@ -278,7 +281,6 @@ export const LoginScreenView = ({
               autoComplete="email"
               importantForAutofill="yes"
               returnKeyType="next"
-              submitBehavior="submit"
               onSubmitEditing={() => passwordRef.current?.focus()}
               onFocus={() => onFocus('email')}
               onBlur={onBlur}
@@ -363,25 +365,45 @@ export const LoginScreenView = ({
               style={styles.socialButton}
               baseColor={COLORS.white}
               pressedColor={COLORS.surface}
-              scaleTo={0.94}
+              scaleTo={0.98}
               onPress={onGoogleLogin}
               disabled={isLoading}
               accessibilityRole="button"
-              accessibilityLabel="Google 계정으로 로그인"
+              accessibilityLabel={
+                lastLoginMethod === 'google'
+                  ? 'Google 계정으로 계속하기, 마지막으로 사용한 로그인 수단'
+                  : 'Google 계정으로 계속하기'
+              }
             >
-              <GoogleIcon size={28} />
+              <GoogleIcon size={20} />
+              <Text style={styles.socialButtonText}>Google로 계속하기</Text>
+              {lastLoginMethod === 'google' && (
+                <View style={styles.lastUsedBadge}>
+                  <Text style={styles.lastUsedBadgeText}>마지막 사용</Text>
+                </View>
+              )}
             </PressableScale>
             <PressableScale
               style={styles.socialButton}
               baseColor={COLORS.white}
               pressedColor={COLORS.surface}
-              scaleTo={0.94}
+              scaleTo={0.98}
               onPress={onNaverLogin}
               disabled={isLoading}
               accessibilityRole="button"
-              accessibilityLabel="네이버 계정으로 로그인"
+              accessibilityLabel={
+                lastLoginMethod === 'naver'
+                  ? '네이버 계정으로 계속하기, 마지막으로 사용한 로그인 수단'
+                  : '네이버 계정으로 계속하기'
+              }
             >
-              <NaverIcon size={28} />
+              <NaverIcon size={20} />
+              <Text style={styles.socialButtonText}>네이버로 계속하기</Text>
+              {lastLoginMethod === 'naver' && (
+                <View style={styles.lastUsedBadge}>
+                  <Text style={styles.lastUsedBadgeText}>마지막 사용</Text>
+                </View>
+              )}
             </PressableScale>
           </View>
         </View>

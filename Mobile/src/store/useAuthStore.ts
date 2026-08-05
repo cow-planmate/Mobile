@@ -2,7 +2,10 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { resolveApiUrl } from '../utils/apiUrl';
-import { LOGOUT_CLEARED_KEYS } from '../constants/storageKeys';
+import {
+  LOGOUT_CLEARED_KEYS,
+  LAST_LOGIN_METHOD_KEY,
+} from '../constants/storageKeys';
 import '../api/axiosConfig';
 
 /**
@@ -14,6 +17,9 @@ export interface User {
   email: string;
 }
 
+/** 로그인 화면의 '마지막 사용' 표시에 쓰는 수단 구분 */
+export type LoginMethod = 'email' | 'google' | 'naver';
+
 /**
  * 인증 및 사용자 세션 상태 관리 인터페이스
  */
@@ -23,6 +29,8 @@ interface AuthState {
   /** 앱 시작 시 저장소 복원이 끝나기 전까지 true (로그인 화면 깜빡임 방지) */
   isInitializing: boolean;
   needsThemeSelection: boolean;
+  /** 가장 최근에 로그인을 성공시킨 수단. 로그아웃해도 유지된다 */
+  lastLoginMethod: LoginMethod | null;
   setNeedsThemeSelection: (val: boolean) => void;
   setUser: (user: User | null) => void;
   /** 앱 시작 시 로컬 저장소 토큰 및 사용자 정보 복원 */
@@ -32,7 +40,7 @@ interface AuthState {
   /** 사용자 로그아웃 처리 */
   logout: () => Promise<void>;
   /** OAuth 인가 코드로 토큰 교환 로그인 */
-  oauthLogin: (code: string) => Promise<void>;
+  oauthLogin: (code: string, provider: 'google' | 'naver') => Promise<void>;
   /** OAuth 신규 회원 추가 정보 등록 및 로그인 완료 */
   oauthComplete: (data: {
     signupId: string;
@@ -47,19 +55,25 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: false,
   isInitializing: true,
   needsThemeSelection: false,
+  lastLoginMethod: null,
   setNeedsThemeSelection: (val) => set({ needsThemeSelection: val }),
   setUser: (user) => set({ user }),
 
   initialize: async () => {
     try {
-      const [[, userJson], [, token]] = await AsyncStorage.multiGet([
-        'user',
-        'accessToken',
-      ]);
+      const [[, userJson], [, token], [, lastMethod]] =
+        await AsyncStorage.multiGet([
+          'user',
+          'accessToken',
+          LAST_LOGIN_METHOD_KEY,
+        ]);
 
       if (userJson && token) {
         set({ user: JSON.parse(userJson) });
         axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+      }
+      if (lastMethod === 'email' || lastMethod === 'google' || lastMethod === 'naver') {
+        set({ lastLoginMethod: lastMethod });
       }
     } catch (error) {
       console.error('Failed to initialize auth store:', error);
@@ -111,9 +125,10 @@ export const useAuthStore = create<AuthState>((set) => ({
           ['user', JSON.stringify(userData)],
           ['accessToken', accessToken],
           ['refreshToken', refreshToken],
+          [LAST_LOGIN_METHOD_KEY, 'email'],
         ]);
 
-        set({ user: userData });
+        set({ user: userData, lastLoginMethod: 'email' });
       } else {
         throw new Error(data.message || '서버 응답 형식이 올바르지 않습니다.');
       }
@@ -126,7 +141,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  oauthLogin: async (code) => {
+  oauthLogin: async (code, provider) => {
     set({ isLoading: true });
     delete axios.defaults.headers.common.Authorization;
 
@@ -160,9 +175,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         ['user', JSON.stringify(userData)],
         ['accessToken', accessToken],
         ['refreshToken', refreshToken],
+        [LAST_LOGIN_METHOD_KEY, provider],
       ]);
 
-      set({ user: userData });
+      set({ user: userData, lastLoginMethod: provider });
     } catch (error) {
       console.error('OAuth Login error:', error);
       throw error;
