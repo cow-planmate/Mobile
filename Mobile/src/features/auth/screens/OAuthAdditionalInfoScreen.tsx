@@ -14,10 +14,16 @@ import {
   Platform,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
+import DatePicker from 'react-native-date-picker';
 import { ArrowLeft } from 'lucide-react-native';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { RouteProp } from '@react-navigation/native';
 import { AuthStackParamList } from '../../../navigation/types';
+import {
+  formatBirthdate,
+  parseBirthdate,
+  toBirthdateString,
+} from '../../../utils/birthdate';
 
 const { width } = Dimensions.get('window');
 const normalize = (size: number) =>
@@ -58,7 +64,8 @@ export default function OAuthAdditionalInfoScreen({
   const isLoading = useAuthStore((state) => state.isLoading);
 
   const [email, setEmail] = useState('');
-  const [age, setAge] = useState('');
+  const [birthdate, setBirthdate] = useState('');
+  const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
   const [gender, setGender] = useState<number | null>(null); // 0: 남성, 1: 여성
   const [focused, setFocused] = useState<string | null>(null);
 
@@ -86,21 +93,21 @@ export default function OAuthAdditionalInfoScreen({
       }
     }
 
-    if (!age.trim()) {
+    if (!birthdate) {
       Toast.show({
         type: 'error',
-        text1: '나이를 입력해주세요.',
+        text1: '생년월일을 선택해주세요.',
         position: 'top',
         visibilityTime: 2500,
       });
       return;
     }
 
-    const ageNum = parseInt(age, 10);
-    if (isNaN(ageNum) || ageNum < 0 || ageNum > 150) {
+    // 서버 birthdate는 @Past다. 오늘 이후 날짜는 여기서 걸러 낸다.
+    if (birthdate >= toBirthdateString(new Date())) {
       Toast.show({
         type: 'error',
-        text1: '올바른 나이를 입력해주세요. (0-150)',
+        text1: '생년월일을 다시 확인해주세요.',
         position: 'top',
         visibilityTime: 2500,
       });
@@ -118,9 +125,6 @@ export default function OAuthAdditionalInfoScreen({
     }
 
     try {
-      const currentYear = new Date().getFullYear();
-      const birthYear = currentYear - ageNum;
-      const birthdate = `${birthYear}-01-01`;
       const genderEnum = gender === 0 ? 'MALE' : 'FEMALE';
 
       await oauthComplete({
@@ -145,7 +149,7 @@ export default function OAuthAdditionalInfoScreen({
     }
   };
 
-  const isButtonEnabled = (!needEmail || email.length > 0) && age.length > 0 && gender !== null;
+  const isButtonEnabled = (!needEmail || email.length > 0) && !!birthdate && gender !== null;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -198,24 +202,21 @@ export default function OAuthAdditionalInfoScreen({
           )}
 
           <View style={styles.inputGroup}>
-            <View
-              style={[
-                styles.inputContainer,
-                focused === 'age' && styles.inputFocused,
-              ]}
-            >
-              <Text style={styles.label}>나이</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="나이를 입력하세요"
-                value={age}
-                onChangeText={setAge}
-                keyboardType="number-pad"
-                onFocus={() => setFocused('age')}
-                onBlur={() => setFocused(null)}
-                editable={!isLoading}
-                placeholderTextColor={COLORS.darkGray}
-              />
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>생년월일</Text>
+              <TouchableOpacity
+                onPress={() => setBirthdatePickerOpen(true)}
+                disabled={isLoading}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="생년월일 선택"
+              >
+                <Text
+                  style={[styles.input, !birthdate && styles.inputPlaceholder]}
+                >
+                  {birthdate ? formatBirthdate(birthdate) : '생년월일을 선택하세요'}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -275,6 +276,24 @@ export default function OAuthAdditionalInfoScreen({
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* 생년월일 선택기. 나이를 받아 역산하면 실제 월·일이 소실된다. */}
+      <DatePicker
+        modal
+        mode="date"
+        title="생년월일 선택"
+        confirmText="확인"
+        cancelText="취소"
+        locale="ko"
+        maximumDate={new Date()}
+        open={isBirthdatePickerOpen}
+        date={parseBirthdate(birthdate)}
+        onConfirm={date => {
+          setBirthdatePickerOpen(false);
+          setBirthdate(toBirthdateString(date));
+        }}
+        onCancel={() => setBirthdatePickerOpen(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -334,6 +353,9 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     padding: 0,
     marginTop: normalize(2),
+  },
+  inputPlaceholder: {
+    color: COLORS.darkGray,
   },
   genderGroup: {
     marginBottom: normalize(32),
