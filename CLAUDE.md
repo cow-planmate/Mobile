@@ -1,5 +1,31 @@
 # Project Rules
 
+## Commands
+
+모든 명령어는 `Mobile/` 디렉토리에서 실행합니다 (저장소 루트가 아님).
+
+```bash
+cd Mobile
+npm run android   # 안드로이드 실행 (iOS 미지원)
+npm start         # Metro 번들러
+npm run lint       # eslint
+npm test           # jest
+npm run storybook-generate  # storybook 스토리 재생성
+```
+
+## Architecture
+
+- 저장소 루트: `App/` — 실제 React Native 프로젝트는 `App/Mobile/`에 있습니다.
+- 기능별 디렉토리: `Mobile/src/features/{auth,community,home,itinerary}`
+- 화면 파일은 관례적으로 4개로 분리됩니다: `Screen.tsx`(컨테이너/로직), `Screen.view.tsx`(순수 뷰), `Screen.styles.ts`(styled-components 스타일), `Screen.stories.tsx`(Storybook)
+- 상태관리: zustand(`src/store`), 서버 상태: `@tanstack/react-query`, 실시간: STOMP(WebSocket)
+- `Backend-v2`, `planmate2.0`은 이 저장소 밖(`../`)에 있는 참고 전용 저장소입니다.
+
+## Environment
+
+- Node `>=20` 필요
+- iOS 미지원 — Android 전용 프로젝트 (`npm run ios`는 안내 메시지만 출력)
+
 ## 1. 코드 작성 규칙
 
 - 간결하고 효율적인 코드를 작성합니다.
@@ -11,7 +37,7 @@
 - 핵심 내용 중심의 필요한 문장으로만 구성합니다.
 - 이모티콘 및 과도한 특수기호 사용을 배제합니다.
 - 보고서 형식의 정돈된 구조를 유지하여 작성합니다.
-- 사용자에게 역으로 질문하는 행위를 금지하며, 확인이나 선택을 요구하는 문장을 구성하지 않습니다.
+- 사용자에게 역으로 질문하는 행위를 금지하며, 확인이나 선택을 요구하는 문장을 구성하지 않습니다. (단, 삭제·강제 푸시·결제 등 되돌리기 어렵거나 위험한 작업은 예외로 하며 항상 확인을 구합니다.)
 
 ## 3. 작업 수행 범위 및 절차 규칙
 
@@ -35,7 +61,9 @@
 
 ## 7. 백엔드 연계 및 로직 교차 검증 규칙
 
-- 모든 기능 구현, 로직 분석 및 문제 해결 시 항상 백엔드(`Backend-v2`) 소스 코드(Controller, DTO, Entity, Service, WebSocket STOMP 등)와 앱(`App/Mobile`) 소스 코드를 1:1로 교차 점검하여 불일치 여부를 전수 탐지하고 원인을 파악하여 해결합니다.
+- 모든 기능 구현, 로직 분석 및 문제 해결 시 필요한 경우 백엔드(`Backend-v2`, 이 저장소 밖 `../Backend-v2`) 소스 코드(Controller, DTO, Entity, Service, WebSocket STOMP 등)와 앱(`App/Mobile`) 소스 코드를 1:1로 교차 점검하여 불일치 여부를 탐지하고 원인을 파악하여 해결합니다.
+- `Backend-v2`, `planmate2.0`은 참고 전용 저장소입니다. 절대 수정하지 않습니다.
+- 이 조항은 필요한 경우에만 적용하며, 그 외 상황에는 제외합니다.
 
 ## 8. 단일 응답 분할 작업 및 연속 수행 규칙
 
@@ -46,4 +74,6 @@
 
 - 코드 디버그, 리뷰 과정에서 사용자의 생각에 대해 무조건 동의하지 않고 객관적인 데이터를 바탕으로 판별하고 분석하여 결과와 원인을 제공합니다.
 
-단, 7번 조항은 필요한 경우에만 적용하며, 그 외 상황에는 제외할 것.
+## 10. 커밋 메시지 말투
+
+- 커밋 메시지는 "~한다"가 아니라 부드러운 존댓말로 작성합니다.
