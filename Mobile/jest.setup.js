@@ -29,3 +29,15 @@ jest.mock('react-native-linear-gradient', () => {
     }
   };
 });
+
+// 이 패키지는 소스를 그대로 배포해 트랜스파일되지 않은 import 구문이 들어 있다.
+// transformIgnorePatterns를 넓히는 대신 linear-gradient와 같은 방식으로 대체한다.
+jest.mock('react-native-date-picker', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return class DatePicker extends React.Component {
+    render() {
+      return <View {...this.props} />;
+    }
+  };
+});
