@@ -395,9 +395,9 @@ export const styles = StyleSheet.create({
   },
   privacyModal: {
     width: '100%',
-    maxHeight: '80%',
+    height: '80%',
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 20,
     padding: normalize(20),
   },
   privacyHeader: {
@@ -414,13 +414,16 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
   },
   privacyCloseIcon: {
-    width: normalize(44),
-    height: normalize(44),
+    width: normalize(48),
+    height: normalize(48),
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: normalize(-10),
   },
-  privacyScroll: { marginBottom: normalize(16) },
+  privacyScroll: {
+    flex: 1,
+    marginBottom: normalize(16),
+  },
   privacySectionTitle: {
     fontSize: normalize(13),
     fontFamily: FONTS.bold,
@@ -443,15 +446,15 @@ export const styles = StyleSheet.create({
     height: normalize(52),
     width: '100%',
     backgroundColor: COLORS.primary,
-    borderRadius: 8,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   privacyCloseButtonText: {
-    fontSize: normalize(15),
+    fontSize: normalize(16),
     fontFamily: FONTS.bold,
-    fontWeight: '700',
-    lineHeight: normalize(20),
+    fontWeight: '600',
+    lineHeight: normalize(24),
     color: COLORS.white,
   },
 });

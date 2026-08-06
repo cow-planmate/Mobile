@@ -110,7 +110,8 @@ const PrivacyPolicyModal = ({
 
         <ScrollView
           style={styles.privacyScroll}
-          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: normalize(12) }}
+          showsVerticalScrollIndicator={true}
         >
           <Text style={styles.privacySectionTitle}>1. 수집·이용 목적</Text>
           <Text style={styles.privacyBullet}>• 회원 관리 및 서비스 제공</Text>

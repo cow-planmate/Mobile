@@ -72,7 +72,7 @@ export default function AuthSubmitButton({
   }));
 
   return (
-    <Animated.View style={containerStyle}>
+    <Animated.View style={[styles.container, containerStyle]}>
       <PressableScale
         style={[styles.button, style]}
         baseColor={PRIMARY}
@@ -99,10 +99,13 @@ export default function AuthSubmitButton({
 }
 
 const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+  },
   button: {
     width: '100%',
     height: normalize(52),
-    borderRadius: 8,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: PRIMARY,
@@ -113,11 +116,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    fontSize: normalize(17),
+    fontSize: normalize(16),
     fontFamily: 'Pretendard Variable',
-    fontWeight: '700',
-    lineHeight: normalize(22),
+    fontWeight: '600',
+    lineHeight: normalize(24),
     color: '#FFFFFF',
-    letterSpacing: 0.2,
+    letterSpacing: 0,
   },
 });

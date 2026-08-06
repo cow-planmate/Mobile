@@ -68,8 +68,20 @@ const PrivacyPolicyModal = ({
     animationType="fade"
     onRequestClose={onClose}
   >
-    <Pressable style={styles.privacyOverlay} onPress={onClose}>
-      <Pressable style={styles.privacyModal} onPress={e => e.stopPropagation()}>
+    {/*
+      배경을 Pressable로 감싸면 그 Pressable이 터치가 시작되는 순간
+      리스폰더를 가져가 안쪽 ScrollView가 제스처를 늦게 넘겨받는다.
+      감싸지 않고 형제로 깔아 둔다.
+    */}
+    <View style={styles.privacyOverlay}>
+      {/* 닫는 길은 X와 확인 버튼이 이미 읽어 준다. 여기서 또 읽으면 중복이다. */}
+      <Pressable
+        style={styles.privacyBackdrop}
+        onPress={onClose}
+        accessible={false}
+        importantForAccessibility="no"
+      />
+      <View style={styles.privacyModal}>
         <View style={styles.privacyHeader}>
           <Text style={styles.privacyTitle}>개인정보 처리방침</Text>
           <TouchableOpacity
@@ -84,7 +96,8 @@ const PrivacyPolicyModal = ({
 
         <ScrollView
           style={styles.privacyScroll}
-          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: normalize(12) }}
+          showsVerticalScrollIndicator={true}
         >
           <Text style={styles.privacySectionTitle}>1. 수집·이용 목적</Text>
           <Text style={styles.privacyBullet}>• 회원 관리 및 서비스 제공</Text>
@@ -143,8 +156,8 @@ const PrivacyPolicyModal = ({
         <TouchableOpacity style={styles.privacyCloseButton} onPress={onClose}>
           <Text style={styles.privacyCloseButtonText}>확인</Text>
         </TouchableOpacity>
-      </Pressable>
-    </Pressable>
+      </View>
+    </View>
   </Modal>
 );
 
