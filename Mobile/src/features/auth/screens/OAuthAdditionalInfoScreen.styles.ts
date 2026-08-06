@@ -1,4 +1,5 @@
 import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
+import { RADIUS } from '../authTokens';
 
 export const { width } = Dimensions.get('window');
 export const normalize = (size: number) =>
@@ -80,7 +81,7 @@ export const styles = StyleSheet.create({
     minHeight: normalize(68),
     borderWidth: 1.5,
     borderColor: COLORS.border,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     paddingHorizontal: normalize(16),
     paddingVertical: normalize(10),
     backgroundColor: COLORS.white,
@@ -145,7 +146,7 @@ export const styles = StyleSheet.create({
   genderButton: {
     flex: 1,
     minHeight: normalize(44),
-    borderRadius: 8,
+    borderRadius: RADIUS.sm,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.white,

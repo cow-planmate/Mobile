@@ -89,7 +89,7 @@ jest.mock('../src/navigation/AppNavigator', () => {
   };
 });
 
-jest.mock('../.storybook', () => {
+jest.mock('../.rnstorybook', () => {
   const React = require('react');
   const { Text } = require('react-native');
 

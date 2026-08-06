@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { HomeScreenView } from './HomeScreen.view';
 
 const meta = {
-  title: 'Screens/App/Main/HomeScreen',
+  title: 'Screens/Home/HomeScreen',
   component: HomeScreenView,
   args: {
     nickname: '플랜메이트',

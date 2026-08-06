@@ -110,7 +110,7 @@ const PrivacyPolicyModal = ({
             2. 수집하는 개인정보 항목
           </Text>
           <Text style={styles.privacyBullet}>
-            • 필수 항목: 이메일, 비밀번호, 닉네임, 나이, 성별
+            • 필수 항목: 이메일, 비밀번호, 닉네임, 생년월일, 성별
           </Text>
           <Text style={styles.privacyBullet}>
             • SNS 계정 로그인 시: 이메일 주소, 프로필 정보(닉네임, 프로필 이미지

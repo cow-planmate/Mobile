@@ -96,7 +96,7 @@ function App() {
   if (SHOW_STORYBOOK) {
     // Storybook 런타임(+ 모든 *.stories 모듈)이 앱 콜드 스타트에 실행되지 않도록
     // 정적 import 대신 지연 로드한다.
-    const StorybookUIRoot = require('./.storybook').default;
+    const StorybookUIRoot = require('./.rnstorybook').default;
     return <StorybookUIRoot />;
   }
 

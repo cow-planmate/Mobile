@@ -1,4 +1,5 @@
 import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
+import { RADIUS } from '../authTokens';
 
 export const { width } = Dimensions.get('window');
 export const normalize = (size: number) =>
@@ -102,7 +103,7 @@ export const styles = StyleSheet.create({
     minHeight: normalize(68),
     borderWidth: 1.5,
     borderColor: COLORS.border,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     paddingHorizontal: normalize(16),
     paddingVertical: normalize(10),
     backgroundColor: COLORS.white,
@@ -149,7 +150,7 @@ export const styles = StyleSheet.create({
   inlineButton: {
     height: normalize(52),
     paddingHorizontal: normalize(16),
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
@@ -256,7 +257,7 @@ export const styles = StyleSheet.create({
   resultIconWrap: {
     width: normalize(72),
     height: normalize(72),
-    borderRadius: normalize(36),
+    borderRadius: RADIUS.full,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: normalize(20),
@@ -286,7 +287,7 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: 12,
+    borderRadius: RADIUS.lg,
     padding: normalize(16),
   },
   resultNoteText: {

@@ -1,4 +1,5 @@
 import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
+import { RADIUS } from '../authTokens';
 
 export const { width, height } = Dimensions.get('window');
 export const normalize = (size: number) =>
@@ -110,7 +111,7 @@ export const styles = StyleSheet.create({
     minHeight: normalize(68),
     borderWidth: 1.5,
     borderColor: COLORS.border,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     paddingHorizontal: normalize(16),
     paddingVertical: normalize(10),
     backgroundColor: COLORS.white,
@@ -167,7 +168,7 @@ export const styles = StyleSheet.create({
   inlineButton: {
     height: normalize(52),
     paddingHorizontal: normalize(16),
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
@@ -305,7 +306,7 @@ export const styles = StyleSheet.create({
   genderButton: {
     flex: 1,
     minHeight: normalize(44),
-    borderRadius: 8,
+    borderRadius: RADIUS.sm,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.white,
@@ -342,7 +343,7 @@ export const styles = StyleSheet.create({
   checkbox: {
     width: normalize(22),
     height: normalize(22),
-    borderRadius: 6,
+    borderRadius: RADIUS.xs,
     borderWidth: 1.5,
     borderColor: COLORS.border,
     justifyContent: 'center',
@@ -397,7 +398,7 @@ export const styles = StyleSheet.create({
     width: '100%',
     height: '80%',
     backgroundColor: COLORS.white,
-    borderRadius: 20,
+    borderRadius: RADIUS.lg,
     padding: normalize(20),
   },
   privacyHeader: {
@@ -446,7 +447,7 @@ export const styles = StyleSheet.create({
     height: normalize(52),
     width: '100%',
     backgroundColor: COLORS.primary,
-    borderRadius: 14,
+    borderRadius: RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
   },

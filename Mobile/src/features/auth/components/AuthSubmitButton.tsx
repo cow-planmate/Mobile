@@ -15,6 +15,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import PressableScale from './PressableScale';
+import { RADIUS } from '../authTokens';
 
 const { width } = Dimensions.get('window');
 const normalize = (size: number) =>
@@ -105,7 +106,7 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
     height: normalize(52),
-    borderRadius: 14,
+    borderRadius: RADIUS.md,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: PRIMARY,

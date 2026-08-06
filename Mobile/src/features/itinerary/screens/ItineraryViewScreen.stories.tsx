@@ -67,7 +67,7 @@ const mockDays: Day[] = [
 ];
 
 const meta = {
-  title: 'Screens/App/Itinerary/ItineraryViewScreen',
+  title: 'Screens/Itinerary/ItineraryViewScreen',
   component: ItineraryViewScreenView,
   decorators: [
     (Story) => (

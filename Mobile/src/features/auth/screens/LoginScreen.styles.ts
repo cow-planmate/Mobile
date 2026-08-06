@@ -1,4 +1,5 @@
 import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
+import { RADIUS } from '../authTokens';
 
 export const { width } = Dimensions.get('window');
 export const normalize = (size: number) =>
@@ -66,7 +67,7 @@ export const styles = StyleSheet.create({
     minHeight: normalize(68),
     borderWidth: 1.5,
     borderColor: COLORS.border,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     paddingHorizontal: normalize(16),
     paddingVertical: normalize(10),
     backgroundColor: COLORS.white,
@@ -96,7 +97,7 @@ export const styles = StyleSheet.create({
     minHeight: normalize(68),
     borderWidth: 1.5,
     borderColor: COLORS.border,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     paddingLeft: normalize(16),
     paddingRight: normalize(4),
     paddingVertical: normalize(10),
@@ -208,7 +209,7 @@ export const styles = StyleSheet.create({
   socialButton: {
     width: '100%',
     minHeight: normalize(52),
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border,
     flexDirection: 'row',
@@ -230,7 +231,7 @@ export const styles = StyleSheet.create({
     position: 'absolute',
     right: normalize(12),
     backgroundColor: COLORS.surface,
-    borderRadius: 999,
+    borderRadius: RADIUS.full,
     paddingHorizontal: normalize(8),
     paddingVertical: normalize(3),
   },
@@ -275,7 +276,7 @@ export const styles = StyleSheet.create({
     width: '100%',
     height: '80%',
     backgroundColor: COLORS.white,
-    borderRadius: 20,
+    borderRadius: RADIUS.lg,
     padding: normalize(20),
   },
   privacyHeader: {
@@ -324,7 +325,7 @@ export const styles = StyleSheet.create({
     height: normalize(52),
     width: '100%',
     backgroundColor: COLORS.primary,
-    borderRadius: 14,
+    borderRadius: RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
