@@ -114,8 +114,8 @@ export const OAuthAdditionalInfoScreenView = ({
             <AuthFieldBox
               state={fieldState(!!errors.email, focusedField === 'email')}
               style={styles.authInputContainer}
+              label="이메일"
             >
-              <Text style={styles.label}>이메일</Text>
               <TextInput
                 style={styles.authInput}
                 placeholder="example@email.com"
@@ -143,8 +143,8 @@ export const OAuthAdditionalInfoScreenView = ({
           <AuthFieldBox
             state={fieldState(!!errors.birthdate, false)}
             style={styles.authInputContainer}
+            label="생년월일"
           >
-            <Text style={styles.label}>생년월일</Text>
             <Pressable
               onPress={() => setBirthdatePickerOpen(true)}
               disabled={isSubmitting}

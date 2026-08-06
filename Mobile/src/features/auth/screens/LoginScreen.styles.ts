@@ -64,22 +64,13 @@ export const styles = StyleSheet.create({
    */
   inputContainer: {
     width: '100%',
-    minHeight: normalize(68),
+    minHeight: normalize(52),
     borderWidth: 1.5,
     borderColor: COLORS.border,
     borderRadius: RADIUS.md,
     paddingHorizontal: normalize(16),
-    paddingVertical: normalize(10),
     backgroundColor: COLORS.white,
     justifyContent: 'center',
-  },
-  label: {
-    fontSize: normalize(12),
-    color: COLORS.textSecondary,
-    marginBottom: normalize(2),
-    fontFamily: FONTS.medium,
-    fontWeight: '500',
-    lineHeight: normalize(16),
   },
   input: {
     width: '100%',
@@ -90,17 +81,16 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
     padding: 0,
     includeFontPadding: false,
-    height: normalize(28),
+    height: normalize(24),
   },
   passwordContainer: {
     width: '100%',
-    minHeight: normalize(68),
+    minHeight: normalize(52),
     borderWidth: 1.5,
     borderColor: COLORS.border,
     borderRadius: RADIUS.md,
     paddingLeft: normalize(16),
     paddingRight: normalize(4),
-    paddingVertical: normalize(10),
     backgroundColor: COLORS.white,
     flexDirection: 'row',
     alignItems: 'center',
@@ -118,7 +108,7 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
     padding: 0,
     includeFontPadding: false,
-    height: normalize(28),
+    height: normalize(24),
   },
   /** 아이콘 전용 버튼은 48dp를 채운다 (Material / One UI 최소 터치 영역) */
   eyeButton: {

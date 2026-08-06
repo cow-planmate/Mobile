@@ -78,22 +78,13 @@ export const styles = StyleSheet.create({
    */
   authInputContainer: {
     width: '100%',
-    minHeight: normalize(68),
+    minHeight: normalize(52),
     borderWidth: 1.5,
     borderColor: COLORS.border,
     borderRadius: RADIUS.md,
     paddingHorizontal: normalize(16),
-    paddingVertical: normalize(10),
     backgroundColor: COLORS.white,
     justifyContent: 'center',
-  },
-  label: {
-    fontSize: normalize(12),
-    color: COLORS.textSecondary,
-    fontFamily: FONTS.medium,
-    fontWeight: '500',
-    lineHeight: normalize(16),
-    marginBottom: normalize(2),
   },
   authInput: {
     flex: 1,
@@ -102,7 +93,7 @@ export const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: normalize(20),
     color: COLORS.text,
-    height: normalize(28),
+    height: normalize(24),
     padding: 0,
     includeFontPadding: false,
     textAlignVertical: 'center',

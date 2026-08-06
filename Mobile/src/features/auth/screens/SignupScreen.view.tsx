@@ -388,11 +388,12 @@ export const SignupScreenView = ({
                     state={fieldState(!!errors.email, focusedField === 'email')}
                     style={[
                       styles.authInputContainer,
-                      styles.flex1,
                       emailLocked && styles.inputLocked,
                     ]}
+                    containerStyle={styles.flex1}
+                    label="이메일"
+                    labelBackground={emailLocked ? COLORS.surface : COLORS.white}
                   >
-                    <Text style={styles.label}>이메일</Text>
                     {emailLocked ? (
                       <Text style={styles.authValue} numberOfLines={1}>
                         {form.email}
@@ -470,8 +471,8 @@ export const SignupScreenView = ({
                   <AuthFieldBox
                     state={codeState}
                     style={styles.authInputContainer}
+                    label="인증번호"
                   >
-                    <Text style={styles.label}>인증번호</Text>
                     <View style={styles.authInputRow}>
                       <TextInput
                         ref={codeRef}
@@ -568,8 +569,8 @@ export const SignupScreenView = ({
                     focusedField === 'password',
                   )}
                   style={styles.authInputContainer}
+                  label="비밀번호"
                 >
-                  <Text style={styles.label}>비밀번호</Text>
                   <View style={styles.authInputRow}>
                     <TextInput
                       ref={passwordRef}
@@ -626,8 +627,8 @@ export const SignupScreenView = ({
                     focusedField === 'confirmPassword',
                   )}
                   style={styles.authInputContainer}
+                  label="비밀번호 확인"
                 >
-                  <Text style={styles.label}>비밀번호 확인</Text>
                   <View style={styles.authInputRow}>
                     <TextInput
                       ref={confirmRef}
@@ -684,8 +685,8 @@ export const SignupScreenView = ({
                 <AuthFieldBox
                   state={nicknameState}
                   style={styles.authInputContainer}
+                  label="닉네임"
                 >
-                  <Text style={styles.label}>닉네임</Text>
                   <View style={styles.authInputRow}>
                     <TextInput
                       ref={nicknameRef}
@@ -713,8 +714,8 @@ export const SignupScreenView = ({
                 <AuthFieldBox
                   state={errors.birthdate ? 'error' : 'default'}
                   style={styles.authInputContainer}
+                  label="생년월일"
                 >
-                  <Text style={styles.label}>생년월일</Text>
                   <TouchableOpacity
                     style={styles.authInputRow}
                     onPress={() => setBirthdatePickerOpen(true)}

@@ -198,11 +198,12 @@ export const ForgotPasswordScreenView = ({
                     state={emailState}
                     style={[
                       styles.authInputContainer,
-                      styles.flex1,
                       emailLocked && styles.inputLocked,
                     ]}
+                    containerStyle={styles.flex1}
+                    label="이메일"
+                    labelBackground={emailLocked ? COLORS.surface : COLORS.white}
                   >
-                    <Text style={styles.label}>이메일</Text>
                     {emailLocked ? (
                       <Text style={styles.authValue} numberOfLines={1}>
                         {email}
@@ -278,8 +279,8 @@ export const ForgotPasswordScreenView = ({
                   <AuthFieldBox
                     state={codeState}
                     style={styles.authInputContainer}
+                    label="인증번호"
                   >
-                    <Text style={styles.label}>인증번호</Text>
                     <View style={styles.authInputRow}>
                       <TextInput
                         ref={codeRef}

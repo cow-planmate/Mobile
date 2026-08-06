@@ -279,8 +279,11 @@ export const LoginScreenView = ({
         <Text style={styles.title}>로그인</Text>
 
         <View style={styles.inputGroup}>
-          <AuthFieldBox state={emailState} style={styles.inputContainer}>
-            <Text style={styles.label}>이메일</Text>
+          <AuthFieldBox
+            state={emailState}
+            style={styles.inputContainer}
+            label="이메일"
+          >
             <TextInput
               ref={emailRef}
               style={styles.input}
@@ -306,9 +309,12 @@ export const LoginScreenView = ({
         </View>
 
         <View style={styles.inputGroup}>
-          <AuthFieldBox state={passwordState} style={styles.passwordContainer}>
+          <AuthFieldBox
+            state={passwordState}
+            style={styles.passwordContainer}
+            label="비밀번호"
+          >
             <View style={styles.passwordContent}>
-              <Text style={styles.label}>비밀번호</Text>
               <TextInput
                 ref={passwordRef}
                 style={styles.passwordInput}

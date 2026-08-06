@@ -148,8 +148,8 @@ export const ChangePasswordScreenView = ({
               focusedField === 'currentPassword',
             )}
             style={styles.authInputContainer}
+            label="현재 비밀번호"
           >
-            <Text style={styles.label}>현재 비밀번호</Text>
             <View style={styles.authInputRow}>
               <TextInput
                 style={styles.authInput}
@@ -195,8 +195,8 @@ export const ChangePasswordScreenView = ({
               focusedField === 'newPassword',
             )}
             style={styles.authInputContainer}
+            label="새 비밀번호"
           >
-            <Text style={styles.label}>새 비밀번호</Text>
             <View style={styles.authInputRow}>
               <TextInput
                 ref={newPasswordRef}
@@ -260,8 +260,8 @@ export const ChangePasswordScreenView = ({
                 : 'default'
             }
             style={styles.authInputContainer}
+            label="새 비밀번호 확인"
           >
-            <Text style={styles.label}>새 비밀번호 확인</Text>
             <View style={styles.authInputRow}>
               <TextInput
                 ref={confirmPasswordRef}

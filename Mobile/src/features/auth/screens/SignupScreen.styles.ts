@@ -96,9 +96,13 @@ export const styles = StyleSheet.create({
 
   /* ── 입력 ── */
   inputGroup: { marginBottom: normalize(16) },
+  /**
+   * 라벨이 테두리 위로 올라가면서 입력 칸 위에 라벨 절반만큼 여백이 생겼다.
+   * 가운데 정렬이면 옆의 인증요청 버튼과 4dp 어긋나므로 아래를 맞춘다.
+   */
   fieldRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     gap: normalize(8),
   },
   /**
@@ -108,25 +112,16 @@ export const styles = StyleSheet.create({
    */
   authInputContainer: {
     width: '100%',
-    minHeight: normalize(68),
+    minHeight: normalize(52),
     borderWidth: 1.5,
     borderColor: COLORS.border,
     borderRadius: RADIUS.md,
     paddingHorizontal: normalize(16),
-    paddingVertical: normalize(10),
     backgroundColor: COLORS.white,
     justifyContent: 'center',
   },
   inputLocked: { backgroundColor: COLORS.surface },
 
-  label: {
-    fontSize: normalize(12),
-    color: COLORS.textSecondary,
-    fontFamily: FONTS.medium,
-    fontWeight: '500',
-    lineHeight: normalize(16),
-    marginBottom: normalize(2),
-  },
   authInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -139,7 +134,7 @@ export const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: normalize(20),
     color: COLORS.text,
-    height: normalize(28),
+    height: normalize(24),
     padding: 0,
     includeFontPadding: false,
     textAlignVertical: 'center',
