@@ -738,16 +738,14 @@ export const SignupScreenView = ({
                 {!!errors.birthdate && <InlineError message={errors.birthdate} />}
               </View>
 
+              {/*
+                성별은 값을 적는 칸이 아니라 고르는 컨트롤이다. 입력 칸 테두리로
+                한 번 더 감싸면 테두리 안의 테두리가 되어 무거워진다.
+                라벨만 밖에 두고 버튼을 바로 놓는다.
+              */}
               <View style={styles.inputGroup}>
-                <AuthFieldBox
-                  state={errors.gender ? 'error' : 'default'}
-                  style={[
-                    styles.authInputContainer,
-                    styles.genderInputContainer,
-                  ]}
-                >
-                  <Text style={styles.label}>성별</Text>
-                  <View style={styles.genderContainer}>
+                <Text style={styles.groupLabel}>성별</Text>
+                <View style={styles.genderContainer}>
                     {(
                       [
                         { key: 'male', label: '남성' },
@@ -758,6 +756,7 @@ export const SignupScreenView = ({
                         key={option.key}
                         style={[
                           styles.genderButton,
+                          !!errors.gender && styles.genderButtonError,
                           form.gender === option.key && styles.genderButtonSelected,
                         ]}
                         baseColor={
@@ -787,8 +786,7 @@ export const SignupScreenView = ({
                         </Text>
                       </PressableScale>
                     ))}
-                  </View>
-                </AuthFieldBox>
+                </View>
                 {!!errors.gender && <InlineError message={errors.gender} />}
               </View>
 

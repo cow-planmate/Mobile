@@ -153,7 +153,6 @@ export const ChangePasswordScreenView = ({
             <View style={styles.authInputRow}>
               <TextInput
                 style={styles.authInput}
-                placeholder="현재 비밀번호"
                 placeholderTextColor={COLORS.textSecondary}
                 value={form.currentPassword}
                 onChangeText={value => onChange('currentPassword', value)}
@@ -202,7 +201,7 @@ export const ChangePasswordScreenView = ({
               <TextInput
                 ref={newPasswordRef}
                 style={styles.authInput}
-                placeholder="새 비밀번호"
+                placeholder="8자 이상"
                 placeholderTextColor={COLORS.textSecondary}
                 value={form.newPassword}
                 onChangeText={value => onChange('newPassword', value)}
@@ -267,7 +266,7 @@ export const ChangePasswordScreenView = ({
               <TextInput
                 ref={confirmPasswordRef}
                 style={styles.authInput}
-                placeholder="새 비밀번호 확인"
+                placeholder="다시 한 번 입력해 주세요"
                 placeholderTextColor={COLORS.textSecondary}
                 value={form.confirmPassword}
                 onChangeText={value => onChange('confirmPassword', value)}

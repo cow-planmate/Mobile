@@ -284,7 +284,7 @@ export const LoginScreenView = ({
             <TextInput
               ref={emailRef}
               style={styles.input}
-              placeholder="이메일을 입력하세요"
+              placeholder="example@email.com"
               value={form.email}
               onChangeText={text => onChange('email', text)}
               keyboardType="email-address"
@@ -312,7 +312,6 @@ export const LoginScreenView = ({
               <TextInput
                 ref={passwordRef}
                 style={styles.passwordInput}
-                placeholder="비밀번호를 입력하세요"
                 value={form.password}
                 onChangeText={text => onChange('password', text)}
                 secureTextEntry={!isPasswordVisible}

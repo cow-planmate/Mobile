@@ -137,7 +137,15 @@ export const styles = StyleSheet.create({
   },
 
   /* ── 성별 ── */
-  genderInputContainer: { justifyContent: 'flex-start' },
+  /** 박스 밖에 놓이는 그룹 라벨. 입력 칸 안의 라벨과 크기를 맞춘다. */
+  groupLabel: {
+    fontSize: normalize(12),
+    color: COLORS.textSecondary,
+    fontFamily: FONTS.medium,
+    fontWeight: '500',
+    lineHeight: normalize(16),
+    paddingHorizontal: normalize(2),
+  },
   genderContainer: {
     flexDirection: 'row',
     gap: normalize(12),
@@ -153,6 +161,8 @@ export const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: COLORS.border,
   },
+  /** 감싸던 박스를 없앤 자리. 오류는 버튼 테두리가 대신 알린다. */
+  genderButtonError: { borderColor: COLORS.error },
   genderButtonSelected: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
