@@ -4,6 +4,10 @@ import axios from 'axios';
 import EventSource, { MessageEvent } from 'react-native-sse';
 
 import { resolveApiUrl } from '../utils/apiUrl';
+import {
+  CollaborationRequestResult,
+  parseCollaborationRequestResult,
+} from '../utils/collaborationRequest';
 
 const DEFAULT_INVITATION_SSE_PATH = '/api/sse/subscribe';
 
@@ -19,18 +23,26 @@ const sseLog = (...args: unknown[]) => {
   }
 };
 const INITIAL_RECONNECT_DELAY_MS = 1000;
+/** 중복 처리 방지용으로 기억해 둘 이벤트 ID 개수 상한 */
+const SEEN_EVENT_ID_LIMIT = 200;
 const MAX_RECONNECT_DELAY_MS = 30000;
+/** 내가 보낸 요청의 처리 결과. 목록 갱신이 아니라 그 자리에서 알려야 한다. */
+const REQUEST_RESULT_EVENT = 'requestResult';
+
 const CUSTOM_EVENT_TYPES = [
   'invitation',
   'invite',
   'collaboration-request',
   'notification',
+  REQUEST_RESULT_EVENT,
 ] as const;
 type InvitationCustomEvent = (typeof CUSTOM_EVENT_TYPES)[number];
 
 interface UseInvitationSseParams {
   enabled: boolean;
   onInvitationEvent: () => void | Promise<void>;
+  /** 내가 보낸 초대·편집 권한 요청이 수락/거절됐을 때 */
+  onRequestResult?: (result: CollaborationRequestResult) => void;
 }
 
 const resolveSseUrl = (): string => {
@@ -48,6 +60,7 @@ const resolveSseUrl = (): string => {
 export function useInvitationSse({
   enabled,
   onInvitationEvent,
+  onRequestResult,
 }: UseInvitationSseParams) {
   const sourceRef = useRef<EventSource | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -55,10 +68,15 @@ export function useInvitationSse({
   const shouldReconnectRef = useRef(false);
   const seenEventIdsRef = useRef<Set<string>>(new Set());
   const onInvitationEventRef = useRef(onInvitationEvent);
+  const onRequestResultRef = useRef(onRequestResult);
 
   useEffect(() => {
     onInvitationEventRef.current = onInvitationEvent;
   }, [onInvitationEvent]);
+
+  useEffect(() => {
+    onRequestResultRef.current = onRequestResult;
+  }, [onRequestResult]);
 
   const clearReconnectTimer = useCallback(() => {
     if (reconnectTimerRef.current) {
@@ -108,6 +126,14 @@ export function useInvitationSse({
     }
 
     const token = await AsyncStorage.getItem('accessToken');
+
+    // 토큰을 읽는 동안 언마운트(또는 비활성화)됐을 수 있다. 그 사이 cleanup이
+    // 지나갔다면 sourceRef가 아직 비어 있어서, 여기서 스트림을 새로 열면
+    // 아무도 닫을 수 없는 EventSource가 남는다.
+    if (!shouldReconnectRef.current) {
+      return;
+    }
+
     if (!token) {
       scheduleReconnect(connect);
       return;
@@ -132,6 +158,7 @@ export function useInvitationSse({
     };
 
     const handleIncomingEvent = (event: {
+      type?: string;
       data: string | null;
       lastEventId: string | null;
     }) => {
@@ -141,6 +168,14 @@ export function useInvitationSse({
       }
 
       if (eventId) {
+        // 장시간 실행 시 무한히 커지지 않도록 오래된 것부터 버린다.
+        // (useFcmNotifications의 seenMessageIds와 같은 방식)
+        if (seenEventIdsRef.current.size >= SEEN_EVENT_ID_LIMIT) {
+          const oldest = seenEventIdsRef.current.values().next().value;
+          if (oldest !== undefined) {
+            seenEventIdsRef.current.delete(oldest);
+          }
+        }
         seenEventIdsRef.current.add(eventId);
       }
 
@@ -149,10 +184,21 @@ export function useInvitationSse({
         return;
       }
 
+      let payload: unknown;
       try {
-        JSON.parse(rawData);
+        payload = JSON.parse(rawData);
       } catch (_error) {
         // JSON 형태가 아닌 하트비트 메시지는 무시합니다.
+      }
+
+      // 요청 결과는 서버가 저장하지 않아 다시 조회할 수 없다.
+      // 목록을 새로 받는 대신 이 페이로드를 그대로 화면에 넘긴다.
+      if (event.type === REQUEST_RESULT_EVENT) {
+        const result = parseCollaborationRequestResult(payload);
+        if (result) {
+          onRequestResultRef.current?.(result);
+        }
+        return;
       }
 
       Promise.resolve(onInvitationEventRef.current()).catch(error => {
@@ -172,7 +218,11 @@ export function useInvitationSse({
         'lastEventId' in event
       ) {
         handleIncomingEvent(
-          event as { data: string | null; lastEventId: string | null },
+          event as {
+            type?: string;
+            data: string | null;
+            lastEventId: string | null;
+          },
         );
       }
     };

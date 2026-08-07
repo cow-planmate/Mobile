@@ -1,43 +1,16 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  SafeAreaView,
-  ActivityIndicator,
-  StyleSheet,
-  Dimensions,
-  PixelRatio,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import Toast from 'react-native-toast-message';
-import { ArrowLeft } from 'lucide-react-native';
-import { useAuthStore } from '../../../store/useAuthStore';
+import React, { useCallback, useMemo, useState } from 'react';
 import { RouteProp } from '@react-navigation/native';
+import {
+  OAuthAdditionalInfoScreenView,
+  OAuthAdditionalInfoErrors,
+  OAuthAdditionalInfoForm,
+} from './OAuthAdditionalInfoScreen.view';
+import { useAuthStore } from '../../../store/useAuthStore';
 import { AuthStackParamList } from '../../../navigation/types';
+import { getDisplayErrorMessage } from '../../../utils/errorHandler';
+import { toBirthdateString } from '../../../utils/birthdate';
 
-const { width } = Dimensions.get('window');
-const normalize = (size: number) =>
-  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
-
-const COLORS = {
-  primary: '#1344FF',
-  primaryLight: '#E8EDFF',
-  primaryDark: '#0F36D6',
-  lightGray: '#F3F4F6',
-  gray: '#E5E7EB',
-  darkGray: '#9CA3AF',
-  text: '#111827',
-  textSecondary: '#6B7280',
-  white: '#FFFFFF',
-  success: '#34C759',
-  error: '#FF3B30',
-  surface: '#F9FAFB',
-  border: '#E5E7EB',
-};
+const EMAIL_REGEX = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$/;
 
 type OAuthAdditionalInfoScreenRouteProp = RouteProp<
   AuthStackParamList,
@@ -49,343 +22,117 @@ type OAuthAdditionalInfoScreenProps = {
   navigation: { goBack: () => void };
 };
 
+/**
+ * 소셜 로그인 후 서버가 요구하는 추가 정보(이메일·생년월일·성별) 입력 컨테이너.
+ */
 export default function OAuthAdditionalInfoScreen({
   route,
   navigation,
 }: OAuthAdditionalInfoScreenProps) {
   const { signupId, needEmail } = route.params;
-  const oauthComplete = useAuthStore((state) => state.oauthComplete);
-  const isLoading = useAuthStore((state) => state.isLoading);
+  const oauthComplete = useAuthStore(state => state.oauthComplete);
 
-  const [email, setEmail] = useState('');
-  const [age, setAge] = useState('');
-  const [gender, setGender] = useState<number | null>(null); // 0: 남성, 1: 여성
-  const [focused, setFocused] = useState<string | null>(null);
+  const [form, setForm] = useState<OAuthAdditionalInfoForm>({
+    email: '',
+    birthdate: '',
+    gender: '',
+  });
+  const [errors, setErrors] = useState<OAuthAdditionalInfoErrors>({});
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleComplete = async () => {
-    if (needEmail && !email.trim()) {
-      Toast.show({
-        type: 'error',
-        text1: '이메일을 입력해주세요.',
-        position: 'top',
-        visibilityTime: 2500,
+  const onChange = useCallback(
+    (field: keyof OAuthAdditionalInfoForm, value: string) => {
+      setForm(prev => ({ ...prev, [field]: value }));
+      setErrors(prev => {
+        if (!prev[field] && !prev.form) return prev;
+        const next = { ...prev };
+        delete next[field];
+        delete next.form;
+        return next;
       });
-      return;
-    }
+    },
+    [],
+  );
+
+  const isCompleteEnabled = useMemo(
+    () =>
+      (!needEmail || form.email.trim().length > 0) &&
+      !!form.birthdate &&
+      !!form.gender,
+    [needEmail, form.email, form.birthdate, form.gender],
+  );
+
+  /** 채우지 않은 칸을 눌러도 알 수 있도록, 막지 않고 눌렀을 때 이유를 붙인다. */
+  const validate = useCallback((): OAuthAdditionalInfoErrors => {
+    const next: OAuthAdditionalInfoErrors = {};
 
     if (needEmail) {
-      const emailRegex = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$/;
-      if (!emailRegex.test(email.trim())) {
-        Toast.show({
-          type: 'error',
-          text1: '이메일 형식이 올바르지 않습니다.',
-          position: 'top',
-          visibilityTime: 2500,
-        });
-        return;
+      const email = form.email.trim();
+      if (!email) {
+        next.email = '이메일을 입력해 주세요.';
+      } else if (!EMAIL_REGEX.test(email)) {
+        next.email = '이메일 형식이 올바르지 않아요.';
       }
     }
 
-    if (!age.trim()) {
-      Toast.show({
-        type: 'error',
-        text1: '나이를 입력해주세요.',
-        position: 'top',
-        visibilityTime: 2500,
-      });
+    if (!form.birthdate) {
+      next.birthdate = '생년월일을 선택해 주세요.';
+    } else if (form.birthdate >= toBirthdateString(new Date())) {
+      // 서버 birthdate는 @Past다. 오늘 이후 날짜는 여기서 걸러 낸다.
+      next.birthdate = '생년월일을 다시 확인해 주세요.';
+    }
+
+    if (!form.gender) {
+      next.gender = '성별을 선택해 주세요.';
+    }
+
+    return next;
+  }, [needEmail, form.email, form.birthdate, form.gender]);
+
+  const handleComplete = useCallback(async () => {
+    const nextErrors = validate();
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
       return;
     }
 
-    const ageNum = parseInt(age, 10);
-    if (isNaN(ageNum) || ageNum < 0 || ageNum > 150) {
-      Toast.show({
-        type: 'error',
-        text1: '올바른 나이를 입력해주세요. (0-150)',
-        position: 'top',
-        visibilityTime: 2500,
-      });
-      return;
-    }
-
-    if (gender === null) {
-      Toast.show({
-        type: 'error',
-        text1: '성별을 선택해주세요.',
-        position: 'top',
-        visibilityTime: 2500,
-      });
-      return;
-    }
-
+    setErrors({});
+    setIsSubmitting(true);
     try {
-      const currentYear = new Date().getFullYear();
-      const birthYear = currentYear - ageNum;
-      const birthdate = `${birthYear}-01-01`;
-      const genderEnum = gender === 0 ? 'MALE' : 'FEMALE';
-
       await oauthComplete({
         signupId,
-        email: needEmail ? email.trim() : null,
-        birthdate,
-        gender: genderEnum,
+        email: needEmail ? form.email.trim() : null,
+        birthdate: form.birthdate,
+        gender: form.gender === 'male' ? 'MALE' : 'FEMALE',
       });
-      Toast.show({
-        type: 'success',
-        text1: '가입이 완료되었습니다.',
-        position: 'top',
-        visibilityTime: 2500,
+      // 성공하면 스토어가 user를 채우고 루트 네비게이터가 화면을 바꾼다.
+    } catch (e) {
+      setErrors({
+        form: getDisplayErrorMessage(e, '가입 처리 중 문제가 생겼어요.'),
       });
-    } catch (e: any) {
-      Toast.show({
-        type: 'error',
-        text1: e.message || '가입 처리 중 오류가 발생했습니다.',
-        position: 'top',
-        visibilityTime: 2500,
-      });
+    } finally {
+      setIsSubmitting(false);
     }
-  };
+  }, [validate, oauthComplete, signupId, needEmail, form]);
 
-  const isButtonEnabled = (!needEmail || email.length > 0) && age.length > 0 && gender !== null;
+  const handleBack = useCallback(() => navigation.goBack(), [navigation]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.headerBackButton}
-            onPress={() => navigation.goBack()}
-            disabled={isLoading}
-          >
-            <ArrowLeft size={20} color={COLORS.text} />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Text style={styles.title}>추가 정보 입력</Text>
-          <Text style={styles.description}>
-            서비스 이용을 위해 추가 정보를 입력해 주세요.
-          </Text>
-
-          {needEmail && (
-            <View style={styles.inputGroup}>
-              <View
-                style={[
-                  styles.inputContainer,
-                  focused === 'email' && styles.inputFocused,
-                ]}
-              >
-                <Text style={styles.label}>이메일</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="이메일을 입력하세요"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  onFocus={() => setFocused('email')}
-                  onBlur={() => setFocused(null)}
-                  editable={!isLoading}
-                  placeholderTextColor={COLORS.darkGray}
-                />
-              </View>
-            </View>
-          )}
-
-          <View style={styles.inputGroup}>
-            <View
-              style={[
-                styles.inputContainer,
-                focused === 'age' && styles.inputFocused,
-              ]}
-            >
-              <Text style={styles.label}>나이</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="나이를 입력하세요"
-                value={age}
-                onChangeText={setAge}
-                keyboardType="number-pad"
-                onFocus={() => setFocused('age')}
-                onBlur={() => setFocused(null)}
-                editable={!isLoading}
-                placeholderTextColor={COLORS.darkGray}
-              />
-            </View>
-          </View>
-
-          <View style={styles.genderGroup}>
-            <Text style={styles.genderLabel}>성별</Text>
-            <View style={styles.genderButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.genderButton,
-                  gender === 0 && styles.genderButtonSelected,
-                ]}
-                onPress={() => setGender(0)}
-                disabled={isLoading}
-              >
-                <Text
-                  style={[
-                    styles.genderButtonText,
-                    gender === 0 && styles.genderButtonTextSelected,
-                  ]}
-                >
-                  남성
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.genderButton,
-                  gender === 1 && styles.genderButtonSelected,
-                ]}
-                onPress={() => setGender(1)}
-                disabled={isLoading}
-              >
-                <Text
-                  style={[
-                    styles.genderButtonText,
-                    gender === 1 && styles.genderButtonTextSelected,
-                  ]}
-                >
-                  여성
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.submitButton,
-              (isLoading || !isButtonEnabled) && styles.submitButtonDisabled,
-            ]}
-            onPress={handleComplete}
-            disabled={isLoading || !isButtonEnabled}
-          >
-            {isLoading ? (
-              <ActivityIndicator color={COLORS.white} />
-            ) : (
-              <Text style={styles.submitButtonText}>완료</Text>
-            )}
-          </TouchableOpacity>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    <OAuthAdditionalInfoScreenView
+      needEmail={needEmail}
+      form={form}
+      errors={errors}
+      isSubmitting={isSubmitting}
+      isCompleteEnabled={isCompleteEnabled}
+      focusedField={focusedField}
+      isBirthdatePickerOpen={isBirthdatePickerOpen}
+      onChange={onChange}
+      onComplete={handleComplete}
+      onBack={handleBack}
+      setFocusedField={setFocusedField}
+      setBirthdatePickerOpen={setBirthdatePickerOpen}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.white },
-  header: {
-    paddingHorizontal: normalize(24),
-    paddingTop: normalize(16),
-    paddingBottom: normalize(10),
-  },
-  headerBackButton: {
-    width: normalize(34),
-    height: normalize(34),
-    borderRadius: normalize(17),
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  scrollContainer: { padding: normalize(24), paddingBottom: normalize(40) },
-  title: {
-    fontSize: normalize(28),
-    fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: normalize(8),
-  },
-  description: {
-    fontSize: normalize(15),
-    color: COLORS.textSecondary,
-    marginBottom: normalize(32),
-  },
-  inputGroup: { marginBottom: normalize(16) },
-  inputContainer: {
-    width: '100%',
-    minHeight: normalize(62),
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    paddingHorizontal: normalize(16),
-    paddingVertical: normalize(8),
-    backgroundColor: COLORS.white,
-    justifyContent: 'center',
-  },
-  inputFocused: {
-    borderColor: COLORS.primary,
-  },
-  label: {
-    fontSize: normalize(11),
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-    marginBottom: normalize(2),
-  },
-  input: {
-    fontSize: normalize(16),
-    color: COLORS.text,
-    padding: 0,
-    marginTop: normalize(2),
-  },
-  genderGroup: {
-    marginBottom: normalize(32),
-  },
-  genderLabel: {
-    fontSize: normalize(14),
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: normalize(12),
-  },
-  genderButtons: {
-    flexDirection: 'row',
-    gap: normalize(12),
-  },
-  genderButton: {
-    flex: 1,
-    height: normalize(48),
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-  },
-  genderButtonSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight,
-  },
-  genderButtonText: {
-    fontSize: normalize(15),
-    fontWeight: '500',
-    color: COLORS.textSecondary,
-  },
-  genderButtonTextSelected: {
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  submitButton: {
-    width: '100%',
-    height: normalize(52),
-    borderRadius: 8,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: normalize(16),
-  },
-  submitButtonDisabled: {
-    backgroundColor: COLORS.darkGray,
-  },
-  submitButtonText: {
-    fontSize: normalize(16),
-    fontWeight: '600',
-    color: COLORS.white,
-  },
-});

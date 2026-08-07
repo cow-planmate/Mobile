@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, Linking } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
 import { BlockInlineContent, ContentBlock } from '../types';
 import { asBlocks, inlineToText } from '../utils/blocks';
 import { isUnreachableHostUrl } from '../utils/avatar';
+import { openExternalUrl } from '../../../utils/externalLink';
 
 /**
  * 게시글 본문 뷰어.
@@ -25,11 +26,14 @@ interface PostContentViewProps {
 /** 글자가 없어도 그 자체로 의미가 있는 블록 (평문 폴백 대상에서 제외) */
 const VISUAL_BLOCK_TYPES = new Set(['image', 'divider', 'separator']);
 
+/**
+ * 본문 링크 열기.
+ *
+ * 본문은 사용자가 웹 에디터로 쓴 내용이라 href를 그대로 믿을 수 없다.
+ * openExternalUrl이 웹 링크(http/https)만 통과시킨다.
+ */
 const openLink = (href?: string) => {
-  if (!href) return;
-  Linking.openURL(href).catch(() => {
-    // 열 수 없는 링크는 무시한다 (본문 읽기를 막을 이유가 없다)
-  });
+  openExternalUrl(href);
 };
 
 /** 굵게·기울임·밑줄·취소선·인라인코드와 링크를 반영해 인라인 조각을 그린다. */

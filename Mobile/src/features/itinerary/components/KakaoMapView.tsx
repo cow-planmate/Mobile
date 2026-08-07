@@ -38,6 +38,14 @@ interface KakaoMapViewProps {
  * 장소 이름 같은 서버 문자열에 '</script>'가 들어 있으면 스크립트 태그가 그
  * 자리에서 닫혀 지도가 통째로 깨진다. U+2028/2029도 파서에 따라 문제가 된다.
  */
+/**
+ * 카카오 지도 앱 키 존재 여부.
+ *
+ * .env에 KAKAO_APP_KEY가 없으면 @env가 undefined를 주고, 그대로 SDK URL에
+ * 끼워 넣으면 appkey=undefined로 요청돼 지도가 뜨지 않는다.
+ */
+const hasKakaoAppKey = !!(KAKAO_APP_KEY ?? '').trim();
+
 const toScriptSafeJson = (value: unknown): string =>
   JSON.stringify(value)
     .replace(/</g, '\\u003c')
@@ -420,6 +428,24 @@ export default function KakaoMapView({
 </html>`;
   }, [validPlaces]);
 
+  /**
+   * 키가 없으면 SDK 스크립트가 appkey=undefined로 실려 조용히 실패한다.
+   * 빈 WebView만 남아 앱이 깨진 것처럼 보이므로 원인을 밝혀 준다.
+   */
+  if (!hasKakaoAppKey) {
+    return (
+      <View style={[mapStyles.container, style]}>
+        <View style={mapStyles.emptyContainer}>
+          <MapPin size={32} color="#D1D5DB" strokeWidth={1.5} />
+          <Text style={mapStyles.emptyText}>지도를 불러올 수 없습니다</Text>
+          <Text style={mapStyles.emptyHint}>
+            카카오 지도 키가 설정되지 않았어요.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   if (validPlaces.length === 0) {
     return (
       <View style={[mapStyles.container, style]}>
@@ -472,5 +498,12 @@ const mapStyles = StyleSheet.create({
     fontSize: 14,
     color: '#9CA3AF',
     fontFamily: 'Inter_500Medium',
+  },
+  emptyHint: {
+    fontSize: 12,
+    color: '#B0B6BF',
+    fontFamily: 'Inter_500Medium',
+    textAlign: 'center',
+    paddingHorizontal: 16,
   },
 });

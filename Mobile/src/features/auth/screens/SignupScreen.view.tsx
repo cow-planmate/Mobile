@@ -1,32 +1,58 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   TextInput,
-  SafeAreaView,
   TouchableOpacity,
   Pressable,
   ActivityIndicator,
-  Platform,
-  KeyboardAvoidingView,
   ScrollView,
   Modal,
 } from 'react-native';
-import { ArrowLeft, Eye, EyeOff, Check, X } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  FadeInDown,
+  FadeOut,
+  FadeInRight,
+  FadeInLeft,
+} from 'react-native-reanimated';
+import DatePicker from 'react-native-date-picker';
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Check,
+  Circle,
+  X,
+  AlertCircle,
+  Loader,
+} from 'lucide-react-native';
 import { styles, COLORS, normalize } from './SignupScreen.styles';
+import PressableScale from '../components/PressableScale';
+import AuthSubmitButton from '../components/AuthSubmitButton';
+import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
+import {
+  formatBirthdate,
+  parseBirthdate,
+  toBirthdateString,
+} from '../../../utils/birthdate';
+import type { NicknameStatus } from './SignupScreen';
+
+/* ── 비밀번호 조건 한 줄 ── */
 
 export const PasswordRequirement = React.memo(
   ({ met, label }: { met: boolean; label: string }) => (
     <View style={styles.requirementRow}>
-      <Check
-        size={normalize(14)}
-        color={met ? COLORS.success : COLORS.darkGray}
-        style={{ marginRight: normalize(8) }}
-      />
+      {/* 색만 바꾸면 색각 이상 사용자가 구분하지 못한다. 형태를 바꾼다. */}
+      {met ? (
+        <Check size={normalize(15)} color={COLORS.success} strokeWidth={3} />
+      ) : (
+        <Circle size={normalize(15)} color={COLORS.darkGray} strokeWidth={2} />
+      )}
       <Text
         style={[
           styles.requirementText,
-          { color: met ? COLORS.text : COLORS.darkGray },
+          { color: met ? COLORS.success : COLORS.textSecondary },
         ]}
       >
         {label}
@@ -34,6 +60,26 @@ export const PasswordRequirement = React.memo(
     </View>
   ),
 );
+
+/* ── 인라인 오류 ── */
+
+const InlineError = ({ message }: { message: string }) => (
+  <Animated.View
+    style={styles.errorRow}
+    entering={FadeInDown.duration(180)}
+    exiting={FadeOut.duration(120)}
+    accessibilityLiveRegion="polite"
+  >
+    <AlertCircle
+      size={normalize(15)}
+      color={COLORS.error}
+      style={styles.errorIcon}
+    />
+    <Text style={styles.errorText}>{message}</Text>
+  </Animated.View>
+);
+
+/* ── 개인정보 동의 모달 ── */
 
 const PrivacyPolicyModal = ({
   visible,
@@ -52,14 +98,20 @@ const PrivacyPolicyModal = ({
       <Pressable style={styles.privacyModal} onPress={e => e.stopPropagation()}>
         <View style={styles.privacyHeader}>
           <Text style={styles.privacyTitle}>개인정보 수집·이용 동의</Text>
-          <TouchableOpacity onPress={onClose}>
-            <X size={20} color={COLORS.darkGray} />
+          <TouchableOpacity
+            onPress={onClose}
+            style={styles.privacyCloseIcon}
+            accessibilityRole="button"
+            accessibilityLabel="닫기"
+          >
+            <X size={20} color={COLORS.textSecondary} />
           </TouchableOpacity>
         </View>
 
         <ScrollView
           style={styles.privacyScroll}
-          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: normalize(12) }}
+          showsVerticalScrollIndicator={true}
         >
           <Text style={styles.privacySectionTitle}>1. 수집·이용 목적</Text>
           <Text style={styles.privacyBullet}>• 회원 관리 및 서비스 제공</Text>
@@ -72,15 +124,13 @@ const PrivacyPolicyModal = ({
             2. 수집하는 개인정보 항목
           </Text>
           <Text style={styles.privacyBullet}>
-            • 필수 항목: 이메일, 비밀번호, 닉네임, 나이, 성별
+            • 필수 항목: 이메일, 비밀번호, 닉네임, 생년월일, 성별
           </Text>
 
           <Text style={styles.privacySectionTitle}>
             3. 개인정보 보유·이용 기간
           </Text>
-          <Text style={styles.privacyBullet}>
-            • 회원 탈퇴 시 지체 없이 파기
-          </Text>
+          <Text style={styles.privacyBullet}>• 회원 탈퇴 시 지체 없이 파기</Text>
           <Text style={styles.privacyBullet}>
             • 단, 관련 법령에 따라 보존이 필요한 경우 해당 기간 동안 보관
           </Text>
@@ -91,46 +141,59 @@ const PrivacyPolicyModal = ({
           <Text style={styles.privacyBullet}>
             • 회원가입 시 필수 항목 동의를 거부할 경우 회원가입이 불가합니다.
           </Text>
-          <Text style={styles.privacyBullet}>
-            • 선택 항목은 동의하지 않아도 회원가입은 가능하며, 일부 서비스
-            이용이 제한될 수 있습니다.
-          </Text>
         </ScrollView>
 
         <TouchableOpacity style={styles.privacyCloseButton} onPress={onClose}>
-          <Text style={styles.privacyCloseButtonText}>확인</Text>
+          <Text style={styles.privacyCloseButtonText}>닫기</Text>
         </TouchableOpacity>
       </Pressable>
     </Pressable>
   </Modal>
 );
 
+/* ── Props ── */
+
+export interface SignupErrors {
+  email?: string;
+  verificationCode?: string;
+  password?: string;
+  confirmPassword?: string;
+  nickname?: string;
+  birthdate?: string;
+  gender?: string;
+  agreement?: string;
+  form?: string;
+}
+
 export interface SignupScreenViewProps {
   step: number;
   totalSteps: number;
   form: any;
+  errors: SignupErrors;
+  focusSeq: number;
   isPasswordVisible: boolean;
   isConfirmPasswordVisible: boolean;
-  isLoading: boolean;
+  isSendingEmail: boolean;
+  isVerifying: boolean;
+  isSubmitting: boolean;
+  isEmailFormatValid: boolean;
   showVerificationInput: boolean;
   isEmailVerified: boolean;
-  isNicknameVerified: boolean;
-  isEmailDuplicate: boolean;
+  isCodeExpired: boolean;
+  resendCooldown: number;
+  nicknameStatus: NicknameStatus;
   focusedField: string | null;
   timeLeft: number;
   passwordRequirements: { hasMinLength: boolean; hasCombination: boolean };
   isPasswordMatch: boolean;
-  isNextButtonEnabled: boolean;
+  isNextEnabled: boolean;
   isAgreed: boolean;
-  onChangeAgreement?: (agreed: boolean) => void;
+  onChangeAgreement: (agreed: boolean) => void;
   onChange: (name: string, value: string) => void;
   onSendEmail: () => void;
-  onVerifyCode: () => void;
-  onCheckNickname: () => void;
-  onSignup: () => void;
+  onEditEmail: () => void;
   onNextStep: () => void;
   onPrevStep: () => void;
-  onResetEmail: () => void;
   setFocusedField: (field: string | null) => void;
   setIsPasswordVisible: (visible: boolean | ((v: boolean) => boolean)) => void;
   setIsConfirmPasswordVisible: (
@@ -139,493 +202,665 @@ export interface SignupScreenViewProps {
   formatTime: (seconds: number) => string;
 }
 
+const STEP_TITLES = ['이메일 인증', '비밀번호 설정', '프로필 설정'];
+const STEP_DESCRIPTIONS = [
+  '로그인에 사용할 이메일을 인증해주세요.',
+  '안전하게 보호할 비밀번호를 만들어 주세요.',
+  '앱에서 사용할 닉네임과 맞춤형 여행 계획을 위한 정보를 입력해주세요.',
+];
+
 export const SignupScreenView = ({
   step,
   totalSteps,
   form,
+  errors,
+  focusSeq,
   isPasswordVisible,
   isConfirmPasswordVisible,
-  isLoading,
+  isSendingEmail,
+  isVerifying,
+  isSubmitting,
+  isEmailFormatValid,
   showVerificationInput,
   isEmailVerified,
-  isNicknameVerified,
-  isEmailDuplicate,
+  isCodeExpired,
+  resendCooldown,
+  nicknameStatus,
   focusedField,
   timeLeft,
   passwordRequirements,
   isPasswordMatch,
-  isNextButtonEnabled,
+  isNextEnabled,
   isAgreed,
   onChangeAgreement,
   onChange,
   onSendEmail,
-  onVerifyCode,
-  onCheckNickname,
-  onSignup,
+  onEditEmail,
   onNextStep,
   onPrevStep,
-  onResetEmail,
   setFocusedField,
   setIsPasswordVisible,
   setIsConfirmPasswordVisible,
   formatTime,
 }: SignupScreenViewProps) => {
+  const insets = useSafeAreaInsets();
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const step1FooterLabel = isEmailVerified
-    ? '다음'
-    : showVerificationInput
-    ? '인증번호 확인'
-    : '인증요청';
-  const step3FooterLabel = isNicknameVerified ? '다음' : '중복확인';
+  const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
+
+  const emailRef = useRef<TextInput>(null);
+  const codeRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmRef = useRef<TextInput>(null);
+  const nicknameRef = useRef<TextInput>(null);
+
+  /** 단계가 늘었는지 줄었는지에 따라 들어오는 방향을 바꾼다. */
+  const prevStepRef = useRef(step);
+  const goingForward = step >= prevStepRef.current;
+  useEffect(() => {
+    prevStepRef.current = step;
+  }, [step]);
+
+  /**
+   * 오류가 있으면 그 필드로, 없으면 이번 단계의 첫 필드로 포커스를 옮긴다.
+   * 단계 내용이 먼저 붙어야 ref가 살아 있으므로 한 프레임 뒤에 실행한다.
+   */
+  useEffect(() => {
+    if (focusSeq === 0) return;
+    const id = setTimeout(() => {
+      if (errors.email) return emailRef.current?.focus();
+      if (errors.verificationCode) return codeRef.current?.focus();
+      if (errors.password) return passwordRef.current?.focus();
+      if (errors.confirmPassword) return confirmRef.current?.focus();
+      if (errors.nickname) return nicknameRef.current?.focus();
+
+      if (step === 1) {
+        return showVerificationInput && !isEmailVerified
+          ? codeRef.current?.focus()
+          : emailRef.current?.focus();
+      }
+      if (step === 2) return passwordRef.current?.focus();
+      if (step === 3) return nicknameRef.current?.focus();
+    }, 120);
+    return () => clearTimeout(id);
+    // errors·step은 focusSeq와 함께 갱신된다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusSeq]);
+
+  const emailLocked = showVerificationInput || isEmailVerified;
+  const isBusy = isSendingEmail || isVerifying || isSubmitting;
+
+  const fieldState = (invalid: boolean, isFocused: boolean): FieldState =>
+    invalid ? 'error' : isFocused ? 'focus' : 'default';
+
+  const codeState: FieldState = errors.verificationCode
+    ? 'error'
+    : isEmailVerified
+    ? 'success'
+    : focusedField === 'verificationCode'
+    ? 'focus'
+    : 'default';
+
+  const nicknameState: FieldState =
+    errors.nickname || nicknameStatus === 'taken'
+      ? 'error'
+      : nicknameStatus === 'available'
+      ? 'success'
+      : focusedField === 'nickname'
+      ? 'focus'
+      : 'default';
+
+  const nicknameHint = () => {
+    if (nicknameStatus === 'checking') {
+      return (
+        <View style={styles.statusRow}>
+          <Loader size={normalize(14)} color={COLORS.textSecondary} />
+          <Text style={styles.statusTextMuted}>확인 중…</Text>
+        </View>
+      );
+    }
+    if (nicknameStatus === 'available') {
+      return (
+        <Animated.View style={styles.statusRow} entering={FadeInDown.duration(160)}>
+          <Check size={normalize(14)} color={COLORS.success} strokeWidth={3} />
+          <Text style={styles.statusTextOk}>사용할 수 있는 닉네임이에요.</Text>
+        </Animated.View>
+      );
+    }
+    if (nicknameStatus === 'taken') {
+      return (
+        <Animated.View style={styles.statusRow} entering={FadeInDown.duration(160)}>
+          <AlertCircle size={normalize(14)} color={COLORS.error} />
+          <Text style={styles.statusTextError}>이미 사용 중인 닉네임이에요.</Text>
+        </Animated.View>
+      );
+    }
+    return null;
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* ── 헤더: 뒤로가기는 항상 왼쪽 ── */}
       <View style={styles.header}>
         <Pressable
-          style={({ pressed }) => [
-            styles.headerBackButton,
-            pressed && !isLoading && { opacity: 0.7 },
-          ]}
+          style={styles.headerBackButton}
           onPress={onPrevStep}
-          disabled={isLoading}
+          disabled={isBusy}
+          accessibilityRole="button"
+          accessibilityLabel={step > 1 ? '이전 단계' : '뒤로 가기'}
         >
-          <ArrowLeft size={18} color={COLORS.textSecondary} />
+          <ArrowLeft size={22} color={COLORS.text} />
         </Pressable>
-        <Text style={styles.stepText}>STEP {step}</Text>
-        <View style={styles.stepIndicatorContainer}>
+
+        <View style={styles.progressTrack}>
           {Array.from({ length: totalSteps }).map((_, i) => (
             <View
               key={i}
-              style={[
-                styles.stepDot,
-                { width: i + 1 === step ? normalize(24) : normalize(8) },
-                i + 1 <= step && styles.stepDotActive,
-              ]}
+              style={[styles.progressSegment, i < step && styles.progressSegmentOn]}
             />
           ))}
         </View>
+
+        <Text style={styles.progressCount}>
+          {step} / {totalSteps}
+        </Text>
       </View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <ScrollView
         style={styles.flex1}
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          style={styles.flex1}
-          contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps="handled"
+        <Animated.View
+          key={step}
+          entering={(goingForward ? FadeInRight : FadeInLeft).duration(220)}
         >
-          <Text style={styles.title}>
-            {step === 1 && '이메일 인증'}
-            {step === 2 && '비밀번호 설정'}
-            {step === 3 && '닉네임 설정'}
-            {step === 4 && '내 정보 입력'}
-          </Text>
+          <Text style={styles.title}>{STEP_TITLES[step - 1]}</Text>
+          <Text style={styles.description}>{STEP_DESCRIPTIONS[step - 1]}</Text>
 
+          {/* ══ 1단계: 이메일 인증 ══ */}
           {step === 1 && (
             <>
-              <Text style={styles.description}>
-                로그인에 사용할 이메일을 인증해주세요.
-              </Text>
               <View style={styles.inputGroup}>
-                <View
-                  style={[
-                    styles.authInputContainer,
-                    focusedField === 'email' && styles.inputFocused,
-                    (showVerificationInput || isEmailVerified) &&
-                      styles.inputDisabled,
-                    isEmailDuplicate && { borderColor: COLORS.error },
-                  ]}
-                >
-                  <Text style={styles.label}>이메일</Text>
-                  <View style={styles.authInputRow}>
-                    {showVerificationInput || isEmailVerified ? (
-                      <View style={styles.authValueWrapper}>
-                        <Text style={styles.authValue}>{form.email}</Text>
-                      </View>
+                <View style={styles.fieldRow}>
+                  <AuthFieldBox
+                    state={fieldState(!!errors.email, focusedField === 'email')}
+                    style={[
+                      styles.authInputContainer,
+                      emailLocked && styles.inputLocked,
+                    ]}
+                    containerStyle={styles.flex1}
+                    label="이메일"
+                    labelBackground={emailLocked ? COLORS.surface : COLORS.white}
+                  >
+                    {emailLocked ? (
+                      <Text style={styles.authValue} numberOfLines={1}>
+                        {form.email}
+                      </Text>
                     ) : (
                       <TextInput
+                        ref={emailRef}
                         style={styles.authInput}
                         placeholder="example@email.com"
-                        placeholderTextColor={COLORS.darkGray}
+                        placeholderTextColor={COLORS.textSecondary}
                         value={form.email}
                         onChangeText={v => onChange('email', v)}
                         keyboardType="email-address"
                         autoCapitalize="none"
-                        editable={!isLoading}
+                        autoCorrect={false}
+                        spellCheck={false}
+                        autoComplete="email"
+                        importantForAutofill="yes"
+                        returnKeyType="send"
+                        onSubmitEditing={onSendEmail}
+                        editable={!isSendingEmail}
                         onFocus={() => setFocusedField('email')}
                         onBlur={() => setFocusedField(null)}
+                        accessibilityLabel="이메일"
                       />
                     )}
-                  </View>
+                  </AuthFieldBox>
+
+                  {!emailLocked ? (
+                    <PressableScale
+                      style={[
+                        styles.inlineButton,
+                        (!isEmailFormatValid || isSendingEmail) &&
+                          styles.inlineButtonDisabled,
+                      ]}
+                      baseColor={
+                        !isEmailFormatValid || isSendingEmail
+                          ? COLORS.gray
+                          : COLORS.primary
+                      }
+                      pressedColor={COLORS.primaryDark}
+                      scaleTo={0.95}
+                      onPress={onSendEmail}
+                      disabled={!isEmailFormatValid || isSendingEmail}
+                      accessibilityRole="button"
+                      accessibilityLabel="인증번호 요청"
+                    >
+                      {isSendingEmail ? (
+                        <ActivityIndicator color={COLORS.white} size="small" />
+                      ) : (
+                        <Text style={styles.inlineButtonText}>인증요청</Text>
+                      )}
+                    </PressableScale>
+                  ) : (
+                    !isEmailVerified && (
+                      <Pressable
+                        style={styles.editButton}
+                        onPress={onEditEmail}
+                        accessibilityRole="button"
+                        accessibilityLabel="이메일 수정"
+                      >
+                        <Text style={styles.editButtonText}>수정</Text>
+                      </Pressable>
+                    )
+                  )}
                 </View>
-                {isEmailDuplicate && (
-                  <Text style={styles.errorText}>
-                    이미 가입된 이메일입니다.
-                  </Text>
-                )}
+                {!!errors.email && <InlineError message={errors.email} />}
               </View>
 
               {showVerificationInput && (
-                <View style={styles.inputGroup}>
-                  <View
-                    style={[
-                      styles.authInputContainer,
-                      focusedField === 'verificationCode' &&
-                        styles.inputFocused,
-                      isEmailVerified && styles.inputDisabled,
-                    ]}
+                <Animated.View
+                  style={styles.inputGroup}
+                  entering={FadeInDown.duration(220)}
+                >
+                  <AuthFieldBox
+                    state={codeState}
+                    style={styles.authInputContainer}
+                    label="인증번호"
                   >
-                    <Text style={styles.label}>인증번호</Text>
                     <View style={styles.authInputRow}>
-                      {isEmailVerified ? (
-                        <View style={styles.authValueWrapper}>
-                          <Text style={styles.authValue}>
-                            {form.verificationCode}
-                          </Text>
-                        </View>
-                      ) : (
-                        <TextInput
-                          style={styles.authInput}
-                          placeholder="123456"
-                          placeholderTextColor={COLORS.darkGray}
-                          value={form.verificationCode}
-                          onChangeText={v => onChange('verificationCode', v)}
-                          keyboardType="number-pad"
-                          maxLength={6}
-                          editable={!isLoading && !isEmailVerified}
-                          onFocus={() => setFocusedField('verificationCode')}
-                          onBlur={() => setFocusedField(null)}
+                      <TextInput
+                        ref={codeRef}
+                        style={styles.authInput}
+                        placeholder="6자리 숫자"
+                        placeholderTextColor={COLORS.textSecondary}
+                        value={form.verificationCode}
+                        onChangeText={v =>
+                          onChange('verificationCode', v.replace(/[^0-9]/g, ''))
+                        }
+                        keyboardType="number-pad"
+                        maxLength={6}
+                        autoComplete="sms-otp"
+                        importantForAutofill="yes"
+                        editable={!isEmailVerified && !isCodeExpired && !isVerifying}
+                        onFocus={() => setFocusedField('verificationCode')}
+                        onBlur={() => setFocusedField(null)}
+                        accessibilityLabel="인증번호 6자리"
+                      />
+                      {isVerifying ? (
+                        <ActivityIndicator size="small" color={COLORS.primary} />
+                      ) : isEmailVerified ? (
+                        <Check
+                          size={normalize(20)}
+                          color={COLORS.success}
+                          strokeWidth={3}
                         />
+                      ) : (
+                        <Text
+                          style={[
+                            styles.timerText,
+                            isCodeExpired && styles.timerTextExpired,
+                          ]}
+                        >
+                          {formatTime(timeLeft)}
+                        </Text>
                       )}
-                      <Text style={styles.timerText}>
-                        {isEmailVerified ? '' : formatTime(timeLeft)}
-                      </Text>
                     </View>
-                  </View>
-                </View>
+                  </AuthFieldBox>
+
+                  {!!errors.verificationCode && (
+                    <InlineError message={errors.verificationCode} />
+                  )}
+
+                  {isEmailVerified ? (
+                    <Animated.View
+                      style={styles.statusRow}
+                      entering={FadeInDown.duration(160)}
+                    >
+                      <Check size={normalize(14)} color={COLORS.success} strokeWidth={3} />
+                      <Text style={styles.statusTextOk}>
+                        인증이 완료되었어요.
+                      </Text>
+                    </Animated.View>
+                  ) : (
+                    <View style={styles.resendRow}>
+                      <Text style={styles.resendHint}>
+                        {isCodeExpired
+                          ? '인증 시간이 지났어요.'
+                          : '메일이 오지 않았나요?'}
+                      </Text>
+                      <Pressable
+                        onPress={onSendEmail}
+                        disabled={resendCooldown > 0 || isSendingEmail}
+                        style={styles.resendButton}
+                        accessibilityRole="button"
+                        accessibilityLabel="인증번호 다시 받기"
+                      >
+                        <Text
+                          style={[
+                            styles.resendButtonText,
+                            resendCooldown > 0 && styles.resendButtonTextDisabled,
+                          ]}
+                        >
+                          {resendCooldown > 0
+                            ? `다시 받기 (${resendCooldown}초)`
+                            : '다시 받기'}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  )}
+                </Animated.View>
               )}
             </>
           )}
 
+          {/* ══ 2단계: 비밀번호 ══ */}
           {step === 2 && (
             <>
-              <Text style={styles.description}>
-                안전한 비밀번호를 설정해주세요.
-              </Text>
               <View style={styles.inputGroup}>
-                <View
-                  style={[
-                    styles.passwordContainer,
-                    focusedField === 'password' && styles.inputFocused,
-                  ]}
+                <AuthFieldBox
+                  state={fieldState(
+                    !!errors.password,
+                    focusedField === 'password',
+                  )}
+                  style={styles.authInputContainer}
+                  label="비밀번호"
                 >
-                  <Text style={styles.label}>비밀번호</Text>
                   <View style={styles.authInputRow}>
                     <TextInput
+                      ref={passwordRef}
                       style={styles.authInput}
                       value={form.password}
-                      placeholder="********"
-                      placeholderTextColor={COLORS.darkGray}
+                      placeholder="8자 이상"
+                      placeholderTextColor={COLORS.textSecondary}
                       onChangeText={v => onChange('password', v)}
                       secureTextEntry={!isPasswordVisible}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      autoComplete="password-new"
+                      importantForAutofill="yes"
+                      returnKeyType="next"
+                      submitBehavior="submit"
+                      onSubmitEditing={() => confirmRef.current?.focus()}
                       onFocus={() => setFocusedField('password')}
                       onBlur={() => setFocusedField(null)}
+                      accessibilityLabel="비밀번호"
                     />
-                    <TouchableOpacity
-                      style={styles.eyeIcon}
+                    <Pressable
+                      style={styles.eyeButton}
                       onPress={() => setIsPasswordVisible(v => !v)}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        isPasswordVisible ? '비밀번호 숨기기' : '비밀번호 표시'
+                      }
                     >
                       {isPasswordVisible ? (
                         <EyeOff size={20} color={COLORS.textSecondary} />
                       ) : (
                         <Eye size={20} color={COLORS.textSecondary} />
                       )}
-                    </TouchableOpacity>
+                    </Pressable>
                   </View>
-                </View>
+                </AuthFieldBox>
+                {!!errors.password && <InlineError message={errors.password} />}
                 <View style={styles.requirementsContainer}>
                   <PasswordRequirement
                     met={passwordRequirements.hasMinLength}
-                    label="최소 8자 이상"
+                    label="8자 이상"
                   />
                   <PasswordRequirement
                     met={passwordRequirements.hasCombination}
-                    label="영문, 숫자, 특수문자 포함"
+                    label="영문 · 숫자 · 특수문자 포함"
                   />
                 </View>
               </View>
 
               <View style={styles.inputGroup}>
-                <View
-                  style={[
-                    styles.passwordContainer,
-                    focusedField === 'confirmPassword' && styles.inputFocused,
-                  ]}
+                <AuthFieldBox
+                  state={fieldState(
+                    !!errors.confirmPassword,
+                    focusedField === 'confirmPassword',
+                  )}
+                  style={styles.authInputContainer}
+                  label="비밀번호 확인"
                 >
-                  <Text style={styles.label}>비밀번호 확인</Text>
                   <View style={styles.authInputRow}>
                     <TextInput
+                      ref={confirmRef}
                       style={styles.authInput}
                       value={form.confirmPassword}
-                      placeholder="********"
-                      placeholderTextColor={COLORS.darkGray}
+                      placeholder="다시 한 번 입력해 주세요"
+                      placeholderTextColor={COLORS.textSecondary}
                       onChangeText={v => onChange('confirmPassword', v)}
                       secureTextEntry={!isConfirmPasswordVisible}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      autoComplete="password-new"
+                      importantForAutofill="yes"
+                      returnKeyType="done"
+                      onSubmitEditing={onNextStep}
                       onFocus={() => setFocusedField('confirmPassword')}
                       onBlur={() => setFocusedField(null)}
+                      accessibilityLabel="비밀번호 확인"
                     />
-                    <TouchableOpacity
-                      style={styles.eyeIcon}
+                    <Pressable
+                      style={styles.eyeButton}
                       onPress={() => setIsConfirmPasswordVisible(v => !v)}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        isConfirmPasswordVisible
+                          ? '비밀번호 숨기기'
+                          : '비밀번호 표시'
+                      }
                     >
                       {isConfirmPasswordVisible ? (
                         <EyeOff size={20} color={COLORS.textSecondary} />
                       ) : (
                         <Eye size={20} color={COLORS.textSecondary} />
                       )}
-                    </TouchableOpacity>
+                    </Pressable>
                   </View>
-                </View>
-                <View style={styles.requirementsContainer}>
-                  <PasswordRequirement
-                    met={isPasswordMatch}
-                    label="비밀번호 일치"
-                  />
-                </View>
+                </AuthFieldBox>
+                {!!errors.confirmPassword && (
+                  <InlineError message={errors.confirmPassword} />
+                )}
+                {form.confirmPassword.length > 0 && (
+                  <View style={styles.requirementsContainer}>
+                    <PasswordRequirement met={isPasswordMatch} label="비밀번호 일치" />
+                  </View>
+                )}
               </View>
             </>
           )}
 
+          {/* ══ 3단계: 닉네임 & 내 정보 ══ */}
           {step === 3 && (
             <>
-              <Text style={styles.description}>
-                앱에서 사용할 닉네임을 정해주세요.
-              </Text>
               <View style={styles.inputGroup}>
-                <View
-                  style={[
-                    styles.authInputContainer,
-                    focusedField === 'nickname' && styles.inputFocused,
-                  ]}
+                <AuthFieldBox
+                  state={nicknameState}
+                  style={styles.authInputContainer}
+                  label="닉네임"
                 >
-                  <Text style={styles.label}>닉네임</Text>
-                  <View style={styles.nicknameInputRow}>
-                    <TextInput
-                      style={styles.authInput}
-                      placeholder="플랜메이트"
-                      placeholderTextColor={COLORS.darkGray}
-                      value={form.nickname}
-                      onChangeText={v => onChange('nickname', v)}
-                      editable={!isLoading}
-                      onFocus={() => setFocusedField('nickname')}
-                      onBlur={() => setFocusedField(null)}
-                    />
-                  </View>
-                </View>
-              </View>
-            </>
-          )}
-
-          {step === 4 && (
-            <>
-              <Text style={styles.description}>
-                맞춤형 여행 계획을 위해 필요해요.
-              </Text>
-              <View style={styles.inputGroup}>
-                <View
-                  style={[
-                    styles.authInputContainer,
-                    focusedField === 'age' && styles.inputFocused,
-                  ]}
-                >
-                  <Text style={styles.label}>나이</Text>
                   <View style={styles.authInputRow}>
                     <TextInput
+                      ref={nicknameRef}
                       style={styles.authInput}
-                      placeholder="나이 입력"
-                      placeholderTextColor={COLORS.darkGray}
-                      value={form.age}
-                      onChangeText={v => onChange('age', v)}
-                      keyboardType="number-pad"
-                      maxLength={3}
-                      editable={!isLoading}
-                      onFocus={() => setFocusedField('age')}
+                      placeholder="플랜메이트"
+                      placeholderTextColor={COLORS.textSecondary}
+                      value={form.nickname}
+                      onChangeText={v => onChange('nickname', v)}
+                      autoComplete="username"
+                      importantForAutofill="yes"
+                      returnKeyType="next"
+                      onSubmitEditing={() => setBirthdatePickerOpen(true)}
+                      maxLength={20}
+                      onFocus={() => setFocusedField('nickname')}
                       onBlur={() => setFocusedField(null)}
+                      accessibilityLabel="닉네임"
                     />
-                    {form.age ? (
-                      <Text style={styles.authValue}>세</Text>
-                    ) : null}
                   </View>
-                </View>
+                </AuthFieldBox>
+                {!!errors.nickname && <InlineError message={errors.nickname} />}
+                {!errors.nickname && nicknameHint()}
               </View>
 
               <View style={styles.inputGroup}>
-                <View
-                  style={[
-                    styles.authInputContainer,
-                    styles.fieldContainerTop,
-                    styles.genderInputContainer,
-                  ]}
+                <AuthFieldBox
+                  state={errors.birthdate ? 'error' : 'default'}
+                  style={styles.authInputContainer}
+                  label="생년월일"
                 >
-                  <Text style={styles.label}>성별</Text>
-                  <View style={styles.genderContainer}>
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.genderButton,
-                        form.gender === 'male' && styles.genderButtonSelected,
-                        pressed && { opacity: 0.7 },
+                  <TouchableOpacity
+                    style={styles.authInputRow}
+                    onPress={() => setBirthdatePickerOpen(true)}
+                    disabled={isSubmitting}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="생년월일 선택"
+                  >
+                    <Text
+                      style={[
+                        styles.authInput,
+                        !form.birthdate && styles.authInputPlaceholder,
                       ]}
-                      onPress={() => onChange('gender', 'male')}
                     >
-                      <Text
-                        style={[
-                          styles.genderButtonText,
-                          form.gender === 'male' &&
-                            styles.genderButtonTextSelected,
-                        ]}
-                      >
-                        남자
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.genderButton,
-                        form.gender === 'female' && styles.genderButtonSelected,
-                        pressed && { opacity: 0.7 },
-                      ]}
-                      onPress={() => onChange('gender', 'female')}
-                    >
-                      <Text
-                        style={[
-                          styles.genderButtonText,
-                          form.gender === 'female' &&
-                            styles.genderButtonTextSelected,
-                        ]}
-                      >
-                        여자
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
+                      {form.birthdate
+                        ? formatBirthdate(form.birthdate)
+                        : '생년월일 선택'}
+                    </Text>
+                  </TouchableOpacity>
+                </AuthFieldBox>
+                {!!errors.birthdate && <InlineError message={errors.birthdate} />}
               </View>
 
-              {/* 개인정보 수집 및 이용 동의 */}
-              <View style={styles.privacyAgreementContainer}>
-                <TouchableOpacity
+              {/*
+                성별은 값을 적는 칸이 아니라 고르는 컨트롤이다. 입력 칸 테두리로
+                한 번 더 감싸면 테두리 안의 테두리가 되어 무거워진다.
+                라벨만 밖에 두고 버튼을 바로 놓는다.
+              */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.groupLabel}>성별</Text>
+                <View style={styles.genderContainer}>
+                    {(
+                      [
+                        { key: 'male', label: '남성' },
+                        { key: 'female', label: '여성' },
+                      ] as const
+                    ).map(option => (
+                      <PressableScale
+                        key={option.key}
+                        style={[
+                          styles.genderButton,
+                          !!errors.gender && styles.genderButtonError,
+                          form.gender === option.key && styles.genderButtonSelected,
+                        ]}
+                        baseColor={
+                          form.gender === option.key
+                            ? COLORS.primary
+                            : COLORS.white
+                        }
+                        pressedColor={
+                          form.gender === option.key
+                            ? COLORS.primaryDark
+                            : COLORS.surface
+                        }
+                        scaleTo={0.96}
+                        onPress={() => onChange('gender', option.key)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: form.gender === option.key }}
+                        accessibilityLabel={option.label}
+                      >
+                        <Text
+                          style={[
+                            styles.genderButtonText,
+                            form.gender === option.key &&
+                              styles.genderButtonTextSelected,
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                      </PressableScale>
+                    ))}
+                </View>
+                {!!errors.gender && <InlineError message={errors.gender} />}
+              </View>
+
+              {/* 개인정보 수집 및 이용 동의 — 체크박스와 보기 링크를 분리한다 */}
+              <View style={styles.agreementRow}>
+                <Pressable
                   testID="agreement-checkbox"
-                  style={styles.checkboxWrapper}
-                  onPress={() => onChangeAgreement?.(!isAgreed)}
-                  activeOpacity={0.8}
+                  style={styles.checkboxHit}
+                  onPress={() => onChangeAgreement(!isAgreed)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isAgreed }}
+                  accessibilityLabel="개인정보 수집 및 이용 동의, 필수"
                 >
-                  <View
-                    style={[
-                      styles.checkbox,
-                      isAgreed && styles.checkboxActive,
-                    ]}
-                  >
-                    {isAgreed && <Check size={normalize(12)} color={COLORS.white} />}
+                  <View style={[styles.checkbox, isAgreed && styles.checkboxActive]}>
+                    {isAgreed && (
+                      <Check size={normalize(13)} color={COLORS.white} strokeWidth={3} />
+                    )}
                   </View>
                   <Text style={styles.agreementText}>
-                    <Text
-                      style={styles.agreementLink}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        setShowPrivacyModal(true);
-                      }}
-                    >
-                      개인정보 수집 및 이용
-                    </Text>
-                    에 동의합니다 <Text style={styles.requiredText}>(필수)</Text>
+                    개인정보 수집·이용에 동의합니다{' '}
+                    <Text style={styles.requiredText}>(필수)</Text>
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
+
+                <Pressable
+                  style={styles.agreementViewButton}
+                  onPress={() => setShowPrivacyModal(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="개인정보 수집 및 이용 약관 보기"
+                >
+                  <Text style={styles.agreementViewText}>보기</Text>
+                </Pressable>
               </View>
+              {!!errors.agreement && <InlineError message={errors.agreement} />}
+              {!!errors.form && <InlineError message={errors.form} />}
             </>
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </Animated.View>
+      </ScrollView>
 
-      <View style={styles.footer}>
-        {step < 4 ? (
-          <>
-            <Pressable
-              style={({ pressed }) => [
-                styles.submitButton,
-                (isLoading ||
-                  (step !== 1 && step !== 3 && !isNextButtonEnabled)) &&
-                  styles.buttonDisabled,
-                pressed &&
-                  !isLoading && {
-                    opacity: 0.85,
-                    transform: [{ scale: 0.98 }],
-                  },
-              ]}
-              onPress={
-                step === 1
-                  ? isEmailVerified
-                    ? onNextStep
-                    : showVerificationInput
-                    ? onVerifyCode
-                    : onSendEmail
-                  : step === 3
-                  ? isNicknameVerified
-                    ? onNextStep
-                    : onCheckNickname
-                  : onNextStep
-              }
-              disabled={isLoading}
-            >
-              <Text style={styles.submitButtonText}>
-                {step === 1
-                  ? step1FooterLabel
-                  : step === 3
-                  ? step3FooterLabel
-                  : '다음'}
-              </Text>
-            </Pressable>
-
-            {step === 1 && (showVerificationInput || isEmailVerified) && (
-              <TouchableOpacity
-                style={styles.retryButton}
-                onPress={onResetEmail}
-                disabled={isLoading}
-              >
-                <Text style={styles.retryButtonText}>이메일 다시 입력하기</Text>
-              </TouchableOpacity>
-            )}
-          </>
-        ) : (
-          <Pressable
-            style={({ pressed }) => [
-              styles.submitButton,
-              pressed &&
-                !isLoading && { opacity: 0.85, transform: [{ scale: 0.98 }] },
-            ]}
-            onPress={onSignup}
-          >
-            {isLoading ? (
-              <ActivityIndicator color={COLORS.white} />
-            ) : (
-              <Text style={styles.submitButtonText}>회원가입 완료</Text>
-            )}
-          </Pressable>
-        )}
-
-        {step > 1 && (
-          <TouchableOpacity
-            style={styles.bottomBackButton}
-            onPress={onPrevStep}
-            disabled={isLoading}
-          >
-            <Text style={styles.bottomBackButtonText}>이전 단계</Text>
-          </TouchableOpacity>
-        )}
+      {/* ── 하단: 주 버튼은 항상 '다음' 하나 ── */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + normalize(16) }]}>
+        <AuthSubmitButton
+          label={step === totalSteps ? '회원가입 완료' : '다음'}
+          onPress={onNextStep}
+          loading={isSubmitting}
+          muted={!isNextEnabled}
+          disabled={isBusy}
+        />
       </View>
 
       <PrivacyPolicyModal
         visible={showPrivacyModal}
         onClose={() => setShowPrivacyModal(false)}
       />
-    </SafeAreaView>
+
+      {/* 생년월일 선택기. 나이를 받아 역산하면 실제 월·일이 소실된다. */}
+      <DatePicker
+        modal
+        mode="date"
+        title="생년월일 선택"
+        confirmText="확인"
+        cancelText="취소"
+        locale="ko"
+        maximumDate={new Date()}
+        open={isBirthdatePickerOpen}
+        date={parseBirthdate(form.birthdate)}
+        onConfirm={date => {
+          setBirthdatePickerOpen(false);
+          onChange('birthdate', toBirthdateString(date));
+        }}
+        onCancel={() => setBirthdatePickerOpen(false)}
+      />
+    </View>
   );
 };

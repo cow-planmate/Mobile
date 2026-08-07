@@ -10,6 +10,7 @@ import {
   PendingInvitation,
   rejectInvitation,
 } from '../../../api/trips';
+import { collaborationRequestNoun } from '../../../utils/collaborationRequest';
 import { BOARDS, BoardKey } from '../constants/levels';
 import { useHotPosts, usePosts } from '../hooks/queries';
 import CommunityScreenView from './CommunityScreen.view';
@@ -69,36 +70,47 @@ export default function CommunityScreen() {
     }, [fetchPendingRequests]),
   );
 
+  /** 실패 안내 제목은 초대/편집 권한 요청에 따라 달라진다. */
+  const findRequestNoun = useCallback(
+    (requestId: number) =>
+      collaborationRequestNoun(
+        pendingRequests.find(r => r.requestId === requestId)?.type,
+      ),
+    [pendingRequests],
+  );
+
   const handleAcceptInvitation = useCallback(
     async (requestId: number) => {
+      const noun = findRequestNoun(requestId);
       try {
         await acceptInvitation(requestId);
         await fetchPendingRequests();
       } catch (error) {
         showAlert({
-          title: '초대 수락 실패',
+          title: `${noun} 수락 실패`,
           message: getBackendErrorMessage(error),
           type: 'error',
         });
       }
     },
-    [fetchPendingRequests, showAlert],
+    [fetchPendingRequests, findRequestNoun, showAlert],
   );
 
   const handleRejectInvitation = useCallback(
     async (requestId: number) => {
+      const noun = findRequestNoun(requestId);
       try {
         await rejectInvitation(requestId);
         await fetchPendingRequests();
       } catch (error) {
         showAlert({
-          title: '초대 거절 실패',
+          title: `${noun} 거절 실패`,
           message: getBackendErrorMessage(error),
           type: 'error',
         });
       }
     },
-    [fetchPendingRequests, showAlert],
+    [fetchPendingRequests, findRequestNoun, showAlert],
   );
 
   const handleWritePost = useCallback(() => {

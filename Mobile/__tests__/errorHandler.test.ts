@@ -1,4 +1,8 @@
-import { parseBackendError, getBackendErrorMessage } from '../src/utils/errorHandler';
+import {
+  parseBackendError,
+  getBackendErrorMessage,
+  getDisplayErrorMessage,
+} from '../src/utils/errorHandler';
 import { BACKEND_ERROR_MESSAGES } from '../src/types/error';
 
 describe('errorHandler Utility', () => {
@@ -37,6 +41,37 @@ describe('errorHandler Utility', () => {
     const parsed = parseBackendError(mockError);
     expect(parsed.code).toBe('COMMON_005');
     expect(parsed.message).toBe('Network Error');
+  });
+
+  describe('getDisplayErrorMessage', () => {
+    it('should use the server message when the response body exists', () => {
+      const mockAxiosError = {
+        response: {
+          data: { code: 'AUTH_004', message: '이미 가입된 이메일입니다.' },
+        },
+      };
+
+      expect(getDisplayErrorMessage(mockAxiosError, '대체 문구')).toBe(
+        '이미 가입된 이메일입니다.',
+      );
+    });
+
+    it('should not leak an internal Error message to the screen', () => {
+      // 401을 만나면 인터셉터가 토큰 재발급을 시도하다 이 오류를 대신 던진다.
+      const interceptorError = new Error(
+        'No refresh token found or token creation failed',
+      );
+
+      expect(
+        getDisplayErrorMessage(interceptorError, '인증번호가 올바르지 않아요.'),
+      ).toBe('인증번호가 올바르지 않아요.');
+    });
+
+    it('should fall back when the response has no parseable body', () => {
+      const networkError = { response: undefined };
+
+      expect(getDisplayErrorMessage(networkError, '대체 문구')).toBe('대체 문구');
+    });
   });
 
   it('should extract error message via getBackendErrorMessage helper', () => {

@@ -31,11 +31,15 @@ Object.assign(global as any, {
 const ROOM_READY_FALLBACK_MS = 2000;
 
 /**
- * graceful 종료(DISCONNECT 프레임 전송)를 기다리는 최대 시간(ms).
- * 이 시간을 넘기면 소켓을 강제로 닫는다. RN이 백그라운드로 전환되며
- * JS 스레드가 정지하면 프레임이 나가지 못한 채 남을 수 있다.
+ * deactivate()가 끝나기를 기다리는 최대 시간(ms). 넘기면 소켓을 강제로 닫는다.
+ *
+ * DISCONNECT 프레임 자체는 deactivate() 안에서 동기로 write되므로, 이 타이머가
+ * 발화할 시점에는 이미 전송이 끝나 있다. 실제로 기다리는 건 서버의 RECEIPT 응답인데,
+ * 서버는 RECEIPT가 아니라 DISCONNECT 프레임이 도착한 시점에 세션 종료 이벤트를
+ * 발행하므로 접속자 목록 관점에서는 기다릴 이유가 없다. 짧게 잡아 백그라운드 전환 중
+ * JS가 멈추기 전에 소켓까지 닫히게 한다.
  */
-const DISCONNECT_TIMEOUT_MS = 1500;
+const DISCONNECT_TIMEOUT_MS = 300;
 
 /**
  * 개발 전용 로그.
@@ -344,10 +348,10 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     activeSocket.current = null;
 
     if (client) {
-      // force: true는 DISCONNECT 프레임을 보내지 않고 소켓을 폐기한다.
-      // 그러면 서버가 SessionDisconnectEvent를 즉시 발행하지 못해
-      // 다른 참여자의 접속자 목록에서 늦게 사라진다.
-      // 정상 종료 시퀀스를 태우되, 프레임 전송이 지연되면 강제로 닫는다.
+      // force: true는 DISCONNECT 프레임을 보내지 않고 소켓을 폐기한다. 그래도 서버는
+      // 소켓이 닫힌 것을 감지하면 세션 종료 이벤트를 발행하지만, 그건 전송 계층이
+      // 끊김을 알아챈 뒤라 다른 참여자의 접속자 목록에서 늦게 사라진다.
+      // 정상 종료 시퀀스를 태우되, RECEIPT 대기가 길어지면 강제로 닫는다.
       const hardClose = setTimeout(() => {
         try {
           socket?.close();

@@ -86,20 +86,14 @@ export default function UpdateThemeModal({
   const handleSave = async () => {
     try {
       setSaving(true);
-      // 카테고리별로 PATCH 요청
-      const categoryIds = Object.keys(selectedThemes).map(Number);
-      for (const catId of categoryIds) {
-        const themeIds =
-          selectedThemes[catId]?.map(t => t.preferredThemeId) || [];
-        await changePreferredThemes(catId, themeIds);
-      }
-
-      // 선택되지 않은 카테고리도 빈 배열로 전송 (기존 선택 제거)
+      // 세 카테고리를 한 요청에 담는다. 선택이 없는 카테고리는 빈 배열로 보내
+      // 기존 선택을 지운다. 나눠 보내면 중간에 실패했을 때 일부만 반영된다.
+      const themeIdsByCategoryId: Record<number, number[]> = {};
       for (const catId of [0, 1, 2]) {
-        if (!categoryIds.includes(catId)) {
-          await changePreferredThemes(catId, []);
-        }
+        themeIdsByCategoryId[catId] =
+          selectedThemes[catId]?.map(t => t.preferredThemeId) || [];
       }
+      await changePreferredThemes(themeIdsByCategoryId);
 
       onConfirm();
     } catch (error) {

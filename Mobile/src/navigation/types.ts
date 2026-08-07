@@ -57,10 +57,6 @@ export type ScheduleStackParamList = {
     startDate?: string;
     endDate?: string;
   };
-  SearchLocation: {
-    fieldToUpdate: 'departure' | 'destination';
-    currentValue: string;
-  };
   Profile: undefined;
   ThemeSettings: undefined;
   ChangePassword: undefined;

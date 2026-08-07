@@ -67,6 +67,26 @@ describe('NotificationModal', () => {
     const textJoined = getTestInstanceText(component.root);
     expect(textJoined).toContain('홍길동');
     expect(textJoined).toContain('제주도 여행');
+    // type이 없으면 기존과 동일하게 초대로 본다
+    expect(textJoined).toContain('일정에 초대했습니다.');
+  });
+
+  it('renders edit-access wording for REQUEST type', () => {
+    let component: any;
+    act(() => {
+      component = renderer.create(
+        <NotificationModal
+          visible={true}
+          onClose={jest.fn()}
+          invitations={[{ ...mockInvitations[0], type: 'REQUEST' }]}
+          onAccept={jest.fn()}
+          onReject={jest.fn()}
+        />
+      );
+    });
+    const textJoined = getTestInstanceText(component.root);
+    expect(textJoined).toContain('일정의 편집 권한을 요청했습니다.');
+    expect(textJoined).not.toContain('초대했습니다.');
   });
 
   it('renders empty message when no invitations are present', () => {

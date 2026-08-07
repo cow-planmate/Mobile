@@ -1,4 +1,5 @@
 import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
+import { RADIUS } from '../authTokens';
 
 export const { width, height } = Dimensions.get('window');
 export const normalize = (size: number) =>
@@ -29,50 +30,51 @@ export const FONTS = {
 
 export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.white },
+  flex1: { flex: 1 },
+
+  /* ── 헤더 — 뒤로가기는 항상 왼쪽 ── */
   header: {
-    position: 'relative',
-    paddingHorizontal: normalize(24),
-    paddingTop: normalize(36),
-    paddingBottom: normalize(10),
-  },
-  headerBackButton: {
-    position: 'absolute',
-    top: normalize(36),
-    right: normalize(24),
-    width: normalize(34),
-    height: normalize(34),
-    borderRadius: normalize(17),
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  stepIndicatorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: normalize(6),
-    marginBottom: normalize(12),
+    gap: normalize(12),
+    height: normalize(56),
+    paddingLeft: normalize(4),
+    paddingRight: normalize(20),
   },
-  stepDot: {
-    height: normalize(6),
-    borderRadius: normalize(3),
-    backgroundColor: COLORS.gray,
+  headerBackButton: {
+    width: normalize(48),
+    height: normalize(48),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  stepDotActive: {
+  progressTrack: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(5),
+  },
+  progressSegment: {
+    flex: 1,
+    height: normalize(4),
+    borderRadius: normalize(2),
+    backgroundColor: COLORS.border,
+  },
+  progressSegmentOn: {
     backgroundColor: COLORS.primary,
   },
-  stepText: {
-    fontSize: normalize(12),
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-    lineHeight: normalize(16),
-    color: COLORS.primary,
-    marginBottom: normalize(4),
-    textTransform: 'uppercase',
-    letterSpacing: 0.2,
+  progressCount: {
+    fontSize: normalize(13),
+    fontFamily: FONTS.semibold,
+    fontWeight: '600',
+    lineHeight: normalize(18),
+    color: COLORS.textSecondary,
   },
-  scrollContainer: { padding: normalize(24), paddingBottom: normalize(100) },
+
+  scrollContainer: {
+    paddingHorizontal: normalize(24),
+    paddingTop: normalize(16),
+    paddingBottom: normalize(32),
+  },
   title: {
     fontSize: normalize(32),
     fontFamily: FONTS.bold,
@@ -81,7 +83,6 @@ export const styles = StyleSheet.create({
     letterSpacing: 0.2,
     color: COLORS.text,
     marginBottom: normalize(8),
-    textAlign: 'left',
   },
   description: {
     fontSize: normalize(15),
@@ -91,70 +92,40 @@ export const styles = StyleSheet.create({
     letterSpacing: 0.1,
     color: COLORS.textSecondary,
     marginBottom: normalize(32),
-    textAlign: 'left',
   },
-  inputGroup: { marginBottom: normalize(14) },
+
+  /* ── 입력 ── */
+  inputGroup: { marginBottom: normalize(16) },
+  /**
+   * 라벨이 테두리 위로 올라가면서 입력 칸 위에 라벨 절반만큼 여백이 생겼다.
+   * 가운데 정렬이면 옆의 인증요청 버튼과 4dp 어긋나므로 아래를 맞춘다.
+   */
+  fieldRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: normalize(8),
+  },
+  /**
+   * 테두리 굵기를 상태와 무관하게 1.5로 고정한다. 포커스될 때만 굵어지면
+   * 박스 크기가 함께 바뀌어 입력 중에 글자가 흔들린다.
+   * 색은 AuthFieldBox가 상태에 따라 전환한다.
+   */
   authInputContainer: {
     width: '100%',
-    minHeight: normalize(68),
-    borderWidth: 1,
+    minHeight: normalize(52),
+    borderWidth: 1.5,
     borderColor: COLORS.border,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     paddingHorizontal: normalize(16),
-    paddingVertical: normalize(10),
     backgroundColor: COLORS.white,
     justifyContent: 'center',
   },
-  fieldContainerTop: {
-    justifyContent: 'flex-start',
-  },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: normalize(8),
-  },
-  label: {
-    fontSize: normalize(11),
-    color: COLORS.textSecondary,
-    fontFamily: FONTS.medium,
-    fontWeight: '500',
-    lineHeight: normalize(16),
-    marginLeft: 0,
-    marginBottom: normalize(2),
-  },
-  changeEmailText: {
-    fontSize: normalize(12),
-    color: COLORS.primary,
-    textDecorationLine: 'underline',
-    marginRight: normalize(4),
-    fontWeight: '500',
-    lineHeight: normalize(16),
-  },
+  inputLocked: { backgroundColor: COLORS.surface },
+
   authInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: normalize(8),
-  },
-  nicknameInputRow: {
-    marginTop: normalize(2),
-  },
-  authValueWrapper: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  authValue: {
-    fontSize: normalize(16),
-    fontFamily: FONTS.regular,
-    fontWeight: '400',
-    lineHeight: normalize(28),
-    color: COLORS.text,
-    padding: 0,
-    includeFontPadding: false,
-    textAlignVertical: 'center',
-  },
-  selectionValue: {
-    marginTop: normalize(2),
   },
   authInput: {
     flex: 1,
@@ -163,40 +134,42 @@ export const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: normalize(20),
     color: COLORS.text,
-    height: normalize(28),
+    height: normalize(24),
     padding: 0,
     includeFontPadding: false,
     textAlignVertical: 'center',
   },
-  inputFocused: {
-    borderColor: COLORS.primary,
-    borderWidth: 2,
-  },
-  inputDisabled: {
-    backgroundColor: COLORS.lightGray,
-    color: COLORS.darkGray,
-  },
-  errorText: {
-    color: COLORS.error,
-    fontSize: normalize(13),
+  authInputPlaceholder: { color: COLORS.textSecondary },
+  authValue: {
+    fontSize: normalize(16),
     fontFamily: FONTS.regular,
     fontWeight: '400',
-    lineHeight: normalize(18),
-    marginTop: normalize(8),
-    marginLeft: normalize(4),
+    lineHeight: normalize(24),
+    color: COLORS.text,
+    padding: 0,
+    includeFontPadding: false,
   },
-  flex1: { flex: 1 },
+
+  /** 아이콘 전용 버튼은 48dp를 채운다 */
+  eyeButton: {
+    width: normalize(44),
+    height: normalize(44),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: normalize(-10),
+  },
+
+  /* ── 필드에 붙는 인라인 버튼 ── */
   inlineButton: {
     height: normalize(52),
-    paddingHorizontal: normalize(14),
-    borderRadius: 8,
+    paddingHorizontal: normalize(16),
+    borderRadius: RADIUS.md,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
-    minWidth: normalize(72),
-    flexShrink: 0,
+    minWidth: normalize(84),
   },
-  buttonDisabled: { backgroundColor: COLORS.darkGray },
+  inlineButtonDisabled: { backgroundColor: COLORS.gray },
   inlineButtonText: {
     color: COLORS.white,
     fontFamily: FONTS.bold,
@@ -204,71 +177,147 @@ export const styles = StyleSheet.create({
     fontSize: normalize(14),
     lineHeight: normalize(18),
   },
-  timerText: {
-    color: COLORS.error,
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
+  editButton: {
+    height: normalize(52),
+    paddingHorizontal: normalize(12),
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: normalize(52),
+  },
+  editButtonText: {
+    color: COLORS.primary,
+    fontFamily: FONTS.semibold,
+    fontWeight: '600',
     fontSize: normalize(14),
     lineHeight: normalize(18),
   },
-  passwordContainer: {
-    width: '100%',
-    minHeight: normalize(68),
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    paddingHorizontal: normalize(16),
-    paddingVertical: normalize(10),
-    backgroundColor: COLORS.white,
-    justifyContent: 'center',
+
+  /* ── 타이머 · 재전송 ── */
+  timerText: {
+    color: COLORS.textSecondary,
+    fontFamily: FONTS.semibold,
+    fontWeight: '600',
+    fontSize: normalize(14),
+    lineHeight: normalize(18),
   },
-  passwordInput: {
-    flex: 1,
-    height: '100%',
-    paddingHorizontal: normalize(16),
-    fontSize: normalize(16),
+  timerTextExpired: { color: COLORS.error },
+  resendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: normalize(4),
+  },
+  resendHint: {
+    fontSize: normalize(13),
     fontFamily: FONTS.regular,
-    fontWeight: '400',
-    lineHeight: normalize(20),
-    color: COLORS.text,
+    color: COLORS.textSecondary,
+    lineHeight: normalize(18),
   },
-  eyeIcon: { padding: normalize(12) },
+  resendButton: {
+    paddingVertical: normalize(13),
+    paddingHorizontal: normalize(8),
+  },
+  resendButtonText: {
+    fontSize: normalize(13),
+    fontFamily: FONTS.bold,
+    fontWeight: '700',
+    lineHeight: normalize(18),
+    color: COLORS.primary,
+  },
+  resendButtonTextDisabled: { color: COLORS.textSecondary },
+
+  /* ── 상태 한 줄 (닉네임 · 인증 완료) ── */
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(6),
+    marginTop: normalize(8),
+    paddingHorizontal: normalize(2),
+  },
+  statusTextOk: {
+    fontSize: normalize(13),
+    fontFamily: FONTS.medium,
+    fontWeight: '500',
+    lineHeight: normalize(18),
+    color: COLORS.success,
+  },
+  statusTextError: {
+    fontSize: normalize(13),
+    fontFamily: FONTS.medium,
+    fontWeight: '500',
+    lineHeight: normalize(18),
+    color: COLORS.error,
+  },
+  statusTextMuted: {
+    fontSize: normalize(13),
+    fontFamily: FONTS.medium,
+    fontWeight: '500',
+    lineHeight: normalize(18),
+    color: COLORS.textSecondary,
+  },
+
+  /* ── 인라인 오류 ── */
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: normalize(6),
+    marginTop: normalize(8),
+    paddingHorizontal: normalize(2),
+  },
+  errorIcon: { marginTop: normalize(2) },
+  errorText: {
+    flex: 1,
+    color: COLORS.error,
+    fontSize: normalize(13),
+    fontFamily: FONTS.medium,
+    fontWeight: '500',
+    lineHeight: normalize(18),
+  },
+
+  /* ── 비밀번호 조건 ── */
   requirementsContainer: {
     marginTop: normalize(12),
-    marginLeft: normalize(10),
+    paddingHorizontal: normalize(2),
+    gap: normalize(6),
   },
   requirementRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: normalize(4),
-  },
-  requirementIcon: {
-    marginRight: normalize(8),
-    fontFamily: FONTS.bold,
-    fontSize: normalize(14),
-    fontWeight: '700',
-    lineHeight: normalize(18),
+    gap: normalize(8),
   },
   requirementText: {
     fontSize: normalize(13),
-    fontFamily: FONTS.regular,
-    fontWeight: '400',
+    fontFamily: FONTS.medium,
+    fontWeight: '500',
     lineHeight: normalize(18),
   },
-  genderContainer: { flexDirection: 'row', gap: normalize(12) },
-  genderInputContainer: {
-    minHeight: normalize(68),
+
+  /* ── 성별 ── */
+  /** 박스 밖에 놓이는 그룹 라벨. 입력 칸 안의 라벨과 크기를 맞춘다. */
+  groupLabel: {
+    fontSize: normalize(12),
+    color: COLORS.textSecondary,
+    fontFamily: FONTS.medium,
+    fontWeight: '500',
+    lineHeight: normalize(16),
+    paddingHorizontal: normalize(2),
+  },
+  genderContainer: {
+    flexDirection: 'row',
+    gap: normalize(12),
+    marginTop: normalize(6),
   },
   genderButton: {
     flex: 1,
-    minHeight: normalize(28),
-    borderRadius: 8,
+    minHeight: normalize(44),
+    borderRadius: RADIUS.sm,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.white,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: COLORS.border,
   },
+  /** 감싸던 박스를 없앤 자리. 오류는 버튼 테두리가 대신 알린다. */
+  genderButtonError: { borderColor: COLORS.error },
   genderButtonSelected: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
@@ -276,110 +325,85 @@ export const styles = StyleSheet.create({
   genderButtonText: {
     fontSize: normalize(16),
     fontFamily: FONTS.semibold,
-    color: COLORS.textSecondary,
     fontWeight: '600',
     lineHeight: normalize(20),
+    color: COLORS.textSecondary,
   },
   genderButtonTextSelected: { color: COLORS.white },
-  footer: { padding: normalize(24), backgroundColor: COLORS.white },
-  submitButton: {
-    width: '100%',
-    height: normalize(52),
-    borderRadius: 8,
-    justifyContent: 'center',
+
+  /* ── 약관 동의 — 체크박스와 보기 링크를 분리한다 ── */
+  agreementRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
-  },
-  submitButtonText: {
-    fontSize: normalize(17),
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-    lineHeight: normalize(22),
-    color: COLORS.white,
-    letterSpacing: 0.2,
-  },
-  retryButton: {
-    alignItems: 'center',
-    padding: normalize(12),
-    marginTop: normalize(8),
-  },
-  retryButtonText: {
-    fontSize: normalize(14),
-    fontFamily: FONTS.regular,
-    fontWeight: '400',
-    lineHeight: normalize(18),
-    color: COLORS.textSecondary,
-    textDecorationLine: 'underline',
-  },
-  bottomBackButton: {
-    alignItems: 'center',
-    padding: normalize(12),
     marginTop: normalize(12),
   },
-  bottomBackButtonText: {
-    fontSize: normalize(14),
-    fontFamily: FONTS.regular,
-    fontWeight: '400',
-    lineHeight: normalize(18),
-    color: COLORS.textSecondary,
-    textDecorationLine: 'underline',
-  },
-  modalOverlay: {
+  checkboxHit: {
     flex: 1,
-    backgroundColor: COLORS.modalBackground,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(10),
+    minHeight: normalize(48),
+    paddingRight: normalize(8),
+  },
+  checkbox: {
+    width: normalize(22),
+    height: normalize(22),
+    borderRadius: RADIUS.xs,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  modalContent: {
     backgroundColor: COLORS.white,
-    width: width * 0.8,
-    maxHeight: height * 0.6,
-    borderRadius: 12,
-    padding: normalize(20),
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  modalTitle: {
-    fontSize: normalize(20),
+  checkboxActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  agreementText: {
+    flex: 1,
+    fontSize: normalize(14),
+    fontFamily: FONTS.regular,
+    color: COLORS.textSecondary,
+    lineHeight: normalize(20),
+  },
+  requiredText: {
+    color: COLORS.error,
     fontFamily: FONTS.bold,
     fontWeight: '700',
-    lineHeight: normalize(24),
-    marginBottom: normalize(16),
-    textAlign: 'center',
-    color: COLORS.text,
   },
-  ageOption: {
-    paddingVertical: normalize(12),
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
-  },
-  ageOptionText: {
-    fontSize: normalize(16),
-    fontFamily: FONTS.regular,
-    fontWeight: '400',
-    lineHeight: normalize(20),
-    textAlign: 'center',
-    color: COLORS.text,
-  },
-  marginBottom0: {
-    marginBottom: 0,
-  },
-  justifyCenter: {
+  agreementViewButton: {
+    minHeight: normalize(48),
+    paddingHorizontal: normalize(10),
     justifyContent: 'center',
+  },
+  agreementViewText: {
+    fontSize: normalize(14),
+    fontFamily: FONTS.semibold,
+    fontWeight: '600',
+    lineHeight: normalize(20),
+    color: COLORS.primary,
+    textDecorationLine: 'underline',
+  },
+
+  /* ── 하단 ── */
+  footer: {
+    paddingHorizontal: normalize(24),
+    paddingTop: normalize(12),
+    backgroundColor: COLORS.white,
   },
   /* ── Privacy Policy Modal ── */
   privacyOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: COLORS.modalBackground,
     justifyContent: 'center',
     alignItems: 'center',
     padding: normalize(16),
   },
   privacyModal: {
     width: '100%',
-    maxHeight: '80%',
+    height: '80%',
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: RADIUS.lg,
     padding: normalize(20),
   },
   privacyHeader: {
@@ -395,7 +419,15 @@ export const styles = StyleSheet.create({
     lineHeight: normalize(24),
     color: COLORS.text,
   },
+  privacyCloseIcon: {
+    width: normalize(48),
+    height: normalize(48),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: normalize(-10),
+  },
   privacyScroll: {
+    flex: 1,
     marginBottom: normalize(16),
   },
   privacySectionTitle: {
@@ -413,64 +445,22 @@ export const styles = StyleSheet.create({
     fontWeight: '400',
     color: COLORS.textSecondary,
     lineHeight: normalize(18),
-    marginBottom: normalize(3),
+    marginBottom: normalize(4),
     paddingLeft: normalize(4),
   },
   privacyCloseButton: {
     height: normalize(52),
     width: '100%',
     backgroundColor: COLORS.primary,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   privacyCloseButtonText: {
-    fontSize: normalize(15),
+    fontSize: normalize(16),
     fontFamily: FONTS.bold,
-    fontWeight: '700',
-    lineHeight: normalize(20),
+    fontWeight: '600',
+    lineHeight: normalize(24),
     color: COLORS.white,
-  },
-  /* ── Privacy Agreement ── */
-  privacyAgreementContainer: {
-    marginTop: normalize(20),
-    marginBottom: normalize(8),
-    paddingHorizontal: normalize(4),
-  },
-  checkboxWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  checkbox: {
-    width: normalize(20),
-    height: normalize(20),
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: normalize(8),
-    backgroundColor: COLORS.white,
-  },
-  checkboxActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  agreementText: {
-    fontSize: normalize(14),
-    fontFamily: FONTS.regular,
-    color: COLORS.textSecondary,
-    lineHeight: normalize(20),
-  },
-  agreementLink: {
-    textDecorationLine: 'underline',
-    color: COLORS.primary,
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-  },
-  requiredText: {
-    color: COLORS.error,
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
   },
 });

@@ -36,7 +36,7 @@ describe('Auth Store - Social Login & Complete', () => {
     mockedAxios.get.mockResolvedValueOnce(mockProfileResponse);
 
     const store = useAuthStore.getState();
-    await store.oauthLogin('mock-auth-code');
+    await store.oauthLogin('mock-auth-code', 'google');
 
     expect(mockedAxios.post).toHaveBeenCalledWith(
       expect.stringContaining('/api/oauth/exchange'),

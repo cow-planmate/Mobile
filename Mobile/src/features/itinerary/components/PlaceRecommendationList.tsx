@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import FastImage from 'react-native-fast-image';
 import {
   View,
@@ -63,16 +63,13 @@ const TAB_COLORS: { [key in PlaceTab]: string } = {
 
 type PlaceTab = '관광지' | '숙소' | '식당' | '직접 추가' | '검색';
 
-/** 탭 라벨 → PlacesContext의 페이지네이션 필드 */
-const TAB_TO_PLACES_FIELD: Record<
-  PlaceTab,
-  'tour' | 'lodging' | 'restaurant' | 'search'
+/** 서버 페이징이 있는 탭만 → PlacesContext의 페이지네이션 필드 */
+const TAB_TO_PLACES_FIELD: Partial<
+  Record<PlaceTab, 'tour' | 'lodging' | 'restaurant'>
 > = {
   관광지: 'tour',
   숙소: 'lodging',
   식당: 'restaurant',
-  '직접 추가': 'search',
-  검색: 'search',
 };
 
 type EmptyStateConfig = {
@@ -84,27 +81,31 @@ type EmptyStateConfig = {
   note?: string;
 };
 
-const EMPTY_STATE_CONFIG: Record<PlaceTab, EmptyStateConfig> = {
+// '검색' 탭은 서버에 키워드 검색이 없어 renderEmpty에서 따로 안내한다.
+const EMPTY_STATE_CONFIG: Record<
+  Exclude<PlaceTab, '검색'>,
+  EmptyStateConfig
+> = {
   관광지: {
     icon: faUmbrellaBeach,
     iconColor: '#84cc16',
     iconBackground: '#ecfccb',
     title: '관광지 추천장소가 존재하지 않아요.',
-    subtitle: '검색 탭에서 장소를 직접 찾아볼 수 있어요!',
+    subtitle: "'직접 추가' 탭에서 장소를 직접 넣을 수 있어요!",
   },
   숙소: {
     icon: faBed,
     iconColor: '#f97316',
     iconBackground: '#ffedd5',
     title: '숙소 추천장소가 존재하지 않아요.',
-    subtitle: '검색 탭에서 장소를 직접 찾아볼 수 있어요!',
+    subtitle: "'직접 추가' 탭에서 장소를 직접 넣을 수 있어요!",
   },
   식당: {
     icon: faUtensils,
     iconColor: '#3b82f6',
     iconBackground: '#dbeafe',
     title: '식당 추천장소가 존재하지 않아요.',
-    subtitle: '검색 탭에서 장소를 직접 찾아볼 수 있어요!',
+    subtitle: "'직접 추가' 탭에서 장소를 직접 넣을 수 있어요!",
   },
   '직접 추가': {
     icon: faPencil,
@@ -113,13 +114,6 @@ const EMPTY_STATE_CONFIG: Record<PlaceTab, EmptyStateConfig> = {
     title: "위 일정에 맞춰 장소 이름을 입력하고 '추가' 버튼을 눌러보세요.",
     subtitle: '추가된 장소는 일정에 바로 반영돼요.',
     note: '추가된 장소는 순서에 따라 자동 저장돼요.',
-  },
-  검색: {
-    icon: faMagnifyingGlass,
-    iconColor: '#9ca3af',
-    iconBackground: '#f3f4f6',
-    title: '검색 결과가 없습니다.',
-    subtitle: '다른 키워드로 장소를 다시 찾아보세요.',
   },
 };
 
@@ -297,13 +291,10 @@ export default function PlaceRecommendationList({
     tour,
     lodging,
     restaurant,
-    search,
-    searchNext,
     tourHasNext,
     lodgingHasNext,
     restaurantHasNext,
     isLoading,
-    doSearchPlaces,
     loadMorePlaces,
     fetchAllRecommendations,
     isPetFriendly,
@@ -311,13 +302,8 @@ export default function PlaceRecommendationList({
   } = usePlaces();
 
   const [selectedTab, setSelectedTab] = useState<PlaceTab>('관광지');
-  const [searchQuery, setSearchQuery] = useState('');
   const [customPlaceName, setCustomPlaceName] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-  const normalizedSearchQuery = searchQuery.trim();
-  const isSearchReady =
-    selectedTab === '검색' && normalizedSearchQuery.length >= 2;
 
   // Reset pet friendly filter on mount
   useEffect(() => {
@@ -336,39 +322,6 @@ export default function PlaceRecommendationList({
     }
   }, [planId, travelId, isRefreshing, fetchAllRecommendations]);
 
-
-  // ─── Debounced search ───
-  const handleSearchSubmit = useCallback(() => {
-    if (!normalizedSearchQuery || normalizedSearchQuery.length < 2) {
-      return;
-    }
-    const fullQuery = destination
-      ? `${destination} ${normalizedSearchQuery}`
-      : normalizedSearchQuery;
-    doSearchPlaces(planId, fullQuery);
-    setSelectedTab('검색');
-  }, [normalizedSearchQuery, destination, planId, doSearchPlaces]);
-
-  const handleSearchTextChange = useCallback(
-    (text: string) => {
-      setSearchQuery(text);
-
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-
-      if (text.trim().length >= 2) {
-        debounceRef.current = setTimeout(() => {
-          const fullQuery = destination
-            ? `${destination} ${text.trim()}`
-            : text.trim();
-          doSearchPlaces(planId, fullQuery);
-          setSelectedTab('검색');
-        }, 400);
-      }
-    },
-    [destination, planId, doSearchPlaces],
-  );
 
   const handleDirectAdd = useCallback(() => {
     const trimmedName = customPlaceName.trim();
@@ -393,14 +346,6 @@ export default function PlaceRecommendationList({
     setCustomPlaceName('');
   }, [customPlaceName, destination, onAddPlace]);
 
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-    };
-  }, []);
-
   // ─── Data ───
   const getTabData = (): PlaceVO[] => {
     let rawData: PlaceVO[] = [];
@@ -413,9 +358,6 @@ export default function PlaceRecommendationList({
         break;
       case '식당':
         rawData = restaurant;
-        break;
-      case '검색':
-        rawData = isSearchReady ? search : [];
         break;
       default:
         rawData = [];
@@ -440,8 +382,6 @@ export default function PlaceRecommendationList({
         return lodgingHasNext;
       case '식당':
         return restaurantHasNext;
-      case '검색':
-        return isSearchReady ? searchNext.length > 0 : false;
       default:
         return false;
     }
@@ -452,7 +392,9 @@ export default function PlaceRecommendationList({
 
   const handleLoadMore = useCallback(() => {
     if (!hasMoreData || isLoading) return;
-    loadMorePlaces(TAB_TO_PLACES_FIELD[selectedTab]);
+    const field = TAB_TO_PLACES_FIELD[selectedTab];
+    if (!field) return;
+    loadMorePlaces(field);
   }, [hasMoreData, isLoading, loadMorePlaces, selectedTab]);
 
   // ─── Map modal state ───
@@ -565,8 +507,7 @@ export default function PlaceRecommendationList({
   const renderEmpty = useCallback(() => {
     if (isLoading) return null;
 
-    // 서버에 키워드 검색 엔드포인트가 아직 없어 결과가 비어 있다.
-    // 검색어를 넣었는데 아무 설명 없이 빈 화면이면 앱 오류로 보이므로 상태를 밝힌다.
+    // 서버에 키워드 검색 엔드포인트가 없다. 입력란 없이 상태만 알린다.
     if (selectedTab === '검색') {
       return (
         <View style={plStyles.emptyContainer}>
@@ -617,44 +558,10 @@ export default function PlaceRecommendationList({
   }, [isLoading, selectedTab]);
 
   const renderHeader = useCallback(() => {
+    // 검색 탭: 입력란을 두면 아무 일도 일어나지 않아 오작동으로 보인다.
+    // 안내(renderEmpty)만 남긴다.
     if (selectedTab === '검색') {
-      return (
-        <View style={plStyles.searchContainer}>
-          <View style={plStyles.searchField}>
-            <FontAwesomeIcon
-              icon={faMagnifyingGlass}
-              size={16}
-              color="#9CA3AF"
-            />
-            <TextInput
-              value={searchQuery}
-              onChangeText={handleSearchTextChange}
-              onSubmitEditing={handleSearchSubmit}
-              placeholder="장소를 입력하세요 (2글자 이상)"
-              placeholderTextColor="#9CA3AF"
-              returnKeyType="search"
-              style={plStyles.searchInput}
-              autoCorrect={false}
-              autoCapitalize="none"
-            />
-          </View>
-          <TouchableOpacity
-            style={[
-              plStyles.searchActionButton,
-              !normalizedSearchQuery || normalizedSearchQuery.length < 2
-                ? plStyles.searchActionButtonDisabled
-                : plStyles.searchActionButtonActive,
-            ]}
-            onPress={handleSearchSubmit}
-            disabled={
-              !normalizedSearchQuery || normalizedSearchQuery.length < 2
-            }
-            activeOpacity={0.85}
-          >
-            <Text style={plStyles.searchActionButtonText}>검색</Text>
-          </TouchableOpacity>
-        </View>
-      );
+      return null;
     }
 
     if (selectedTab === '직접 추가') {
@@ -691,7 +598,7 @@ export default function PlaceRecommendationList({
     }
 
     return null;
-  }, [selectedTab, searchQuery, normalizedSearchQuery, customPlaceName, handleSearchTextChange, handleSearchSubmit, handleDirectAdd]);
+  }, [selectedTab, customPlaceName, handleDirectAdd]);
 
   return (
     <View style={plStyles.container}>
@@ -865,9 +772,6 @@ const plStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 14,
-  },
-  searchActionButtonActive: {
-    backgroundColor: '#1344FF',
   },
   searchActionButtonPurple: {
     backgroundColor: '#8B5CF6',

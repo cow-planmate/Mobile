@@ -15,5 +15,5 @@ const finalConfig = mergeConfig(defaultConfig, config);
 
 module.exports = withStorybook(finalConfig, {
   enabled: true,
-  configPath: './.storybook',
+  configPath: './.rnstorybook',
 });

@@ -10,11 +10,17 @@ import {
 } from 'react-native';
 import { X } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
+import {
+  CollaborationRequestType,
+  describeCollaborationRequest,
+} from '../../utils/collaborationRequest';
 
 export interface Invitation {
   requestId: number;
   senderNickname: string;
   planName: string;
+  /** INVITE(초대받음) / REQUEST(편집 권한 요청받음). 없으면 초대로 본다. */
+  type?: CollaborationRequestType;
 }
 
 interface NotificationModalProps {
@@ -71,7 +77,7 @@ const NotificationModal = ({
                       </Text>
                       님이{' '}
                       <Text style={styles.highlight}>{invite.planName}</Text>{' '}
-                      일정에 초대했습니다.
+                      {describeCollaborationRequest(invite.type)}
                     </Text>
                   </View>
                   <View style={styles.buttonContainer}>

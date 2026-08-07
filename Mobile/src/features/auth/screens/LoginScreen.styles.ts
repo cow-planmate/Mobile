@@ -1,4 +1,5 @@
 import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
+import { RADIUS } from '../authTokens';
 
 export const { width } = Dimensions.get('window');
 export const normalize = (size: number) =>
@@ -27,9 +28,21 @@ export const FONTS = {
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    padding: normalize(24),
     backgroundColor: COLORS.white,
+  },
+  /**
+   * 키보드가 뜨면 화면이 줄어든다. 스크롤이 없으면 아래쪽(소셜 로그인·회원가입
+   * 링크)에 손이 닿지 않으므로 스크롤 안에 담고, 여유가 있을 때만 세로 가운데
+   * 정렬이 되도록 flexGrow로 늘린다.
+   */
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: normalize(24),
+    paddingVertical: normalize(24),
   },
   title: {
     fontSize: normalize(32),
@@ -45,24 +58,19 @@ export const styles = StyleSheet.create({
     width: '100%',
     marginBottom: normalize(14),
   },
+  /**
+   * 테두리 굵기를 상태와 무관하게 1.5로 고정한다. 포커스될 때만 굵어지면
+   * 박스 크기가 함께 바뀌어 입력 중에 글자가 흔들린다.
+   */
   inputContainer: {
     width: '100%',
-    minHeight: normalize(68),
-    borderWidth: 1,
+    minHeight: normalize(52),
+    borderWidth: 1.5,
     borderColor: COLORS.border,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     paddingHorizontal: normalize(16),
-    paddingVertical: normalize(10),
     backgroundColor: COLORS.white,
     justifyContent: 'center',
-  },
-  label: {
-    fontSize: normalize(11),
-    color: COLORS.textSecondary,
-    marginBottom: normalize(2),
-    fontFamily: FONTS.medium,
-    fontWeight: '500',
-    lineHeight: normalize(16),
   },
   input: {
     width: '100%',
@@ -73,21 +81,16 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
     padding: 0,
     includeFontPadding: false,
-    height: normalize(28),
-  },
-  /** 입력값이 유효하지 않을 때의 테두리 강조. 정의가 없어 적용되지 않았다. */
-  inputError: {
-    borderColor: COLORS.error,
-    borderWidth: 1,
+    height: normalize(24),
   },
   passwordContainer: {
     width: '100%',
-    minHeight: normalize(68),
-    borderWidth: 1,
+    minHeight: normalize(52),
+    borderWidth: 1.5,
     borderColor: COLORS.border,
-    borderRadius: 8,
-    paddingHorizontal: normalize(16),
-    paddingVertical: normalize(10),
+    borderRadius: RADIUS.md,
+    paddingLeft: normalize(16),
+    paddingRight: normalize(4),
     backgroundColor: COLORS.white,
     flexDirection: 'row',
     alignItems: 'center',
@@ -105,77 +108,68 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
     padding: 0,
     includeFontPadding: false,
-    height: normalize(28),
+    height: normalize(24),
   },
-  passwordToggleText: {
-    color: COLORS.textSecondary,
-    fontSize: normalize(14),
-    fontFamily: FONTS.semibold,
-    fontWeight: '600',
-    lineHeight: normalize(20),
-  },
-  inputFocused: {
-    borderColor: COLORS.primary,
-    borderWidth: 2.5,
-  },
-  submitButton: {
-    width: '100%',
-    height: normalize(52),
-    borderRadius: 8,
-    justifyContent: 'center',
+  /** 아이콘 전용 버튼은 48dp를 채운다 (Material / One UI 최소 터치 영역) */
+  eyeButton: {
+    width: normalize(48),
+    height: normalize(48),
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+  },
+
+  /* ── 인라인 오류 ── */
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: normalize(6),
+    marginTop: normalize(8),
+    paddingHorizontal: normalize(2),
+  },
+  errorIcon: {
+    marginTop: normalize(2),
+  },
+  errorText: {
+    flex: 1,
+    color: COLORS.error,
+    fontSize: normalize(13),
+    fontFamily: FONTS.medium,
+    fontWeight: '500',
+    lineHeight: normalize(18),
+  },
+
+  /** 버튼 자체는 AuthSubmitButton이 그린다. 여기서는 간격만 준다. */
+  submitButtonSpacing: {
     marginTop: normalize(24),
-  },
-  submitButtonDisabled: {
-    backgroundColor: COLORS.darkGray,
-  },
-  submitButtonText: {
-    fontSize: normalize(17),
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-    lineHeight: normalize(22),
-    color: COLORS.white,
-    letterSpacing: 0.2,
   },
   linksContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
-    marginTop: normalize(28),
-    gap: normalize(24),
-  },
-  separatorWrapper: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-  },
-  separator: {
-    color: COLORS.darkGray,
-    fontSize: normalize(14),
-    fontFamily: FONTS.regular,
-    fontWeight: '400',
-    lineHeight: normalize(18),
+    marginTop: normalize(20),
   },
   linkButton: {
-    paddingVertical: normalize(6),
-    paddingHorizontal: normalize(12),
-    borderRadius: 8,
+    paddingVertical: normalize(13),
+    paddingHorizontal: normalize(8),
   },
   linkText: {
-    color: COLORS.darkGray,
+    color: COLORS.textSecondary,
     fontSize: normalize(14),
     fontFamily: FONTS.medium,
     fontWeight: '500',
     lineHeight: normalize(18),
   },
+  linkTextStrong: {
+    color: COLORS.primary,
+    fontFamily: FONTS.bold,
+    fontWeight: '700',
+  },
 
   /* ── Social Login ── */
   socialContainer: {
     width: '100%',
-    marginTop: normalize(20),
-    marginBottom: normalize(12),
+    marginTop: normalize(12),
     alignItems: 'center',
   },
   socialDivider: {
@@ -195,48 +189,84 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     fontWeight: '500',
     lineHeight: normalize(16),
-    color: COLORS.darkGray,
+    color: COLORS.textSecondary,
   },
   socialButtons: {
-    flexDirection: 'row',
-    gap: normalize(20),
+    width: '100%',
+    gap: normalize(10),
   },
+  /** One UI 최소 터치 높이(48dp)보다 여유를 둬 라벨과 배지가 눌리기 편하게 한다 */
   socialButton: {
-    width: normalize(48),
-    height: normalize(48),
-    borderRadius: normalize(24),
+    width: '100%',
+    minHeight: normalize(52),
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.white,
+    paddingHorizontal: normalize(16),
+    gap: normalize(10),
+  },
+  socialButtonText: {
+    fontSize: normalize(15),
+    fontFamily: FONTS.medium,
+    fontWeight: '500',
+    lineHeight: normalize(20),
+    color: COLORS.text,
+  },
+  /** 라벨 중앙 정렬을 깨지 않도록 버튼 오른쪽에 절대 위치로 얹는다 */
+  lastUsedBadge: {
+    position: 'absolute',
+    right: normalize(12),
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.full,
+    paddingHorizontal: normalize(8),
+    paddingVertical: normalize(3),
+  },
+  lastUsedBadgeText: {
+    fontSize: normalize(11),
+    fontFamily: FONTS.medium,
+    fontWeight: '500',
+    lineHeight: normalize(14),
+    color: COLORS.primary,
   },
 
   /* ── Privacy Policy Link ── */
+  privacyLinkButton: {
+    alignSelf: 'center',
+    marginTop: normalize(20),
+    paddingVertical: normalize(12),
+    paddingHorizontal: normalize(12),
+  },
   privacyLinkText: {
     fontSize: normalize(12),
     fontFamily: FONTS.regular,
     fontWeight: '400',
     lineHeight: normalize(16),
-    color: COLORS.darkGray,
+    color: COLORS.textSecondary,
     textDecorationLine: 'underline',
     textAlign: 'center',
-    marginBottom: normalize(4),
   },
 
   /* ── Privacy Policy Modal ── */
   privacyOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: normalize(16),
   },
+  /** 배경 어둡게. 모달을 감싸지 않고 뒤에 깔린다. */
+  privacyBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
   privacyModal: {
     width: '100%',
-    maxHeight: '80%',
+    height: '80%',
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: RADIUS.lg,
     padding: normalize(20),
   },
   privacyHeader: {
@@ -252,7 +282,15 @@ export const styles = StyleSheet.create({
     lineHeight: normalize(24),
     color: COLORS.text,
   },
+  privacyCloseIcon: {
+    width: normalize(48),
+    height: normalize(48),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: normalize(-10),
+  },
   privacyScroll: {
+    flex: 1,
     marginBottom: normalize(16),
   },
   privacySectionTitle: {
@@ -270,22 +308,48 @@ export const styles = StyleSheet.create({
     fontWeight: '400',
     color: COLORS.textSecondary,
     lineHeight: normalize(18),
-    marginBottom: normalize(3),
+    marginBottom: normalize(4),
     paddingLeft: normalize(4),
   },
   privacyCloseButton: {
     height: normalize(52),
     width: '100%',
     backgroundColor: COLORS.primary,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   privacyCloseButtonText: {
-    fontSize: normalize(15),
+    fontSize: normalize(16),
     fontFamily: FONTS.bold,
-    fontWeight: '700',
-    lineHeight: normalize(20),
+    fontWeight: '600',
+    lineHeight: normalize(24),
     color: COLORS.white,
+  },
+
+  /* ── SNS WebView ── */
+  snsContainer: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+  },
+  snsHeader: {
+    height: normalize(52),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingHorizontal: normalize(8),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  snsCloseButton: {
+    width: normalize(48),
+    height: normalize(48),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  snsLoading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

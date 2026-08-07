@@ -22,6 +22,13 @@ import {
 import { AirplaneLoading } from '../../../components/common';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
 import { formatDateLocal } from '../../../utils/timeUtils';
+import {
+  CollaborationRequestResult,
+  describeAcceptResult,
+  describeRejectResult,
+  describeRequestResultMessage,
+  describeRequestResultTitle,
+} from '../../../utils/collaborationRequest';
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
 /**
@@ -104,9 +111,27 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     }, [fetchPendingRequests]),
   );
 
+  /**
+   * 내가 보낸 초대·편집 권한 요청이 처리된 결과.
+   *
+   * 서버가 결과를 보관하지 않아 나중에 조회할 방법이 없다. 이벤트를 받은
+   * 그 자리에서 알리고, 놓치면 그대로 사라진다(FCM 푸시로 한 번 더 온다).
+   */
+  const handleRequestResult = useCallback(
+    (result: CollaborationRequestResult) => {
+      showAlert({
+        title: describeRequestResultTitle(result),
+        message: describeRequestResultMessage(result),
+        type: result.status === 'ACCEPTED' ? 'success' : 'info',
+      });
+    },
+    [showAlert],
+  );
+
   useInvitationSse({
     enabled: !!user,
     onInvitationEvent: () => fetchPendingRequests(),
+    onRequestResult: handleRequestResult,
   });
 
   useFcmNotifications({
@@ -136,10 +161,15 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
 
 
+  /** 알림 문구는 초대/편집 권한 요청에 따라 달라지므로 목록에서 종류를 찾는다. */
+  const findRequestType = (requestId: number) =>
+    pendingRequests.find(r => r.requestId === requestId)?.type;
+
   const handleAccept = async (requestId: number) => {
+    const type = findRequestType(requestId);
     try {
       await acceptInvitation(requestId);
-      showAlert({ title: '수락 완료', message: '일정에 참여했습니다.' });
+      showAlert({ title: '수락 완료', message: describeAcceptResult(type) });
       setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
@@ -150,9 +180,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   };
 
   const handleReject = async (requestId: number) => {
+    const type = findRequestType(requestId);
     try {
       await rejectInvitation(requestId);
-      showAlert({ title: '거절 완료', message: '초대를 거절했습니다.' });
+      showAlert({ title: '거절 완료', message: describeRejectResult(type) });
       setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
@@ -238,12 +269,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
       const result = await createFullPlanMutation.mutateAsync({
         planFrame: {
-          planName: `${destination} 여행`,
-          departure: 'SEOUL',
           destinationId: travelId,
-          travelId: travelId,
           transportationType: transport === '자동차' ? 'PRIVATE' : 'PUBLIC',
-          transportationCategoryId: transport === '자동차' ? 1 : 0,
           adultCount: adults ?? 1,
           childCount: children ?? 0,
         },

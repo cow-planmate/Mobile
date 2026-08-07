@@ -1,6 +1,10 @@
 import axios from 'axios';
 import { WEB_URL } from '@env';
 import { resolveApiUrl } from '../utils/apiUrl';
+import {
+  CollaborationRequestType,
+  normalizeCollaborationRequestType,
+} from '../utils/collaborationRequest';
 
 // ────────────────────────────────────────────────
 // 타입 정의
@@ -24,10 +28,9 @@ export interface PlaceVO {
   copyrightDivCd?: string;
 }
 
-/** 장소 목록 조회 응답 */
+/** 장소 목록 조회 응답 (GET /api/place는 page/size 기반 페이징만 지원한다) */
 export interface PlacesResponse {
   places: PlaceVO[];
-  nextPageTokens?: string[];
   totalCount?: number;
   page?: number;
   size?: number;
@@ -90,31 +93,20 @@ export interface PlanFrameVO {
   transportationCategoryId: number;
 }
 
-/** 일정 생성 요청 페이로드 */
-export interface CreatePlanPayload {
-  departure: string;
-  travelId: number;
-  dates: string[];
-  adultCount: number;
-  childCount: number;
-  transportation: number;
-}
-
-/** 전체 일정 저장 페이로드 */
+/**
+ * 전체 일정 저장 페이로드.
+ *
+ * planFrame은 서버 PlanFrameDto와 같은 네 필드뿐이다. 일정 이름은 생성 시
+ * 목적지명으로 정해지므로 여기서 보낼 수 없고, 필요하면 PATCH /name으로 바꾼다.
+ */
 export interface FullPlanPayload {
   planFrame: {
-    destinationId?: number;
-    travelId?: number;
-    transportationType?: 'PUBLIC' | 'PRIVATE';
-    transportationCategoryId?: number;
+    destinationId: number;
+    transportationType: 'PUBLIC' | 'PRIVATE';
     adultCount: number;
     childCount: number;
-    planId?: string;
-    planName?: string;
-    departure?: string;
   };
   timetables: {
-    timetableId?: number;
     date: string;
     timeTableStartTime: string;
     timeTableEndTime: string;
@@ -127,29 +119,12 @@ export interface FullPlanPayload {
 // ────────────────────────────────────────────────
 
 /**
- * 신규 일정 생성
- * @param payload 일정 생성 데이터
- */
-export async function createPlan(
-  payload: CreatePlanPayload,
-): Promise<{ planId: string }> {
-  const response = await axios.post(resolveApiUrl(`/api/plan`), payload);
-  return response.data;
-}
-
-/**
- * 전체 일정 생성 및 저장 (비로그인 저장 포함)
+ * 전체 일정 생성 및 저장
  * @param payload 전체 일정 데이터
  */
 export async function createFullPlan(
   payload: FullPlanPayload,
 ): Promise<{ planId: string }> {
-  const destinationId =
-    payload.planFrame.destinationId ?? payload.planFrame.travelId ?? 1;
-  const transportationType =
-    payload.planFrame.transportationType ??
-    (payload.planFrame.transportationCategoryId === 1 ? 'PRIVATE' : 'PUBLIC');
-
   const categoryMap: Record<number | string, string> = {
     0: 'ATTRACTION',
     1: 'ACCOMMODATION',
@@ -165,16 +140,10 @@ export async function createFullPlan(
 
   const formattedPayload = {
     planFrame: {
-      destinationId,
-      travelId: destinationId,
-      transportationType,
-      transportationCategoryId:
-        payload.planFrame.transportationCategoryId ??
-        (transportationType === 'PRIVATE' ? 1 : 0),
+      destinationId: payload.planFrame.destinationId,
+      transportationType: payload.planFrame.transportationType,
       adultCount: payload.planFrame.adultCount ?? 1,
       childCount: payload.planFrame.childCount ?? 0,
-      departure: payload.planFrame.departure || 'SEOUL',
-      planName: payload.planFrame.planName || '나의 일정',
     },
     timetables: payload.timetables || [],
     timetablePlaceBlocks: (payload.timetablePlaceBlocks || []).map(
@@ -273,73 +242,32 @@ export const fetchLodgingPlaces = (destinationId: number, page: number = 1, size
 /** 음식점 추천 목록 조회 */
 export const fetchRestaurantPlaces = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlaces(destinationId, 'restaurant', page, size);
 
-/** 카테고리별 추천 장소 목록 조회 (비인증) */
-export async function fetchCategoryPlacesNoAuth(
-  categoryType: 'tour' | 'lodging' | 'restaurant',
-  destinationId: number,
-  page: number = 1,
-  size: number = 20,
-): Promise<PlacesResponse> {
-  return fetchCategoryPlaces(destinationId, categoryType, page, size);
-}
-
-/** 관광지 추천 목록 조회 (비인증) */
-export const fetchTourPlacesNoAuth = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlacesNoAuth('tour', destinationId, page, size);
-
-/** 숙소 추천 목록 조회 (비인증) */
-export const fetchLodgingPlacesNoAuth = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlacesNoAuth('lodging', destinationId, page, size);
-
-/** 음식점 추천 목록 조회 (비인증) */
-export const fetchRestaurantPlacesNoAuth = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlacesNoAuth('restaurant', destinationId, page, size);
-
-// ────────────────────────────────────────────────
-// 장소 검색 및 페이징 API
-// ────────────────────────────────────────────────
-
 /**
- * 일정 내 장소 검색
- * @param planId 일정 ID
- * @param query 검색어
+ * 비인증용 별칭.
+ *
+ * GET /api/place는 인증을 선택으로 받으므로(@AuthenticationPrincipal
+ * errorOnInvalidType = false) 요청이 인증 여부와 상관없이 같다. 호출부 이름만
+ * 남겨 두고 실제 동작은 위 함수들과 동일하다.
  */
-export async function searchPlaces(
-  planId: string,
-  query: string,
-): Promise<PlacesResponse> {
-  const response = await axios.get(
-    `/api/plan/${planId}/place/${encodeURIComponent(query)}`,
-  );
-  return response.data;
-}
-
-/**
- * 장소 검색 (비인증 / 일정 ID 미선택)
- * @param query 검색어
- */
-export async function searchPlacesNoAuth(
-  query: string,
-): Promise<PlacesResponse> {
-  const response = await axios.get(
-    `/api/plan/place/${encodeURIComponent(query)}`,
-  );
-  return response.data;
-}
-
-/**
- * 다음 페이지 장소 목록 추가 조회
- * @param nextPageTokens 페이징 토큰 배열
- */
-export async function fetchNextPlaces(
-  nextPageTokens: string[],
-): Promise<PlacesResponse> {
-  const response = await axios.post(`/api/plan/nextplace`, {
-    nextPageTokens,
-  });
-  return response.data;
-}
+export const fetchTourPlacesNoAuth = fetchTourPlaces;
+export const fetchLodgingPlacesNoAuth = fetchLodgingPlaces;
+export const fetchRestaurantPlacesNoAuth = fetchRestaurantPlaces;
 
 // ────────────────────────────────────────────────
 // 날씨 정보 API
 // ────────────────────────────────────────────────
+
+/**
+ * 날씨 데이터의 출처.
+ *
+ * 여행일이 예보 범위(오늘+15일)를 넘으면 서버가 작년 같은 기간의 실측치로,
+ * 외부 API 호출 자체가 실패하면 계절 평균으로 대체한다. 둘 다 예보가 아니므로
+ * 예보처럼 보여주면 안 된다.
+ */
+export type WeatherDataSource =
+  | 'FORECAST'
+  | 'LAST_YEAR_ACTUAL'
+  | 'SEASONAL_AVERAGE';
 
 /**
  * 일자별 날씨 요약 정보.
@@ -352,8 +280,8 @@ export interface SimpleWeatherInfo {
   tempMin: number;
   tempMax: number;
   feelsLike: number;
-  /** 실측/예보 등 데이터 출처 구분 (서버가 내려주는 경우에만) */
-  dataSource?: string;
+  /** 서버는 항상 채워 보낸다. 구버전 응답 대비로만 optional. */
+  dataSource?: WeatherDataSource;
 }
 
 /** 날씨 정보 응답 객체 */
@@ -470,14 +398,19 @@ export async function leaveAsEditor(planId: string): Promise<void> {
   await axios.delete(resolveApiUrl(`/api/plan/${planId}/editor/me`));
 }
 
-/** 대기 중인 초대 요청 인터페이스 */
+/**
+ * 대기 중인 협업 요청.
+ *
+ * type이 INVITE면 내가 남의 일정에 초대받은 것이고, REQUEST면 내 일정의
+ * 편집 권한을 요청받은 것이라 수락/거절의 의미가 반대다.
+ */
 export interface PendingInvitation {
   requestId: number;
   senderId: number;
   senderNickname: string;
   planId: string;
   planName: string;
-  type: string;
+  type: CollaborationRequestType;
 }
 
 /** 대기 중인 초대 목록 조회 */
@@ -492,7 +425,7 @@ export async function getPendingInvitations(): Promise<PendingInvitation[]> {
     senderNickname: item.senderNickname,
     planId: item.planId,
     planName: item.planName,
-    type: item.type,
+    type: normalizeCollaborationRequestType(item.type),
   })) as PendingInvitation[];
 }
 

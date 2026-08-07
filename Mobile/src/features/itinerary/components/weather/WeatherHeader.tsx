@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import WeatherIcon from './WeatherIcon';
-import { SimpleWeatherInfo } from '../../../../api/trips';
+import { SimpleWeatherInfo, WeatherDataSource } from '../../../../api/trips';
 import { theme } from '../../../../theme/theme';
 import LinearGradient from 'react-native-linear-gradient';
 
@@ -11,12 +11,28 @@ interface WeatherHeaderProps {
   appearance?: 'default' | 'overlay';
 }
 
+/**
+ * 예보가 아닌 데이터일 때 붙일 꼬리표.
+ *
+ * 여행일이 예보 범위(오늘+15일)를 넘으면 서버가 작년 같은 기간 실측치를,
+ * 외부 API 실패 시에는 계절 평균을 내려준다. 아무 표시 없이 예보처럼 보여주면
+ * 두 달 뒤 일정을 짜는 사용자가 추정치를 예보로 오해한다.
+ */
+const DATA_SOURCE_LABELS: Record<WeatherDataSource, string | null> = {
+  FORECAST: null,
+  LAST_YEAR_ACTUAL: '작년 같은 기간 기록',
+  SEASONAL_AVERAGE: '계절 평균 추정',
+};
+
 export default function WeatherHeader({
   dayNumber,
   weather,
   appearance = 'default',
 }: WeatherHeaderProps) {
   const isOverlay = appearance === 'overlay';
+  const dataSourceLabel = weather.dataSource
+    ? DATA_SOURCE_LABELS[weather.dataSource]
+    : null;
 
   return (
     <View style={[styles.container, isOverlay && styles.containerOverlay]}>
@@ -44,6 +60,11 @@ export default function WeatherHeader({
             >
               {weather.description}
             </Text>
+            {dataSourceLabel && (
+              <Text style={styles.dataSourceText} numberOfLines={1}>
+                {dataSourceLabel}
+              </Text>
+            )}
           </View>
         </View>
         <View style={styles.rightSection}>
@@ -131,6 +152,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: theme.colors.text,
+  },
+  dataSourceText: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+    marginTop: 1,
   },
   rightSection: {
     flexDirection: 'row',

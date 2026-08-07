@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import FastImage from 'react-native-fast-image';
-import { Linking } from 'react-native';
 import { X, Map as MapIcon } from 'lucide-react-native';
+import { openExternalUrl } from '../../../utils/externalLink';
 import { theme } from '../../../theme/theme';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CATEGORY_COLORS } from './TimelineItem.styles';
@@ -107,14 +107,18 @@ export default function PlaceEditModal({
     onClose();
   };
 
-  /** 외부 지도 앱으로 연다. place_url이 있으면 그것을, 없으면 좌표를 쓴다. */
+  /**
+   * 외부 지도 앱으로 연다. place_url이 있으면 그것을, 없으면 좌표를 쓴다.
+   *
+   * place_url은 외부 장소 API에서 온 값이라 웹 링크인지 확인하고 연다.
+   * 웹 링크가 아니면 좌표로 대신 연다.
+   */
   const handleOpenMap = () => {
-    if (place.place_url) {
-      void Linking.openURL(place.place_url);
+    if (openExternalUrl(place.place_url)) {
       return;
     }
     if (place.latitude && place.longitude) {
-      void Linking.openURL(
+      openExternalUrl(
         `https://maps.google.com/?q=${place.latitude},${place.longitude}`,
       );
     }

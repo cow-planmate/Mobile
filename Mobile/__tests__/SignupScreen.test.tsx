@@ -43,6 +43,37 @@ jest.mock('react-native-toast-message', () => ({
   show: jest.fn(),
 }));
 
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 44, left: 0, right: 0, bottom: 34 }),
+}));
+
+jest.mock('react-native-reanimated', () => {
+  const React = require('react');
+  const View = ({ children, ...rest }: any) =>
+    React.createElement('View', rest, children);
+  // entering/exiting은 .duration()을 체이닝하므로 자기 자신을 돌려준다.
+  const animation: any = {};
+  animation.duration = () => animation;
+  return {
+    __esModule: true,
+    default: {
+      View,
+      // PressableScale이 Pressable을 감싸 쓴다. 목에서는 원본을 그대로 돌려준다.
+      createAnimatedComponent: (Component: any) => Component,
+    },
+    useSharedValue: (value: any) => ({ value }),
+    useAnimatedStyle: (fn: any) => fn(),
+    withTiming: (value: any) => value,
+    withSpring: (value: any) => value,
+    interpolateColor: (_v: any, _in: any, output: any[]) => output[0],
+    Easing: { out: () => () => 0, quad: () => 0 },
+    FadeInDown: animation,
+    FadeOut: animation,
+    FadeInRight: animation,
+    FadeInLeft: animation,
+  };
+});
+
 describe('SignupScreen components & agreement validation', () => {
   beforeAll(() => {
     jest.useFakeTimers();
@@ -64,7 +95,7 @@ describe('SignupScreen components & agreement validation', () => {
     expect(renderer).toBeDefined();
   });
 
-  it('renders SignupScreenView step 4 with agreement checkbox correctly', () => {
+  it('renders SignupScreenView step 3 with agreement checkbox correctly', () => {
     const form = {
       email: 'test@example.com',
       verificationCode: '123456',
@@ -72,17 +103,14 @@ describe('SignupScreen components & agreement validation', () => {
       confirmPassword: 'password123!',
       nickname: '닉네임',
       gender: 'male',
-      age: '25',
+      birthdate: '2000-01-01',
     };
 
     const mockOnChange = jest.fn();
     const mockOnSendEmail = jest.fn();
-    const mockOnVerifyCode = jest.fn();
-    const mockOnCheckNickname = jest.fn();
-    const mockOnSignup = jest.fn();
+    const mockOnEditEmail = jest.fn();
     const mockOnNextStep = jest.fn();
     const mockOnPrevStep = jest.fn();
-    const mockOnResetEmail = jest.fn();
     const mockSetFocusedField = jest.fn();
     const mockSetIsPasswordVisible = jest.fn();
     const mockSetIsConfirmPasswordVisible = jest.fn();
@@ -93,31 +121,34 @@ describe('SignupScreen components & agreement validation', () => {
     ReactTestRenderer.act(() => {
       view = ReactTestRenderer.create(
         <SignupScreenView
-          step={4}
-          totalSteps={4}
+          step={3}
+          totalSteps={3}
           form={form}
+          errors={{}}
+          focusSeq={0}
           isPasswordVisible={false}
           isConfirmPasswordVisible={false}
-          isLoading={false}
+          isSendingEmail={false}
+          isVerifying={false}
+          isSubmitting={false}
+          isEmailFormatValid={true}
           showVerificationInput={false}
           isEmailVerified={true}
-          isNicknameVerified={true}
-          isEmailDuplicate={false}
+          isCodeExpired={false}
+          resendCooldown={0}
+          nicknameStatus="available"
           focusedField={null}
           timeLeft={300}
           passwordRequirements={{ hasMinLength: true, hasCombination: true }}
           isPasswordMatch={true}
-          isNextButtonEnabled={false} // Initially false if not agreed
+          isNextEnabled={false} // 동의 전이므로 아직 false
           isAgreed={false}
           onChangeAgreement={mockOnChangeAgreement}
           onChange={mockOnChange}
           onSendEmail={mockOnSendEmail}
-          onVerifyCode={mockOnVerifyCode}
-          onCheckNickname={mockOnCheckNickname}
-          onSignup={mockOnSignup}
+          onEditEmail={mockOnEditEmail}
           onNextStep={mockOnNextStep}
           onPrevStep={mockOnPrevStep}
-          onResetEmail={mockOnResetEmail}
           setFocusedField={mockSetFocusedField}
           setIsPasswordVisible={mockSetIsPasswordVisible}
           setIsConfirmPasswordVisible={mockSetIsConfirmPasswordVisible}

@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   TextInput,
-  SafeAreaView,
   TouchableOpacity,
   ActivityIndicator,
   Modal,
@@ -11,9 +10,15 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
-import { X } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
+import { WebView } from 'react-native-webview';
+import { X, Eye, EyeOff, AlertCircle } from 'lucide-react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
-import { styles, COLORS } from './LoginScreen.styles';
+import { styles, COLORS, normalize } from './LoginScreen.styles';
+import PressableScale from '../components/PressableScale';
+import AuthSubmitButton from '../components/AuthSubmitButton';
+import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
 
 /* ── Inline SVG icons for social login ── */
 
@@ -50,8 +55,6 @@ const NaverIcon = ({ size = 28 }: { size?: number }) => (
 
 /* ── Privacy Policy Modal ── */
 
-import { WebView } from 'react-native-webview';
-
 const PrivacyPolicyModal = ({
   visible,
   onClose,
@@ -59,25 +62,42 @@ const PrivacyPolicyModal = ({
   visible: boolean;
   onClose: () => void;
 }) => (
-  // ... Privacy Modal omitted for brevity, let's keep it ...
   <Modal
     visible={visible}
     transparent
     animationType="fade"
     onRequestClose={onClose}
   >
-    <Pressable style={styles.privacyOverlay} onPress={onClose}>
-      <Pressable style={styles.privacyModal} onPress={e => e.stopPropagation()}>
+    {/*
+      배경을 Pressable로 감싸면 그 Pressable이 터치가 시작되는 순간
+      리스폰더를 가져가 안쪽 ScrollView가 제스처를 늦게 넘겨받는다.
+      감싸지 않고 형제로 깔아 둔다.
+    */}
+    <View style={styles.privacyOverlay}>
+      {/* 닫는 길은 X와 확인 버튼이 이미 읽어 준다. 여기서 또 읽으면 중복이다. */}
+      <Pressable
+        style={styles.privacyBackdrop}
+        onPress={onClose}
+        accessible={false}
+        importantForAccessibility="no"
+      />
+      <View style={styles.privacyModal}>
         <View style={styles.privacyHeader}>
           <Text style={styles.privacyTitle}>개인정보 처리방침</Text>
-          <TouchableOpacity onPress={onClose}>
-            <X size={20} color={COLORS.darkGray} />
+          <TouchableOpacity
+            onPress={onClose}
+            style={styles.privacyCloseIcon}
+            accessibilityRole="button"
+            accessibilityLabel="개인정보 처리방침 닫기"
+          >
+            <X size={20} color={COLORS.textSecondary} />
           </TouchableOpacity>
         </View>
 
         <ScrollView
           style={styles.privacyScroll}
-          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: normalize(12) }}
+          showsVerticalScrollIndicator={true}
         >
           <Text style={styles.privacySectionTitle}>1. 수집·이용 목적</Text>
           <Text style={styles.privacyBullet}>• 회원 관리 및 서비스 제공</Text>
@@ -90,7 +110,7 @@ const PrivacyPolicyModal = ({
             2. 수집하는 개인정보 항목
           </Text>
           <Text style={styles.privacyBullet}>
-            • 필수 항목: 이메일, 비밀번호, 닉네임, 나이, 성별
+            • 필수 항목: 이메일, 비밀번호, 닉네임, 생년월일, 성별
           </Text>
           <Text style={styles.privacyBullet}>
             • SNS 계정 로그인 시: 이메일 주소, 프로필 정보(닉네임, 프로필 이미지
@@ -100,9 +120,7 @@ const PrivacyPolicyModal = ({
           <Text style={styles.privacySectionTitle}>
             3. 개인정보 보유·이용 기간
           </Text>
-          <Text style={styles.privacyBullet}>
-            • 회원 탈퇴 시 지체 없이 파기
-          </Text>
+          <Text style={styles.privacyBullet}>• 회원 탈퇴 시 지체 없이 파기</Text>
           <Text style={styles.privacyBullet}>
             • 단, 관련 법령에 따라 보존이 필요한 경우 해당 기간 동안 보관
           </Text>
@@ -114,16 +132,16 @@ const PrivacyPolicyModal = ({
             • 회원가입 시 필수 항목 동의를 거부할 경우 회원가입이 불가합니다.
           </Text>
           <Text style={styles.privacyBullet}>
-            • 선택 항목은 동의하지 않아도 회원가입은 가능하며, 일부 서비스
-            이용이 제한될 수 있습니다.
+            • 선택 항목은 동의하지 않아도 회원가입은 가능하며, 일부 서비스 이용이
+            제한될 수 있습니다.
           </Text>
 
           <Text style={styles.privacySectionTitle}>
             5. SNS 계정 로그인 관련 안내
           </Text>
           <Text style={styles.privacyBullet}>
-            • 구글 등 외부 SNS 제공자는 OAuth 인증을 통해 로그인 기능만
-            제공하며, 회원님의 비밀번호를 당사에 제공하지 않습니다.
+            • 구글 등 외부 SNS 제공자는 OAuth 인증을 통해 로그인 기능만 제공하며,
+            회원님의 비밀번호를 당사에 제공하지 않습니다.
           </Text>
           <Text style={styles.privacyBullet}>
             • 당사는 SNS 제공자로부터 제공받은 최소한의 정보(이메일, 프로필 정보
@@ -138,193 +156,298 @@ const PrivacyPolicyModal = ({
         <TouchableOpacity style={styles.privacyCloseButton} onPress={onClose}>
           <Text style={styles.privacyCloseButtonText}>확인</Text>
         </TouchableOpacity>
-      </Pressable>
-    </Pressable>
+      </View>
+    </View>
   </Modal>
+);
+
+/* ── 인라인 오류 한 줄 ── */
+
+const InlineError = ({ message }: { message: string }) => (
+  <Animated.View
+    style={styles.errorRow}
+    entering={FadeInDown.duration(180)}
+    exiting={FadeOut.duration(120)}
+    accessibilityLiveRegion="polite"
+  >
+    <AlertCircle
+      size={normalize(15)}
+      color={COLORS.error}
+      style={styles.errorIcon}
+    />
+    <Text style={styles.errorText}>{message}</Text>
+  </Animated.View>
 );
 
 /* ── Props ── */
 
+export interface LoginErrors {
+  email?: string;
+  password?: string;
+  /** 어느 필드에도 귀속되지 않는 오류 (자격 증명 불일치, 네트워크 등) */
+  form?: string;
+}
+
 export interface LoginScreenViewProps {
-  isEmailValid: boolean;
-  isPasswordValid: boolean;
   form: { email: string; password: string };
+  errors: LoginErrors;
+  /** 검증 실패 시 증가한다. 값이 바뀌면 첫 번째 문제 필드로 포커스를 옮긴다. */
+  focusSeq: number;
   isLoading: boolean;
   focused: string | null;
   onChange: (key: 'email' | 'password', value: string) => void;
   onLogin: () => void;
   onFocus: (key: string) => void;
   onBlur: () => void;
-  onClearPassword: () => void;
   onNavigateToSignup: () => void;
   onNavigateToForgotPassword: () => void;
   onGoogleLogin: () => void;
   onNaverLogin: () => void;
+  /** 가장 최근에 로그인을 성공시킨 수단. 해당 버튼에 '마지막 사용' 배지를 띄운다 */
+  lastLoginMethod: 'email' | 'google' | 'naver' | null;
   snsAuthUrl: string | null;
   onSnsClose: () => void;
   onSnsNavigationStateChange: (navState: any) => void;
 }
 
 export const LoginScreenView = ({
-  isEmailValid,
-  isPasswordValid,
   form,
+  errors,
+  focusSeq,
   isLoading,
   focused,
   onChange,
   onLogin,
   onFocus,
   onBlur,
-  onClearPassword,
   onNavigateToSignup,
   onNavigateToForgotPassword,
   onGoogleLogin,
   onNaverLogin,
+  lastLoginMethod,
   snsAuthUrl,
   onSnsClose,
   onSnsNavigationStateChange,
 }: LoginScreenViewProps) => {
+  const insets = useSafeAreaInsets();
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const isButtonEnabled = form.email.length > 0 && form.password.length > 0;
+  const [isPasswordVisible, setPasswordVisible] = useState(false);
+
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+
+  /**
+   * 검증에 걸린 첫 필드로 포커스를 옮긴다.
+   * 오류 객체가 아니라 focusSeq를 보는 이유는, 같은 오류가 다시 나도(같은 값으로
+   * 재시도) 포커스가 움직여야 하기 때문이다.
+   */
+  useEffect(() => {
+    if (focusSeq === 0) return;
+    if (errors.email) emailRef.current?.focus();
+    else if (errors.password) passwordRef.current?.focus();
+    // errors는 focusSeq와 함께 갱신되므로 의존성에 넣지 않는다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusSeq]);
+
+  const fieldState = (
+    invalid: boolean,
+    isFocused: boolean,
+  ): FieldState => (invalid ? 'error' : isFocused ? 'focus' : 'default');
+
+  const emailState = fieldState(
+    !!errors.email || !!errors.form,
+    focused === 'email',
+  );
+  const passwordState = fieldState(
+    !!errors.password || !!errors.form,
+    focused === 'password',
+  );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>로그인</Text>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + normalize(24) },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        <Text style={styles.title}>로그인</Text>
 
-      <View style={styles.inputGroup}>
-        <View
-          style={[
-            styles.inputContainer,
-            focused === 'email' && styles.inputFocused,
-            !isEmailValid && styles.inputError,
-          ]}
-        >
-          <Text style={styles.label}>이메일</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="이메일을 입력하세요"
-            value={form.email}
-            onChangeText={text => onChange('email', text)}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            onFocus={() => onFocus('email')}
-            onBlur={onBlur}
-            editable={!isLoading}
-            placeholderTextColor={COLORS.darkGray}
-          />
-        </View>
-      </View>
-      <View style={styles.inputGroup}>
-        <View
-          style={[
-            styles.passwordContainer,
-            focused === 'password' && styles.inputFocused,
-            !isPasswordValid && styles.inputError,
-          ]}
-        >
-          <View style={styles.passwordContent}>
-            <Text style={styles.label}>비밀번호</Text>
+        <View style={styles.inputGroup}>
+          <AuthFieldBox
+            state={emailState}
+            style={styles.inputContainer}
+            label="이메일"
+          >
             <TextInput
-              style={styles.passwordInput}
-              placeholder="비밀번호를 입력하세요"
-              value={form.password}
-              onChangeText={text => onChange('password', text)}
-              secureTextEntry={true}
+              ref={emailRef}
+              style={styles.input}
+              placeholder="example@email.com"
+              value={form.email}
+              onChangeText={text => onChange('email', text)}
+              keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
-              onFocus={() => onFocus('password')}
+              spellCheck={false}
+              autoComplete="email"
+              importantForAutofill="yes"
+              returnKeyType="next"
+              onSubmitEditing={() => passwordRef.current?.focus()}
+              onFocus={() => onFocus('email')}
               onBlur={onBlur}
               editable={!isLoading}
               placeholderTextColor={COLORS.darkGray}
+              accessibilityLabel="이메일"
             />
-          </View>
-          {form.password.length > 0 && (
-            <TouchableOpacity
-              onPress={onClearPassword}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: 10,
-                backgroundColor: '#C7C7CC',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
+          </AuthFieldBox>
+          {!!errors.email && <InlineError message={errors.email} />}
+        </View>
+
+        <View style={styles.inputGroup}>
+          <AuthFieldBox
+            state={passwordState}
+            style={styles.passwordContainer}
+            label="비밀번호"
+          >
+            <View style={styles.passwordContent}>
+              <TextInput
+                ref={passwordRef}
+                style={styles.passwordInput}
+                value={form.password}
+                onChangeText={text => onChange('password', text)}
+                secureTextEntry={!isPasswordVisible}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="password"
+                importantForAutofill="yes"
+                returnKeyType="go"
+                onSubmitEditing={onLogin}
+                onFocus={() => onFocus('password')}
+                onBlur={onBlur}
+                editable={!isLoading}
+                placeholderTextColor={COLORS.darkGray}
+                accessibilityLabel="비밀번호"
+              />
+            </View>
+            <Pressable
+              style={styles.eyeButton}
+              onPress={() => setPasswordVisible(v => !v)}
+              accessibilityRole="button"
+              accessibilityLabel={
+                isPasswordVisible ? '비밀번호 숨기기' : '비밀번호 표시'
+              }
             >
-              <X size={12} color="#FFFFFF" strokeWidth={3} />
-            </TouchableOpacity>
-          )}
+              {isPasswordVisible ? (
+                <EyeOff size={20} color={COLORS.textSecondary} />
+              ) : (
+                <Eye size={20} color={COLORS.textSecondary} />
+              )}
+            </Pressable>
+          </AuthFieldBox>
+          {!!errors.password && <InlineError message={errors.password} />}
+          {!!errors.form && <InlineError message={errors.form} />}
         </View>
-      </View>
 
-      <TouchableOpacity
-        style={[
-          styles.submitButton,
-          (isLoading || !isButtonEnabled) && styles.submitButtonDisabled,
-        ]}
-        onPress={onLogin}
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <ActivityIndicator color={COLORS.white} />
-        ) : (
-          <Text style={styles.submitButtonText}>로그인</Text>
-        )}
-      </TouchableOpacity>
+        <AuthSubmitButton
+          label="로그인"
+          onPress={onLogin}
+          loading={isLoading}
+          style={styles.submitButtonSpacing}
+        />
 
-      <View style={styles.linksContainer}>
-        <TouchableOpacity
-          onPress={onNavigateToForgotPassword}
-          disabled={isLoading}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={styles.linkText}>비밀번호 찾기</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.separator}>|</Text>
-
-        <TouchableOpacity
-          onPress={onNavigateToSignup}
-          disabled={isLoading}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={styles.linkText}>회원가입</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Social Login */}
-      <View style={styles.socialContainer}>
-        <View style={styles.socialDivider}>
-          <View style={styles.socialDividerLine} />
-          <Text style={styles.socialDividerText}>소셜 계정으로 로그인</Text>
-          <View style={styles.socialDividerLine} />
-        </View>
-        <View style={styles.socialButtons}>
-          <TouchableOpacity
-            style={styles.socialButton}
-            onPress={onGoogleLogin}
+        <View style={styles.linksContainer}>
+          <Pressable
+            style={styles.linkButton}
+            onPress={onNavigateToForgotPassword}
             disabled={isLoading}
+            accessibilityRole="button"
           >
-            <GoogleIcon size={28} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.socialButton}
-            onPress={onNaverLogin}
-            disabled={isLoading}
-          >
-            <NaverIcon size={28} />
-          </TouchableOpacity>
+            <Text style={styles.linkText}>비밀번호를 잊으셨나요?</Text>
+          </Pressable>
         </View>
-      </View>
 
-      {/* Privacy Policy */}
-      <TouchableOpacity
-        onPress={() => setShowPrivacyModal(true)}
-        disabled={isLoading}
-        style={{ marginTop: 24, alignSelf: 'center' }}
-      >
-        <Text style={styles.privacyLinkText}>개인정보 처리방침</Text>
-      </TouchableOpacity>
+        {/* Social Login */}
+        <View style={styles.socialContainer}>
+          <View style={styles.socialDivider}>
+            <View style={styles.socialDividerLine} />
+            <Text style={styles.socialDividerText}>소셜 계정으로 로그인</Text>
+            <View style={styles.socialDividerLine} />
+          </View>
+          <View style={styles.socialButtons}>
+            <PressableScale
+              style={styles.socialButton}
+              baseColor={COLORS.white}
+              pressedColor={COLORS.surface}
+              scaleTo={0.98}
+              onPress={onGoogleLogin}
+              disabled={isLoading}
+              accessibilityRole="button"
+              accessibilityLabel={
+                lastLoginMethod === 'google'
+                  ? 'Google 계정으로 계속하기, 마지막으로 사용한 로그인 수단'
+                  : 'Google 계정으로 계속하기'
+              }
+            >
+              <GoogleIcon size={20} />
+              <Text style={styles.socialButtonText}>Google로 계속하기</Text>
+              {lastLoginMethod === 'google' && (
+                <View style={styles.lastUsedBadge}>
+                  <Text style={styles.lastUsedBadgeText}>마지막 사용</Text>
+                </View>
+              )}
+            </PressableScale>
+            <PressableScale
+              style={styles.socialButton}
+              baseColor={COLORS.white}
+              pressedColor={COLORS.surface}
+              scaleTo={0.98}
+              onPress={onNaverLogin}
+              disabled={isLoading}
+              accessibilityRole="button"
+              accessibilityLabel={
+                lastLoginMethod === 'naver'
+                  ? '네이버 계정으로 계속하기, 마지막으로 사용한 로그인 수단'
+                  : '네이버 계정으로 계속하기'
+              }
+            >
+              <NaverIcon size={20} />
+              <Text style={styles.socialButtonText}>네이버로 계속하기</Text>
+              {lastLoginMethod === 'naver' && (
+                <View style={styles.lastUsedBadge}>
+                  <Text style={styles.lastUsedBadgeText}>마지막 사용</Text>
+                </View>
+              )}
+            </PressableScale>
+          </View>
+        </View>
+
+        <View style={styles.linksContainer}>
+          <Text style={styles.linkText}>계정이 없으신가요?</Text>
+          <Pressable
+            style={styles.linkButton}
+            onPress={onNavigateToSignup}
+            disabled={isLoading}
+            accessibilityRole="button"
+            accessibilityLabel="회원가입"
+          >
+            <Text style={[styles.linkText, styles.linkTextStrong]}>회원가입</Text>
+          </Pressable>
+        </View>
+
+        <Pressable
+          onPress={() => setShowPrivacyModal(true)}
+          disabled={isLoading}
+          style={styles.privacyLinkButton}
+          accessibilityRole="button"
+        >
+          <Text style={styles.privacyLinkText}>개인정보 처리방침</Text>
+        </Pressable>
+      </ScrollView>
 
       <PrivacyPolicyModal
         visible={showPrivacyModal}
@@ -338,10 +461,20 @@ export const LoginScreenView = ({
           animationType="slide"
           onRequestClose={onSnsClose}
         >
-          <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF' }}>
-            <View style={{ height: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#EEE' }}>
-              <TouchableOpacity onPress={onSnsClose}>
-                <X size={24} color={COLORS.darkGray} />
+          <View
+            style={[
+              styles.snsContainer,
+              { paddingTop: insets.top, paddingBottom: insets.bottom },
+            ]}
+          >
+            <View style={styles.snsHeader}>
+              <TouchableOpacity
+                onPress={onSnsClose}
+                style={styles.snsCloseButton}
+                accessibilityRole="button"
+                accessibilityLabel="소셜 로그인 취소"
+              >
+                <X size={24} color={COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
             <WebView
@@ -354,14 +487,14 @@ export const LoginScreenView = ({
                   : 'Mozilla/5.0 (Linux; Android 13; SM-S901B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36'
               }
               renderLoading={() => (
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <View style={styles.snsLoading}>
                   <ActivityIndicator size="large" color={COLORS.primary} />
                 </View>
               )}
             />
-          </SafeAreaView>
+          </View>
         </Modal>
       )}
-    </SafeAreaView>
+    </View>
   );
 };
