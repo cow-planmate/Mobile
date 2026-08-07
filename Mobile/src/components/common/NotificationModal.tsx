@@ -33,10 +33,10 @@ interface NotificationModalProps {
 
 const COLORS = theme.colors;
 const FONTS = {
-  regular: 'Pretendard Variable',
-  medium: 'Pretendard Variable',
-  semibold: 'Pretendard Variable',
-  bold: 'Pretendard Variable',
+  regular: 'Pretendard-Regular',
+  medium: 'Pretendard-Medium',
+  semibold: 'Pretendard-SemiBold',
+  bold: 'Pretendard-Bold',
 };
 
 const NotificationModal = ({

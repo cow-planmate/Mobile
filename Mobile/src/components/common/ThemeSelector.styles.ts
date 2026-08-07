@@ -15,10 +15,10 @@ export const COLORS = {
 };
 
 export const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard-Regular',
+  medium: 'Pretendard-Medium',
+  semibold: 'Pretendard-SemiBold',
+  bold: 'Pretendard-Bold',
 };
 
 export const styles = StyleSheet.create({

@@ -454,14 +454,14 @@ const modalStyles = StyleSheet.create({
   },
   panelTitle: {
     fontSize: 18,
-    fontFamily: 'Pretendard Variable',
+    fontFamily: 'Pretendard-Bold',
     fontWeight: '700',
     color: '#111827',
   },
   panelSubtitle: {
     marginTop: 2,
     fontSize: 12,
-    fontFamily: 'Pretendard Variable',
+    fontFamily: 'Pretendard-Regular',
     color: '#6B7280',
   },
   participantList: {
@@ -493,7 +493,7 @@ const modalStyles = StyleSheet.create({
   participantAvatarText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontFamily: 'Pretendard Variable',
+    fontFamily: 'Pretendard-Bold',
     fontWeight: '700',
   },
   participantInfo: {
@@ -501,14 +501,14 @@ const modalStyles = StyleSheet.create({
   },
   participantName: {
     fontSize: 15,
-    fontFamily: 'Pretendard Variable',
+    fontFamily: 'Pretendard-Bold',
     fontWeight: '700',
     color: '#111827',
   },
   participantStatus: {
     marginTop: 2,
     fontSize: 12,
-    fontFamily: 'Pretendard Variable',
+    fontFamily: 'Pretendard-Regular',
     color: '#6B7280',
   },
   mapContainer: {

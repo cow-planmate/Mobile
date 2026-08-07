@@ -331,7 +331,7 @@ const s = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontFamily: 'Inter_700Bold',
+    fontFamily: 'Pretendard-Bold',
     color: '#111827',
     textAlign: 'center',
     marginBottom: 8,
@@ -339,7 +339,7 @@ const s = StyleSheet.create({
   },
   message: {
     fontSize: 14,
-    fontFamily: 'Inter_400Regular',
+    fontFamily: 'Pretendard-Regular',
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 20,
@@ -372,7 +372,7 @@ const s = StyleSheet.create({
   },
   buttonText: {
     fontSize: 15,
-    fontFamily: 'Inter_600SemiBold',
+    fontFamily: 'Pretendard-SemiBold',
     color: '#111827',
   },
   buttonTextPrimary: {

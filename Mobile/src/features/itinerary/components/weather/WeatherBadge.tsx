@@ -39,7 +39,7 @@ const s = StyleSheet.create({
   },
   tempText: {
     fontSize: 10,
-    fontFamily: 'Inter_500Medium',
+    fontFamily: 'Pretendard-Medium',
     color: '#6B7280',
   },
   tempTextLight: {

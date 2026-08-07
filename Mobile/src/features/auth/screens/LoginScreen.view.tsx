@@ -15,10 +15,13 @@ import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { WebView } from 'react-native-webview';
 import { X, Eye, EyeOff, AlertCircle } from 'lucide-react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
-import { styles, COLORS, normalize } from './LoginScreen.styles';
+import { styles } from './LoginScreen.styles';
+import { COLORS } from '../authTokens';
+import { sf } from '../../../design/scale';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
+import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
 
 /* ── Inline SVG icons for social login ── */
 
@@ -53,114 +56,6 @@ const NaverIcon = ({ size = 28 }: { size?: number }) => (
   </Svg>
 );
 
-/* ── Privacy Policy Modal ── */
-
-const PrivacyPolicyModal = ({
-  visible,
-  onClose,
-}: {
-  visible: boolean;
-  onClose: () => void;
-}) => (
-  <Modal
-    visible={visible}
-    transparent
-    animationType="fade"
-    onRequestClose={onClose}
-  >
-    {/*
-      배경을 Pressable로 감싸면 그 Pressable이 터치가 시작되는 순간
-      리스폰더를 가져가 안쪽 ScrollView가 제스처를 늦게 넘겨받는다.
-      감싸지 않고 형제로 깔아 둔다.
-    */}
-    <View style={styles.privacyOverlay}>
-      {/* 닫는 길은 X와 확인 버튼이 이미 읽어 준다. 여기서 또 읽으면 중복이다. */}
-      <Pressable
-        style={styles.privacyBackdrop}
-        onPress={onClose}
-        accessible={false}
-        importantForAccessibility="no"
-      />
-      <View style={styles.privacyModal}>
-        <View style={styles.privacyHeader}>
-          <Text style={styles.privacyTitle}>개인정보 처리방침</Text>
-          <TouchableOpacity
-            onPress={onClose}
-            style={styles.privacyCloseIcon}
-            accessibilityRole="button"
-            accessibilityLabel="개인정보 처리방침 닫기"
-          >
-            <X size={20} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          style={styles.privacyScroll}
-          contentContainerStyle={{ paddingBottom: normalize(12) }}
-          showsVerticalScrollIndicator={true}
-        >
-          <Text style={styles.privacySectionTitle}>1. 수집·이용 목적</Text>
-          <Text style={styles.privacyBullet}>• 회원 관리 및 서비스 제공</Text>
-          <Text style={styles.privacyBullet}>• 문의 대응 및 공지사항 전달</Text>
-          <Text style={styles.privacyBullet}>
-            • 맞춤형 서비스 제공 및 이벤트 안내
-          </Text>
-
-          <Text style={styles.privacySectionTitle}>
-            2. 수집하는 개인정보 항목
-          </Text>
-          <Text style={styles.privacyBullet}>
-            • 필수 항목: 이메일, 비밀번호, 닉네임, 생년월일, 성별
-          </Text>
-          <Text style={styles.privacyBullet}>
-            • SNS 계정 로그인 시: 이메일 주소, 프로필 정보(닉네임, 프로필 이미지
-            등) 및 서비스 제공에 필요한 최소한의 계정 식별자
-          </Text>
-
-          <Text style={styles.privacySectionTitle}>
-            3. 개인정보 보유·이용 기간
-          </Text>
-          <Text style={styles.privacyBullet}>• 회원 탈퇴 시 지체 없이 파기</Text>
-          <Text style={styles.privacyBullet}>
-            • 단, 관련 법령에 따라 보존이 필요한 경우 해당 기간 동안 보관
-          </Text>
-
-          <Text style={styles.privacySectionTitle}>
-            4. 동의 거부 권리 및 불이익 안내
-          </Text>
-          <Text style={styles.privacyBullet}>
-            • 회원가입 시 필수 항목 동의를 거부할 경우 회원가입이 불가합니다.
-          </Text>
-          <Text style={styles.privacyBullet}>
-            • 선택 항목은 동의하지 않아도 회원가입은 가능하며, 일부 서비스 이용이
-            제한될 수 있습니다.
-          </Text>
-
-          <Text style={styles.privacySectionTitle}>
-            5. SNS 계정 로그인 관련 안내
-          </Text>
-          <Text style={styles.privacyBullet}>
-            • 구글 등 외부 SNS 제공자는 OAuth 인증을 통해 로그인 기능만 제공하며,
-            회원님의 비밀번호를 당사에 제공하지 않습니다.
-          </Text>
-          <Text style={styles.privacyBullet}>
-            • 당사는 SNS 제공자로부터 제공받은 최소한의 정보(이메일, 프로필 정보
-            등)를 회원 식별 및 서비스 제공 목적에 한정하여 이용합니다.
-          </Text>
-          <Text style={styles.privacyBullet}>
-            • SNS 계정 연동 해제 또는 회원 탈퇴 시, 관련 정보는 법령에 따른 보존
-            의무가 없는 한 지체 없이 파기됩니다.
-          </Text>
-        </ScrollView>
-
-        <TouchableOpacity style={styles.privacyCloseButton} onPress={onClose}>
-          <Text style={styles.privacyCloseButtonText}>확인</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </Modal>
-);
-
 /* ── 인라인 오류 한 줄 ── */
 
 const InlineError = ({ message }: { message: string }) => (
@@ -170,11 +65,7 @@ const InlineError = ({ message }: { message: string }) => (
     exiting={FadeOut.duration(120)}
     accessibilityLiveRegion="polite"
   >
-    <AlertCircle
-      size={normalize(15)}
-      color={COLORS.error}
-      style={styles.errorIcon}
-    />
+    <AlertCircle size={sf(15)} color={COLORS.error} style={styles.errorIcon} />
     <Text style={styles.errorText}>{message}</Text>
   </Animated.View>
 );
@@ -249,10 +140,8 @@ export const LoginScreenView = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusSeq]);
 
-  const fieldState = (
-    invalid: boolean,
-    isFocused: boolean,
-  ): FieldState => (invalid ? 'error' : isFocused ? 'focus' : 'default');
+  const fieldState = (invalid: boolean, isFocused: boolean): FieldState =>
+    invalid ? 'error' : isFocused ? 'focus' : 'default';
 
   const emailState = fieldState(
     !!errors.email || !!errors.form,
@@ -269,7 +158,7 @@ export const LoginScreenView = ({
         style={styles.scroll}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + normalize(24) },
+          { paddingBottom: insets.bottom + sf(24) },
         ]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -301,7 +190,7 @@ export const LoginScreenView = ({
               onFocus={() => onFocus('email')}
               onBlur={onBlur}
               editable={!isLoading}
-              placeholderTextColor={COLORS.darkGray}
+              placeholderTextColor={COLORS.textSecondary}
               accessibilityLabel="이메일"
             />
           </AuthFieldBox>
@@ -330,7 +219,7 @@ export const LoginScreenView = ({
                 onFocus={() => onFocus('password')}
                 onBlur={onBlur}
                 editable={!isLoading}
-                placeholderTextColor={COLORS.darkGray}
+                placeholderTextColor={COLORS.textSecondary}
                 accessibilityLabel="비밀번호"
               />
             </View>
@@ -381,7 +270,7 @@ export const LoginScreenView = ({
           <View style={styles.socialButtons}>
             <PressableScale
               style={styles.socialButton}
-              baseColor={COLORS.white}
+              baseColor={COLORS.surfaceRaised}
               pressedColor={COLORS.surface}
               scaleTo={0.98}
               onPress={onGoogleLogin}
@@ -403,7 +292,7 @@ export const LoginScreenView = ({
             </PressableScale>
             <PressableScale
               style={styles.socialButton}
-              baseColor={COLORS.white}
+              baseColor={COLORS.surfaceRaised}
               pressedColor={COLORS.surface}
               scaleTo={0.98}
               onPress={onNaverLogin}
@@ -435,7 +324,9 @@ export const LoginScreenView = ({
             accessibilityRole="button"
             accessibilityLabel="회원가입"
           >
-            <Text style={[styles.linkText, styles.linkTextStrong]}>회원가입</Text>
+            <Text style={[styles.linkText, styles.linkTextStrong]}>
+              회원가입
+            </Text>
           </Pressable>
         </View>
 
@@ -452,6 +343,7 @@ export const LoginScreenView = ({
       <PrivacyPolicyModal
         visible={showPrivacyModal}
         onClose={() => setShowPrivacyModal(false)}
+        variant="policy"
       />
 
       {snsAuthUrl && (

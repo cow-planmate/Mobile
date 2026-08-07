@@ -32,10 +32,10 @@ import { usePlaces } from '../../../contexts/PlacesContext';
 import { PlaceVO } from '../../../api/trips';
 import { GoogleMapsIcon } from '../../../components/common';
 const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard-Regular',
+  medium: 'Pretendard-Medium',
+  semibold: 'Pretendard-SemiBold',
+  bold: 'Pretendard-Bold',
 };
 
 // ────────────────────────────────────────────────

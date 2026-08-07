@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontSize: normalize(22),
-    fontFamily: 'Pretendard Variable',
+    fontFamily: 'Pretendard-Bold',
     fontWeight: '800',
     color: '#0047FF',
   },
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   },
   userNickname: {
     fontSize: normalize(12),
-    fontFamily: 'Pretendard Variable',
+    fontFamily: 'Pretendard-Bold',
     fontWeight: 'bold',
     color: '#374151',
     marginLeft: normalize(6),

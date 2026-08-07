@@ -130,7 +130,7 @@ function MainTabs() {
         tabBarActiveTintColor: '#1344FF',
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarLabelStyle: {
-          fontFamily: 'Inter_600SemiBold',
+          fontFamily: 'Pretendard-SemiBold',
           fontSize: 11,
           marginTop: -2,
         },

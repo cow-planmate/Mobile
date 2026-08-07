@@ -10,7 +10,9 @@ import {
   Circle,
   AlertCircle,
 } from 'lucide-react-native';
-import { styles, COLORS, normalize } from './ChangePasswordScreen.styles';
+import { styles } from './ChangePasswordScreen.styles';
+import { COLORS } from '../authTokens';
+import { sf } from '../../../design/scale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
 
@@ -54,9 +56,9 @@ const PasswordRequirement = React.memo(
     <View style={styles.requirementRow}>
       {/* 색만 바꾸면 색각 이상 사용자가 구분하지 못한다. 형태를 바꾼다. */}
       {met ? (
-        <Check size={normalize(15)} color={COLORS.success} strokeWidth={3} />
+        <Check size={sf(15)} color={COLORS.success} strokeWidth={3} />
       ) : (
-        <Circle size={normalize(15)} color={COLORS.darkGray} strokeWidth={2} />
+        <Circle size={sf(15)} color={COLORS.textDisabled} strokeWidth={2} />
       )}
       <Text
         style={[
@@ -79,11 +81,7 @@ const InlineError = ({ message }: { message: string }) => (
     exiting={FadeOut.duration(120)}
     accessibilityLiveRegion="polite"
   >
-    <AlertCircle
-      size={normalize(15)}
-      color={COLORS.error}
-      style={styles.errorIcon}
-    />
+    <AlertCircle size={sf(15)} color={COLORS.error} style={styles.errorIcon} />
     <Text style={styles.errorText}>{message}</Text>
   </Animated.View>
 );
@@ -172,7 +170,9 @@ export const ChangePasswordScreenView = ({
                 onPress={() => setIsCurrentVisible(!isCurrentVisible)}
                 accessibilityRole="button"
                 accessibilityLabel={
-                  isCurrentVisible ? '현재 비밀번호 가리기' : '현재 비밀번호 보기'
+                  isCurrentVisible
+                    ? '현재 비밀번호 가리기'
+                    : '현재 비밀번호 보기'
                 }
               >
                 {isCurrentVisible ? (
@@ -302,7 +302,10 @@ export const ChangePasswordScreenView = ({
 
           {form.confirmPassword.length > 0 && (
             <View style={styles.requirementsContainer}>
-              <PasswordRequirement met={isPasswordMatch} label="비밀번호 일치" />
+              <PasswordRequirement
+                met={isPasswordMatch}
+                label="비밀번호 일치"
+              />
             </View>
           )}
 
@@ -314,9 +317,7 @@ export const ChangePasswordScreenView = ({
         {!!errors.form && <InlineError message={errors.form} />}
       </ScrollView>
 
-      <View
-        style={[styles.footer, { paddingBottom: insets.bottom + normalize(16) }]}
-      >
+      <View style={[styles.footer, { paddingBottom: insets.bottom + sf(16) }]}>
         <AuthSubmitButton
           label="비밀번호 변경"
           onPress={onSubmit}

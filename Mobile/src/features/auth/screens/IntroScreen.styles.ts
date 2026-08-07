@@ -14,10 +14,10 @@ const COLORS = {
 };
 
 const FONTS = {
-  regular: 'Pretendard Variable',
-  medium: 'Pretendard Variable',
-  semibold: 'Pretendard Variable',
-  bold: 'Pretendard Variable',
+  regular: 'Pretendard-Regular',
+  medium: 'Pretendard-Medium',
+  semibold: 'Pretendard-SemiBold',
+  bold: 'Pretendard-Bold',
 };
 
 export const styles = StyleSheet.create({

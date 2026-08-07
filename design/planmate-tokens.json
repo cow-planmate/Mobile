@@ -106,7 +106,7 @@
       "buttonLg":   { "$type": "sizing", "$value": "52" },
       "buttonMd":   { "$type": "sizing", "$value": "44" },
       "buttonSm":   { "$type": "sizing", "$value": "36" },
-      "fieldMin":   { "$type": "sizing", "$value": "56" },
+      "fieldMin":   { "$type": "sizing", "$value": "52", "$description": "플로팅 라벨 상단 여백 8을 제외한 입력 박스 높이" },
       "rowMin":     { "$type": "sizing", "$value": "56", "$description": "리스트 아이템 최소 높이" },
       "header":     { "$type": "sizing", "$value": "56" },
       "tabBar":     { "$type": "sizing", "$value": "60" },

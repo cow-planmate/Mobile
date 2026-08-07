@@ -5,8 +5,6 @@ import {
   Text,
   StyleProp,
   ViewStyle,
-  Dimensions,
-  PixelRatio,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -15,14 +13,8 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import PressableScale from './PressableScale';
-import { RADIUS } from '../authTokens';
-
-const { width } = Dimensions.get('window');
-const normalize = (size: number) =>
-  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
-
-const PRIMARY = '#1344FF';
-const PRIMARY_DARK = '#0F36D6';
+import { COLORS, RADIUS, TYPO } from '../authTokens';
+import { sf, sp } from '../../../design/scale';
 
 const FADE = { duration: 180, easing: Easing.out(Easing.quad) };
 
@@ -76,8 +68,8 @@ export default function AuthSubmitButton({
     <Animated.View style={[styles.container, containerStyle]}>
       <PressableScale
         style={[styles.button, style]}
-        baseColor={PRIMARY}
-        pressedColor={PRIMARY_DARK}
+        baseColor={COLORS.primary}
+        pressedColor={COLORS.primaryPressed}
         scaleTo={0.985}
         onPress={onPress}
         disabled={disabled || loading}
@@ -92,7 +84,7 @@ export default function AuthSubmitButton({
           style={[StyleSheet.absoluteFill, styles.center, spinnerStyle]}
           pointerEvents="none"
         >
-          <ActivityIndicator color="#FFFFFF" />
+          <ActivityIndicator color={COLORS.onPrimary} />
         </Animated.View>
       </PressableScale>
     </Animated.View>
@@ -105,11 +97,11 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
-    height: normalize(52),
+    height: sf(52),
     borderRadius: RADIUS.md,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: PRIMARY,
+    backgroundColor: COLORS.primary,
     overflow: 'hidden',
   },
   center: {
@@ -117,11 +109,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    fontSize: normalize(16),
-    fontFamily: 'Pretendard Variable',
-    fontWeight: '600',
-    lineHeight: normalize(24),
-    color: '#FFFFFF',
-    letterSpacing: 0,
+    fontSize: sp(TYPO.button.fontSize),
+    fontFamily: TYPO.button.fontFamily,
+    lineHeight: sp(TYPO.button.lineHeight),
+    color: COLORS.onPrimary,
+    letterSpacing: TYPO.button.letterSpacing,
   },
 });

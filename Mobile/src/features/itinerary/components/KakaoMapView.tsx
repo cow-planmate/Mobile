@@ -497,12 +497,12 @@ const mapStyles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     color: '#9CA3AF',
-    fontFamily: 'Inter_500Medium',
+    fontFamily: 'Pretendard-Medium',
   },
   emptyHint: {
     fontSize: 12,
     color: '#B0B6BF',
-    fontFamily: 'Inter_500Medium',
+    fontFamily: 'Pretendard-Medium',
     textAlign: 'center',
     paddingHorizontal: 16,
   },
