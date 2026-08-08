@@ -166,4 +166,39 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
     // Check if isWeatherLoading becomes false after weather promise is resolved
     expect(viewComponent.props.isWeatherLoading).toBe(false);
   });
+
+  it('passes itinerary dates when navigating back to the editor', async () => {
+    mockedAxios.get.mockResolvedValueOnce({
+      data: { message: 'success', planFrame: {}, placeBlocks: [], timetables: [] },
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+    const route = {
+      params: {
+        planId: '123',
+        days: [
+          { date: new Date(2026, 7, 1), dayNumber: 1, places: [] },
+          { date: new Date(2026, 7, 3), dayNumber: 2, places: [] },
+        ],
+      },
+    } as any;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <ItineraryViewScreen navigation={mockNavigation} route={route} />,
+      );
+    });
+
+    const viewComponent = renderer!.root.findByType(
+      require('../src/features/itinerary/screens/ItineraryViewScreen.view').default,
+    );
+    viewComponent.props.handleEdit();
+
+    expect(mockNavigate).toHaveBeenCalledWith(
+      'ItineraryEditor',
+      expect.objectContaining({
+        startDate: '2026-07-31T15:00:00.000Z',
+        endDate: '2026-08-02T15:00:00.000Z',
+      }),
+    );
+  });
 });

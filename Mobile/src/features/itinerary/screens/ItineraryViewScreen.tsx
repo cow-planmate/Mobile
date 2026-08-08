@@ -78,6 +78,8 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     adults,
     children,
     planId,
+    startDate: routeStartDate,
+    endDate: routeEndDate,
   } = route.params || {};
 
   const [days, setDays] = useState<Day[]>(initialDays);
@@ -142,13 +144,12 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       if (planFrame?.planName) {
         setTripName(prev => (prev ? prev : planFrame.planName));
       }
-      setDestinationCity(
+      const fetchedDestination =
         (planFrame as any)?.destinationName ||
-          buildWeatherCity(
-            planFrame?.travelCategoryName,
-            planFrame?.travelName,
-          ),
-      );
+        buildWeatherCity(planFrame?.travelCategoryName, planFrame?.travelName);
+      if (fetchedDestination) {
+        setDestinationCity(fetchedDestination);
+      }
 
       if (timetables && timetables.length > 0) {
         const fetchedDays: Day[] = timetables.map((tt, index) => {
@@ -407,6 +408,8 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
           transport,
           adults,
           children,
+          startDate: routeStartDate || days[0]?.date.toISOString(),
+          endDate: routeEndDate || days[days.length - 1]?.date.toISOString(),
         })
       }
       planId={planId}
