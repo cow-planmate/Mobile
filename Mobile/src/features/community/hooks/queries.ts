@@ -105,10 +105,17 @@ export const usePost = (postId: number | string | undefined) =>
   });
 
 /** 댓글 목록 */
-export const useComments = (postId: number | string | undefined, page = 0) =>
-  useQuery({
-    queryKey: [...KEYS.comments(postId ?? ''), page],
-    queryFn: () => fetchComments(postId as number | string, page),
+export const useComments = (
+  postId: number | string | undefined,
+  size = 20,
+) =>
+  useInfiniteQuery({
+    queryKey: KEYS.comments(postId ?? ''),
+    queryFn: ({ pageParam }) =>
+      fetchComments(postId as number | string, pageParam as number, size),
+    initialPageParam: 0,
+    getNextPageParam: lastPage =>
+      lastPage.page + 1 < lastPage.totalPages ? lastPage.page + 1 : undefined,
     enabled: postId !== undefined && postId !== null && postId !== '',
   });
 
