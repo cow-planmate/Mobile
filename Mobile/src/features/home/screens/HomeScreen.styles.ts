@@ -79,10 +79,11 @@ export const styles = StyleSheet.create({
   inputRowLast: {
     marginBottom: normalize(8),
   },
+  // DESIGN.md ink-label(#4B5563, 7.0:1) / ink-muted(#6B7280, 4.83:1). #9CA3AF는 2.54:1로 미달이었다.
   label: {
     fontSize: normalize(12),
     fontFamily: FONTS.medium,
-    color: '#9CA3AF',
+    color: '#4B5563',
     marginBottom: normalize(4),
   },
   valueContainer: {
@@ -99,7 +100,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     fontSize: normalize(15),
     fontFamily: FONTS.medium,
-    color: '#9CA3AF',
+    color: '#6B7280',
   },
   rowIcon: {
     marginLeft: normalize(8),

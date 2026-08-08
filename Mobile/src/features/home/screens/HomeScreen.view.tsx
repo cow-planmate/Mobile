@@ -48,6 +48,8 @@ const InputRow = ({
       style={[styles.inputRow, isLast && styles.inputRowLast]}
       onPress={onPress}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={hasValue ? `${label}, ${value}` : `${label}, ${placeholder ?? '미입력'}`}
     >
       <Text style={styles.label}>{label}</Text>
       <View style={styles.valueContainer}>
@@ -59,7 +61,7 @@ const InputRow = ({
           <Text style={styles.placeholderText}>{placeholder}</Text>
         )}
         <View style={styles.rowIcon}>
-          <FontAwesomeIcon icon={icon} color="#9CA3AF" size={18} />
+          <FontAwesomeIcon icon={icon} color="#6B7280" size={18} />
         </View>
       </View>
     </TouchableOpacity>
@@ -182,9 +184,10 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
             source={{ uri: HERO_IMAGES[heroIndex], priority: FastImage.priority.normal }}
             style={styles.heroImage}
             resizeMode={FastImage.resizeMode.cover}
+            accessible={false}
           />
           <View style={styles.heroOverlay} />
-          <Text style={styles.heroTitle}>
+          <Text style={styles.heroTitle} accessibilityRole="header">
             {'나다운, 우리다운\n여행의 시작'}
           </Text>
         </View>
@@ -234,6 +237,9 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               ]}
               onPress={onCreateItinerary}
               disabled={!isFormValid}
+              accessibilityRole="button"
+              accessibilityLabel="일정생성"
+              accessibilityState={{ disabled: !isFormValid }}
             >
               <Text
                 style={[

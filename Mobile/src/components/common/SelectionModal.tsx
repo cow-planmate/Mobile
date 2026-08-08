@@ -41,6 +41,9 @@ export default function SelectionModal({
               style={styles.closeButtonContainer}
               onPress={onClose}
               activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="닫기"
             >
               <X size={20} color={COLORS.placeholder} strokeWidth={1.5} />
             </TouchableOpacity>
@@ -58,6 +61,9 @@ export default function SelectionModal({
                   ]}
                   onPress={() => onSelect(option.label)}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={option.label}
+                  accessibilityState={{ selected: isSelected }}
                 >
                   <View style={styles.optionIconWrapper}>{option.icon}</View>
                   <Text

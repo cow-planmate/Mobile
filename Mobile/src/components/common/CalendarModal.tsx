@@ -229,6 +229,9 @@ export default function CalendarModal({
               style={styles.closeButtonContainer}
               onPress={onClose}
               activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="닫기"
             >
               <X size={20} color={COLORS.placeholder} strokeWidth={1.5} />
             </TouchableOpacity>
@@ -242,6 +245,9 @@ export default function CalendarModal({
                 style={styles.monthNavButton}
                 onPress={handlePrevMonth}
                 activeOpacity={0.7}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="이전 달"
               >
                 <ChevronLeft size={20} color={COLORS.subtext} strokeWidth={2} />
               </TouchableOpacity>
@@ -252,6 +258,9 @@ export default function CalendarModal({
                 style={styles.monthNavButton}
                 onPress={handleNextMonth}
                 activeOpacity={0.7}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="다음 달"
               >
                 <ChevronRight size={20} color={COLORS.subtext} strokeWidth={2} />
               </TouchableOpacity>
@@ -300,6 +309,8 @@ export default function CalendarModal({
                 const dayColorType = getDayColorType(item.date, item.isCurrentMonth);
                 const isPast = itemTime < todayStart.getTime();
 
+                const dayLabel = `${item.date.getFullYear()}년 ${item.date.getMonth() + 1}월 ${item.date.getDate()}일 ${WEEK_DAYS[item.date.getDay()]}요일`;
+
                 return (
                   <TouchableOpacity
                     key={index}
@@ -307,6 +318,9 @@ export default function CalendarModal({
                     onPress={() => onDayPress(item.date, item.isCurrentMonth)}
                     disabled={isPast}
                     activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={dayLabel}
+                    accessibilityState={{ selected: isSelected, disabled: isPast }}
                   >
                     {/* 범위 선택 시 물결 연결 배경 */}
                     {isRangeActive && (isBetween || isStart || isEnd) && (
@@ -361,6 +375,8 @@ export default function CalendarModal({
               ]}
               onPress={handleConfirm}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="확인"
             >
               <Text style={styles.confirmButtonText}>확인</Text>
             </TouchableOpacity>
