@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -13,38 +13,38 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { ChevronLeft, Check, MapPin } from 'lucide-react-native';
-import { useNavigation } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAlert } from '../../../contexts/AlertContext';
 import { useUserProfile } from '../../../hooks/useUserProfile';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { FeedStackParamList } from '../../../navigation/types';
-import { useCreatePost } from '../hooks/queries';
+import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
 import { textToBlocks } from '../utils/blocks';
+import {
+  buildFeedUpdatePayload,
+  parseFeedTags,
+} from '../utils/feedPostPayload';
 import {
   buildFeedPlanSnapshot,
   CompletePlanResponse,
   FeedPlanSnapshot,
 } from '../utils/planToItinerary';
 
-const parseTags = (value: string) =>
-  Array.from(
-    new Set(
-      value
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(Boolean)
-        .map(tag => (tag.startsWith('#') ? tag : `#${tag}`)),
-    ),
-  );
+type FeedCreateRoute = RouteProp<FeedStackParamList, 'FeedCreate'>;
 
 export default function FeedCreateScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<FeedStackParamList>>();
+  const route = useRoute<FeedCreateRoute>();
   const { showAlert } = useAlert();
   const { data: profile, isLoading: isProfileLoading } = useUserProfile();
   const createPost = useCreatePost();
+  const postId = route.params?.postId;
+  const isEditMode = !!postId;
+  const existingPost = usePost(postId);
+  const updatePost = useUpdatePost(Number(postId ?? 0));
 
   const [snapshot, setSnapshot] = useState<FeedPlanSnapshot | null>(null);
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
@@ -52,6 +52,16 @@ export default function FeedCreateScreen() {
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
+
+  useEffect(() => {
+    const post = existingPost.data;
+    if (!post || post.category !== 'feed') return;
+
+    setTitle(post.title);
+    setContent(post.contentText);
+    setTags((post.tags ?? []).join(', '));
+    setThumbnailUrl(post.image ?? '');
+  }, [existingPost.data]);
 
   const ownedPlans = useMemo(
     () => (profile?.myPlans ?? []).filter(plan => !plan.isShared),
@@ -80,7 +90,12 @@ export default function FeedCreateScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!snapshot || !title.trim()) {
+    const canEdit =
+      isEditMode &&
+      existingPost.data?.category === 'feed' &&
+      !!existingPost.data.itinerary;
+
+    if ((!isEditMode && !snapshot) || (isEditMode && !canEdit) || !title.trim()) {
       showAlert({
         title: '입력 확인',
         message: '공개할 일정과 여행기 제목을 입력해 주세요.',
@@ -91,23 +106,27 @@ export default function FeedCreateScreen() {
 
     const contentText = content.trim() || title.trim();
     try {
-      const created = await createPost.mutateAsync({
-        category: 'feed',
-        title: title.trim(),
-        content: textToBlocks(contentText),
-        contentText,
-        thumbnailUrl: thumbnailUrl.trim() || null,
-        region: snapshot.destinationName,
-        location: snapshot.destinationName,
-        durationDays: snapshot.itinerary.days.length,
-        itinerary: snapshot.itinerary,
-        tags: parseTags(tags),
-        sourcePlanId: snapshot.planId,
-      });
+      const created = isEditMode
+        ? await updatePost.mutateAsync(
+            buildFeedUpdatePayload({ title, content, tags, thumbnailUrl }),
+          )
+        : await createPost.mutateAsync({
+            category: 'feed',
+            title: title.trim(),
+            content: textToBlocks(contentText),
+            contentText,
+            thumbnailUrl: thumbnailUrl.trim() || null,
+            region: snapshot!.destinationName,
+            location: snapshot!.destinationName,
+            durationDays: snapshot!.itinerary.days.length,
+            itinerary: snapshot!.itinerary,
+            tags: parseFeedTags(tags),
+            sourcePlanId: snapshot!.planId,
+          });
       navigation.replace('FeedDetail', { postId: String(created.id) });
     } catch (error) {
       showAlert({
-        title: '여행기 발행 실패',
+        title: isEditMode ? '여행기 수정 실패' : '여행기 발행 실패',
         message: getBackendErrorMessage(error),
         type: 'error',
       });
@@ -123,13 +142,33 @@ export default function FeedCreateScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
           <ChevronLeft size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>여행기 발행</Text>
+        <Text style={styles.headerTitle}>
+          {isEditMode ? '여행기 수정' : '여행기 발행'}
+        </Text>
         <View style={styles.headerSpace} />
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
         <Text style={styles.label}>공개할 일정</Text>
-        {isProfileLoading ? (
+        {isEditMode && existingPost.isLoading ? (
+          <ActivityIndicator color="#1344FF" />
+        ) : isEditMode &&
+          (existingPost.isError ||
+            (existingPost.data &&
+              (existingPost.data.category !== 'feed' ||
+                !existingPost.data.itinerary))) ? (
+          <Text style={styles.emptyText}>여행기를 불러올 수 없어요.</Text>
+        ) : isEditMode && existingPost.data?.itinerary ? (
+          <View style={styles.snapshotInfo}>
+            <MapPin size={16} color="#1344FF" />
+            <Text style={styles.snapshotText}>
+              {existingPost.data.itinerary.plan?.destinationName ??
+                existingPost.data.location ??
+                existingPost.data.region ?? ''}
+              {' '}· {existingPost.data.itinerary.days.length}일 일정은 그대로 유지됩니다.
+            </Text>
+          </View>
+        ) : isProfileLoading ? (
           <ActivityIndicator color="#1344FF" />
         ) : ownedPlans.length === 0 ? (
           <Text style={styles.emptyText}>발행할 내 일정이 없어요.</Text>
@@ -162,7 +201,7 @@ export default function FeedCreateScreen() {
           })
         )}
 
-        {snapshot && (
+        {!isEditMode && snapshot && (
           <View style={styles.snapshotInfo}>
             <MapPin size={16} color="#1344FF" />
             <Text style={styles.snapshotText}>
@@ -210,14 +249,36 @@ export default function FeedCreateScreen() {
 
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.submitButton, (!snapshot || createPost.isPending) && styles.submitDisabled]}
+          style={[
+            styles.submitButton,
+            ((!isEditMode && !snapshot) ||
+              (isEditMode &&
+                (!existingPost.data?.itinerary ||
+                  existingPost.data.category !== 'feed')) ||
+              createPost.isPending ||
+              updatePost.isPending) &&
+              styles.submitDisabled,
+          ]}
           onPress={() => {
             handleSubmit();
           }}
-          disabled={!snapshot || createPost.isPending}
+          disabled={
+            (!isEditMode && !snapshot) ||
+            (isEditMode &&
+              (!existingPost.data?.itinerary ||
+                existingPost.data.category !== 'feed')) ||
+            createPost.isPending ||
+            updatePost.isPending
+          }
         >
           <Text style={styles.submitText}>
-            {createPost.isPending ? '발행 중…' : '여행기 발행하기'}
+            {createPost.isPending || updatePost.isPending
+              ? isEditMode
+                ? '수정 중…'
+                : '발행 중…'
+              : isEditMode
+                ? '여행기 수정하기'
+                : '여행기 발행하기'}
           </Text>
         </TouchableOpacity>
       </View>
