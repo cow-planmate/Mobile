@@ -27,6 +27,11 @@ interface PendingBlockSync {
   timetableId: number;
 }
 
+interface PendingPlaceCreate {
+  place: Place;
+  dateString: string;
+}
+
 /** 모든 날짜에 걸친 장소 총개수. */
 export const countPlaces = (days: Day[]): number =>
   days.reduce((sum, d) => sum + d.places.length, 0);
@@ -264,6 +269,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
   // 서버가 blockId를 확정하기 전인 블록의 update/delete 보류분. key는 임시 ID.
   const pendingBlockSyncRef = useRef<Map<string, PendingBlockSync>>(new Map());
+  const pendingPlaceCreateRef = useRef<PendingPlaceCreate[]>([]);
 
   /**
    * 다른 plan으로 진입할 때 이전 일정 상태를 비웁니다.
@@ -278,7 +284,30 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setDays([]);
     setLastAddedPlaceId(null);
     pendingBlockSyncRef.current.clear();
+    pendingPlaceCreateRef.current = [];
   }, []);
+
+  const flushPendingPlaceCreates = useCallback(
+    (dateString: string, timetableId: number) => {
+      const pending = pendingPlaceCreateRef.current.filter(
+        item => item.dateString === dateString,
+      );
+      if (pending.length === 0) return;
+
+      pendingPlaceCreateRef.current = pendingPlaceCreateRef.current.filter(
+        item => item.dateString !== dateString,
+      );
+      pending.forEach(({ place }) => {
+        sendMessage(
+          'create',
+          'timetableplaceblock',
+          mapToTimetablePlaceBlockDto(place, timetableId),
+          place.id,
+        );
+      });
+    },
+    [sendMessage],
+  );
 
   /**
    * 블록 변경을 전송합니다. blockId가 아직 없으면 서버가 create 응답으로
@@ -581,6 +610,14 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     };
   }, [subscribeToMessages, unsubscribeFromMessages, handleWebSocketMessage]);
 
+  useEffect(() => {
+    days.forEach(day => {
+      if (day.timetableId !== undefined && day.timetableId !== null) {
+        flushPendingPlaceCreates(formatDateLocal(day.date), day.timetableId);
+      }
+    });
+  }, [days, flushPendingPlaceCreates]);
+
   const addPlaceToDay = useCallback((
     dayIndex: number,
     placeData: Omit<Place, 'startTime' | 'endTime'> & { startTime?: string; endTime?: string },
@@ -648,6 +685,11 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         otherPlacesToSync.forEach(p => {
           sendBlockSync('update', p, dayTimetableId!);
         });
+      } else if (finalPlace && dayDateString) {
+        pendingPlaceCreateRef.current.push({
+          place: finalPlace,
+          dateString: dayDateString,
+        });
       }
     }, 0);
   }, [sendMessage, sendBlockSync]);
@@ -679,6 +721,9 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setLastAddedPlaceId(null);
 
     setTimeout(() => {
+      pendingPlaceCreateRef.current = pendingPlaceCreateRef.current.filter(
+        item => item.place.id !== placeId,
+      );
       if (placeToDelete && dayTimetableId && dayDateString) {
         sendBlockSync('delete', placeToDelete, dayTimetableId);
       }
