@@ -317,6 +317,16 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
       const newPlanId = result?.planId;
 
+      if (!newPlanId) {
+        console.error('Plan creation response did not include planId:', result);
+        setIsCreating(false);
+        showAlert({
+          title: '일정을 확인할 수 없습니다',
+          message: '일정 생성 응답에 식별자가 없습니다. 내 일정에서 생성 여부를 확인해주세요.',
+        });
+        return;
+      }
+
       setIsCreating(false);
 
       navigation.navigate('ItineraryEditor', {

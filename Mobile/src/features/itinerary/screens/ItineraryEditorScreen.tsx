@@ -935,6 +935,15 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
       const newPlanId = result?.planId;
 
+      if (!newPlanId) {
+        console.error('Plan creation response did not include planId:', result);
+        showAlert({
+          title: '일정을 확인할 수 없습니다',
+          message: '일정 생성 응답에 식별자가 없습니다. 내 일정에서 생성 여부를 확인해주세요.',
+        });
+        return;
+      }
+
       // 백엔드가 생성 시 planName을 무시하고 강제로 목적지명 등으로 생성할 수 있으므로,
       // 생성이 끝난 직후 신규 planId에 대해 즉각 이름 변경 PATCH API를 추가 호출하여 동기화합니다.
       if (newPlanId && tripName) {

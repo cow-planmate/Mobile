@@ -183,4 +183,32 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
       })
     );
   });
+
+  it('does not navigate when the create response has no plan id', async () => {
+    mockMutateAsync.mockResolvedValueOnce({});
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <QueryClientProvider client={queryClient}>
+          <HomeScreen navigation={mockNavigation} route={mockRoute} />
+        </QueryClientProvider>,
+      );
+    });
+
+    const viewComponent = renderer!.root.findByType(
+      require('../src/features/home/screens/HomeScreen.view').HomeScreenView,
+    );
+    await ReactTestRenderer.act(async () => {
+      viewComponent.props.onSelectLocation('Seoul', 3);
+    });
+    await ReactTestRenderer.act(async () => {
+      await viewComponent.props.onCreateItinerary();
+    });
+
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(mockShowAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '일정을 확인할 수 없습니다' }),
+    );
+  });
 });
