@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Search, LayoutGrid, List, SlidersHorizontal, X, MapPin } from 'lucide-react-native';
+import { Search, LayoutGrid, List, SlidersHorizontal, X, MapPin, Plus } from 'lucide-react-native';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { Header, NotificationModal } from '../../../components/common';
@@ -25,9 +25,10 @@ import {
   acceptInvitation,
   rejectInvitation,
 } from '../../../api/trips';
-import { useFeedPosts } from '../../community/hooks/queries';
+import { useFeedPosts, useFeedRegionCounts } from '../../community/hooks/queries';
 import { formatDuration } from '../../community/services/communityApi';
 import { resolveAvatarUrl } from '../../community/utils/avatar';
+import { buildFeedRegionOptions } from '../../community/utils/feedRegions';
 import { FeedFilterParams } from '../../community/types';
 import {
   describeAcceptResult,
@@ -89,7 +90,19 @@ export default function TravelFeedScreen() {
   const [tempDuration, setTempDuration] = useState('전체');
 
   const tags = ['#뚜벅이최적화', '#극한의J', '#여유로운P', '#동선낭비없는'];
-  const regions = ['전체', '서울', '부산', '제주도', '강릉', '경주', '전주'];
+  const regionCountsQuery = useFeedRegionCounts();
+  const regionOptions = useMemo(
+    () => buildFeedRegionOptions(regionCountsQuery.data),
+    [regionCountsQuery.data],
+  );
+  const regions = useMemo(
+    () => ['전체', ...regionOptions.map(option => option.region)],
+    [regionOptions],
+  );
+  const regionCountByName = useMemo(
+    () => new Map(regionOptions.map(option => [option.region, option.count])),
+    [regionOptions],
+  );
   const durations = ['전체', '1일', '2-3일', '4일 이상'];
   const sortOptions = ['최신순', '인기순', '좋아요순'];
 
@@ -101,6 +114,13 @@ export default function TravelFeedScreen() {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 350);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  useEffect(() => {
+    if (filterRegion !== '전체' && !regions.includes(filterRegion)) {
+      setFilterRegion('전체');
+      setTempRegion('전체');
+    }
+  }, [filterRegion, regions]);
 
   /** 화면의 한국어 필터를 서버 파라미터로 옮긴다 */
   const feedFilters: FeedFilterParams = useMemo(() => {
@@ -221,6 +241,17 @@ export default function TravelFeedScreen() {
 
   const handleFeedItemPress = (item: TravelFeedItem) => {
     navigation.navigate('FeedDetail', { postId: item.id });
+  };
+
+  const handleCreateFeed = () => {
+    if (!user) {
+      showAlert({
+        title: '로그인 필요',
+        message: '여행기를 발행하려면 로그인이 필요합니다.',
+      });
+      return;
+    }
+    navigation.navigate('FeedCreate');
   };
 
 
@@ -372,6 +403,15 @@ export default function TravelFeedScreen() {
           </View>
         </View>
 
+        <TouchableOpacity
+          style={styles.createButton}
+          onPress={handleCreateFeed}
+          activeOpacity={0.85}
+        >
+          <Plus size={20} color="#FFFFFF" />
+          <Text style={styles.createButtonText}>여행기 발행</Text>
+        </TouchableOpacity>
+
       </View>
 
 
@@ -412,7 +452,9 @@ export default function TravelFeedScreen() {
                           tempRegion === r && styles.filterChipTextActive
                         ]}
                       >
-                        {r}
+                        {r === '전체'
+                          ? r
+                          : `${r} (${regionCountByName.get(r) ?? 0})`}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -537,6 +579,24 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  createButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    minHeight: 48,
+    paddingHorizontal: 16,
+    borderRadius: 24,
+    backgroundColor: '#1344FF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    elevation: 4,
+  },
+  createButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
   controlRowContainer: {
     flexDirection: 'row',

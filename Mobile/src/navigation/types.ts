@@ -8,6 +8,7 @@ export type TabParamList = {
 
 export type FeedStackParamList = {
   FeedMain: undefined;
+  FeedCreate: undefined;
   FeedDetail: {
     /** 커뮤니티 여행기(category=feed) 게시글 ID */
     postId: string;
@@ -74,6 +75,7 @@ export type CommunityStackParamList = {
     | {
         /** 목록에서 보고 있던 게시판을 미리 선택한다 */
         category?: 'free' | 'qna' | 'mate' | 'recommend';
+        postId?: string;
       }
     | undefined;
 };

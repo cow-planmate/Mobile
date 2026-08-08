@@ -10,6 +10,7 @@ import ThemeSettingsScreen from '../features/auth/screens/ThemeSettingsScreen';
 import ChangePasswordScreen from '../features/auth/screens/ChangePasswordScreen';
 import {
   CommunityScreen,
+  FeedCreateScreen,
   FeedDetailScreen,
   PostCreateScreen,
   PostDetailScreen,
@@ -57,6 +58,10 @@ function FeedStack() {
       <FeedStackNavigator.Screen
         name="FeedMain"
         component={TravelFeedScreen}
+      />
+      <FeedStackNavigator.Screen
+        name="FeedCreate"
+        component={FeedCreateScreen}
       />
       <FeedStackNavigator.Screen
         name="FeedDetail"
