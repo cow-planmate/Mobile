@@ -17,39 +17,55 @@ describe('Auth Store - Social Login & Complete', () => {
     useAuthStore.setState({ user: null, isLoading: false });
   });
 
+  // 서버 exchange는 code를 본문(@RequestBody)으로 받고 일반 로그인과 같은
+  // LoginResponse(userId 포함)를 돌려준다. 프로필을 따로 조회하지 않는다.
   it('should successfully login via oauth exchange', async () => {
     const mockExchangeResponse = {
       data: {
         accessToken: 'mock-access-token',
         refreshToken: 'mock-refresh-token',
+        userId: '3f6c1b7e-0000-4000-8000-000000000001',
         nickname: '소셜가입자',
-      },
-    };
-    
-    const mockProfileResponse = {
-      data: {
-        userId: 123,
+        email: 'social@example.com',
       },
     };
 
     mockedAxios.post.mockResolvedValueOnce(mockExchangeResponse);
-    mockedAxios.get.mockResolvedValueOnce(mockProfileResponse);
 
     const store = useAuthStore.getState();
     await store.oauthLogin('mock-auth-code', 'google');
 
     expect(mockedAxios.post).toHaveBeenCalledWith(
       expect.stringContaining('/api/oauth/exchange'),
-      null,
-      expect.any(Object)
+      { code: 'mock-auth-code' }
     );
-    
+    expect(mockedAxios.get).not.toHaveBeenCalled();
+
     expect(useAuthStore.getState().user).toEqual({
-      userId: 123,
+      userId: '3f6c1b7e-0000-4000-8000-000000000001',
       nickname: '소셜가입자',
-      email: '',
+      email: 'social@example.com',
     });
     expect(AsyncStorage.multiSet).toHaveBeenCalled();
+  });
+
+  // userId 없이 세션을 만들면 자기 일정에서도 소유자로 인식되지 않는다.
+  it('should reject oauth exchange response without userId', async () => {
+    mockedAxios.post.mockResolvedValueOnce({
+      data: {
+        accessToken: 'mock-access-token',
+        refreshToken: 'mock-refresh-token',
+        nickname: '소셜가입자',
+      },
+    });
+
+    const store = useAuthStore.getState();
+
+    await expect(store.oauthLogin('mock-auth-code', 'google')).rejects.toThrow(
+      '서버 응답 형식이 올바르지 않습니다.',
+    );
+    expect(useAuthStore.getState().user).toBeNull();
+    expect(AsyncStorage.multiSet).not.toHaveBeenCalled();
   });
 
   it('should successfully complete oauth registration', async () => {
