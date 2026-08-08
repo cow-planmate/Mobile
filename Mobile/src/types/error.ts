@@ -58,4 +58,8 @@ export const BACKEND_ERROR_MESSAGES: Record<string, string> = {
 
   // 추천 장소
   PLACE_001: '외부 관광정보 조회에 실패했습니다.',
+
+  // 체크리스트
+  CHECKLIST_001: '이미 삭제된 항목입니다.',
+  CHECKLIST_002: '본인이 만든 항목만 수정할 수 있습니다.',
 };
