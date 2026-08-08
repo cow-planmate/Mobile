@@ -4,12 +4,11 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Platform,
   Modal,
   Pressable,
   Dimensions,
-  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FastImage from 'react-native-fast-image';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faUser } from '@fortawesome/free-solid-svg-icons';
@@ -37,6 +36,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const navigation = useNavigation<any>();
   const logout = useAuthStore((state) => state.logout);
+  const insets = useSafeAreaInsets();
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 16 });
   const profileRef = useRef<React.ComponentRef<typeof TouchableOpacity>>(null);
@@ -45,9 +45,8 @@ const Header: React.FC<HeaderProps> = ({
     profileRef.current?.measure((x, y, width, height, pageX, pageY) => {
       const screenWidth = Dimensions.get('window').width;
       const right = screenWidth - (pageX + width);
-      const statusBarHeight = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
       setMenuPosition({
-        top: pageY + height - statusBarHeight + 3,
+        top: pageY + height - insets.top + 3,
         right: Math.max(16, right),
       });
       setMenuVisible(true);
@@ -70,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <View style={styles.topBar}>
+    <View style={[styles.topBar, { paddingTop: insets.top + normalize(8) }]}>
       <Text style={styles.logo}>planMate</Text>
       <View style={styles.topIcons}>
         <TouchableOpacity 
@@ -144,7 +143,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: normalize(16),
-    paddingTop: Platform.OS === 'android' ? normalize(38) : normalize(4),
+    // paddingTop은 useSafeAreaInsets()로 실제 상태바 높이에 맞춰 인라인으로 채워진다.
     paddingBottom: normalize(8),
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,

@@ -1,4 +1,4 @@
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
 
@@ -16,54 +16,11 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  scrollContainer: {
+  scroll: {
     flex: 1,
   },
-  // [NEW] Top Header Area (planMate logo + menu)
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: normalize(16),
-    paddingTop: Platform.OS === 'android' ? normalize(48) : normalize(10), // 갤럭시 등 안드로이드 상단바 높이 고려
-    paddingBottom: normalize(10),
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  logo: {
-    fontSize: normalize(22),
-    fontFamily: FONTS.bold,
-    fontWeight: '800',
-    color: '#0047FF',
-  },
-  topIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(10),
-  },
-  headerIconBtn: {
-    width: normalize(32),
-    height: normalize(32),
-    borderRadius: normalize(6),
-    backgroundColor: '#2563EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  userAvatar: {
-    width: normalize(28),
-    height: normalize(28),
-    borderRadius: normalize(14),
-    backgroundColor: '#E5E7EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  userNickname: {
-    fontSize: normalize(13),
-    fontFamily: FONTS.medium,
-    color: '#374151',
-    marginLeft: normalize(4),
+  scrollContainer: {
+    flexGrow: 1,
   },
   // [NEW] Hero Section with Background Image
   heroSection: {
@@ -165,8 +122,5 @@ export const styles = StyleSheet.create({
   },
   submitButtonTextDisabled: {
     color: '#9CA3AF',
-  },
-  labelError: {
-    color: theme.colors.danger,
   },
 });

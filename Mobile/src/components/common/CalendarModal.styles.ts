@@ -1,8 +1,5 @@
-import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
-
-const { width } = Dimensions.get('window');
-const normalize = (size: number) =>
-  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
+import { StyleSheet } from 'react-native';
+import { sf as normalize } from '../../design/scale';
 
 export const COLORS = {
   primary: '#1344FF',

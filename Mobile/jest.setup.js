@@ -1,3 +1,22 @@
+// 네이티브 인셋 계산이 없는 테스트 환경이므로 0으로 고정한다.
+// 패키지가 제공하는 jest/mock.tsx는 트랜스파일 대상 밖(node_modules)이라 그대로
+// require하면 import 구문에서 깨진다. 필요한 API만 직접 흉내낸다.
+jest.mock('react-native-safe-area-context', () => {
+  const React = require('react');
+  const inset = { top: 0, right: 0, bottom: 0, left: 0 };
+  const frame = { x: 0, y: 0, width: 0, height: 0 };
+  return {
+    SafeAreaProvider: ({ children }) => children,
+    SafeAreaView: ({ children, ...props }) =>
+      React.createElement('RNCSafeAreaView', props, children),
+    SafeAreaInsetsContext: React.createContext(inset),
+    SafeAreaFrameContext: React.createContext(frame),
+    useSafeAreaInsets: () => inset,
+    useSafeAreaFrame: () => frame,
+    initialWindowMetrics: { insets: inset, frame },
+  };
+});
+
 // .env는 저장소에 포함되지 않으므로 테스트에서는 고정값을 사용한다.
 jest.mock('@env', () => ({
   API_URL: 'http://localhost:8080',

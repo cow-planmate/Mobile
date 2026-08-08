@@ -123,9 +123,11 @@ jest.mock('@fortawesome/react-native-fontawesome', () => ({
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
   const { View } = require('react-native');
+  const inset = { top: 0, right: 0, bottom: 0, left: 0 };
   return {
     SafeAreaProvider: ({ children }: any) => React.createElement(View, null, children),
     SafeAreaView: ({ children }: any) => React.createElement(View, null, children),
+    useSafeAreaInsets: () => inset,
   };
 });
 

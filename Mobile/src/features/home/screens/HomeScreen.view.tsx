@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  SafeAreaView,
+  ScrollView,
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FastImage from 'react-native-fast-image';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
@@ -16,6 +17,7 @@ import {
   faBus,
 } from '@fortawesome/free-solid-svg-icons';
 import { CalendarModal, Header, Invitation, NotificationModal, OptionType, PaxModal, SearchLocationModal, SelectionModal } from '../../../components/common';
+import { normalize } from '../../../utils/normalize';
 import { styles } from './HomeScreen.styles';
 
 const HERO_IMAGES = [
@@ -144,6 +146,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   onRejectNotification,
 }) => {
   const [heroIndex, setHeroIndex] = useState(0);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -153,7 +156,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" />
 
       <Header
@@ -164,8 +167,14 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         onNavigateProfile={onNavigateProfile}
       />
 
-      <View
-        style={styles.scrollContainer}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.scrollContainer,
+          { paddingBottom: insets.bottom + normalize(24) },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         {/* 2. Hero Section */}
         <View style={styles.heroSection}>
@@ -237,7 +246,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </ScrollView>
 
       {/* Modals - 기존 유지 */}
       <SearchLocationModal
@@ -276,6 +285,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         onAccept={onAcceptNotification}
         onReject={onRejectNotification}
       />
-    </SafeAreaView>
+    </View>
   );
 };
