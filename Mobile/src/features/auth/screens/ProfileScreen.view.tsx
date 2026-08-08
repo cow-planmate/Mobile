@@ -327,6 +327,11 @@ interface ProfileScreenViewProps {
   onRenamePlan: (planId: string, newName: string) => Promise<void>;
   /** 프로필 공개 여부 변경 */
   onChangeProfileVisibility: (profilePublic: boolean) => Promise<void>;
+  /** 갤러리에서 선택한 프로필 사진 업로드 */
+  onChangeProfileImage: () => Promise<void>;
+  /** 등록된 프로필 사진 삭제 */
+  onDeleteProfileImage: () => Promise<void>;
+  isProfileImageUpdating: boolean;
   scrollToItinerary?: boolean;
 }
 
@@ -345,6 +350,9 @@ export default function ProfileScreenView({
   handleResign,
   onRenamePlan,
   onChangeProfileVisibility,
+  onChangeProfileImage,
+  onDeleteProfileImage,
+  isProfileImageUpdating,
   scrollToItinerary,
 }: ProfileScreenViewProps) {
   const navigation = useNavigation<any>();
@@ -697,6 +705,28 @@ export default function ProfileScreenView({
         position: 'top',
       });
     }
+  };
+
+  const handleProfileImagePress = () => {
+    if (isProfileImageUpdating) return;
+
+    const actions: any[] = [
+      {
+        text: '갤러리에서 선택',
+        onPress: onChangeProfileImage,
+      },
+    ];
+
+    if (user.profileImageUrl) {
+      actions.push({
+        text: '현재 사진 삭제',
+        style: 'destructive',
+        onPress: onDeleteProfileImage,
+      });
+    }
+
+    actions.push({ text: '취소', style: 'cancel' });
+    Alert.alert('프로필 사진', '등록할 사진을 선택해주세요.', actions);
   };
 
   const preferredThemes = user.preferredThemes || [];
@@ -1157,7 +1187,14 @@ export default function ProfileScreenView({
               </TouchableOpacity>
 
               {/* 프로필 이미지 & 카메라 배지 */}
-              <View style={styles.avatarEditContainer}>
+              <TouchableOpacity
+                style={styles.avatarEditContainer}
+                onPress={handleProfileImagePress}
+                disabled={isProfileImageUpdating}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="프로필 사진 변경"
+              >
                 {avatarUri ? (
                   <FastImage
                     source={{ uri: avatarUri, priority: FastImage.priority.normal }}
@@ -1172,7 +1209,7 @@ export default function ProfileScreenView({
                 <View style={styles.cameraBadge}>
                   <Camera size={12} color="#FFFFFF" />
                 </View>
-              </View>
+              </TouchableOpacity>
             </View>
 
             <ScrollView 
