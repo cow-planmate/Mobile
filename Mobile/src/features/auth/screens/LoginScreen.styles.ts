@@ -122,6 +122,21 @@ export const styles = StyleSheet.create({
     width: '100%',
     marginTop: sf(20),
   },
+  /**
+   * 계정 없음 안내와 개인정보 링크를 한 꼬리로 묶는 바깥 그룹.
+   * 위 소셜 로그인 섹션과의 간격은 여기 하나에서만 준다.
+   */
+  tailLinksGroup: {
+    width: '100%',
+    marginTop: sf(20),
+    alignItems: 'center',
+  },
+  tailLinksRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
   linkButton: {
     paddingVertical: sf(13),
     paddingHorizontal: sf(8),
@@ -201,10 +216,14 @@ export const styles = StyleSheet.create({
     color: COLORS.primary,
   },
 
-  /* ── Privacy Policy Link ── */
+  /**
+   * ── Privacy Policy Link ──
+   * tailLinksGroup 안에 붙어 있으므로 여백은 회원가입 행과의 거리만큼만
+   * 작게 둔다. 예전처럼 20을 주면 같은 꼬리인데도 독립 섹션처럼 보였다.
+   */
   privacyLinkButton: {
     alignSelf: 'center',
-    marginTop: sf(20),
+    marginTop: sf(4),
     paddingVertical: sf(12),
     paddingHorizontal: sf(12),
   },

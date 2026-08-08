@@ -18,6 +18,7 @@ import Svg, { Path, Rect } from 'react-native-svg';
 import { styles } from './LoginScreen.styles';
 import { COLORS } from '../authTokens';
 import { sf } from '../../../design/scale';
+import { revealStep } from '../motion';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
@@ -165,179 +166,190 @@ export const LoginScreenView = ({
         showsVerticalScrollIndicator={false}
         bounces={false}
       >
-        <Text style={styles.title}>로그인</Text>
+        <Animated.Text style={styles.title} entering={revealStep(0)}>
+          로그인
+        </Animated.Text>
 
-        <View style={styles.inputGroup}>
-          <AuthFieldBox
-            state={emailState}
-            style={styles.inputContainer}
-            label="이메일"
-          >
-            <TextInput
-              ref={emailRef}
-              style={styles.input}
-              placeholder="example@email.com"
-              value={form.email}
-              onChangeText={text => onChange('email', text)}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              spellCheck={false}
-              autoComplete="email"
-              importantForAutofill="yes"
-              returnKeyType="next"
-              onSubmitEditing={() => passwordRef.current?.focus()}
-              onFocus={() => onFocus('email')}
-              onBlur={onBlur}
-              editable={!isLoading}
-              placeholderTextColor={COLORS.textSecondary}
-              accessibilityLabel="이메일"
-            />
-          </AuthFieldBox>
-          {!!errors.email && <InlineError message={errors.email} />}
-        </View>
-
-        <View style={styles.inputGroup}>
-          <AuthFieldBox
-            state={passwordState}
-            style={styles.passwordContainer}
-            label="비밀번호"
-          >
-            <View style={styles.passwordContent}>
+        <Animated.View entering={revealStep(1)}>
+          <View style={styles.inputGroup}>
+            <AuthFieldBox
+              state={emailState}
+              style={styles.inputContainer}
+              label="이메일"
+            >
               <TextInput
-                ref={passwordRef}
-                style={styles.passwordInput}
-                value={form.password}
-                onChangeText={text => onChange('password', text)}
-                secureTextEntry={!isPasswordVisible}
+                ref={emailRef}
+                style={styles.input}
+                placeholder="example@email.com"
+                value={form.email}
+                onChangeText={text => onChange('email', text)}
+                keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
-                autoComplete="password"
+                spellCheck={false}
+                autoComplete="email"
                 importantForAutofill="yes"
-                returnKeyType="go"
-                onSubmitEditing={onLogin}
-                onFocus={() => onFocus('password')}
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                onFocus={() => onFocus('email')}
                 onBlur={onBlur}
                 editable={!isLoading}
                 placeholderTextColor={COLORS.textSecondary}
-                accessibilityLabel="비밀번호"
+                accessibilityLabel="이메일"
               />
-            </View>
+            </AuthFieldBox>
+            {!!errors.email && <InlineError message={errors.email} />}
+          </View>
+
+          <View style={styles.inputGroup}>
+            <AuthFieldBox
+              state={passwordState}
+              style={styles.passwordContainer}
+              label="비밀번호"
+            >
+              <View style={styles.passwordContent}>
+                <TextInput
+                  ref={passwordRef}
+                  style={styles.passwordInput}
+                  value={form.password}
+                  onChangeText={text => onChange('password', text)}
+                  secureTextEntry={!isPasswordVisible}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="password"
+                  importantForAutofill="yes"
+                  returnKeyType="go"
+                  onSubmitEditing={onLogin}
+                  onFocus={() => onFocus('password')}
+                  onBlur={onBlur}
+                  editable={!isLoading}
+                  placeholderTextColor={COLORS.textSecondary}
+                  accessibilityLabel="비밀번호"
+                />
+              </View>
+              <Pressable
+                style={styles.eyeButton}
+                onPress={() => setPasswordVisible(v => !v)}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  isPasswordVisible ? '비밀번호 숨기기' : '비밀번호 표시'
+                }
+              >
+                {isPasswordVisible ? (
+                  <EyeOff size={20} color={COLORS.textSecondary} />
+                ) : (
+                  <Eye size={20} color={COLORS.textSecondary} />
+                )}
+              </Pressable>
+            </AuthFieldBox>
+            {!!errors.password && <InlineError message={errors.password} />}
+            {!!errors.form && <InlineError message={errors.form} />}
+          </View>
+
+          <AuthSubmitButton
+            label="로그인"
+            onPress={onLogin}
+            loading={isLoading}
+            style={styles.submitButtonSpacing}
+          />
+
+          <View style={styles.linksContainer}>
             <Pressable
-              style={styles.eyeButton}
-              onPress={() => setPasswordVisible(v => !v)}
+              style={styles.linkButton}
+              onPress={onNavigateToForgotPassword}
+              disabled={isLoading}
               accessibilityRole="button"
-              accessibilityLabel={
-                isPasswordVisible ? '비밀번호 숨기기' : '비밀번호 표시'
-              }
             >
-              {isPasswordVisible ? (
-                <EyeOff size={20} color={COLORS.textSecondary} />
-              ) : (
-                <Eye size={20} color={COLORS.textSecondary} />
-              )}
+              <Text style={styles.linkText}>비밀번호를 잊으셨나요?</Text>
             </Pressable>
-          </AuthFieldBox>
-          {!!errors.password && <InlineError message={errors.password} />}
-          {!!errors.form && <InlineError message={errors.form} />}
-        </View>
-
-        <AuthSubmitButton
-          label="로그인"
-          onPress={onLogin}
-          loading={isLoading}
-          style={styles.submitButtonSpacing}
-        />
-
-        <View style={styles.linksContainer}>
-          <Pressable
-            style={styles.linkButton}
-            onPress={onNavigateToForgotPassword}
-            disabled={isLoading}
-            accessibilityRole="button"
-          >
-            <Text style={styles.linkText}>비밀번호를 잊으셨나요?</Text>
-          </Pressable>
-        </View>
-
-        {/* Social Login */}
-        <View style={styles.socialContainer}>
-          <View style={styles.socialDivider}>
-            <View style={styles.socialDividerLine} />
-            <Text style={styles.socialDividerText}>소셜 계정으로 로그인</Text>
-            <View style={styles.socialDividerLine} />
           </View>
-          <View style={styles.socialButtons}>
-            <PressableScale
-              style={styles.socialButton}
-              baseColor={COLORS.surfaceRaised}
-              pressedColor={COLORS.surface}
-              scaleTo={0.98}
-              onPress={onGoogleLogin}
-              disabled={isLoading}
-              accessibilityRole="button"
-              accessibilityLabel={
-                lastLoginMethod === 'google'
-                  ? 'Google 계정으로 계속하기, 마지막으로 사용한 로그인 수단'
-                  : 'Google 계정으로 계속하기'
-              }
-            >
-              <GoogleIcon size={20} />
-              <Text style={styles.socialButtonText}>Google로 계속하기</Text>
-              {lastLoginMethod === 'google' && (
-                <View style={styles.lastUsedBadge}>
-                  <Text style={styles.lastUsedBadgeText}>마지막 사용</Text>
-                </View>
-              )}
-            </PressableScale>
-            <PressableScale
-              style={styles.socialButton}
-              baseColor={COLORS.surfaceRaised}
-              pressedColor={COLORS.surface}
-              scaleTo={0.98}
-              onPress={onNaverLogin}
-              disabled={isLoading}
-              accessibilityRole="button"
-              accessibilityLabel={
-                lastLoginMethod === 'naver'
-                  ? '네이버 계정으로 계속하기, 마지막으로 사용한 로그인 수단'
-                  : '네이버 계정으로 계속하기'
-              }
-            >
-              <NaverIcon size={20} />
-              <Text style={styles.socialButtonText}>네이버로 계속하기</Text>
-              {lastLoginMethod === 'naver' && (
-                <View style={styles.lastUsedBadge}>
-                  <Text style={styles.lastUsedBadgeText}>마지막 사용</Text>
-                </View>
-              )}
-            </PressableScale>
+
+          {/* Social Login */}
+          <View style={styles.socialContainer}>
+            <View style={styles.socialDivider}>
+              <View style={styles.socialDividerLine} />
+              <Text style={styles.socialDividerText}>소셜 계정으로 로그인</Text>
+              <View style={styles.socialDividerLine} />
+            </View>
+            <View style={styles.socialButtons}>
+              <PressableScale
+                style={styles.socialButton}
+                baseColor={COLORS.surfaceRaised}
+                pressedColor={COLORS.surface}
+                scaleTo={0.98}
+                onPress={onGoogleLogin}
+                disabled={isLoading}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  lastLoginMethod === 'google'
+                    ? 'Google 계정으로 계속하기, 마지막으로 사용한 로그인 수단'
+                    : 'Google 계정으로 계속하기'
+                }
+              >
+                <GoogleIcon size={20} />
+                <Text style={styles.socialButtonText}>Google로 계속하기</Text>
+                {lastLoginMethod === 'google' && (
+                  <View style={styles.lastUsedBadge}>
+                    <Text style={styles.lastUsedBadgeText}>마지막 사용</Text>
+                  </View>
+                )}
+              </PressableScale>
+              <PressableScale
+                style={styles.socialButton}
+                baseColor={COLORS.surfaceRaised}
+                pressedColor={COLORS.surface}
+                scaleTo={0.98}
+                onPress={onNaverLogin}
+                disabled={isLoading}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  lastLoginMethod === 'naver'
+                    ? '네이버 계정으로 계속하기, 마지막으로 사용한 로그인 수단'
+                    : '네이버 계정으로 계속하기'
+                }
+              >
+                <NaverIcon size={20} />
+                <Text style={styles.socialButtonText}>네이버로 계속하기</Text>
+                {lastLoginMethod === 'naver' && (
+                  <View style={styles.lastUsedBadge}>
+                    <Text style={styles.lastUsedBadgeText}>마지막 사용</Text>
+                  </View>
+                )}
+              </PressableScale>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.linksContainer}>
-          <Text style={styles.linkText}>계정이 없으신가요?</Text>
-          <Pressable
-            style={styles.linkButton}
-            onPress={onNavigateToSignup}
-            disabled={isLoading}
-            accessibilityRole="button"
-            accessibilityLabel="회원가입"
-          >
-            <Text style={[styles.linkText, styles.linkTextStrong]}>
-              회원가입
-            </Text>
-          </Pressable>
-        </View>
+          {/*
+            계정 없음 안내와 개인정보 링크는 둘 다 화면을 마무리하는 꼬리
+            문구다. 각자 독립된 섹션처럼 20dp씩 떨어져 계단을 만들던 것을
+            한 덩어리로 묶는다.
+          */}
+          <View style={styles.tailLinksGroup}>
+            <View style={styles.tailLinksRow}>
+              <Text style={styles.linkText}>계정이 없으신가요?</Text>
+              <Pressable
+                style={styles.linkButton}
+                onPress={onNavigateToSignup}
+                disabled={isLoading}
+                accessibilityRole="button"
+                accessibilityLabel="회원가입"
+              >
+                <Text style={[styles.linkText, styles.linkTextStrong]}>
+                  회원가입
+                </Text>
+              </Pressable>
+            </View>
 
-        <Pressable
-          onPress={() => setShowPrivacyModal(true)}
-          disabled={isLoading}
-          style={styles.privacyLinkButton}
-          accessibilityRole="button"
-        >
-          <Text style={styles.privacyLinkText}>개인정보 처리방침</Text>
-        </Pressable>
+            <Pressable
+              onPress={() => setShowPrivacyModal(true)}
+              disabled={isLoading}
+              style={styles.privacyLinkButton}
+              accessibilityRole="button"
+            >
+              <Text style={styles.privacyLinkText}>개인정보 처리방침</Text>
+            </Pressable>
+          </View>
+        </Animated.View>
       </ScrollView>
 
       <PrivacyPolicyModal

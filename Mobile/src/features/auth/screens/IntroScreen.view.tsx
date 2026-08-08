@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, Pressable, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInUp, Easing } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { styles, normalize } from './IntroScreen.styles';
 import AuthSubmitButton from '../components/AuthSubmitButton';
+import { revealStep } from '../motion';
 
 interface IntroScreenViewProps {
   onStart: () => void;
@@ -15,15 +16,6 @@ interface IntroScreenViewProps {
  * 앱 첫 화면인데 지금까지 아무 등장 동작이 없어 다른 화면(AuthSubmitButton,
  * Signup 단계 전환)과 달리 정적으로 느껴졌다.
  */
-const REVEAL_STAGGER_MS = 90;
-const REVEAL_DURATION_MS = 420;
-const REVEAL_EASING = Easing.out(Easing.cubic);
-
-const revealStep = (order: number) =>
-  FadeInUp.duration(REVEAL_DURATION_MS)
-    .delay(order * REVEAL_STAGGER_MS)
-    .easing(REVEAL_EASING);
-
 const IntroScreenView = ({ onStart, onLogin }: IntroScreenViewProps) => {
   const insets = useSafeAreaInsets();
 
