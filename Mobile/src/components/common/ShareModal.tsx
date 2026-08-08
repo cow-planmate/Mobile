@@ -45,7 +45,9 @@ export default function ShareModal({
   onClose,
   planId,
   isMock = false,
-  isOwner = true,
+  // 소유자만 쓸 수 있는 조작(공유 토글·편집자 삭제)은 서버가 OWNER를 요구한다.
+  // 판정을 못 넘겨받았으면 숨긴다 — 눌러도 403이 나는 버튼을 보여주지 않는다.
+  isOwner = false,
 }: ShareModalProps) {
   const { showAlert } = useAlert();
   const [shareLink, setShareLink] = useState('');

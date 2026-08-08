@@ -289,6 +289,7 @@ const meta = {
           onClose={() => setShareModalVisible(false)}
           planId="123"
           isMock={true}
+          isOwner
         />
         <Modal
           visible={isParticipantsVisible}

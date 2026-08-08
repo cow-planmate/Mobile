@@ -28,6 +28,7 @@ import {
   fetchWeather,
 } from '../../../api/trips';
 import { useAlert } from '../../../contexts/AlertContext';
+import { usePlanOwnership } from '../../../hooks/usePlanOwnership';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
 // DTO Interfaces
 interface PlanFrameVO {
@@ -84,6 +85,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [isShareModalVisible, setShareModalVisible] = useState(false);
   const [isChecklistVisible, setChecklistVisible] = useState(false);
+  const { isOwner: isPlanOwner } = usePlanOwnership(planId);
   const [isMapVisible, setMapVisible] = useState(false);
   const [isBacking, setIsBacking] = useState(false);
   const isBackingRef = useRef(false);
@@ -388,6 +390,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       setShareModalVisible={setShareModalVisible}
       isChecklistVisible={isChecklistVisible}
       setChecklistVisible={setChecklistVisible}
+      isPlanOwner={isPlanOwner}
       scrollRef={scrollRef}
       gridHours={gridHours}
       offsetMinutes={offsetMinutes}

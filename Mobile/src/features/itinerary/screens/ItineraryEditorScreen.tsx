@@ -25,6 +25,7 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { useItineraryEditor } from '../../../hooks/useItineraryEditor';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
+import { usePlanOwnership } from '../../../hooks/usePlanOwnership';
 import {
   timeToMinutes,
   dateToTime,
@@ -83,6 +84,7 @@ type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const { showAlert } = useAlert();
   const currentUser = useAuthStore(state => state.user);
+  const { isOwner: isPlanOwner } = usePlanOwnership(route.params.planId);
   let queryClient: any = null;
   try {
     // useQueryClient는 Provider가 없으면 예외를 던진다. 내부적으로 useContext를
@@ -830,11 +832,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       disconnect();
 
       try {
-        const ownerIdLower = String(planMetadata?.user?.userId || planMetadata?.ownerId || '').toLowerCase();
-        const currentUserIdLower = String(currentUser?.userId || '').toLowerCase();
-        const isOwner = !ownerIdLower || ownerIdLower === currentUserIdLower;
-
-        if (isOwner && tripName) {
+        // 이름 변경은 서버가 OWNER만 허용한다. 소유자가 아니면 보내지 않는다.
+        if (isPlanOwner && tripName) {
           await axios.patch(
             resolveApiUrl(`/api/plan/${route.params.planId}/name`),
             { planName: tripName },
@@ -1159,7 +1158,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         visible={isShareModalVisible}
         onClose={() => setShareModalVisible(false)}
         planId={planId as string}
-        isOwner={!(planMetadata?.user?.userId || planMetadata?.ownerId) || String(planMetadata?.user?.userId || planMetadata?.ownerId).toLowerCase() === String(currentUser?.userId || '').toLowerCase()}
+        isOwner={isPlanOwner}
       />
       {/* 닫혀 있을 때는 마운트하지 않는다. 조회 훅이 그동안 헛돌 이유가 없다. */}
       {isChecklistVisible && (

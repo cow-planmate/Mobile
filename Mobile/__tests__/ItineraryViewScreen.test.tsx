@@ -32,6 +32,11 @@ const mockRoute = {
   },
 } as any;
 
+// 소유권 조회는 이 테스트 관심사가 아니다. Provider 없이 useQuery가 돌지 않도록 대체한다.
+jest.mock('../src/hooks/usePlanOwnership', () => ({
+  usePlanOwnership: () => ({ isOwner: true, isLoading: false, isError: false }),
+}));
+
 jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: jest.fn(() => Promise.resolve(null)),
   setItem: jest.fn(() => Promise.resolve()),

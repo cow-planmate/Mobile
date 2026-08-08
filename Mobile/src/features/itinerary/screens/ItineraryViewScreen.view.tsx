@@ -231,6 +231,8 @@ export interface ItineraryViewScreenViewProps {
   setShareModalVisible: (visible: boolean) => void;
   isChecklistVisible: boolean;
   setChecklistVisible: (visible: boolean) => void;
+  /** 공유 토글·편집자 삭제는 소유자만 쓸 수 있다. */
+  isPlanOwner: boolean;
   scrollRef: React.RefObject<ScrollView | null>;
   gridHours: number[];
   offsetMinutes: number;
@@ -256,6 +258,7 @@ export default function ItineraryViewScreenView({
   setShareModalVisible,
   isChecklistVisible,
   setChecklistVisible,
+  isPlanOwner,
   scrollRef,
   gridHours,
   offsetMinutes,
@@ -482,6 +485,7 @@ export default function ItineraryViewScreenView({
         visible={isShareModalVisible}
         onClose={() => setShareModalVisible(false)}
         planId={planId ?? ''}
+        isOwner={isPlanOwner}
       />
       {/* 닫혀 있을 때는 마운트하지 않는다. 조회 훅이 그동안 헛돌 이유가 없다. */}
       {isChecklistVisible && (
