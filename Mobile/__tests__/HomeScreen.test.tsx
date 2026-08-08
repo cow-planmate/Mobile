@@ -83,7 +83,9 @@ jest.mock('../src/contexts/AlertContext', () => ({
 }));
 
 // Mocking Trips APIs
-const mockMutateAsync = jest.fn(() => Promise.resolve({ planId: 'new-plan-123' }));
+const mockMutateAsync = jest.fn<Promise<{ planId?: string }>, []>(() =>
+  Promise.resolve({ planId: 'new-plan-123' }),
+);
 jest.mock('../src/hooks/usePlanQueries', () => ({
   useCreateFullPlan: () => ({
     mutateAsync: mockMutateAsync,
