@@ -203,7 +203,12 @@ export default function ScheduleEditModal({
   const formatTime = (time: string) => time.substring(0, 5);
 
   return (
-    <Modal visible={visible} animationType="fade" transparent={true}>
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={onClose}
+    >
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable style={styles.modal} onPress={() => {}}>
           {/* Header */}

@@ -175,11 +175,18 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         setNotificationModalVisible(false);
       }
     } catch (e) {
-      showAlert({ title: '오류', message: '수락 처리에 실패했습니다.' });
+      showAlert({
+        title: '수락하지 못했습니다',
+        message: '네트워크 상태를 확인하고 다시 시도해주세요.',
+        buttons: [
+          { text: '닫기', style: 'cancel' },
+          { text: '다시 시도', onPress: () => void handleAccept(requestId) },
+        ],
+      });
     }
   };
 
-  const handleReject = async (requestId: number) => {
+  const rejectRequest = async (requestId: number) => {
     const type = findRequestType(requestId);
     try {
       await rejectInvitation(requestId);
@@ -189,8 +196,38 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         setNotificationModalVisible(false);
       }
     } catch (e) {
-      showAlert({ title: '오류', message: '거절 처리에 실패했습니다.' });
+      showAlert({
+        title: '거절하지 못했습니다',
+        message: '네트워크 상태를 확인하고 다시 시도해주세요.',
+        buttons: [
+          { text: '닫기', style: 'cancel' },
+          { text: '다시 시도', onPress: () => void rejectRequest(requestId) },
+        ],
+      });
     }
+  };
+
+  /**
+   * 거절은 되돌릴 수 없다. 서버가 처리 결과를 보관하지 않아 목록에서 사라지면
+   * 다시 찾을 방법이 없으므로, 누르기 전에 한 번 확인한다.
+   */
+  const handleReject = (requestId: number) => {
+    const request = pendingRequests.find(r => r.requestId === requestId);
+    showAlert({
+      title: '거절할까요?',
+      message: request
+        ? `${request.senderNickname}님의 요청은 거절하면 다시 받을 수 없어요.`
+        : '거절하면 다시 받을 수 없어요.',
+      type: 'confirm',
+      buttons: [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '거절',
+          style: 'destructive',
+          onPress: () => void rejectRequest(requestId),
+        },
+      ],
+    });
   };
 
   const handleNotificationPress = () => {
@@ -296,9 +333,15 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     } catch (error) {
       console.error('일정 생성 준비 실패:', error);
       setIsCreating(false);
+      /** 입력값은 그대로 남아 있으므로 이 자리에서 바로 다시 시도할 수 있다. */
       showAlert({
-        title: '오류',
-        message: '일정 생성에 실패했습니다. 다시 시도해주세요.',
+        title: '일정을 만들지 못했습니다',
+        message:
+          '입력한 내용은 그대로 남아 있어요.\n네트워크 상태를 확인하고 다시 시도해주세요.',
+        buttons: [
+          { text: '닫기', style: 'cancel' },
+          { text: '다시 시도', onPress: () => void handleCreateItinerary() },
+        ],
       });
     }
   };

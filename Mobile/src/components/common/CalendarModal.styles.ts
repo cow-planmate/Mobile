@@ -11,6 +11,7 @@ export const COLORS = {
   surface: '#F3F4F6',
   text: '#111827',
   subtext: '#4B5563',
+  subtextMuted: '#6B7280',
   placeholder: '#9CA3AF',
   border: '#E5E7EB',
   danger: '#EF4444',
@@ -63,11 +64,18 @@ export const styles = StyleSheet.create({
     letterSpacing: -0.3,
     marginBottom: normalize(4),
   },
+  headerTextArea: {
+    flex: 1,
+    marginRight: normalize(8),
+  },
   headerSubtitle: {
     fontSize: normalize(14),
     fontFamily: FONTS.medium,
     fontWeight: '600',
     color: COLORS.primary,
+  },
+  headerSubtitleNotice: {
+    color: COLORS.danger,
   },
   closeButtonContainer: {
     width: normalize(36),
@@ -185,9 +193,16 @@ export const styles = StyleSheet.create({
     color: COLORS.primary,
     fontFamily: FONTS.bold,
   },
+  /**
+   * 인접 월의 날짜. 눌러서 그 달로 이동할 수 있는 살아 있는 컨트롤이므로
+   * 읽히는 밝기를 유지한다(#6B7280, 흰 배경 대비 4.83:1).
+   */
   dayTextOutside: {
+    color: COLORS.subtextMuted,
+  },
+  /** 지난 날짜. 누를 수 없으므로 흐리게 두고 대비 기준에서 제외한다. */
+  dayTextPast: {
     color: COLORS.placeholder,
-    opacity: 0.35,
   },
   
   confirmFooter: {
@@ -201,6 +216,9 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
+  },
+  confirmButtonMuted: {
+    opacity: 0.55,
   },
   confirmButtonText: {
     fontSize: normalize(15),

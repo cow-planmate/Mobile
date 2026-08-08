@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Modal, View, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Modal, View, Text, TouchableOpacity, Pressable } from 'react-native';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { styles, COLORS } from './CalendarModal.styles';
 
@@ -19,6 +19,20 @@ interface CalendarDay {
 
 const WEEK_DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
+/**
+ * 선택 가능한 최대 여행 일수.
+ *
+ * 일정 생성은 범위 안의 날짜마다 타임테이블을 하나씩 만든다. 상한이 없으면
+ * 연도를 잘못 누른 한 번의 탭이 수백 개의 타임테이블을 조용히 만들어 버린다.
+ */
+const MAX_RANGE_DAYS = 30;
+
+const startOfDay = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const daysBetween = (from: Date, to: Date) =>
+  Math.round((to.getTime() - from.getTime()) / 86400000) + 1;
+
 export default function CalendarModal({
   visible,
   onClose,
@@ -28,10 +42,14 @@ export default function CalendarModal({
 }: CalendarModalProps) {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  /** 선택이 거절된 이유. 부제 자리에 그대로 띄운다. */
+  const [notice, setNotice] = useState<string | null>(null);
 
   // 현재 표시 중인 달력의 연/월 상태 (0-indexed month)
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+
+  const todayStart = useMemo(() => startOfDay(new Date()), []);
 
   useEffect(() => {
     if (visible) {
@@ -39,6 +57,7 @@ export default function CalendarModal({
       const end = initialEndDate || null;
       setStartDate(start);
       setEndDate(end);
+      setNotice(null);
 
       // 모달이 열릴 때 선택된 시작일 기준 또는 오늘 날짜 기준으로 연/월 포커스
       const baseDate = start || new Date();
@@ -108,29 +127,50 @@ export default function CalendarModal({
     }
   };
 
-  const onDayPress = (date: Date) => {
-    // 시간 정보 초기화하여 비교 일치성 보장
-    const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const onDayPress = useCallback(
+    (date: Date, isCurrentMonth: boolean) => {
+      // 시간 정보 초기화하여 비교 일치성 보장
+      const targetDate = startOfDay(date);
 
-    if (!startDate || (startDate && endDate)) {
-      setStartDate(targetDate);
-      setEndDate(null);
-    } else {
+      /**
+       * 인접 월의 날짜를 눌렀으면 그 달로 이동한다. 이동하지 않으면 선택은
+       * 되는데 보이지 않는 곳에 남아 무엇이 선택됐는지 알 수 없다.
+       */
+      if (!isCurrentMonth) {
+        setCurrentYear(targetDate.getFullYear());
+        setCurrentMonth(targetDate.getMonth());
+      }
+
+      setNotice(null);
+
+      if (!startDate || (startDate && endDate)) {
+        setStartDate(targetDate);
+        setEndDate(null);
+        return;
+      }
+
       if (targetDate < startDate) {
         setStartDate(targetDate);
         setEndDate(null);
-      } else {
-        setEndDate(targetDate);
+        return;
       }
-    }
-  };
+
+      if (daysBetween(startDate, targetDate) > MAX_RANGE_DAYS) {
+        setNotice(`한 번에 최대 ${MAX_RANGE_DAYS}일까지 선택할 수 있어요`);
+        return;
+      }
+
+      setEndDate(targetDate);
+    },
+    [startDate, endDate],
+  );
 
   const handleConfirm = () => {
-    if (startDate && endDate) {
-      onConfirm({ startDate, endDate });
-    } else if (startDate && !endDate) {
-      onConfirm({ startDate, endDate: startDate });
+    if (!startDate) {
+      setNotice('여행 날짜를 먼저 선택해주세요');
+      return;
     }
+    onConfirm({ startDate, endDate: endDate ?? startDate });
   };
 
   const formatSelectedRange = () => {
@@ -164,13 +204,26 @@ export default function CalendarModal({
   };
 
   return (
-    <Modal visible={visible} animationType="fade" transparent={true}>
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <Pressable style={styles.centeredView} onPress={onClose}>
+        {/* 카드 안쪽 탭이 배경으로 새어 나가 모달을 닫지 않도록 막는다. */}
+        <Pressable style={styles.modalView} onPress={() => {}}>
           <View style={styles.header}>
-            <View>
+            <View style={styles.headerTextArea}>
               <Text style={styles.headerTitle}>여행 기간 선택</Text>
-              <Text style={styles.headerSubtitle}>{formatSelectedRange()}</Text>
+              <Text
+                style={[
+                  styles.headerSubtitle,
+                  notice != null && styles.headerSubtitleNotice,
+                ]}
+              >
+                {notice ?? formatSelectedRange()}
+              </Text>
             </View>
             <TouchableOpacity
               style={styles.closeButtonContainer}
@@ -245,12 +298,14 @@ export default function CalendarModal({
                 const isRangeActive = startTime !== null && endTime !== null;
 
                 const dayColorType = getDayColorType(item.date, item.isCurrentMonth);
+                const isPast = itemTime < todayStart.getTime();
 
                 return (
                   <TouchableOpacity
                     key={index}
                     style={styles.dayCell}
-                    onPress={() => onDayPress(item.date)}
+                    onPress={() => onDayPress(item.date, item.isCurrentMonth)}
+                    disabled={isPast}
                     activeOpacity={0.8}
                   >
                     {/* 범위 선택 시 물결 연결 배경 */}
@@ -279,6 +334,7 @@ export default function CalendarModal({
                           dayColorType === 'sunday' && !isSelected && { color: COLORS.danger },
                           dayColorType === 'saturday' && !isSelected && { color: COLORS.weekendBlue },
                           isToday(item.date) && !isSelected && styles.dayTextToday,
+                          isPast && styles.dayTextPast,
                           isSelected && styles.dayTextSelected,
                         ]}
                       >
@@ -291,18 +347,26 @@ export default function CalendarModal({
             </View>
           </View>
 
-          {/* 하단 확인 버튼 */}
+          {/*
+            하단 확인 버튼.
+
+            날짜가 없을 때 회색으로 죽이지 않는다. 흐리게만 두고, 누르면 무엇이
+            모자란지 부제 자리에 알린다.
+          */}
           <View style={styles.confirmFooter}>
             <TouchableOpacity
-              style={styles.confirmButton}
+              style={[
+                styles.confirmButton,
+                !startDate && styles.confirmButtonMuted,
+              ]}
               onPress={handleConfirm}
               activeOpacity={0.7}
             >
               <Text style={styles.confirmButtonText}>확인</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
