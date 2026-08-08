@@ -13,12 +13,9 @@ import { queryClient } from './src/api/queryClient';
 // axios 인터셉터 설정 초기화
 import './src/api/axiosConfig';
 
-import { StyleSheet, StatusBar, View, Text } from 'react-native';
+import { StyleSheet, StatusBar } from 'react-native';
 import Toast from 'react-native-toast-message';
-import type { ToastConfig } from 'react-native-toast-message';
-import { XCircle, CheckCircle2, Info } from 'lucide-react-native';
-import { COLORS, RADIUS, TYPO } from './src/design/tokens';
-import { sf, sp } from './src/design/scale';
+import { toastConfig } from './src/components/common/toastConfig';
 
 // 글로벌 폰트 스케일링 가드는 index.js에서 최우선 적용된다.
 // (React 19에서 defaultProps가 제거되어 utils/fontScalingGuard로 대체)
@@ -34,53 +31,9 @@ const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && true;
  * 흰 종이인데 토스트만 검은 유리로 떠서 유일하게 이질적이었다.
  * 종이 배경 + 1dp 경계선 + 토큰 색으로 시스템에 맞춘다.
  */
-const toastStyles = StyleSheet.create({
-  container: {
-    paddingHorizontal: sf(16),
-    paddingVertical: sf(12),
-    borderRadius: RADIUS.md,
-    marginHorizontal: sf(24),
-    marginTop: sf(8),
-    backgroundColor: COLORS.surfaceRaised,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  text: {
-    color: COLORS.text,
-    fontSize: sp(TYPO.label.fontSize),
-    fontFamily: TYPO.label.fontFamily,
-    textAlign: 'left',
-    marginLeft: sf(8),
-    flexShrink: 1,
-    lineHeight: sp(TYPO.label.lineHeight),
-  },
-});
+/* Toast visuals are shared with Storybook through toastConfig. */
 
 /* ── Toast Config ── */
-const toastConfig: ToastConfig = {
-  error: ({ text1 }) => (
-    <View style={toastStyles.container}>
-      <XCircle size={18} color={COLORS.error} strokeWidth={2.5} />
-      <Text style={toastStyles.text}>{text1 ?? ''}</Text>
-    </View>
-  ),
-  success: ({ text1 }) => (
-    <View style={toastStyles.container}>
-      <CheckCircle2 size={18} color={COLORS.success} strokeWidth={2.5} />
-      <Text style={toastStyles.text}>{text1 ?? ''}</Text>
-    </View>
-  ),
-  info: ({ text1 }) => (
-    <View style={toastStyles.container}>
-      <Info size={18} color={COLORS.primary} strokeWidth={2.5} />
-      <Text style={toastStyles.text}>{text1 ?? ''}</Text>
-    </View>
-  ),
-};
-
 function App() {
   const initializeAuth = useAuthStore(state => state.initialize);
 
