@@ -18,7 +18,7 @@ import Svg, { Path, Rect } from 'react-native-svg';
 import { styles } from './LoginScreen.styles';
 import { COLORS } from '../authTokens';
 import { sf } from '../../../design/scale';
-import { revealStep } from '../motion';
+import { revealStep, PUSH_TRANSITION_MS } from '../motion';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
@@ -166,11 +166,14 @@ export const LoginScreenView = ({
         showsVerticalScrollIndicator={false}
         bounces={false}
       >
-        <Animated.Text style={styles.title} entering={revealStep(0)}>
+        <Animated.Text
+          style={styles.title}
+          entering={revealStep(0, PUSH_TRANSITION_MS)}
+        >
           로그인
         </Animated.Text>
 
-        <Animated.View entering={revealStep(1)}>
+        <Animated.View entering={revealStep(1, PUSH_TRANSITION_MS)}>
           <View style={styles.inputGroup}>
             <AuthFieldBox
               state={emailState}

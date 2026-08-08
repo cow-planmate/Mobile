@@ -32,6 +32,7 @@ import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
+import { revealStep, PUSH_TRANSITION_MS } from '../motion';
 import {
   formatBirthdate,
   parseBirthdate,
@@ -186,6 +187,19 @@ export const SignupScreenView = ({
   }, [step]);
 
   /**
+   * 최초 진입(화면 push 직후)과 단계 간 전환을 다른 모션으로 구분한다.
+   * 최초 진입은 화면 슬라이드와 축이 겹치지 않게 revealStep으로,
+   * 이후 단계 전환만 기존 수평 슬라이드를 쓴다.
+   */
+  const hasMountedRef = useRef(false);
+  useEffect(() => {
+    hasMountedRef.current = true;
+  }, []);
+  const stepEntering = hasMountedRef.current
+    ? (goingForward ? FadeInRight : FadeInLeft).duration(220)
+    : revealStep(1, PUSH_TRANSITION_MS);
+
+  /**
    * 오류가 있으면 그 필드로, 없으면 이번 단계의 첫 필드로 포커스를 옮긴다.
    * 단계 내용이 먼저 붙어야 ref가 살아 있으므로 한 프레임 뒤에 실행한다.
    */
@@ -273,7 +287,7 @@ export const SignupScreenView = ({
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* ── 헤더: 뒤로가기는 항상 왼쪽 ── */}
-      <View style={styles.header}>
+      <Animated.View style={styles.header} entering={revealStep(0, PUSH_TRANSITION_MS)}>
         <Pressable
           style={styles.headerBackButton}
           onPress={onPrevStep}
@@ -299,7 +313,7 @@ export const SignupScreenView = ({
         <Text style={styles.progressCount}>
           {step} / {totalSteps}
         </Text>
-      </View>
+      </Animated.View>
 
       <ScrollView
         style={styles.flex1}
@@ -310,7 +324,7 @@ export const SignupScreenView = ({
       >
         <Animated.View
           key={step}
-          entering={(goingForward ? FadeInRight : FadeInLeft).duration(220)}
+          entering={stepEntering}
           exiting={FadeOut.duration(180)}
         >
           <Text style={styles.title}>{STEP_TITLES[step - 1]}</Text>
