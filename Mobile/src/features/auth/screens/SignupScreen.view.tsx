@@ -311,6 +311,7 @@ export const SignupScreenView = ({
         <Animated.View
           key={step}
           entering={(goingForward ? FadeInRight : FadeInLeft).duration(220)}
+          exiting={FadeOut.duration(180)}
         >
           <Text style={styles.title}>{STEP_TITLES[step - 1]}</Text>
           <Text style={styles.description}>{STEP_DESCRIPTIONS[step - 1]}</Text>
