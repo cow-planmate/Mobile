@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { SignupScreenView } from './SignupScreen.view';
 
@@ -54,7 +55,27 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+function InteractiveSignup() {
+  const [form, setForm] = useState(emptyForm);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [isAgreed, setIsAgreed] = useState(false);
+
+  return (
+    <SignupScreenView
+      {...meta.args}
+      form={form}
+      focusedField={focusedField}
+      isAgreed={isAgreed}
+      onChange={(name, value) =>
+        setForm(previous => ({ ...previous, [name]: value }))
+      }
+      onChangeAgreement={setIsAgreed}
+      setFocusedField={setFocusedField}
+    />
+  );
+}
+
+export const Default: Story = { render: () => <InteractiveSignup /> };
 export const PasswordStep: Story = { args: { step: 2 } };
 export const ProfileStep: Story = {
   args: {

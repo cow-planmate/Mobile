@@ -1,5 +1,6 @@
+import React, { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { LoginScreenView } from './LoginScreen.view';
+import { LoginScreenView, LoginErrors } from './LoginScreen.view';
 
 const meta = {
   title: 'Auth/Login',
@@ -28,7 +29,42 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+function InteractiveLogin() {
+  const [form, setForm] = useState({ email: '', password: '' });
+  const [focused, setFocused] = useState<string | null>(null);
+  const [errors, setErrors] = useState<LoginErrors>({});
+
+  return (
+    <LoginScreenView
+      form={form}
+      errors={errors}
+      focusSeq={0}
+      isLoading={false}
+      focused={focused}
+      onChange={(key, value) => {
+        setForm(previous => ({ ...previous, [key]: value }));
+        setErrors({});
+      }}
+      onLogin={() => {
+        if (!form.email || !form.password) {
+          setErrors({ form: '이메일과 비밀번호를 입력해 주세요.' });
+        }
+      }}
+      onFocus={setFocused}
+      onBlur={() => setFocused(null)}
+      onNavigateToSignup={() => {}}
+      onNavigateToForgotPassword={() => {}}
+      onGoogleLogin={() => {}}
+      onNaverLogin={() => {}}
+      lastLoginMethod={null}
+      snsAuthUrl={null}
+      onSnsClose={() => {}}
+      onSnsNavigationStateChange={() => {}}
+    />
+  );
+}
+
+export const Default: Story = { render: () => <InteractiveLogin /> };
 export const InvalidEmail: Story = {
   args: {
     form: { email: 'invalid-email', password: '' },
