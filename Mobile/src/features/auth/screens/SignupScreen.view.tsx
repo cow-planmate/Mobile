@@ -7,6 +7,7 @@ import {
   Pressable,
   ActivityIndicator,
   ScrollView,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -173,6 +174,17 @@ export const SignupScreenView = ({
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
 
+  /**
+   * 안드로이드의 windowSoftInputMode="adjustResize"는 키보드가 뜨면 창 자체를
+   * 줄여서 이 화면의 flex:1 컨테이너도 함께 줄어들고, 그 아래 붙은 하단 '다음'
+   * 버튼이 키보드 위로 따라 올라온다. 1·2단계는 필드의 리턴 키로 바로 다음
+   * 단계로 넘어가 버튼을 볼 필요가 없고, 3단계는 닉네임 입력을 마치면 생년월일
+   * ·성별처럼 키보드가 필요 없는 컨트롤로 넘어가므로, 버튼이 키보드를 따라
+   * 움직일 필요가 없다. 마운트 시점의 화면 높이를 고정값으로 박아 두면 창이
+   * 줄어들어도 이 컨테이너는 반응하지 않는다.
+   */
+  const [screenHeight] = useState(() => Dimensions.get('window').height);
+
   const emailRef = useRef<TextInput>(null);
   const codeRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -285,7 +297,9 @@ export const SignupScreenView = ({
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View
+      style={[styles.container, { paddingTop: insets.top, height: screenHeight }]}
+    >
       {/* ── 헤더: 뒤로가기는 항상 왼쪽 ── */}
       <Animated.View style={styles.header} entering={revealStep(0, PUSH_TRANSITION_MS)}>
         <Pressable
