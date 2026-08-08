@@ -264,6 +264,9 @@ export default function ProfileScreen({ route }: any) {
           position: 'top',
           visibilityTime: 2500,
         });
+        // 뷰가 목록을 미리 바꿔 두므로 실패를 알려야 한다. 삼키면 서버가 거절한
+        // 이름이 화면에만 남는다.
+        throw e;
       }
     },
     [queryClient],

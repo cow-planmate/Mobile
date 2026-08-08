@@ -97,8 +97,9 @@ export const PLAN_MENU_OPTIONS = [
 ];
 
 /** 편집 권한만 받은 일정의 설정 메뉴 (삭제 대신 권한 포기) */
+// 제목 바꾸기는 넣지 않는다. 서버가 PATCH /api/plan/{planId}/name을 OWNER에게만
+// 허용해 편집자가 누르면 403이 온다. 일정 편집 화면에서는 실시간 편집으로 바꿀 수 있다.
 export const SHARED_PLAN_MENU_OPTIONS = [
-  { label: '제목 바꾸기', action: 'rename', icon: faT },
   { label: '수정하기', action: 'edit', icon: faPen },
   { label: '공유 및 초대', action: 'share', icon: faShare },
   {
@@ -463,7 +464,13 @@ export default function ProfileScreenView({
 
   const handleConfirmRename = async (newName: string) => {
     if (!menuPlan) return;
-    await onRenamePlan(menuPlan.planId, newName);
+    try {
+      await onRenamePlan(menuPlan.planId, newName);
+    } catch (e) {
+      // 실패 문구는 컨테이너가 띄운다. 목록은 그대로 두고 모달만 닫는다.
+      setRenameVisible(false);
+      return;
+    }
     setPlans(prev =>
       prev.map(p =>
         p.planId === menuPlan.planId ? { ...p, planName: newName.trim() } : p,

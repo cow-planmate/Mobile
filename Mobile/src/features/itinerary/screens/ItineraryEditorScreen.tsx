@@ -585,16 +585,27 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         sendMessage('update', 'plan', planPayload);
         syncedTripNameRef.current = tripName;
       }
-      try {
-        await axios.patch(
-          resolveApiUrl(`/api/plan/${planId}/name`),
-          { planName: tripName },
-        );
-      } catch (err) {
-        console.error('Failed to update plan title on edit:', err);
+      // 이름 변경 REST는 서버가 OWNER만 허용한다. 편집자의 변경은 위 WebSocket
+      // 전송으로 이미 반영되므로, 403이 확정된 요청을 굳이 보내지 않는다.
+      if (isPlanOwner) {
+        try {
+          await axios.patch(
+            resolveApiUrl(`/api/plan/${planId}/name`),
+            { planName: tripName },
+          );
+        } catch (err) {
+          console.error('Failed to update plan title on edit:', err);
+        }
       }
     }
-  }, [buildPlanSyncPayload, planId, sendMessage, setIsEditingTripName, tripName]);
+  }, [
+    buildPlanSyncPayload,
+    isPlanOwner,
+    planId,
+    sendMessage,
+    setIsEditingTripName,
+    tripName,
+  ]);
 
   const handleOpenParticipants = useCallback(() => {
     setParticipantsVisible(true);
