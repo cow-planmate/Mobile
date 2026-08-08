@@ -36,6 +36,25 @@ interface PendingPlaceCreate {
 export const countPlaces = (days: Day[]): number =>
   days.reduce((sum, d) => sum + d.places.length, 0);
 
+const dayKey = (day: Day): string => {
+  const date = day.date;
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+};
+
+const normalizeTimeForComparison = (time?: string): string =>
+  (time || '').substring(0, 5);
+
+const isSamePlaceForFetch = (current: Place, fetched: Place): boolean =>
+  current.id === fetched.id &&
+  current.name === fetched.name &&
+  current.address === fetched.address &&
+  (current.memo || '') === (fetched.memo || '') &&
+  current.categoryId === fetched.categoryId &&
+  normalizeTimeForComparison(current.startTime) ===
+    normalizeTimeForComparison(fetched.startTime) &&
+  normalizeTimeForComparison(current.endTime) ===
+    normalizeTimeForComparison(fetched.endTime);
+
 /**
  * 서버 조회 결과로 로컬 상태를 덮어써도 되는지 판단합니다.
  *
@@ -45,13 +64,40 @@ export const countPlaces = (days: Day[]): number =>
  * place 개수를 가진 stale 스냅샷일 수 있습니다. 그런 응답으로 전체를
  * 덮어쓰면 방금 저장한 내용이 화면에서 사라집니다.
  *
- * 그래서 "이미 알고 있는 것보다 적지 않을 때만" 서버 응답을 신뢰합니다.
+ * 그래서 장소 수가 적지 않고, 로컬에 있는 날짜·장소의 시간과 메모가 모두 일치할 때만
+ * 서버 응답을 신뢰합니다.
  * 로컬이 비어 있으면(최초 진입) 항상 서버 응답을 받아들입니다.
  */
 export const isFetchAtLeastAsComplete = (
   fetched: Day[],
   current: Day[],
-): boolean => countPlaces(fetched) >= countPlaces(current);
+): boolean => {
+  if (current.length === 0) return true;
+  if (countPlaces(fetched) < countPlaces(current)) return false;
+
+  return current.every(currentDay => {
+    const fetchedDay = fetched.find(day =>
+      currentDay.timetableId !== undefined && day.timetableId !== undefined
+        ? String(day.timetableId) === String(currentDay.timetableId)
+        : dayKey(day) === dayKey(currentDay),
+    );
+    if (!fetchedDay) return false;
+
+    const hasSameDayRange =
+      normalizeTimeForComparison(currentDay.startTime) ===
+        normalizeTimeForComparison(fetchedDay.startTime) &&
+      normalizeTimeForComparison(currentDay.endTime) ===
+        normalizeTimeForComparison(fetchedDay.endTime);
+    if (!hasSameDayRange) return false;
+
+    return currentDay.places.every(currentPlace => {
+      const fetchedPlace = fetchedDay.places.find(
+        place => place.id === currentPlace.id,
+      );
+      return !!fetchedPlace && isSamePlaceForFetch(currentPlace, fetchedPlace);
+    });
+  });
+};
 
 /** 블록 최소 길이(분). resolveConflictsAndSort의 스냅 단위와 동일하게 둔다. */
 const MIN_BLOCK_MINUTES = 15;
