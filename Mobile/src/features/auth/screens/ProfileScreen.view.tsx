@@ -52,8 +52,11 @@ import {
   ChevronLeft,
   ChevronDown,
   MoreVertical,
+  ListChecks,
 } from 'lucide-react-native';
 import FastImage from 'react-native-fast-image';
+import ChecklistSheet from '../../itinerary/components/checklist/ChecklistSheet';
+import { useChecklist } from '../../itinerary/hooks/useChecklistQueries';
 import gravatarUrl from '../../../utils/gravatarUrl';
 import { normalize } from '../../../utils/normalize';
 import DatePicker from 'react-native-date-picker';
@@ -106,16 +109,6 @@ export const SHARED_PLAN_MENU_OPTIONS = [
   },
 ];
 
-/**
- * '준비중' 체크리스트 미리보기 항목.
- * pointerEvents="none"로 잠겨 있어 변하지 않으므로 카드마다 state로 들고 있지 않는다.
- */
-const PREVIEW_TASKS = [
-  { id: 1, text: '숙소 예약 확인', checked: true },
-  { id: 2, text: '짐 싸기 완료', checked: false },
-  { id: 3, text: '맛집 리스트 체크', checked: false },
-] as const;
-
 const ItineraryCardItem = ({
   plan,
   onOpenMenu,
@@ -123,6 +116,7 @@ const ItineraryCardItem = ({
   isEditMode,
   isSelected,
   onSelectToggle,
+  onOpenChecklist,
 }: {
   plan: PlanItem;
   onOpenMenu: (plan: PlanItem) => void;
@@ -130,6 +124,7 @@ const ItineraryCardItem = ({
   isEditMode: boolean;
   isSelected: boolean;
   onSelectToggle: () => void;
+  onOpenChecklist: (plan: PlanItem) => void;
 }) => {
 
   // D-Day 계산
@@ -157,8 +152,27 @@ const ItineraryCardItem = ({
   const dDay = getDDay(plan.startDate);
   const formattedPeriod = getFormattedPeriod(plan.startDate, plan.endDate);
 
-  const completedCount = PREVIEW_TASKS.filter(t => t.checked).length;
-  
+  /**
+   * 준비물 요약.
+   *
+   * 목록 스크롤만으로 카드 수만큼 요청이 나가지 않도록 조회는 끄고 캐시만 읽는다.
+   * 시트를 한 번이라도 연 일정은 캐시가 채워져 있고, 시트에서 항목을 바꾸면
+   * 같은 캐시를 구독하는 이 카드도 함께 갱신된다.
+   */
+  const { data: sharedChecklist } = useChecklist(plan.planId, 'shared', false);
+  const { data: personalChecklist } = useChecklist(
+    plan.planId,
+    'personal',
+    false,
+  );
+  const checklistItems = [
+    ...(sharedChecklist ?? []),
+    ...(personalChecklist ?? []),
+  ];
+  const hasChecklistCache = !!sharedChecklist || !!personalChecklist;
+  const completedCount = checklistItems.filter(item => item.isChecked).length;
+
+
   // 테마 색상 분기 (공유받은 일정이면 오렌지색, 생성한 일정이면 파란색)
   const themeColor = plan.isShared ? '#F97316' : '#1344FF';
 
@@ -228,40 +242,61 @@ const ItineraryCardItem = ({
       </View>
 
       {/* 체크리스트 영역 */}
-      <View style={[styles.checklistContainer, { opacity: 0.6 }]} pointerEvents="none">
+      <TouchableOpacity
+        style={styles.checklistContainer}
+        onPress={() => onOpenChecklist(plan)}
+        disabled={isEditMode}
+        activeOpacity={0.7}
+      >
         <View style={styles.checklistHeader}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Lock size={12} color="#9CA3AF" style={{ marginRight: 6 }} />
-            <Text style={[styles.checklistTitle, { color: '#9CA3AF' }]}>CHECK LIST (준비중)</Text>
+            <ListChecks size={12} color="#6B7280" style={{ marginRight: 6 }} />
+            <Text style={styles.checklistTitle}>준비물</Text>
           </View>
-          <Text style={[styles.checklistProgressText, { color: '#9CA3AF' }]}>
-            {completedCount}/{PREVIEW_TASKS.length}
+          <Text style={styles.checklistProgressText}>
+            {hasChecklistCache
+              ? `${completedCount}/${checklistItems.length}`
+              : '확인하기'}
           </Text>
         </View>
 
-        {PREVIEW_TASKS.map(task => (
-          <View
-            key={task.id}
-            style={styles.taskItemRow}
-          >
-            {task.checked ? (
-              <CheckCircle2 size={16} color="#9CA3AF" style={{ marginRight: 8 }} />
-            ) : (
-              <Circle size={16} color="#D1D5DB" style={{ marginRight: 8 }} />
-            )}
+        {hasChecklistCache && checklistItems.length > 0 ? (
+          checklistItems.slice(0, 3).map(item => (
+            <View key={item.itemId} style={styles.taskItemRow}>
+              {item.isChecked ? (
+                <CheckCircle2
+                  size={16}
+                  color="#1344FF"
+                  style={{ marginRight: 8 }}
+                />
+              ) : (
+                <Circle size={16} color="#D1D5DB" style={{ marginRight: 8 }} />
+              )}
+              <Text
+                style={[
+                  styles.taskText,
+                  item.isChecked && styles.taskTextCompleted,
+                ]}
+                numberOfLines={1}
+              >
+                {item.content}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <View style={styles.taskItemRow}>
+            <Circle size={16} color="#D1D5DB" style={{ marginRight: 8 }} />
             <Text
-              style={[
-                styles.taskText,
-                { color: '#9CA3AF' },
-                task.checked && styles.taskTextCompleted,
-              ]}
+              style={[styles.taskText, { color: '#9CA3AF' }]}
               numberOfLines={1}
             >
-              {task.text}
+              {hasChecklistCache
+                ? '준비물을 추가해 보세요'
+                : '눌러서 준비물을 확인하세요'}
             </Text>
           </View>
-        ))}
-      </View>
+        )}
+      </TouchableOpacity>
 
       {/* 공유 일정 전용 SHARED 코너 배지 */}
       {plan.isShared && (
@@ -322,6 +357,8 @@ export default function ProfileScreenView({
   const [plans, setPlans] = useState<any[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPlanIds, setSelectedPlanIds] = useState<string[]>([]);
+  /** 준비물 시트를 연 일정. null이면 시트가 닫힌 상태다. */
+  const [checklistPlan, setChecklistPlan] = useState<PlanItem | null>(null);
   const scrollRef = React.useRef<ScrollView>(null);
   const [itineraryY, setItineraryY] = useState(0);
 
@@ -397,6 +434,10 @@ export default function ProfileScreenView({
   const handleOpenPlanMenu = (plan: PlanItem) => {
     setMenuPlan(plan);
     setPlanMenuVisible(true);
+  };
+
+  const handleOpenChecklist = (plan: PlanItem) => {
+    setChecklistPlan(plan);
   };
 
   const handlePlanMenuSelect = (action: string) => {
@@ -957,6 +998,7 @@ export default function ProfileScreenView({
                       isEditMode={isEditMode}
                       isSelected={isSelected}
                       onSelectToggle={onSelectToggle}
+                      onOpenChecklist={handleOpenChecklist}
                     />
                   );
                 })}
@@ -1377,6 +1419,14 @@ export default function ProfileScreenView({
           onClose={() => setPlanShareVisible(false)}
           planId={menuPlan.planId}
           isOwner={!menuPlan.isShared}
+        />
+      )}
+
+      {checklistPlan && (
+        <ChecklistSheet
+          visible
+          onClose={() => setChecklistPlan(null)}
+          planId={checklistPlan.planId}
         />
       )}
     </View>

@@ -71,6 +71,7 @@ jest.mock('lucide-react-native', () => {
   return {
     Map: () => React.createElement(View),
     ChevronLeft: () => React.createElement(View),
+    ListChecks: () => React.createElement(View),
   };
 });
 

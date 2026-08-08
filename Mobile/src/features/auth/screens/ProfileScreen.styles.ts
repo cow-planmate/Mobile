@@ -737,7 +737,7 @@ export const styles = StyleSheet.create({
   checklistTitle: {
     fontSize: normalize(10),
     fontWeight: '700',
-    color: '#9CA3AF',
+    color: '#6B7280',
     letterSpacing: 0.5,
   },
   checklistProgressText: {

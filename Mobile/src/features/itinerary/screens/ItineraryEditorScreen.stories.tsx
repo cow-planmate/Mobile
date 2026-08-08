@@ -104,6 +104,7 @@ const meta = {
     onOpenParticipants: () => {},
     onOpenMap: () => {},
     onOpenShare: () => {},
+    onOpenChecklist: () => {},
     onUndo: () => {},
     onRedo: () => {},
     onOpenPlanInfo: () => {},

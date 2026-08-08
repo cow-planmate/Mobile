@@ -86,6 +86,8 @@ const meta = {
     setMapVisible: () => {},
     isShareModalVisible: false,
     setShareModalVisible: () => {},
+    isChecklistVisible: false,
+    setChecklistVisible: () => {},
     scrollRef: { current: null } as any,
     gridHours: [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
     offsetMinutes: 9 * 60,
@@ -117,6 +119,7 @@ const meta = {
     const [selectedDayIndex, setSelectedDayIndex] = React.useState(args.selectedDayIndex);
     const [isMapVisible, setMapVisible] = React.useState(args.isMapVisible);
     const [isShareModalVisible, setShareModalVisible] = React.useState(args.isShareModalVisible);
+    const [isChecklistVisible, setChecklistVisible] = React.useState(args.isChecklistVisible);
 
     return (
       <ItineraryViewScreenView
@@ -127,6 +130,8 @@ const meta = {
         setMapVisible={setMapVisible}
         isShareModalVisible={isShareModalVisible}
         setShareModalVisible={setShareModalVisible}
+        isChecklistVisible={isChecklistVisible}
+        setChecklistVisible={setChecklistVisible}
       />
     );
   },

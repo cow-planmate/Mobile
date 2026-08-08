@@ -83,6 +83,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const [tripName, setTripName] = useState(initialTripName);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [isShareModalVisible, setShareModalVisible] = useState(false);
+  const [isChecklistVisible, setChecklistVisible] = useState(false);
   const [isMapVisible, setMapVisible] = useState(false);
   const [isBacking, setIsBacking] = useState(false);
   const isBackingRef = useRef(false);
@@ -385,6 +386,8 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       setMapVisible={setMapVisible}
       isShareModalVisible={isShareModalVisible}
       setShareModalVisible={setShareModalVisible}
+      isChecklistVisible={isChecklistVisible}
+      setChecklistVisible={setChecklistVisible}
       scrollRef={scrollRef}
       gridHours={gridHours}
       offsetMinutes={offsetMinutes}

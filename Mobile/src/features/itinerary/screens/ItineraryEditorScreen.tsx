@@ -45,6 +45,7 @@ import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { ShareModal, PlanInfoModal, AirplaneLoading } from '../../../components/common';
 import PlaceEditModal from '../components/PlaceEditModal';
 import RouteMapSection from '../components/RouteMapSection';
+import ChecklistSheet from '../components/checklist/ChecklistSheet';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faMap, faUsers, faXmark } from '@fortawesome/free-solid-svg-icons';
 
@@ -198,6 +199,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const destination = route.params.destination;
   const [isScheduleEditVisible, setScheduleEditVisible] = useState(false);
   const [isShareModalVisible, setShareModalVisible] = useState(false);
+  const [isChecklistVisible, setChecklistVisible] = useState(false);
   const [isPlaceEditModalVisible, setPlaceEditModalVisible] = useState(false);
   const [editingPlace, setEditingPlace] = useState<any>(null);
   const [isParticipantsVisible, setParticipantsVisible] = useState(false);
@@ -999,6 +1001,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         onOpenParticipants={handleOpenParticipants}
         onOpenMap={handleOpenMap}
         onOpenShare={() => setShareModalVisible(true)}
+        onOpenChecklist={() => setChecklistVisible(true)}
         onUndo={handleUndo}
         onRedo={handleRedo}
         participantsCount={onlineUsers.length}
@@ -1158,6 +1161,14 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         planId={planId as string}
         isOwner={!(planMetadata?.user?.userId || planMetadata?.ownerId) || String(planMetadata?.user?.userId || planMetadata?.ownerId).toLowerCase() === String(currentUser?.userId || '').toLowerCase()}
       />
+      {/* 닫혀 있을 때는 마운트하지 않는다. 조회 훅이 그동안 헛돌 이유가 없다. */}
+      {isChecklistVisible && (
+        <ChecklistSheet
+          visible
+          onClose={() => setChecklistVisible(false)}
+          planId={planId ?? null}
+        />
+      )}
       {editingPlace && (
         <PlaceEditModal
           visible={isPlaceEditModalVisible}

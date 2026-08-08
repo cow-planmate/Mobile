@@ -92,6 +92,7 @@ jest.mock('lucide-react-native', () => {
   return {
     Map: () => React.createElement(View, { testID: 'mock-lucide-map-icon' }),
     ChevronLeft: () => React.createElement(View, { testID: 'mock-lucide-chevron-left' }),
+    ListChecks: () => React.createElement(View, { testID: 'mock-lucide-list-checks' }),
   };
 });
 
@@ -347,6 +348,7 @@ describe('ItineraryEditorScreenView Component', () => {
             onOpenParticipants={() => {}}
             onOpenMap={() => {}}
             onOpenShare={() => {}}
+            onOpenChecklist={() => {}}
             onUndo={() => {}}
             onRedo={() => {}}
             participantsCount={0}
@@ -445,6 +447,7 @@ describe('ItineraryEditorScreenView Component', () => {
           onOpenParticipants={() => {}}
           onOpenMap={() => {}}
           onOpenShare={() => {}}
+          onOpenChecklist={() => {}}
           onUndo={mockUndo}
           onRedo={mockRedo}
           participantsCount={0}
