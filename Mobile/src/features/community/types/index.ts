@@ -143,6 +143,8 @@ export interface FeedFilterParams {
   tag?: string;
   /** latest | likes | views | forks */
   sort?: string;
+  /** 정렬 방향. 생략하면 desc를 명시해 보낸다(서버 기본값에 기대지 않는다). */
+  order?: 'asc' | 'desc';
   q?: string;
 }
 

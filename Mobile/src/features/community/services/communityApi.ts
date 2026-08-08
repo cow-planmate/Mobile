@@ -106,6 +106,9 @@ export async function fetchFeedPosts(
     page: String(page),
     size: String(size),
     sort: filters.sort ?? 'latest',
+    // 웹은 정렬 방향을 항상 명시해 보낸다. 앱만 생략하면 서버 기본값이 desc가
+    // 아닐 때 같은 화면이 다른 순서로 보인다.
+    order: filters.order ?? 'desc',
   };
   if (filters.region) params.region = filters.region;
   if (filters.minDays !== undefined) params.minDays = String(filters.minDays);
