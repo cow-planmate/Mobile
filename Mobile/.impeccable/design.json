@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-08T00:00:00Z",
+  "title": "Design System: planMate",
+  "extensions": {
+    "colorMeta": {
+      "departure-blue": {
+        "role": "primary",
+        "displayName": "출발 신호 블루 (Departure Blue)",
+        "canonical": "#1344FF",
+        "tonalRamp": ["#03135C", "#061F8C", "#0A2BBD", "#0F36D6", "#1344FF", "#5C7BFF", "#93A9FF", "#E8EDFF"]
+      },
+      "departure-blue-pressed": {
+        "role": "primary",
+        "displayName": "눌린 블루",
+        "canonical": "#0F36D6"
+      },
+      "departure-blue-tint": {
+        "role": "primary",
+        "displayName": "블루 틴트",
+        "canonical": "#E8EDFF"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "잉크",
+        "canonical": "#111827",
+        "tonalRamp": ["#030712", "#111827", "#1F2937", "#374151", "#4B5563", "#6B7280", "#9CA3AF", "#D1D5DB"]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "눈금선",
+        "canonical": "#E5E7EB",
+        "tonalRamp": ["#374151", "#4B5563", "#6B7280", "#9CA3AF", "#D1D5DB", "#E5E7EB", "#F3F4F6", "#F9FAFB"]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "종이",
+        "canonical": "#FFFFFF"
+      },
+      "paper-recessed": {
+        "role": "neutral",
+        "displayName": "눌린 종이",
+        "canonical": "#F9FAFB"
+      },
+      "category-attraction": {
+        "role": "tertiary",
+        "displayName": "관광지 라임",
+        "canonical": "#84CC16",
+        "tonalRamp": ["#1A2E05", "#365314", "#4D7C0F", "#65A30D", "#84CC16", "#BEF264", "#ECFCCB", "#F7FEE7"]
+      },
+      "category-lodging": {
+        "role": "tertiary",
+        "displayName": "숙소 오렌지",
+        "canonical": "#F97316",
+        "tonalRamp": ["#431407", "#7C2D12", "#9A3412", "#C2410C", "#F97316", "#FDBA74", "#FFEDD5", "#FFF7ED"]
+      },
+      "category-dining": {
+        "role": "tertiary",
+        "displayName": "식당 블루",
+        "canonical": "#3B82F6",
+        "tonalRamp": ["#172554", "#1E3A8A", "#1D4ED8", "#2563EB", "#3B82F6", "#93C5FD", "#DBEAFE", "#EFF6FF"]
+      },
+      "category-custom": {
+        "role": "tertiary",
+        "displayName": "직접 추가 바이올렛",
+        "canonical": "#8B5CF6",
+        "tonalRamp": ["#2E1065", "#4C1D95", "#5B21B6", "#6D28D9", "#8B5CF6", "#C4B5FD", "#EDE9FE", "#F5F3FF"]
+      },
+      "category-other": {
+        "role": "tertiary",
+        "displayName": "검색·기타 그레이",
+        "canonical": "#6B7280",
+        "tonalRamp": ["#111827", "#1F2937", "#374151", "#4B5563", "#6B7280", "#9CA3AF", "#E5E7EB", "#F9FAFB"]
+      },
+      "error": {
+        "role": "error",
+        "displayName": "에러 레드",
+        "canonical": "#D92D20"
+      },
+      "success": {
+        "role": "success",
+        "displayName": "성공 그린",
+        "canonical": "#067647"
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "인증 화면 제목과 히어로 문구. 화면당 1회." },
+      "title": { "displayName": "Title", "purpose": "화면 제목, 모달 제목." },
+      "headline": { "displayName": "Headline", "purpose": "섹션 제목, 카드 헤더." },
+      "bodyLg": { "displayName": "Body Large", "purpose": "입력 필드 값과 본문 강조." },
+      "body": { "displayName": "Body", "purpose": "기본 본문과 목록 내용." },
+      "label": { "displayName": "Label", "purpose": "필드 라벨과 칩." },
+      "caption": { "displayName": "Caption", "purpose": "메타 정보, 탭 라벨, 타임스탬프." },
+      "button": { "displayName": "Button", "purpose": "버튼 라벨 전용." }
+    },
+    "shadows": [
+      {
+        "name": "none",
+        "value": "none",
+        "purpose": "이 시스템의 유일한 공식 그림자 값. 깊이는 1dp 경계선, 면 색 단차, 스크림으로만 낸다."
+      }
+    ],
+    "motion": [
+      { "name": "press-in", "value": "90ms cubic-bezier(0.25, 0.46, 0.45, 0.94)", "purpose": "누를 때 0.985~0.97배 축소와 배경색 전환 (Reanimated Easing.out(quad))." },
+      { "name": "press-out", "value": "spring(damping 14, stiffness 260, mass 0.5)", "purpose": "손을 뗄 때 살짝 튀며 원래 크기로 복귀." },
+      { "name": "state-fade", "value": "180ms cubic-bezier(0.25, 0.46, 0.45, 0.94)", "purpose": "라벨↔스피너 교차 페이드, muted 상태 불투명도 전환." },
+      { "name": "screen-push", "value": "250ms slide_from_right", "purpose": "스택 화면 전환 기본값." },
+      { "name": "screen-instant", "value": "0ms", "purpose": "일정 편집·조회 화면 전용. 실시간 편집에서 전환 애니메이션은 지연으로 읽힌다." }
+    ],
+    "breakpoints": [
+      { "name": "base", "value": "360dp", "purpose": "스케일 기준 폭. 실제 폭에 따라 0.95~1.2로 클램프되며 별도 브레이크포인트는 없다." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "화면의 주 행동. 누르면 줄고 색이 진해지며, 떼면 스프링으로 복귀한다.",
+      "html": "<button class=\"ds-btn-primary\">일정 만들기</button>",
+      "css": ".ds-btn-primary { display: flex; align-items: center; justify-content: center; width: 100%; height: 52px; background: #1344FF; color: #FFFFFF; font-family: 'Pretendard-SemiBold', sans-serif; font-size: 16px; line-height: 24px; border: none; border-radius: 14px; cursor: pointer; transition: background 90ms cubic-bezier(0.25,0.46,0.45,0.94), transform 90ms cubic-bezier(0.25,0.46,0.45,0.94); } .ds-btn-primary:hover { background: #0F36D6; } .ds-btn-primary:active { background: #0F36D6; transform: scale(0.985); } .ds-btn-primary:focus-visible { outline: 2px solid #1344FF; outline-offset: 2px; }"
+    },
+    {
+      "name": "Muted Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "아직 진행할 수 없는 상태. 비활성화하지 않고 흐리게만 둔다. 누르면 무엇이 모자란지 알린다.",
+      "html": "<button class=\"ds-btn-muted\">다음</button>",
+      "css": ".ds-btn-muted { display: flex; align-items: center; justify-content: center; width: 100%; height: 52px; background: #1344FF; color: #FFFFFF; font-family: 'Pretendard-SemiBold', sans-serif; font-size: 16px; line-height: 24px; border: none; border-radius: 14px; opacity: 0.55; cursor: pointer; transition: opacity 180ms cubic-bezier(0.25,0.46,0.45,0.94); } .ds-btn-muted:hover { opacity: 0.7; } .ds-btn-muted:focus-visible { outline: 2px solid #1344FF; outline-offset: 2px; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "보조 행동. 파란 글자와 1dp 파란 테두리만으로 존재한다.",
+      "html": "<button class=\"ds-btn-outline\">취소</button>",
+      "css": ".ds-btn-outline { display: flex; align-items: center; justify-content: center; width: 100%; height: 52px; background: transparent; color: #1344FF; font-family: 'Pretendard-SemiBold', sans-serif; font-size: 16px; line-height: 24px; border: 1px solid #1344FF; border-radius: 14px; cursor: pointer; transition: background 90ms cubic-bezier(0.25,0.46,0.45,0.94); } .ds-btn-outline:hover { background: #E8EDFF; } .ds-btn-outline:focus-visible { outline: 2px solid #1344FF; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "테두리 굵기를 1.5dp로 고정한다. 포커스에서는 색만 바뀐다 — 굵기가 변하면 입력 중 글자가 흔들린다.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"이메일\" />",
+      "css": ".ds-input { width: 100%; min-height: 52px; box-sizing: border-box; padding: 0 16px; background: #FFFFFF; color: #111827; font-family: 'Pretendard-Regular', sans-serif; font-size: 16px; line-height: 24px; border: 1.5px solid #E5E7EB; border-radius: 14px; transition: border-color 180ms cubic-bezier(0.25,0.46,0.45,0.94); } .ds-input::placeholder { color: #9CA3AF; } .ds-input:hover { border-color: #D1D5DB; } .ds-input:focus { outline: none; border-color: #1344FF; }"
+    },
+    {
+      "name": "Theme Chip",
+      "kind": "chip",
+      "refersTo": "chip-unselected",
+      "description": "선호 테마와 필터 선택. 선택되면 배경과 테두리가 같은 블루로 채워져 경계가 사라진다.",
+      "html": "<div class=\"ds-chip-row\"><button class=\"ds-chip\">바다</button><button class=\"ds-chip ds-chip--selected\">맛집</button><button class=\"ds-chip\">야경</button></div>",
+      "css": ".ds-chip-row { display: flex; flex-wrap: wrap; gap: 10px; } .ds-chip { padding: 10px 14px; background: #F3F4F6; color: #4B5563; font-family: 'Pretendard-Medium', sans-serif; font-size: 14px; line-height: 22px; border: 1px solid #E5E7EB; border-radius: 6px; cursor: pointer; transition: background 180ms cubic-bezier(0.25,0.46,0.45,0.94), color 180ms cubic-bezier(0.25,0.46,0.45,0.94), border-color 180ms cubic-bezier(0.25,0.46,0.45,0.94); } .ds-chip:hover { border-color: #D1D5DB; } .ds-chip--selected { background: #1344FF; color: #FFFFFF; border-color: #1344FF; } .ds-chip:focus-visible { outline: 2px solid #1344FF; outline-offset: 2px; }"
+    },
+    {
+      "name": "Surface Card",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "목록 카드. 1dp 경계선이 카드를 카드로 만드는 유일한 장치다. 그림자 없음.",
+      "html": "<article class=\"ds-card\"><h3 class=\"ds-card__title\">제주 3박 4일</h3><p class=\"ds-card__meta\">2026.09.12 – 09.15 · 4명</p></article>",
+      "css": ".ds-card { padding: 16px; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 10px; } .ds-card__title { margin: 0 0 4px; color: #111827; font-family: 'Pretendard-SemiBold', sans-serif; font-size: 18px; line-height: 26px; letter-spacing: -0.22px; } .ds-card__meta { margin: 0; color: #6B7280; font-family: 'Pretendard-Medium', sans-serif; font-size: 12px; line-height: 16px; letter-spacing: 0.24px; }"
+    },
+    {
+      "name": "Timeline Place Card",
+      "kind": "custom",
+      "refersTo": "timeline-place-card",
+      "description": "이 앱의 시그니처. 왼쪽 4dp 카테고리 테두리와 옅은 배경만으로 장소 종류를 알린다. 나머지 세 변에는 테두리가 없다.",
+      "html": "<div class=\"ds-timeline\"><div class=\"ds-place ds-place--attraction\"><div class=\"ds-place__info\"><span class=\"ds-place__name\">성산일출봉</span><span class=\"ds-place__meta\">09:00 – 10:30 · 도보 12분</span></div></div><div class=\"ds-place ds-place--dining\"><div class=\"ds-place__info\"><span class=\"ds-place__name\">올레국수</span><span class=\"ds-place__meta\">11:00 – 12:00 · 차량 8분</span></div></div></div>",
+      "css": ".ds-timeline { display: flex; flex-direction: column; gap: 8px; } .ds-place { display: flex; padding: 16px; border-radius: 4px; border-left: 4px solid transparent; overflow: hidden; } .ds-place__info { display: flex; flex-direction: column; gap: 2px; } .ds-place__name { font-family: 'Pretendard-SemiBold', sans-serif; font-size: 15px; line-height: 22px; } .ds-place__meta { font-family: 'Pretendard-Regular', sans-serif; font-size: 12px; line-height: 16px; } .ds-place--attraction { background: #F7FEE7; border-left-color: #84CC16; } .ds-place--attraction .ds-place__name { color: #064E3B; } .ds-place--attraction .ds-place__meta { color: #4D7C0F; } .ds-place--dining { background: #EFF6FF; border-left-color: #3B82F6; } .ds-place--dining .ds-place__name { color: #1E3A8A; } .ds-place--dining .ds-place__meta { color: #1D4ED8; } .ds-place--lodging { background: #FFF7ED; border-left-color: #F97316; } .ds-place--lodging .ds-place__name { color: #7C2D12; } .ds-place--lodging .ds-place__meta { color: #C2410C; } .ds-place--custom { background: #F5F3FF; border-left-color: #8B5CF6; } .ds-place--custom .ds-place__name { color: #4C1D95; } .ds-place--custom .ds-place__meta { color: #6D28D9; } .ds-place--other { background: #F9FAFB; border-left-color: #6B7280; } .ds-place--other .ds-place__name { color: #111827; } .ds-place--other .ds-place__meta { color: #4B5563; }"
+    },
+    {
+      "name": "Bottom Navigation",
+      "kind": "nav",
+      "refersTo": "nav-bar-item",
+      "description": "3개 목적지. 활성 표시는 아이콘과 라벨의 색 변화뿐이며 배경 강조나 인디케이터 바는 쓰지 않는다.",
+      "html": "<nav class=\"ds-nav\"><button class=\"ds-nav__item\"><svg class=\"ds-nav__icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><polygon points=\"16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76\"/></svg><span class=\"ds-nav__label\">피드</span></button><button class=\"ds-nav__item ds-nav__item--active\"><svg class=\"ds-nav__icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" y1=\"8\" x2=\"12\" y2=\"16\"/><line x1=\"8\" y1=\"12\" x2=\"16\" y2=\"12\"/></svg><span class=\"ds-nav__label\">일정 생성</span></button><button class=\"ds-nav__item\"><svg class=\"ds-nav__icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\"/></svg><span class=\"ds-nav__label\">커뮤니티</span></button></nav>",
+      "css": ".ds-nav { display: flex; align-items: center; height: 60px; padding-top: 8px; padding-bottom: 8px; background: #FFFFFF; border-top: 1px solid #E5E7EB; } .ds-nav__item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: none; color: #9CA3AF; cursor: pointer; transition: color 180ms cubic-bezier(0.25,0.46,0.45,0.94); } .ds-nav__icon { width: 24px; height: 24px; } .ds-nav__label { font-family: 'Pretendard-SemiBold', sans-serif; font-size: 11px; line-height: 16px; } .ds-nav__item--active { color: #1344FF; } .ds-nav__item:focus-visible { outline: 2px solid #1344FF; outline-offset: -2px; }"
+    },
+    {
+      "name": "Floating Action Button",
+      "kind": "button",
+      "refersTo": "fab",
+      "description": "화면당 하나, 주 행동 하나에만. 60dp 원형에 출발 신호 블루.",
+      "html": "<button class=\"ds-fab\" aria-label=\"장소 추가\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><line x1=\"12\" y1=\"5\" x2=\"12\" y2=\"19\"/><line x1=\"5\" y1=\"12\" x2=\"19\" y2=\"12\"/></svg></button>",
+      "css": ".ds-fab { display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; background: #1344FF; color: #FFFFFF; border: 1px solid #1344FF; border-radius: 9999px; cursor: pointer; transition: background 90ms cubic-bezier(0.25,0.46,0.45,0.94), transform 90ms cubic-bezier(0.25,0.46,0.45,0.94); } .ds-fab svg { width: 28px; height: 28px; } .ds-fab:hover { background: #0F36D6; } .ds-fab:active { transform: scale(0.97); } .ds-fab:focus-visible { outline: 2px solid #1344FF; outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "공유 작업판 (The Shared Worktable)",
+    "overview": "planMate는 여러 사람의 손이 동시에 올라오는 하나의 판이다. 화면은 자기를 주장하지 않고, 지금 판 위에 무엇이 놓였고 누가 그것을 만지고 있는지를 오차 없이 비춘다. 시각적 무게는 전부 내용물 — 장소 카드, 시간, 참여자 — 에 실리고, 인터페이스는 그 사이를 가르는 선으로만 존재한다.\n\n밀도는 중간에서 높은 쪽이다. 여행 당일 이동 중에 한 손으로 훑는 화면이므로 정보는 촘촘하되, 구획은 명확한 1dp 경계선으로 끊는다. 종이 흰색 바탕 위에 회색 눈금선이 구조를 만들고, 채도 높은 색은 오직 둘 — 출발 신호 블루 하나와 장소 카테고리 5색 — 뿐이다. 이 절제가 있기 때문에 파란 버튼 하나가 화면에서 즉시 \"다음 행동\"으로 읽힌다.\n\n거부하는 것: 그라디언트 표면, 장식용 그림자, 무드 사진 위의 큰 글씨, 아이콘의 화려한 색채. planMate는 감성 여행 앱이 아니라 여러 명이 실수 없이 합의를 만드는 도구다.",
+    "keyCharacteristics": [
+      "흰 종이와 회색 눈금선으로 만든 구조. 깊이는 그림자가 아니라 선과 면 색으로 낸다.",
+      "채도 높은 색은 액센트 1개와 카테고리 5색으로 고정. 그 외 전부 무채색.",
+      "Pretendard 단일 서체. 크기·굵기·자간만으로 위계를 만든다.",
+      "큰 제목에는 음수 자간(-0.56 ~ -0.22), 작은 라벨에는 양수 자간(+0.24).",
+      "모든 터치 타깃 48dp. 여백은 기기 인셋 값 위에 쌓고 고정하지 않는다.",
+      "누름은 반드시 눈에 보인다. 90ms 축소와 색 전환, 스프링으로 복귀."
+    ],
+    "rules": [
+      { "name": "The One Blue Rule", "body": "출발 신호 블루는 화면 안에서 하나의 행동만 가리킨다. 주 버튼 옆에 파란 링크를 두거나 파란 아이콘을 흩뿌리면 이 규칙이 깨진다. 두 번째 강조가 필요하면 색이 아니라 굵기나 위치로 만든다.", "section": "colors" },
+      { "name": "The No New Hex Rule", "body": "새 화면에서 새 hex를 만들지 않는다. 필요한 색이 없다면 새 색이 필요한 것이 아니라 위계 판단이 틀린 것이다. 현재 코드베이스는 이 규칙을 어긴 상태이며(#0047FF, #2563EB, #1A73E8, #E11D48 등) 정리 대상이다.", "section": "colors" },
+      { "name": "The Category Border Rule", "body": "카테고리 색은 카드의 왼쪽 4dp 테두리와 옅은 배경으로만 나타난다. 글자색이나 아이콘 색으로 카테고리를 표현하지 않는다.", "section": "colors" },
+      { "name": "The sp Rule", "body": "모든 글자 크기는 sp()(= sf())를 거친다. 360dp 기준 폭에 대해 0.95~1.2로 클램프된 스케일이며, 화면마다 숫자를 손으로 고르지 않는다.", "section": "typography" },
+      { "name": "The Four Weights Rule", "body": "Pretendard 4종 외의 굵기를 요구하지 않는다. fontWeight: '800' 같은 지정은 번들된 Bold로 폴백되어 기기마다 다르게 렌더된다. 굵기는 fontFamily로만 지정한다.", "section": "typography" },
+      { "name": "The Inset Rule", "body": "하단 여백은 insets.bottom + 16dp처럼 기기가 알려 주는 값 위에 쌓는다. 고정값은 제스처 바에 깔린다.", "section": "layout" },
+      { "name": "The Flat Rule", "body": "새 코드에 elevation, shadowColor, shadowOpacity, shadowRadius를 쓰지 않는다. 떠 보이게 하고 싶다면 경계선을 주거나 배경 면 색을 한 단 바꾼다.", "section": "elevation" },
+      { "name": "The Scrim Rule", "body": "화면 위에 겹치는 층(모달, 바텀시트, 메뉴)은 그림자가 아니라 스크림으로 분리된다. 스크림이 있으면 그림자는 필요 없다.", "section": "elevation" },
+      { "name": "The Constant Stroke Rule", "body": "상태 변화는 테두리 색으로 알린다. 굵기는 바꾸지 않는다.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do 모든 색을 src/design/tokens.ts에서 가져온다. 화면 파일 상단에 const COLORS = { ... }를 새로 만들지 않는다.",
+      "Do 글자 크기는 sp(), 여백과 치수는 sf()를 거친다.",
+      "Do 깊이가 필요하면 1dp 경계선이나 면 색 단차를 쓴다(The Flat Rule).",
+      "Do 모든 터치 타깃을 48dp 이상으로 채우고 인접 타깃 사이에 8dp를 둔다.",
+      "Do 상·하단 여백을 useSafeAreaInsets() 값 위에 쌓는다(The Inset Rule).",
+      "Do 카테고리를 왼쪽 4dp 테두리와 옅은 배경으로만 표현한다(The Category Border Rule).",
+      "Do 누름에 시각 반응을 준다. 90ms 축소와 색 전환, 스프링 복귀.",
+      "Do 시스템 Back 제스처가 항상 동작하게 둔다."
+    ],
+    "donts": [
+      "Don't elevation / shadowColor / shadowOpacity / shadowRadius를 쓴다.",
+      "Don't 새 hex 값을 만든다. #0047FF, #2563EB, #1A73E8는 기존 위반 사례이며 departure-blue로 수렴시킨다(The No New Hex Rule).",
+      "Don't 화면 하나에 파란 강조를 두 군데 이상 둔다(The One Blue Rule).",
+      "Don't fontWeight: '800'처럼 번들되지 않은 굵기를 지정한다(The Four Weights Rule).",
+      "Don't 포커스나 상태 변화에 테두리 굵기를 바꾼다(The Constant Stroke Rule).",
+      "Don't 그라디언트를 표면이나 글자에 쓴다. react-native-linear-gradient는 이미지 위 가독성 오버레이 용도로만 쓴다.",
+      "Don't 진행 불가 상태의 주 버튼을 회색으로 비활성화한다. 흐리게 두고 이유를 알린다.",
+      "Don't 다크 테마 변형을 만든다. 이 제품은 라이트 테마 고정이다.",
+      "Don't iOS 컨트롤(Cupertino 스위치·다이얼로그)이나 iOS 전용 관용구를 이식한다."
+    ]
+  }
+}
