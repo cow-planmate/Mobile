@@ -67,6 +67,8 @@ export default function FeedCreateScreen() {
     () => (profile?.myPlans ?? []).filter(plan => !plan.isShared),
     [profile?.myPlans],
   );
+  const previewDays =
+    snapshot?.itinerary.days ?? existingPost.data?.itinerary?.days ?? [];
 
   const handleSelectPlan = async (planId: string) => {
     setLoadingPlanId(planId);
@@ -210,6 +212,36 @@ export default function FeedCreateScreen() {
           </View>
         )}
 
+        {previewDays.length > 0 && (
+          <View style={styles.itineraryPreview}>
+            <Text style={styles.previewTitle}>일정 미리보기</Text>
+            {previewDays.map(day => (
+              <View key={day.day} style={styles.previewDay}>
+                <View style={styles.previewDayLabel}>
+                  <Text style={styles.previewDayText}>DAY {day.day}</Text>
+                </View>
+                <View style={styles.previewPlaces}>
+                  {day.items.slice(0, 2).map(item => (
+                    <Text
+                      key={`${day.day}-${item.time}-${item.place}`}
+                      style={styles.previewPlace}
+                      numberOfLines={1}
+                    >
+                      {item.time} {item.place}
+                    </Text>
+                  ))}
+                  {day.items.length > 2 && (
+                    <Text style={styles.previewMore}>외 {day.items.length - 2}곳</Text>
+                  )}
+                  {day.items.length === 0 && (
+                    <Text style={styles.previewMore}>등록한 장소가 없습니다.</Text>
+                  )}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
         <Text style={styles.label}>제목</Text>
         <TextInput
           value={title}
@@ -324,6 +356,38 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   snapshotText: { flex: 1, fontSize: 13, color: '#1D4ED8' },
+  itineraryPreview: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  previewTitle: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: '#374151',
+    fontSize: 13,
+    fontWeight: '700',
+    backgroundColor: '#F9FAFB',
+  },
+  previewDay: {
+    flexDirection: 'row',
+    gap: 10,
+    padding: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  previewDayLabel: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#E8EDFF',
+  },
+  previewDayText: { color: '#1344FF', fontSize: 11, fontWeight: '700' },
+  previewPlaces: { flex: 1, gap: 3 },
+  previewPlace: { color: '#374151', fontSize: 13 },
+  previewMore: { color: '#9CA3AF', fontSize: 12 },
   input: {
     minHeight: 48,
     borderWidth: 1,
