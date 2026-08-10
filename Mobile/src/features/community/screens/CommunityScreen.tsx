@@ -11,6 +11,8 @@ import {
   rejectInvitation,
 } from '../../../api/trips';
 import { collaborationRequestNoun } from '../../../utils/collaborationRequest';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidatePlanCaches } from '../../../hooks/planCache';
 import { BOARDS, BoardKey } from '../constants/levels';
 import { useHotPosts, usePosts } from '../hooks/queries';
 import CommunityScreenView from './CommunityScreen.view';
@@ -21,6 +23,7 @@ const SEARCH_DEBOUNCE_MS = 350;
 export default function CommunityScreen() {
   const { showAlert } = useAlert();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const queryClient = useQueryClient();
   const user = useAuthStore(state => state.user);
 
   const [category, setCategory] = useState<BoardKey>('free');
@@ -84,6 +87,8 @@ export default function CommunityScreen() {
       const noun = findRequestNoun(requestId);
       try {
         await acceptInvitation(requestId);
+        // 편집 권한이 생겨 프로필의 editablePlans가 바뀐다.
+        void invalidatePlanCaches(queryClient);
         await fetchPendingRequests();
       } catch (error) {
         showAlert({
@@ -93,7 +98,7 @@ export default function CommunityScreen() {
         });
       }
     },
-    [fetchPendingRequests, findRequestNoun, showAlert],
+    [fetchPendingRequests, findRequestNoun, queryClient, showAlert],
   );
 
   const handleRejectInvitation = useCallback(

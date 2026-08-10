@@ -28,6 +28,7 @@ import {
   updatePost,
 } from '../services/communityApi';
 import { forkItinerary } from '../services/forkItinerary';
+import { invalidatePlanCaches } from '../../../hooks/planCache';
 import {
   CreatePostPayload,
   FeedFilterParams,
@@ -335,8 +336,7 @@ export const useForkItinerary = (postId: number | string) => {
     onSuccess: () => {
       void invalidate.post(postId);
       void invalidate.lists();
-      void queryClient.invalidateQueries({ queryKey: ['myPlans'] });
-      void queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      void invalidatePlanCaches(queryClient);
     },
   });
 };

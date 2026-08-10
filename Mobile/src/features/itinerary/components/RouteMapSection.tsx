@@ -13,6 +13,11 @@ import { fetchRouteTrip, isRouteFallback, RoutePoint } from '../../../api/route'
 import { laneColor } from '../constants/transit';
 import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
+import {
+  buildOptimizedOrder,
+  hasMapPosition,
+  isSameOrder,
+} from '../../../utils/routeOptimization';
 import { useAlert } from '../../../contexts/AlertContext';
 
 interface RouteMapSectionProps {
@@ -29,10 +34,6 @@ interface RouteMapSectionProps {
   style?: object;
 }
 
-/** 지도에 표시할 수 있는 좌표를 가진 장소만 남긴다 (KakaoMapView와 동일 기준). */
-const hasValidPosition = (place: MapPlace) =>
-  place.latitude !== 0 && place.longitude !== 0;
-
 /**
  * 지도 + 구간 정보를 묶은 섹션.
  *
@@ -47,7 +48,8 @@ export default function RouteMapSection({
 }: RouteMapSectionProps) {
   const { showAlert } = useAlert();
   const [isOptimizing, setOptimizing] = useState(false);
-  const validPlaces = useMemo(() => places.filter(hasValidPosition), [places]);
+  // 지도에 표시할 수 있는 좌표를 가진 장소만 남긴다 (KakaoMapView와 동일 기준).
+  const validPlaces = useMemo(() => places.filter(hasMapPosition), [places]);
 
   const points: RoutePoint[] = useMemo(
     () => validPlaces.map(p => ({ lat: p.latitude, lng: p.longitude })),
@@ -116,14 +118,9 @@ export default function RouteMapSection({
     setOptimizing(true);
     try {
       const result = await fetchRouteTrip(points);
-      const order = result?.visitOrder ?? [];
+      const orderedIds = buildOptimizedOrder(places, result?.visitOrder);
 
-      // 인덱스가 하나라도 범위를 벗어나면 재배치가 어긋나므로 적용하지 않는다.
-      const isUsable =
-        order.length === validPlaces.length &&
-        order.every(i => Number.isInteger(i) && i >= 0 && i < validPlaces.length);
-
-      if (!isUsable) {
+      if (!orderedIds) {
         showAlert({
           title: '순서 최적화 실패',
           message: '경로를 계산하지 못했습니다. 잠시 후 다시 시도해주세요.',
@@ -132,12 +129,7 @@ export default function RouteMapSection({
         return;
       }
 
-      const orderedIds = order.map(i => validPlaces[i].id);
-      const isUnchanged = orderedIds.every(
-        (id, i) => id === validPlaces[i].id,
-      );
-
-      if (isUnchanged) {
+      if (isSameOrder(places, orderedIds)) {
         showAlert({
           title: '이미 최적 순서예요',
           message: '지금 순서가 가장 짧은 동선입니다.',
@@ -157,7 +149,7 @@ export default function RouteMapSection({
     } finally {
       setOptimizing(false);
     }
-  }, [onApplyOptimizedOrder, points, validPlaces, isOptimizing, showAlert]);
+  }, [onApplyOptimizedOrder, places, points, isOptimizing, showAlert]);
 
   return (
     <View style={[sectionStyles.container, style]}>

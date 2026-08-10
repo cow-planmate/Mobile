@@ -26,6 +26,7 @@ import { useItineraryEditor } from '../../../hooks/useItineraryEditor';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
 import { usePlanOwnership } from '../../../hooks/usePlanOwnership';
+import { invalidatePlanCaches } from '../../../hooks/planCache';
 import {
   timeToMinutes,
   dateToTime,
@@ -320,8 +321,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const weatherDestinationId =
     (route.params as any)?.destinationId ||
     route.params.travelId ||
-    (planMetadata as any)?.destinationId ||
-    planMetadata?.travelId ||
+    planMetadata?.destinationId ||
     null;
 
   useEffect(() => {
@@ -507,11 +507,17 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   const fetchedDestIdRef = useRef<number | null>(null);
 
+  /**
+   * 추천 장소 조회 기준 여행지 ID.
+   *
+   * 서버 PlanFrameDetailDto는 destinationId를 준다. 내 일정 목록에서 진입하면
+   * route.params에 travelId가 없으므로 조회한 planFrame에서 가져와야 한다.
+   * 이 값은 추천 목록 컴포넌트에도 그대로 내려보내 새로고침이 같은 ID를 쓰게 한다.
+   */
   const recommendationDestId =
     (route.params as any)?.destinationId ||
     route.params.travelId ||
-    (planMetadata as any)?.destinationId ||
-    planMetadata?.travelId ||
+    planMetadata?.destinationId ||
     null;
 
   // Fetch place recommendations via PlacesContext
@@ -764,8 +770,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       }
 
       if (queryClient) {
-        void queryClient.invalidateQueries({ queryKey: ['myPlans'] });
-        void queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+        void invalidatePlanCaches(queryClient);
       }
 
       navigation.navigate('ItineraryView', {
@@ -932,7 +937,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         onRedo={handleRedo}
         participantsCount={onlineUsers.length}
         planId={planId ?? null}
-        travelId={route.params.travelId || planMetadata?.travelId || null}
+        travelId={recommendationDestId}
         onOpenDetail={handleOpenDetail}
         weatherMap={weatherMap}
         onOpenPlanInfo={() => setPlanInfoVisible(true)}

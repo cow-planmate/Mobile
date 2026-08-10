@@ -1074,12 +1074,11 @@ const TimelineTabScreen = React.memo(() => {
 const AddPlaceTabScreen = React.memo(() => {
   const state = useContext(EditorStateContext);
   if (!state) return null;
-  const { handleAddPlace, planId, destination, travelId } = state;
+  const { handleAddPlace, destination, travelId } = state;
 
   return (
     <PlaceRecommendationList
       onAddPlace={handleAddPlace}
-      planId={planId}
       destination={destination}
       travelId={travelId}
     />

@@ -21,6 +21,8 @@ import {
 } from '../../../hooks/useFcmNotifications';
 import { AirplaneLoading } from '../../../components/common';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
+import { invalidatePlanCaches } from '../../../hooks/planCache';
+import { useQueryClient } from '@tanstack/react-query';
 import { formatDateLocal } from '../../../utils/timeUtils';
 import {
   CollaborationRequestResult,
@@ -39,6 +41,7 @@ type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const user = useAuthStore((state) => state.user);
   const { showAlert } = useAlert();
+  const queryClient = useQueryClient();
   const createFullPlanMutation = useCreateFullPlan();
 
   const [isCreating, setIsCreating] = useState(false);
@@ -169,6 +172,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     const type = findRequestType(requestId);
     try {
       await acceptInvitation(requestId);
+      // 수락하면 편집 권한이 생겨 프로필의 editablePlans가 바뀐다.
+      // 무효화하지 않으면 내 일정 목록에 최대 staleTime(5분)만큼 나타나지 않는다.
+      void invalidatePlanCaches(queryClient);
       showAlert({ title: '수락 완료', message: describeAcceptResult(type) });
       setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
       if (pendingRequests.length <= 1) {

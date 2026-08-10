@@ -16,6 +16,7 @@ import {
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
   formatDateLocal,
+  parseLocalDate,
   timeToMinutes,
 } from '../../../utils/timeUtils';
 import {
@@ -30,17 +31,15 @@ import {
 import { useAlert } from '../../../contexts/AlertContext';
 import { usePlanOwnership } from '../../../hooks/usePlanOwnership';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
-// DTO Interfaces
+// DTO Interfaces — 서버 PlanFrameDetailDto와 1:1로 맞춘다.
 interface PlanFrameVO {
-  planId: number;
+  planId: string;
   planName: string;
-  departure: string;
-  travelCategoryName: string;
-  travelId: number;
-  travelName: string;
+  destinationId: number;
+  destinationName: string;
   adultCount: number;
   childCount: number;
-  transportationCategoryId: number;
+  transportationType: 'PUBLIC' | 'PRIVATE';
 }
 
 interface GetCompletePlanResponse {
@@ -110,20 +109,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   );
   const [isWeatherLoading, setIsWeatherLoading] = useState(true);
 
-  const buildWeatherCity = useCallback(
-    (travelCategoryName?: string, travelName?: string) => {
-      const category = travelCategoryName?.trim() || '';
-      const name = travelName?.trim() || '';
-
-      if (category && name) {
-        return `${category} ${name}`;
-      }
-
-      return category || name || '';
-    },
-    [],
-  );
-
   const fetchCompletePlan = useCallback(async () => {
     if (!planId) return;
     try {
@@ -135,8 +120,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       );
       const { planFrame, placeBlocks, timetables } = response.data;
 
-      const planDestinationId =
-        (planFrame as any)?.destinationId ?? planFrame?.travelId ?? null;
+      const planDestinationId = planFrame?.destinationId ?? null;
       if (planDestinationId != null) {
         setWeatherDestinationId(Number(planDestinationId));
       }
@@ -144,11 +128,8 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       if (planFrame?.planName) {
         setTripName(prev => (prev ? prev : planFrame.planName));
       }
-      const fetchedDestination =
-        (planFrame as any)?.destinationName ||
-        buildWeatherCity(planFrame?.travelCategoryName, planFrame?.travelName);
-      if (fetchedDestination) {
-        setDestinationCity(fetchedDestination);
+      if (planFrame?.destinationName) {
+        setDestinationCity(planFrame.destinationName);
       }
 
       if (timetables && timetables.length > 0) {
@@ -213,7 +194,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
           });
 
           return {
-            date: new Date(tt.date),
+            date: parseLocalDate(String(tt.date).substring(0, 10)),
             dayNumber: index + 1,
             startTime: tt.timeTableStartTime || DEFAULT_DAY_START,
             endTime: tt.timeTableEndTime || DEFAULT_DAY_END,
@@ -235,7 +216,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       showAlert({ title: '오류', message: '일정을 불러오는데 실패했습니다.' });
       setIsWeatherLoading(false);
     }
-  }, [planId, buildWeatherCity, showAlert]);
+  }, [planId, showAlert]);
 
   useEffect(() => {
     if (initialDays.length > 0) {
@@ -307,8 +288,10 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         return;
       }
 
+      // 일정을 아직/끝내 불러오지 못한 상태. 붙잡아 둘 이유가 없으므로 그대로
+      // 내보낸다. 예전에는 여기서도 preventDefault를 걸어, 조회가 실패해 days가
+      // 비면 화면을 빠져나올 수 없었다.
       if (days.length === 0) {
-        e.preventDefault();
         return;
       }
 

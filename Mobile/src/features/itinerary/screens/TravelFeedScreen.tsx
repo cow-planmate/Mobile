@@ -25,6 +25,8 @@ import {
   acceptInvitation,
   rejectInvitation,
 } from '../../../api/trips';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidatePlanCaches } from '../../../hooks/planCache';
 import { useFeedPosts, useFeedRegionCounts } from '../../community/hooks/queries';
 import { formatDuration } from '../../community/services/communityApi';
 import { resolveAvatarUrl } from '../../community/utils/avatar';
@@ -68,6 +70,7 @@ const REGION_COORDINATES: Record<string, { lat: number; lng: number; name: strin
 export default function TravelFeedScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { showAlert } = useAlert();
+  const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -203,6 +206,9 @@ export default function TravelFeedScreen() {
     const type = findRequestType(requestId);
     try {
       await acceptInvitation(requestId);
+      // 편집 권한이 생겨 프로필의 editablePlans가 바뀐다. 무효화하지 않으면
+      // 내 일정 목록에 최대 staleTime(5분)만큼 나타나지 않는다.
+      void invalidatePlanCaches(queryClient);
       showAlert({ title: '수락 완료', message: describeAcceptResult(type) });
       setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
       if (pendingRequests.length <= 1) {

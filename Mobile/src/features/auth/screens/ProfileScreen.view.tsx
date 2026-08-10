@@ -26,8 +26,10 @@ import {
   UpdateValueModal,
 } from '../../../components/common';
 import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { deletePlans, leaveAsEditor } from '../../../api/trips';
+import { invalidatePlanCaches } from '../../../hooks/planCache';
 import {
   faT,
   faPen,
@@ -59,6 +61,7 @@ import ChecklistSheet from '../../itinerary/components/checklist/ChecklistSheet'
 import { useChecklist } from '../../itinerary/hooks/useChecklistQueries';
 import gravatarUrl from '../../../utils/gravatarUrl';
 import { normalize } from '../../../utils/normalize';
+import { parseLocalDate } from '../../../utils/timeUtils';
 import DatePicker from 'react-native-date-picker';
 import {
   toKoreanAge,
@@ -94,6 +97,18 @@ interface PlanItem {
 }
 
 
+
+/**
+ * 일정 카드의 날짜 문자열('YYYY.MM.DD' 또는 'YYYY-MM-DD')을 로컬 자정 Date로 바꾼다.
+ *
+ * new Date('2026-08-10')은 UTC 자정으로 해석되어 UTC보다 이른 타임존에서
+ * 하루가 밀린다. D-Day와 지난 일정 판정이 하루씩 어긋나므로 로컬로 파싱한다.
+ */
+const parsePlanDate = (value?: string): Date | null => {
+  if (!value) return null;
+  const parsed = parseLocalDate(value.replace(/\./g, '-').substring(0, 10));
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
 
 /** 내가 만든 일정의 설정 메뉴 */
 export const PLAN_MENU_OPTIONS = [
@@ -137,24 +152,17 @@ const ItineraryCardItem = ({
 
   // D-Day 계산
   const getDDay = (startDateStr?: string) => {
-    if (!startDateStr) return 'D-Day';
-    try {
-      const parsedDate = startDateStr.includes('.')
-        ? startDateStr.replace(/\./g, '-')
-        : startDateStr;
-      const start = new Date(parsedDate);
-      const today = new Date();
-      start.setHours(0, 0, 0, 0);
-      today.setHours(0, 0, 0, 0);
-      
-      const diffTime = start.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (diffDays === 0) return 'D-Day';
-      if (diffDays > 0) return `D-${diffDays}`;
-      return `D+${Math.abs(diffDays)}`;
-    } catch {
-      return 'D-Day';
-    }
+    const start = parsePlanDate(startDateStr);
+    if (!start) return 'D-Day';
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const diffTime = start.getTime() - today.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'D-Day';
+    if (diffDays > 0) return `D-${diffDays}`;
+    return `D+${Math.abs(diffDays)}`;
   };
 
   const dDay = getDDay(plan.startDate);
@@ -368,6 +376,7 @@ export default function ProfileScreenView({
 }: ProfileScreenViewProps) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [tempNickname, setTempNickname] = useState('');
   const [tempBirthdate, setTempBirthdate] = useState('');
@@ -512,6 +521,9 @@ export default function ProfileScreenView({
               try {
                 await leaveAsEditor(planId);
                 setPlans(prev => prev.filter(p => p.planId !== planId));
+                // 로컬 목록만 지우면 캐시(staleTime 5분)에는 그대로 남아
+                // 화면을 다시 열 때 되살아난다.
+                void invalidatePlanCaches(queryClient);
                 Toast.show({
                   type: 'success',
                   text1: '편집 권한 포기가 완료되었습니다.',
@@ -544,6 +556,9 @@ export default function ProfileScreenView({
               try {
                 await axios.delete(resolveApiUrl(`/api/plan/${planId}`));
                 setPlans(prev => prev.filter(p => p.planId !== planId));
+                // 로컬 목록만 지우면 캐시(staleTime 5분)에는 그대로 남아
+                // 화면을 다시 열 때 되살아난다.
+                void invalidatePlanCaches(queryClient);
                 Toast.show({
                   type: 'success',
                   text1: '일정이 정상적으로 삭제되었습니다.',
@@ -564,24 +579,15 @@ export default function ProfileScreenView({
     }
   };
 
-  // 오늘 날짜 2026-07-11 기준 지난 일정 여부 판단
+  /** 종료일(없으면 시작일)이 오늘보다 이전이면 지난 일정으로 본다. */
   const isPastPlan = (endDateStr?: string, startDateStr?: string) => {
-    const targetStr = endDateStr || startDateStr;
-    if (!targetStr) return false;
-    try {
-      const parsedDate = targetStr.includes('.')
-        ? targetStr.replace(/\./g, '-')
-        : targetStr;
-      const targetDate = new Date(parsedDate);
-      const today = new Date();
-      
-      targetDate.setHours(0, 0, 0, 0);
-      today.setHours(0, 0, 0, 0);
-      
-      return targetDate.getTime() < today.getTime();
-    } catch {
-      return false;
-    }
+    const targetDate = parsePlanDate(endDateStr || startDateStr);
+    if (!targetDate) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return targetDate.getTime() < today.getTime();
   };
 
   const upcomingPlans = plans.filter(p => !isPastPlan(p.endDate, p.startDate));
@@ -652,6 +658,9 @@ export default function ProfileScreenView({
             // 목록에서는 사라진 것처럼 보였다.
             if (processedIds.length > 0) {
               setPlans(prev => prev.filter(p => !processedIds.includes(p.planId)));
+              // 로컬 목록만 지우면 캐시(staleTime 5분)에는 그대로 남아
+              // 화면을 다시 열 때 되살아난다.
+              void invalidatePlanCaches(queryClient);
             }
             setSelectedPlanIds([]);
             setIsEditMode(false);

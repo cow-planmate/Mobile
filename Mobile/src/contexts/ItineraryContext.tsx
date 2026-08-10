@@ -916,6 +916,11 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
         // 요청한 ID 집합이 그날 블록과 정확히 일치할 때만 적용한다.
         if (reordered.length !== day.places.length) {
+          // 조용히 무시하면 호출부는 성공한 줄 알고 안내를 띄운다.
+          console.warn(
+            `[Itinerary] 재정렬 무시: 요청 ${orderedPlaceIds.length}건 중 ` +
+              `${reordered.length}건만 일치(그날 블록 ${day.places.length}건)`,
+          );
           return prevDays;
         }
 

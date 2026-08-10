@@ -101,18 +101,19 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
   });
 
   it('maintains loading until weather is fully loaded', async () => {
+    // 서버 PlanFrameDetailDto와 같은 키를 쓴다.
+    // 예전 픽스처는 구 스키마(travelId/travelName/transportationCategoryId)라
+    // 실제 응답으로는 재현되지 않는 경로를 검증하고 있었다.
     const mockPlanData = {
       message: 'success',
       planFrame: {
-        planId: 123,
+        planId: '0199a1b2-c3d4-7e5f-8901-234567890abc',
         planName: 'Test Trip',
-        departure: 'SEOUL',
-        travelCategoryName: 'Category',
-        travelId: 1,
-        travelName: 'Name',
+        destinationId: 1,
+        destinationName: '제주',
         adultCount: 1,
         childCount: 0,
-        transportationCategoryId: 1,
+        transportationType: 'PRIVATE',
       },
       placeBlocks: [],
       timetables: [
