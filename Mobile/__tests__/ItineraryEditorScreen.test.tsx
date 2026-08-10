@@ -701,4 +701,47 @@ describe('ItineraryEditorScreen Component', () => {
 
     expect(mockItineraryEditor.fetchPlanDetails).toHaveBeenCalledTimes(1);
   });
+
+  it('제목을 다시 저장해도 값이 그대로면 요청을 한 번만 보낸다', async () => {
+    // TextInput의 onBlur와 뷰의 keyboardDidHide 리스너가 겹쳐 handleSaveTripName이
+    // 같은 편집에 두 번 불릴 수 있다. 이름이 안 바뀌었으면 두 번째 호출은 건너뛰어야 한다.
+    mockItineraryEditor.days = mockDays;
+    mockItineraryEditor.selectedDay = mockDays[0];
+    mockItineraryEditor.tripName = '제주도 여행';
+    mockItineraryEditor.planMetadata = {};
+
+    const mockNavigation = {
+      addListener: jest.fn(() => jest.fn()),
+      goBack: jest.fn(),
+      navigate: jest.fn(),
+      dispatch: jest.fn(),
+      setParams: jest.fn(),
+    } as any;
+
+    const mockRoute = {
+      params: { planId: 'plan-123', destination: '제주도' },
+    } as any;
+
+    let rendererInstance: renderer.ReactTestRenderer | undefined;
+
+    await act(async () => {
+      rendererInstance = renderer.create(
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+      );
+    });
+
+    const viewComponent = rendererInstance!.root.findByType(ItineraryEditorScreenView);
+
+    await act(async () => {
+      await viewComponent.props.onSaveTripName();
+    });
+    await act(async () => {
+      await viewComponent.props.onSaveTripName();
+    });
+
+    const planUpdateCalls = mockWebSocket.sendMessage.mock.calls.filter(
+      (call: any[]) => call[0] === 'update' && call[1] === 'plan',
+    );
+    expect(planUpdateCalls).toHaveLength(1);
+  });
 });

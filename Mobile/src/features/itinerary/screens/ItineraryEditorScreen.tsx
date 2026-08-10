@@ -567,22 +567,29 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     [updatePlaceDetails, selectedDayIndex],
   );
 
+  /**
+   * 제목 편집을 확정한다. TextInput의 onBlur와 onSubmitEditing, 그리고 뷰의
+   * keyboardDidHide 리스너까지 겹쳐서 호출될 수 있다(키보드를 내리면 blur와
+   * keyboardDidHide가 함께 발생). 이름이 바뀌지 않았으면 WS 전송과 PATCH를
+   * 건너뛰어 같은 편집에 중복 요청이 나가지 않게 한다.
+   */
   const handleSaveTripName = useCallback(async () => {
     setIsEditingTripName(false);
-    if (tripName && planId) {
-      sendMessage('update', 'plan', buildPlanSyncPayload(planId, tripName));
-      syncedTripNameRef.current = tripName;
-      // 이름 변경 REST는 서버가 OWNER만 허용한다. 편집자의 변경은 위 WebSocket
-      // 전송으로 이미 반영되므로, 403이 확정된 요청을 굳이 보내지 않는다.
-      if (isPlanOwner) {
-        try {
-          await axios.patch(
-            resolveApiUrl(`/api/plan/${planId}/name`),
-            { planName: tripName },
-          );
-        } catch (err) {
-          console.error('Failed to update plan title on edit:', err);
-        }
+    if (!tripName || !planId) return;
+    if (tripName === syncedTripNameRef.current) return;
+
+    sendMessage('update', 'plan', buildPlanSyncPayload(planId, tripName));
+    syncedTripNameRef.current = tripName;
+    // 이름 변경 REST는 서버가 OWNER만 허용한다. 편집자의 변경은 위 WebSocket
+    // 전송으로 이미 반영되므로, 403이 확정된 요청을 굳이 보내지 않는다.
+    if (isPlanOwner) {
+      try {
+        await axios.patch(
+          resolveApiUrl(`/api/plan/${planId}/name`),
+          { planName: tripName },
+        );
+      } catch (err) {
+        console.error('Failed to update plan title on edit:', err);
       }
     }
   }, [
@@ -663,8 +670,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     }
 
     setDays(prevDays => mergeScheduleEditDays(prevDays, updatedDays));
-    // 마지막 일차를 보던 중 일수가 줄면 선택 인덱스가 범위를 벗어난다.
-    setSelectedDayIndex(prev => Math.min(prev, updatedDays.length - 1));
+    // 일수가 줄어 selectedDayIndex가 범위를 벗어나는 경우는
+    // useItineraryEditor의 클램프 이펙트가 처리한다(원격 삭제와 공통 경로).
     setScheduleEditVisible(false);
     // startDate/endDate는 planId가 없을 때 초기 날짜 골격을 만드는 용도라
     // 여기서 되돌려 쓸 필요가 없다. setParams로 갱신하면 fetchPlanDetails의

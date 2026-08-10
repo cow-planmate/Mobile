@@ -275,6 +275,19 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
 
   const selectedDay = days[selectedDayIndex];
 
+  /**
+   * 다른 참여자가 마지막 일차를 삭제하거나(원격 timetable delete) 일수를 줄이면
+   * selectedDayIndex가 범위를 벗어나 selectedDay가 undefined가 된다. 뷰는
+   * selectedDay가 없으면 로딩 화면에 고정되므로 여기서 항상 유효한 인덱스로 되돌린다.
+   * onConfirmScheduleEdit의 로컬 클램프는 "내가" 일수를 줄인 경우만 커버한다.
+   */
+  useEffect(() => {
+    if (days.length === 0) return;
+    if (selectedDayIndex > days.length - 1) {
+      setSelectedDayIndex(days.length - 1);
+    }
+  }, [days.length, selectedDayIndex, setSelectedDayIndex]);
+
   useEffect(() => {
     if (timelineScrollRef.current) {
       timelineScrollRef.current.scrollTo({ y: 0, animated: false });

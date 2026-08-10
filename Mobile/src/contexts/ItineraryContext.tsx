@@ -67,6 +67,11 @@ const isSamePlaceForFetch = (current: Place, fetched: Place): boolean =>
  * 그래서 장소 수가 적지 않고, 로컬에 있는 날짜·장소의 시간과 메모가 모두 일치할 때만
  * 서버 응답을 신뢰합니다.
  * 로컬이 비어 있으면(최초 진입) 항상 서버 응답을 받아들입니다.
+ *
+ * 일차를 timetableId로 매칭하는 경우 날짜 일치 여부는 검사되지 않았다.
+ * 일정 변경으로 날짜만 바꾼 직후, 그 변경이 아직 서버 캐시에 반영되기 전에
+ * REST 재조회가 끼어들면 옛 날짜의 응답이 이 검사를 그대로 통과해 방금 바꾼
+ * 날짜를 되돌려 버린다. 날짜도 같아야만 신뢰한다.
  */
 export const isFetchAtLeastAsComplete = (
   fetched: Day[],
@@ -84,6 +89,7 @@ export const isFetchAtLeastAsComplete = (
     if (!fetchedDay) return false;
 
     const hasSameDayRange =
+      formatDateLocal(currentDay.date) === formatDateLocal(fetchedDay.date) &&
       normalizeTimeForComparison(currentDay.startTime) ===
         normalizeTimeForComparison(fetchedDay.startTime) &&
       normalizeTimeForComparison(currentDay.endTime) ===
@@ -142,6 +148,7 @@ import {
   isTempPlaceId,
   resolveBlockId,
 } from '../utils/planSyncPayload';
+import { applyTimetableBroadcast } from '../utils/timetableBroadcast';
 
 
 interface ItineraryContextType {
@@ -588,57 +595,8 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         if (dataList.length === 0) return;
 
         setDays(prevDays => {
-          let nextDays = [...prevDays];
-          let changed = false;
-
-          dataList.forEach((respVO: any) => {
-            const timetableId = respVO.timeTableId ?? respVO.timetableId;
-            const dateStr = respVO.date
-              ? String(respVO.date).split('T')[0]
-              : null;
-
-            if (action === 'delete') {
-              if (timetableId === undefined || timetableId === null) return;
-              const idx = nextDays.findIndex(
-                d => String(d.timetableId) === String(timetableId),
-              );
-              if (idx !== -1) {
-                nextDays.splice(idx, 1);
-                changed = true;
-              }
-              return;
-            }
-
-            if (!dateStr) return;
-
-            const idx = nextDays.findIndex(
-              d => formatDateLocal(d.date) === dateStr,
-            );
-
-            if (idx !== -1) {
-              // 서버가 확정한 timetableId를 주입해야 이후 블록 편집이 전송된다.
-              if (String(nextDays[idx].timetableId) !== String(timetableId)) {
-                nextDays[idx] = { ...nextDays[idx], timetableId };
-                changed = true;
-              }
-            } else {
-              const [y, m, d] = dateStr.split('-').map(Number);
-              nextDays.push({
-                timetableId,
-                date: new Date(y, m - 1, d),
-                dayNumber: 0,
-                startTime: respVO.timeTableStartTime || '09:00:00',
-                endTime: respVO.timeTableEndTime || '20:00:00',
-                places: [],
-              });
-              changed = true;
-            }
-          });
-
-          if (!changed) return prevDays;
-
-          nextDays.sort((a, b) => a.date.getTime() - b.date.getTime());
-          return nextDays.map((d, i) => ({ ...d, dayNumber: i + 1 }));
+          const result = applyTimetableBroadcast(prevDays, action, dataList);
+          return result.changed ? result.days : prevDays;
         });
       }
     },
