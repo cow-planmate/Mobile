@@ -282,3 +282,42 @@ export async function fetchMyStats(): Promise<MyStats> {
   const response = await axios.get(url('/me/stats'));
   return response.data;
 }
+
+const activityParams = (page: number, size: number, category?: string) => {
+  const params = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+  });
+  if (category) params.set('category', category);
+  return params.toString();
+};
+
+export async function fetchMyPosts(
+  page = 0,
+  size = 20,
+  category?: string,
+): Promise<PageData<CommunityPostSummary>> {
+  const response = await axios.get(
+    url(`/me/posts?${activityParams(page, size, category)}`),
+  );
+  return mapPage(response.data);
+}
+
+export async function fetchLikedPosts(
+  page = 0,
+  size = 20,
+  category?: string,
+): Promise<PageData<CommunityPostSummary>> {
+  const response = await axios.get(
+    url(`/me/liked?${activityParams(page, size, category)}`),
+  );
+  return mapPage(response.data);
+}
+
+export async function fetchMyComments(
+  page = 0,
+  size = 20,
+): Promise<PageData<CommunityComment>> {
+  const response = await axios.get(url(`/me/comments?page=${page}&size=${size}`));
+  return mapPage(response.data);
+}

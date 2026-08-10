@@ -72,6 +72,7 @@ import {
   levelBadgeColor,
   levelName,
 } from '../../community/constants/levels';
+import ProfileActivitySections from '../components/ProfileActivitySections';
 import { styles, COLORS } from './ProfileScreen.styles';
 const getFormattedPeriod = (start?: string, end?: string) => {
   if (!start) return '날짜 확인 필요';
@@ -1180,6 +1181,7 @@ export default function ProfileScreenView({
             )}
           </View>
         </View>
+        <ProfileActivitySections plans={plans} />
       </ScrollView>
 
       {/* 생년월일 선택기. 수정 모달 위에 떠야 하므로 형제로 둔다. */}

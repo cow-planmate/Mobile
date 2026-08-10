@@ -14,6 +14,9 @@ import {
   fetchFeedPosts,
   fetchFeedRegionCounts,
   fetchHotPosts,
+  fetchLikedPosts,
+  fetchMyComments,
+  fetchMyPosts,
   fetchMyStats,
   fetchPost,
   fetchPosts,
@@ -125,6 +128,27 @@ export const useMyStats = (enabled = true) =>
     queryKey: ['community', 'me', 'stats'],
     queryFn: fetchMyStats,
     enabled,
+  });
+
+export const useMyPosts = (category?: string, size = PAGE_SIZE) =>
+  useQuery({
+    queryKey: ['community', 'me', 'posts', category ?? 'all', size] as const,
+    queryFn: () => fetchMyPosts(0, size, category),
+    staleTime: 30_000,
+  });
+
+export const useLikedPosts = (category?: string, size = PAGE_SIZE) =>
+  useQuery({
+    queryKey: ['community', 'me', 'liked', category ?? 'all', size] as const,
+    queryFn: () => fetchLikedPosts(0, size, category),
+    staleTime: 30_000,
+  });
+
+export const useMyComments = (size = PAGE_SIZE) =>
+  useQuery({
+    queryKey: ['community', 'me', 'comments', size] as const,
+    queryFn: () => fetchMyComments(0, size),
+    staleTime: 30_000,
   });
 
 // ────────────────────────────────────────────────
