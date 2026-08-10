@@ -80,17 +80,15 @@ export interface PlaceBlockVO {
   placeCopyrightDivCd?: string;
 }
 
-/** 일정 기본 프레임 정보 VO */
+/** 일정 기본 프레임 정보 VO. 서버 PlanFrameDetailDto와 1:1로 맞춘다. */
 export interface PlanFrameVO {
   planId: string;
   planName: string;
-  departure: string;
-  travelCategoryName: string;
-  travelId: number;
-  travelName: string;
+  destinationId: number;
+  destinationName: string;
   adultCount: number;
   childCount: number;
-  transportationCategoryId: number;
+  transportationType: 'PUBLIC' | 'PRIVATE';
 }
 
 /**

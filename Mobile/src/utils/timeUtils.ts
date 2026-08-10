@@ -38,6 +38,17 @@ export const formatDateLocal = (date: Date): string => {
 };
 
 /**
+ * 'YYYY-MM-DD' 문자열을 로컬 타임존 기준 Date로 파싱합니다.
+ * new Date('2026-08-10')은 UTC 자정으로 해석되어 UTC보다 이른 타임존에서는
+ * 하루가 밀립니다. formatDateLocal과 왕복이 어긋나지 않도록 로컬로 만듭니다.
+ */
+export const parseLocalDate = (value?: string | null): Date => {
+  const [year, month, day] = String(value || '').split('-').map(Number);
+  if (!year || !month || !day) return new Date(NaN);
+  return new Date(year, month - 1, day);
+};
+
+/**
  * Date 객체에서 'HH:mm' 형태의 24시간제 시간 문자열을 추출합니다.
  */
 export const dateToTime = (date: Date) => {

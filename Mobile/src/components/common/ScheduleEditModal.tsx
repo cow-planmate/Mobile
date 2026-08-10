@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Modal,
   View,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react-native';
 import { useAlert } from '../../contexts/AlertContext';
 import { timeToMinutes } from '../../utils/timeUtils';
+import { findInvalidDateOrder } from '../../utils/scheduleEditSync';
 
 type DayConfig = {
   dayNumber: number;
@@ -53,19 +54,26 @@ export default function ScheduleEditModal({
   );
   const [pickerDate, setPickerDate] = useState(new Date());
 
+  /**
+   * initialDays는 부모가 렌더마다 새로 만드는 배열이라 의존성에 두면 부모가
+   * 리렌더될 때마다(참여자 입·퇴장, 날씨 응답 등) 편집 중이던 날짜가 초기화된다.
+   * 모달이 열리는 순간의 값만 스냅샷으로 쓴다.
+   */
+  const initialDaysRef = useRef(initialDays);
+  initialDaysRef.current = initialDays;
+
   useEffect(() => {
-    if (visible) {
-      setDays(
-        initialDays.map((day, index) => ({
-          dayNumber: index + 1,
-          date: new Date(day.date),
-          startTime: day.startTime || '09:00:00',
-          endTime: day.endTime || '20:00:00',
-          places: day.places || [],
-        })),
-      );
-    }
-  }, [visible, initialDays]);
+    if (!visible) return;
+    setDays(
+      initialDaysRef.current.map((day, index) => ({
+        dayNumber: index + 1,
+        date: new Date(day.date),
+        startTime: day.startTime || '09:00:00',
+        endTime: day.endTime || '20:00:00',
+        places: day.places || [],
+      })),
+    );
+  }, [visible]);
 
   const handleAddDay = () => {
     if (days.length >= 14) {
@@ -169,6 +177,18 @@ export default function ScheduleEditModal({
   };
 
   const handleFinalConfirm = () => {
+    // 날짜 유효성 검증. 날짜 변경은 뒤쪽 일차만 밀어내므로 앞 일차와 겹치거나
+    // 역순이 될 수 있다. 같은 날짜가 두 번 나오면 두 일차가 같은 타임테이블을
+    // 가리키게 되어 한쪽 편집이 다른 쪽을 덮어쓴다.
+    const invalidIndex = findInvalidDateOrder(days);
+    if (invalidIndex !== null) {
+      showAlert({
+        title: '날짜 설정 오류',
+        message: `${days[invalidIndex].dayNumber}일차 날짜가 이전 일차와 같거나 앞섭니다. 날짜를 순서대로 지정해주세요.`,
+      });
+      return;
+    }
+
     // 시간 유효성 검증
     for (const day of days) {
       const startMinutes = timeToMinutes(day.startTime);

@@ -17,6 +17,7 @@ import {
 import {
   timeToMinutes,
   minutesToTime,
+  parseLocalDate,
   resolveConflictsAndSort,
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
@@ -132,10 +133,9 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
 
       if (timetables && timetables.length > 0) {
         const newDays: Day[] = timetables.map((tt: any, index: number) => {
-          const date = new Date(tt.date);
-
           const ttId = tt.timetableId ?? tt.timeTableId;
           const ttDateStr = tt.date ? String(tt.date).substring(0, 10) : '';
+          const date = parseLocalDate(ttDateStr);
 
           const dayPlaces = (placeBlocks || [])
             .filter((pb: any) => {

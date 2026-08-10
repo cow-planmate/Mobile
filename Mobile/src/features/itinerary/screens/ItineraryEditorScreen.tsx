@@ -33,15 +33,12 @@ import {
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
 } from '../../../utils/timeUtils';
+import { toLocalTime } from '../../../utils/planSyncPayload';
 import {
-  buildTimeTableDto,
-  toLocalTime,
-} from '../../../utils/planSyncPayload';
-import {
-  SimpleWeatherInfo,
-  fetchWeather,
-  getShareStatus,
-} from '../../../api/trips';
+  buildScheduleEditSync,
+  mergeScheduleEditDays,
+} from '../../../utils/scheduleEditSync';
+import { SimpleWeatherInfo, fetchWeather } from '../../../api/trips';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { ShareModal, PlanInfoModal, AirplaneLoading } from '../../../components/common';
 import PlaceEditModal from '../components/PlaceEditModal';
@@ -218,8 +215,15 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         return;
       }
 
-      if (days.length === 0 || isSaving) {
+      if (isSaving) {
         e.preventDefault();
+        return;
+      }
+
+      // 일정을 아직/끝내 불러오지 못한 상태. 지킬 변경사항이 없으므로 그대로
+      // 내보낸다. 예전에는 여기서도 preventDefault를 걸어, 조회가 실패해 days가
+      // 비면 전체화면 로딩 뒤에 갇혀 화면을 빠져나올 수 없었다.
+      if (days.length === 0) {
         return;
       }
 
@@ -281,43 +285,29 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
    * 실시간 편집(WS)으로 보낼 plan 변경 페이로드를 만든다.
    *
    * SharedSync가 캐시를 병합할 때 값이 null인 필드만 건너뛰는데, PlanDto의
-   * adultCount·childCount·isShared는 원시 타입이라 페이로드에서 빠지면 null이 아니라
-   * 0/false로 역직렬화된다. 그래서 이름만 담아 보내면 인원수가 0으로, 공유 여부가
-   * 해제로 덮어써지고, 그 캐시가 그대로 DB까지 내려간다. 바꾸지 않는 값이라도
-   * 반드시 실제 값을 함께 실어야 한다.
+   * adultCount·childCount는 원시 타입이라 페이로드에서 빠지면 null이 아니라 0으로
+   * 역직렬화된다. 그래서 이름만 담아 보내면 인원수가 0으로 덮어써지고, 그 캐시가
+   * 그대로 DB까지 내려간다. 바꾸지 않는 값이라도 반드시 실제 값을 함께 실어야 한다.
    *
-   * isShared는 GET /api/plan/{id}/complete의 planFrame에 없어 화면이 들고 있지 않다.
-   * 공유 모달에서 언제든 바뀔 수 있는 값이라 캐시해 두면 낡은 값을 실어 보낼 위험이
-   * 있으므로, 보내기 직전에 조회한다. 조회에 실패하면 null을 반환해 WS 전송 자체를
-   * 건너뛴다. 이름 변경은 REST PATCH /api/plan/{id}/name이 DB와 SharedSync 캐시를
-   * 함께 갱신하므로, WS를 건너뛰어도 저장은 되고 다른 참여자 화면 반영만 늦어진다.
+   * isShared는 싣지 않는다. Plan 엔티티에 @IgnoreShared가 붙어 생성된 PlanDto에
+   * 필드 자체가 없고, DTO는 ignoreUnknown이라 보내도 폐기된다. 예전에는 이 값을
+   * 채우려고 전송 직전 공유 상태를 조회했는데, 왕복이 늘고 조회가 실패하면 이름
+   * 실시간 반영까지 통째로 건너뛰는 부작용만 있었다.
    */
   const buildPlanSyncPayload = useCallback(
-    async (targetPlanId: string, planName: string) => {
-      let isShared: boolean;
-      try {
-        ({ isShared } = await getShareStatus(targetPlanId));
-      } catch (err) {
-        console.warn('공유 상태 조회 실패로 plan 실시간 전송을 건너뜁니다:', err);
-        return null;
-      }
-
-      return {
-        planId: targetPlanId,
-        planName,
-        adultCount: planMetadata?.adultCount ?? route.params.adults ?? 1,
-        childCount: planMetadata?.childCount ?? route.params.children ?? 0,
-        isShared,
-      };
-    },
+    (targetPlanId: string, planName: string) => ({
+      planId: targetPlanId,
+      planName,
+      adultCount: planMetadata?.adultCount ?? route.params.adults ?? 1,
+      childCount: planMetadata?.childCount ?? route.params.children ?? 0,
+    }),
     [planMetadata, route.params.adults, route.params.children],
   );
 
   /**
    * 서버와 마지막으로 맞춘 일정 이름.
    *
-   * 완료 시 이름이 그대로면 plan 전송을 통째로 건너뛰기 위해 둔다. 전송에는 공유
-   * 상태 조회가 앞서 붙는데, 그 왕복이 소켓 종료를 그만큼 미룬다.
+   * 완료 시 이름이 그대로면 plan 전송을 통째로 건너뛰기 위해 둔다.
    */
   const syncedTripNameRef = useRef<string | null>(null);
   useEffect(() => {
@@ -580,11 +570,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const handleSaveTripName = useCallback(async () => {
     setIsEditingTripName(false);
     if (tripName && planId) {
-      const planPayload = await buildPlanSyncPayload(planId, tripName);
-      if (planPayload) {
-        sendMessage('update', 'plan', planPayload);
-        syncedTripNameRef.current = tripName;
-      }
+      sendMessage('update', 'plan', buildPlanSyncPayload(planId, tripName));
+      syncedTripNameRef.current = tripName;
       // 이름 변경 REST는 서버가 OWNER만 허용한다. 편집자의 변경은 위 WebSocket
       // 전송으로 이미 반영되므로, 403이 확정된 요청을 굳이 보내지 않는다.
       if (isPlanOwner) {
@@ -651,121 +638,37 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
    */
   const handleRedo = undefined;
 
+  /**
+   * 일정 변경 모달의 확정 결과를 반영한다.
+   *
+   * 일차는 인덱스로 대조한다. 날짜로 대조하면 날짜를 옮긴 일차가 삭제+생성으로
+   * 해석돼 그날의 장소가 통째로 사라지고, 서버가 옛 타임테이블을 DB에서 지우지
+   * 못해 재진입 시 옛 날짜로 되돌아간다(utils/scheduleEditSync 주석 참고).
+   */
   const onConfirmScheduleEdit = (updatedDays: any[]) => {
-    if (updatedDays.length > 0) {
-      const oldDates = new Set(
-        days.map(d => formatDateLocal(d.date)),
+    if (updatedDays.length === 0) return;
+
+    if (!planId) {
+      console.warn('[Schedule] planId 없음 — timetable 동기화를 건너뜁니다.');
+    } else {
+      const { creates, updates, deletes } = buildScheduleEditSync(
+        days,
+        updatedDays,
+        planId,
       );
-      const newDates = new Set(
-        updatedDays.map(d => formatDateLocal(d.date)),
-      );
 
-      const addedDates = [...newDates].filter(d => !oldDates.has(d));
-      const removedDates = [...oldDates].filter(d => !newDates.has(d));
-
-      if (!planId) {
-        console.warn('[Schedule] planId 없음 — timetable 동기화를 건너뜁니다.');
-      } else {
-        if (addedDates.length > 0) {
-          const newTimetables = addedDates.map(dateStr => {
-            const matched = updatedDays.find(
-              ud => formatDateLocal(ud.date) === dateStr,
-            );
-            return buildTimeTableDto({
-              dateString: dateStr,
-              startTime: matched?.startTime,
-              endTime: matched?.endTime,
-              planId,
-            });
-          });
-          sendMessage('create', 'timetable', newTimetables);
-        }
-
-        if (removedDates.length > 0) {
-          const removedTimetables = days
-            .filter(
-              d =>
-                removedDates.includes(formatDateLocal(d.date)) &&
-                d.timetableId !== undefined &&
-                d.timetableId !== null,
-            )
-            .map(d =>
-              buildTimeTableDto({
-                timetableId: d.timetableId,
-                dateString: formatDateLocal(d.date),
-                startTime: d.startTime,
-                endTime: d.endTime,
-                planId,
-              }),
-            );
-
-          if (removedTimetables.length > 0) {
-            sendMessage('delete', 'timetable', removedTimetables);
-          }
-        }
-
-        // 날짜는 그대로이고 운영시간만 바뀐 경우. 이 전송이 없으면 로컬만 바뀌고
-        // 재진입 시 서버 값으로 되돌아간다.
-        const changedTimetables = days
-          .filter(d => d.timetableId !== undefined && d.timetableId !== null)
-          .map(d => {
-            const dateStr = formatDateLocal(d.date);
-            const updated = updatedDays.find(
-              ud => formatDateLocal(ud.date) === dateStr,
-            );
-            if (!updated) return null;
-            if (
-              toLocalTime(updated.startTime) === toLocalTime(d.startTime) &&
-              toLocalTime(updated.endTime) === toLocalTime(d.endTime)
-            ) {
-              return null;
-            }
-            return buildTimeTableDto({
-              timetableId: d.timetableId,
-              dateString: dateStr,
-              startTime: updated.startTime,
-              endTime: updated.endTime,
-              planId,
-            });
-          })
-          .filter(Boolean);
-
-        if (changedTimetables.length > 0) {
-          sendMessage('update', 'timetable', changedTimetables);
-        }
-      }
-
-      // Update days (add new days, delete removed days, and sync existing days)
-      setDays(prevDays => {
-        return updatedDays.map((ud, idx) => {
-          const dateStr = formatDateLocal(ud.date);
-          const existingDay = prevDays.find(
-            pd => formatDateLocal(pd.date) === dateStr,
-          );
-          if (existingDay) {
-            return {
-              ...existingDay,
-              startTime: ud.startTime,
-              endTime: ud.endTime,
-              dayNumber: idx + 1,
-            };
-          } else {
-            return {
-              date: ud.date,
-              dayNumber: idx + 1,
-              startTime: ud.startTime || '09:00:00',
-              endTime: ud.endTime || '20:00:00',
-              places: [],
-            };
-          }
-        });
-      });
-
-      setScheduleEditVisible(false);
-      // startDate/endDate는 planId가 없을 때 초기 날짜 골격을 만드는 용도라
-      // 여기서 되돌려 쓸 필요가 없다. setParams로 갱신하면 fetchPlanDetails의
-      // identity만 바뀌어 불필요한 재조회와 재연결을 유발한다.
+      if (creates.length > 0) sendMessage('create', 'timetable', creates);
+      if (updates.length > 0) sendMessage('update', 'timetable', updates);
+      if (deletes.length > 0) sendMessage('delete', 'timetable', deletes);
     }
+
+    setDays(prevDays => mergeScheduleEditDays(prevDays, updatedDays));
+    // 마지막 일차를 보던 중 일수가 줄면 선택 인덱스가 범위를 벗어난다.
+    setSelectedDayIndex(prev => Math.min(prev, updatedDays.length - 1));
+    setScheduleEditVisible(false);
+    // startDate/endDate는 planId가 없을 때 초기 날짜 골격을 만드는 용도라
+    // 여기서 되돌려 쓸 필요가 없다. setParams로 갱신하면 fetchPlanDetails의
+    // identity만 바뀌어 불필요한 재조회와 재연결을 유발한다.
   };
 
   const onConfirmTimePicker = (date: Date) => {
@@ -818,21 +721,18 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setIsSaving(true);
     isCompletingRef.current = true;
 
-    // 이름이 이미 서버와 맞아 있으면 보내지 않는다. 전송 앞의 공유 상태 조회가
-    // 그대로 소켓 종료를 미루기 때문에, 바뀐 게 없을 때는 왕복 자체를 없앤다.
+    // 이름이 이미 서버와 맞아 있으면 보내지 않는다.
     if (
       route.params.planId &&
       tripName &&
       tripName !== syncedTripNameRef.current
     ) {
-      const planPayload = await buildPlanSyncPayload(
-        route.params.planId,
-        tripName,
+      sendMessage(
+        'update',
+        'plan',
+        buildPlanSyncPayload(route.params.planId, tripName),
       );
-      if (planPayload) {
-        sendMessage('update', 'plan', planPayload);
-        syncedTripNameRef.current = tripName;
-      }
+      syncedTripNameRef.current = tripName;
     }
 
     // If plan already exists (editing from MySchedule or pre-created from Home), update title for owner and navigate to view
@@ -1083,15 +983,14 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
                     '사용자';
                   const initial = name.charAt(0) || '?';
                   const userUidLower = String(user.uid || '').toLowerCase();
-                  const ownerIdLower = String(planMetadata?.user?.userId || planMetadata?.ownerId || '').toLowerCase();
 
                   const isMe =
                     !!currentUser &&
                     String(currentUser.userId || '').toLowerCase() === userUidLower;
-                  const isOwner =
-                    (!!ownerIdLower && userUidLower === ownerIdLower) ||
-                    (!!planMetadata?.user?.nickname &&
-                      planMetadata.user.nickname === name);
+                  // 소유자는 내 계정에 대해서만 판정할 수 있다. 일정 조회 응답
+                  // (PlanFrameDetailDto)에도, 편집자 목록(EDITOR만 반환)에도
+                  // 소유자 정보가 없어 다른 참여자의 소유 여부는 알 방법이 없다.
+                  const isOwner = isMe && isPlanOwner;
 
                   return (
                     <View key={user.uid || `user-${idx}`} style={modalStyles.participantRow}>
@@ -1204,12 +1103,18 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         visible={isPlanInfoVisible}
         onClose={() => setPlanInfoVisible(false)}
         planName={tripName}
-        destination={planMetadata?.travelName || route.params.destination || '미정'}
+        destination={planMetadata?.destinationName || route.params.destination || '미정'}
         startDate={days.length > 0 ? formatDateLocal(days[0].date) : route.params.startDate}
         endDate={days.length > 0 ? formatDateLocal(days[days.length - 1].date) : route.params.endDate}
         adultCount={planMetadata?.adultCount ?? route.params.adults ?? 1}
         childCount={planMetadata?.childCount ?? route.params.children ?? 0}
-        transport={planMetadata ? (planMetadata.transportationCategoryId === 1 ? '자동차' : '대중교통') : (route.params.transport || '대중교통')}
+        transport={
+          planMetadata?.transportationType
+            ? planMetadata.transportationType === 'PRIVATE'
+              ? '자동차'
+              : '대중교통'
+            : route.params.transport || '대중교통'
+        }
       />
       <Modal
         visible={isInitialLoading || days.length === 0 || isSaving || isBacking}
