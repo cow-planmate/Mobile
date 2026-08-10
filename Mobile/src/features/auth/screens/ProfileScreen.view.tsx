@@ -66,6 +66,12 @@ import {
   toBirthdateString,
   parseBirthdate,
 } from '../../../utils/birthdate';
+import { MyStats } from '../../community/types';
+import {
+  getLevelProgress,
+  levelBadgeColor,
+  levelName,
+} from '../../community/constants/levels';
 import { styles, COLORS } from './ProfileScreen.styles';
 const getFormattedPeriod = (start?: string, end?: string) => {
   if (!start) return '날짜 확인 필요';
@@ -313,6 +319,8 @@ const ItineraryCardItem = ({
 interface ProfileScreenViewProps {
   loading: boolean;
   user: any;
+  communityStats?: MyStats;
+  isCommunityStatsLoading: boolean;
   isThemeModalVisible: boolean;
   setThemeModalVisible: (visible: boolean) => void;
   isPasswordModalVisible: boolean;
@@ -338,6 +346,8 @@ interface ProfileScreenViewProps {
 export default function ProfileScreenView({
   loading,
   user,
+  communityStats,
+  isCommunityStatsLoading,
   isThemeModalVisible,
   setThemeModalVisible,
   isPasswordModalVisible,
@@ -733,6 +743,17 @@ export default function ProfileScreenView({
   const themeNames = preferredThemes.map((t: any) => t.preferredThemeName || t);
   const defaultThemes = ['해수욕장', '호텔', '한식', '고기집', '이자카야'];
   const displayThemes = themeNames.length > 0 ? themeNames : defaultThemes;
+  const activityProgress = getLevelProgress(
+    communityStats?.postCount ?? 0,
+    communityStats?.commentCount ?? 0,
+  );
+  const currentLevel = communityStats?.level ?? activityProgress.currentTier.level;
+  const badgeColor = levelBadgeColor(currentLevel);
+  const activityValue = communityStats
+    ? activityProgress.nextTier
+      ? `${activityProgress.score} / ${activityProgress.nextTier.min} 활동`
+      : `${activityProgress.score} 활동 · 최고 레벨`
+    : '활동 통계를 불러오는 중';
 
   const handleOpenEditModal = () => {
     setTempNickname(user.name);
@@ -838,9 +859,11 @@ export default function ProfileScreenView({
             <View style={styles.profileTextInfo}>
               <View style={styles.nicknameRow}>
                 <Text style={styles.nicknameText}>{user.name || '사용자'}</Text>
-                <View style={[styles.levelBadge, { backgroundColor: '#9CA3AF' }]}>
-                  <Lock size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
-                  <Text style={styles.levelBadgeText}>LV.1 • 준비중</Text>
+                <View style={[styles.levelBadge, { backgroundColor: badgeColor.bg }]}>
+                  <Award size={10} color={badgeColor.text} />
+                  <Text style={[styles.levelBadgeText, { color: badgeColor.text }]}>
+                    Lv.{currentLevel} · {levelName(currentLevel)}
+                  </Text>
                 </View>
               </View>
 
@@ -859,11 +882,19 @@ export default function ProfileScreenView({
           {/* 경험치 프로그레스 바 */}
           <View style={styles.experienceSection}>
             <View style={styles.experienceLabelRow}>
-              <Text style={[styles.experienceTitle, { color: '#9CA3AF' }]}>현재 경험치 (준비중)</Text>
-              <Text style={[styles.experienceValue, { color: '#9CA3AF' }]}>0 / 100 EXP</Text>
+              <Text style={styles.experienceTitle}>현재 활동 점수</Text>
+              <Text style={styles.experienceValue}>{activityValue}</Text>
             </View>
-            <View style={[styles.progressBarTrack, { backgroundColor: '#E5E7EB' }]}>
-              <View style={[styles.progressBarFill, { width: '0%', backgroundColor: '#9CA3AF' }]} />
+            <View style={styles.progressBarTrack}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    width: `${communityStats ? activityProgress.progressPercent : 0}%`,
+                    backgroundColor: badgeColor.text,
+                  },
+                ]}
+              />
             </View>
           </View>
 
@@ -893,8 +924,10 @@ export default function ProfileScreenView({
               <Text style={styles.statLabel}>초대된 일정</Text>
             </View>
             <View style={styles.statBlock}>
-              <Text style={styles.statNumber}>0</Text>
-              <Text style={styles.statLabel}>좋아요</Text>
+              <Text style={styles.statNumber}>
+                {isCommunityStatsLoading ? '-' : activityProgress.score}
+              </Text>
+              <Text style={styles.statLabel}>커뮤니티 활동</Text>
             </View>
           </View>
         </View>

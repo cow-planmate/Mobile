@@ -25,6 +25,7 @@ import {
   UserProfile,
   USER_PROFILE_QUERY_KEY,
 } from '../../../hooks/useUserProfile';
+import { useMyStats } from '../../community/hooks/queries';
 import { buildProfileImageUploadFile } from '../utils/profileImage';
 const EMPTY_PROFILE: UserProfile = {
   name: '',
@@ -42,6 +43,7 @@ export default function ProfileScreen({ route }: any) {
   const { showAlert } = useAlert();
   const queryClient = useQueryClient();
   const { data, isLoading } = useUserProfile();
+  const { data: communityStats, isLoading: isCommunityStatsLoading } = useMyStats();
   const user = data ?? EMPTY_PROFILE;
 
   // 닉네임·나이·성별은 뷰가 하나의 편집 모달에서 함께 다룬다.
@@ -381,6 +383,8 @@ export default function ProfileScreen({ route }: any) {
     <ProfileScreenView
       loading={isLoading}
       user={user}
+      communityStats={communityStats}
+      isCommunityStatsLoading={isCommunityStatsLoading}
       onRenamePlan={handleRenamePlan}
       onChangeProfileVisibility={handleChangeProfileVisibility}
       onChangeProfileImage={handleChangeProfileImage}
