@@ -53,6 +53,31 @@ const resolveSseUrl = (): string => {
 };
 
 /**
+ * 리프레시 토큰으로 액세스 토큰을 한 번 갱신한다.
+ * axiosConfig의 401 인터셉터와 별개 경로다 — 이 EventSource 연결은 axios를
+ * 거치지 않아 그 인터셉터의 자동 갱신 대상이 아니다.
+ */
+const refreshAccessToken = async (): Promise<boolean> => {
+  try {
+    const refreshToken = await AsyncStorage.getItem('refreshToken');
+    if (!refreshToken) return false;
+
+    const response = await axios.post(resolveApiUrl('/api/auth/token'), {
+      refreshToken,
+    });
+    const newAccessToken = response.data?.accessToken;
+    if (!newAccessToken) return false;
+
+    await AsyncStorage.setItem('accessToken', newAccessToken);
+    axios.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
+    return true;
+  } catch (error) {
+    sseLog('[SSE] 토큰 갱신 실패:', error);
+    return false;
+  }
+};
+
+/**
  * 실시간 일정 초댓장 및 협업 요청 알림을 위한 SSE(Server-Sent Events) 구독 훅
  *
  * @param params enabled 활성화 여부 및 이벤트 수신 콜백 함수
@@ -241,10 +266,32 @@ export function useInvitationSse({
         `[SSE] 초대 스트림 오류: status=${xhrStatus}, state=${xhrState}`,
       );
 
-      // 서버에서 권한을 거부(401/403)한 경우 재연결 시도를 중지하고 폴링 방식에 의존
-      if (xhrStatus === '401' || xhrStatus === '403') {
+      // 403은 권한 자체가 없는 것이라 재시도로 해결되지 않는다.
+      if (xhrStatus === '403') {
         shouldReconnectRef.current = false;
         disconnect();
+        return;
+      }
+
+      // 401은 대부분 액세스 토큰 만료다. 앱을 오래 유휴 상태로 두면(SSE emitter
+      // 타임아웃 30분 > 토큰 수명 15분) 다른 API 호출이 없어 토큰이 갱신될 기회가
+      // 없다. 여기서 직접 한 번 갱신을 시도하고, 성공하면 그 토큰으로 재연결한다.
+      // 갱신도 실패하면(리프레시 토큰까지 만료) 예전처럼 재시도를 멈춘다.
+      if (xhrStatus === '401') {
+        disconnect();
+        refreshAccessToken()
+          .then(refreshed => {
+            if (!shouldReconnectRef.current) return;
+            if (!refreshed) {
+              shouldReconnectRef.current = false;
+              return;
+            }
+            reconnectDelayRef.current = INITIAL_RECONNECT_DELAY_MS;
+            scheduleReconnect(connect);
+          })
+          .catch(() => {
+            shouldReconnectRef.current = false;
+          });
         return;
       }
 

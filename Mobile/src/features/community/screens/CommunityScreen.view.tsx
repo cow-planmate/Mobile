@@ -10,7 +10,12 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { Search, ThumbsUp, MessageSquare, Eye, PenSquare, Flame } from 'lucide-react-native';
+import Search from 'lucide-react-native/dist/esm/icons/search';
+import ThumbsUp from 'lucide-react-native/dist/esm/icons/thumbs-up';
+import MessageSquare from 'lucide-react-native/dist/esm/icons/message-square';
+import Eye from 'lucide-react-native/dist/esm/icons/eye';
+import PenSquare from 'lucide-react-native/dist/esm/icons/square-pen';
+import Flame from 'lucide-react-native/dist/esm/icons/flame';
 import FastImage from 'react-native-fast-image';
 import { styles } from './CommunityScreen.styles';
 import { Header, NotificationModal } from '../../../components/common';

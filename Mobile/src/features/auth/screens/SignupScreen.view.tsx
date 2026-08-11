@@ -17,15 +17,13 @@ import Animated, {
   FadeInLeft,
 } from 'react-native-reanimated';
 import DatePicker from 'react-native-date-picker';
-import {
-  ArrowLeft,
-  Eye,
-  EyeOff,
-  Check,
-  Circle,
-  AlertCircle,
-  Loader,
-} from 'lucide-react-native';
+import ArrowLeft from 'lucide-react-native/dist/esm/icons/arrow-left';
+import Eye from 'lucide-react-native/dist/esm/icons/eye';
+import EyeOff from 'lucide-react-native/dist/esm/icons/eye-off';
+import Check from 'lucide-react-native/dist/esm/icons/check';
+import Circle from 'lucide-react-native/dist/esm/icons/circle';
+import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
+import Loader from 'lucide-react-native/dist/esm/icons/loader';
 import { styles } from './SignupScreen.styles';
 import { COLORS } from '../authTokens';
 import { sf } from '../../../design/scale';

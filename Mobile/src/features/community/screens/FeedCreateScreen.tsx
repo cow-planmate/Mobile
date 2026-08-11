@@ -12,7 +12,9 @@ import {
   View,
 } from 'react-native';
 import axios from 'axios';
-import { ChevronLeft, Check, MapPin } from 'lucide-react-native';
+import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
+import Check from 'lucide-react-native/dist/esm/icons/check';
+import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAlert } from '../../../contexts/AlertContext';

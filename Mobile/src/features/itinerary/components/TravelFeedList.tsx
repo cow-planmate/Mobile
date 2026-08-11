@@ -9,7 +9,12 @@ import {
   RefreshControl,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { ThumbsUp, ThumbsDown, MessageSquare, Eye, Copy, Clock } from 'lucide-react-native';
+import ThumbsUp from 'lucide-react-native/dist/esm/icons/thumbs-up';
+import ThumbsDown from 'lucide-react-native/dist/esm/icons/thumbs-down';
+import MessageSquare from 'lucide-react-native/dist/esm/icons/message-square';
+import Eye from 'lucide-react-native/dist/esm/icons/eye';
+import Copy from 'lucide-react-native/dist/esm/icons/copy';
+import Clock from 'lucide-react-native/dist/esm/icons/clock';
 import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
 

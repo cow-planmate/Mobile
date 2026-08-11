@@ -8,7 +8,7 @@ import {
   TextInput,
 } from 'react-native';
 import { styles } from './UpdateValueModal.styles';
-import { X } from 'lucide-react-native';
+import X from 'lucide-react-native/dist/esm/icons/x';
 
 type UpdateValueModalProps = {
   visible: boolean;

@@ -13,7 +13,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { WebView } from 'react-native-webview';
-import { X, Eye, EyeOff, AlertCircle } from 'lucide-react-native';
+import X from 'lucide-react-native/dist/esm/icons/x';
+import Eye from 'lucide-react-native/dist/esm/icons/eye';
+import EyeOff from 'lucide-react-native/dist/esm/icons/eye-off';
+import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { styles } from './LoginScreen.styles';
 import { COLORS } from '../authTokens';

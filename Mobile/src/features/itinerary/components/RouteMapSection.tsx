@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Route as RouteIcon, Wand2 } from 'lucide-react-native';
+import RouteIcon from 'lucide-react-native/dist/esm/icons/route';
+import Wand2 from 'lucide-react-native/dist/esm/icons/wand-sparkles';
 import KakaoMapView, { MapPlace, MapTransitLane } from './KakaoMapView';
 import RouteSegmentSheet from './RouteSegmentSheet';
 import {

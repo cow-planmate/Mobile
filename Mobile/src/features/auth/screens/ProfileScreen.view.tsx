@@ -30,32 +30,28 @@ import { useQueryClient } from '@tanstack/react-query';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { deletePlans, leaveAsEditor } from '../../../api/trips';
 import { invalidatePlanCaches } from '../../../hooks/planCache';
-import {
-  faT,
-  faPen,
-  faShare,
-  faTrash,
-  faUserMinus,
-} from '@fortawesome/free-solid-svg-icons';
+import { faT } from '@fortawesome/free-solid-svg-icons/faT';
+import { faPen } from '@fortawesome/free-solid-svg-icons/faPen';
+import { faShare } from '@fortawesome/free-solid-svg-icons/faShare';
+import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash';
+import { faUserMinus } from '@fortawesome/free-solid-svg-icons/faUserMinus';
 
-import {
-  User,
-  Settings,
-  Award,
-  Lock,
-  X,
-  Camera,
-  AlertTriangle,
-  Calendar,
-  Trash2,
-  CheckCircle2,
-  Circle,
-  Check,
-  ChevronLeft,
-  ChevronDown,
-  MoreVertical,
-  ListChecks,
-} from 'lucide-react-native';
+import User from 'lucide-react-native/dist/esm/icons/user';
+import Settings from 'lucide-react-native/dist/esm/icons/settings';
+import Award from 'lucide-react-native/dist/esm/icons/award';
+import Lock from 'lucide-react-native/dist/esm/icons/lock';
+import X from 'lucide-react-native/dist/esm/icons/x';
+import Camera from 'lucide-react-native/dist/esm/icons/camera';
+import AlertTriangle from 'lucide-react-native/dist/esm/icons/triangle-alert';
+import Calendar from 'lucide-react-native/dist/esm/icons/calendar';
+import Trash2 from 'lucide-react-native/dist/esm/icons/trash-2';
+import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
+import Circle from 'lucide-react-native/dist/esm/icons/circle';
+import Check from 'lucide-react-native/dist/esm/icons/check';
+import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
+import ChevronDown from 'lucide-react-native/dist/esm/icons/chevron-down';
+import MoreVertical from 'lucide-react-native/dist/esm/icons/ellipsis-vertical';
+import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
 import FastImage from 'react-native-fast-image';
 import ChecklistSheet from '../../itinerary/components/checklist/ChecklistSheet';
 import { useChecklist } from '../../itinerary/hooks/useChecklistQueries';

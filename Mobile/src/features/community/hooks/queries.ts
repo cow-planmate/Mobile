@@ -30,10 +30,13 @@ import {
 import { forkItinerary } from '../services/forkItinerary';
 import { invalidatePlanCaches } from '../../../hooks/planCache';
 import {
+  CommunityPostSummary,
   CreatePostPayload,
   FeedFilterParams,
   Itinerary,
   MateStatus,
+  PageData,
+  ReactionResult,
   ReactionType,
 } from '../types';
 
@@ -212,13 +215,73 @@ export const useDeletePost = () => {
   });
 };
 
+/**
+ * 목록류 캐시(게시판/여행기 무한 스크롤, 핫글, 내 글/좋아요)에서 postId와 일치하는
+ * 항목에만 patch를 반영한다.
+ *
+ * 좋아요는 스크롤 중 자주 일어나는데, invalidateQueries로 무효화하면 무한 스크롤로
+ * 이미 불러온 페이지 전체가 다시 요청된다. 서버가 반응 결과에 최신 likes/dislikes를
+ * 그대로 돌려주므로, 그 값을 캐시에 직접 써 넣으면 재요청 없이 목록도 갱신된다.
+ */
+const patchPostSummaryInCaches = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  postId: number | string,
+  patch: Partial<CommunityPostSummary>,
+) => {
+  const idStr = String(postId);
+  const patchItem = (item: CommunityPostSummary) =>
+    String(item.id) === idStr ? { ...item, ...patch } : item;
+
+  // 게시판(usePosts)·여행기(useFeedPosts) 무한 스크롤 — 둘 다 ['community','posts',...]
+  queryClient.setQueriesData({ queryKey: ['community', 'posts'] }, (data: any) => {
+    if (!data?.pages) return data;
+    return {
+      ...data,
+      pages: data.pages.map((page: PageData<CommunityPostSummary>) => ({
+        ...page,
+        items: page.items.map(patchItem),
+      })),
+    };
+  });
+
+  // 핫글 — 페이지네이션 없는 단순 배열
+  queryClient.setQueriesData(
+    { queryKey: ['community', 'hot'] },
+    (data: CommunityPostSummary[] | undefined) => data?.map(patchItem),
+  );
+
+  // 내 글 / 내가 좋아요한 글
+  (['posts', 'liked'] as const).forEach(key => {
+    queryClient.setQueriesData(
+      { queryKey: ['community', 'me', key] },
+      (data: PageData<CommunityPostSummary> | undefined) =>
+        data ? { ...data, items: data.items.map(patchItem) } : data,
+    );
+  });
+};
+
 export const useReactToPost = (postId: number | string) => {
-  const invalidate = useInvalidate();
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (type: ReactionType) => reactToPost(Number(postId), type),
-    onSuccess: () => {
-      void invalidate.post(postId);
-      void invalidate.lists();
+    onSuccess: (result: ReactionResult) => {
+      queryClient.setQueryData(
+        KEYS.post(postId),
+        (prev: (CommunityPostSummary & { myReaction?: ReactionType | null }) | undefined) =>
+          prev
+            ? {
+                ...prev,
+                likes: result.likes,
+                dislikes: result.dislikes,
+                myReaction: result.myReaction,
+              }
+            : prev,
+      );
+      patchPostSummaryInCaches(queryClient, postId, {
+        likes: result.likes,
+        dislikes: result.dislikes,
+      });
     },
   });
 };

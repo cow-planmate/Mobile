@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Modal, View, Text, TouchableOpacity, Pressable } from 'react-native';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import X from 'lucide-react-native/dist/esm/icons/x';
+import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
+import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import { styles, COLORS } from './CalendarModal.styles';
 
 type CalendarModalProps = {

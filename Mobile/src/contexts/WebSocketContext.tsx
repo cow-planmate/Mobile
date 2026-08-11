@@ -7,10 +7,10 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
-import { Client, IMessage } from '@stomp/stompjs';
+import { Client, IMessage, ReconnectionTimeMode } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import FastImage from 'react-native-fast-image';
 
 import gravatarUrl from '../utils/gravatarUrl';
 import { resolveApiUrl } from '../utils/apiUrl';
@@ -201,16 +201,32 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
-    const wsUrl = token
-      ? resolveApiUrl(`/ws?token=${encodeURIComponent(token)}`)
-      : resolveApiUrl('/ws');
+    /**
+     * 매 (재)연결 시도 직전에 참조하는 최신 토큰.
+     *
+     * 예전에는 connect() 최초 호출 시 읽은 토큰을 URL/헤더에 고정해 클라이언트를
+     * 만들었다. STOMP는 끊기면 같은 클라이언트로 자동 재연결하는데, 액세스 토큰
+     * 수명(15분)보다 편집 세션이 길면 재연결 때마다 이미 만료된 토큰을 그대로
+     * 재사용해 인증에 실패했다. beforeConnect에서 매번 다시 읽어 반영한다.
+     */
+    const latestTokenRef = { current: token };
 
     const client = new Client({
-      // SockJS 지원을 위해 factory 사용
+      // SockJS 지원을 위해 factory 사용. beforeConnect 이후에 호출되므로
+      // latestTokenRef가 최신 값으로 갱신된 뒤 URL을 만든다.
       webSocketFactory: () => {
+        const wsUrl = latestTokenRef.current
+          ? resolveApiUrl(`/ws?token=${encodeURIComponent(latestTokenRef.current)}`)
+          : resolveApiUrl('/ws');
         const socket = new SockJS(wsUrl);
         activeSocket.current = socket;
         return socket;
+      },
+      beforeConnect: async c => {
+        latestTokenRef.current = await AsyncStorage.getItem('accessToken');
+        c.connectHeaders = latestTokenRef.current
+          ? { Authorization: `Bearer ${latestTokenRef.current}` }
+          : {};
       },
       connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
       debug: __DEV__
@@ -219,8 +235,12 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
           }
         : () => {},
       // 서버가 메시지 처리 중 예외를 만나면 STOMP ERROR 프레임 후 세션을 닫는다(핸들러
-      // 예외 처리 미구현). 동시 편집 중 간헐적으로 발생하므로 재연결 지연을 짧게 둔다.
+      // 예외 처리 미구현). 동시 편집 중 간헐적으로 발생하므로 초기 재연결 지연은
+      // 짧게 두되, 계속 실패하면(예: 서버 다운) 무한히 3초마다 재시도하지 않도록
+      // 지수 백오프로 최대 30초까지 늘린다.
       reconnectDelay: 3000,
+      reconnectTimeMode: ReconnectionTimeMode.EXPONENTIAL,
+      maxReconnectDelay: 30000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       onConnect: frame => {
@@ -274,9 +294,11 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
                   const url = email ? gravatarUrl(email) : undefined;
                   // presence는 참여자가 드나들 때마다 전체 목록을 다시 보낸다.
                   // 이미 요청한 아바타를 매번 다시 prefetch하지 않는다.
+                  // 실제 렌더는 FastImage(Glide)를 쓰므로 RN 기본 Image.prefetch(Fresco)로
+                  // 미리 받아도 캐시가 갈려 헛돈다 — FastImage.preload로 맞춘다.
                   if (url && !prefetchedAvatarsRef.current.has(url)) {
                     prefetchedAvatarsRef.current.add(url);
-                    Image.prefetch(url).catch(() => {});
+                    FastImage.preload([{ uri: url }]);
                   }
                   return {
                     ...u,

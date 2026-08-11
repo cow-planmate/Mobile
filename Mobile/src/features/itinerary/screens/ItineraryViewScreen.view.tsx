@@ -9,16 +9,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import {
-  faShareNodes,
-  faPencil,
-  faCheck,
-} from '@fortawesome/free-solid-svg-icons';
-import {
-  Map as MapOutlineIcon,
-  ChevronLeft,
-  ListChecks,
-} from 'lucide-react-native';
+import { faShareNodes } from '@fortawesome/free-solid-svg-icons/faShareNodes';
+import { faPencil } from '@fortawesome/free-solid-svg-icons/faPencil';
+import { faCheck } from '@fortawesome/free-solid-svg-icons/faCheck';
+import MapOutlineIcon from 'lucide-react-native/dist/esm/icons/map';
+import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
+import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
 import RouteMapSection from '../components/RouteMapSection';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
 import { ShareModal, AirplaneLoading, LoadingSpinner } from '../../../components/common';

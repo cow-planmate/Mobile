@@ -9,7 +9,8 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { X, Lock } from 'lucide-react-native';
+import X from 'lucide-react-native/dist/esm/icons/x';
+import Lock from 'lucide-react-native/dist/esm/icons/lock';
 import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
 import { parseBackendError } from '../../../utils/errorHandler';

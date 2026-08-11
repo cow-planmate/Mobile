@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   TextInput,
 } from 'react-native';
-import { Eye, EyeOff, X } from 'lucide-react-native';
+import Eye from 'lucide-react-native/dist/esm/icons/eye';
+import EyeOff from 'lucide-react-native/dist/esm/icons/eye-off';
+import X from 'lucide-react-native/dist/esm/icons/x';
 import { styles, COLORS } from './UpdatePasswordModal.styles';
 import { useAlert } from '../../contexts/AlertContext';
 

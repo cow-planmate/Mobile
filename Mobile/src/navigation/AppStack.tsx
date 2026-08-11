@@ -24,7 +24,9 @@ import {
   AppStackParamList,
 } from './types';
 import { Platform } from 'react-native';
-import { MessageSquare, Compass, PlusCircle } from 'lucide-react-native';
+import MessageSquare from 'lucide-react-native/dist/esm/icons/message-square';
+import Compass from 'lucide-react-native/dist/esm/icons/compass';
+import PlusCircle from 'lucide-react-native/dist/esm/icons/circle-plus';
 
 const FeedStackNavigator = createNativeStackNavigator<FeedStackParamList>();
 const ScheduleStackNavigator = createNativeStackNavigator<ScheduleStackParamList>();

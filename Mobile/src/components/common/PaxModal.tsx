@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Modal, View, Text, TouchableOpacity } from 'react-native';
-import { X, Minus, Plus } from 'lucide-react-native';
+import X from 'lucide-react-native/dist/esm/icons/x';
+import Minus from 'lucide-react-native/dist/esm/icons/minus';
+import Plus from 'lucide-react-native/dist/esm/icons/plus';
 
 import { styles, COLORS } from './PaxModal.styles';
 

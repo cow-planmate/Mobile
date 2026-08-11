@@ -1,7 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { ToastConfig } from 'react-native-toast-message';
-import { CheckCircle2, Info, XCircle } from 'lucide-react-native';
+import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
+import Info from 'lucide-react-native/dist/esm/icons/info';
+import XCircle from 'lucide-react-native/dist/esm/icons/circle-x';
 import { COLORS, RADIUS, TYPO } from '../../design/tokens';
 import { sf, sp } from '../../design/scale';
 

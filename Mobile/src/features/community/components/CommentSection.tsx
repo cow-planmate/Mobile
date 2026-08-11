@@ -9,7 +9,9 @@ import {
   ViewStyle,
   ActivityIndicator,
 } from 'react-native';
-import { CornerDownRight, MessageCircle, Send } from 'lucide-react-native';
+import CornerDownRight from 'lucide-react-native/dist/esm/icons/corner-down-right';
+import MessageCircle from 'lucide-react-native/dist/esm/icons/message-circle';
+import Send from 'lucide-react-native/dist/esm/icons/send';
 import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';

@@ -60,3 +60,8 @@ jest.mock('react-native-date-picker', () => {
     }
   };
 });
+
+// 네이티브 모듈이라 테스트 환경에는 없다. 패키지가 제공하는 CJS 목을 그대로 쓴다.
+jest.mock('@react-native-community/netinfo', () =>
+  require('@react-native-community/netinfo/jest/netinfo-mock'),
+);

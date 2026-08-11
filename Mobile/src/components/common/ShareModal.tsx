@@ -13,7 +13,7 @@ import {
   Switch,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { X } from 'lucide-react-native';
+import X from 'lucide-react-native/dist/esm/icons/x';
 import {
   getShareUrl,
   updateShareStatus,

@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, TouchableOpacity } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPencil, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faPencil } from '@fortawesome/free-solid-svg-icons/faPencil';
+import { faTimes } from '@fortawesome/free-solid-svg-icons/faTimes';
 
 import { styles, CATEGORY_COLORS } from './TimelineItem.styles';
 

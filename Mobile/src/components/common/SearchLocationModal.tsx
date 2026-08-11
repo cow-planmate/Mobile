@@ -12,11 +12,9 @@ import {
   ScrollView,
 } from 'react-native';
 import axios from 'axios';
-import {
-  X,
-  MapPin,
-  Map,
-} from 'lucide-react-native';
+import X from 'lucide-react-native/dist/esm/icons/x';
+import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
+import Map from 'lucide-react-native/dist/esm/icons/map';
 
 import { styles, COLORS } from './SearchLocationModal.styles';
 import { DESTINATIONS_28, REGION_GROUPS } from '../../constants/regions';

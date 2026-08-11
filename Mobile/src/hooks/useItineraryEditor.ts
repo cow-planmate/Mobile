@@ -80,6 +80,8 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   const timelineScrollRef = useRef<ScrollView>(null);
   /** days에 이미 담겨 있는 일정의 planId. 다른 plan의 응답과 비교하지 않기 위한 기준. */
   const loadedPlanIdRef = useRef<string | null>(null);
+  /** 최초 일정 조회가 끝났는지. 화면 진입 시 전체화면 로딩을 이 값으로 판단한다. */
+  const [isInitialPlanLoading, setIsInitialPlanLoading] = useState(true);
 
   const initDaysFromDates = useCallback(() => {
     if (!route.params?.startDate || !route.params?.endDate) return;
@@ -262,6 +264,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     if (scopedPlanIdRef.current === nextPlanId) return;
     scopedPlanIdRef.current = nextPlanId;
     isInitialized.current = false;
+    setIsInitialPlanLoading(true);
     resetItinerary();
   }, [route.params?.planId, resetItinerary]);
 
@@ -269,7 +272,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   useEffect(() => {
     if (isInitialized.current) return;
     isInitialized.current = true;
-    fetchPlanDetails();
+    fetchPlanDetails().finally(() => setIsInitialPlanLoading(false));
   }, [fetchPlanDetails]);
 
 
@@ -381,5 +384,6 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     selectedDay,
     planMetadata,
     fetchPlanDetails,
+    isInitialPlanLoading,
   };
 };

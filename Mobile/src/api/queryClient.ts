@@ -1,4 +1,17 @@
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, onlineManager } from '@tanstack/react-query';
+import NetInfo from '@react-native-community/netinfo';
+
+/**
+ * react-query는 기본으로 `navigator.onLine`을 봐 온라인 여부를 판단하는데, RN에는
+ * 그 값이 없어 항상 온라인으로 간주한다. 오프라인에서도 쿼리가 그대로 발사돼
+ * axios 타임아웃(현재 10초)만큼 기다렸다가 실패하고, 복구돼도 자동 재조회가
+ * 없었다. NetInfo로 실제 연결 상태를 알려준다.
+ */
+onlineManager.setEventListener(setOnline => {
+  return NetInfo.addEventListener(state => {
+    setOnline(!!state.isConnected);
+  });
+});
 
 /**
  * 전역 React Query Client 인스턴스 설정

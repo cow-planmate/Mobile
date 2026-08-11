@@ -24,7 +24,7 @@ const matchesPath = (url: string | undefined, paths: string[]) =>
 // axios 기본 설정
 if (axios && axios.defaults) {
   axios.defaults.baseURL = normalizedApiUrl;
-  axios.defaults.timeout = 30000; // 30초 타임아웃
+  axios.defaults.timeout = 15000; // 15초 타임아웃 (재시도 1회 포함 최대 30초)
   if (axios.defaults.headers && axios.defaults.headers.common) {
     axios.defaults.headers.common['Content-Type'] = 'application/json';
   }

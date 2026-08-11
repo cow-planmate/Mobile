@@ -9,7 +9,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import axios from 'axios';
-import { Map, Bed, UtensilsCrossed, X } from 'lucide-react-native';
+import Map from 'lucide-react-native/dist/esm/icons/map';
+import Bed from 'lucide-react-native/dist/esm/icons/bed';
+import UtensilsCrossed from 'lucide-react-native/dist/esm/icons/utensils-crossed';
+import X from 'lucide-react-native/dist/esm/icons/x';
 import { PreferredThemeVO, changePreferredThemes } from '../../api/themes';
 import ThemeSelector, { ThemeSelectorResult, CATEGORY_MAP } from './ThemeSelector';
 import { styles, COLORS } from './UpdateThemeModal.styles';

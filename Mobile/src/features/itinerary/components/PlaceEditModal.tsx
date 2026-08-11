@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import FastImage from 'react-native-fast-image';
-import { X, Map as MapIcon } from 'lucide-react-native';
+import X from 'lucide-react-native/dist/esm/icons/x';
+import MapIcon from 'lucide-react-native/dist/esm/icons/map';
 import { openExternalUrl } from '../../../utils/externalLink';
 import { theme } from '../../../theme/theme';
 import { useAlert } from '../../../contexts/AlertContext';

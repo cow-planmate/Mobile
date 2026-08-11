@@ -13,7 +13,13 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Search, LayoutGrid, List, SlidersHorizontal, X, MapPin, Plus } from 'lucide-react-native';
+import Search from 'lucide-react-native/dist/esm/icons/search';
+import LayoutGrid from 'lucide-react-native/dist/esm/icons/layout-grid';
+import List from 'lucide-react-native/dist/esm/icons/list';
+import SlidersHorizontal from 'lucide-react-native/dist/esm/icons/sliders-horizontal';
+import X from 'lucide-react-native/dist/esm/icons/x';
+import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
+import Plus from 'lucide-react-native/dist/esm/icons/plus';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { Header, NotificationModal } from '../../../components/common';

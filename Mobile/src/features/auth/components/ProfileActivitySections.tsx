@@ -6,15 +6,13 @@ import {
   Text,
   View,
 } from 'react-native';
-import {
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  Heart,
-  MapPin,
-  MessageCircle,
-} from 'lucide-react-native';
+import CalendarDays from 'lucide-react-native/dist/esm/icons/calendar-days';
+import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
+import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
+import FileText from 'lucide-react-native/dist/esm/icons/file-text';
+import Heart from 'lucide-react-native/dist/esm/icons/heart';
+import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
+import MessageCircle from 'lucide-react-native/dist/esm/icons/message-circle';
 import { ProfilePlan } from '../../../hooks/useUserProfile';
 import {
   useLikedPosts,

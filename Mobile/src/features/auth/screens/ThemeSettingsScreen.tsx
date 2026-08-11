@@ -9,7 +9,9 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { ArrowLeft, Check, Palette } from 'lucide-react-native';
+import ArrowLeft from 'lucide-react-native/dist/esm/icons/arrow-left';
+import Check from 'lucide-react-native/dist/esm/icons/check';
+import Palette from 'lucide-react-native/dist/esm/icons/palette';
 import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
 
