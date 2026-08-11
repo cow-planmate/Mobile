@@ -52,7 +52,16 @@ export default function RouteMapSection({
   const validPlaces = useMemo(() => places.filter(hasMapPosition), [places]);
 
   const points: RoutePoint[] = useMemo(
-    () => validPlaces.map(p => ({ lat: p.latitude, lng: p.longitude })),
+    () =>
+      validPlaces.map(place => {
+        const placeId = place.placeRefId?.trim();
+
+        return {
+          lat: place.latitude,
+          lng: place.longitude,
+          ...(placeId && !placeId.startsWith('custom_') ? { placeId } : {}),
+        };
+      }),
     [validPlaces],
   );
   const key = pointsKey(points);

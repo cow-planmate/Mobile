@@ -1074,6 +1074,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
                   address: place.address,
                   latitude: place.latitude,
                   longitude: place.longitude,
+                  placeRefId: place.placeRefId,
                   place_url: place.place_url,
                 })) || []
               }

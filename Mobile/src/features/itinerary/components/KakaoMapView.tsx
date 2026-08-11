@@ -7,6 +7,7 @@ import { RoutePoint } from '../../../api/route';
 
 export interface MapPlace {
   id: string;
+  placeRefId?: string;
   name: string;
   address: string;
   latitude: number;

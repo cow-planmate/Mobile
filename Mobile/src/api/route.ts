@@ -19,6 +19,7 @@ import { resolveApiUrl } from '../utils/apiUrl';
 export interface RoutePoint {
   lat: number;
   lng: number;
+  placeId?: string;
 }
 
 /** 경유지 기반 도로 경로 응답 */
