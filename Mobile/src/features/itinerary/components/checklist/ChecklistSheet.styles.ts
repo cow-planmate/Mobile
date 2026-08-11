@@ -43,6 +43,10 @@ export const styles = StyleSheet.create({
     fontFamily: theme.typography.fontFamily.semibold,
     color: COLORS.text,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   closeButton: {
     padding: normalize(4),
   },

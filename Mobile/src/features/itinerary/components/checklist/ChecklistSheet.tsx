@@ -15,8 +15,11 @@ import Toast from 'react-native-toast-message';
 import {
   Check,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Circle,
   Pencil,
+  RefreshCw,
   Trash2,
   X,
 } from 'lucide-react-native';
@@ -31,6 +34,7 @@ import {
   useDeleteChecklistItem,
   useEditChecklistItemContent,
   usePlanChecklists,
+  useReorderChecklistItems,
   useToggleChecklistItem,
 } from '../../hooks/useChecklistQueries';
 import { normalize } from '../../../../utils/normalize';
@@ -60,7 +64,7 @@ interface ChecklistSheetProps {
  * 서버가 실시간 편집 세션에 REST 변경을 push하지 않아 열어 둔 채로는 다른
  * 참여자의 변경을 알 수 없기 때문이다.
  *
- * 순서 변경 API는 준비되어 있으나 드래그 정렬 UI는 이 범위 밖이라 넣지 않았다.
+ * 항목별 상·하 이동으로 정렬을 변경하며, 서버에는 전체 항목 ID 순서를 보낸다.
  */
 export default function ChecklistSheet({
   visible,
@@ -72,20 +76,32 @@ export default function ChecklistSheet({
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState('');
 
-  const { sharedItems, personalItems, counts, isLoading, isError, refetch } =
-    usePlanChecklists(planId, visible);
+  const {
+    sharedItems,
+    personalItems,
+    counts,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = usePlanChecklists(planId, visible);
 
   const createItem = useCreateChecklistItem(planId, scope);
   const editContent = useEditChecklistItemContent(planId, scope);
   const toggleItem = useToggleChecklistItem(planId, scope);
   const deleteItem = useDeleteChecklistItem(planId, scope);
+  const reorderItems = useReorderChecklistItems(planId, scope);
 
   const items = scope === 'shared' ? sharedItems : personalItems;
   const count = counts[scope];
   const progress = count.total > 0 ? count.done / count.total : 0;
 
   const isMutating =
-    createItem.isPending || editContent.isPending || deleteItem.isPending;
+    createItem.isPending ||
+    editContent.isPending ||
+    toggleItem.isPending ||
+    deleteItem.isPending ||
+    reorderItems.isPending;
 
   const showError = useCallback((error: unknown) => {
     Toast.show({
@@ -157,6 +173,33 @@ export default function ChecklistSheet({
     [cancelEditing, deleteItem, editingItemId, showError],
   );
 
+  const handleMove = useCallback(
+    (itemId: number, direction: -1 | 1) => {
+      if (reorderItems.isPending) {
+        return;
+      }
+
+      const currentIndex = items.findIndex(item => item.itemId === itemId);
+      const nextIndex = currentIndex + direction;
+
+      if (currentIndex < 0 || nextIndex < 0 || nextIndex >= items.length) {
+        return;
+      }
+
+      const itemIds = items.map(item => item.itemId);
+      [itemIds[currentIndex], itemIds[nextIndex]] = [
+        itemIds[nextIndex],
+        itemIds[currentIndex],
+      ];
+      reorderItems.mutate(itemIds, { onError: showError });
+    },
+    [items, reorderItems, showError],
+  );
+
+  const handleRefresh = useCallback(() => {
+    refetch().catch(() => undefined);
+  }, [refetch]);
+
   const canSubmitDraft = draft.trim().length > 0 && !createItem.isPending;
 
   const body = useMemo(() => {
@@ -177,7 +220,9 @@ export default function ChecklistSheet({
           </Text>
           <TouchableOpacity
             style={styles.retryButton}
-            onPress={() => void refetch()}
+            onPress={() => {
+              refetch().catch(() => undefined);
+            }}
             activeOpacity={0.7}
           >
             <Text style={styles.retryLabel}>다시 시도</Text>
@@ -199,7 +244,7 @@ export default function ChecklistSheet({
         contentContainerStyle={styles.list}
         keyboardShouldPersistTaps="handled"
       >
-        {items.map(item => {
+        {items.map((item, index) => {
           const isEditing = editingItemId === item.itemId;
 
           return (
@@ -238,6 +283,7 @@ export default function ChecklistSheet({
                   <TouchableOpacity
                     style={styles.itemToggle}
                     onPress={() => handleToggle(item)}
+                    disabled={isMutating}
                     activeOpacity={0.7}
                   >
                     {item.isChecked ? (
@@ -273,6 +319,26 @@ export default function ChecklistSheet({
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.itemAction}
+                    onPress={() => handleMove(item.itemId, -1)}
+                    disabled={isMutating || index === 0}
+                    accessibilityLabel={`${item.content} 위로 이동`}
+                    hitSlop={6}
+                    activeOpacity={0.7}
+                  >
+                    <ChevronUp size={normalize(16)} color={COLORS.textTertiary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.itemAction}
+                    onPress={() => handleMove(item.itemId, 1)}
+                    disabled={isMutating || index === items.length - 1}
+                    accessibilityLabel={`${item.content} 아래로 이동`}
+                    hitSlop={6}
+                    activeOpacity={0.7}
+                  >
+                    <ChevronDown size={normalize(16)} color={COLORS.textTertiary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.itemAction}
                     onPress={() => handleDelete(item.itemId)}
                     disabled={isMutating}
                     hitSlop={6}
@@ -293,6 +359,7 @@ export default function ChecklistSheet({
     editingItemId,
     editingText,
     handleDelete,
+    handleMove,
     handleSubmitEdit,
     handleToggle,
     isError,
@@ -321,14 +388,30 @@ export default function ChecklistSheet({
 
           <View style={styles.header}>
             <Text style={styles.headerTitle}>준비물 체크리스트</Text>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={onClose}
-              activeOpacity={0.7}
-              hitSlop={8}
-            >
-              <X size={normalize(18)} color={COLORS.textTertiary} />
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={handleRefresh}
+                disabled={isFetching || isMutating}
+                accessibilityLabel="체크리스트 새로고침"
+                activeOpacity={0.7}
+                hitSlop={8}
+              >
+                {isFetching ? (
+                  <ActivityIndicator size="small" color={COLORS.textTertiary} />
+                ) : (
+                  <RefreshCw size={normalize(18)} color={COLORS.textTertiary} />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={onClose}
+                activeOpacity={0.7}
+                hitSlop={8}
+              >
+                <X size={normalize(18)} color={COLORS.textTertiary} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.tabRow}>

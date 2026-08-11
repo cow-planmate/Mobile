@@ -47,6 +47,7 @@ export function useChecklist(
     queryKey: checklistKeys.scope(planId ?? '', scope),
     queryFn: () => getChecklist(planId as string, scope),
     enabled: !!planId && enabled,
+    refetchOnMount: 'always',
   });
 }
 
@@ -232,6 +233,7 @@ export function usePlanChecklists(
     personalItems,
     counts,
     isLoading: sharedQuery.isLoading || personalQuery.isLoading,
+    isFetching: sharedQuery.isFetching || personalQuery.isFetching,
     isError: sharedQuery.isError || personalQuery.isError,
     error: sharedQuery.error ?? personalQuery.error,
     refetch: () => Promise.all([sharedQuery.refetch(), personalQuery.refetch()]),
