@@ -4,7 +4,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { AppState, AppStateStatus, Modal, BackHandler } from 'react-native';
 import { AppStackParamList } from '../../../navigation/types';
 import { useAuthStore } from '../../../store/useAuthStore';
-import { OptionType } from '../../../components/common';
 import { HomeScreenView } from './HomeScreen.view';
 import {
   getPendingInvitations,
@@ -13,7 +12,6 @@ import {
   PendingInvitation,
 } from '../../../api/trips';
 import { useAlert } from '../../../contexts/AlertContext';
-import { Bus, Car } from 'lucide-react-native';
 import { useInvitationSse } from '../../../hooks/useInvitationSse';
 import {
   IS_FCM_RUNTIME_ENABLED,
@@ -67,19 +65,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [adults, setAdults] = useState<number | null>(1);
   const [children, setChildren] = useState<number | null>(0);
   const [isPaxModalVisible, setPaxModalVisible] = useState(false);
-  const [transport, setTransport] = useState('대중교통');
-  const [isTransportModalVisible, setTransportModalVisible] = useState(false);
-
-  const transportOptions: OptionType[] = [
-    {
-      label: '대중교통',
-      icon: <Bus size={40} color="#1344FF" strokeWidth={1.5} />,
-    },
-    {
-      label: '자동차',
-      icon: <Car size={40} color="#1344FF" strokeWidth={1.5} />,
-    },
-  ];
 
   const [destination, setDestination] = useState('');
   const [travelId, setTravelId] = useState<number>(0);
@@ -248,8 +233,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     destination !== '' &&
     startDate !== null &&
     endDate !== null &&
-    adults !== null &&
-    transport !== '';
+    adults !== null;
 
   const formatDate = (date: Date) => {
     const y = date.getFullYear();
@@ -313,7 +297,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       const result = await createFullPlanMutation.mutateAsync({
         planFrame: {
           destinationId: travelId,
-          transportationType: transport === '자동차' ? 'PRIVATE' : 'PUBLIC',
           adultCount: adults ?? 1,
           childCount: children ?? 0,
         },
@@ -344,7 +327,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         endDate: endDate.toISOString(),
         adults: adults ?? 1,
         children: children ?? 0,
-        transport: transport || '대중교통',
       });
     } catch (error) {
       console.error('일정 생성 준비 실패:', error);
@@ -378,19 +360,16 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         email={user?.email}
         pendingRequestsCount={pendingRequests.length}
         destination={destination}
-        transport={transport}
         dateText={getDateText()}
         paxText={getPaxText()}
         isFormValid={isFormValid}
         isSearchModalVisible={isSearchModalVisible}
         isCalendarVisible={isCalendarVisible}
         isPaxModalVisible={isPaxModalVisible}
-        isTransportModalVisible={isTransportModalVisible}
         startDate={startDate}
         endDate={endDate}
         adults={adults}
         children={children}
-        transportOptions={transportOptions}
         onNotificationPress={handleNotificationPress}
         isNotificationModalVisible={isNotificationModalVisible}
         pendingRequestList={pendingRequests}
@@ -414,12 +393,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           setAdults(newAdults);
           setChildren(newChildren);
           setPaxModalVisible(false);
-        }}
-        onOpenTransportModal={() => setTransportModalVisible(true)}
-        onCloseTransportModal={() => setTransportModalVisible(false)}
-        onSelectTransport={option => {
-          setTransport(option);
-          setTransportModalVisible(false);
         }}
         onCreateItinerary={handleCreateItinerary}
       />

@@ -102,7 +102,7 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
 
   it('maintains loading until weather is fully loaded', async () => {
     // 서버 PlanFrameDetailDto와 같은 키를 쓴다.
-    // 예전 픽스처는 구 스키마(travelId/travelName/transportationCategoryId)라
+    // 예전 픽스처는 구 스키마 필드를 사용했지만
     // 실제 응답으로는 재현되지 않는 경로를 검증하고 있었다.
     const mockPlanData = {
       message: 'success',
@@ -113,7 +113,6 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
         destinationName: '제주',
         adultCount: 1,
         childCount: 0,
-        transportationType: 'PRIVATE',
       },
       placeBlocks: [],
       timetables: [

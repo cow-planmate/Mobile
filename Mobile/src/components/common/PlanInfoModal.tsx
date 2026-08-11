@@ -12,7 +12,6 @@ type PlanInfoModalProps = {
   endDate?: string;
   adultCount: number;
   childCount: number;
-  transport: string;
 };
 
 export default function PlanInfoModal({
@@ -24,7 +23,6 @@ export default function PlanInfoModal({
   endDate,
   adultCount,
   childCount,
-  transport,
 }: PlanInfoModalProps) {
   const dateRangeText = startDate && endDate ? `${startDate} ~ ${endDate}` : '미지정';
 
@@ -69,10 +67,6 @@ export default function PlanInfoModal({
               </Text>
             </View>
 
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>이동 수단</Text>
-              <Text style={styles.infoValue}>{transport}</Text>
-            </View>
           </View>
 
           <View style={styles.confirmFooter}>

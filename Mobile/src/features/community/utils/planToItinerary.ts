@@ -10,7 +10,6 @@ export interface CompletePlanResponse {
     destinationName: string;
     adultCount: number;
     childCount: number;
-    transportationType: string;
   };
   timetables: Array<{
     timeTableId: number;
@@ -58,7 +57,7 @@ export function buildFeedPlanSnapshot(
 ): FeedPlanSnapshot {
   const { planFrame, timetables, placeBlocks } = response;
 
-  if (!planFrame?.destinationId || !planFrame.transportationType) {
+  if (!planFrame?.destinationId) {
     throw new Error('여행기로 발행할 수 있는 일정 정보가 아닙니다.');
   }
 
@@ -111,7 +110,6 @@ export function buildFeedPlanSnapshot(
       plan: {
         destinationId: planFrame.destinationId,
         destinationName: planFrame.destinationName,
-        transportationType: planFrame.transportationType,
         adultCount: planFrame.adultCount,
         childCount: planFrame.childCount,
       },

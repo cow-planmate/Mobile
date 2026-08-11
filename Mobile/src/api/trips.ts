@@ -88,7 +88,6 @@ export interface PlanFrameVO {
   destinationName: string;
   adultCount: number;
   childCount: number;
-  transportationType: 'PUBLIC' | 'PRIVATE';
 }
 
 /**
@@ -100,7 +99,6 @@ export interface PlanFrameVO {
 export interface FullPlanPayload {
   planFrame: {
     destinationId: number;
-    transportationType: 'PUBLIC' | 'PRIVATE';
     adultCount: number;
     childCount: number;
   };
@@ -139,7 +137,6 @@ export async function createFullPlan(
   const formattedPayload = {
     planFrame: {
       destinationId: payload.planFrame.destinationId,
-      transportationType: payload.planFrame.transportationType,
       adultCount: payload.planFrame.adultCount ?? 1,
       childCount: payload.planFrame.childCount ?? 0,
     },

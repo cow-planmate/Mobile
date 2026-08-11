@@ -39,7 +39,6 @@ interface PlanFrameVO {
   destinationName: string;
   adultCount: number;
   childCount: number;
-  transportationType: 'PUBLIC' | 'PRIVATE';
 }
 
 interface GetCompletePlanResponse {
@@ -73,7 +72,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     departure,
     destination: routeDestination,
     travelId,
-    transport,
     adults,
     children,
     planId,
@@ -388,7 +386,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
           destination: destinationCity || routeDestination,
           departure,
           travelId,
-          transport,
           adults,
           children,
           startDate: routeStartDate || days[0]?.date.toISOString(),

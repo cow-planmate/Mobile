@@ -45,7 +45,6 @@ export type ScheduleStackParamList = {
     endDate?: string;
     adults?: number;
     children?: number;
-    transport?: string;
     pendingPlace?: any;
   };
   ItineraryView: {
@@ -56,7 +55,6 @@ export type ScheduleStackParamList = {
     departure?: string;
     destination?: string;
     travelId?: number;
-    transport?: string;
     adults?: number;
     children?: number;
     startDate?: string;

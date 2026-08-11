@@ -10,7 +10,6 @@ describe('buildFeedPlanSnapshot', () => {
         destinationName: '거제',
         adultCount: 2,
         childCount: 1,
-        transportationType: 'PUBLIC',
       },
       timetables: [
         {
@@ -40,7 +39,6 @@ describe('buildFeedPlanSnapshot', () => {
     expect(result.itinerary.plan).toEqual({
       destinationId: 25,
       destinationName: '거제',
-      transportationType: 'PUBLIC',
       adultCount: 2,
       childCount: 1,
     });
@@ -68,7 +66,6 @@ describe('buildFeedPlanSnapshot', () => {
           destinationName: '',
           adultCount: 1,
           childCount: 0,
-          transportationType: 'PUBLIC',
         },
         timetables: [],
         placeBlocks: [],

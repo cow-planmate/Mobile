@@ -780,7 +780,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         departure: route.params.departure,
         destination: route.params.destination,
         travelId: route.params.travelId,
-        transport: route.params.transport,
         adults: route.params.adults,
         children: route.params.children,
         startDate: route.params.startDate,
@@ -836,8 +835,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       const result = await createFullPlanMutation.mutateAsync({
         planFrame: {
           destinationId: route.params.travelId || 1,
-          transportationType:
-            route.params.transport === '자동차' ? 'PRIVATE' : 'PUBLIC',
           adultCount: route.params.adults || 1,
           childCount: route.params.children || 0,
         },
@@ -878,7 +875,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         departure: route.params.departure,
         destination: route.params.destination,
         travelId: route.params.travelId,
-        transport: route.params.transport,
         adults: route.params.adults,
         children: route.params.children,
         startDate: route.params.startDate,
@@ -1120,13 +1116,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         endDate={days.length > 0 ? formatDateLocal(days[days.length - 1].date) : route.params.endDate}
         adultCount={planMetadata?.adultCount ?? route.params.adults ?? 1}
         childCount={planMetadata?.childCount ?? route.params.children ?? 0}
-        transport={
-          planMetadata?.transportationType
-            ? planMetadata.transportationType === 'PRIVATE'
-              ? '자동차'
-              : '대중교통'
-            : route.params.transport || '대중교통'
-        }
       />
       <Modal
         visible={isInitialLoading || days.length === 0 || isSaving || isBacking}

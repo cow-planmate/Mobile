@@ -13,10 +13,8 @@ import {
   faUser,
   faLocationDot,
   faCalendar,
-  faCar,
-  faBus,
 } from '@fortawesome/free-solid-svg-icons';
-import { CalendarModal, Header, Invitation, NotificationModal, OptionType, PaxModal, SearchLocationModal, SelectionModal } from '../../../components/common';
+import { CalendarModal, Header, Invitation, NotificationModal, PaxModal, SearchLocationModal } from '../../../components/common';
 import { normalize } from '../../../utils/normalize';
 import { styles } from './HomeScreen.styles';
 
@@ -73,14 +71,12 @@ export interface HomeScreenViewProps {
   email?: string;
   pendingRequestsCount: number;
   destination: string;
-  transport: string;
   dateText: string;
   paxText: string;
   isFormValid: boolean;
   isSearchModalVisible: boolean;
   isCalendarVisible: boolean;
   isPaxModalVisible: boolean;
-  isTransportModalVisible: boolean;
   isNotificationModalVisible: boolean;
   pendingRequestList: Invitation[];
   onCloseNotificationModal: () => void;
@@ -90,7 +86,6 @@ export interface HomeScreenViewProps {
   endDate?: Date | null;
   adults?: number | null;
   children?: number | null;
-  transportOptions: OptionType[];
   onNotificationPress: () => void;
   onNavigateProfile: () => void;
   onOpenSearchModal: () => void;
@@ -102,9 +97,6 @@ export interface HomeScreenViewProps {
   onOpenPaxModal: () => void;
   onClosePaxModal: () => void;
   onConfirmPax: (pax: { adults: number; children: number }) => void;
-  onOpenTransportModal: () => void;
-  onCloseTransportModal: () => void;
-  onSelectTransport: (option: string) => void;
   onCreateItinerary: () => void;
 }
 
@@ -113,19 +105,16 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   email,
   pendingRequestsCount, // 알림 뱃지 등에 활용 가능
   destination,
-  transport,
   dateText,
   paxText,
   isFormValid,
   isSearchModalVisible,
   isCalendarVisible,
   isPaxModalVisible,
-  isTransportModalVisible,
   startDate,
   endDate,
   adults,
   children,
-  transportOptions,
   onNotificationPress,
   onNavigateProfile,
   onOpenSearchModal,
@@ -137,9 +126,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   onOpenPaxModal,
   onClosePaxModal,
   onConfirmPax,
-  onOpenTransportModal,
-  onCloseTransportModal,
-  onSelectTransport,
   onCreateItinerary,
   isNotificationModalVisible,
   pendingRequestList,
@@ -219,16 +205,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               onPress={onOpenPaxModal}
             />
 
-            <InputRow
-              label="이동수단"
-              value={transport}
-              placeholder="무엇을 타고 가시나요?"
-              icon={transport === '자동차' ? faCar : faBus}
-              onPress={onOpenTransportModal}
-            />
-
-
-
             {/* Create Button */}
             <TouchableOpacity
               style={[
@@ -275,15 +251,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         initialAdults={adults ?? 1}
         initialChildren={children ?? 0}
       />
-      <SelectionModal
-        visible={isTransportModalVisible}
-        title="이동수단 선택"
-        options={transportOptions}
-        currentValue={transport}
-        onClose={onCloseTransportModal}
-        onSelect={onSelectTransport}
-      />
-
       <NotificationModal
         visible={isNotificationModalVisible}
         onClose={onCloseNotificationModal}
