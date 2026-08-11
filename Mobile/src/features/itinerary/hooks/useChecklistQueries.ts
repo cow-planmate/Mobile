@@ -121,12 +121,13 @@ export function useToggleChecklistItem(
 
       return { previousItems };
     },
+    // 성공 시에는 재조회하지 않는다. 낙관적으로 넣은 값이 곧 우리가 보낸 값이라
+    // 서버 기준과 다를 수 없고, 체크는 연달아 누르는 조작이라 탭마다 GET이 붙으면
+    // 요청 수가 배로 늘어난다. 어긋났을 가능성이 있는 실패 경로에서만 다시 맞춘다.
     onError: (_error, _variables, context) => {
       if (context?.previousItems) {
         queryClient.setQueryData(queryKey, context.previousItems);
       }
-    },
-    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey });
     },
   });
@@ -181,12 +182,11 @@ export function useReorderChecklistItems(
 
       return { previousItems };
     },
+    // 토글과 같은 이유로 성공 경로에서는 재조회하지 않는다. 보낸 순서가 곧 결과다.
     onError: (_error, _variables, context) => {
       if (context?.previousItems) {
         queryClient.setQueryData(queryKey, context.previousItems);
       }
-    },
-    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey });
     },
   });

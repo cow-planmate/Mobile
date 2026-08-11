@@ -67,8 +67,8 @@ const KEYS = {
 export const usePosts = (category: string, sort = 'latest', q = '') =>
   useInfiniteQuery({
     queryKey: KEYS.posts(category, sort, q),
-    queryFn: ({ pageParam }) =>
-      fetchPosts(category, pageParam as number, PAGE_SIZE, sort, q),
+    queryFn: ({ pageParam, signal }) =>
+      fetchPosts(category, pageParam as number, PAGE_SIZE, sort, q, signal),
     initialPageParam: 0,
     getNextPageParam: lastPage =>
       lastPage.page + 1 < lastPage.totalPages ? lastPage.page + 1 : undefined,
@@ -79,8 +79,8 @@ export const usePosts = (category: string, sort = 'latest', q = '') =>
 export const useFeedPosts = (filters: FeedFilterParams, size = 12) =>
   useInfiniteQuery({
     queryKey: ['community', 'posts', 'feed', filters, size] as const,
-    queryFn: ({ pageParam }) =>
-      fetchFeedPosts(pageParam as number, size, filters),
+    queryFn: ({ pageParam, signal }) =>
+      fetchFeedPosts(pageParam as number, size, filters, signal),
     initialPageParam: 0,
     getNextPageParam: lastPage =>
       lastPage.page + 1 < lastPage.totalPages ? lastPage.page + 1 : undefined,
@@ -107,7 +107,7 @@ export const useHotPosts = (category: string) =>
 export const usePost = (postId: number | string | undefined) =>
   useQuery({
     queryKey: KEYS.post(postId ?? ''),
-    queryFn: () => fetchPost(postId as number | string),
+    queryFn: ({ signal }) => fetchPost(postId as number | string, signal),
     enabled: postId !== undefined && postId !== null && postId !== '',
   });
 
@@ -118,8 +118,8 @@ export const useComments = (
 ) =>
   useInfiniteQuery({
     queryKey: KEYS.comments(postId ?? ''),
-    queryFn: ({ pageParam }) =>
-      fetchComments(postId as number | string, pageParam as number, size),
+    queryFn: ({ pageParam, signal }) =>
+      fetchComments(postId as number | string, pageParam as number, size, signal),
     initialPageParam: 0,
     getNextPageParam: lastPage =>
       lastPage.page + 1 < lastPage.totalPages ? lastPage.page + 1 : undefined,

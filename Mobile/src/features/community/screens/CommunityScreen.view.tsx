@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -54,6 +54,79 @@ export interface CommunityScreenViewProps {
   onRejectInvitation: (requestId: number) => void;
 }
 
+/**
+ * 게시글 목록 카드.
+ *
+ * memo로 감싸 목록이 리렌더될 때 항목까지 함께 다시 그려지지 않게 한다.
+ * onPress는 item을 클로저로 잡지 않고 id만 넘겨 부모의 핸들러 identity가
+ * 유지되도록 한다(그래야 memo가 실제로 걸린다).
+ */
+const PostListItem = React.memo(function PostListItem({
+  item,
+  onPress,
+}: {
+  item: CommunityPostSummary;
+  onPress: (postId: string) => void;
+}) {
+  const handlePress = useCallback(
+    () => onPress(String(item.id)),
+    [onPress, item.id],
+  );
+
+  return (
+    <TouchableOpacity
+      style={styles.postCard}
+      onPress={handlePress}
+      activeOpacity={0.8}
+    >
+      <View style={styles.postLeftSection}>
+        <Text style={styles.postTitle} numberOfLines={2}>
+          {item.title}
+        </Text>
+
+        <View style={styles.postMetaRow}>
+          <Text style={styles.authorName}>{item.author}</Text>
+          <LevelBadge level={item.level} />
+          <Text style={styles.metaDivider}>|</Text>
+          <Text style={styles.postTime}>{item.createdAt}</Text>
+        </View>
+      </View>
+
+      {/* 썸네일 + 통계 */}
+      <View style={styles.postRightSection}>
+        {item.image ? (
+          <FastImage
+            style={styles.thumbnailImage}
+            source={{ uri: item.image }}
+            resizeMode={FastImage.resizeMode.cover}
+          />
+        ) : (
+          <View style={styles.thumbnailPlaceholder}>
+            <View style={styles.imagePlaceholderSymbol} />
+          </View>
+        )}
+
+        <View style={styles.postStatsOverlay}>
+          <View style={styles.statItem}>
+            <ThumbsUp size={11} color="#3B82F6" style={styles.statIcon} />
+            <Text style={[styles.statText, styles.statTextLikes]}>
+              {item.likes}
+            </Text>
+          </View>
+          <View style={styles.statItem}>
+            <MessageSquare size={11} color="#6B7280" style={styles.statIcon} />
+            <Text style={styles.statText}>{item.comments}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Eye size={11} color="#9CA3AF" style={styles.statIcon} />
+            <Text style={styles.statText}>{item.views}</Text>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+});
+
 export default function CommunityScreenView({
   posts,
   hotPosts,
@@ -84,56 +157,7 @@ export default function CommunityScreenView({
 
   const renderPostItem = useCallback(
     ({ item }: { item: CommunityPostSummary }) => (
-      <TouchableOpacity
-        style={styles.postCard}
-        onPress={() => onPostPress(String(item.id))}
-        activeOpacity={0.8}
-      >
-        <View style={styles.postLeftSection}>
-          <Text style={styles.postTitle} numberOfLines={2}>
-            {item.title}
-          </Text>
-
-          <View style={styles.postMetaRow}>
-            <Text style={styles.authorName}>{item.author}</Text>
-            <LevelBadge level={item.level} />
-            <Text style={styles.metaDivider}>|</Text>
-            <Text style={styles.postTime}>{item.createdAt}</Text>
-          </View>
-        </View>
-
-        {/* 썸네일 + 통계 */}
-        <View style={styles.postRightSection}>
-          {item.image ? (
-            <FastImage
-              style={styles.thumbnailImage}
-              source={{ uri: item.image }}
-              resizeMode={FastImage.resizeMode.cover}
-            />
-          ) : (
-            <View style={styles.thumbnailPlaceholder}>
-              <View style={styles.imagePlaceholderSymbol} />
-            </View>
-          )}
-
-          <View style={styles.postStatsOverlay}>
-            <View style={styles.statItem}>
-              <ThumbsUp size={11} color="#3B82F6" style={styles.statIcon} />
-              <Text style={[styles.statText, styles.statTextLikes]}>
-                {item.likes}
-              </Text>
-            </View>
-            <View style={styles.statItem}>
-              <MessageSquare size={11} color="#6B7280" style={styles.statIcon} />
-              <Text style={styles.statText}>{item.comments}</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Eye size={11} color="#9CA3AF" style={styles.statIcon} />
-              <Text style={styles.statText}>{item.views}</Text>
-            </View>
-          </View>
-        </View>
-      </TouchableOpacity>
+      <PostListItem item={item} onPress={onPostPress} />
     ),
     [onPostPress],
   );
@@ -144,8 +168,12 @@ export default function CommunityScreenView({
    * 컴포넌트(함수)로 넘기면 렌더마다 함수 identity가 바뀌어 React가 다른 타입으로
    * 보고 헤더 전체를 언마운트 후 다시 마운트한다. 헤더에 검색 TextInput이 있어
    * 한 글자 입력할 때마다 포커스와 키보드가 사라졌다.
+   *
+   * 엘리먼트는 useMemo로 고정한다. 헤더가 가로 ScrollView 두 개(게시판 탭·핫글)를
+   * 품고 있어, 목록이 리렌더될 때마다 새로 만들면 그 트리 전체가 함께 다시 그려진다.
    */
-  const renderListHeader = () => (
+  const listHeader = useMemo(
+    () => (
     <View style={styles.listHeaderContainer}>
       {/* 게시판 탭 */}
       <View style={styles.tabBarContainer}>
@@ -284,19 +312,31 @@ export default function CommunityScreenView({
           </ScrollView>
         </View>
       )}
-    </View>
+      </View>
+    ),
+    [
+      boards,
+      selectedCategory,
+      selectedLabel,
+      searchQuery,
+      hotPosts,
+      onSelectCategory,
+      onSearchChange,
+      onWritePost,
+      onPostPress,
+    ],
   );
 
-  const renderListFooter = () => {
+  const listFooter = useMemo(() => {
     if (!isFetchingNextPage) return null;
     return (
       <View style={styles.listFooterLoading}>
         <ActivityIndicator color={theme.colors.primary} />
       </View>
     );
-  };
+  }, [isFetchingNextPage]);
 
-  const renderEmpty = () => {
+  const listEmpty = useMemo(() => {
     if (isLoading) {
       return (
         <View style={styles.listStateBox}>
@@ -315,7 +355,7 @@ export default function CommunityScreenView({
         </Text>
       </View>
     );
-  };
+  }, [isLoading, isError, searchQuery]);
 
   return (
     <View style={styles.container}>
@@ -335,11 +375,17 @@ export default function CommunityScreenView({
         keyExtractor={item => String(item.id)}
         contentContainerStyle={styles.postList}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={renderListHeader()}
-        ListFooterComponent={renderListFooter()}
-        ListEmptyComponent={renderEmpty()}
+        ListHeaderComponent={listHeader}
+        ListFooterComponent={listFooter}
+        ListEmptyComponent={listEmpty}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.4}
+        // 게시글 카드는 높이가 일정하지 않아 getItemLayout을 줄 수 없다.
+        // 대신 초기 렌더량과 유지 창을 좁혀 스크롤 중 렌더 부하를 낮춘다.
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}

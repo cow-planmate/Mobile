@@ -60,8 +60,11 @@ react {
 
 /**
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
+ *
+ * 켤 때 유지해야 하는 클래스는 proguard-rules.pro에 정리해 두었다. 특히 Glide
+ * (react-native-fast-image)는 consumer 규칙을 배포하지 않아 명시적 keep이 필요하다.
  */
-def enableProguardInReleaseBuilds = false
+def enableProguardInReleaseBuilds = true
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)

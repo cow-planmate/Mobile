@@ -9,11 +9,11 @@ import React, {
 } from 'react';
 import { Client, IMessage, ReconnectionTimeMode } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import FastImage from 'react-native-fast-image';
 
 import gravatarUrl from '../utils/gravatarUrl';
 import { resolveApiUrl } from '../utils/apiUrl';
+import { ensureFreshAccessToken } from '../api/axiosConfig';
 
 declare var global: any;
 
@@ -194,7 +194,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     setOnlineUsers([]);
 
     // Frontend와 동일하게 SockJS URL에 토큰 포함 (JwtHandshakeInterceptor 인증)
-    const token = await AsyncStorage.getItem('accessToken');
+    const token = await ensureFreshAccessToken();
 
     // await 사이에 더 최근의 connect가 시작되었으면 이 호출은 폐기한다.
     if (generation !== connectGenerationRef.current) {
@@ -223,7 +223,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         return socket;
       },
       beforeConnect: async c => {
-        latestTokenRef.current = await AsyncStorage.getItem('accessToken');
+        latestTokenRef.current = await ensureFreshAccessToken();
         c.connectHeaders = latestTokenRef.current
           ? { Authorization: `Bearer ${latestTokenRef.current}` }
           : {};

@@ -2,6 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@env';
 import { LOGOUT_CLEARED_KEYS } from '../constants/storageKeys';
+import { isTokenExpiringSoon } from '../utils/jwt';
 
 const normalizedApiUrl = (API_URL ?? '').trim().replace(/\/+$/, '');
 
@@ -18,8 +19,87 @@ const NO_AUTH_PATHS = [
   '/api/beta/feedback',
 ];
 
+/**
+ * 만료 이 시간 전부터는 요청을 보내기 전에 미리 갱신한다.
+ *
+ * 서버 액세스 토큰 수명이 15분이라, 사전 갱신이 없으면 15분마다 첫 요청이
+ * 요청 → 401 → 재발급 → 재요청으로 3번 왕복한다.
+ */
+const TOKEN_REFRESH_LEEWAY_MS = 60 * 1000;
+
 const matchesPath = (url: string | undefined, paths: string[]) =>
   paths.some(path => url?.includes(path));
+
+/**
+ * 진행 중인 재발급 요청. 동시에 여러 요청이 갱신을 시도해도 실제 호출은 한 번만
+ * 나가도록 공유한다(사전 갱신·401 재시도 양쪽이 같은 약속을 쓴다).
+ */
+let refreshPromise: Promise<string | null> | null = null;
+
+const performTokenRefresh = async (): Promise<string | null> => {
+  const refreshToken = await AsyncStorage.getItem('refreshToken');
+  if (!refreshToken) return null;
+
+  // NO_AUTH_PATHS에 있어 요청 인터셉터가 토큰을 붙이지 않는다(재귀 차단).
+  const response = await axios.post('/api/auth/token', { refreshToken });
+  const newAccessToken = response.data?.accessToken;
+  if (!newAccessToken) return null;
+
+  await AsyncStorage.setItem('accessToken', newAccessToken);
+  return newAccessToken;
+};
+
+/**
+ * 액세스 토큰을 재발급한다. 실패하면 null을 돌려준다(예외를 던지지 않는다).
+ * 동시 호출은 하나의 요청으로 합쳐진다.
+ *
+ * WebSocket·SSE처럼 axios를 거치지 않는 연결도 만료 시 이 함수를 쓴다.
+ */
+export const refreshAccessToken = (): Promise<string | null> => {
+  if (!refreshPromise) {
+    refreshPromise = performTokenRefresh()
+      .catch(error => {
+        if (__DEV__) {
+          console.error('Token refresh failed:', error);
+        }
+        return null;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+};
+
+/**
+ * 저장된 액세스 토큰을 돌려주되, 만료가 임박했으면 먼저 갱신한다.
+ *
+ * axios를 거치지 않는 연결(WebSocket 핸드셰이크, SSE 스트림)이 쓴다. 그쪽은
+ * 요청 인터셉터를 타지 않아 스스로 갱신 시점을 챙겨야 한다.
+ */
+export const ensureFreshAccessToken = async (): Promise<string | null> => {
+  const token = await AsyncStorage.getItem('accessToken');
+  if (!isTokenExpiringSoon(token, TOKEN_REFRESH_LEEWAY_MS)) {
+    return token;
+  }
+  return (await refreshAccessToken()) ?? token;
+};
+
+/** 재발급까지 실패했을 때 세션을 정리한다. */
+const clearSession = async () => {
+  await AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS);
+
+  // Zustand auth store 상태 업데이트 (동적 로드를 통해 순환 참조 방지)
+  try {
+    const { useAuthStore } = require('../store/useAuthStore');
+    useAuthStore.getState().setUser(null);
+  } catch (storeError) {
+    console.error(
+      'Failed to update auth store on token refresh failure:',
+      storeError,
+    );
+  }
+};
 
 // axios 기본 설정
 if (axios && axios.defaults) {
@@ -40,7 +120,17 @@ axios.interceptors.request.use(
     if (isNoAuthPath) {
       delete config.headers.Authorization;
     } else if (!config.headers.Authorization) {
-      const token = await AsyncStorage.getItem('accessToken');
+      // 저장소가 유일한 토큰 출처다. 예전에는 로그인·재발급 시점에
+      // axios.defaults.headers.common에도 같은 값을 심어 두었는데, axios는
+      // 인터셉터보다 먼저 common 헤더를 config에 병합하므로 이 분기가 실행되지
+      // 않아 만료 토큰이 그대로 나갈 수 있었다.
+      let token = await AsyncStorage.getItem('accessToken');
+
+      // 만료가 임박했으면 보내기 전에 갱신한다(401 왕복 1회 제거).
+      if (isTokenExpiringSoon(token, TOKEN_REFRESH_LEEWAY_MS)) {
+        token = (await refreshAccessToken()) ?? token;
+      }
+
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -68,21 +158,6 @@ axios.interceptors.request.use(
     return Promise.reject(error);
   },
 );
-
-// 토큰 갱신을 위한 상태 변수 및 큐
-let isRefreshing = false;
-let failedQueue: any[] = [];
-
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach(prom => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-  failedQueue = [];
-};
 
 // 응답 인터셉터: 응답 로깅 및 토큰 갱신
 if (axios && axios.interceptors && axios.interceptors.response) {
@@ -117,67 +192,21 @@ axios.interceptors.response.use(
       !originalRequest._retry &&
       !matchesPath(originalRequest.url, ['/api/auth/login', '/api/auth/token'])
     ) {
-      // 큐에 넣기 전에 재시도 표시를 해야 재발급 후 재요청이 또 401을 받았을 때
+      // 재시도 표시를 먼저 해야 재발급 후 재요청이 또 401을 받았을 때
       // 무한 재발급 루프에 빠지지 않는다.
       originalRequest._retry = true;
 
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then(token => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return axios(originalRequest);
-          })
-          .catch(err => {
-            return Promise.reject(err);
-          });
+      // 동시에 401을 받은 요청들은 refreshAccessToken 내부에서 하나의 재발급
+      // 요청으로 합쳐진다. 별도 큐가 필요하지 않다.
+      const newAccessToken = await refreshAccessToken();
+
+      if (newAccessToken) {
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        return axios(originalRequest);
       }
 
-      isRefreshing = true;
-
-      try {
-        const refreshToken = await AsyncStorage.getItem('refreshToken');
-        if (refreshToken) {
-          const response = await axios.post('/api/auth/token', {
-            refreshToken,
-          });
-
-          const newAccessToken = response.data.accessToken;
-          if (newAccessToken) {
-            await AsyncStorage.setItem('accessToken', newAccessToken);
-            axios.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
-            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
-            processQueue(null, newAccessToken);
-
-            return axios(originalRequest);
-          }
-        }
-        throw new Error('No refresh token found or token creation failed');
-      } catch (refreshError) {
-        if (__DEV__) {
-          console.error('Token refresh failed:', refreshError);
-        }
-        
-        // 저장된 토큰 및 유저 정보 제거
-        await AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS);
-        delete axios.defaults.headers.common.Authorization;
-        
-        // Zustand auth store 상태 업데이트 (동적 로드를 통해 순환 참조 방지)
-        try {
-          const { useAuthStore } = require('../store/useAuthStore');
-          useAuthStore.getState().setUser(null);
-        } catch (storeError) {
-          console.error('Failed to update auth store on token refresh failure:', storeError);
-        }
-        
-        processQueue(refreshError, null);
-
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
+      await clearSession();
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);

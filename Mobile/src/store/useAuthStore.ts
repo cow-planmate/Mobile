@@ -68,9 +68,11 @@ export const useAuthStore = create<AuthState>((set) => ({
           LAST_LOGIN_METHOD_KEY,
         ]);
 
+      // 토큰은 저장소에만 둔다. axios.defaults.headers.common에도 심어 두면
+      // 요청 인터셉터의 최신 토큰 조회가 건너뛰어져 만료분이 그대로 나간다
+      // (axios는 인터셉터보다 먼저 common 헤더를 config에 병합한다).
       if (userJson && token) {
         set({ user: JSON.parse(userJson) });
-        axios.defaults.headers.common.Authorization = `Bearer ${token}`;
       }
       if (lastMethod === 'email' || lastMethod === 'google' || lastMethod === 'naver') {
         set({ lastLoginMethod: lastMethod });
@@ -84,7 +86,6 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (email, password) => {
     set({ isLoading: true });
-    delete axios.defaults.headers.common.Authorization;
 
     try {
       const response = await axios.post(
@@ -119,8 +120,6 @@ export const useAuthStore = create<AuthState>((set) => ({
           email: userEmail || email,
         };
 
-        axios.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
-
         await AsyncStorage.multiSet([
           ['user', JSON.stringify(userData)],
           ['accessToken', accessToken],
@@ -143,7 +142,6 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   oauthLogin: async (code, provider) => {
     set({ isLoading: true });
-    delete axios.defaults.headers.common.Authorization;
 
     try {
       // 서버 OAuthExchangeRequest는 code를 본문으로 받는다(@RequestBody).
@@ -162,8 +160,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (!accessToken || !refreshToken || !userId) {
         throw new Error('서버 응답 형식이 올바르지 않습니다.');
       }
-
-      axios.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
 
       const userData: User = {
         userId,
@@ -204,8 +200,6 @@ export const useAuthStore = create<AuthState>((set) => ({
           nickname: nickname || '사용자',
           email: email || data.email || '',
         };
-        axios.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
-
         await AsyncStorage.multiSet([
           ['user', JSON.stringify(userData)],
           ['accessToken', accessToken],
@@ -246,7 +240,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       console.error('서버 로그아웃 요청 실패:', error);
     } finally {
       set({ user: null });
-      delete axios.defaults.headers.common.Authorization;
       await AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS);
       set({ isLoading: false });
     }

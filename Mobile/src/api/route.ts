@@ -162,10 +162,13 @@ export interface TransitLaneResponse {
  */
 export async function fetchDirections(
   waypoints: RoutePoint[],
+  signal?: AbortSignal,
 ): Promise<RouteResponse> {
-  const response = await axios.post(resolveApiUrl('/api/route/directions'), {
-    waypoints,
-  });
+  const response = await axios.post(
+    resolveApiUrl('/api/route/directions'),
+    { waypoints },
+    { signal },
+  );
   return response.data;
 }
 
@@ -189,11 +192,13 @@ export function isRouteFallback(result: RouteResponse | undefined): boolean {
 export async function fetchRouteTable(
   waypoints: RoutePoint[],
   profile: RouteProfile = 'driving',
+  signal?: AbortSignal,
 ): Promise<RouteTableResponse> {
-  const response = await axios.post(resolveApiUrl('/api/route/table'), {
-    waypoints,
-    profile,
-  });
+  const response = await axios.post(
+    resolveApiUrl('/api/route/table'),
+    { waypoints, profile },
+    { signal },
+  );
   return response.data;
 }
 
@@ -212,12 +217,13 @@ export async function fetchRouteTrip(
   waypoints: RoutePoint[],
   profile: RouteProfile = 'driving',
   roundtrip: boolean = false,
+  signal?: AbortSignal,
 ): Promise<RouteTripResponse> {
-  const response = await axios.post(resolveApiUrl('/api/route/trip'), {
-    waypoints,
-    profile,
-    roundtrip,
-  });
+  const response = await axios.post(
+    resolveApiUrl('/api/route/trip'),
+    { waypoints, profile, roundtrip },
+    { signal },
+  );
   return response.data;
 }
 
@@ -229,11 +235,13 @@ export async function fetchRouteTrip(
 export async function fetchTransit(
   from: RoutePoint,
   to: RoutePoint,
+  signal?: AbortSignal,
 ): Promise<TransitRouteResponse> {
-  const response = await axios.post(resolveApiUrl('/api/route/transit'), {
-    from,
-    to,
-  });
+  const response = await axios.post(
+    resolveApiUrl('/api/route/transit'),
+    { from, to },
+    { signal },
+  );
   return response.data;
 }
 
@@ -242,9 +250,12 @@ export async function fetchTransit(
  */
 export async function fetchTransitLane(
   mapObj: string,
+  signal?: AbortSignal,
 ): Promise<TransitLaneResponse> {
-  const response = await axios.post(resolveApiUrl('/api/route/transit/lane'), {
-    mapObj,
-  });
+  const response = await axios.post(
+    resolveApiUrl('/api/route/transit/lane'),
+    { mapObj },
+    { signal },
+  );
   return response.data;
 }

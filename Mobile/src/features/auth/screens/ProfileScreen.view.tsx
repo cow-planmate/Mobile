@@ -58,6 +58,7 @@ import { useChecklist } from '../../itinerary/hooks/useChecklistQueries';
 import gravatarUrl from '../../../utils/gravatarUrl';
 import { normalize } from '../../../utils/normalize';
 import { parseLocalDate } from '../../../utils/timeUtils';
+import { allSettledWithConcurrency } from '../../../utils/concurrency';
 import DatePicker from 'react-native-date-picker';
 import {
   toKoreanAge,
@@ -74,6 +75,10 @@ import {
 import ProfileActivitySections from '../components/ProfileActivitySections';
 import FeedbackModal from '../components/FeedbackModal';
 import { styles, COLORS } from './ProfileScreen.styles';
+
+/** 편집 권한 일정에서 나갈 때 동시에 띄울 최대 요청 수. */
+const LEAVE_EDITOR_CONCURRENCY = 4;
+
 const getFormattedPeriod = (start?: string, end?: string) => {
   if (!start) return '날짜 확인 필요';
   const cleanedStart = start.replace(/-/g, '.');
@@ -638,9 +643,11 @@ export default function ProfileScreenView({
             }
 
             // 편집 권한만 있는 일정은 일괄 API 대상이 아니라 개별 처리한다.
+            // 선택 개수만큼 한꺼번에 띄우지 않도록 동시 실행 수를 제한한다.
             if (sharedIds.length > 0) {
-              const results = await Promise.allSettled(
-                sharedIds.map(id => leaveAsEditor(id)),
+              const results = await allSettledWithConcurrency(
+                sharedIds.map(id => () => leaveAsEditor(id)),
+                LEAVE_EDITOR_CONCURRENCY,
               );
               results.forEach((r, i) => {
                 if (r.status === 'fulfilled') {

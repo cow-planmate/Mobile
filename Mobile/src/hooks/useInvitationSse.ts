@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import EventSource, { MessageEvent } from 'react-native-sse';
 
 import { resolveApiUrl } from '../utils/apiUrl';
+import { ensureFreshAccessToken, refreshAccessToken } from '../api/axiosConfig';
 import {
   CollaborationRequestResult,
   parseCollaborationRequestResult,
@@ -52,30 +52,6 @@ const resolveSseUrl = (): string => {
   return resolveApiUrl(DEFAULT_INVITATION_SSE_PATH, baseUrl);
 };
 
-/**
- * 리프레시 토큰으로 액세스 토큰을 한 번 갱신한다.
- * axiosConfig의 401 인터셉터와 별개 경로다 — 이 EventSource 연결은 axios를
- * 거치지 않아 그 인터셉터의 자동 갱신 대상이 아니다.
- */
-const refreshAccessToken = async (): Promise<boolean> => {
-  try {
-    const refreshToken = await AsyncStorage.getItem('refreshToken');
-    if (!refreshToken) return false;
-
-    const response = await axios.post(resolveApiUrl('/api/auth/token'), {
-      refreshToken,
-    });
-    const newAccessToken = response.data?.accessToken;
-    if (!newAccessToken) return false;
-
-    await AsyncStorage.setItem('accessToken', newAccessToken);
-    axios.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
-    return true;
-  } catch (error) {
-    sseLog('[SSE] 토큰 갱신 실패:', error);
-    return false;
-  }
-};
 
 /**
  * 실시간 일정 초댓장 및 협업 요청 알림을 위한 SSE(Server-Sent Events) 구독 훅
@@ -150,7 +126,9 @@ export function useInvitationSse({
       return;
     }
 
-    const token = await AsyncStorage.getItem('accessToken');
+    // 만료가 임박했으면 스트림을 열기 전에 갱신한다. 스트림은 한 번 열리면
+    // 30분(서버 emitter 타임아웃)까지 유지되므로 여는 시점의 토큰이 중요하다.
+    const token = await ensureFreshAccessToken();
 
     // 토큰을 읽는 동안 언마운트(또는 비활성화)됐을 수 있다. 그 사이 cleanup이
     // 지나갔다면 sourceRef가 아직 비어 있어서, 여기서 스트림을 새로 열면
@@ -279,19 +257,15 @@ export function useInvitationSse({
       // 갱신도 실패하면(리프레시 토큰까지 만료) 예전처럼 재시도를 멈춘다.
       if (xhrStatus === '401') {
         disconnect();
-        refreshAccessToken()
-          .then(refreshed => {
-            if (!shouldReconnectRef.current) return;
-            if (!refreshed) {
-              shouldReconnectRef.current = false;
-              return;
-            }
-            reconnectDelayRef.current = INITIAL_RECONNECT_DELAY_MS;
-            scheduleReconnect(connect);
-          })
-          .catch(() => {
+        refreshAccessToken().then(newToken => {
+          if (!shouldReconnectRef.current) return;
+          if (!newToken) {
             shouldReconnectRef.current = false;
-          });
+            return;
+          }
+          reconnectDelayRef.current = INITIAL_RECONNECT_DELAY_MS;
+          scheduleReconnect(connect);
+        });
         return;
       }
 

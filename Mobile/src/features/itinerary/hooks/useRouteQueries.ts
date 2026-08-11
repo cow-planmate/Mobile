@@ -10,6 +10,10 @@ import {
   TransitLaneResponse,
   TransitRouteResponse,
 } from '../../../api/route';
+import { allSettledWithConcurrency } from '../../../utils/concurrency';
+
+/** 구간 정보 조회 시 동시에 띄울 최대 요청 수. */
+const SEGMENT_REQUEST_CONCURRENCY = 4;
 
 /**
  * 길찾기 관련 React Query 훅.
@@ -41,7 +45,7 @@ export function useDirections(points: RoutePoint[]) {
 
   return useQuery<RouteResponse>({
     queryKey: ['route', 'directions', key],
-    queryFn: () => fetchDirections(points),
+    queryFn: ({ signal }) => fetchDirections(points, signal),
     enabled: points.length >= 2,
     // 좌표가 같으면 경로도 같다. 재조회할 이유가 없어 길게 잡는다.
     staleTime: 1000 * 60 * 30,
@@ -63,17 +67,28 @@ export function useSegmentInfo(points: RoutePoint[], enabled: boolean) {
 
   return useQuery<SegmentInfo>({
     queryKey: ['route', 'segmentInfo', key],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const pairs = points.slice(0, -1).map((from, i) => ({
         from,
         to: points[i + 1],
       }));
 
-      const results = await Promise.allSettled([
-        fetchRouteTable(points, 'driving'),
-        fetchRouteTable(points, 'foot'),
-        ...pairs.map(({ from, to }) => fetchTransit(from, to)),
-      ]);
+      // 장소 N개면 요청이 2 + (N-1)개다. 한꺼번에 띄우면 모바일 회선에서
+      // 버스트가 나고 ODsay 쿼터도 급하게 소모된다. 동시 실행 수를 제한한다.
+      const tasks: Array<() => Promise<unknown>> = [
+        () => fetchRouteTable(points, 'driving', signal),
+        () => fetchRouteTable(points, 'foot', signal),
+        ...pairs.map(
+          ({ from, to }) =>
+            () =>
+              fetchTransit(from, to, signal),
+        ),
+      ];
+
+      const results = await allSettledWithConcurrency(
+        tasks,
+        SEGMENT_REQUEST_CONCURRENCY,
+      );
 
       const [drivingResult, footResult, ...transitResults] = results;
 
@@ -107,7 +122,7 @@ export function useSegmentInfo(points: RoutePoint[], enabled: boolean) {
 export function useTransitLane(mapObj: string | null) {
   return useQuery<TransitLaneResponse>({
     queryKey: ['route', 'transitLane', mapObj],
-    queryFn: () => fetchTransitLane(mapObj as string),
+    queryFn: ({ signal }) => fetchTransitLane(mapObj as string, signal),
     enabled: !!mapObj,
     staleTime: 1000 * 60 * 30,
     gcTime: 1000 * 60 * 60,

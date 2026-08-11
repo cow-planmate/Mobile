@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { resolveApiUrl } from '../utils/apiUrl';
 import { parseLocalDate } from '../utils/timeUtils';
+import { mapWithConcurrency } from '../utils/concurrency';
 import { PreferredThemeVO } from '../api/themes';
 
 /** 프로필 응답의 일정 항목. 서버는 planId/planName만 내려준다. */
@@ -60,33 +61,15 @@ const formatDateStr = (dateStr: string): string => {
   return `${yyyy}.${mm}.${dd}`;
 };
 
-/** items를 limit개씩 동시 실행하며 순서를 유지해 매핑한다. */
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  limit: number,
-  fn: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const results = new Array<R>(items.length);
-  let cursor = 0;
-
-  const worker = async () => {
-    while (cursor < items.length) {
-      const index = cursor++;
-      results[index] = await fn(items[index]);
-    }
-  };
-
-  await Promise.all(
-    Array.from({ length: Math.min(limit, items.length) }, worker),
-  );
-  return results;
-}
-
 /** 일정 상세에서 시작·종료 날짜만 뽑아 채워 넣는다. 실패하면 원본을 그대로 둔다. */
-const withPlanDates = async (plan: ProfilePlan): Promise<ProfilePlan> => {
+const withPlanDates = async (
+  plan: ProfilePlan,
+  signal?: AbortSignal,
+): Promise<ProfilePlan> => {
   try {
     const { data } = await axios.get(
       resolveApiUrl(`/api/plan/${plan.planId}/complete`),
+      { signal },
     );
     const timetables = data?.timetables;
     if (!timetables || timetables.length === 0) {
@@ -110,8 +93,12 @@ const withPlanDates = async (plan: ProfilePlan): Promise<ProfilePlan> => {
   }
 };
 
-const fetchUserProfile = async (): Promise<UserProfile> => {
-  const { data } = await axios.get(resolveApiUrl('/api/user/profile'));
+const fetchUserProfile = async (
+  signal?: AbortSignal,
+): Promise<UserProfile> => {
+  const { data } = await axios.get(resolveApiUrl('/api/user/profile'), {
+    signal,
+  });
 
   const plans: ProfilePlan[] = [
     ...(data.myPlans || []).map((p: any) => ({ ...p, isShared: false })),
@@ -121,7 +108,7 @@ const fetchUserProfile = async (): Promise<UserProfile> => {
   const plansWithDates = await mapWithConcurrency(
     plans,
     PLAN_DETAIL_CONCURRENCY,
-    withPlanDates,
+    plan => withPlanDates(plan, signal),
   );
 
   return {
@@ -147,6 +134,6 @@ const fetchUserProfile = async (): Promise<UserProfile> => {
 export function useUserProfile() {
   return useQuery({
     queryKey: USER_PROFILE_QUERY_KEY,
-    queryFn: fetchUserProfile,
+    queryFn: ({ signal }) => fetchUserProfile(signal),
   });
 }
