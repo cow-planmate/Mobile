@@ -106,6 +106,9 @@ export async function fetchFeedPosts(
     page: String(page),
     size: String(size),
     sort: filters.sort ?? 'latest',
+    // 웹은 정렬 방향을 항상 명시해 보낸다. 앱만 생략하면 서버 기본값이 desc가
+    // 아닐 때 같은 화면이 다른 순서로 보인다.
+    order: filters.order ?? 'desc',
   };
   if (filters.region) params.region = filters.region;
   if (filters.minDays !== undefined) params.minDays = String(filters.minDays);
@@ -278,4 +281,43 @@ export async function updateAnswered(
 export async function fetchMyStats(): Promise<MyStats> {
   const response = await axios.get(url('/me/stats'));
   return response.data;
+}
+
+const activityParams = (page: number, size: number, category?: string) => {
+  const params = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+  });
+  if (category) params.set('category', category);
+  return params.toString();
+};
+
+export async function fetchMyPosts(
+  page = 0,
+  size = 20,
+  category?: string,
+): Promise<PageData<CommunityPostSummary>> {
+  const response = await axios.get(
+    url(`/me/posts?${activityParams(page, size, category)}`),
+  );
+  return mapPage(response.data);
+}
+
+export async function fetchLikedPosts(
+  page = 0,
+  size = 20,
+  category?: string,
+): Promise<PageData<CommunityPostSummary>> {
+  const response = await axios.get(
+    url(`/me/liked?${activityParams(page, size, category)}`),
+  );
+  return mapPage(response.data);
+}
+
+export async function fetchMyComments(
+  page = 0,
+  size = 20,
+): Promise<PageData<CommunityComment>> {
+  const response = await axios.get(url(`/me/comments?page=${page}&size=${size}`));
+  return mapPage(response.data);
 }

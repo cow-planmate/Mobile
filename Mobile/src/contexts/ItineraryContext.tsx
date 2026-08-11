@@ -27,9 +27,33 @@ interface PendingBlockSync {
   timetableId: number;
 }
 
+interface PendingPlaceCreate {
+  place: Place;
+  dateString: string;
+}
+
 /** 모든 날짜에 걸친 장소 총개수. */
 export const countPlaces = (days: Day[]): number =>
   days.reduce((sum, d) => sum + d.places.length, 0);
+
+const dayKey = (day: Day): string => {
+  const date = day.date;
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+};
+
+const normalizeTimeForComparison = (time?: string): string =>
+  (time || '').substring(0, 5);
+
+const isSamePlaceForFetch = (current: Place, fetched: Place): boolean =>
+  current.id === fetched.id &&
+  current.name === fetched.name &&
+  current.address === fetched.address &&
+  (current.memo || '') === (fetched.memo || '') &&
+  current.categoryId === fetched.categoryId &&
+  normalizeTimeForComparison(current.startTime) ===
+    normalizeTimeForComparison(fetched.startTime) &&
+  normalizeTimeForComparison(current.endTime) ===
+    normalizeTimeForComparison(fetched.endTime);
 
 /**
  * 서버 조회 결과로 로컬 상태를 덮어써도 되는지 판단합니다.
@@ -40,13 +64,46 @@ export const countPlaces = (days: Day[]): number =>
  * place 개수를 가진 stale 스냅샷일 수 있습니다. 그런 응답으로 전체를
  * 덮어쓰면 방금 저장한 내용이 화면에서 사라집니다.
  *
- * 그래서 "이미 알고 있는 것보다 적지 않을 때만" 서버 응답을 신뢰합니다.
+ * 그래서 장소 수가 적지 않고, 로컬에 있는 날짜·장소의 시간과 메모가 모두 일치할 때만
+ * 서버 응답을 신뢰합니다.
  * 로컬이 비어 있으면(최초 진입) 항상 서버 응답을 받아들입니다.
+ *
+ * 일차를 timetableId로 매칭하는 경우 날짜 일치 여부는 검사되지 않았다.
+ * 일정 변경으로 날짜만 바꾼 직후, 그 변경이 아직 서버 캐시에 반영되기 전에
+ * REST 재조회가 끼어들면 옛 날짜의 응답이 이 검사를 그대로 통과해 방금 바꾼
+ * 날짜를 되돌려 버린다. 날짜도 같아야만 신뢰한다.
  */
 export const isFetchAtLeastAsComplete = (
   fetched: Day[],
   current: Day[],
-): boolean => countPlaces(fetched) >= countPlaces(current);
+): boolean => {
+  if (current.length === 0) return true;
+  if (countPlaces(fetched) < countPlaces(current)) return false;
+
+  return current.every(currentDay => {
+    const fetchedDay = fetched.find(day =>
+      currentDay.timetableId !== undefined && day.timetableId !== undefined
+        ? String(day.timetableId) === String(currentDay.timetableId)
+        : dayKey(day) === dayKey(currentDay),
+    );
+    if (!fetchedDay) return false;
+
+    const hasSameDayRange =
+      formatDateLocal(currentDay.date) === formatDateLocal(fetchedDay.date) &&
+      normalizeTimeForComparison(currentDay.startTime) ===
+        normalizeTimeForComparison(fetchedDay.startTime) &&
+      normalizeTimeForComparison(currentDay.endTime) ===
+        normalizeTimeForComparison(fetchedDay.endTime);
+    if (!hasSameDayRange) return false;
+
+    return currentDay.places.every(currentPlace => {
+      const fetchedPlace = fetchedDay.places.find(
+        place => place.id === currentPlace.id,
+      );
+      return !!fetchedPlace && isSamePlaceForFetch(currentPlace, fetchedPlace);
+    });
+  });
+};
 
 /** 블록 최소 길이(분). resolveConflictsAndSort의 스냅 단위와 동일하게 둔다. */
 const MIN_BLOCK_MINUTES = 15;
@@ -91,6 +148,7 @@ import {
   isTempPlaceId,
   resolveBlockId,
 } from '../utils/planSyncPayload';
+import { applyTimetableBroadcast } from '../utils/timetableBroadcast';
 
 
 interface ItineraryContextType {
@@ -264,6 +322,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
   // 서버가 blockId를 확정하기 전인 블록의 update/delete 보류분. key는 임시 ID.
   const pendingBlockSyncRef = useRef<Map<string, PendingBlockSync>>(new Map());
+  const pendingPlaceCreateRef = useRef<PendingPlaceCreate[]>([]);
 
   /**
    * 다른 plan으로 진입할 때 이전 일정 상태를 비웁니다.
@@ -278,7 +337,30 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setDays([]);
     setLastAddedPlaceId(null);
     pendingBlockSyncRef.current.clear();
+    pendingPlaceCreateRef.current = [];
   }, []);
+
+  const flushPendingPlaceCreates = useCallback(
+    (dateString: string, timetableId: number) => {
+      const pending = pendingPlaceCreateRef.current.filter(
+        item => item.dateString === dateString,
+      );
+      if (pending.length === 0) return;
+
+      pendingPlaceCreateRef.current = pendingPlaceCreateRef.current.filter(
+        item => item.dateString !== dateString,
+      );
+      pending.forEach(({ place }) => {
+        sendMessage(
+          'create',
+          'timetableplaceblock',
+          mapToTimetablePlaceBlockDto(place, timetableId),
+          place.id,
+        );
+      });
+    },
+    [sendMessage],
+  );
 
   /**
    * 블록 변경을 전송합니다. blockId가 아직 없으면 서버가 create 응답으로
@@ -513,57 +595,8 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         if (dataList.length === 0) return;
 
         setDays(prevDays => {
-          let nextDays = [...prevDays];
-          let changed = false;
-
-          dataList.forEach((respVO: any) => {
-            const timetableId = respVO.timeTableId ?? respVO.timetableId;
-            const dateStr = respVO.date
-              ? String(respVO.date).split('T')[0]
-              : null;
-
-            if (action === 'delete') {
-              if (timetableId === undefined || timetableId === null) return;
-              const idx = nextDays.findIndex(
-                d => String(d.timetableId) === String(timetableId),
-              );
-              if (idx !== -1) {
-                nextDays.splice(idx, 1);
-                changed = true;
-              }
-              return;
-            }
-
-            if (!dateStr) return;
-
-            const idx = nextDays.findIndex(
-              d => formatDateLocal(d.date) === dateStr,
-            );
-
-            if (idx !== -1) {
-              // 서버가 확정한 timetableId를 주입해야 이후 블록 편집이 전송된다.
-              if (String(nextDays[idx].timetableId) !== String(timetableId)) {
-                nextDays[idx] = { ...nextDays[idx], timetableId };
-                changed = true;
-              }
-            } else {
-              const [y, m, d] = dateStr.split('-').map(Number);
-              nextDays.push({
-                timetableId,
-                date: new Date(y, m - 1, d),
-                dayNumber: 0,
-                startTime: respVO.timeTableStartTime || '09:00:00',
-                endTime: respVO.timeTableEndTime || '20:00:00',
-                places: [],
-              });
-              changed = true;
-            }
-          });
-
-          if (!changed) return prevDays;
-
-          nextDays.sort((a, b) => a.date.getTime() - b.date.getTime());
-          return nextDays.map((d, i) => ({ ...d, dayNumber: i + 1 }));
+          const result = applyTimetableBroadcast(prevDays, action, dataList);
+          return result.changed ? result.days : prevDays;
         });
       }
     },
@@ -580,6 +613,14 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       }
     };
   }, [subscribeToMessages, unsubscribeFromMessages, handleWebSocketMessage]);
+
+  useEffect(() => {
+    days.forEach(day => {
+      if (day.timetableId !== undefined && day.timetableId !== null) {
+        flushPendingPlaceCreates(formatDateLocal(day.date), day.timetableId);
+      }
+    });
+  }, [days, flushPendingPlaceCreates]);
 
   const addPlaceToDay = useCallback((
     dayIndex: number,
@@ -648,6 +689,11 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
         otherPlacesToSync.forEach(p => {
           sendBlockSync('update', p, dayTimetableId!);
         });
+      } else if (finalPlace && dayDateString) {
+        pendingPlaceCreateRef.current.push({
+          place: finalPlace,
+          dateString: dayDateString,
+        });
       }
     }, 0);
   }, [sendMessage, sendBlockSync]);
@@ -679,6 +725,9 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setLastAddedPlaceId(null);
 
     setTimeout(() => {
+      pendingPlaceCreateRef.current = pendingPlaceCreateRef.current.filter(
+        item => item.place.id !== placeId,
+      );
       if (placeToDelete && dayTimetableId && dayDateString) {
         sendBlockSync('delete', placeToDelete, dayTimetableId);
       }
@@ -867,6 +916,11 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
         // 요청한 ID 집합이 그날 블록과 정확히 일치할 때만 적용한다.
         if (reordered.length !== day.places.length) {
+          // 조용히 무시하면 호출부는 성공한 줄 알고 안내를 띄운다.
+          console.warn(
+            `[Itinerary] 재정렬 무시: 요청 ${orderedPlaceIds.length}건 중 ` +
+              `${reordered.length}건만 일치(그날 블록 ${day.places.length}건)`,
+          );
           return prevDays;
         }
 

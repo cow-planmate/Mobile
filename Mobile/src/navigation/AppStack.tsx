@@ -10,6 +10,7 @@ import ThemeSettingsScreen from '../features/auth/screens/ThemeSettingsScreen';
 import ChangePasswordScreen from '../features/auth/screens/ChangePasswordScreen';
 import {
   CommunityScreen,
+  FeedCreateScreen,
   FeedDetailScreen,
   PostCreateScreen,
   PostDetailScreen,
@@ -31,15 +32,18 @@ const CommunityStackNavigator = createNativeStackNavigator<CommunityStackParamLi
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
+/**
+ * height/paddingBottom을 여기서 지정하지 않는다. @react-navigation/bottom-tabs는
+ * 커스텀 tabBarStyle을 자신의 인셋 기반 값(paddingBottom: insets.bottom 등) 뒤에
+ * 펼쳐 넣으므로, 여기서 숫자를 주면 실제 하단 인셋을 완전히 덮어써 제스처 내비게이션
+ * 영역에 탭바가 깔린다. 배경·테두리만 책임지고 크기는 라이브러리에 맡긴다.
+ */
 const baseTabBarStyle = {
   backgroundColor: '#FFFFFF',
   borderTopWidth: 1,
   borderTopColor: '#E5E7EB',
-  height: Platform.OS === 'ios' ? 85 : 60,
-  paddingBottom: Platform.OS === 'ios' ? 28 : 8,
   paddingTop: 8,
   elevation: 0,
-  marginBottom: Platform.OS === 'ios' ? 10 : 6,
 };
 
 function FeedStack() {
@@ -54,6 +58,10 @@ function FeedStack() {
       <FeedStackNavigator.Screen
         name="FeedMain"
         component={TravelFeedScreen}
+      />
+      <FeedStackNavigator.Screen
+        name="FeedCreate"
+        component={FeedCreateScreen}
       />
       <FeedStackNavigator.Screen
         name="FeedDetail"
@@ -130,7 +138,7 @@ function MainTabs() {
         tabBarActiveTintColor: '#1344FF',
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarLabelStyle: {
-          fontFamily: 'Inter_600SemiBold',
+          fontFamily: 'Pretendard-SemiBold',
           fontSize: 11,
           marginTop: -2,
         },

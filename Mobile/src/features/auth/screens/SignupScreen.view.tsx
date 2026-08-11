@@ -7,7 +7,7 @@ import {
   Pressable,
   ActivityIndicator,
   ScrollView,
-  Modal,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -23,14 +23,17 @@ import {
   EyeOff,
   Check,
   Circle,
-  X,
   AlertCircle,
   Loader,
 } from 'lucide-react-native';
-import { styles, COLORS, normalize } from './SignupScreen.styles';
+import { styles } from './SignupScreen.styles';
+import { COLORS } from '../authTokens';
+import { sf } from '../../../design/scale';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
+import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
+import { revealStep, PUSH_TRANSITION_MS } from '../motion';
 import {
   formatBirthdate,
   parseBirthdate,
@@ -45,9 +48,9 @@ export const PasswordRequirement = React.memo(
     <View style={styles.requirementRow}>
       {/* 색만 바꾸면 색각 이상 사용자가 구분하지 못한다. 형태를 바꾼다. */}
       {met ? (
-        <Check size={normalize(15)} color={COLORS.success} strokeWidth={3} />
+        <Check size={sf(15)} color={COLORS.success} strokeWidth={3} />
       ) : (
-        <Circle size={normalize(15)} color={COLORS.darkGray} strokeWidth={2} />
+        <Circle size={sf(15)} color={COLORS.textDisabled} strokeWidth={2} />
       )}
       <Text
         style={[
@@ -70,85 +73,9 @@ const InlineError = ({ message }: { message: string }) => (
     exiting={FadeOut.duration(120)}
     accessibilityLiveRegion="polite"
   >
-    <AlertCircle
-      size={normalize(15)}
-      color={COLORS.error}
-      style={styles.errorIcon}
-    />
+    <AlertCircle size={sf(15)} color={COLORS.error} style={styles.errorIcon} />
     <Text style={styles.errorText}>{message}</Text>
   </Animated.View>
-);
-
-/* ── 개인정보 동의 모달 ── */
-
-const PrivacyPolicyModal = ({
-  visible,
-  onClose,
-}: {
-  visible: boolean;
-  onClose: () => void;
-}) => (
-  <Modal
-    visible={visible}
-    transparent
-    animationType="fade"
-    onRequestClose={onClose}
-  >
-    <Pressable style={styles.privacyOverlay} onPress={onClose}>
-      <Pressable style={styles.privacyModal} onPress={e => e.stopPropagation()}>
-        <View style={styles.privacyHeader}>
-          <Text style={styles.privacyTitle}>개인정보 수집·이용 동의</Text>
-          <TouchableOpacity
-            onPress={onClose}
-            style={styles.privacyCloseIcon}
-            accessibilityRole="button"
-            accessibilityLabel="닫기"
-          >
-            <X size={20} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          style={styles.privacyScroll}
-          contentContainerStyle={{ paddingBottom: normalize(12) }}
-          showsVerticalScrollIndicator={true}
-        >
-          <Text style={styles.privacySectionTitle}>1. 수집·이용 목적</Text>
-          <Text style={styles.privacyBullet}>• 회원 관리 및 서비스 제공</Text>
-          <Text style={styles.privacyBullet}>• 문의 대응 및 공지사항 전달</Text>
-          <Text style={styles.privacyBullet}>
-            • 맞춤형 서비스 제공 및 이벤트 안내
-          </Text>
-
-          <Text style={styles.privacySectionTitle}>
-            2. 수집하는 개인정보 항목
-          </Text>
-          <Text style={styles.privacyBullet}>
-            • 필수 항목: 이메일, 비밀번호, 닉네임, 생년월일, 성별
-          </Text>
-
-          <Text style={styles.privacySectionTitle}>
-            3. 개인정보 보유·이용 기간
-          </Text>
-          <Text style={styles.privacyBullet}>• 회원 탈퇴 시 지체 없이 파기</Text>
-          <Text style={styles.privacyBullet}>
-            • 단, 관련 법령에 따라 보존이 필요한 경우 해당 기간 동안 보관
-          </Text>
-
-          <Text style={styles.privacySectionTitle}>
-            4. 동의 거부 권리 및 불이익 안내
-          </Text>
-          <Text style={styles.privacyBullet}>
-            • 회원가입 시 필수 항목 동의를 거부할 경우 회원가입이 불가합니다.
-          </Text>
-        </ScrollView>
-
-        <TouchableOpacity style={styles.privacyCloseButton} onPress={onClose}>
-          <Text style={styles.privacyCloseButtonText}>닫기</Text>
-        </TouchableOpacity>
-      </Pressable>
-    </Pressable>
-  </Modal>
 );
 
 /* ── Props ── */
@@ -247,6 +174,17 @@ export const SignupScreenView = ({
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
 
+  /**
+   * 안드로이드의 windowSoftInputMode="adjustResize"는 키보드가 뜨면 창 자체를
+   * 줄여서 이 화면의 flex:1 컨테이너도 함께 줄어들고, 그 아래 붙은 하단 '다음'
+   * 버튼이 키보드 위로 따라 올라온다. 1·2단계는 필드의 리턴 키로 바로 다음
+   * 단계로 넘어가 버튼을 볼 필요가 없고, 3단계는 닉네임 입력을 마치면 생년월일
+   * ·성별처럼 키보드가 필요 없는 컨트롤로 넘어가므로, 버튼이 키보드를 따라
+   * 움직일 필요가 없다. 마운트 시점의 화면 높이를 고정값으로 박아 두면 창이
+   * 줄어들어도 이 컨테이너는 반응하지 않는다.
+   */
+  const [screenHeight] = useState(() => Dimensions.get('window').height);
+
   const emailRef = useRef<TextInput>(null);
   const codeRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -259,6 +197,19 @@ export const SignupScreenView = ({
   useEffect(() => {
     prevStepRef.current = step;
   }, [step]);
+
+  /**
+   * 최초 진입(화면 push 직후)과 단계 간 전환을 다른 모션으로 구분한다.
+   * 최초 진입은 화면 슬라이드와 축이 겹치지 않게 revealStep으로,
+   * 이후 단계 전환만 기존 수평 슬라이드를 쓴다.
+   */
+  const hasMountedRef = useRef(false);
+  useEffect(() => {
+    hasMountedRef.current = true;
+  }, []);
+  const stepEntering = hasMountedRef.current
+    ? (goingForward ? FadeInRight : FadeInLeft).duration(220)
+    : revealStep(1, PUSH_TRANSITION_MS);
 
   /**
    * 오류가 있으면 그 필드로, 없으면 이번 단계의 첫 필드로 포커스를 옮긴다.
@@ -313,24 +264,32 @@ export const SignupScreenView = ({
     if (nicknameStatus === 'checking') {
       return (
         <View style={styles.statusRow}>
-          <Loader size={normalize(14)} color={COLORS.textSecondary} />
+          <Loader size={sf(14)} color={COLORS.textSecondary} />
           <Text style={styles.statusTextMuted}>확인 중…</Text>
         </View>
       );
     }
     if (nicknameStatus === 'available') {
       return (
-        <Animated.View style={styles.statusRow} entering={FadeInDown.duration(160)}>
-          <Check size={normalize(14)} color={COLORS.success} strokeWidth={3} />
+        <Animated.View
+          style={styles.statusRow}
+          entering={FadeInDown.duration(160)}
+        >
+          <Check size={sf(14)} color={COLORS.success} strokeWidth={3} />
           <Text style={styles.statusTextOk}>사용할 수 있는 닉네임이에요.</Text>
         </Animated.View>
       );
     }
     if (nicknameStatus === 'taken') {
       return (
-        <Animated.View style={styles.statusRow} entering={FadeInDown.duration(160)}>
-          <AlertCircle size={normalize(14)} color={COLORS.error} />
-          <Text style={styles.statusTextError}>이미 사용 중인 닉네임이에요.</Text>
+        <Animated.View
+          style={styles.statusRow}
+          entering={FadeInDown.duration(160)}
+        >
+          <AlertCircle size={sf(14)} color={COLORS.error} />
+          <Text style={styles.statusTextError}>
+            이미 사용 중인 닉네임이에요.
+          </Text>
         </Animated.View>
       );
     }
@@ -338,9 +297,11 @@ export const SignupScreenView = ({
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View
+      style={[styles.container, { paddingTop: insets.top, height: screenHeight }]}
+    >
       {/* ── 헤더: 뒤로가기는 항상 왼쪽 ── */}
-      <View style={styles.header}>
+      <Animated.View style={styles.header} entering={revealStep(0, PUSH_TRANSITION_MS)}>
         <Pressable
           style={styles.headerBackButton}
           onPress={onPrevStep}
@@ -355,7 +316,10 @@ export const SignupScreenView = ({
           {Array.from({ length: totalSteps }).map((_, i) => (
             <View
               key={i}
-              style={[styles.progressSegment, i < step && styles.progressSegmentOn]}
+              style={[
+                styles.progressSegment,
+                i < step && styles.progressSegmentOn,
+              ]}
             />
           ))}
         </View>
@@ -363,7 +327,7 @@ export const SignupScreenView = ({
         <Text style={styles.progressCount}>
           {step} / {totalSteps}
         </Text>
-      </View>
+      </Animated.View>
 
       <ScrollView
         style={styles.flex1}
@@ -374,7 +338,8 @@ export const SignupScreenView = ({
       >
         <Animated.View
           key={step}
-          entering={(goingForward ? FadeInRight : FadeInLeft).duration(220)}
+          entering={stepEntering}
+          exiting={FadeOut.duration(180)}
         >
           <Text style={styles.title}>{STEP_TITLES[step - 1]}</Text>
           <Text style={styles.description}>{STEP_DESCRIPTIONS[step - 1]}</Text>
@@ -392,7 +357,9 @@ export const SignupScreenView = ({
                     ]}
                     containerStyle={styles.flex1}
                     label="이메일"
-                    labelBackground={emailLocked ? COLORS.surface : COLORS.white}
+                    labelBackground={
+                      emailLocked ? COLORS.surface : COLORS.surfaceRaised
+                    }
                   >
                     {emailLocked ? (
                       <Text style={styles.authValue} numberOfLines={1}>
@@ -431,10 +398,10 @@ export const SignupScreenView = ({
                       ]}
                       baseColor={
                         !isEmailFormatValid || isSendingEmail
-                          ? COLORS.gray
+                          ? COLORS.border
                           : COLORS.primary
                       }
-                      pressedColor={COLORS.primaryDark}
+                      pressedColor={COLORS.primaryPressed}
                       scaleTo={0.95}
                       onPress={onSendEmail}
                       disabled={!isEmailFormatValid || isSendingEmail}
@@ -442,7 +409,10 @@ export const SignupScreenView = ({
                       accessibilityLabel="인증번호 요청"
                     >
                       {isSendingEmail ? (
-                        <ActivityIndicator color={COLORS.white} size="small" />
+                        <ActivityIndicator
+                          color={COLORS.onPrimary}
+                          size="small"
+                        />
                       ) : (
                         <Text style={styles.inlineButtonText}>인증요청</Text>
                       )}
@@ -487,16 +457,21 @@ export const SignupScreenView = ({
                         maxLength={6}
                         autoComplete="sms-otp"
                         importantForAutofill="yes"
-                        editable={!isEmailVerified && !isCodeExpired && !isVerifying}
+                        editable={
+                          !isEmailVerified && !isCodeExpired && !isVerifying
+                        }
                         onFocus={() => setFocusedField('verificationCode')}
                         onBlur={() => setFocusedField(null)}
                         accessibilityLabel="인증번호 6자리"
                       />
                       {isVerifying ? (
-                        <ActivityIndicator size="small" color={COLORS.primary} />
+                        <ActivityIndicator
+                          size="small"
+                          color={COLORS.primary}
+                        />
                       ) : isEmailVerified ? (
                         <Check
-                          size={normalize(20)}
+                          size={sf(20)}
                           color={COLORS.success}
                           strokeWidth={3}
                         />
@@ -522,7 +497,11 @@ export const SignupScreenView = ({
                       style={styles.statusRow}
                       entering={FadeInDown.duration(160)}
                     >
-                      <Check size={normalize(14)} color={COLORS.success} strokeWidth={3} />
+                      <Check
+                        size={sf(14)}
+                        color={COLORS.success}
+                        strokeWidth={3}
+                      />
                       <Text style={styles.statusTextOk}>
                         인증이 완료되었어요.
                       </Text>
@@ -544,7 +523,8 @@ export const SignupScreenView = ({
                         <Text
                           style={[
                             styles.resendButtonText,
-                            resendCooldown > 0 && styles.resendButtonTextDisabled,
+                            resendCooldown > 0 &&
+                              styles.resendButtonTextDisabled,
                           ]}
                         >
                           {resendCooldown > 0
@@ -671,7 +651,10 @@ export const SignupScreenView = ({
                 )}
                 {form.confirmPassword.length > 0 && (
                   <View style={styles.requirementsContainer}>
-                    <PasswordRequirement met={isPasswordMatch} label="비밀번호 일치" />
+                    <PasswordRequirement
+                      met={isPasswordMatch}
+                      label="비밀번호 일치"
+                    />
                   </View>
                 )}
               </View>
@@ -736,7 +719,9 @@ export const SignupScreenView = ({
                     </Text>
                   </TouchableOpacity>
                 </AuthFieldBox>
-                {!!errors.birthdate && <InlineError message={errors.birthdate} />}
+                {!!errors.birthdate && (
+                  <InlineError message={errors.birthdate} />
+                )}
               </View>
 
               {/*
@@ -747,46 +732,49 @@ export const SignupScreenView = ({
               <View style={styles.inputGroup}>
                 <Text style={styles.groupLabel}>성별</Text>
                 <View style={styles.genderContainer}>
-                    {(
-                      [
-                        { key: 'male', label: '남성' },
-                        { key: 'female', label: '여성' },
-                      ] as const
-                    ).map(option => (
-                      <PressableScale
-                        key={option.key}
+                  {(
+                    [
+                      { key: 'male', label: '남성' },
+                      { key: 'female', label: '여성' },
+                    ] as const
+                  ).map(option => (
+                    <PressableScale
+                      key={option.key}
+                      style={[
+                        styles.genderButton,
+                        !!errors.gender && styles.genderButtonError,
+                        form.gender === option.key &&
+                          styles.genderButtonSelected,
+                      ]}
+                      baseColor={
+                        form.gender === option.key
+                          ? COLORS.primary
+                          : COLORS.surfaceRaised
+                      }
+                      pressedColor={
+                        form.gender === option.key
+                          ? COLORS.primaryPressed
+                          : COLORS.surface
+                      }
+                      scaleTo={0.96}
+                      onPress={() => onChange('gender', option.key)}
+                      accessibilityRole="radio"
+                      accessibilityState={{
+                        selected: form.gender === option.key,
+                      }}
+                      accessibilityLabel={option.label}
+                    >
+                      <Text
                         style={[
-                          styles.genderButton,
-                          !!errors.gender && styles.genderButtonError,
-                          form.gender === option.key && styles.genderButtonSelected,
+                          styles.genderButtonText,
+                          form.gender === option.key &&
+                            styles.genderButtonTextSelected,
                         ]}
-                        baseColor={
-                          form.gender === option.key
-                            ? COLORS.primary
-                            : COLORS.white
-                        }
-                        pressedColor={
-                          form.gender === option.key
-                            ? COLORS.primaryDark
-                            : COLORS.surface
-                        }
-                        scaleTo={0.96}
-                        onPress={() => onChange('gender', option.key)}
-                        accessibilityRole="radio"
-                        accessibilityState={{ selected: form.gender === option.key }}
-                        accessibilityLabel={option.label}
                       >
-                        <Text
-                          style={[
-                            styles.genderButtonText,
-                            form.gender === option.key &&
-                              styles.genderButtonTextSelected,
-                          ]}
-                        >
-                          {option.label}
-                        </Text>
-                      </PressableScale>
-                    ))}
+                        {option.label}
+                      </Text>
+                    </PressableScale>
+                  ))}
                 </View>
                 {!!errors.gender && <InlineError message={errors.gender} />}
               </View>
@@ -801,9 +789,15 @@ export const SignupScreenView = ({
                   accessibilityState={{ checked: isAgreed }}
                   accessibilityLabel="개인정보 수집 및 이용 동의, 필수"
                 >
-                  <View style={[styles.checkbox, isAgreed && styles.checkboxActive]}>
+                  <View
+                    style={[styles.checkbox, isAgreed && styles.checkboxActive]}
+                  >
                     {isAgreed && (
-                      <Check size={normalize(13)} color={COLORS.white} strokeWidth={3} />
+                      <Check
+                        size={sf(13)}
+                        color={COLORS.onPrimary}
+                        strokeWidth={3}
+                      />
                     )}
                   </View>
                   <Text style={styles.agreementText}>
@@ -829,7 +823,7 @@ export const SignupScreenView = ({
       </ScrollView>
 
       {/* ── 하단: 주 버튼은 항상 '다음' 하나 ── */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + normalize(16) }]}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + sf(16) }]}>
         <AuthSubmitButton
           label={step === totalSteps ? '회원가입 완료' : '다음'}
           onPress={onNextStep}
@@ -842,6 +836,7 @@ export const SignupScreenView = ({
       <PrivacyPolicyModal
         visible={showPrivacyModal}
         onClose={() => setShowPrivacyModal(false)}
+        variant="consent"
       />
 
       {/* 생년월일 선택기. 나이를 받아 역산하면 실제 월·일이 소실된다. */}

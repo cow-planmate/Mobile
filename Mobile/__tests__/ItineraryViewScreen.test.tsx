@@ -32,6 +32,11 @@ const mockRoute = {
   },
 } as any;
 
+// 소유권 조회는 이 테스트 관심사가 아니다. Provider 없이 useQuery가 돌지 않도록 대체한다.
+jest.mock('../src/hooks/usePlanOwnership', () => ({
+  usePlanOwnership: () => ({ isOwner: true, isLoading: false, isError: false }),
+}));
+
 jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: jest.fn(() => Promise.resolve(null)),
   setItem: jest.fn(() => Promise.resolve()),
@@ -71,6 +76,7 @@ jest.mock('lucide-react-native', () => {
   return {
     Map: () => React.createElement(View),
     ChevronLeft: () => React.createElement(View),
+    ListChecks: () => React.createElement(View),
   };
 });
 
@@ -95,18 +101,18 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
   });
 
   it('maintains loading until weather is fully loaded', async () => {
+    // 서버 PlanFrameDetailDto와 같은 키를 쓴다.
+    // 예전 픽스처는 구 스키마 필드를 사용했지만
+    // 실제 응답으로는 재현되지 않는 경로를 검증하고 있었다.
     const mockPlanData = {
       message: 'success',
       planFrame: {
-        planId: 123,
+        planId: '0199a1b2-c3d4-7e5f-8901-234567890abc',
         planName: 'Test Trip',
-        departure: 'SEOUL',
-        travelCategoryName: 'Category',
-        travelId: 1,
-        travelName: 'Name',
+        destinationId: 1,
+        destinationName: '제주',
         adultCount: 1,
         childCount: 0,
-        transportationCategoryId: 1,
       },
       placeBlocks: [],
       timetables: [
@@ -159,5 +165,40 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
 
     // Check if isWeatherLoading becomes false after weather promise is resolved
     expect(viewComponent.props.isWeatherLoading).toBe(false);
+  });
+
+  it('passes itinerary dates when navigating back to the editor', async () => {
+    mockedAxios.get.mockResolvedValueOnce({
+      data: { message: 'success', planFrame: {}, placeBlocks: [], timetables: [] },
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+    const route = {
+      params: {
+        planId: '123',
+        days: [
+          { date: new Date(2026, 7, 1), dayNumber: 1, places: [] },
+          { date: new Date(2026, 7, 3), dayNumber: 2, places: [] },
+        ],
+      },
+    } as any;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <ItineraryViewScreen navigation={mockNavigation} route={route} />,
+      );
+    });
+
+    const viewComponent = renderer!.root.findByType(
+      require('../src/features/itinerary/screens/ItineraryViewScreen.view').default,
+    );
+    viewComponent.props.handleEdit();
+
+    expect(mockNavigate).toHaveBeenCalledWith(
+      'ItineraryEditor',
+      expect.objectContaining({
+        startDate: '2026-07-31T15:00:00.000Z',
+        endDate: '2026-08-02T15:00:00.000Z',
+      }),
+    );
   });
 });

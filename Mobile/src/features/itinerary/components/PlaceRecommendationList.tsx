@@ -32,10 +32,10 @@ import { usePlaces } from '../../../contexts/PlacesContext';
 import { PlaceVO } from '../../../api/trips';
 import { GoogleMapsIcon } from '../../../components/common';
 const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard-Regular',
+  medium: 'Pretendard-Medium',
+  semibold: 'Pretendard-SemiBold',
+  bold: 'Pretendard-Bold',
 };
 
 // ────────────────────────────────────────────────
@@ -275,14 +275,13 @@ const PlaceMapModal = React.memo(
 // ────────────────────────────────────────────────
 
 interface PlaceRecommendationListProps {
-  planId: string | null;
   destination?: string;
+  /** 추천 장소 조회 기준 여행지 ID (서버 destinationId) */
   travelId: number | null;
   onAddPlace: (place: Omit<Place, 'startTime' | 'endTime'>) => void;
 }
 
 export default function PlaceRecommendationList({
-  planId,
   destination,
   travelId,
   onAddPlace,
@@ -311,16 +310,17 @@ export default function PlaceRecommendationList({
   }, [setPetFriendly]);
 
   // ─── 당겨서 새로고침 ───
+  // planId를 대체 ID로 쓰지 않는다. planId는 UUID라 Number()가 NaN이 되어
+  // 조회가 조용히 실패한다. 여행지 ID는 travelId 하나로만 판단한다.
   const handleRefresh = useCallback(async () => {
-    const destId = travelId || planId;
-    if (!destId || isRefreshing) return;
+    if (!travelId || isRefreshing) return;
     setIsRefreshing(true);
     try {
-      await fetchAllRecommendations(Number(destId), true);
+      await fetchAllRecommendations(travelId, true);
     } finally {
       setIsRefreshing(false);
     }
-  }, [planId, travelId, isRefreshing, fetchAllRecommendations]);
+  }, [travelId, isRefreshing, fetchAllRecommendations]);
 
 
   const handleDirectAdd = useCallback(() => {

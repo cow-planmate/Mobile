@@ -10,11 +10,16 @@ jest.mock('axios');
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
 jest.mock('@react-navigation/native', () => {
+  const React = require('react');
   return {
     useNavigation: () => ({
       goBack: mockGoBack,
       navigate: mockNavigate,
     }),
+    // 회원가입 화면은 포커스 동안 소프트 키보드 모드를 바꾼다.
+    // 테스트에는 네비게이터가 없으므로 마운트 시 한 번 도는 이펙트로 대체한다.
+    useFocusEffect: (effect: React.EffectCallback) =>
+      React.useEffect(effect, [effect]),
   };
 });
 
@@ -51,9 +56,13 @@ jest.mock('react-native-reanimated', () => {
   const React = require('react');
   const View = ({ children, ...rest }: any) =>
     React.createElement('View', rest, children);
-  // entering/exiting은 .duration()을 체이닝하므로 자기 자신을 돌려준다.
-  const animation: any = {};
-  animation.duration = () => animation;
+  // entering/exiting은 .duration().delay().easing()처럼 체이닝하므로
+  // 어떤 빌더 메서드를 부르든 자기 자신을 돌려준다.
+  // (features/auth/motion.ts가 FadeInUp에 세 개를 이어 붙인다)
+  const animation: any = new Proxy(
+    {},
+    { get: () => () => animation },
+  );
   return {
     __esModule: true,
     default: {
@@ -66,7 +75,8 @@ jest.mock('react-native-reanimated', () => {
     withTiming: (value: any) => value,
     withSpring: (value: any) => value,
     interpolateColor: (_v: any, _in: any, output: any[]) => output[0],
-    Easing: { out: () => () => 0, quad: () => 0 },
+    Easing: { out: () => () => 0, quad: () => 0, cubic: () => 0 },
+    FadeInUp: animation,
     FadeInDown: animation,
     FadeOut: animation,
     FadeInRight: animation,

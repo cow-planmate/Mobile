@@ -1,8 +1,5 @@
-import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
-
-const { width } = Dimensions.get('window');
-const normalize = (size: number) =>
-  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
+import { StyleSheet } from 'react-native';
+import { sf as normalize } from '../../design/scale';
 
 export const COLORS = {
   primary: '#1344FF',
@@ -15,10 +12,10 @@ export const COLORS = {
 };
 
 export const FONTS = {
-  regular: 'Pretendard Variable',
-  medium: 'Pretendard Variable',
-  semibold: 'Pretendard Variable',
-  bold: 'Pretendard Variable',
+  regular: 'Pretendard-Regular',
+  medium: 'Pretendard-Medium',
+  semibold: 'Pretendard-SemiBold',
+  bold: 'Pretendard-Bold',
 };
 
 export const styles = StyleSheet.create({

@@ -2,20 +2,20 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  SafeAreaView,
+  ScrollView,
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FastImage from 'react-native-fast-image';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faUser,
   faLocationDot,
   faCalendar,
-  faCar,
-  faBus,
 } from '@fortawesome/free-solid-svg-icons';
-import { CalendarModal, Header, Invitation, NotificationModal, OptionType, PaxModal, SearchLocationModal, SelectionModal } from '../../../components/common';
+import { CalendarModal, Header, Invitation, NotificationModal, PaxModal, SearchLocationModal } from '../../../components/common';
+import { normalize } from '../../../utils/normalize';
 import { styles } from './HomeScreen.styles';
 
 const HERO_IMAGES = [
@@ -46,6 +46,8 @@ const InputRow = ({
       style={[styles.inputRow, isLast && styles.inputRowLast]}
       onPress={onPress}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={hasValue ? `${label}, ${value}` : `${label}, ${placeholder ?? '미입력'}`}
     >
       <Text style={styles.label}>{label}</Text>
       <View style={styles.valueContainer}>
@@ -57,7 +59,7 @@ const InputRow = ({
           <Text style={styles.placeholderText}>{placeholder}</Text>
         )}
         <View style={styles.rowIcon}>
-          <FontAwesomeIcon icon={icon} color="#9CA3AF" size={18} />
+          <FontAwesomeIcon icon={icon} color="#6B7280" size={18} />
         </View>
       </View>
     </TouchableOpacity>
@@ -69,14 +71,12 @@ export interface HomeScreenViewProps {
   email?: string;
   pendingRequestsCount: number;
   destination: string;
-  transport: string;
   dateText: string;
   paxText: string;
   isFormValid: boolean;
   isSearchModalVisible: boolean;
   isCalendarVisible: boolean;
   isPaxModalVisible: boolean;
-  isTransportModalVisible: boolean;
   isNotificationModalVisible: boolean;
   pendingRequestList: Invitation[];
   onCloseNotificationModal: () => void;
@@ -86,7 +86,6 @@ export interface HomeScreenViewProps {
   endDate?: Date | null;
   adults?: number | null;
   children?: number | null;
-  transportOptions: OptionType[];
   onNotificationPress: () => void;
   onNavigateProfile: () => void;
   onOpenSearchModal: () => void;
@@ -98,9 +97,6 @@ export interface HomeScreenViewProps {
   onOpenPaxModal: () => void;
   onClosePaxModal: () => void;
   onConfirmPax: (pax: { adults: number; children: number }) => void;
-  onOpenTransportModal: () => void;
-  onCloseTransportModal: () => void;
-  onSelectTransport: (option: string) => void;
   onCreateItinerary: () => void;
 }
 
@@ -109,19 +105,16 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   email,
   pendingRequestsCount, // 알림 뱃지 등에 활용 가능
   destination,
-  transport,
   dateText,
   paxText,
   isFormValid,
   isSearchModalVisible,
   isCalendarVisible,
   isPaxModalVisible,
-  isTransportModalVisible,
   startDate,
   endDate,
   adults,
   children,
-  transportOptions,
   onNotificationPress,
   onNavigateProfile,
   onOpenSearchModal,
@@ -133,9 +126,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   onOpenPaxModal,
   onClosePaxModal,
   onConfirmPax,
-  onOpenTransportModal,
-  onCloseTransportModal,
-  onSelectTransport,
   onCreateItinerary,
   isNotificationModalVisible,
   pendingRequestList,
@@ -144,6 +134,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   onRejectNotification,
 }) => {
   const [heroIndex, setHeroIndex] = useState(0);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -153,7 +144,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" />
 
       <Header
@@ -164,8 +155,14 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         onNavigateProfile={onNavigateProfile}
       />
 
-      <View
-        style={styles.scrollContainer}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.scrollContainer,
+          { paddingBottom: insets.bottom + normalize(24) },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         {/* 2. Hero Section */}
         <View style={styles.heroSection}>
@@ -173,9 +170,10 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
             source={{ uri: HERO_IMAGES[heroIndex], priority: FastImage.priority.normal }}
             style={styles.heroImage}
             resizeMode={FastImage.resizeMode.cover}
+            accessible={false}
           />
           <View style={styles.heroOverlay} />
-          <Text style={styles.heroTitle}>
+          <Text style={styles.heroTitle} accessibilityRole="header">
             {'나다운, 우리다운\n여행의 시작'}
           </Text>
         </View>
@@ -207,16 +205,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               onPress={onOpenPaxModal}
             />
 
-            <InputRow
-              label="이동수단"
-              value={transport}
-              placeholder="무엇을 타고 가시나요?"
-              icon={transport === '자동차' ? faCar : faBus}
-              onPress={onOpenTransportModal}
-            />
-
-
-
             {/* Create Button */}
             <TouchableOpacity
               style={[
@@ -225,6 +213,9 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               ]}
               onPress={onCreateItinerary}
               disabled={!isFormValid}
+              accessibilityRole="button"
+              accessibilityLabel="일정생성"
+              accessibilityState={{ disabled: !isFormValid }}
             >
               <Text
                 style={[
@@ -237,7 +228,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </ScrollView>
 
       {/* Modals - 기존 유지 */}
       <SearchLocationModal
@@ -260,15 +251,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         initialAdults={adults ?? 1}
         initialChildren={children ?? 0}
       />
-      <SelectionModal
-        visible={isTransportModalVisible}
-        title="이동수단 선택"
-        options={transportOptions}
-        currentValue={transport}
-        onClose={onCloseTransportModal}
-        onSelect={onSelectTransport}
-      />
-
       <NotificationModal
         visible={isNotificationModalVisible}
         onClose={onCloseNotificationModal}
@@ -276,6 +258,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         onAccept={onAcceptNotification}
         onReject={onRejectNotification}
       />
-    </SafeAreaView>
+    </View>
   );
 };

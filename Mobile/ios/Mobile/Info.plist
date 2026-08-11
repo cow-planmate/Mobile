@@ -49,12 +49,10 @@
 	<false/>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Inter_400Regular.ttf</string>
-		<string>Inter_500Medium.ttf</string>
-		<string>Inter_600SemiBold.ttf</string>
-		<string>Inter_700Bold.ttf</string>
-		<string>Inter_800ExtraBold.ttf</string>
-		<string>PretendardVariable.ttf</string>
+		<string>Pretendard-Regular.otf</string>
+		<string>Pretendard-Medium.otf</string>
+		<string>Pretendard-SemiBold.otf</string>
+		<string>Pretendard-Bold.otf</string>
 	</array>
 </dict>
 </plist>

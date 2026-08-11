@@ -48,10 +48,10 @@ export const theme = {
   },
   typography: {
     fontFamily: {
-      regular: 'Inter_400Regular',
-      medium: 'Inter_500Medium',
-      semibold: 'Inter_600SemiBold',
-      bold: 'Inter_700Bold',
+      regular: 'Pretendard-Regular',
+      medium: 'Pretendard-Medium',
+      semibold: 'Pretendard-SemiBold',
+      bold: 'Pretendard-Bold',
     },
     weight: {
       thin: '300' as const,

@@ -92,6 +92,7 @@ jest.mock('lucide-react-native', () => {
   return {
     Map: () => React.createElement(View, { testID: 'mock-lucide-map-icon' }),
     ChevronLeft: () => React.createElement(View, { testID: 'mock-lucide-chevron-left' }),
+    ListChecks: () => React.createElement(View, { testID: 'mock-lucide-list-checks' }),
   };
 });
 
@@ -192,6 +193,11 @@ jest.mock('../src/contexts/AlertContext', () => ({
   useAlert: () => ({
     showAlert: mockShowAlert,
   }),
+}));
+
+// 소유권 조회는 이 테스트 관심사가 아니다. Provider 없이 useQuery가 돌지 않도록 대체한다.
+jest.mock('../src/hooks/usePlanOwnership', () => ({
+  usePlanOwnership: () => ({ isOwner: true, isLoading: false, isError: false }),
 }));
 
 const mockMutateAsync = jest.fn();
@@ -347,6 +353,7 @@ describe('ItineraryEditorScreenView Component', () => {
             onOpenParticipants={() => {}}
             onOpenMap={() => {}}
             onOpenShare={() => {}}
+            onOpenChecklist={() => {}}
             onUndo={() => {}}
             onRedo={() => {}}
             participantsCount={0}
@@ -445,6 +452,7 @@ describe('ItineraryEditorScreenView Component', () => {
           onOpenParticipants={() => {}}
           onOpenMap={() => {}}
           onOpenShare={() => {}}
+          onOpenChecklist={() => {}}
           onUndo={mockUndo}
           onRedo={mockRedo}
           participantsCount={0}
@@ -692,5 +700,48 @@ describe('ItineraryEditorScreen Component', () => {
     });
 
     expect(mockItineraryEditor.fetchPlanDetails).toHaveBeenCalledTimes(1);
+  });
+
+  it('제목을 다시 저장해도 값이 그대로면 요청을 한 번만 보낸다', async () => {
+    // TextInput의 onBlur와 뷰의 keyboardDidHide 리스너가 겹쳐 handleSaveTripName이
+    // 같은 편집에 두 번 불릴 수 있다. 이름이 안 바뀌었으면 두 번째 호출은 건너뛰어야 한다.
+    mockItineraryEditor.days = mockDays;
+    mockItineraryEditor.selectedDay = mockDays[0];
+    mockItineraryEditor.tripName = '제주도 여행';
+    mockItineraryEditor.planMetadata = {};
+
+    const mockNavigation = {
+      addListener: jest.fn(() => jest.fn()),
+      goBack: jest.fn(),
+      navigate: jest.fn(),
+      dispatch: jest.fn(),
+      setParams: jest.fn(),
+    } as any;
+
+    const mockRoute = {
+      params: { planId: 'plan-123', destination: '제주도' },
+    } as any;
+
+    let rendererInstance: renderer.ReactTestRenderer | undefined;
+
+    await act(async () => {
+      rendererInstance = renderer.create(
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+      );
+    });
+
+    const viewComponent = rendererInstance!.root.findByType(ItineraryEditorScreenView);
+
+    await act(async () => {
+      await viewComponent.props.onSaveTripName();
+    });
+    await act(async () => {
+      await viewComponent.props.onSaveTripName();
+    });
+
+    const planUpdateCalls = mockWebSocket.sendMessage.mock.calls.filter(
+      (call: any[]) => call[0] === 'update' && call[1] === 'plan',
+    );
+    expect(planUpdateCalls).toHaveLength(1);
   });
 });

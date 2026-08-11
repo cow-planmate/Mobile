@@ -7,14 +7,16 @@ import Animated, {
   interpolateColor,
   Easing,
 } from 'react-native-reanimated';
+import { COLORS, TYPO } from '../authTokens';
+import { sf, sp } from '../../../design/scale';
 
 export type FieldState = 'default' | 'focus' | 'error' | 'success';
 
 const BORDER_COLOR: Record<FieldState, string> = {
-  default: '#E5E7EB',
-  focus: '#1344FF',
-  error: '#FF3B30',
-  success: '#34C759',
+  default: COLORS.border,
+  focus: COLORS.primary,
+  error: COLORS.errorBorder,
+  success: COLORS.success,
 };
 
 const DURATION = 160;
@@ -54,14 +56,14 @@ export function useAnimatedBorderColor(color: string) {
 }
 
 const LABEL_COLOR: Record<FieldState, string> = {
-  default: '#6B7280',
-  focus: '#1344FF',
-  error: '#FF3B30',
-  success: '#6B7280',
+  default: COLORS.textSecondary,
+  focus: COLORS.primary,
+  error: COLORS.error,
+  success: COLORS.textSecondary,
 };
 
 /** 라벨 글자 높이. 절반이 테두리 위로, 절반이 아래로 걸친다. */
-const LABEL_HEIGHT = 16;
+const LABEL_HEIGHT = sp(TYPO.caption.lineHeight);
 
 interface AuthFieldBoxProps {
   state?: FieldState;
@@ -96,7 +98,7 @@ export default function AuthFieldBox({
   style,
   containerStyle,
   label,
-  labelBackground = '#FFFFFF',
+  labelBackground = COLORS.surfaceRaised,
   children,
 }: AuthFieldBoxProps) {
   const animatedStyle = useAnimatedBorderColor(BORDER_COLOR[state]);
@@ -105,11 +107,7 @@ export default function AuthFieldBox({
   );
 
   if (!label) {
-    return containerStyle ? (
-      <View style={containerStyle}>{box}</View>
-    ) : (
-      box
-    );
+    return containerStyle ? <View style={containerStyle}>{box}</View> : box;
   }
 
   /*
@@ -142,15 +140,15 @@ const styles = StyleSheet.create({
   labelWrap: {
     position: 'absolute',
     top: 0,
-    left: 12,
+    left: sf(12),
     flexDirection: 'row',
   },
   label: {
-    fontSize: 12,
-    fontFamily: 'Pretendard Variable',
-    fontWeight: '500',
+    fontSize: sp(TYPO.caption.fontSize),
+    fontFamily: TYPO.caption.fontFamily,
     lineHeight: LABEL_HEIGHT,
-    paddingHorizontal: 4,
+    letterSpacing: TYPO.caption.letterSpacing,
+    paddingHorizontal: sf(4),
     includeFontPadding: false,
   },
 });

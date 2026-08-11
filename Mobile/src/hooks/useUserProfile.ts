@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { resolveApiUrl } from '../utils/apiUrl';
+import { parseLocalDate } from '../utils/timeUtils';
 import { PreferredThemeVO } from '../api/themes';
 
 /** 프로필 응답의 일정 항목. 서버는 planId/planName만 내려준다. */
@@ -46,8 +47,13 @@ const GENDER_LABELS: Record<string, string> = {
   OTHER: '기타',
 };
 
+/**
+ * 서버 LocalDate('YYYY-MM-DD')를 'YYYY.MM.DD' 표시 문자열로 바꾼다.
+ * new Date(문자열)은 UTC 자정으로 해석되어 UTC보다 이른 타임존에서 하루가 밀린다.
+ */
 const formatDateStr = (dateStr: string): string => {
-  const d = new Date(dateStr);
+  const d = parseLocalDate(String(dateStr).substring(0, 10));
+  if (Number.isNaN(d.getTime())) return '';
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
@@ -87,9 +93,10 @@ const withPlanDates = async (plan: ProfilePlan): Promise<ProfilePlan> => {
       return plan;
     }
 
-    const sorted = [...timetables].sort(
-      (a: any, b: any) =>
-        new Date(a.date).getTime() - new Date(b.date).getTime(),
+    // 'YYYY-MM-DD'는 사전순 비교가 곧 날짜순이라 Date로 만들 필요가 없다.
+    const dateKey = (tt: any) => String(tt?.date ?? '').substring(0, 10);
+    const sorted = [...timetables].sort((a: any, b: any) =>
+      dateKey(a).localeCompare(dateKey(b)),
     );
 
     return {
@@ -121,7 +128,7 @@ const fetchUserProfile = async (): Promise<UserProfile> => {
     name: data.nickname || '이름 없음',
     email: data.email || '',
     profileImageUrl: data.profileImageUrl || '',
-    profilePublic: data.profilePublic ?? true,
+    profilePublic: data.profilePublic ?? false,
     birthdate: data.birthdate ? String(data.birthdate).substring(0, 10) : '',
     gender: GENDER_LABELS[data.gender] ?? '미설정',
     preferredThemes: data.preferredThemes || [],

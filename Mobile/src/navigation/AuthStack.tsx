@@ -1,9 +1,8 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Platform } from 'react-native';
-import IntroScreen from '../features/auth/screens/IntroScreen';
-import LoginScreen from '../features/auth/screens/LoginScreen';
-import SignupScreen from '../features/auth/screens/SignupScreen';
+import IntroScreen from '../features/auth/screens/Intro';
+import LoginScreen from '../features/auth/screens/Login';
+import SignupScreen from '../features/auth/screens/Signup';
 import ForgotPasswordScreen from '../features/auth/screens/ForgotPasswordScreen';
 import OAuthAdditionalInfoScreen from '../features/auth/screens/OAuthAdditionalInfoScreen';
 import { AuthStackParamList } from './types';
@@ -16,8 +15,7 @@ export default function AuthStack() {
       initialRouteName="Intro"
       screenOptions={{
         headerShown: false,
-        animation: Platform.OS === 'ios' ? 'default' : 'slide_from_right',
-        animationDuration: 250,
+        animation: 'none',
       }}
     >
       <Stack.Screen

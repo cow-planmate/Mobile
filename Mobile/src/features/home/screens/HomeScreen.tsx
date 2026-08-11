@@ -4,7 +4,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { AppState, AppStateStatus, Modal, BackHandler } from 'react-native';
 import { AppStackParamList } from '../../../navigation/types';
 import { useAuthStore } from '../../../store/useAuthStore';
-import { OptionType } from '../../../components/common';
 import { HomeScreenView } from './HomeScreen.view';
 import {
   getPendingInvitations,
@@ -13,7 +12,6 @@ import {
   PendingInvitation,
 } from '../../../api/trips';
 import { useAlert } from '../../../contexts/AlertContext';
-import { Bus, Car } from 'lucide-react-native';
 import { useInvitationSse } from '../../../hooks/useInvitationSse';
 import {
   IS_FCM_RUNTIME_ENABLED,
@@ -21,6 +19,8 @@ import {
 } from '../../../hooks/useFcmNotifications';
 import { AirplaneLoading } from '../../../components/common';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
+import { invalidatePlanCaches } from '../../../hooks/planCache';
+import { useQueryClient } from '@tanstack/react-query';
 import { formatDateLocal } from '../../../utils/timeUtils';
 import {
   CollaborationRequestResult,
@@ -39,6 +39,7 @@ type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const user = useAuthStore((state) => state.user);
   const { showAlert } = useAlert();
+  const queryClient = useQueryClient();
   const createFullPlanMutation = useCreateFullPlan();
 
   const [isCreating, setIsCreating] = useState(false);
@@ -64,19 +65,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [adults, setAdults] = useState<number | null>(1);
   const [children, setChildren] = useState<number | null>(0);
   const [isPaxModalVisible, setPaxModalVisible] = useState(false);
-  const [transport, setTransport] = useState('대중교통');
-  const [isTransportModalVisible, setTransportModalVisible] = useState(false);
-
-  const transportOptions: OptionType[] = [
-    {
-      label: '대중교통',
-      icon: <Bus size={40} color="#1344FF" strokeWidth={1.5} />,
-    },
-    {
-      label: '자동차',
-      icon: <Car size={40} color="#1344FF" strokeWidth={1.5} />,
-    },
-  ];
 
   const [destination, setDestination] = useState('');
   const [travelId, setTravelId] = useState<number>(0);
@@ -169,17 +157,27 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     const type = findRequestType(requestId);
     try {
       await acceptInvitation(requestId);
+      // 수락하면 편집 권한이 생겨 프로필의 editablePlans가 바뀐다.
+      // 무효화하지 않으면 내 일정 목록에 최대 staleTime(5분)만큼 나타나지 않는다.
+      void invalidatePlanCaches(queryClient);
       showAlert({ title: '수락 완료', message: describeAcceptResult(type) });
       setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
       }
     } catch (e) {
-      showAlert({ title: '오류', message: '수락 처리에 실패했습니다.' });
+      showAlert({
+        title: '수락하지 못했습니다',
+        message: '네트워크 상태를 확인하고 다시 시도해주세요.',
+        buttons: [
+          { text: '닫기', style: 'cancel' },
+          { text: '다시 시도', onPress: () => void handleAccept(requestId) },
+        ],
+      });
     }
   };
 
-  const handleReject = async (requestId: number) => {
+  const rejectRequest = async (requestId: number) => {
     const type = findRequestType(requestId);
     try {
       await rejectInvitation(requestId);
@@ -189,8 +187,38 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         setNotificationModalVisible(false);
       }
     } catch (e) {
-      showAlert({ title: '오류', message: '거절 처리에 실패했습니다.' });
+      showAlert({
+        title: '거절하지 못했습니다',
+        message: '네트워크 상태를 확인하고 다시 시도해주세요.',
+        buttons: [
+          { text: '닫기', style: 'cancel' },
+          { text: '다시 시도', onPress: () => void rejectRequest(requestId) },
+        ],
+      });
     }
+  };
+
+  /**
+   * 거절은 되돌릴 수 없다. 서버가 처리 결과를 보관하지 않아 목록에서 사라지면
+   * 다시 찾을 방법이 없으므로, 누르기 전에 한 번 확인한다.
+   */
+  const handleReject = (requestId: number) => {
+    const request = pendingRequests.find(r => r.requestId === requestId);
+    showAlert({
+      title: '거절할까요?',
+      message: request
+        ? `${request.senderNickname}님의 요청은 거절하면 다시 받을 수 없어요.`
+        : '거절하면 다시 받을 수 없어요.',
+      type: 'confirm',
+      buttons: [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '거절',
+          style: 'destructive',
+          onPress: () => void rejectRequest(requestId),
+        },
+      ],
+    });
   };
 
   const handleNotificationPress = () => {
@@ -205,8 +233,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     destination !== '' &&
     startDate !== null &&
     endDate !== null &&
-    adults !== null &&
-    transport !== '';
+    adults !== null;
 
   const formatDate = (date: Date) => {
     const y = date.getFullYear();
@@ -270,7 +297,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       const result = await createFullPlanMutation.mutateAsync({
         planFrame: {
           destinationId: travelId,
-          transportationType: transport === '자동차' ? 'PRIVATE' : 'PUBLIC',
           adultCount: adults ?? 1,
           childCount: children ?? 0,
         },
@@ -279,6 +305,16 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       });
 
       const newPlanId = result?.planId;
+
+      if (!newPlanId) {
+        console.error('Plan creation response did not include planId:', result);
+        setIsCreating(false);
+        showAlert({
+          title: '일정을 확인할 수 없습니다',
+          message: '일정 생성 응답에 식별자가 없습니다. 내 일정에서 생성 여부를 확인해주세요.',
+        });
+        return;
+      }
 
       setIsCreating(false);
 
@@ -291,14 +327,19 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         endDate: endDate.toISOString(),
         adults: adults ?? 1,
         children: children ?? 0,
-        transport: transport || '대중교통',
       });
     } catch (error) {
       console.error('일정 생성 준비 실패:', error);
       setIsCreating(false);
+      /** 입력값은 그대로 남아 있으므로 이 자리에서 바로 다시 시도할 수 있다. */
       showAlert({
-        title: '오류',
-        message: '일정 생성에 실패했습니다. 다시 시도해주세요.',
+        title: '일정을 만들지 못했습니다',
+        message:
+          '입력한 내용은 그대로 남아 있어요.\n네트워크 상태를 확인하고 다시 시도해주세요.',
+        buttons: [
+          { text: '닫기', style: 'cancel' },
+          { text: '다시 시도', onPress: () => void handleCreateItinerary() },
+        ],
       });
     }
   };
@@ -319,19 +360,16 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         email={user?.email}
         pendingRequestsCount={pendingRequests.length}
         destination={destination}
-        transport={transport}
         dateText={getDateText()}
         paxText={getPaxText()}
         isFormValid={isFormValid}
         isSearchModalVisible={isSearchModalVisible}
         isCalendarVisible={isCalendarVisible}
         isPaxModalVisible={isPaxModalVisible}
-        isTransportModalVisible={isTransportModalVisible}
         startDate={startDate}
         endDate={endDate}
         adults={adults}
         children={children}
-        transportOptions={transportOptions}
         onNotificationPress={handleNotificationPress}
         isNotificationModalVisible={isNotificationModalVisible}
         pendingRequestList={pendingRequests}
@@ -355,12 +393,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           setAdults(newAdults);
           setChildren(newChildren);
           setPaxModalVisible(false);
-        }}
-        onOpenTransportModal={() => setTransportModalVisible(true)}
-        onCloseTransportModal={() => setTransportModalVisible(false)}
-        onSelectTransport={option => {
-          setTransport(option);
-          setTransportModalVisible(false);
         }}
         onCreateItinerary={handleCreateItinerary}
       />

@@ -35,6 +35,7 @@ export interface CommunityPostSummary {
   authorImage?: string | null;
   /** 작성자 이메일 해시 — Gravatar 폴백용 */
   authorAvatarHash?: string | null;
+  authorDeleted?: boolean;
   level: number;
   likes: number;
   dislikes: number;
@@ -58,6 +59,7 @@ export interface CommunityPostSummary {
   forks?: number;
   tags?: string[];
   description?: string;
+  actedAt?: string;
 }
 
 /** 게시글 상세 */
@@ -87,7 +89,6 @@ export interface CommunityPostDetail extends CommunityPostSummary {
 export interface ItineraryPlanSnapshot {
   destinationId: number;
   destinationName?: string | null;
-  transportationType: string;
   adultCount?: number | null;
   childCount?: number | null;
 }
@@ -143,6 +144,8 @@ export interface FeedFilterParams {
   tag?: string;
   /** latest | likes | views | forks */
   sort?: string;
+  /** 정렬 방향. 생략하면 desc를 명시해 보낸다(서버 기본값에 기대지 않는다). */
+  order?: 'asc' | 'desc';
   q?: string;
 }
 
@@ -161,8 +164,11 @@ export interface CommunityComment {
   author: string;
   authorImage?: string | null;
   authorAvatarHash?: string | null;
+  authorDeleted?: boolean;
   level: number;
   content: string;
+  postTitle?: string | null;
+  postCategory?: CommunityCategory | null;
   createdAt: string;
   createdAtIso: string;
 }
@@ -204,6 +210,10 @@ export interface CreatePostPayload {
   lng?: number;
   region?: string;
   maxParticipants?: number | null;
+  durationDays?: number;
+  itinerary?: Itinerary | null;
+  tags?: string[];
+  sourcePlanId?: string;
 }
 
 // ────────────────────────────────────────────────

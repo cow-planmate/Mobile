@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { BackHandler } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { SignupScreenView, SignupErrors } from './SignupScreen.view';
 import { useAuthStore } from '../../../store/useAuthStore';
@@ -10,6 +10,7 @@ import {
   getDisplayErrorMessage,
 } from '../../../utils/errorHandler';
 import { toBirthdateString } from '../../../utils/birthdate';
+import { setAdjustNothing, setAdjustResize } from '../../../utils/softInputMode';
 
 /** 이미 가입된 이메일일 때 서버가 주는 코드 (AUTH_004) */
 const DUPLICATE_EMAIL_CODE = 'AUTH_004';
@@ -122,6 +123,17 @@ export default function SignupScreen() {
     });
     return () => sub.remove();
   }, [step]);
+
+  /**
+   * 이 화면에 있는 동안만 키보드가 떠도 레이아웃이 움직이지 않게 한다.
+   * 벗어나면 다른 화면(채팅 등)이 쓰는 기본 리사이즈 동작으로 되돌린다.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      setAdjustNothing();
+      return () => setAdjustResize();
+    }, []),
+  );
 
   /* 인증번호 타이머. 0이 되면 만료로 두고 다시 300으로 되돌리지 않는다. */
   useEffect(() => {

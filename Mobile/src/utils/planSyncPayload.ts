@@ -41,6 +41,15 @@ export interface TimeTableDtoInput {
   planId: string;
 }
 
+/** sharedsync TimeTableDto와 키가 일치하는 전송 페이로드 */
+export interface TimeTableDtoPayload {
+  timeTableId: number | null;
+  date: string;
+  timeTableStartTime: string;
+  timeTableEndTime: string;
+  planId: string;
+}
+
 /**
  * sharedsync TimeTableDto와 동일한 키 구조의 페이로드를 생성합니다.
  * planId는 부모 인덱스 등록에 필수이며, 누락 시 서버 캐시가 plan 하위로 인덱싱하지 못합니다.
@@ -51,7 +60,7 @@ export const buildTimeTableDto = ({
   startTime,
   endTime,
   planId,
-}: TimeTableDtoInput) => ({
+}: TimeTableDtoInput): TimeTableDtoPayload => ({
   timeTableId: timetableId ?? null,
   date: dateString,
   timeTableStartTime: toLocalTime(startTime) || DEFAULT_DAY_START,

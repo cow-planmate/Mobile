@@ -3,6 +3,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAlert } from '../../../contexts/AlertContext';
 import Toast from 'react-native-toast-message';
+import FastImage from 'react-native-fast-image';
+import {
+  launchImageLibrary,
+  type ImagePickerResponse,
+} from 'react-native-image-picker';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../../../store/useAuthStore';
@@ -10,17 +15,23 @@ import ProfileScreenView from './ProfileScreen.view';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { LOGOUT_CLEARED_KEYS } from '../../../constants/storageKeys';
 import { changePassword } from '../../../api/auth';
-import { changeProfileVisibility } from '../../../api/user';
+import {
+  changeProfileVisibility,
+  deleteProfileImage,
+  uploadProfileImage,
+} from '../../../api/user';
 import {
   useUserProfile,
   UserProfile,
   USER_PROFILE_QUERY_KEY,
 } from '../../../hooks/useUserProfile';
+import { useMyStats } from '../../community/hooks/queries';
+import { buildProfileImageUploadFile } from '../utils/profileImage';
 const EMPTY_PROFILE: UserProfile = {
   name: '',
   email: '',
   profileImageUrl: '',
-  profilePublic: true,
+  profilePublic: false,
   birthdate: '',
   gender: '',
   preferredThemes: [],
@@ -32,11 +43,13 @@ export default function ProfileScreen({ route }: any) {
   const { showAlert } = useAlert();
   const queryClient = useQueryClient();
   const { data, isLoading } = useUserProfile();
+  const { data: communityStats, isLoading: isCommunityStatsLoading } = useMyStats();
   const user = data ?? EMPTY_PROFILE;
 
   // 닉네임·나이·성별은 뷰가 하나의 편집 모달에서 함께 다룬다.
   const [isThemeModalVisible, setThemeModalVisible] = useState(false);
   const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
+  const [isProfileImageUpdating, setIsProfileImageUpdating] = useState(false);
 
   /** 서버 반영 후 프로필 캐시만 부분 갱신한다(재조회 없이 즉시 화면에 반영). */
   const patchProfile = useCallback(
@@ -264,6 +277,9 @@ export default function ProfileScreen({ route }: any) {
           position: 'top',
           visibilityTime: 2500,
         });
+        // 뷰가 목록을 미리 바꿔 두므로 실패를 알려야 한다. 삼키면 서버가 거절한
+        // 이름이 화면에만 남는다.
+        throw e;
       }
     },
     [queryClient],
@@ -278,12 +294,102 @@ export default function ProfileScreen({ route }: any) {
     [patchProfile],
   );
 
+  const handleChangeProfileImage = useCallback(async () => {
+    let result: ImagePickerResponse;
+    try {
+      result = await launchImageLibrary({
+        mediaType: 'photo',
+        selectionLimit: 1,
+        includeExtra: false,
+      });
+    } catch {
+      Toast.show({
+        type: 'error',
+        text1: '이미지 선택에 실패했습니다.',
+        position: 'top',
+      });
+      return;
+    }
+
+    if (result.didCancel) return;
+
+    if (result.errorCode) {
+      Toast.show({
+        type: 'error',
+        text1: result.errorMessage || '이미지 선택에 실패했습니다.',
+        position: 'top',
+      });
+      return;
+    }
+
+    const selected = buildProfileImageUploadFile(result.assets?.[0]);
+    if ('error' in selected) {
+      Toast.show({ type: 'error', text1: selected.error, position: 'top' });
+      return;
+    }
+
+    setIsProfileImageUpdating(true);
+    try {
+      const profileImageUrl = await uploadProfileImage(selected.file);
+      await FastImage.clearMemoryCache();
+      patchProfile({ profileImageUrl });
+      await queryClient.invalidateQueries({ queryKey: USER_PROFILE_QUERY_KEY });
+      Toast.show({
+        type: 'success',
+        text1: '프로필 사진이 변경되었습니다.',
+        position: 'top',
+      });
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message
+        : undefined;
+      Toast.show({
+        type: 'error',
+        text1: message || '프로필 사진 변경에 실패했습니다.',
+        position: 'top',
+      });
+    } finally {
+      setIsProfileImageUpdating(false);
+    }
+  }, [patchProfile, queryClient]);
+
+  const handleDeleteProfileImage = useCallback(async () => {
+    setIsProfileImageUpdating(true);
+    try {
+      await deleteProfileImage();
+      await FastImage.clearMemoryCache();
+      patchProfile({ profileImageUrl: '' });
+      await queryClient.invalidateQueries({ queryKey: USER_PROFILE_QUERY_KEY });
+      Toast.show({
+        type: 'success',
+        text1: '프로필 사진이 삭제되었습니다.',
+        position: 'top',
+      });
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message
+        : undefined;
+      Toast.show({
+        type: 'error',
+        text1: message || '프로필 사진 삭제에 실패했습니다.',
+        position: 'top',
+      });
+    } finally {
+      setIsProfileImageUpdating(false);
+    }
+  }, [patchProfile, queryClient]);
+
   return (
     <ProfileScreenView
       loading={isLoading}
       user={user}
+      communityStats={communityStats}
+      isCommunityStatsLoading={isCommunityStatsLoading}
       onRenamePlan={handleRenamePlan}
       onChangeProfileVisibility={handleChangeProfileVisibility}
+      onChangeProfileImage={handleChangeProfileImage}
+      onDeleteProfileImage={handleDeleteProfileImage}
+      isProfileImageUpdating={isProfileImageUpdating}
       isThemeModalVisible={isThemeModalVisible}
       setThemeModalVisible={setThemeModalVisible}
       isPasswordModalVisible={isPasswordModalVisible}

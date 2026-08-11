@@ -14,6 +14,9 @@ import {
   fetchFeedPosts,
   fetchFeedRegionCounts,
   fetchHotPosts,
+  fetchLikedPosts,
+  fetchMyComments,
+  fetchMyPosts,
   fetchMyStats,
   fetchPost,
   fetchPosts,
@@ -25,6 +28,7 @@ import {
   updatePost,
 } from '../services/communityApi';
 import { forkItinerary } from '../services/forkItinerary';
+import { invalidatePlanCaches } from '../../../hooks/planCache';
 import {
   CreatePostPayload,
   FeedFilterParams,
@@ -105,10 +109,17 @@ export const usePost = (postId: number | string | undefined) =>
   });
 
 /** 댓글 목록 */
-export const useComments = (postId: number | string | undefined, page = 0) =>
-  useQuery({
-    queryKey: [...KEYS.comments(postId ?? ''), page],
-    queryFn: () => fetchComments(postId as number | string, page),
+export const useComments = (
+  postId: number | string | undefined,
+  size = 20,
+) =>
+  useInfiniteQuery({
+    queryKey: KEYS.comments(postId ?? ''),
+    queryFn: ({ pageParam }) =>
+      fetchComments(postId as number | string, pageParam as number, size),
+    initialPageParam: 0,
+    getNextPageParam: lastPage =>
+      lastPage.page + 1 < lastPage.totalPages ? lastPage.page + 1 : undefined,
     enabled: postId !== undefined && postId !== null && postId !== '',
   });
 
@@ -118,6 +129,27 @@ export const useMyStats = (enabled = true) =>
     queryKey: ['community', 'me', 'stats'],
     queryFn: fetchMyStats,
     enabled,
+  });
+
+export const useMyPosts = (category?: string, size = PAGE_SIZE) =>
+  useQuery({
+    queryKey: ['community', 'me', 'posts', category ?? 'all', size] as const,
+    queryFn: () => fetchMyPosts(0, size, category),
+    staleTime: 30_000,
+  });
+
+export const useLikedPosts = (category?: string, size = PAGE_SIZE) =>
+  useQuery({
+    queryKey: ['community', 'me', 'liked', category ?? 'all', size] as const,
+    queryFn: () => fetchLikedPosts(0, size, category),
+    staleTime: 30_000,
+  });
+
+export const useMyComments = (size = PAGE_SIZE) =>
+  useQuery({
+    queryKey: ['community', 'me', 'comments', size] as const,
+    queryFn: () => fetchMyComments(0, size),
+    staleTime: 30_000,
   });
 
 // ────────────────────────────────────────────────
@@ -304,8 +336,7 @@ export const useForkItinerary = (postId: number | string) => {
     onSuccess: () => {
       void invalidate.post(postId);
       void invalidate.lists();
-      void queryClient.invalidateQueries({ queryKey: ['myPlans'] });
-      void queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      void invalidatePlanCaches(queryClient);
     },
   });
 };

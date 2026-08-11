@@ -14,8 +14,13 @@ import {
   faPencil,
   faCheck,
 } from '@fortawesome/free-solid-svg-icons';
-import { Map as MapOutlineIcon, ChevronLeft } from 'lucide-react-native';
+import {
+  Map as MapOutlineIcon,
+  ChevronLeft,
+  ListChecks,
+} from 'lucide-react-native';
 import RouteMapSection from '../components/RouteMapSection';
+import ChecklistSheet from '../components/checklist/ChecklistSheet';
 import { ShareModal, AirplaneLoading, LoadingSpinner } from '../../../components/common';
 import TimelineItem, {
   Place,
@@ -224,6 +229,10 @@ export interface ItineraryViewScreenViewProps {
   setMapVisible: (visible: boolean) => void;
   isShareModalVisible: boolean;
   setShareModalVisible: (visible: boolean) => void;
+  isChecklistVisible: boolean;
+  setChecklistVisible: (visible: boolean) => void;
+  /** 공유 토글·편집자 삭제는 소유자만 쓸 수 있다. */
+  isPlanOwner: boolean;
   scrollRef: React.RefObject<ScrollView | null>;
   gridHours: number[];
   offsetMinutes: number;
@@ -247,6 +256,9 @@ export default function ItineraryViewScreenView({
   setMapVisible,
   isShareModalVisible,
   setShareModalVisible,
+  isChecklistVisible,
+  setChecklistVisible,
+  isPlanOwner,
   scrollRef,
   gridHours,
   offsetMinutes,
@@ -298,6 +310,12 @@ export default function ItineraryViewScreenView({
             variant="outlineDark"
           >
             <MapOutlineIcon color="#111827" size={17} strokeWidth={2} />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            onPress={() => setChecklistVisible(true)}
+            variant="outlineDark"
+          >
+            <ListChecks size={17} color="#111827" strokeWidth={2} />
           </ToolbarIconButton>
           <ToolbarIconButton
             onPress={() => setShareModalVisible(true)}
@@ -411,6 +429,7 @@ export default function ItineraryViewScreenView({
                   address: place.address,
                   latitude: place.latitude,
                   longitude: place.longitude,
+                  placeRefId: place.placeRefId,
                   place_url: place.place_url,
                 })) || []
               }
@@ -467,7 +486,16 @@ export default function ItineraryViewScreenView({
         visible={isShareModalVisible}
         onClose={() => setShareModalVisible(false)}
         planId={planId ?? ''}
+        isOwner={isPlanOwner}
       />
+      {/* 닫혀 있을 때는 마운트하지 않는다. 조회 훅이 그동안 헛돌 이유가 없다. */}
+      {isChecklistVisible && (
+        <ChecklistSheet
+          visible
+          onClose={() => setChecklistVisible(false)}
+          planId={planId}
+        />
+      )}
       <Modal
         visible={days.length === 0 || isBacking}
         transparent={false}

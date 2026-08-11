@@ -41,6 +41,10 @@ const PaxCounter = ({
         onPress={onDecrease}
         disabled={count <= minValue}
         activeOpacity={0.7}
+        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        accessibilityRole="button"
+        accessibilityLabel={`${label} 줄이기`}
+        accessibilityState={{ disabled: count <= minValue }}
       >
         <Minus
           size={16}
@@ -48,11 +52,16 @@ const PaxCounter = ({
           strokeWidth={2}
         />
       </TouchableOpacity>
-      <Text style={styles.counterValue}>{count}</Text>
+      <Text style={styles.counterValue} accessibilityLabel={`${count}명`}>
+        {count}
+      </Text>
       <TouchableOpacity
         style={styles.counterButton}
         onPress={onIncrease}
         activeOpacity={0.7}
+        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        accessibilityRole="button"
+        accessibilityLabel={`${label} 늘리기`}
       >
         <Plus size={16} color={COLORS.primary} strokeWidth={2} />
       </TouchableOpacity>
@@ -89,6 +98,9 @@ export default function PaxModal({
               style={styles.closeButtonContainer}
               onPress={onClose}
               activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="닫기"
             >
               <X size={20} color={COLORS.placeholder} strokeWidth={1.5} />
             </TouchableOpacity>
@@ -115,6 +127,8 @@ export default function PaxModal({
             style={styles.confirmButton}
             onPress={handleConfirm}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="확인"
           >
             <Text style={styles.confirmButtonText}>확인</Text>
           </TouchableOpacity>

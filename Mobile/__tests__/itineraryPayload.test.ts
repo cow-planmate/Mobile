@@ -64,7 +64,7 @@ describe('buildTimeTableDto', () => {
       dateString: '2026-08-01',
       startTime: '09:00:00',
       planId,
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     expect(dto.timetableId).toBeUndefined();
     expect(dto.startTime).toBeUndefined();

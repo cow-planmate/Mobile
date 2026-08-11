@@ -12,7 +12,6 @@ const item = (over: Partial<ItineraryItem>): ItineraryItem => ({
 const itinerary = (items: ItineraryItem[]): Itinerary => ({
   plan: {
     destinationId: 1,
-    transportationType: 'PUBLIC',
     adultCount: 2,
     childCount: 0,
   },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -18,9 +18,8 @@ import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CommunityStackParamList } from '../../../navigation/types';
 import { BOARDS, BoardKey } from '../constants/levels';
-import { useCreatePost } from '../hooks/queries';
-import { textToBlocks } from '../utils/blocks';
-import { CreatePostPayload } from '../types';
+import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
+import { buildPostPayload } from '../utils/postPayload';
 import { styles, COLORS } from './PostCreateScreen.styles';
 
 type CreateRoute = RouteProp<CommunityStackParamList, 'CommunityCreate'>;
@@ -46,35 +45,45 @@ export default function PostCreateScreen() {
   const [location, setLocation] = useState('');
 
   const createPost = useCreatePost();
+  const postId = route.params?.postId;
+  const isEditMode = !!postId;
+  const existingPost = usePost(postId);
+  const updatePost = useUpdatePost(Number(postId ?? 0));
+
+  useEffect(() => {
+    const post = existingPost.data;
+    if (!post || post.category === 'feed') return;
+
+    setCategory(post.category as BoardKey);
+    setTitle(post.title);
+    setContent(post.contentText);
+    setMaxParticipants(post.maxParticipants ? String(post.maxParticipants) : '');
+    setLocation(post.location ?? '');
+  }, [existingPost.data]);
 
   const canSubmit =
     title.trim().length > 0 &&
     content.trim().length > 0 &&
-    !createPost.isPending;
+    (!isEditMode ||
+      (!!existingPost.data && existingPost.data.category !== 'feed')) &&
+    !createPost.isPending &&
+    !updatePost.isPending;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
 
-    const trimmedContent = content.trim();
-    const payload: CreatePostPayload = {
+    const payload = buildPostPayload({
       category,
-      title: title.trim(),
-      content: textToBlocks(trimmedContent),
-      contentText: trimmedContent,
-    };
-
-    if (category === 'mate' && maxParticipants.trim()) {
-      const parsed = Number(maxParticipants.trim());
-      if (Number.isFinite(parsed) && parsed > 0) {
-        payload.maxParticipants = Math.floor(parsed);
-      }
-    }
-    if (category === 'recommend' && location.trim()) {
-      payload.location = location.trim();
-    }
+      title,
+      content,
+      maxParticipants,
+      location,
+    });
 
     try {
-      const created = await createPost.mutateAsync(payload);
+      const created = isEditMode
+        ? await updatePost.mutateAsync(payload)
+        : await createPost.mutateAsync(payload);
       // 서버가 작성 응답에 게시글을 담아주면 바로 상세로 보낸다.
       // 본문 없이 성공만 알려주는 경우도 있으므로, id가 없으면 목록으로
       // 돌아간다 — 목록은 이미 무효화되어 새 글이 올라와 있다.
@@ -85,7 +94,7 @@ export default function PostCreateScreen() {
       }
     } catch (error) {
       showAlert({
-        title: '등록 실패',
+        title: isEditMode ? '수정 실패' : '등록 실패',
         message: getBackendErrorMessage(error),
         type: 'error',
       });
@@ -127,7 +136,9 @@ export default function PostCreateScreen() {
         >
           <ChevronLeft size={normalize(22)} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>글쓰기</Text>
+        <Text style={styles.topBarTitle}>
+          {isEditMode ? '게시글 수정' : '글쓰기'}
+        </Text>
         <TouchableOpacity
           style={[
             styles.submitButton,
@@ -138,7 +149,13 @@ export default function PostCreateScreen() {
           activeOpacity={0.85}
         >
           <Text style={styles.submitButtonText}>
-            {createPost.isPending ? '등록 중' : '등록'}
+            {createPost.isPending || updatePost.isPending
+              ? isEditMode
+                ? '수정 중'
+                : '등록 중'
+              : isEditMode
+                ? '수정'
+                : '등록'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -159,7 +176,10 @@ export default function PostCreateScreen() {
                     styles.boardChip,
                     isActive && styles.boardChipActive,
                   ]}
-                  onPress={() => setCategory(board.key)}
+                  onPress={() => {
+                    if (!isEditMode) setCategory(board.key);
+                  }}
+                  disabled={isEditMode}
                   activeOpacity={0.85}
                 >
                   <Text

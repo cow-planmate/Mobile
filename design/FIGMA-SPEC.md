@@ -167,12 +167,14 @@ sm   H 36 고정 · 가로 · gap 6 · padding 0/14 · radius sm(10)
 | `trailing` | `none` / `icon` / `action` |
 
 ```
-Min H 56 · W Fill · 세로 · gap 2 · padding 9/16 · radius md(14)
-테두리  default 1 border · focus 1.5 primary · error 1.5 errorBorder
-라벨    caption / textSecondary
+박스 Min H 52 · W Fill · 상단 라벨 여백 8 · 총 레이아웃 H 60 · radius md(14)
+테두리  상태와 무관하게 1.5 고정 · default border · focus primary · error errorBorder
+라벨    박스 윗변 중앙에 플로팅 · caption / textSecondary
 값      bodyLg / text
 플레이스홀더  bodyLg / textSecondary   ← textDisabled 아님
 ```
+
+> 입력 박스 자체가 52dp이므로 최소 터치 타깃 48dp를 충족합니다. 테두리 굵기는 상태 전환 때 내부 콘텐츠가 흔들리지 않도록 1.5dp로 고정합니다.
 
 > **플레이스홀더에 `gray/400`을 쓰지 마세요.** 대비 2.54:1로 AA 미달이며, 이 값이 코드 전체에 115회 쓰여 있던 것이 진단의 핵심 항목(L-8)입니다.
 

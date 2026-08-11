@@ -17,6 +17,7 @@ import {
   Copy,
   Eye,
   MapPin,
+  Pencil,
   ThumbsDown,
   ThumbsUp,
 } from 'lucide-react-native';
@@ -58,6 +59,7 @@ export default function FeedDetailScreen() {
   const { data: post, isLoading, isError } = usePost(postId);
   const react = useReactToPost(postId ?? '');
   const fork = useForkItinerary(postId ?? '');
+  const isAuthor = !!post && user?.userId === post.userId;
 
   const days = useMemo(() => post?.itinerary?.days ?? [], [post]);
   const isForkable = canForkItinerary(post?.itinerary);
@@ -140,7 +142,17 @@ export default function FeedDetailScreen() {
         <ChevronLeft size={normalize(22)} color={COLORS.text} />
       </TouchableOpacity>
       <Text style={styles.topBarTitle}>여행기</Text>
-      <View style={styles.topBarButton} />
+      {isAuthor ? (
+        <TouchableOpacity
+          style={styles.topBarButton}
+          onPress={() => navigation.navigate('FeedCreate', { postId: String(post.id) })}
+          activeOpacity={0.7}
+        >
+          <Pencil size={normalize(18)} color={COLORS.text} />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.topBarButton} />
+      )}
     </View>
   );
 

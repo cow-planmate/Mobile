@@ -19,10 +19,10 @@ export const COLORS = {
 };
 
 export const FONTS = {
-  regular: 'Pretendard Variable',
-  medium: 'Pretendard Variable',
-  semibold: 'Pretendard Variable',
-  bold: 'Pretendard Variable',
+  regular: 'Pretendard-Regular',
+  medium: 'Pretendard-Medium',
+  semibold: 'Pretendard-SemiBold',
+  bold: 'Pretendard-Bold',
 };
 
 export const styles = StyleSheet.create({
@@ -737,7 +737,7 @@ export const styles = StyleSheet.create({
   checklistTitle: {
     fontSize: normalize(10),
     fontWeight: '700',
-    color: '#9CA3AF',
+    color: '#6B7280',
     letterSpacing: 0.5,
   },
   checklistProgressText: {

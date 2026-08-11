@@ -22,6 +22,7 @@ import {
   useUpdateComment,
 } from '../hooks/queries';
 import { CommunityComment } from '../types';
+import { mergeCommentPages } from '../utils/commentPages';
 import UserAvatar from './UserAvatar';
 import LevelBadge from './LevelBadge';
 
@@ -133,7 +134,7 @@ export default function CommentSection({
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  const { data: commentsPage, isLoading } = useComments(postId);
+  const commentsQuery = useComments(postId);
   const createComment = useCreateComment(postId);
   const updateComment = useUpdateComment(postId);
   const deleteComment = useDeleteComment(postId);
@@ -143,7 +144,7 @@ export default function CommentSection({
    * 부모가 현재 페이지에 없으면 고아가 되지 않도록 최상위로 올린다.
    */
   const { topLevel, repliesByParent } = useMemo(() => {
-    const items = commentsPage?.items ?? [];
+    const items = mergeCommentPages(commentsQuery.data?.pages);
     const ids = new Set(items.map(c => c.id));
     const top: CommunityComment[] = [];
     const byParent = new Map<number, CommunityComment[]>();
@@ -159,7 +160,7 @@ export default function CommentSection({
     });
 
     return { topLevel: top, repliesByParent: byParent };
-  }, [commentsPage]);
+  }, [commentsQuery.data?.pages]);
 
   const requireLogin = useCallback(() => {
     showAlert({ title: '로그인 필요', message: '로그인 후 이용할 수 있어요.' });
@@ -357,7 +358,7 @@ export default function CommentSection({
         onSubmit={handleSubmit}
       />
 
-      {isLoading ? (
+      {commentsQuery.isLoading ? (
         <ActivityIndicator
           style={styles.loading}
           color={theme.colors.primary}
@@ -365,7 +366,22 @@ export default function CommentSection({
       ) : topLevel.length === 0 ? (
         <Text style={styles.empty}>첫 댓글을 남겨보세요</Text>
       ) : (
-        topLevel.map(comment => renderComment(comment, false))
+        <>
+          {topLevel.map(comment => renderComment(comment, false))}
+          {commentsQuery.hasNextPage && (
+            <TouchableOpacity
+              style={styles.loadMoreButton}
+              onPress={() => void commentsQuery.fetchNextPage()}
+              disabled={commentsQuery.isFetchingNextPage}
+            >
+              {commentsQuery.isFetchingNextPage ? (
+                <ActivityIndicator color={theme.colors.primary} />
+              ) : (
+                <Text style={styles.loadMoreText}>댓글 더 보기</Text>
+              )}
+            </TouchableOpacity>
+          )}
+        </>
       )}
     </View>
   );
@@ -513,5 +529,21 @@ const styles = StyleSheet.create({
     fontSize: normalize(12),
     fontFamily: theme.typography.fontFamily.regular,
     color: theme.colors.textTertiary,
+  },
+  loadMoreButton: {
+    alignSelf: 'center',
+    minWidth: normalize(112),
+    minHeight: normalize(36),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: normalize(8),
+    paddingHorizontal: normalize(14),
+    borderRadius: theme.borderRadius.l,
+    backgroundColor: theme.colors.surface,
+  },
+  loadMoreText: {
+    fontSize: normalize(12),
+    fontFamily: theme.typography.fontFamily.medium,
+    color: theme.colors.primary,
   },
 });

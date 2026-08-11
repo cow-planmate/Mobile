@@ -26,8 +26,10 @@ import {
   UpdateValueModal,
 } from '../../../components/common';
 import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { deletePlans, leaveAsEditor } from '../../../api/trips';
+import { invalidatePlanCaches } from '../../../hooks/planCache';
 import {
   faT,
   faPen,
@@ -52,10 +54,14 @@ import {
   ChevronLeft,
   ChevronDown,
   MoreVertical,
+  ListChecks,
 } from 'lucide-react-native';
 import FastImage from 'react-native-fast-image';
+import ChecklistSheet from '../../itinerary/components/checklist/ChecklistSheet';
+import { useChecklist } from '../../itinerary/hooks/useChecklistQueries';
 import gravatarUrl from '../../../utils/gravatarUrl';
 import { normalize } from '../../../utils/normalize';
+import { parseLocalDate } from '../../../utils/timeUtils';
 import DatePicker from 'react-native-date-picker';
 import {
   toKoreanAge,
@@ -63,6 +69,14 @@ import {
   toBirthdateString,
   parseBirthdate,
 } from '../../../utils/birthdate';
+import { MyStats } from '../../community/types';
+import {
+  getLevelProgress,
+  levelBadgeColor,
+  levelName,
+} from '../../community/constants/levels';
+import ProfileActivitySections from '../components/ProfileActivitySections';
+import FeedbackModal from '../components/FeedbackModal';
 import { styles, COLORS } from './ProfileScreen.styles';
 const getFormattedPeriod = (start?: string, end?: string) => {
   if (!start) return '날짜 확인 필요';
@@ -85,6 +99,18 @@ interface PlanItem {
 
 
 
+/**
+ * 일정 카드의 날짜 문자열('YYYY.MM.DD' 또는 'YYYY-MM-DD')을 로컬 자정 Date로 바꾼다.
+ *
+ * new Date('2026-08-10')은 UTC 자정으로 해석되어 UTC보다 이른 타임존에서
+ * 하루가 밀린다. D-Day와 지난 일정 판정이 하루씩 어긋나므로 로컬로 파싱한다.
+ */
+const parsePlanDate = (value?: string): Date | null => {
+  if (!value) return null;
+  const parsed = parseLocalDate(value.replace(/\./g, '-').substring(0, 10));
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 /** 내가 만든 일정의 설정 메뉴 */
 export const PLAN_MENU_OPTIONS = [
   { label: '제목 바꾸기', action: 'rename', icon: faT },
@@ -94,8 +120,9 @@ export const PLAN_MENU_OPTIONS = [
 ];
 
 /** 편집 권한만 받은 일정의 설정 메뉴 (삭제 대신 권한 포기) */
+// 제목 바꾸기는 넣지 않는다. 서버가 PATCH /api/plan/{planId}/name을 OWNER에게만
+// 허용해 편집자가 누르면 403이 온다. 일정 편집 화면에서는 실시간 편집으로 바꿀 수 있다.
 export const SHARED_PLAN_MENU_OPTIONS = [
-  { label: '제목 바꾸기', action: 'rename', icon: faT },
   { label: '수정하기', action: 'edit', icon: faPen },
   { label: '공유 및 초대', action: 'share', icon: faShare },
   {
@@ -106,16 +133,6 @@ export const SHARED_PLAN_MENU_OPTIONS = [
   },
 ];
 
-/**
- * '준비중' 체크리스트 미리보기 항목.
- * pointerEvents="none"로 잠겨 있어 변하지 않으므로 카드마다 state로 들고 있지 않는다.
- */
-const PREVIEW_TASKS = [
-  { id: 1, text: '숙소 예약 확인', checked: true },
-  { id: 2, text: '짐 싸기 완료', checked: false },
-  { id: 3, text: '맛집 리스트 체크', checked: false },
-] as const;
-
 const ItineraryCardItem = ({
   plan,
   onOpenMenu,
@@ -123,6 +140,7 @@ const ItineraryCardItem = ({
   isEditMode,
   isSelected,
   onSelectToggle,
+  onOpenChecklist,
 }: {
   plan: PlanItem;
   onOpenMenu: (plan: PlanItem) => void;
@@ -130,35 +148,48 @@ const ItineraryCardItem = ({
   isEditMode: boolean;
   isSelected: boolean;
   onSelectToggle: () => void;
+  onOpenChecklist: (plan: PlanItem) => void;
 }) => {
 
   // D-Day 계산
   const getDDay = (startDateStr?: string) => {
-    if (!startDateStr) return 'D-Day';
-    try {
-      const parsedDate = startDateStr.includes('.')
-        ? startDateStr.replace(/\./g, '-')
-        : startDateStr;
-      const start = new Date(parsedDate);
-      const today = new Date();
-      start.setHours(0, 0, 0, 0);
-      today.setHours(0, 0, 0, 0);
-      
-      const diffTime = start.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (diffDays === 0) return 'D-Day';
-      if (diffDays > 0) return `D-${diffDays}`;
-      return `D+${Math.abs(diffDays)}`;
-    } catch {
-      return 'D-Day';
-    }
+    const start = parsePlanDate(startDateStr);
+    if (!start) return 'D-Day';
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const diffTime = start.getTime() - today.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'D-Day';
+    if (diffDays > 0) return `D-${diffDays}`;
+    return `D+${Math.abs(diffDays)}`;
   };
 
   const dDay = getDDay(plan.startDate);
   const formattedPeriod = getFormattedPeriod(plan.startDate, plan.endDate);
 
-  const completedCount = PREVIEW_TASKS.filter(t => t.checked).length;
-  
+  /**
+   * 준비물 요약.
+   *
+   * 목록 스크롤만으로 카드 수만큼 요청이 나가지 않도록 조회는 끄고 캐시만 읽는다.
+   * 시트를 한 번이라도 연 일정은 캐시가 채워져 있고, 시트에서 항목을 바꾸면
+   * 같은 캐시를 구독하는 이 카드도 함께 갱신된다.
+   */
+  const { data: sharedChecklist } = useChecklist(plan.planId, 'shared', false);
+  const { data: personalChecklist } = useChecklist(
+    plan.planId,
+    'personal',
+    false,
+  );
+  const checklistItems = [
+    ...(sharedChecklist ?? []),
+    ...(personalChecklist ?? []),
+  ];
+  const hasChecklistCache = !!sharedChecklist || !!personalChecklist;
+  const completedCount = checklistItems.filter(item => item.isChecked).length;
+
+
   // 테마 색상 분기 (공유받은 일정이면 오렌지색, 생성한 일정이면 파란색)
   const themeColor = plan.isShared ? '#F97316' : '#1344FF';
 
@@ -228,40 +259,61 @@ const ItineraryCardItem = ({
       </View>
 
       {/* 체크리스트 영역 */}
-      <View style={[styles.checklistContainer, { opacity: 0.6 }]} pointerEvents="none">
+      <TouchableOpacity
+        style={styles.checklistContainer}
+        onPress={() => onOpenChecklist(plan)}
+        disabled={isEditMode}
+        activeOpacity={0.7}
+      >
         <View style={styles.checklistHeader}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Lock size={12} color="#9CA3AF" style={{ marginRight: 6 }} />
-            <Text style={[styles.checklistTitle, { color: '#9CA3AF' }]}>CHECK LIST (준비중)</Text>
+            <ListChecks size={12} color="#6B7280" style={{ marginRight: 6 }} />
+            <Text style={styles.checklistTitle}>준비물</Text>
           </View>
-          <Text style={[styles.checklistProgressText, { color: '#9CA3AF' }]}>
-            {completedCount}/{PREVIEW_TASKS.length}
+          <Text style={styles.checklistProgressText}>
+            {hasChecklistCache
+              ? `${completedCount}/${checklistItems.length}`
+              : '확인하기'}
           </Text>
         </View>
 
-        {PREVIEW_TASKS.map(task => (
-          <View
-            key={task.id}
-            style={styles.taskItemRow}
-          >
-            {task.checked ? (
-              <CheckCircle2 size={16} color="#9CA3AF" style={{ marginRight: 8 }} />
-            ) : (
-              <Circle size={16} color="#D1D5DB" style={{ marginRight: 8 }} />
-            )}
+        {hasChecklistCache && checklistItems.length > 0 ? (
+          checklistItems.slice(0, 3).map(item => (
+            <View key={item.itemId} style={styles.taskItemRow}>
+              {item.isChecked ? (
+                <CheckCircle2
+                  size={16}
+                  color="#1344FF"
+                  style={{ marginRight: 8 }}
+                />
+              ) : (
+                <Circle size={16} color="#D1D5DB" style={{ marginRight: 8 }} />
+              )}
+              <Text
+                style={[
+                  styles.taskText,
+                  item.isChecked && styles.taskTextCompleted,
+                ]}
+                numberOfLines={1}
+              >
+                {item.content}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <View style={styles.taskItemRow}>
+            <Circle size={16} color="#D1D5DB" style={{ marginRight: 8 }} />
             <Text
-              style={[
-                styles.taskText,
-                { color: '#9CA3AF' },
-                task.checked && styles.taskTextCompleted,
-              ]}
+              style={[styles.taskText, { color: '#9CA3AF' }]}
               numberOfLines={1}
             >
-              {task.text}
+              {hasChecklistCache
+                ? '준비물을 추가해 보세요'
+                : '눌러서 준비물을 확인하세요'}
             </Text>
           </View>
-        ))}
-      </View>
+        )}
+      </TouchableOpacity>
 
       {/* 공유 일정 전용 SHARED 코너 배지 */}
       {plan.isShared && (
@@ -277,6 +329,8 @@ const ItineraryCardItem = ({
 interface ProfileScreenViewProps {
   loading: boolean;
   user: any;
+  communityStats?: MyStats;
+  isCommunityStatsLoading: boolean;
   isThemeModalVisible: boolean;
   setThemeModalVisible: (visible: boolean) => void;
   isPasswordModalVisible: boolean;
@@ -291,12 +345,19 @@ interface ProfileScreenViewProps {
   onRenamePlan: (planId: string, newName: string) => Promise<void>;
   /** 프로필 공개 여부 변경 */
   onChangeProfileVisibility: (profilePublic: boolean) => Promise<void>;
+  /** 갤러리에서 선택한 프로필 사진 업로드 */
+  onChangeProfileImage: () => Promise<void>;
+  /** 등록된 프로필 사진 삭제 */
+  onDeleteProfileImage: () => Promise<void>;
+  isProfileImageUpdating: boolean;
   scrollToItinerary?: boolean;
 }
 
 export default function ProfileScreenView({
   loading,
   user,
+  communityStats,
+  isCommunityStatsLoading,
   isThemeModalVisible,
   setThemeModalVisible,
   isPasswordModalVisible,
@@ -309,11 +370,16 @@ export default function ProfileScreenView({
   handleResign,
   onRenamePlan,
   onChangeProfileVisibility,
+  onChangeProfileImage,
+  onDeleteProfileImage,
+  isProfileImageUpdating,
   scrollToItinerary,
 }: ProfileScreenViewProps) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [isFeedbackModalVisible, setFeedbackModalVisible] = useState(false);
   const [tempNickname, setTempNickname] = useState('');
   const [tempBirthdate, setTempBirthdate] = useState('');
   const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
@@ -322,6 +388,8 @@ export default function ProfileScreenView({
   const [plans, setPlans] = useState<any[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPlanIds, setSelectedPlanIds] = useState<string[]>([]);
+  /** 준비물 시트를 연 일정. null이면 시트가 닫힌 상태다. */
+  const [checklistPlan, setChecklistPlan] = useState<PlanItem | null>(null);
   const scrollRef = React.useRef<ScrollView>(null);
   const [itineraryY, setItineraryY] = useState(0);
 
@@ -399,6 +467,10 @@ export default function ProfileScreenView({
     setPlanMenuVisible(true);
   };
 
+  const handleOpenChecklist = (plan: PlanItem) => {
+    setChecklistPlan(plan);
+  };
+
   const handlePlanMenuSelect = (action: string) => {
     setPlanMenuVisible(false);
     if (!menuPlan) return;
@@ -422,7 +494,13 @@ export default function ProfileScreenView({
 
   const handleConfirmRename = async (newName: string) => {
     if (!menuPlan) return;
-    await onRenamePlan(menuPlan.planId, newName);
+    try {
+      await onRenamePlan(menuPlan.planId, newName);
+    } catch (e) {
+      // 실패 문구는 컨테이너가 띄운다. 목록은 그대로 두고 모달만 닫는다.
+      setRenameVisible(false);
+      return;
+    }
     setPlans(prev =>
       prev.map(p =>
         p.planId === menuPlan.planId ? { ...p, planName: newName.trim() } : p,
@@ -445,6 +523,9 @@ export default function ProfileScreenView({
               try {
                 await leaveAsEditor(planId);
                 setPlans(prev => prev.filter(p => p.planId !== planId));
+                // 로컬 목록만 지우면 캐시(staleTime 5분)에는 그대로 남아
+                // 화면을 다시 열 때 되살아난다.
+                void invalidatePlanCaches(queryClient);
                 Toast.show({
                   type: 'success',
                   text1: '편집 권한 포기가 완료되었습니다.',
@@ -477,6 +558,9 @@ export default function ProfileScreenView({
               try {
                 await axios.delete(resolveApiUrl(`/api/plan/${planId}`));
                 setPlans(prev => prev.filter(p => p.planId !== planId));
+                // 로컬 목록만 지우면 캐시(staleTime 5분)에는 그대로 남아
+                // 화면을 다시 열 때 되살아난다.
+                void invalidatePlanCaches(queryClient);
                 Toast.show({
                   type: 'success',
                   text1: '일정이 정상적으로 삭제되었습니다.',
@@ -497,24 +581,15 @@ export default function ProfileScreenView({
     }
   };
 
-  // 오늘 날짜 2026-07-11 기준 지난 일정 여부 판단
+  /** 종료일(없으면 시작일)이 오늘보다 이전이면 지난 일정으로 본다. */
   const isPastPlan = (endDateStr?: string, startDateStr?: string) => {
-    const targetStr = endDateStr || startDateStr;
-    if (!targetStr) return false;
-    try {
-      const parsedDate = targetStr.includes('.')
-        ? targetStr.replace(/\./g, '-')
-        : targetStr;
-      const targetDate = new Date(parsedDate);
-      const today = new Date();
-      
-      targetDate.setHours(0, 0, 0, 0);
-      today.setHours(0, 0, 0, 0);
-      
-      return targetDate.getTime() < today.getTime();
-    } catch {
-      return false;
-    }
+    const targetDate = parsePlanDate(endDateStr || startDateStr);
+    if (!targetDate) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return targetDate.getTime() < today.getTime();
   };
 
   const upcomingPlans = plans.filter(p => !isPastPlan(p.endDate, p.startDate));
@@ -585,6 +660,9 @@ export default function ProfileScreenView({
             // 목록에서는 사라진 것처럼 보였다.
             if (processedIds.length > 0) {
               setPlans(prev => prev.filter(p => !processedIds.includes(p.planId)));
+              // 로컬 목록만 지우면 캐시(staleTime 5분)에는 그대로 남아
+              // 화면을 다시 열 때 되살아난다.
+              void invalidatePlanCaches(queryClient);
             }
             setSelectedPlanIds([]);
             setIsEditMode(false);
@@ -651,10 +729,43 @@ export default function ProfileScreenView({
     }
   };
 
+  const handleProfileImagePress = () => {
+    if (isProfileImageUpdating) return;
+
+    const actions: any[] = [
+      {
+        text: '갤러리에서 선택',
+        onPress: onChangeProfileImage,
+      },
+    ];
+
+    if (user.profileImageUrl) {
+      actions.push({
+        text: '현재 사진 삭제',
+        style: 'destructive',
+        onPress: onDeleteProfileImage,
+      });
+    }
+
+    actions.push({ text: '취소', style: 'cancel' });
+    Alert.alert('프로필 사진', '등록할 사진을 선택해주세요.', actions);
+  };
+
   const preferredThemes = user.preferredThemes || [];
   const themeNames = preferredThemes.map((t: any) => t.preferredThemeName || t);
   const defaultThemes = ['해수욕장', '호텔', '한식', '고기집', '이자카야'];
   const displayThemes = themeNames.length > 0 ? themeNames : defaultThemes;
+  const activityProgress = getLevelProgress(
+    communityStats?.postCount ?? 0,
+    communityStats?.commentCount ?? 0,
+  );
+  const currentLevel = communityStats?.level ?? activityProgress.currentTier.level;
+  const badgeColor = levelBadgeColor(currentLevel);
+  const activityValue = communityStats
+    ? activityProgress.nextTier
+      ? `${activityProgress.score} / ${activityProgress.nextTier.min} 활동`
+      : `${activityProgress.score} 활동 · 최고 레벨`
+    : '활동 통계를 불러오는 중';
 
   const handleOpenEditModal = () => {
     setTempNickname(user.name);
@@ -760,9 +871,11 @@ export default function ProfileScreenView({
             <View style={styles.profileTextInfo}>
               <View style={styles.nicknameRow}>
                 <Text style={styles.nicknameText}>{user.name || '사용자'}</Text>
-                <View style={[styles.levelBadge, { backgroundColor: '#9CA3AF' }]}>
-                  <Lock size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
-                  <Text style={styles.levelBadgeText}>LV.1 • 준비중</Text>
+                <View style={[styles.levelBadge, { backgroundColor: badgeColor.bg }]}>
+                  <Award size={10} color={badgeColor.text} />
+                  <Text style={[styles.levelBadgeText, { color: badgeColor.text }]}>
+                    Lv.{currentLevel} · {levelName(currentLevel)}
+                  </Text>
                 </View>
               </View>
 
@@ -781,11 +894,19 @@ export default function ProfileScreenView({
           {/* 경험치 프로그레스 바 */}
           <View style={styles.experienceSection}>
             <View style={styles.experienceLabelRow}>
-              <Text style={[styles.experienceTitle, { color: '#9CA3AF' }]}>현재 경험치 (준비중)</Text>
-              <Text style={[styles.experienceValue, { color: '#9CA3AF' }]}>0 / 100 EXP</Text>
+              <Text style={styles.experienceTitle}>현재 활동 점수</Text>
+              <Text style={styles.experienceValue}>{activityValue}</Text>
             </View>
-            <View style={[styles.progressBarTrack, { backgroundColor: '#E5E7EB' }]}>
-              <View style={[styles.progressBarFill, { width: '0%', backgroundColor: '#9CA3AF' }]} />
+            <View style={styles.progressBarTrack}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    width: `${communityStats ? activityProgress.progressPercent : 0}%`,
+                    backgroundColor: badgeColor.text,
+                  },
+                ]}
+              />
             </View>
           </View>
 
@@ -815,8 +936,10 @@ export default function ProfileScreenView({
               <Text style={styles.statLabel}>초대된 일정</Text>
             </View>
             <View style={styles.statBlock}>
-              <Text style={styles.statNumber}>0</Text>
-              <Text style={styles.statLabel}>좋아요</Text>
+              <Text style={styles.statNumber}>
+                {isCommunityStatsLoading ? '-' : activityProgress.score}
+              </Text>
+              <Text style={styles.statLabel}>커뮤니티 활동</Text>
             </View>
           </View>
         </View>
@@ -957,6 +1080,7 @@ export default function ProfileScreenView({
                       isEditMode={isEditMode}
                       isSelected={isSelected}
                       onSelectToggle={onSelectToggle}
+                      onOpenChecklist={handleOpenChecklist}
                     />
                   );
                 })}
@@ -1068,6 +1192,7 @@ export default function ProfileScreenView({
             )}
           </View>
         </View>
+        <ProfileActivitySections plans={plans} />
       </ScrollView>
 
       {/* 생년월일 선택기. 수정 모달 위에 떠야 하므로 형제로 둔다. */}
@@ -1108,7 +1233,14 @@ export default function ProfileScreenView({
               </TouchableOpacity>
 
               {/* 프로필 이미지 & 카메라 배지 */}
-              <View style={styles.avatarEditContainer}>
+              <TouchableOpacity
+                style={styles.avatarEditContainer}
+                onPress={handleProfileImagePress}
+                disabled={isProfileImageUpdating}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="프로필 사진 변경"
+              >
                 {avatarUri ? (
                   <FastImage
                     source={{ uri: avatarUri, priority: FastImage.priority.normal }}
@@ -1123,7 +1255,7 @@ export default function ProfileScreenView({
                 <View style={styles.cameraBadge}>
                   <Camera size={12} color="#FFFFFF" />
                 </View>
-              </View>
+              </TouchableOpacity>
             </View>
 
             <ScrollView 
@@ -1290,6 +1422,18 @@ export default function ProfileScreenView({
                 </View>
               </View>
 
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>피드백</Text>
+                <TouchableOpacity
+                  style={styles.actionNavButton}
+                  onPress={() => setFeedbackModalVisible(true)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.actionNavButtonText}>피드백 보내기</Text>
+                  <Settings size={14} color="#9CA3AF" />
+                </TouchableOpacity>
+              </View>
+
               {/* 오작동 우려로 스크롤 영역 하단 맨 끝에 계정 탈퇴하기 배치 */}
               <TouchableOpacity 
                 style={styles.resignLinkButton}
@@ -1350,6 +1494,10 @@ export default function ProfileScreenView({
         onClose={() => setPasswordModalVisible(false)}
         onConfirm={handleUpdatePassword}
       />
+      <FeedbackModal
+        visible={isFeedbackModalVisible}
+        onClose={() => setFeedbackModalVisible(false)}
+      />
 
       {/* ── 일정 카드 설정 메뉴 ── */}
       <MenuModal
@@ -1377,6 +1525,14 @@ export default function ProfileScreenView({
           onClose={() => setPlanShareVisible(false)}
           planId={menuPlan.planId}
           isOwner={!menuPlan.isShared}
+        />
+      )}
+
+      {checklistPlan && (
+        <ChecklistSheet
+          visible
+          onClose={() => setChecklistPlan(null)}
+          planId={checklistPlan.planId}
         />
       )}
     </View>

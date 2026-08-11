@@ -178,6 +178,8 @@ export default function SearchLocationModal({
                       style={[styles.chip, isSelected && styles.chipSelected]}
                       onPress={() => setSelectedGroup(group)}
                       activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
                     >
                       <Text
                         style={[
@@ -210,6 +212,8 @@ export default function SearchLocationModal({
                       style={[styles.chip, isSelected && styles.chipSelected]}
                       onPress={() => handleDestinationSelect(item)}
                       activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
                     >
                       <Text
                         style={[
@@ -237,6 +241,8 @@ export default function SearchLocationModal({
           ]}
           onPress={handleConfirmDestination}
           disabled={isConfirmDisabled}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isConfirmDisabled }}
         >
           <Text
             style={[
@@ -254,7 +260,12 @@ export default function SearchLocationModal({
   );
 
   return (
-    <Modal visible={visible} transparent={true} animationType="fade">
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -271,6 +282,9 @@ export default function SearchLocationModal({
               onPress={onClose}
               style={styles.closeButton}
               activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="닫기"
             >
               <X size={20} color={COLORS.subtext} strokeWidth={1.5} />
             </TouchableOpacity>

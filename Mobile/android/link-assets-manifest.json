@@ -2,28 +2,20 @@
   "migIndex": 1,
   "data": [
     {
-      "path": "src/assets/fonts/Inter_400Regular.ttf",
-      "sha1": "7a3fa76705ad586f6410a1b5b0059dd17db20c26"
+      "path": "src/assets/fonts/Pretendard-Bold.otf",
+      "sha1": "bd4ac82cc26cf93c89cfbfbbba8825c5198b5b99"
     },
     {
-      "path": "src/assets/fonts/Inter_500Medium.ttf",
-      "sha1": "a961cb10310cf86b23bfbe21a637614d1046d795"
+      "path": "src/assets/fonts/Pretendard-Medium.otf",
+      "sha1": "eba1a37734a9c4fe3d84f540ce8d812d366b2b22"
     },
     {
-      "path": "src/assets/fonts/Inter_600SemiBold.ttf",
-      "sha1": "863e1483cb0cad642b80fc840072596afd5ff144"
+      "path": "src/assets/fonts/Pretendard-Regular.otf",
+      "sha1": "e205ef0a314d9da4e1a9382e0e65a25900a9ac7b"
     },
     {
-      "path": "src/assets/fonts/Inter_700Bold.ttf",
-      "sha1": "5a912e0600350ef7bb9c7c2e6c585815bb30ca16"
-    },
-    {
-      "path": "src/assets/fonts/Inter_800ExtraBold.ttf",
-      "sha1": "22f9890b2c77874a15bfd9c0b731fd10376497b4"
-    },
-    {
-      "path": "src/assets/fonts/PretendardVariable.ttf",
-      "sha1": "89b05a2f18c76f8deb577505d48237127ccfc908"
+      "path": "src/assets/fonts/Pretendard-SemiBold.otf",
+      "sha1": "916a62152b7fd08ff43d239de04303a465521fe6"
     }
   ]
 }

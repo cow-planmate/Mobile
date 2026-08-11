@@ -13,79 +13,27 @@ import { queryClient } from './src/api/queryClient';
 // axios 인터셉터 설정 초기화
 import './src/api/axiosConfig';
 
-import { StyleSheet, StatusBar, View, Text } from 'react-native';
+import { StyleSheet, StatusBar } from 'react-native';
 import Toast from 'react-native-toast-message';
-import type { ToastConfig } from 'react-native-toast-message';
-import { XCircle, CheckCircle2, Info } from 'lucide-react-native';
+import { toastConfig } from './src/components/common/toastConfig';
 
 // 글로벌 폰트 스케일링 가드는 index.js에서 최우선 적용된다.
 // (React 19에서 defaultProps가 제거되어 utils/fontScalingGuard로 대체)
 
 const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && true;
 
-/* ── Toast Styles ── */
-const toastStyles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 14,
-    marginHorizontal: 24,
-    marginTop: 8,
-    backgroundColor: 'rgba(28, 28, 30, 0.90)', // Glassmorphism dark base
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 4,
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)', // Subtle border
-  },
-  text: {
-    color: '#FFFFFF',
-    fontSize: 13.5,
-    fontWeight: '600',
-    textAlign: 'left',
-    marginLeft: 8,
-    flexShrink: 1,
-    lineHeight: 18,
-  },
-  successText: {
-    color: '#FFFFFF',
-  },
-  infoText: {
-    color: '#FFFFFF',
-  },
-});
+/**
+ * 토스트 스타일.
+ *
+ * 예전에는 거의 검은 유리 카드 + 그림자 + iOS 다크모드 시스템 색
+ * (#FF453A/#30D158/#0A84FF)을 그대로 썼다. 이 앱은 라이트 테마 고정이고
+ * 그림자를 쓰지 않는 시스템이라(DESIGN.md The Flat Rule), 화면 전체가
+ * 흰 종이인데 토스트만 검은 유리로 떠서 유일하게 이질적이었다.
+ * 종이 배경 + 1dp 경계선 + 토큰 색으로 시스템에 맞춘다.
+ */
+/* Toast visuals are shared with Storybook through toastConfig. */
 
 /* ── Toast Config ── */
-const toastConfig: ToastConfig = {
-  error: ({ text1 }) => (
-    <View style={toastStyles.container}>
-      <XCircle size={18} color="#FF453A" strokeWidth={2.5} />
-      <Text style={toastStyles.text}>{text1 ?? ''}</Text>
-    </View>
-  ),
-  success: ({ text1 }) => (
-    <View style={toastStyles.container}>
-      <CheckCircle2 size={18} color="#30D158" strokeWidth={2.5} />
-      <Text style={[toastStyles.text, toastStyles.successText]}>
-        {text1 ?? ''}
-      </Text>
-    </View>
-  ),
-  info: ({ text1 }) => (
-    <View style={toastStyles.container}>
-      <Info size={18} color="#0A84FF" strokeWidth={2.5} />
-      <Text style={[toastStyles.text, toastStyles.infoText]}>
-        {text1 ?? ''}
-      </Text>
-    </View>
-  ),
-};
-
 function App() {
   const initializeAuth = useAuthStore(state => state.initialize);
 

@@ -60,7 +60,11 @@ import {
   faUsers,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import { Map as MapOutlineIcon, ChevronLeft } from 'lucide-react-native';
+import {
+  Map as MapOutlineIcon,
+  ChevronLeft,
+  ListChecks,
+} from 'lucide-react-native';
 
 const Tab = createMaterialTopTabNavigator();
 const TabNavigatorAny = Tab.Navigator as any;
@@ -1070,12 +1074,11 @@ const TimelineTabScreen = React.memo(() => {
 const AddPlaceTabScreen = React.memo(() => {
   const state = useContext(EditorStateContext);
   if (!state) return null;
-  const { handleAddPlace, planId, destination, travelId } = state;
+  const { handleAddPlace, destination, travelId } = state;
 
   return (
     <PlaceRecommendationList
       onAddPlace={handleAddPlace}
-      planId={planId}
       destination={destination}
       travelId={travelId}
     />
@@ -1122,6 +1125,7 @@ export interface ItineraryEditorScreenViewProps {
   onOpenParticipants: () => void;
   onOpenMap: () => void;
   onOpenShare: () => void;
+  onOpenChecklist: () => void;
   onUndo: () => void;
   onRedo?: () => void;
   participantsCount: number;
@@ -1173,6 +1177,7 @@ export default function ItineraryEditorScreenView({
   onOpenParticipants,
   onOpenMap,
   onOpenShare,
+  onOpenChecklist,
   onUndo,
   onRedo,
   participantsCount,
@@ -1335,6 +1340,9 @@ export default function ItineraryEditorScreenView({
             variant="info"
           >
             <FontAwesomeIcon icon={faCircleInfo} color="#111827" size={18} />
+          </ToolbarIconButton>
+          <ToolbarIconButton onPress={onOpenChecklist} variant="outlineDark">
+            <ListChecks color="#111827" size={17} strokeWidth={2} />
           </ToolbarIconButton>
         </View>
 

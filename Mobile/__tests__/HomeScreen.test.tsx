@@ -83,7 +83,9 @@ jest.mock('../src/contexts/AlertContext', () => ({
 }));
 
 // Mocking Trips APIs
-const mockMutateAsync = jest.fn(() => Promise.resolve({ planId: 'new-plan-123' }));
+const mockMutateAsync = jest.fn<Promise<{ planId?: string }>, []>(() =>
+  Promise.resolve({ planId: 'new-plan-123' }),
+);
 jest.mock('../src/hooks/usePlanQueries', () => ({
   useCreateFullPlan: () => ({
     mutateAsync: mockMutateAsync,
@@ -123,9 +125,11 @@ jest.mock('@fortawesome/react-native-fontawesome', () => ({
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
   const { View } = require('react-native');
+  const inset = { top: 0, right: 0, bottom: 0, left: 0 };
   return {
     SafeAreaProvider: ({ children }: any) => React.createElement(View, null, children),
     SafeAreaView: ({ children }: any) => React.createElement(View, null, children),
+    useSafeAreaInsets: () => inset,
   };
 });
 
@@ -179,6 +183,34 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
         travelId: 3,
         departure: 'SEOUL',
       })
+    );
+  });
+
+  it('does not navigate when the create response has no plan id', async () => {
+    mockMutateAsync.mockResolvedValueOnce({});
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <QueryClientProvider client={queryClient}>
+          <HomeScreen navigation={mockNavigation} route={mockRoute} />
+        </QueryClientProvider>,
+      );
+    });
+
+    const viewComponent = renderer!.root.findByType(
+      require('../src/features/home/screens/HomeScreen.view').HomeScreenView,
+    );
+    await ReactTestRenderer.act(async () => {
+      viewComponent.props.onSelectLocation('Seoul', 3);
+    });
+    await ReactTestRenderer.act(async () => {
+      await viewComponent.props.onCreateItinerary();
+    });
+
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(mockShowAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '일정을 확인할 수 없습니다' }),
     );
   });
 });

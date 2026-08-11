@@ -4,12 +4,11 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Platform,
   Modal,
   Pressable,
   Dimensions,
-  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FastImage from 'react-native-fast-image';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faUser } from '@fortawesome/free-solid-svg-icons';
@@ -37,6 +36,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const navigation = useNavigation<any>();
   const logout = useAuthStore((state) => state.logout);
+  const insets = useSafeAreaInsets();
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 16 });
   const profileRef = useRef<React.ComponentRef<typeof TouchableOpacity>>(null);
@@ -45,9 +45,8 @@ const Header: React.FC<HeaderProps> = ({
     profileRef.current?.measure((x, y, width, height, pageX, pageY) => {
       const screenWidth = Dimensions.get('window').width;
       const right = screenWidth - (pageX + width);
-      const statusBarHeight = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
       setMenuPosition({
-        top: pageY + height - statusBarHeight + 3,
+        top: pageY + height - insets.top + 3,
         right: Math.max(16, right),
       });
       setMenuVisible(true);
@@ -70,13 +69,16 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <View style={styles.topBar}>
+    <View style={[styles.topBar, { paddingTop: insets.top + normalize(8) }]}>
       <Text style={styles.logo}>planMate</Text>
       <View style={styles.topIcons}>
-        <TouchableOpacity 
+        <TouchableOpacity
           ref={profileRef}
-          style={[styles.profileBadge, menuVisible && styles.profileBadgeActive]} 
+          style={[styles.profileBadge, menuVisible && styles.profileBadgeActive]}
           onPress={handleProfilePress}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel={`${nickname || '사용자'}님 메뉴 열기`}
         >
           <View style={styles.userAvatar}>
             {email ? (
@@ -84,6 +86,7 @@ const Header: React.FC<HeaderProps> = ({
                 source={{ uri: gravatarUrl(email, 100), priority: FastImage.priority.normal }}
                 style={{ width: '100%', height: '100%' }}
                 resizeMode={FastImage.resizeMode.cover}
+                accessible={false}
               />
             ) : (
               <FontAwesomeIcon icon={faUser} size={14} color="#9CA3AF" />
@@ -94,7 +97,15 @@ const Header: React.FC<HeaderProps> = ({
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={onNotificationPress}>
+        <TouchableOpacity
+          onPress={onNotificationPress}
+          style={styles.bellButton}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityRole="button"
+          accessibilityLabel={
+            pendingRequestsCount > 0 ? `알림 ${pendingRequestsCount}건` : '알림'
+          }
+        >
           <FontAwesomeIcon icon={faBell} size={25} color="#000" />
           {pendingRequestsCount > 0 && (
             <View style={styles.badge}>
@@ -116,17 +127,21 @@ const Header: React.FC<HeaderProps> = ({
           onPress={() => setMenuVisible(false)}
         >
           <View style={[styles.dropdownMenu, { top: menuPosition.top, right: menuPosition.right }]}>
-            <TouchableOpacity 
-              style={styles.menuItem} 
+            <TouchableOpacity
+              style={styles.menuItem}
               onPress={() => handleMenuItemPress('profile')}
+              accessibilityRole="button"
+              accessibilityLabel="마이페이지"
             >
               <UserIcon size={16} color="#374151" style={styles.menuIcon} />
               <Text style={styles.menuText}>마이페이지</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={[styles.menuItem, styles.logoutItem]} 
+            <TouchableOpacity
+              style={[styles.menuItem, styles.logoutItem]}
               onPress={() => handleMenuItemPress('logout')}
+              accessibilityRole="button"
+              accessibilityLabel="로그아웃"
             >
               <LogOut size={16} color="#EF4444" style={styles.menuIcon} />
               <Text style={styles.logoutText}>로그아웃</Text>
@@ -144,7 +159,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: normalize(16),
-    paddingTop: Platform.OS === 'android' ? normalize(38) : normalize(4),
+    // paddingTop은 useSafeAreaInsets()로 실제 상태바 높이에 맞춰 인라인으로 채워진다.
     paddingBottom: normalize(8),
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
@@ -153,7 +168,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontSize: normalize(22),
-    fontFamily: 'Pretendard Variable',
+    fontFamily: 'Pretendard-Bold',
     fontWeight: '800',
     color: '#0047FF',
   },
@@ -186,7 +201,7 @@ const styles = StyleSheet.create({
   },
   userNickname: {
     fontSize: normalize(12),
-    fontFamily: 'Pretendard Variable',
+    fontFamily: 'Pretendard-Bold',
     fontWeight: 'bold',
     color: '#374151',
     marginLeft: normalize(6),
@@ -194,11 +209,18 @@ const styles = StyleSheet.create({
   userNicknameActive: {
     color: '#1E3A8A',
   },
+  bellButton: {
+    minWidth: normalize(48),
+    minHeight: normalize(48),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   badge: {
     position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: '#FF3B30',
+    top: 6,
+    right: 6,
+    // 토큰 error(#D92D20)는 iOS 스타일 #FF3B30보다 흰 글자 대비가 높다(4.83:1 vs 3.59:1).
+    backgroundColor: '#D92D20',
     borderRadius: 10,
     minWidth: 18,
     height: 18,
@@ -210,7 +232,7 @@ const styles = StyleSheet.create({
   badgeText: {
     color: 'white',
     fontSize: 10,
-    fontWeight: 'bold',
+    fontFamily: 'Pretendard-Bold',
   },
   modalOverlay: {
     flex: 1,

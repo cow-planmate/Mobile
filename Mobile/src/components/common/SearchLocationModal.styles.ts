@@ -1,8 +1,9 @@
-import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+import { sf } from '../../design/scale';
 
-const { width, height } = Dimensions.get('window');
-export const normalize = (size: number) =>
-  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
+const { height } = Dimensions.get('window');
+/** design/scale.ts의 클램프된 스케일러를 그대로 쓴다. 모달마다 따로 정의하면 태블릿/폴더블에서 화면과 다르게 커진다. */
+export const normalize = sf;
 
 export const COLORS = {
   primary: '#1344FF',
@@ -22,10 +23,10 @@ export const COLORS = {
 };
 
 export const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Pretendard-Regular',
+  medium: 'Pretendard-Medium',
+  semibold: 'Pretendard-SemiBold',
+  bold: 'Pretendard-Bold',
 };
 
 export const styles = StyleSheet.create({
@@ -274,11 +275,15 @@ export const styles = StyleSheet.create({
   chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: normalize(5),
+    gap: normalize(8),
   },
+  /**
+   * 세로 패딩을 12로 올려 실제 탭 높이를 키운다. 촘촘히 줄바꿈되는 칩
+   * 목록이라 hitSlop을 쓰면 옆·아래 칩의 히트 영역과 겹쳐 오탭을 만든다.
+   */
   chip: {
-    paddingHorizontal: normalize(10),
-    paddingVertical: normalize(5),
+    paddingHorizontal: normalize(12),
+    paddingVertical: normalize(12),
     borderRadius: normalize(14),
     backgroundColor: COLORS.surface,
     borderWidth: 1,
@@ -324,7 +329,11 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     color: COLORS.white,
   },
+  /**
+   * "여행지를 선택해주세요"는 비활성 버튼 안에 있어도 다음 행동을 알리는
+   * 유일한 문구다. COLORS.disabled(#D1D5DB, 1.34:1)로는 거의 안 보였다.
+   */
   confirmButtonTextDisabled: {
-    color: COLORS.disabled,
+    color: COLORS.subtext,
   },
 });

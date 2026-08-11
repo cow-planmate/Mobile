@@ -33,10 +33,10 @@ interface NotificationModalProps {
 
 const COLORS = theme.colors;
 const FONTS = {
-  regular: 'Pretendard Variable',
-  medium: 'Pretendard Variable',
-  semibold: 'Pretendard Variable',
-  bold: 'Pretendard Variable',
+  regular: 'Pretendard-Regular',
+  medium: 'Pretendard-Medium',
+  semibold: 'Pretendard-SemiBold',
+  bold: 'Pretendard-Bold',
 };
 
 const NotificationModal = ({
@@ -57,7 +57,14 @@ const NotificationModal = ({
         <Pressable style={styles.container} onPress={e => e.stopPropagation()}>
           <View style={styles.header}>
             <Text style={styles.title}>알림</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.7}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.closeButton}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="닫기"
+            >
               <X size={20} color="#9CA3AF" strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
@@ -84,12 +91,16 @@ const NotificationModal = ({
                     <TouchableOpacity
                       style={[styles.button, styles.rejectButton]}
                       onPress={() => onReject(invite.requestId)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${invite.senderNickname}님의 요청 거절`}
                     >
                       <Text style={styles.rejectButtonText}>거절</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.button, styles.acceptButton]}
                       onPress={() => onAccept(invite.requestId)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${invite.senderNickname}님의 요청 수락`}
                     >
                       <Text style={styles.acceptButtonText}>수락</Text>
                     </TouchableOpacity>
@@ -184,6 +195,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     minWidth: 70,
+    minHeight: 48,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   acceptButton: {

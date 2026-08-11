@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   Eye,
   MapPin,
+  Pencil,
   ThumbsDown,
   ThumbsUp,
   Trash2,
@@ -298,6 +299,18 @@ export default function PostDetailScreen() {
                   </Text>
                 </TouchableOpacity>
               )}
+              <TouchableOpacity
+                style={styles.authorActionButton}
+                onPress={() =>
+                  navigation.navigate('CommunityCreate', {
+                    postId: String(post.id),
+                  })
+                }
+                activeOpacity={0.8}
+              >
+                <Pencil size={normalize(12)} color={COLORS.textSecondary} />
+                <Text style={styles.authorActionText}>수정</Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.authorActionButton, styles.authorActionDanger]}
                 onPress={handleDelete}

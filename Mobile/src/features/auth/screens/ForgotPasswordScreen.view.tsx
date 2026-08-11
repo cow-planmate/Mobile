@@ -15,7 +15,9 @@ import {
   XCircle,
   Loader,
 } from 'lucide-react-native';
-import { styles, COLORS, normalize } from './ForgotPasswordScreen.styles';
+import { styles } from './ForgotPasswordScreen.styles';
+import { COLORS } from '../authTokens';
+import { sf } from '../../../design/scale';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
@@ -29,11 +31,7 @@ const InlineError = ({ message }: { message: string }) => (
     exiting={FadeOut.duration(120)}
     accessibilityLiveRegion="polite"
   >
-    <AlertCircle
-      size={normalize(15)}
-      color={COLORS.error}
-      style={styles.errorIcon}
-    />
+    <AlertCircle size={sf(15)} color={COLORS.error} style={styles.errorIcon} />
     <Text style={styles.errorText}>{message}</Text>
   </Animated.View>
 );
@@ -160,7 +158,10 @@ export const ForgotPasswordScreenView = ({
           {Array.from({ length: totalSteps }).map((_, i) => (
             <View
               key={i}
-              style={[styles.progressSegment, i < step && styles.progressSegmentOn]}
+              style={[
+                styles.progressSegment,
+                i < step && styles.progressSegmentOn,
+              ]}
             />
           ))}
         </View>
@@ -175,7 +176,7 @@ export const ForgotPasswordScreenView = ({
         contentContainerStyle={[
           styles.scrollContainer,
           // step 1은 하단 버튼이 없어 스크롤 영역이 곧 화면 맨 아래다.
-          step === 1 && { paddingBottom: insets.bottom + normalize(32) },
+          step === 1 && { paddingBottom: insets.bottom + sf(32) },
         ]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -202,7 +203,9 @@ export const ForgotPasswordScreenView = ({
                     ]}
                     containerStyle={styles.flex1}
                     label="이메일"
-                    labelBackground={emailLocked ? COLORS.surface : COLORS.white}
+                    labelBackground={
+                      emailLocked ? COLORS.surface : COLORS.surfaceRaised
+                    }
                   >
                     {emailLocked ? (
                       <Text style={styles.authValue} numberOfLines={1}>
@@ -241,10 +244,10 @@ export const ForgotPasswordScreenView = ({
                       ]}
                       baseColor={
                         !isEmailFormatValid || isSendingEmail
-                          ? COLORS.gray
+                          ? COLORS.border
                           : COLORS.primary
                       }
-                      pressedColor={COLORS.primaryDark}
+                      pressedColor={COLORS.primaryPressed}
                       scaleTo={0.95}
                       onPress={onSendVerificationEmail}
                       disabled={!isEmailFormatValid || isSendingEmail}
@@ -293,16 +296,18 @@ export const ForgotPasswordScreenView = ({
                         maxLength={6}
                         autoComplete="sms-otp"
                         importantForAutofill="yes"
-                        editable={!isEmailVerified && !isCodeExpired && !isVerifying}
+                        editable={
+                          !isEmailVerified && !isCodeExpired && !isVerifying
+                        }
                         onFocus={() => setFocusedField('verificationCode')}
                         onBlur={() => setFocusedField(null)}
                         accessibilityLabel="인증번호 6자리"
                       />
                       {isVerifying ? (
-                        <Loader size={normalize(18)} color={COLORS.textSecondary} />
+                        <Loader size={sf(18)} color={COLORS.textSecondary} />
                       ) : isEmailVerified ? (
                         <Check
-                          size={normalize(20)}
+                          size={sf(20)}
                           color={COLORS.success}
                           strokeWidth={3}
                         />
@@ -328,8 +333,14 @@ export const ForgotPasswordScreenView = ({
                       style={styles.statusRow}
                       entering={FadeInDown.duration(160)}
                     >
-                      <Check size={normalize(14)} color={COLORS.success} strokeWidth={3} />
-                      <Text style={styles.statusTextOk}>인증이 완료되었어요.</Text>
+                      <Check
+                        size={sf(14)}
+                        color={COLORS.success}
+                        strokeWidth={3}
+                      />
+                      <Text style={styles.statusTextOk}>
+                        인증이 완료되었어요.
+                      </Text>
                     </Animated.View>
                   ) : (
                     <View style={styles.resendRow}>
@@ -348,7 +359,8 @@ export const ForgotPasswordScreenView = ({
                         <Text
                           style={[
                             styles.resendButtonText,
-                            resendCooldown > 0 && styles.resendButtonTextDisabled,
+                            resendCooldown > 0 &&
+                              styles.resendButtonTextDisabled,
                           ]}
                         >
                           {resendCooldown > 0
@@ -367,10 +379,17 @@ export const ForgotPasswordScreenView = ({
             <View style={styles.resultContainer}>
               {tempPasswordStatus === 'sent' ? (
                 <>
-                  <View style={[styles.resultIconWrap, styles.resultIconWrapSuccess]}>
-                    <CheckCircle2 size={normalize(36)} color={COLORS.success} />
+                  <View
+                    style={[
+                      styles.resultIconWrap,
+                      styles.resultIconWrapSuccess,
+                    ]}
+                  >
+                    <CheckCircle2 size={sf(36)} color={COLORS.success} />
                   </View>
-                  <Text style={styles.resultTitle}>임시 비밀번호를 보냈어요</Text>
+                  <Text style={styles.resultTitle}>
+                    임시 비밀번호를 보냈어요
+                  </Text>
                   <Text style={styles.resultBody}>
                     {email}로 임시 비밀번호를 보냈어요.{'\n'}
                     메일함을 확인해 주세요.
@@ -383,8 +402,10 @@ export const ForgotPasswordScreenView = ({
                 </>
               ) : tempPasswordStatus === 'failed' ? (
                 <>
-                  <View style={[styles.resultIconWrap, styles.resultIconWrapError]}>
-                    <XCircle size={normalize(36)} color={COLORS.error} />
+                  <View
+                    style={[styles.resultIconWrap, styles.resultIconWrapError]}
+                  >
+                    <XCircle size={sf(36)} color={COLORS.error} />
                   </View>
                   <Text style={styles.resultTitle}>발송하지 못했어요</Text>
                   <Text style={styles.resultBody}>
@@ -394,9 +415,11 @@ export const ForgotPasswordScreenView = ({
               ) : (
                 <>
                   <View style={styles.resultIconWrap}>
-                    <Loader size={normalize(32)} color={COLORS.primary} />
+                    <Loader size={sf(32)} color={COLORS.primary} />
                   </View>
-                  <Text style={styles.resultTitle}>임시 비밀번호를 보내고 있어요</Text>
+                  <Text style={styles.resultTitle}>
+                    임시 비밀번호를 보내고 있어요
+                  </Text>
                   <Text style={styles.resultBody}>잠시만 기다려 주세요.</Text>
                 </>
               )}
@@ -413,7 +436,7 @@ export const ForgotPasswordScreenView = ({
       */}
       {step === 2 && (
         <View
-          style={[styles.footer, { paddingBottom: insets.bottom + normalize(16) }]}
+          style={[styles.footer, { paddingBottom: insets.bottom + sf(16) }]}
         >
           {tempPasswordStatus === 'sent' && (
             <AuthSubmitButton

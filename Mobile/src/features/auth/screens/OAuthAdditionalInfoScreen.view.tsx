@@ -4,7 +4,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import DatePicker from 'react-native-date-picker';
 import { ArrowLeft, AlertCircle } from 'lucide-react-native';
-import { styles, COLORS, normalize } from './OAuthAdditionalInfoScreen.styles';
+import { styles } from './OAuthAdditionalInfoScreen.styles';
+import { COLORS } from '../authTokens';
+import { sf } from '../../../design/scale';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
@@ -54,11 +56,7 @@ const InlineError = ({ message }: { message: string }) => (
     exiting={FadeOut.duration(120)}
     accessibilityLiveRegion="polite"
   >
-    <AlertCircle
-      size={normalize(15)}
-      color={COLORS.error}
-      style={styles.errorIcon}
-    />
+    <AlertCircle size={sf(15)} color={COLORS.error} style={styles.errorIcon} />
     <Text style={styles.errorText}>{message}</Text>
   </Animated.View>
 );
@@ -174,45 +172,47 @@ export const OAuthAdditionalInfoScreenView = ({
         <View style={styles.inputGroup}>
           <Text style={styles.groupLabel}>성별</Text>
           <View style={styles.genderContainer}>
-              {(
-                [
-                  { key: 'male', label: '남성' },
-                  { key: 'female', label: '여성' },
-                ] as const
-              ).map(option => (
-                <PressableScale
-                  key={option.key}
+            {(
+              [
+                { key: 'male', label: '남성' },
+                { key: 'female', label: '여성' },
+              ] as const
+            ).map(option => (
+              <PressableScale
+                key={option.key}
+                style={[
+                  styles.genderButton,
+                  !!errors.gender && styles.genderButtonError,
+                  form.gender === option.key && styles.genderButtonSelected,
+                ]}
+                baseColor={
+                  form.gender === option.key
+                    ? COLORS.primary
+                    : COLORS.surfaceRaised
+                }
+                pressedColor={
+                  form.gender === option.key
+                    ? COLORS.primaryPressed
+                    : COLORS.surface
+                }
+                scaleTo={0.96}
+                onPress={() => onChange('gender', option.key)}
+                disabled={isSubmitting}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: form.gender === option.key }}
+                accessibilityLabel={option.label}
+              >
+                <Text
                   style={[
-                    styles.genderButton,
-                    !!errors.gender && styles.genderButtonError,
-                    form.gender === option.key && styles.genderButtonSelected,
+                    styles.genderButtonText,
+                    form.gender === option.key &&
+                      styles.genderButtonTextSelected,
                   ]}
-                  baseColor={
-                    form.gender === option.key ? COLORS.primary : COLORS.white
-                  }
-                  pressedColor={
-                    form.gender === option.key
-                      ? COLORS.primaryDark
-                      : COLORS.surface
-                  }
-                  scaleTo={0.96}
-                  onPress={() => onChange('gender', option.key)}
-                  disabled={isSubmitting}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: form.gender === option.key }}
-                  accessibilityLabel={option.label}
                 >
-                  <Text
-                    style={[
-                      styles.genderButtonText,
-                      form.gender === option.key &&
-                        styles.genderButtonTextSelected,
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
-                </PressableScale>
-              ))}
+                  {option.label}
+                </Text>
+              </PressableScale>
+            ))}
           </View>
           {!!errors.gender && <InlineError message={errors.gender} />}
         </View>
@@ -220,9 +220,7 @@ export const OAuthAdditionalInfoScreenView = ({
         {!!errors.form && <InlineError message={errors.form} />}
       </ScrollView>
 
-      <View
-        style={[styles.footer, { paddingBottom: insets.bottom + normalize(16) }]}
-      >
+      <View style={[styles.footer, { paddingBottom: insets.bottom + sf(16) }]}>
         <AuthSubmitButton
           label="완료"
           onPress={onComplete}

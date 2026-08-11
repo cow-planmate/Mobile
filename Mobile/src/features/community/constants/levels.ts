@@ -38,6 +38,28 @@ export const LEVEL_BADGE_COLORS: Record<number, { bg: string; text: string }> = 
 export const levelBadgeColor = (level: number) =>
   LEVEL_BADGE_COLORS[level] ?? LEVEL_BADGE_COLORS[1];
 
+export const getActivityScore = (postCount: number, commentCount: number) =>
+  Math.max(0, postCount) * POST_SCORE_WEIGHT +
+  Math.max(0, commentCount) * COMMENT_SCORE_WEIGHT;
+
+export const getLevelProgress = (postCount: number, commentCount: number) => {
+  const score = getActivityScore(postCount, commentCount);
+  const currentTier =
+    [...LEVEL_TIERS].reverse().find(tier => score >= tier.min) ?? LEVEL_TIERS[0];
+  const nextTier = LEVEL_TIERS.find(tier => tier.min > currentTier.min);
+
+  if (!nextTier) {
+    return { score, currentTier, nextTier: null, progressPercent: 100 };
+  }
+
+  const progressPercent = Math.min(
+    100,
+    ((score - currentTier.min) / (nextTier.min - currentTier.min)) * 100,
+  );
+
+  return { score, currentTier, nextTier, progressPercent };
+};
+
 /** 게시판 코드 ↔ 표기 이름 */
 export const BOARDS = [
   { key: 'free', label: '자유게시판' },
