@@ -1,0 +1,114 @@
+import React, { useRef, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import axios from 'axios';
+import Toast from 'react-native-toast-message';
+import { X } from 'lucide-react-native';
+import { submitFeedback, FEEDBACK_EMPTY_MESSAGE } from '../../../api/feedback';
+import { styles } from './FeedbackModal.styles';
+
+type FeedbackModalProps = {
+  visible: boolean;
+  onClose: () => void;
+};
+
+export default function FeedbackModal({ visible, onClose }: FeedbackModalProps) {
+  const [content, setContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
+
+  const handleSubmit = async () => {
+    if (isSubmittingRef.current) return;
+
+    if (!content.trim()) {
+      Toast.show({ type: 'error', text1: FEEDBACK_EMPTY_MESSAGE, position: 'top' });
+      return;
+    }
+
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+
+    try {
+      await submitFeedback(content);
+      setContent('');
+      onClose();
+      Toast.show({
+        type: 'success',
+        text1: '피드백을 보내주셔서 감사합니다.',
+        position: 'top',
+      });
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message
+        : undefined;
+      Toast.show({
+        type: 'error',
+        text1: message || '피드백 전송에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+        position: 'top',
+      });
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboardContainer}
+      >
+        <Pressable style={styles.backdrop} onPress={onClose}>
+          <Pressable style={styles.modal} onPress={() => undefined}>
+            <View style={styles.header}>
+              <Text style={styles.title}>피드백 보내기</Text>
+              <TouchableOpacity
+                accessibilityLabel="피드백 입력 닫기"
+                disabled={isSubmitting}
+                onPress={onClose}
+                style={styles.closeButton}
+              >
+                <X size={20} color="#6B7280" strokeWidth={1.5} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.description}>
+              서비스 이용 중 불편했던 점이나 개선 의견을 알려주세요.
+            </Text>
+            <TextInput
+              accessibilityLabel="피드백 내용"
+              autoFocus
+              editable={!isSubmitting}
+              multiline
+              onChangeText={setContent}
+              placeholder="피드백을 입력해 주세요."
+              placeholderTextColor="#9CA3AF"
+              style={styles.input}
+              value={content}
+            />
+            <TouchableOpacity
+              accessibilityLabel="피드백 제출"
+              disabled={isSubmitting}
+              onPress={handleSubmit}
+              style={[
+                styles.submitButton,
+                isSubmitting && styles.submitButtonDisabled,
+              ]}
+            >
+              <Text style={styles.submitButtonText}>
+                {isSubmitting ? '보내는 중...' : '보내기'}
+              </Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}

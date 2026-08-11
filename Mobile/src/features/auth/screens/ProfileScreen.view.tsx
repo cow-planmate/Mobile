@@ -76,6 +76,7 @@ import {
   levelName,
 } from '../../community/constants/levels';
 import ProfileActivitySections from '../components/ProfileActivitySections';
+import FeedbackModal from '../components/FeedbackModal';
 import { styles, COLORS } from './ProfileScreen.styles';
 const getFormattedPeriod = (start?: string, end?: string) => {
   if (!start) return '날짜 확인 필요';
@@ -378,6 +379,7 @@ export default function ProfileScreenView({
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [isFeedbackModalVisible, setFeedbackModalVisible] = useState(false);
   const [tempNickname, setTempNickname] = useState('');
   const [tempBirthdate, setTempBirthdate] = useState('');
   const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
@@ -1420,6 +1422,18 @@ export default function ProfileScreenView({
                 </View>
               </View>
 
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>피드백</Text>
+                <TouchableOpacity
+                  style={styles.actionNavButton}
+                  onPress={() => setFeedbackModalVisible(true)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.actionNavButtonText}>피드백 보내기</Text>
+                  <Settings size={14} color="#9CA3AF" />
+                </TouchableOpacity>
+              </View>
+
               {/* 오작동 우려로 스크롤 영역 하단 맨 끝에 계정 탈퇴하기 배치 */}
               <TouchableOpacity 
                 style={styles.resignLinkButton}
@@ -1479,6 +1493,10 @@ export default function ProfileScreenView({
         visible={isPasswordModalVisible}
         onClose={() => setPasswordModalVisible(false)}
         onConfirm={handleUpdatePassword}
+      />
+      <FeedbackModal
+        visible={isFeedbackModalVisible}
+        onClose={() => setFeedbackModalVisible(false)}
       />
 
       {/* ── 일정 카드 설정 메뉴 ── */}

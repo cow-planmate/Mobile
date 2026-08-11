@@ -15,6 +15,7 @@ const NO_AUTH_PATHS = [
   '/api/auth/token',
   '/api/auth/email/verification',
   '/api/auth/register/nickname/verify',
+  '/api/beta/feedback',
 ];
 
 const matchesPath = (url: string | undefined, paths: string[]) =>
