@@ -53,7 +53,7 @@ export async function changeProfileVisibility(
 export interface PublicUserProfile {
   userId: string;
   nickname: string;
-  profileImageUrl: string;
+  profileImageUrl: string | null;
   preferredThemes: { preferredThemeId: number; preferredThemeName: string; category: string }[];
   myPlanCount: number;
   editablePlanCount: number;

@@ -31,7 +31,7 @@ const EMPTY_PROFILE: UserProfile = {
   name: '',
   email: '',
   profileImageUrl: '',
-  profilePublic: true,
+  profilePublic: false,
   birthdate: '',
   gender: '',
   preferredThemes: [],

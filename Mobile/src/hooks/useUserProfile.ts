@@ -128,7 +128,7 @@ const fetchUserProfile = async (): Promise<UserProfile> => {
     name: data.nickname || '이름 없음',
     email: data.email || '',
     profileImageUrl: data.profileImageUrl || '',
-    profilePublic: data.profilePublic ?? true,
+    profilePublic: data.profilePublic ?? false,
     birthdate: data.birthdate ? String(data.birthdate).substring(0, 10) : '',
     gender: GENDER_LABELS[data.gender] ?? '미설정',
     preferredThemes: data.preferredThemes || [],
