@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../store/useAuthStore';
 import { savePreferredThemes, PreferredThemeVO } from '../api/themes';
@@ -38,6 +39,15 @@ export default function AppNavigator() {
       }
     } catch (error) {
       console.error('Failed to save preferred themes:', error);
+      // 이 선택 화면은 가입 직후 한 번만 열린다. 실패를 알리지 않으면 저장된 줄
+      // 알고 넘어가고, 다시 고를 기회도 없다.
+      Toast.show({
+        type: 'error',
+        text1: '선호 테마를 저장하지 못했어요.',
+        text2: '마이페이지에서 다시 설정할 수 있어요.',
+        position: 'top',
+        visibilityTime: 3500,
+      });
     }
     setNeedsThemeSelection(false);
   };

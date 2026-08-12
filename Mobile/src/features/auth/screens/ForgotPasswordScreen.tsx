@@ -18,6 +18,10 @@ const RESEND_COOLDOWN_SECONDS = 30;
 /** 인증 성공 표시를 잠깐 보여준 뒤 임시 비밀번호 발송을 시작하기까지 */
 const ADVANCE_DELAY_MS = 700;
 
+/** 발송 실패 문구. 계정 존재 여부가 드러나지 않도록 사유를 구분하지 않는다. */
+const FALLBACK_TEMP_PASSWORD_ERROR =
+  '임시 비밀번호를 보내지 못했어요. 잠시 후 다시 시도해 주세요.';
+
 const formatTime = (seconds: number) => {
   const safe = Math.max(0, seconds);
   const minutes = Math.floor(safe / 60);
@@ -170,12 +174,12 @@ export default function ForgotPasswordScreen() {
       setTempPasswordStatus('failed');
       setErrors({
         form:
-          status === 403
-            ? '임시 비밀번호 발급 권한이 없어요. 잠시 후 다시 시도해 주세요.'
-            : getDisplayErrorMessage(
-                error,
-                '임시 비밀번호 발송에 실패했어요. 다시 시도해 주세요.',
-              ),
+          // 404는 '그 이메일로 가입한 일반 계정이 없다'는 뜻이라, 서버 문구를 그대로
+          // 띄우면 계정 존재 여부가 드러난다. 서버가 인증번호 발송 단계에서 계정
+          // 유무로 분기하지 않는 이유와 같은 근거로 여기서도 밝히지 않는다.
+          status === 404 || status === 403
+            ? FALLBACK_TEMP_PASSWORD_ERROR
+            : getDisplayErrorMessage(error, FALLBACK_TEMP_PASSWORD_ERROR),
       });
     }
   }, []);
@@ -198,7 +202,7 @@ export default function ForgotPasswordScreen() {
         },
       );
 
-      const token = response.data.verificationToken || response.data.token;
+      const token = response.data.verificationToken;
       if (!token) {
         setVerificationCode('');
         setFieldError('verificationCode', '인증번호가 올바르지 않아요.');

@@ -6,6 +6,7 @@ import {
   LOGOUT_CLEARED_KEYS,
 } from '../constants/storageKeys';
 import { getJwtIssuedAtMs, isTokenExpiringSoon } from '../utils/jwt';
+import { isTokenAuthFailure } from '../utils/authError';
 
 const normalizedApiUrl = (API_URL ?? '').trim().replace(/\/+$/, '');
 
@@ -219,10 +220,12 @@ axios.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // 401 에러이고 재시도하지 않은 요청인 경우 토큰 갱신 시도
-    // (절대 URL로 호출되는 경우가 있어 includes로 비교한다)
+    // 토큰 문제로 401이 났고 재시도하지 않은 요청인 경우에만 갱신을 시도한다.
+    // 인증번호·현재 비밀번호 확인 실패도 401이라, 코드를 보지 않으면 오타 한 번에
+    // 재발급과 재요청이 따라붙는다(utils/authError).
+    // (절대 URL로 호출되는 경우가 있어 경로는 includes로 비교한다)
     if (
-      error.response?.status === 401 &&
+      isTokenAuthFailure(error) &&
       originalRequest &&
       !originalRequest._retry &&
       !matchesPath(originalRequest.url, ['/api/auth/login', '/api/auth/token'])

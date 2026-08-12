@@ -241,7 +241,7 @@ export default function SignupScreen() {
         },
       );
 
-      const token = response.data.verificationToken || response.data.token;
+      const token = response.data.verificationToken;
       if (!token) {
         setForm(prev => ({ ...prev, verificationCode: '' }));
         setFieldError('verificationCode', '인증번호가 올바르지 않아요.');
