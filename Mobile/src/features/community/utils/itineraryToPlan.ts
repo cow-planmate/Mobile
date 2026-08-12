@@ -15,6 +15,24 @@ const DEFAULT_BLOCK_MINUTES = 30;
 /** 스냅샷에 장소명이 비어 있을 때 대신 넣을 값 */
 const DEFAULT_PLACE_NAME = '이름 없는 장소';
 
+/**
+ * 서버 BlockCategory enum 값.
+ *
+ * 이 목록 밖의 값이 하나라도 섞이면 역직렬화 단계에서 400이 나 가져가기 전체가
+ * 실패한다. 스냅샷은 게시 시점의 값이 그대로 굳은 것이라 최신 enum과 어긋날 수
+ * 있으므로 여기서 걸러 낸다(placeName을 대체하는 것과 같은 이유).
+ */
+const BLOCK_CATEGORIES = new Set([
+  'ATTRACTION',
+  'ACCOMMODATION',
+  'RESTAURANT',
+  'FREE',
+  'SEARCH',
+]);
+
+const toBlockCategory = (category?: string | null): string =>
+  category && BLOCK_CATEGORIES.has(category) ? category : 'FREE';
+
 export interface CreatePlanRequestBody {
   planFrame: {
     destinationId: number;
@@ -52,6 +70,23 @@ const toHHmm = (minutes: number): string => {
   const h = String(Math.floor(clamped / 60)).padStart(2, '0');
   const m = String(clamped % 60).padStart(2, '0');
   return `${h}:${m}`;
+};
+
+/**
+ * 스냅샷의 시각을 서버 LocalTime('HH:mm:ss')으로 맞춘다.
+ *
+ * 스냅샷에는 'HH:mm'과 'HH:mm:ss'가 섞여 들어올 수 있어, 뒤에 ':00'을 그대로
+ * 붙이면 'HH:mm:ss:00'이 되어 하루가 아니라 요청 전체가 400으로 실패한다.
+ */
+const toLocalTime = (time: string | null | undefined, fallback: string): string => {
+  const [rawHour, rawMinute] = String(time ?? '').split(':');
+  const hour = Number(rawHour);
+  const minute = Number(rawMinute);
+
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
+    return `${fallback}:00`;
+  }
+  return `${toHHmm(hour * 60 + minute)}:00`;
 };
 
 const addDays = (start: Date, offset: number): string => {
@@ -117,11 +152,20 @@ export const buildCreatePlanRequest = (
   const days = itinerary.days ?? [];
   let adjustedBlocks = 0;
 
-  const timetables = days.map((day, idx) => ({
-    date: addDays(startDate, idx),
-    timeTableStartTime: `${day.startTime ?? DEFAULT_DAY_START}:00`,
-    timeTableEndTime: `${day.endTime ?? DEFAULT_DAY_END}:00`,
-  }));
+  const timetables = days.map((day, idx) => {
+    const timeTableStartTime = toLocalTime(day.startTime, DEFAULT_DAY_START);
+    let timeTableEndTime = toLocalTime(day.endTime, DEFAULT_DAY_END);
+    // 서버 TimetableDto는 시작 ≤ 종료를 요구한다. 자릿수가 고정이라 문자열 비교로 충분.
+    if (timeTableEndTime < timeTableStartTime) {
+      timeTableEndTime = `${toHHmm(DAY_LAST_MINUTE)}:00`;
+    }
+
+    return {
+      date: addDays(startDate, idx),
+      timeTableStartTime,
+      timeTableEndTime,
+    };
+  });
 
   const timetablePlaceBlocks = days.flatMap((day, idx) => {
     const date = addDays(startDate, idx);
@@ -134,7 +178,7 @@ export const buildCreatePlanRequest = (
 
       return {
         date,
-        blockCategory: item.category ?? 'FREE',
+        blockCategory: toBlockCategory(item.category),
         // 서버 placeName은 @NotBlank다. 스냅샷에 빈 이름이 하나라도 있으면
         // 가져가기 전체가 400으로 실패하므로 여기서 대체한다.
         placeName: item.place?.trim() || DEFAULT_PLACE_NAME,

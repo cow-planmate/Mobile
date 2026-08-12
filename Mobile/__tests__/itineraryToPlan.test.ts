@@ -95,3 +95,64 @@ describe('buildCreatePlanRequest — 장소명', () => {
     expect(body.timetablePlaceBlocks[1].placeName).toBe('광안리');
   });
 });
+
+describe('buildCreatePlanRequest — 블록 카테고리', () => {
+  it('서버 enum 값은 그대로 보낸다', () => {
+    const { body } = buildCreatePlanRequest(
+      itinerary([item({ category: 'ACCOMMODATION' })]),
+      START_DATE,
+    );
+
+    expect(body.timetablePlaceBlocks[0].blockCategory).toBe('ACCOMMODATION');
+  });
+
+  it('enum 밖의 값과 빈 값은 FREE로 떨어뜨린다', () => {
+    // 구 스냅샷에 남아 있는 한글 분류나 숫자 ID가 그대로 나가면 요청 전체가 400이 된다.
+    const { body } = buildCreatePlanRequest(
+      itinerary([
+        item({ category: '관광지' }),
+        item({ time: '11:00', category: null }),
+      ]),
+      START_DATE,
+    );
+
+    expect(body.timetablePlaceBlocks[0].blockCategory).toBe('FREE');
+    expect(body.timetablePlaceBlocks[1].blockCategory).toBe('FREE');
+  });
+});
+
+describe('buildCreatePlanRequest — 일차 시각', () => {
+  const timetable = (day: { startTime?: string | null; endTime?: string | null }) =>
+    buildCreatePlanRequest(
+      { plan: { destinationId: 1, adultCount: 1, childCount: 0 }, days: [{ day: 1, items: [], ...day }] },
+      START_DATE,
+    ).body.timetables[0];
+
+  it("'HH:mm'과 'HH:mm:ss'를 모두 LocalTime 형식으로 맞춘다", () => {
+    expect(timetable({ startTime: '08:30', endTime: '21:00' })).toMatchObject({
+      timeTableStartTime: '08:30:00',
+      timeTableEndTime: '21:00:00',
+    });
+    expect(
+      timetable({ startTime: '08:30:00', endTime: '21:00:00' }),
+    ).toMatchObject({
+      timeTableStartTime: '08:30:00',
+      timeTableEndTime: '21:00:00',
+    });
+  });
+
+  it('값이 없으면 기본 시각을 쓴다', () => {
+    expect(timetable({ startTime: null, endTime: undefined })).toMatchObject({
+      timeTableStartTime: '09:00:00',
+      timeTableEndTime: '20:00:00',
+    });
+  });
+
+  it('종료가 시작보다 이르면 하루 끝으로 늘린다', () => {
+    // 서버 TimetableDto의 @AssertTrue(시작 ≤ 종료)에 걸리는 조합이다.
+    expect(timetable({ startTime: '22:00', endTime: '02:00' })).toMatchObject({
+      timeTableStartTime: '22:00:00',
+      timeTableEndTime: '23:59:00',
+    });
+  });
+});
