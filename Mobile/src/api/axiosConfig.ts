@@ -2,7 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@env';
 import { LOGOUT_CLEARED_KEYS } from '../constants/storageKeys';
-import { isTokenExpiringSoon } from '../utils/jwt';
+import { getJwtIssuedAtMs, isTokenExpiringSoon } from '../utils/jwt';
 
 const normalizedApiUrl = (API_URL ?? '').trim().replace(/\/+$/, '');
 
@@ -36,6 +36,16 @@ const matchesPath = (url: string | undefined, paths: string[]) =>
  */
 let refreshPromise: Promise<string | null> | null = null;
 
+/**
+ * 기기 시계가 서버보다 앞선 정도(ms). 만료 판정은 이 값을 빼고 계산한다.
+ *
+ * 재발급 응답이 오는 순간은 서버의 발급 시각(iat)과 사실상 같으므로, 그 차이가
+ * 곧 시계 오차다. 앱을 처음 켠 직후에는 0(=보정 없음)이라 시계가 크게 빠른
+ * 기기에서 사전 갱신이 한 번 더 나갈 수 있지만, 그 응답에서 오차를 학습해
+ * 이후 요청부터는 정상 주기로 돌아온다.
+ */
+let clockSkewMs = 0;
+
 const performTokenRefresh = async (): Promise<string | null> => {
   const refreshToken = await AsyncStorage.getItem('refreshToken');
   if (!refreshToken) return null;
@@ -44,6 +54,11 @@ const performTokenRefresh = async (): Promise<string | null> => {
   const response = await axios.post('/api/auth/token', { refreshToken });
   const newAccessToken = response.data?.accessToken;
   if (!newAccessToken) return null;
+
+  const issuedAtMs = getJwtIssuedAtMs(newAccessToken);
+  if (issuedAtMs !== null) {
+    clockSkewMs = Date.now() - issuedAtMs;
+  }
 
   await AsyncStorage.setItem('accessToken', newAccessToken);
   return newAccessToken;
@@ -79,7 +94,7 @@ export const refreshAccessToken = (): Promise<string | null> => {
  */
 export const ensureFreshAccessToken = async (): Promise<string | null> => {
   const token = await AsyncStorage.getItem('accessToken');
-  if (!isTokenExpiringSoon(token, TOKEN_REFRESH_LEEWAY_MS)) {
+  if (!isTokenExpiringSoon(token, TOKEN_REFRESH_LEEWAY_MS, clockSkewMs)) {
     return token;
   }
   return (await refreshAccessToken()) ?? token;
@@ -127,7 +142,7 @@ axios.interceptors.request.use(
       let token = await AsyncStorage.getItem('accessToken');
 
       // 만료가 임박했으면 보내기 전에 갱신한다(401 왕복 1회 제거).
-      if (isTokenExpiringSoon(token, TOKEN_REFRESH_LEEWAY_MS)) {
+      if (isTokenExpiringSoon(token, TOKEN_REFRESH_LEEWAY_MS, clockSkewMs)) {
         token = (await refreshAccessToken()) ?? token;
       }
 

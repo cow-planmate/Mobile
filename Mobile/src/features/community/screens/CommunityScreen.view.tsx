@@ -382,10 +382,11 @@ export default function CommunityScreenView({
         onEndReachedThreshold={0.4}
         // 게시글 카드는 높이가 일정하지 않아 getItemLayout을 줄 수 없다.
         // 대신 초기 렌더량과 유지 창을 좁혀 스크롤 중 렌더 부하를 낮춘다.
+        // removeClippedSubviews는 쓰지 않는다 — 헤더에 검색 입력과 가로 스크롤이
+        // 들어 있어, 안드로이드에서 스크롤 후 그 영역이 빈 채로 남을 수 있다.
         initialNumToRender={8}
         maxToRenderPerBatch={8}
         windowSize={7}
-        removeClippedSubviews
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}

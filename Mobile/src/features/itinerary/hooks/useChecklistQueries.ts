@@ -110,6 +110,8 @@ export function useToggleChecklistItem(
     mutationFn: ({ itemId, isChecked }: { itemId: number; isChecked: boolean }) =>
       editChecklistItemChecked(planId as string, scope, itemId, isChecked),
     onMutate: async ({ itemId, isChecked }) => {
+      const cancelledFetch =
+        queryClient.getQueryState(queryKey)?.fetchStatus === 'fetching';
       await queryClient.cancelQueries({ queryKey });
       const previousItems = queryClient.getQueryData<ChecklistItem[]>(queryKey);
 
@@ -119,16 +121,21 @@ export function useToggleChecklistItem(
         ),
       );
 
-      return { previousItems };
+      return { previousItems, cancelledFetch };
     },
-    // 성공 시에는 재조회하지 않는다. 낙관적으로 넣은 값이 곧 우리가 보낸 값이라
-    // 서버 기준과 다를 수 없고, 체크는 연달아 누르는 조작이라 탭마다 GET이 붙으면
-    // 요청 수가 배로 늘어난다. 어긋났을 가능성이 있는 실패 경로에서만 다시 맞춘다.
     onError: (_error, _variables, context) => {
       if (context?.previousItems) {
         queryClient.setQueryData(queryKey, context.previousItems);
       }
-      void queryClient.invalidateQueries({ queryKey });
+    },
+    // 성공 시에는 재조회하지 않는다. 낙관적으로 넣은 값이 곧 우리가 보낸 값이라
+    // 서버 기준과 다를 수 없고, 체크는 연달아 누르는 조작이라 탭마다 GET이 붙으면
+    // 요청 수가 배로 늘어난다. 다만 onMutate가 진행 중이던 조회를 끊었다면 그
+    // 응답은 영영 오지 않으므로, 그때는 끊긴 조회를 대신해 다시 맞춰야 한다.
+    onSettled: (_data, error, _variables, context) => {
+      if (error || context?.cancelledFetch) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
     },
   });
 }
@@ -167,6 +174,8 @@ export function useReorderChecklistItems(
     mutationFn: (itemIds: number[]) =>
       reorderChecklistItems(planId as string, scope, itemIds),
     onMutate: async itemIds => {
+      const cancelledFetch =
+        queryClient.getQueryState(queryKey)?.fetchStatus === 'fetching';
       await queryClient.cancelQueries({ queryKey });
       const previousItems = queryClient.getQueryData<ChecklistItem[]>(queryKey);
 
@@ -180,14 +189,18 @@ export function useReorderChecklistItems(
           .filter((item): item is ChecklistItem => !!item);
       });
 
-      return { previousItems };
+      return { previousItems, cancelledFetch };
     },
-    // 토글과 같은 이유로 성공 경로에서는 재조회하지 않는다. 보낸 순서가 곧 결과다.
     onError: (_error, _variables, context) => {
       if (context?.previousItems) {
         queryClient.setQueryData(queryKey, context.previousItems);
       }
-      void queryClient.invalidateQueries({ queryKey });
+    },
+    // 토글과 같은 이유로 성공 경로에서는 재조회하지 않는다. 보낸 순서가 곧 결과다.
+    onSettled: (_data, error, _variables, context) => {
+      if (error || context?.cancelledFetch) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
     },
   });
 }

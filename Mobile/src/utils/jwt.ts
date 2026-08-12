@@ -59,11 +59,11 @@ const decodeBase64Url = (input: string): string | null => {
   return result;
 };
 
-/**
- * 액세스 토큰의 만료 시각(ms)을 돌려준다.
- * 형식이 JWT가 아니거나 exp 클레임이 없으면 null.
- */
-export function getJwtExpiryMs(token: string | null | undefined): number | null {
+/** 페이로드의 초 단위 epoch 클레임을 ms로 읽는다. 없거나 깨졌으면 null. */
+const readEpochClaimMs = (
+  token: string | null | undefined,
+  claim: 'exp' | 'iat',
+): number | null => {
   if (!token) return null;
 
   const parts = token.split('.');
@@ -74,22 +74,47 @@ export function getJwtExpiryMs(token: string | null | undefined): number | null 
 
   try {
     const payload = JSON.parse(json);
-    // exp는 초 단위 epoch다.
-    return typeof payload?.exp === 'number' ? payload.exp * 1000 : null;
+    const value = payload?.[claim];
+    return typeof value === 'number' ? value * 1000 : null;
   } catch (_error) {
     return null;
   }
+};
+
+/**
+ * 액세스 토큰의 만료 시각(ms)을 돌려준다.
+ * 형식이 JWT가 아니거나 exp 클레임이 없으면 null.
+ */
+export function getJwtExpiryMs(token: string | null | undefined): number | null {
+  return readEpochClaimMs(token, 'exp');
+}
+
+/**
+ * 액세스 토큰의 발급 시각(ms)을 돌려준다.
+ *
+ * 토큰을 막 받아온 시점의 `Date.now()`와 비교하면 기기 시계가 서버보다 얼마나
+ * 어긋나 있는지 알 수 있다. 서버는 발급 시 iat를 항상 넣는다.
+ */
+export function getJwtIssuedAtMs(
+  token: string | null | undefined,
+): number | null {
+  return readEpochClaimMs(token, 'iat');
 }
 
 /**
  * 토큰이 `leewayMs` 안에 만료되는지 판단한다.
  * exp를 읽을 수 없으면 false — 근거 없이 갱신을 유발하지 않는다.
+ *
+ * `clockSkewMs`는 기기 시계가 서버보다 앞선 정도다. 이 보정이 없으면 시계가
+ * 빠른 기기에서 갓 발급된 토큰까지 만료로 판정돼, 모든 요청 앞에 재발급이
+ * 붙고 재발급된 토큰도 같은 판정을 받아 요청 수가 영구히 두 배가 된다.
  */
 export function isTokenExpiringSoon(
   token: string | null | undefined,
   leewayMs: number,
+  clockSkewMs = 0,
 ): boolean {
   const expiryMs = getJwtExpiryMs(token);
   if (expiryMs === null) return false;
-  return expiryMs - Date.now() <= leewayMs;
+  return expiryMs - (Date.now() - clockSkewMs) <= leewayMs;
 }

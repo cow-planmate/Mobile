@@ -1,4 +1,8 @@
-import { getJwtExpiryMs, isTokenExpiringSoon } from '../jwt';
+import {
+  getJwtExpiryMs,
+  getJwtIssuedAtMs,
+  isTokenExpiringSoon,
+} from '../jwt';
 
 /** 서명은 검증하지 않으므로 헤더·서명 자리는 아무 값이나 채워도 된다. */
 const makeToken = (payload: object): string => {
@@ -82,5 +86,56 @@ describe('isTokenExpiringSoon', () => {
   it('exp를 읽을 수 없으면 갱신을 유발하지 않는다', () => {
     expect(isTokenExpiringSoon('not-a-jwt', 60_000)).toBe(false);
     expect(isTokenExpiringSoon(null, 60_000)).toBe(false);
+  });
+
+  const HOUR_MS = 60 * 60 * 1000;
+  const ACCESS_TOKEN_LIFETIME_SECONDS = 900; // 서버 액세스 토큰 수명 15분
+
+  it('시계가 앞선 기기에서도 갓 발급된 토큰은 만료로 보지 않는다', () => {
+    // 기기 시계가 1시간 빠르면 서버 기준 exp는 이미 지난 시각으로 보인다.
+    const serverNowSeconds = nowSeconds() - HOUR_MS / 1000;
+    const token = makeToken({
+      iat: serverNowSeconds,
+      exp: serverNowSeconds + ACCESS_TOKEN_LIFETIME_SECONDS,
+    });
+
+    expect(isTokenExpiringSoon(token, 60_000)).toBe(true);
+    expect(isTokenExpiringSoon(token, 60_000, HOUR_MS)).toBe(false);
+  });
+
+  it('시계가 뒤처진 기기에서도 임박한 만료를 놓치지 않는다', () => {
+    const serverNowSeconds = nowSeconds() + HOUR_MS / 1000;
+    const token = makeToken({
+      iat: serverNowSeconds - ACCESS_TOKEN_LIFETIME_SECONDS,
+      exp: serverNowSeconds + 30,
+    });
+
+    expect(isTokenExpiringSoon(token, 60_000)).toBe(false);
+    expect(isTokenExpiringSoon(token, 60_000, -HOUR_MS)).toBe(true);
+  });
+
+  it('보정값을 줘도 실제로 만료된 토큰은 true', () => {
+    const serverNowSeconds = nowSeconds() - HOUR_MS / 1000;
+    const token = makeToken({
+      iat: serverNowSeconds - ACCESS_TOKEN_LIFETIME_SECONDS,
+      exp: serverNowSeconds - 10,
+    });
+
+    expect(isTokenExpiringSoon(token, 60_000, HOUR_MS)).toBe(true);
+  });
+});
+
+describe('getJwtIssuedAtMs', () => {
+  it('iat 클레임을 밀리초로 변환한다', () => {
+    const iatSeconds = 1893456000;
+    expect(getJwtIssuedAtMs(makeToken({ iat: iatSeconds }))).toBe(
+      iatSeconds * 1000,
+    );
+  });
+
+  it('iat가 없거나 숫자가 아니면 null', () => {
+    expect(getJwtIssuedAtMs(makeToken({ exp: 1893456000 }))).toBeNull();
+    expect(getJwtIssuedAtMs(makeToken({ iat: 'now' }))).toBeNull();
+    expect(getJwtIssuedAtMs(null)).toBeNull();
   });
 });
