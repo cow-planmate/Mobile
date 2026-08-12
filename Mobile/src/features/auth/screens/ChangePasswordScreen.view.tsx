@@ -11,6 +11,7 @@ import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import { styles } from './ChangePasswordScreen.styles';
 import { COLORS } from '../authTokens';
 import { sf } from '../../../design/scale';
+import { PASSWORD_MAX_LENGTH } from '../../../utils/passwordPolicy';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
 
@@ -204,6 +205,7 @@ export const ChangePasswordScreenView = ({
                 value={form.newPassword}
                 onChangeText={value => onChange('newPassword', value)}
                 secureTextEntry={!isNewVisible}
+                maxLength={PASSWORD_MAX_LENGTH}
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="new-password"
@@ -269,6 +271,7 @@ export const ChangePasswordScreenView = ({
                 value={form.confirmPassword}
                 onChangeText={value => onChange('confirmPassword', value)}
                 secureTextEntry={!isConfirmVisible}
+                maxLength={PASSWORD_MAX_LENGTH}
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="new-password"

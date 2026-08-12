@@ -12,6 +12,9 @@ import { toBirthdateString } from '../../../utils/birthdate';
 
 const EMAIL_REGEX = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$/;
 
+/** 화면 선택값 → 서버 Gender enum. 서버에는 OTHER도 있으나 화면은 둘만 받는다. */
+const GENDER_ENUM: Record<string, string> = { male: 'MALE', female: 'FEMALE' };
+
 type OAuthAdditionalInfoScreenRouteProp = RouteProp<
   AuthStackParamList,
   'OAuthAdditionalInfo'
@@ -84,7 +87,7 @@ export default function OAuthAdditionalInfoScreen({
       next.birthdate = '생년월일을 다시 확인해 주세요.';
     }
 
-    if (!form.gender) {
+    if (!GENDER_ENUM[form.gender]) {
       next.gender = '성별을 선택해 주세요.';
     }
 
@@ -105,7 +108,7 @@ export default function OAuthAdditionalInfoScreen({
         signupId,
         email: needEmail ? form.email.trim() : null,
         birthdate: form.birthdate,
-        gender: form.gender === 'male' ? 'MALE' : 'FEMALE',
+        gender: GENDER_ENUM[form.gender],
       });
       // 성공하면 스토어가 user를 채우고 루트 네비게이터가 화면을 바꾼다.
     } catch (e) {

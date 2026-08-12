@@ -12,11 +12,16 @@ import EyeOff from 'lucide-react-native/dist/esm/icons/eye-off';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import { styles, COLORS } from './UpdatePasswordModal.styles';
 import { useAlert } from '../../contexts/AlertContext';
+import {
+  PASSWORD_MAX_LENGTH,
+  getPasswordRequirements,
+} from '../../utils/passwordPolicy';
 
 type UpdatePasswordModalProps = {
   visible: boolean;
   onClose: () => void;
-  onConfirm: (current: string, newPass: string) => void;
+  /** 실패하면 예외를 던져야 한다. 그래야 입력을 지우지 않고 모달을 열어 둔다. */
+  onConfirm: (current: string, newPass: string) => void | Promise<void>;
 };
 
 const PasswordInput = ({
@@ -45,6 +50,7 @@ const PasswordInput = ({
             placeholder={placeholder}
             placeholderTextColor={COLORS.placeholder}
             secureTextEntry={!isPasswordVisible}
+            maxLength={PASSWORD_MAX_LENGTH}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
           />
@@ -73,18 +79,48 @@ export default function UpdatePasswordModal({
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (isSubmitting) return;
+
     if (!currentPassword || !newPassword || !confirmPassword) {
       showAlert({ title: '오류', message: '모든 필드를 입력해주세요.' });
+      return;
+    }
+    // 가입 화면과 같은 기준으로 먼저 거른다. 서버는 길이만 보므로 조합 규칙까지
+    // 여기서 확인해야 화면마다 통과 기준이 달라지지 않는다.
+    const { hasMinLength, hasCombination } =
+      getPasswordRequirements(newPassword);
+    if (!hasMinLength || !hasCombination) {
+      showAlert({
+        title: '오류',
+        message: '새 비밀번호는 8자 이상이며 영문·숫자·특수문자를 포함해야 합니다.',
+      });
+      return;
+    }
+    if (newPassword === currentPassword) {
+      showAlert({
+        title: '오류',
+        message: '지금 쓰는 비밀번호와 다르게 정해주세요.',
+      });
       return;
     }
     if (newPassword !== confirmPassword) {
       showAlert({ title: '오류', message: '새 비밀번호가 일치하지 않습니다.' });
       return;
     }
-    onConfirm(currentPassword, newPassword);
-    handleClose();
+
+    setIsSubmitting(true);
+    try {
+      // 성공했을 때만 닫는다. 실패하면 입력이 남아 있어야 다시 시도할 수 있다.
+      await onConfirm(currentPassword, newPassword);
+      handleClose();
+    } catch (_error) {
+      // 실패 사유는 호출부가 토스트로 알린다.
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -133,9 +169,12 @@ export default function UpdatePasswordModal({
             <TouchableOpacity
               style={styles.confirmButton}
               onPress={handleConfirm}
+              disabled={isSubmitting}
               activeOpacity={0.7}
             >
-              <Text style={styles.confirmButtonText}>확인</Text>
+              <Text style={styles.confirmButtonText}>
+                {isSubmitting ? '변경 중…' : '확인'}
+              </Text>
             </TouchableOpacity>
           </View>
         </Pressable>

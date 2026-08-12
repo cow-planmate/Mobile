@@ -74,6 +74,12 @@ import {
 } from '../../community/constants/levels';
 import ProfileActivitySections from '../components/ProfileActivitySections';
 import FeedbackModal from '../components/FeedbackModal';
+import { verifyNicknameAvailable } from '../../../api/auth';
+import { getDisplayErrorMessage } from '../../../utils/errorHandler';
+import {
+  NICKNAME_MAX_LENGTH,
+  getNicknameLengthError,
+} from '../../../utils/nickname';
 import { styles, COLORS } from './ProfileScreen.styles';
 
 /** 편집 권한 일정에서 나갈 때 동시에 띄울 최대 요청 수. */
@@ -385,7 +391,8 @@ export default function ProfileScreenView({
   const [tempBirthdate, setTempBirthdate] = useState('');
   const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
   const [tempGender, setTempGender] = useState('');
-  const isNicknameUnchanged = tempNickname === user.name;
+  const [isNicknameChecking, setIsNicknameChecking] = useState(false);
+  const isNicknameUnchanged = tempNickname.trim() === user.name;
   const [plans, setPlans] = useState<any[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPlanIds, setSelectedPlanIds] = useState<string[]>([]);
@@ -779,20 +786,57 @@ export default function ProfileScreenView({
     setShowBottomFade(false);
   };
 
+  /** 서버에 실제로 물어본다. 저장 단계에서야 중복을 알게 되면 되돌릴 것이 많다. */
+  const handleCheckNickname = async () => {
+    const nickname = tempNickname.trim();
+    const lengthError = getNicknameLengthError(nickname);
+    if (lengthError) {
+      Toast.show({ type: 'error', text1: lengthError, position: 'top' });
+      return;
+    }
+
+    setIsNicknameChecking(true);
+    try {
+      const available = await verifyNicknameAvailable(nickname);
+      Toast.show({
+        type: available ? 'success' : 'error',
+        text1: available
+          ? '사용 가능한 닉네임입니다.'
+          : '이미 사용 중인 닉네임입니다.',
+        position: 'top',
+      });
+    } catch (e) {
+      Toast.show({
+        type: 'error',
+        text1: getDisplayErrorMessage(e, '닉네임을 확인하지 못했습니다.'),
+        position: 'top',
+      });
+    } finally {
+      setIsNicknameChecking(false);
+    }
+  };
+
   const handleSaveProfile = async () => {
     try {
-      if (!tempNickname.trim()) {
+      const nickname = tempNickname.trim();
+      const nicknameError = getNicknameLengthError(nickname);
+      if (nicknameError) {
+        Toast.show({ type: 'error', text1: nicknameError, position: 'top' });
+        return;
+      }
+      // 서버 birthdate는 @Past다. 피커가 오늘까지 열려 있어 한 번 더 막는다.
+      if (tempBirthdate && tempBirthdate >= toBirthdateString(new Date())) {
         Toast.show({
           type: 'error',
-          text1: '닉네임을 입력해주세요.',
+          text1: '생년월일을 다시 확인해 주세요.',
           position: 'top',
         });
         return;
       }
-      
+
       let hasChange = false;
-      if (tempNickname !== user.name) {
-        await handleUpdateNickname(tempNickname);
+      if (nickname !== user.name) {
+        await handleUpdateNickname(nickname);
         hasChange = true;
       }
       if (tempBirthdate && tempBirthdate !== user.birthdate) {
@@ -813,6 +857,8 @@ export default function ProfileScreenView({
       }
       setEditModalVisible(false);
     } catch (err) {
+      // 실패 사유는 각 핸들러가 토스트로 알린다. 여기서는 모달을 닫지 않아
+      // 사용자가 값을 고쳐 다시 저장할 수 있게 둔다.
       console.log('Failed to save profile modifications', err);
     }
   };
@@ -1301,28 +1347,27 @@ export default function ProfileScreenView({
                     onChangeText={setTempNickname}
                     placeholder="닉네임을 입력하세요"
                     placeholderTextColor="#9CA3AF"
+                    maxLength={NICKNAME_MAX_LENGTH}
                   />
-                  <TouchableOpacity 
-                    style={[styles.checkButton, isNicknameUnchanged && { opacity: 0.5 }]}
-                    onPress={() => {
-                      if (!tempNickname.trim()) {
-                        Toast.show({
-                          type: 'error',
-                          text1: '닉네임을 입력해 주세요.',
-                          position: 'top',
-                        });
-                      } else {
-                        Toast.show({
-                          type: 'success',
-                          text1: '사용 가능한 닉네임입니다.',
-                          position: 'top',
-                        });
-                      }
-                    }}
-                    disabled={isNicknameUnchanged}
+                  <TouchableOpacity
+                    style={[
+                      styles.checkButton,
+                      (isNicknameUnchanged || isNicknameChecking) && { opacity: 0.5 },
+                    ]}
+                    onPress={handleCheckNickname}
+                    disabled={isNicknameUnchanged || isNicknameChecking}
                     activeOpacity={0.8}
                   >
-                    <Text style={[styles.checkButtonText, isNicknameUnchanged && { color: '#9CA3AF' }]}>중복 확인</Text>
+                    <Text
+                      style={[
+                        styles.checkButtonText,
+                        (isNicknameUnchanged || isNicknameChecking) && {
+                          color: '#9CA3AF',
+                        },
+                      ]}
+                    >
+                      {isNicknameChecking ? '확인 중…' : '중복 확인'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>

@@ -15,6 +15,7 @@ import ProfileScreenView from './ProfileScreen.view';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { LOGOUT_CLEARED_KEYS } from '../../../constants/storageKeys';
 import { changePassword } from '../../../api/auth';
+import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 import {
   changeProfileVisibility,
   deleteProfileImage,
@@ -78,6 +79,10 @@ export default function ProfileScreen({ route }: any) {
     }, [queryClient]),
   );
 
+  /**
+   * 세 항목 모두 실패를 그대로 올린다. 삼키면 편집 모달이 실패한 변경까지
+   * 저장된 것으로 안내하고 닫힌다.
+   */
   const handleUpdateNickname = async (newNickname: string) => {
     try {
       await axios.patch(resolveApiUrl('/api/user/nickname'), {
@@ -93,10 +98,12 @@ export default function ProfileScreen({ route }: any) {
     } catch (e) {
       Toast.show({
         type: 'error',
-        text1: '닉네임 변경에 실패했습니다.',
+        // 중복(AUTH_005)인지 형식 문제인지 서버 문구로 구분해 알린다.
+        text1: getDisplayErrorMessage(e, '닉네임 변경에 실패했습니다.'),
         position: 'top',
         visibilityTime: 2500,
       });
+      throw e;
     }
   };
 
@@ -125,6 +132,7 @@ export default function ProfileScreen({ route }: any) {
         position: 'top',
         visibilityTime: 2500,
       });
+      throw e;
     }
   };
 
@@ -151,6 +159,7 @@ export default function ProfileScreen({ route }: any) {
         position: 'top',
         visibilityTime: 2500,
       });
+      throw e;
     }
   };
 
@@ -165,15 +174,15 @@ export default function ProfileScreen({ route }: any) {
     setThemeModalVisible(false);
   };
 
+  /**
+   * 비밀번호 변경.
+   *
+   * PATCH가 현재 비밀번호를 이미 검증하므로(PasswordService.changePassword)
+   * /api/auth/password/verify를 먼저 부르지 않는다. 모달이 성공 여부로 닫힘을
+   * 판단하도록 실패는 그대로 올린다.
+   */
   const handleUpdatePassword = async (current: string, newPass: string) => {
     try {
-      await axios.post(
-        resolveApiUrl('/api/auth/password/verify'),
-        {
-          password: current,
-        },
-      );
-
       await changePassword(current, newPass, newPass);
 
       Toast.show({
@@ -183,15 +192,14 @@ export default function ProfileScreen({ route }: any) {
         visibilityTime: 2500,
       });
       setPasswordModalVisible(false);
-    } catch (e: any) {
-      console.error('Password Update Error:', e);
-      const msg = e.response?.data?.message || '비밀번호 변경에 실패했습니다.';
+    } catch (e) {
       Toast.show({
         type: 'error',
-        text1: msg,
+        text1: getDisplayErrorMessage(e, '비밀번호 변경에 실패했습니다.'),
         position: 'top',
         visibilityTime: 2500,
       });
+      throw e;
     }
   };
 
@@ -214,7 +222,6 @@ export default function ProfileScreen({ route }: any) {
 
               if (response.status >= 200 && response.status < 300) {
                 useAuthStore.getState().setUser(null);
-                delete axios.defaults.headers.common.Authorization;
                 await AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS);
 
                 showAlert({

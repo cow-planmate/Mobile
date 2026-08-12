@@ -8,6 +8,7 @@ import {
 } from './ChangePasswordScreen.view';
 import { changePassword } from '../../../api/auth';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
+import { getPasswordRequirements } from '../../../utils/passwordPolicy';
 
 /**
  * 비밀번호 변경 컨테이너.
@@ -44,13 +45,10 @@ export default function ChangePasswordScreen() {
     [],
   );
 
-  const passwordRequirements = useMemo(() => {
-    const hasMinLength = form.newPassword.length >= 8;
-    const hasCombination = /(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*])/.test(
-      form.newPassword,
-    );
-    return { hasMinLength, hasCombination };
-  }, [form.newPassword]);
+  const passwordRequirements = useMemo(
+    () => getPasswordRequirements(form.newPassword),
+    [form.newPassword],
+  );
 
   const isPasswordMatch = useMemo(
     () =>
