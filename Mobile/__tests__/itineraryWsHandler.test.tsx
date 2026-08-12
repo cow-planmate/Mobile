@@ -184,6 +184,54 @@ describe('ItineraryContext WebSocket 수신 핸들러', () => {
     });
   });
 
+  it('받은 update가 다른 블록 시간을 로컬에서 밀어내지 않는다', () => {
+    mount();
+
+    [
+      { blockId: 7001, start: '10:00:00', end: '11:00:00' },
+      { blockId: 7002, start: '11:00:00', end: '12:00:00' },
+    ].forEach(({ blockId, start, end }) => {
+      emit({
+        action: 'create',
+        entity: 'timetableplaceblock',
+        timeTablePlaceBlockDtos: [
+          {
+            blockId,
+            timeTableId: 101,
+            placeName: `블록 ${blockId}`,
+            blockStartTime: start,
+            blockEndTime: end,
+          },
+        ],
+      });
+    });
+
+    // 앞 블록이 길어져 뒤 블록과 겹친다. 뒤 블록을 밀지 여부는 보낸 쪽이 정하고,
+    // 밀었다면 그 블록의 update가 따로 온다.
+    emit({
+      action: 'update',
+      entity: 'timetableplaceblock',
+      timeTablePlaceBlockDtos: [
+        {
+          blockId: 7001,
+          timeTableId: 101,
+          blockStartTime: '10:00:00',
+          blockEndTime: '11:30:00',
+        },
+      ],
+    });
+
+    const places = ctx.days[0].places;
+    expect(places.find(p => p.id === '7001')).toMatchObject({
+      startTime: '10:00',
+      endTime: '11:30',
+    });
+    expect(places.find(p => p.id === '7002')).toMatchObject({
+      startTime: '11:00',
+      endTime: '12:00',
+    });
+  });
+
   it('update 응답의 이름·주소 변경을 반영한다', () => {
     mount();
 

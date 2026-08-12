@@ -581,9 +581,12 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                         ? respVO.memo
                         : existingPlaces[placeIndex].memo,
                   };
-                  dayToUpdate.places = resolveConflictsAndSort(
-                    existingPlaces,
-                    lookupId,
+                  // create와 같은 이유로 재배치하지 않는다. 밀어낸 결과는 보낸
+                  // 쪽이 각 블록의 update로 알려주므로, 여기서 또 밀면 서버에
+                  // 없는 시간이 화면에만 생긴다.
+                  dayToUpdate.places = existingPlaces.sort(
+                    (a, b) =>
+                      timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
                   );
                 }
               }
