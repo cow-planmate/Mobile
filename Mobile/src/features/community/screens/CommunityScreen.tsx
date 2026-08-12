@@ -2,17 +2,19 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAlert } from '../../../contexts/AlertContext';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAuthStore } from '../../../store/useAuthStore';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   acceptInvitation,
-  getPendingInvitations,
-  PendingInvitation,
   rejectInvitation,
 } from '../../../api/trips';
 import { collaborationRequestNoun } from '../../../utils/collaborationRequest';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidatePlanCaches } from '../../../hooks/planCache';
+import {
+  usePendingInvitationActions,
+  usePendingInvitations,
+} from '../../../hooks/usePendingInvitations';
 import { BOARDS, BoardKey } from '../constants/levels';
 import { useHotPosts, usePosts } from '../hooks/queries';
 import CommunityScreenView from './CommunityScreen.view';
@@ -31,9 +33,8 @@ export default function CommunityScreen() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isNotificationModalVisible, setNotificationModalVisible] =
     useState(false);
-  const [pendingRequests, setPendingRequests] = useState<PendingInvitation[]>(
-    [],
-  );
+  const { data: pendingRequests = [] } = usePendingInvitations(!!user);
+  const pendingInvitations = usePendingInvitationActions();
 
   // 검색어 입력이 멈춘 뒤에만 조회한다
   useEffect(() => {
@@ -56,22 +57,9 @@ export default function CommunityScreen() {
   // 검색 중에는 핫글이 맥락에 맞지 않으므로 숨긴다
   const hotPosts = debouncedQuery ? [] : hotQuery.data ?? [];
 
-  const fetchPendingRequests = useCallback(async () => {
-    try {
-      const requests = await getPendingInvitations();
-      if (requests) {
-        setPendingRequests(requests);
-      }
-    } catch (error) {
-      console.log('초대 요청 목록 조회 실패:', error);
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      void fetchPendingRequests();
-    }, [fetchPendingRequests]),
-  );
+  // 목록은 홈·여행기 화면과 같은 캐시를 본다. 탭을 옮길 때마다 다시 부르지 않고,
+  // 한 화면에서 처리한 결과가 다른 화면 배지에도 그대로 반영된다.
+  const fetchPendingRequests = pendingInvitations.invalidate;
 
   /** 실패 안내 제목은 초대/편집 권한 요청에 따라 달라진다. */
   const findRequestNoun = useCallback(

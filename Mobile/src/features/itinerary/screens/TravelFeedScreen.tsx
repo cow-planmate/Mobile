@@ -11,7 +11,7 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Search from 'lucide-react-native/dist/esm/icons/search';
 import LayoutGrid from 'lucide-react-native/dist/esm/icons/layout-grid';
@@ -26,13 +26,15 @@ import { Header, NotificationModal } from '../../../components/common';
 import TravelFeedList, { TravelFeedItem } from '../components/TravelFeedList';
 import KakaoMapView, { MapPlace } from '../components/KakaoMapView';
 import {
-  getPendingInvitations,
-  PendingInvitation,
   acceptInvitation,
   rejectInvitation,
 } from '../../../api/trips';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidatePlanCaches } from '../../../hooks/planCache';
+import {
+  usePendingInvitationActions,
+  usePendingInvitations,
+} from '../../../hooks/usePendingInvitations';
 import { useFeedPosts, useFeedRegionCounts } from '../../community/hooks/queries';
 import { formatDuration } from '../../community/services/communityApi';
 import { resolveAvatarUrl } from '../../community/utils/avatar';
@@ -90,8 +92,8 @@ export default function TravelFeedScreen() {
   const [isFilterModalVisible, setFilterModalVisible] = useState(false);
   const [isNotificationModalVisible, setNotificationModalVisible] = useState(false);
   const [isMapModalVisible, setMapModalVisible] = useState(false);
-  const [pendingRequests, setPendingRequests] = useState<PendingInvitation[]>([]);
-  const [_loading, setLoading] = useState(false);
+  const { data: pendingRequests = [] } = usePendingInvitations(!!user);
+  const pendingInvitations = usePendingInvitationActions();
 
   // 임시 필터 상태
   const [tempSortBy, setTempSortBy] = useState('최신순');
@@ -178,31 +180,8 @@ export default function TravelFeedScreen() {
     }
   }, [feedQuery]);
 
-  const fetchPendingRequests = useCallback(async (silent = false) => {
-    try {
-      if (!silent) {
-        setLoading(true);
-      }
-      const requests = await getPendingInvitations();
-      if (requests) {
-        setPendingRequests(requests);
-      }
-    } catch (error) {
-      console.log('초대 요청 목록 조회 실패:', error);
-    } finally {
-      if (!silent) {
-        setLoading(false);
-      }
-    }
-  }, []);
-
-
-
-  useFocusEffect(
-    useCallback(() => {
-      void fetchPendingRequests(true);
-    }, [fetchPendingRequests])
-  );
+  // 목록은 홈·커뮤니티 화면과 같은 캐시를 본다. 탭을 옮길 때마다 다시 부르지 않고,
+  // 새 요청은 홈 화면의 SSE·FCM 수신이 무효화해 여기에도 반영된다.
 
   /** 알림 문구는 초대/편집 권한 요청에 따라 달라지므로 목록에서 종류를 찾는다. */
   const findRequestType = (requestId: number) =>
@@ -216,7 +195,7 @@ export default function TravelFeedScreen() {
       // 내 일정 목록에 최대 staleTime(5분)만큼 나타나지 않는다.
       void invalidatePlanCaches(queryClient);
       showAlert({ title: '수락 완료', message: describeAcceptResult(type) });
-      setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
+      pendingInvitations.remove(requestId);
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
       }
@@ -230,7 +209,7 @@ export default function TravelFeedScreen() {
     try {
       await rejectInvitation(requestId);
       showAlert({ title: '거절 완료', message: describeRejectResult(type) });
-      setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
+      pendingInvitations.remove(requestId);
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
       }
