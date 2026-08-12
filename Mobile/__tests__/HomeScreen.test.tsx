@@ -135,8 +135,17 @@ jest.mock('react-native-safe-area-context', () => {
 
 describe('HomeScreen - Pre-save Itinerary Flow', () => {
   let queryClient: QueryClient;
+  const mountedRenderers: ReactTestRenderer.ReactTestRenderer[] = [];
+
+  afterEach(() => {
+    ReactTestRenderer.act(() => {
+      mountedRenderers.splice(0).forEach(renderer => renderer.unmount());
+    });
+    jest.useRealTimers();
+  });
 
   beforeEach(() => {
+    jest.useFakeTimers();
     queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -156,6 +165,7 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
           <HomeScreen navigation={mockNavigation} route={mockRoute} />
         </QueryClientProvider>
       );
+      mountedRenderers.push(renderer!);
     });
 
     expect(renderer).toBeDefined();
@@ -196,6 +206,7 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
           <HomeScreen navigation={mockNavigation} route={mockRoute} />
         </QueryClientProvider>,
       );
+      mountedRenderers.push(renderer!);
     });
 
     const viewComponent = renderer!.root.findByType(

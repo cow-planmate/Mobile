@@ -4,8 +4,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
+const mockedAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
+  multiGet: jest.fn(() => Promise.resolve([])),
   multiSet: jest.fn(() => Promise.resolve()),
   multiRemove: jest.fn(() => Promise.resolve()),
   getItem: jest.fn(() => Promise.resolve(null)),
@@ -138,6 +140,32 @@ describe('Auth Store - Social Login & Complete', () => {
       email: 'user@example.com',
     });
     expect(AsyncStorage.multiSet).toHaveBeenCalled();
+  });
+
+  it('should persist the access token receipt time', async () => {
+    const receivedAtMs = 1_700_000_000_000;
+    const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(receivedAtMs);
+    mockedAxios.post.mockResolvedValueOnce({
+      data: {
+        accessToken: 'mock-access-token',
+        refreshToken: 'mock-refresh-token',
+        userId: 789,
+        nickname: '일반가입자',
+        email: 'user@example.com',
+      },
+    });
+
+    try {
+      await useAuthStore.getState().login('user@example.com', 'password123');
+
+      expect(mockedAsyncStorage.multiSet).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          ['accessTokenReceivedAt', String(receivedAtMs)],
+        ]),
+      );
+    } finally {
+      nowSpy.mockRestore();
+    }
   });
 
   it('should throw error when login response fails', async () => {

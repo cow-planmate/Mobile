@@ -5,7 +5,14 @@
  * 정리 대상에서 빠지는 실수를 막을 수 있다.
  */
 
-export const AUTH_STORAGE_KEYS = ['user', 'accessToken', 'refreshToken'];
+export const ACCESS_TOKEN_RECEIVED_AT_KEY = 'accessTokenReceivedAt';
+
+export const AUTH_STORAGE_KEYS = [
+  'user',
+  'accessToken',
+  'refreshToken',
+  ACCESS_TOKEN_RECEIVED_AT_KEY,
+];
 
 /**
  * 마지막으로 로그인에 성공한 수단. 로그인 화면에 '마지막 사용' 표시를 하는

@@ -1,7 +1,10 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@env';
-import { LOGOUT_CLEARED_KEYS } from '../constants/storageKeys';
+import {
+  ACCESS_TOKEN_RECEIVED_AT_KEY,
+  LOGOUT_CLEARED_KEYS,
+} from '../constants/storageKeys';
 import { getJwtIssuedAtMs, isTokenExpiringSoon } from '../utils/jwt';
 
 const normalizedApiUrl = (API_URL ?? '').trim().replace(/\/+$/, '');
@@ -46,6 +49,22 @@ let refreshPromise: Promise<string | null> | null = null;
  */
 let clockSkewMs = 0;
 
+/**
+ * 새 토큰의 iat와 수신 시각 차이로 기기 시계 오차를 학습한다.
+ *
+ * 앱 재실행 후 복원된 토큰도 같은 보정값으로 만료를 판정할 수 있도록
+ * 수신 시각을 별도로 저장한다.
+ */
+export const observeAccessToken = (
+  token: string,
+  receivedAtMs = Date.now(),
+): void => {
+  const issuedAtMs = getJwtIssuedAtMs(token);
+  if (issuedAtMs !== null && Number.isFinite(issuedAtMs)) {
+    clockSkewMs = receivedAtMs - issuedAtMs;
+  }
+};
+
 const performTokenRefresh = async (): Promise<string | null> => {
   const refreshToken = await AsyncStorage.getItem('refreshToken');
   if (!refreshToken) return null;
@@ -55,12 +74,13 @@ const performTokenRefresh = async (): Promise<string | null> => {
   const newAccessToken = response.data?.accessToken;
   if (!newAccessToken) return null;
 
-  const issuedAtMs = getJwtIssuedAtMs(newAccessToken);
-  if (issuedAtMs !== null) {
-    clockSkewMs = Date.now() - issuedAtMs;
-  }
+  const receivedAtMs = Date.now();
+  observeAccessToken(newAccessToken, receivedAtMs);
 
-  await AsyncStorage.setItem('accessToken', newAccessToken);
+  await AsyncStorage.multiSet([
+    ['accessToken', newAccessToken],
+    [ACCESS_TOKEN_RECEIVED_AT_KEY, String(receivedAtMs)],
+  ]);
   return newAccessToken;
 };
 
