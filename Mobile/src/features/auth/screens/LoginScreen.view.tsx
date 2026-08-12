@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,7 @@ import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
+import FormErrorBanner from '../components/FormErrorBanner';
 
 /* ── Inline SVG icons for social login ── */
 
@@ -147,6 +148,33 @@ export const LoginScreenView = ({
   const fieldState = (invalid: boolean, isFocused: boolean): FieldState =>
     invalid ? 'error' : isFocused ? 'focus' : 'default';
 
+  /**
+   * 소셜 버튼 목록.
+   *
+   * 마지막으로 쓴 수단을 맨 앞에 둔다. 재방문 사용자는 대부분 같은 수단으로
+   * 다시 들어오는데, 배지만 달아 두면 아래쪽에 있을 때 눈에 늦게 들어온다.
+   */
+  const socialOptions = useMemo(() => {
+    const options = [
+      {
+        method: 'google' as const,
+        label: 'Google로 계속하기',
+        icon: <GoogleIcon size={20} />,
+        onPress: onGoogleLogin,
+      },
+      {
+        method: 'naver' as const,
+        label: '네이버로 계속하기',
+        icon: <NaverIcon size={20} />,
+        onPress: onNaverLogin,
+      },
+    ];
+
+    return options.sort((a, b) =>
+      a.method === lastLoginMethod ? -1 : b.method === lastLoginMethod ? 1 : 0,
+    );
+  }, [lastLoginMethod, onGoogleLogin, onNaverLogin]);
+
   const emailState = fieldState(
     !!errors.email || !!errors.form,
     focused === 'email',
@@ -177,6 +205,12 @@ export const LoginScreenView = ({
         </Animated.Text>
 
         <Animated.View entering={revealStep(1, PUSH_TRANSITION_MS)}>
+          {/*
+            폼 전역 오류는 폼 머리에 둔다. 두 칸이 함께 붉어지는 오류라
+            비밀번호 칸 아래에 두면 비밀번호만 틀린 것으로 읽힌다.
+          */}
+          {!!errors.form && <FormErrorBanner message={errors.form} />}
+
           <View style={styles.inputGroup}>
             <AuthFieldBox
               state={emailState}
@@ -249,7 +283,21 @@ export const LoginScreenView = ({
               </Pressable>
             </AuthFieldBox>
             {!!errors.password && <InlineError message={errors.password} />}
-            {!!errors.form && <InlineError message={errors.form} />}
+
+            {/*
+              비밀번호가 기억나지 않는 순간은 이 칸을 채우려 할 때다. 제출
+              버튼 아래에 두면 한 번 실패한 뒤에야 눈에 들어온다.
+            */}
+            <View style={styles.fieldAssistRow}>
+              <Pressable
+                style={styles.linkButton}
+                onPress={onNavigateToForgotPassword}
+                disabled={isLoading}
+                accessibilityRole="button"
+              >
+                <Text style={styles.linkText}>비밀번호를 잊으셨나요?</Text>
+              </Pressable>
+            </View>
           </View>
 
           <AuthSubmitButton
@@ -259,16 +307,11 @@ export const LoginScreenView = ({
             style={styles.submitButtonSpacing}
           />
 
-          <View style={styles.linksContainer}>
-            <Pressable
-              style={styles.linkButton}
-              onPress={onNavigateToForgotPassword}
-              disabled={isLoading}
-              accessibilityRole="button"
-            >
-              <Text style={styles.linkText}>비밀번호를 잊으셨나요?</Text>
-            </Pressable>
-          </View>
+          {lastLoginMethod === 'email' && (
+            <Text style={styles.lastUsedHint}>
+              마지막으로 이메일로 로그인했어요
+            </Text>
+          )}
 
           {/* Social Login */}
           <View style={styles.socialContainer}>
@@ -278,85 +321,70 @@ export const LoginScreenView = ({
               <View style={styles.socialDividerLine} />
             </View>
             <View style={styles.socialButtons}>
-              <PressableScale
-                style={styles.socialButton}
-                baseColor={COLORS.surfaceRaised}
-                pressedColor={COLORS.surface}
-                scaleTo={0.98}
-                onPress={onGoogleLogin}
-                disabled={isLoading}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  lastLoginMethod === 'google'
-                    ? 'Google 계정으로 계속하기, 마지막으로 사용한 로그인 수단'
-                    : 'Google 계정으로 계속하기'
-                }
-              >
-                <GoogleIcon size={20} />
-                <Text style={styles.socialButtonText}>Google로 계속하기</Text>
-                {lastLoginMethod === 'google' && (
-                  <View style={styles.lastUsedBadge}>
-                    <Text style={styles.lastUsedBadgeText}>마지막 사용</Text>
-                  </View>
-                )}
-              </PressableScale>
-              <PressableScale
-                style={styles.socialButton}
-                baseColor={COLORS.surfaceRaised}
-                pressedColor={COLORS.surface}
-                scaleTo={0.98}
-                onPress={onNaverLogin}
-                disabled={isLoading}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  lastLoginMethod === 'naver'
-                    ? '네이버 계정으로 계속하기, 마지막으로 사용한 로그인 수단'
-                    : '네이버 계정으로 계속하기'
-                }
-              >
-                <NaverIcon size={20} />
-                <Text style={styles.socialButtonText}>네이버로 계속하기</Text>
-                {lastLoginMethod === 'naver' && (
-                  <View style={styles.lastUsedBadge}>
-                    <Text style={styles.lastUsedBadgeText}>마지막 사용</Text>
-                  </View>
-                )}
-              </PressableScale>
+              {socialOptions.map(option => (
+                <PressableScale
+                  key={option.method}
+                  style={styles.socialButton}
+                  baseColor={COLORS.surfaceRaised}
+                  pressedColor={COLORS.surface}
+                  scaleTo={0.98}
+                  onPress={option.onPress}
+                  disabled={isLoading}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    lastLoginMethod === option.method
+                      ? `${option.label}, 마지막으로 사용한 로그인 수단`
+                      : option.label
+                  }
+                >
+                  {option.icon}
+                  <Text style={styles.socialButtonText}>{option.label}</Text>
+                  {lastLoginMethod === option.method && (
+                    <View style={styles.lastUsedBadge}>
+                      <Text style={styles.lastUsedBadgeText}>마지막 사용</Text>
+                    </View>
+                  )}
+                </PressableScale>
+              ))}
             </View>
           </View>
 
           {/*
-            계정 없음 안내와 개인정보 링크는 둘 다 화면을 마무리하는 꼬리
-            문구다. 각자 독립된 섹션처럼 20dp씩 떨어져 계단을 만들던 것을
-            한 덩어리로 묶는다.
+            회원가입은 계정이 없는 사람에게 남은 유일한 길이다. 개인정보 링크와
+            한 덩어리로 묶여 있으면 '읽고 넘기는 꼬리 문구'로 보여 지나치기 쉽다.
+            로그인 수단들과 같은 층위의 선택지로 떼어 둔다.
           */}
-          <View style={styles.tailLinksGroup}>
-            <View style={styles.tailLinksRow}>
-              <Text style={styles.linkText}>계정이 없으신가요?</Text>
-              <Pressable
-                style={styles.linkButton}
-                onPress={onNavigateToSignup}
-                disabled={isLoading}
-                accessibilityRole="button"
-                accessibilityLabel="회원가입"
-              >
-                <Text style={[styles.linkText, styles.linkTextStrong]}>
-                  회원가입
-                </Text>
-              </Pressable>
-            </View>
-
+          <View style={styles.signupRow}>
+            <Text style={styles.linkText}>계정이 없으신가요?</Text>
             <Pressable
-              onPress={() => setShowPrivacyModal(true)}
+              style={styles.linkButton}
+              onPress={onNavigateToSignup}
               disabled={isLoading}
-              style={styles.privacyLinkButton}
               accessibilityRole="button"
+              accessibilityLabel="회원가입"
             >
-              <Text style={styles.privacyLinkText}>개인정보 처리방침</Text>
+              <Text style={[styles.linkText, styles.linkTextStrong]}>
+                회원가입
+              </Text>
             </Pressable>
           </View>
         </Animated.View>
       </ScrollView>
+
+      {/*
+        약관 링크는 조작이 아니라 고지다. 스크롤을 따라다니며 선택지 사이에
+        끼어 있을 이유가 없어 화면 바닥에 고정해 둔다.
+      */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + sf(8) }]}>
+        <Pressable
+          onPress={() => setShowPrivacyModal(true)}
+          disabled={isLoading}
+          style={styles.privacyLinkButton}
+          accessibilityRole="button"
+        >
+          <Text style={styles.privacyLinkText}>개인정보 처리방침</Text>
+        </Pressable>
+      </View>
 
       <PrivacyPolicyModal
         visible={showPrivacyModal}

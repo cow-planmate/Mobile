@@ -12,6 +12,8 @@ export const COLORS = {
   onPrimary: '#FFFFFF',
   error: '#D92D20',
   errorBorder: '#F04438',
+  /** 오류 배너 바탕. 같은 계열에서 가장 옅은 단계라 본문 대비를 해치지 않는다. */
+  errorSurface: '#FEF3F2',
   success: '#067647',
   scrim: 'rgba(16,20,27,0.45)',
 } as const;
