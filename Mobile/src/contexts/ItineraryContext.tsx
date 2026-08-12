@@ -389,11 +389,15 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     [sendMessage],
   );
 
-  /** 임시 ID가 실제 blockId로 확정된 시점에 보류분을 재작성해 전송합니다. */
+  /**
+   * 임시 ID가 실제 blockId로 확정된 시점에 보류분을 재작성해 전송합니다.
+   *
+   * @returns 실제로 전송한 보류 동작. 없으면 undefined.
+   */
   const flushPendingBlockSync = useCallback(
-    (tempId: string, realId: string) => {
+    (tempId: string, realId: string): PendingBlockSync['action'] | undefined => {
       const pending = pendingBlockSyncRef.current.get(tempId);
-      if (!pending) return;
+      if (!pending) return undefined;
       pendingBlockSyncRef.current.delete(tempId);
 
       sendMessage(
@@ -404,6 +408,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
           pending.timetableId,
         ),
       );
+      return pending.action;
     },
     [sendMessage],
   );
@@ -438,9 +443,10 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
               : null;
 
           // 임시 ID로 보류해 둔 update/delete를 확정된 blockId로 재전송
-          if (action === 'create' && realId && isTempPlaceId(eventId)) {
-            flushPendingBlockSync(eventId, realId);
-          }
+          const flushedAction =
+            action === 'create' && realId && isTempPlaceId(eventId)
+              ? flushPendingBlockSync(eventId, realId)
+              : undefined;
 
           setDays(prevDays => {
             let dayIndex = -1;
@@ -470,6 +476,12 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
             const targetId = realId || eventId;
 
             if (action === 'create') {
+              // 확정을 기다리는 동안 지운 블록이다. 지금 온 응답은 그 삭제 이전의
+              // create라, 목록에 다시 넣으면 서버에서는 지워졌는데 화면에만 남는다.
+              if (flushedAction === 'delete') {
+                return prevDays;
+              }
+
               const tempIndex = eventId
                 ? dayToUpdate.places.findIndex(p => p.id === eventId)
                 : -1;
