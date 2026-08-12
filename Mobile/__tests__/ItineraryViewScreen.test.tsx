@@ -32,6 +32,15 @@ const mockRoute = {
   },
 } as any;
 
+// 화면이 일정 상세 응답을 공유 캐시에 넣는다. 프로바이더 없이 렌더하므로
+// useQueryClient만 스텁으로 바꾸고 나머지 동작은 그대로 둔다.
+jest.mock('@tanstack/react-query', () => {
+  // 렌더마다 새 객체를 주면 이 값을 의존성으로 쓰는 콜백이 매번 새로 만들어져
+  // 조회 이펙트가 반복 실행된다. 참조를 고정한다.
+  const client = { setQueryData: jest.fn(), getQueryState: jest.fn() };
+  return { useQueryClient: () => client };
+});
+
 // 소유권 조회는 이 테스트 관심사가 아니다. Provider 없이 useQuery가 돌지 않도록 대체한다.
 jest.mock('../src/hooks/usePlanOwnership', () => ({
   usePlanOwnership: () => ({ isOwner: true, isLoading: false, isError: false }),

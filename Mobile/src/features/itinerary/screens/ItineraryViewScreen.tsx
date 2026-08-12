@@ -7,11 +7,12 @@ import React, {
 } from 'react';
 import { ScrollView } from 'react-native';
 import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
+import { cachePlanComplete } from '../../../hooks/planCompleteCache';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
 import { Place } from '../components/TimelineItem';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
@@ -66,6 +67,7 @@ type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
  */
 export default function ItineraryViewScreen({ route, navigation }: Props) {
   const { showAlert } = useAlert();
+  const queryClient = useQueryClient();
   const {
     days: initialDays = EMPTY_DAYS,
     tripName: initialTripName = '',
@@ -110,12 +112,13 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const fetchCompletePlan = useCallback(async () => {
     if (!planId) return;
     try {
-      const token = await AsyncStorage.getItem('accessToken');
-      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      // 토큰은 요청 인터셉터가 붙인다. 직접 헤더를 심으면 만료 직전 사전 갱신을
+      // 건너뛰어 401 왕복이 한 번 더 생긴다(axiosConfig 참고).
       const response = await axios.get<GetCompletePlanResponse>(
         resolveApiUrl(`/api/plan/${planId}/complete`),
-        config,
       );
+      // 프로필 목록이 같은 응답을 다시 받지 않도록 공유 캐시에 넣는다.
+      cachePlanComplete(queryClient, String(planId), response.data);
       const { planFrame, placeBlocks, timetables } = response.data;
 
       const planDestinationId = planFrame?.destinationId ?? null;
@@ -214,7 +217,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       showAlert({ title: '오류', message: '일정을 불러오는데 실패했습니다.' });
       setIsWeatherLoading(false);
     }
-  }, [planId, showAlert]);
+  }, [planId, showAlert, queryClient]);
 
   useEffect(() => {
     if (initialDays.length > 0) {

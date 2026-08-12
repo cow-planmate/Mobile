@@ -6,6 +6,7 @@ import {
   useCallback,
 } from 'react';
 import { ScrollView } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { resolveApiUrl } from '../utils/apiUrl';
 import {
@@ -23,6 +24,7 @@ import {
   DEFAULT_DAY_END,
 } from '../utils/timeUtils';
 import { createTempPlaceId } from '../utils/planSyncPayload';
+import { cachePlanComplete } from './planCompleteCache';
 import { MINUTE_HEIGHT } from '../features/itinerary/screens/ItineraryEditorScreen.styles';
 import Toast from 'react-native-toast-message';
 
@@ -52,6 +54,7 @@ const formatDate = (date: Date) => {
  * @param _navigation 네비게이션 객체
  */
 export const useItineraryEditor = (route: any, _navigation: any) => {
+  const queryClient = useQueryClient();
   const {
     days,
     setDays,
@@ -126,6 +129,8 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
       const response = await axios.get(
         resolveApiUrl(`/api/plan/${route.params.planId}/complete`),
       );
+      // 프로필 목록이 같은 응답을 일정 수만큼 다시 받지 않도록 공유 캐시에 넣는다.
+      cachePlanComplete(queryClient, String(targetPlanId), response.data);
       const { planFrame, placeBlocks, timetables } = response.data;
 
       if (planFrame?.planName) {
@@ -245,7 +250,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
       initDaysFromDates();
       loadedPlanIdRef.current = targetPlanId;
     }
-  }, [route.params?.planId, initDaysFromDates, setDays]);
+  }, [route.params?.planId, initDaysFromDates, setDays, queryClient]);
 
   /**
    * 편집 대상 plan이 바뀌면 조회 전에 먼저 전역 일정 상태를 비웁니다.

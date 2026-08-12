@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -144,7 +144,15 @@ export const SHARED_PLAN_MENU_OPTIONS = [
   },
 ];
 
-const ItineraryCardItem = ({
+/**
+ * 일정 카드.
+ *
+ * 화면 최상위에 편집 모달 입력 state가 있어, memo가 없으면 닉네임을 한 글자
+ * 칠 때마다 카드 전체가 다시 렌더된다. 핸들러도 호출부에서 useCallback으로
+ * 고정해야 memo가 실제로 걸린다(선택 토글은 planId를 인자로 받아 카드마다
+ * 새 클로저를 만들지 않는다).
+ */
+const ItineraryCardItem = React.memo(function ItineraryCardItem({
   plan,
   onOpenMenu,
   navigation,
@@ -158,9 +166,9 @@ const ItineraryCardItem = ({
   navigation: any;
   isEditMode: boolean;
   isSelected: boolean;
-  onSelectToggle: () => void;
+  onSelectToggle: (planId: string) => void;
   onOpenChecklist: (plan: PlanItem) => void;
-}) => {
+}) {
 
   // D-Day 계산
   const getDDay = (startDateStr?: string) => {
@@ -204,9 +212,11 @@ const ItineraryCardItem = ({
   // 테마 색상 분기 (공유받은 일정이면 오렌지색, 생성한 일정이면 파란색)
   const themeColor = plan.isShared ? '#F97316' : '#1344FF';
 
+  const handleSelectToggle = () => onSelectToggle(plan.planId);
+
   const handleCardPress = () => {
     if (isEditMode) {
-      onSelectToggle();
+      handleSelectToggle();
     } else {
       navigation.navigate('ItineraryView', {
         planId: plan.planId,
@@ -231,8 +241,8 @@ const ItineraryCardItem = ({
         <View style={styles.badgeRow}>
           {isEditMode && (
             <TouchableOpacity 
-              style={styles.cardCheckboxWrap} 
-              onPress={onSelectToggle}
+              style={styles.cardCheckboxWrap}
+              onPress={handleSelectToggle}
               activeOpacity={0.8}
             >
               <View style={[
@@ -335,7 +345,7 @@ const ItineraryCardItem = ({
       )}
     </Pressable>
   );
-};
+});
 
 interface ProfileScreenViewProps {
   loading: boolean;
@@ -479,14 +489,24 @@ export default function ProfileScreenView({
   const [isRenameVisible, setRenameVisible] = useState(false);
   const [isPlanShareVisible, setPlanShareVisible] = useState(false);
 
-  const handleOpenPlanMenu = (plan: PlanItem) => {
+  // 카드에 넘기는 핸들러는 참조를 고정한다. 매 렌더 새 함수를 주면 카드의
+  // React.memo가 매번 무효화돼 메모이제이션이 없는 것과 같아진다.
+  const handleOpenPlanMenu = useCallback((plan: PlanItem) => {
     setMenuPlan(plan);
     setPlanMenuVisible(true);
-  };
+  }, []);
 
-  const handleOpenChecklist = (plan: PlanItem) => {
+  const handleOpenChecklist = useCallback((plan: PlanItem) => {
     setChecklistPlan(plan);
-  };
+  }, []);
+
+  const handleSelectToggle = useCallback((planId: string) => {
+    setSelectedPlanIds(prev =>
+      prev.includes(planId)
+        ? prev.filter(id => id !== planId)
+        : [...prev, planId],
+    );
+  }, []);
 
   const handlePlanMenuSelect = (action: string) => {
     setPlanMenuVisible(false);
@@ -609,10 +629,17 @@ export default function ProfileScreenView({
     return targetDate.getTime() < today.getTime();
   };
 
-  const upcomingPlans = plans.filter(p => !isPastPlan(p.endDate, p.startDate));
-  const pastPlans = plans.filter(p => isPastPlan(p.endDate, p.startDate));
+  // 렌더마다 두 번 훑고 항목마다 Date를 새로 만들던 자리다. plans가 바뀔 때만 계산한다.
+  const { upcomingPlans, pastPlans } = useMemo(
+    () => ({
+      upcomingPlans: plans.filter(p => !isPastPlan(p.endDate, p.startDate)),
+      pastPlans: plans.filter(p => isPastPlan(p.endDate, p.startDate)),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- isPastPlan은 순수 함수다
+    [plans],
+  );
 
-  const allPlanIds = plans.map(p => p.planId);
+  const allPlanIds = useMemo(() => plans.map(p => p.planId), [plans]);
   const isAllSelected = allPlanIds.length > 0 && allPlanIds.every(id => selectedPlanIds.includes(id));
 
   // 전체 선택 핸들러
@@ -1137,28 +1164,18 @@ export default function ProfileScreenView({
                 <Text style={styles.sectionSubtitleText}>예정된 여행</Text>
               </View>
               <View>
-                {upcomingPlans.map((plan: any) => {
-                  const isSelected = selectedPlanIds.includes(plan.planId);
-                  const onSelectToggle = () => {
-                    if (isSelected) {
-                      setSelectedPlanIds(prev => prev.filter(id => id !== plan.planId));
-                    } else {
-                      setSelectedPlanIds(prev => [...prev, plan.planId]);
-                    }
-                  };
-                  return (
-                    <ItineraryCardItem 
-                      key={plan.planId} 
-                      plan={plan} 
-                      onOpenMenu={handleOpenPlanMenu}
-                      navigation={navigation}
-                      isEditMode={isEditMode}
-                      isSelected={isSelected}
-                      onSelectToggle={onSelectToggle}
-                      onOpenChecklist={handleOpenChecklist}
-                    />
-                  );
-                })}
+                {upcomingPlans.map((plan: any) => (
+                  <ItineraryCardItem
+                    key={plan.planId}
+                    plan={plan}
+                    onOpenMenu={handleOpenPlanMenu}
+                    navigation={navigation}
+                    isEditMode={isEditMode}
+                    isSelected={selectedPlanIds.includes(plan.planId)}
+                    onSelectToggle={handleSelectToggle}
+                    onOpenChecklist={handleOpenChecklist}
+                  />
+                ))}
               </View>
             </View>
           ) : (
@@ -1183,14 +1200,7 @@ export default function ProfileScreenView({
                   const isSelected = selectedPlanIds.includes(plan.planId);
                   const isPastShared = !!plan.isShared;
                   const pastThemeColor = '#6B7280'; // 지난 여행의 테두리 및 체크박스는 회색으로 통일
-                  
-                  const onSelectToggle = () => {
-                    if (isSelected) {
-                      setSelectedPlanIds(prev => prev.filter(id => id !== plan.planId));
-                    } else {
-                      setSelectedPlanIds(prev => [...prev, plan.planId]);
-                    }
-                  };
+                  const onSelectToggle = () => handleSelectToggle(plan.planId);
 
                   return (
                     <TouchableOpacity 
