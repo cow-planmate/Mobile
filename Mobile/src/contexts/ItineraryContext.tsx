@@ -531,10 +531,13 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                     contentTypeId: respVO.placeContentTypeId || '',
                     copyrightDivCd: respVO.placeCopyrightDivCd || '',
                   };
-                  dayToUpdate.places = resolveConflictsAndSort([
-                    ...dayToUpdate.places,
-                    newPlace,
-                  ]);
+                  // 시작 시각으로 끼워 넣기만 한다. 겹친다고 여기서 다른 블록을
+                  // 밀어내면 그 조정은 서버로 나가지 않아 화면에만 남는다.
+                  // 보낸 쪽이 밀어낸 블록은 별도 update 브로드캐스트로 온다.
+                  dayToUpdate.places = [...dayToUpdate.places, newPlace].sort(
+                    (a, b) =>
+                      timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
+                  );
                 }
               }
             } else if (action === 'update') {
@@ -561,6 +564,12 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
                   existingPlaces[placeIndex] = {
                     ...existingPlaces[placeIndex],
+                    // 편집 화면은 이름·주소도 함께 보낸다(updatePlaceDetails).
+                    // 시간·메모만 받아 넣으면 다른 참여자 화면에는 이름이 바뀌지
+                    // 않은 채 남아, 화면을 다시 열기 전까지 서로 다른 값을 본다.
+                    name: respVO.placeName || existingPlaces[placeIndex].name,
+                    address:
+                      respVO.placeAddress ?? existingPlaces[placeIndex].address,
                     startTime: newStartTime
                       ? parseTime(newStartTime)
                       : existingPlaces[placeIndex].startTime,
