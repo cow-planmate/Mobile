@@ -23,6 +23,16 @@ import {
 } from '../../api/trips';
 import { theme } from '../../theme/theme';
 import { useAlert } from '../../contexts/AlertContext';
+import { getNicknameLengthError } from '../../utils/nickname';
+import {
+  getDisplayErrorMessage,
+  parseBackendError,
+} from '../../utils/errorHandler';
+
+/** 이미 편집 권한이 있는 사용자 (COLLAB_002) */
+const ALREADY_MEMBER_CODE = 'COLLAB_002';
+/** 이미 대기 중인 요청이 있는 사용자 (COLLAB_003) */
+const DUPLICATE_PENDING_CODE = 'COLLAB_003';
 
 const COLORS = theme.colors;
 const FONTS = {
@@ -156,27 +166,47 @@ export default function ShareModal({
   }, [visible, planId, fetchShareLink, fetchEditors]);
 
   const handleInvite = async () => {
-    if (!nickname.trim()) {
-      showAlert({ title: '오류', message: '닉네임을 입력해주세요.' });
+    const receiverNickname = nickname.trim();
+    // 서버도 @Size(2, 20)으로 막는다. 먼저 걸러야 원문 검증 문구가 뜨지 않는다.
+    const lengthError = getNicknameLengthError(receiverNickname);
+    if (lengthError) {
+      showAlert({ title: '오류', message: lengthError });
       return;
     }
+
     setLoading(true);
     try {
       if (isMock) {
         await new Promise(resolve => setTimeout(resolve, 600));
-        setEditors(prev => [...prev, { userId: Date.now(), nickname }]);
-        showAlert({ title: '성공', message: `${nickname}님을 초대했습니다.` });
+        setEditors(prev => [
+          ...prev,
+          { userId: String(Date.now()), nickname: receiverNickname },
+        ]);
+        showAlert({
+          title: '성공',
+          message: `${receiverNickname}님을 초대했습니다.`,
+        });
         setNickname('');
       } else {
-        await inviteEditor(planId, nickname);
-        showAlert({ title: '성공', message: `${nickname}님을 초대했습니다.` });
+        await inviteEditor(planId, receiverNickname);
+        showAlert({
+          title: '성공',
+          message: `${receiverNickname}님을 초대했습니다.`,
+        });
         setNickname('');
         fetchEditors();
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Invite failed:', error);
-      const isConflict = error?.response?.status === 409;
-      if (isConflict) {
+      // 409는 두 가지다. 이미 편집자인 경우와 수락을 기다리는 중인 경우를 같은
+      // 문구로 묶으면, 이미 참여 중인 사람을 계속 다시 초대하게 된다.
+      const { code } = parseBackendError(error);
+      if (code === ALREADY_MEMBER_CODE) {
+        showAlert({
+          title: '이미 참여 중',
+          message: '이미 이 일정의 편집 권한이 있는 사용자입니다.',
+        });
+      } else if (code === DUPLICATE_PENDING_CODE) {
         showAlert({
           title: '초대 대기 중',
           message: '이미 초대를 보낸 사용자입니다. 상대방의 수락을 기다려주세요.',
@@ -184,7 +214,10 @@ export default function ShareModal({
       } else {
         showAlert({
           title: '오류',
-          message: '사용자를 초대하지 못했습니다. 닉네임을 확인해주세요.',
+          message: getDisplayErrorMessage(
+            error,
+            '사용자를 초대하지 못했습니다. 닉네임을 확인해주세요.',
+          ),
         });
       }
     } finally {

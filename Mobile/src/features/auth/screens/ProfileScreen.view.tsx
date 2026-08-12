@@ -28,7 +28,11 @@ import {
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 import { resolveApiUrl } from '../../../utils/apiUrl';
-import { deletePlans, leaveAsEditor } from '../../../api/trips';
+import {
+  PLAN_NAME_MAX_LENGTH,
+  deletePlans,
+  leaveAsEditor,
+} from '../../../api/trips';
 import { invalidatePlanCaches } from '../../../hooks/planCache';
 import { faT } from '@fortawesome/free-solid-svg-icons/faT';
 import { faPen } from '@fortawesome/free-solid-svg-icons/faPen';
@@ -1585,6 +1589,7 @@ export default function ProfileScreenView({
         title="제목 바꾸기"
         label="일정 제목"
         initialValue={menuPlan?.planName ?? ''}
+        maxLength={PLAN_NAME_MAX_LENGTH}
         onClose={() => setRenameVisible(false)}
         onConfirm={handleConfirmRename}
       />
