@@ -30,6 +30,19 @@ export function cachePlanComplete(
   queryClient.setQueryData(planCompleteKey(planId), data);
 }
 
+/**
+ * 캐시된 일정 상세 응답을 버린다.
+ *
+ * 편집 화면을 벗어날 때처럼 응답이 더 이상 현재 상태를 담고 있지 않은 시점에
+ * 호출한다. 남겨 두면 프로필 목록이 편집 이전 날짜를 다시 보여줄 수 있다.
+ */
+export function dropPlanComplete(
+  queryClient: QueryClient,
+  planId: string,
+): void {
+  queryClient.removeQueries({ queryKey: planCompleteKey(planId) });
+}
+
 /** 재사용 가능한 일정 상세 응답. 없거나 오래됐으면 undefined. */
 export function readCachedPlanComplete<T = unknown>(
   queryClient: QueryClient,
