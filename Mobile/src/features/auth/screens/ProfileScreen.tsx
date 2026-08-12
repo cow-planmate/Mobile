@@ -43,7 +43,7 @@ const EMPTY_PROFILE: UserProfile = {
 export default function ProfileScreen({ route }: any) {
   const { showAlert } = useAlert();
   const queryClient = useQueryClient();
-  const { data, isLoading } = useUserProfile();
+  const { data, isLoading, isError, refetch } = useUserProfile();
   const { data: communityStats, isLoading: isCommunityStatsLoading } = useMyStats();
   const user = data ?? EMPTY_PROFILE;
 
@@ -389,6 +389,10 @@ export default function ProfileScreen({ route }: any) {
   return (
     <ProfileScreenView
       loading={isLoading}
+      // 조회에 실패하면 빈 프로필이 그려진다. 값이 없는 계정과 구분되지 않으므로
+      // 실패는 실패로 알리고 다시 시도할 수단을 준다.
+      loadError={isError}
+      onRetryLoad={refetch}
       user={user}
       communityStats={communityStats}
       isCommunityStatsLoading={isCommunityStatsLoading}

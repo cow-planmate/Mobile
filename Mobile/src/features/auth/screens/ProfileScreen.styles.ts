@@ -36,6 +36,33 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
   },
+  loadErrorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: normalize(32),
+  },
+  loadErrorText: {
+    fontFamily: FONTS.medium,
+    fontSize: normalize(15),
+    color: '#4B5563',
+    textAlign: 'center',
+    marginBottom: normalize(16),
+  },
+  loadErrorButton: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: normalize(12),
+    paddingHorizontal: normalize(24),
+    height: normalize(44),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadErrorButtonText: {
+    fontFamily: FONTS.semibold,
+    fontSize: normalize(14),
+    color: '#4B5563',
+  },
   scrollContainer: {
     paddingBottom: normalize(40),
   },

@@ -335,6 +335,9 @@ const ItineraryCardItem = ({
 
 interface ProfileScreenViewProps {
   loading: boolean;
+  /** 프로필 조회 실패. 빈 프로필을 그리지 않고 재시도 화면을 보여준다. */
+  loadError?: boolean;
+  onRetryLoad?: () => void;
   user: any;
   communityStats?: MyStats;
   isCommunityStatsLoading: boolean;
@@ -362,6 +365,8 @@ interface ProfileScreenViewProps {
 
 export default function ProfileScreenView({
   loading,
+  loadError,
+  onRetryLoad,
   user,
   communityStats,
   isCommunityStatsLoading,
@@ -710,6 +715,23 @@ export default function ProfileScreenView({
     return (
       <View style={styles.loadingContainer}>
         <LoadingSpinner color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <View style={styles.loadErrorContainer}>
+        <Text style={styles.loadErrorText}>
+          프로필을 불러오지 못했어요.{'\n'}잠시 후 다시 시도해 주세요.
+        </Text>
+        <TouchableOpacity
+          style={styles.loadErrorButton}
+          onPress={onRetryLoad}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.loadErrorButtonText}>다시 시도</Text>
+        </TouchableOpacity>
       </View>
     );
   }
