@@ -912,7 +912,7 @@ export default function ProfileScreenView({
     } catch (err) {
       // 실패 사유는 각 핸들러가 토스트로 알린다. 여기서는 모달을 닫지 않아
       // 사용자가 값을 고쳐 다시 저장할 수 있게 둔다.
-      console.log('Failed to save profile modifications', err);
+      if (__DEV__) console.log('Failed to save profile modifications', err);
     }
   };
 

@@ -333,7 +333,7 @@ export async function getShareUrl(
     const status = await getShareStatus(planId);
     isShared = status.isShared;
   } catch (e) {
-    console.log('Failed to fetch share status:', e);
+    if (__DEV__) console.log('Failed to fetch share status:', e);
   }
   return {
     shareUrl: `${WEB_URL}/create?id=${planId}`,

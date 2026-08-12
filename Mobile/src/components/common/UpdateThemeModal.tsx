@@ -18,6 +18,11 @@ import ThemeSelector, { ThemeSelectorResult, CATEGORY_MAP } from './ThemeSelecto
 import { styles, COLORS } from './UpdateThemeModal.styles';
 import { useAlert } from '../../contexts/AlertContext';
 import { resolveApiUrl } from '../../utils/apiUrl';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  USER_PROFILE_QUERY_KEY,
+  UserProfile,
+} from '../../hooks/useUserProfile';
 
 const CATEGORY_ICONS: Record<number, React.ReactNode> = {
   0: <Map size={16} color="#6B7280" strokeWidth={1.5} />,
@@ -43,6 +48,7 @@ export default function UpdateThemeModal({
   onConfirm,
 }: UpdateThemeModalProps) {
   const { showAlert } = useAlert();
+  const queryClient = useQueryClient();
   const [selectedThemes, setSelectedThemes] = useState<ThemeSelectorResult>({});
   const [isSelectorVisible, setSelectorVisible] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -51,8 +57,16 @@ export default function UpdateThemeModal({
   const fetchUserThemes = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get(resolveApiUrl('/api/user/profile'));
-      const themes: PreferredThemeVO[] = response.data.preferredThemes || [];
+      // 이 모달은 프로필 화면에서만 열린다. 방금 받은 프로필 캐시에 선호 테마가
+      // 들어 있으므로 같은 응답을 다시 받지 않는다.
+      const cachedThemes = queryClient.getQueryData<UserProfile>(
+        USER_PROFILE_QUERY_KEY,
+      )?.preferredThemes;
+      const themes: PreferredThemeVO[] =
+        cachedThemes ??
+        (await axios.get(resolveApiUrl('/api/user/profile'))).data
+          .preferredThemes ??
+        [];
       // 카테고리별로 그룹화.
       // 서버 응답에는 카테고리 ID가 없고 category enum만 있으므로 CATEGORY_MAP으로 변환한다.
       // 예전에는 존재하지 않는 preferredThemeCategoryId로 묶어 모든 테마가
@@ -73,7 +87,7 @@ export default function UpdateThemeModal({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     if (visible) {

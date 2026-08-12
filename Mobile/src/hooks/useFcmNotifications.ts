@@ -30,7 +30,7 @@ const getMessaging = () => {
   try {
     return require('@react-native-firebase/messaging').default;
   } catch (error) {
-    console.log('[FCM] 메시징 네이티브 모듈을 사용할 수 없습니다:', error);
+    fcmLog('[FCM] 메시징 네이티브 모듈을 사용할 수 없습니다:', error);
     return null;
   }
 };

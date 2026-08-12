@@ -104,7 +104,9 @@ const withPlanDates = async (
       endDate: formatDateStr(sorted[sorted.length - 1].date),
     };
   } catch (e) {
-    console.log(`Failed to fetch dates for plan ${plan.planId}:`, e);
+    if (__DEV__) {
+      console.log(`Failed to fetch dates for plan ${plan.planId}:`, e);
+    }
     return plan;
   }
 };
