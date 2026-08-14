@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { X } from 'lucide-react-native';
+import X from 'lucide-react-native/dist/esm/icons/x';
 import { COLORS, RADIUS, TYPO } from '../authTokens';
 import { sf, sp } from '../../../design/scale';
 

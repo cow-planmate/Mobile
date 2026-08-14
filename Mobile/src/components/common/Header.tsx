@@ -11,10 +11,11 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FastImage from 'react-native-fast-image';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faUser } from '@fortawesome/free-solid-svg-icons';
-import { faBell } from '@fortawesome/free-regular-svg-icons';
+import { faUser } from '@fortawesome/free-solid-svg-icons/faUser';
+import { faBell } from '@fortawesome/free-regular-svg-icons/faBell';
 import { useNavigation } from '@react-navigation/native';
-import { User as UserIcon, LogOut } from 'lucide-react-native';
+import UserIcon from 'lucide-react-native/dist/esm/icons/user';
+import LogOut from 'lucide-react-native/dist/esm/icons/log-out';
 import { useAuthStore } from '../../store/useAuthStore';
 import { normalize } from '../../utils/normalize';
 import gravatarUrl from '../../utils/gravatarUrl';

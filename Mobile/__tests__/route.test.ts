@@ -30,16 +30,19 @@ describe('route API requests', () => {
       1,
       expect.stringContaining('/api/route/directions'),
       { waypoints },
+      { signal: undefined },
     );
     expect(mockedAxios.post).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining('/api/route/table'),
       { waypoints, profile: 'foot' },
+      { signal: undefined },
     );
     expect(mockedAxios.post).toHaveBeenNthCalledWith(
       3,
       expect.stringContaining('/api/route/trip'),
       { waypoints, profile: 'driving', roundtrip: true },
+      { signal: undefined },
     );
   });
 
@@ -52,6 +55,39 @@ describe('route API requests', () => {
     expect(mockedAxios.post).toHaveBeenCalledWith(
       expect.stringContaining('/api/route/transit'),
       { from, to },
+      { signal: undefined },
+    );
+  });
+
+  // 화면을 벗어나면 react-query가 signal을 취소해 진행 중인 요청을 끊는다.
+  it('취소 시그널을 axios로 넘긴다', async () => {
+    const controller = new AbortController();
+    const waypoints = [
+      { lat: 37.5665, lng: 126.978 },
+      { lat: 37.5704, lng: 126.9922 },
+    ];
+
+    await fetchDirections(waypoints, controller.signal);
+    await fetchRouteTable(waypoints, 'driving', controller.signal);
+    await fetchTransit(waypoints[0], waypoints[1], controller.signal);
+
+    expect(mockedAxios.post).toHaveBeenNthCalledWith(
+      1,
+      expect.any(String),
+      expect.anything(),
+      { signal: controller.signal },
+    );
+    expect(mockedAxios.post).toHaveBeenNthCalledWith(
+      2,
+      expect.any(String),
+      expect.anything(),
+      { signal: controller.signal },
+    );
+    expect(mockedAxios.post).toHaveBeenNthCalledWith(
+      3,
+      expect.any(String),
+      expect.anything(),
+      { signal: controller.signal },
     );
   });
 });

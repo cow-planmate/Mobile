@@ -8,7 +8,7 @@ import {
   TextInput,
 } from 'react-native';
 import { styles } from './UpdateValueModal.styles';
-import { X } from 'lucide-react-native';
+import X from 'lucide-react-native/dist/esm/icons/x';
 
 type UpdateValueModalProps = {
   visible: boolean;
@@ -16,6 +16,8 @@ type UpdateValueModalProps = {
   label: string;
   initialValue: string;
   keyboardType?: 'default' | 'number-pad' | 'email-address';
+  /** 서버가 길이를 제한하는 값이면 입력 단계에서 막는다. */
+  maxLength?: number;
   onClose: () => void;
   onConfirm: (value: string) => void;
 };
@@ -26,6 +28,7 @@ export default function UpdateValueModal({
   label,
   initialValue,
   keyboardType = 'default',
+  maxLength,
   onClose,
   onConfirm,
 }: UpdateValueModalProps) {
@@ -65,6 +68,7 @@ export default function UpdateValueModal({
               value={value}
               onChangeText={setValue}
               keyboardType={keyboardType}
+              maxLength={maxLength}
               autoFocus={true}
             />
           </View>

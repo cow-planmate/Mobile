@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
-import { X } from 'lucide-react-native';
+import X from 'lucide-react-native/dist/esm/icons/x';
 import { submitFeedback, FEEDBACK_EMPTY_MESSAGE } from '../../../api/feedback';
 import { styles } from './FeedbackModal.styles';
 

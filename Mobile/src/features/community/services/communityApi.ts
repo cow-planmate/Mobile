@@ -75,6 +75,7 @@ export async function fetchPosts(
   size: number,
   sort = 'latest',
   q?: string,
+  signal?: AbortSignal,
 ): Promise<PageData<CommunityPostSummary>> {
   const params: Record<string, string> = {
     category,
@@ -86,7 +87,7 @@ export async function fetchPosts(
     params.q = q.trim();
   }
 
-  const response = await axios.get(url('/posts'), { params });
+  const response = await axios.get(url('/posts'), { params, signal });
   return mapPage(response.data);
 }
 
@@ -100,6 +101,7 @@ export async function fetchFeedPosts(
   page: number,
   size: number,
   filters: FeedFilterParams = {},
+  signal?: AbortSignal,
 ): Promise<PageData<CommunityPostSummary>> {
   const params: Record<string, string> = {
     category: 'feed',
@@ -116,7 +118,7 @@ export async function fetchFeedPosts(
   if (filters.tag) params.tag = filters.tag;
   if (filters.q && filters.q.trim()) params.q = filters.q.trim();
 
-  const response = await axios.get(url('/posts'), { params });
+  const response = await axios.get(url('/posts'), { params, signal });
   return mapPage(response.data);
 }
 
@@ -153,8 +155,9 @@ export async function fetchHotPosts(
 /** 게시글 상세 조회 (조회수가 증가한다) */
 export async function fetchPost(
   postId: number | string,
+  signal?: AbortSignal,
 ): Promise<CommunityPostDetail> {
-  const response = await axios.get(url(`/posts/${postId}`));
+  const response = await axios.get(url(`/posts/${postId}`), { signal });
   return mapCreatedAt(response.data);
 }
 
@@ -202,9 +205,11 @@ export async function fetchComments(
   postId: number | string,
   page = 0,
   size = 50,
+  signal?: AbortSignal,
 ): Promise<PageData<CommunityComment>> {
   const response = await axios.get(url(`/posts/${postId}/comments`), {
     params: { page: String(page), size: String(size) },
+    signal,
   });
   return mapPage(response.data);
 }

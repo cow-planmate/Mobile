@@ -9,11 +9,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FastImage from 'react-native-fast-image';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import {
-  faUser,
-  faLocationDot,
-  faCalendar,
-} from '@fortawesome/free-solid-svg-icons';
+import { faUser } from '@fortawesome/free-solid-svg-icons/faUser';
+import { faLocationDot } from '@fortawesome/free-solid-svg-icons/faLocationDot';
+import { faCalendar } from '@fortawesome/free-solid-svg-icons/faCalendar';
 import { CalendarModal, Header, Invitation, NotificationModal, PaxModal, SearchLocationModal } from '../../../components/common';
 import { normalize } from '../../../utils/normalize';
 import { styles } from './HomeScreen.styles';

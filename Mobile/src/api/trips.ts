@@ -310,6 +310,9 @@ export async function fetchWeather(
 // 공유 및 협업 API
 // ────────────────────────────────────────────────
 
+/** 서버 EditPlanNameRequest의 @Size(max = 100) */
+export const PLAN_NAME_MAX_LENGTH = 100;
+
 /** 일정 공유 상태 조회 */
 export async function getShareStatus(planId: string): Promise<{ isShared: boolean }> {
   const response = await axios.get(resolveApiUrl(`/api/plan/${planId}/share`));
@@ -330,7 +333,7 @@ export async function getShareUrl(
     const status = await getShareStatus(planId);
     isShared = status.isShared;
   } catch (e) {
-    console.log('Failed to fetch share status:', e);
+    if (__DEV__) console.log('Failed to fetch share status:', e);
   }
   return {
     shareUrl: `${WEB_URL}/create?id=${planId}`,
@@ -338,18 +341,20 @@ export async function getShareUrl(
   };
 }
 
+/** 편집자 목록 항목 (서버 EditorDto) */
+interface EditorDto {
+  userId: string;
+  nickname: string;
+}
+
 /** 편집자 목록 조회 */
-export async function getEditors(planId: string): Promise<{ userId: string; nickname: string }[]> {
-  const response = await axios.get(resolveApiUrl(`/api/plan/${planId}/editors`));
-  const data = response?.data;
-  const rawEditors = Array.isArray(data)
-    ? data
-    : data && typeof data === 'object' && 'editors' in data && Array.isArray(data.editors)
-    ? data.editors
-    : [];
-  return rawEditors.map((e: any) => ({
-    userId: String(e?.userId ?? ''),
-    nickname: String(e?.nickname ?? ''),
+export async function getEditors(planId: string): Promise<EditorDto[]> {
+  const response = await axios.get<{ editors?: EditorDto[] }>(
+    resolveApiUrl(`/api/plan/${planId}/editors`),
+  );
+  return (response.data?.editors ?? []).map(editor => ({
+    userId: String(editor?.userId ?? ''),
+    nickname: String(editor?.nickname ?? ''),
   }));
 }
 
@@ -401,7 +406,8 @@ export async function leaveAsEditor(planId: string): Promise<void> {
  */
 export interface PendingInvitation {
   requestId: number;
-  senderId: number;
+  /** 서버 senderId는 UUID 문자열이다(PendingRequestDto). */
+  senderId: string;
   senderNickname: string;
   planId: string;
   planName: string;
@@ -413,9 +419,9 @@ export async function getPendingInvitations(): Promise<PendingInvitation[]> {
   const response = await axios.get(
     resolveApiUrl('/api/collaboration-requests/pending'),
   );
-  const rawList = response.data.requests || response.data.pendingRequests || [];
+  const rawList = response.data?.requests ?? [];
   return rawList.map((item: any) => ({
-    requestId: item.collaborationRequestId ?? item.requestId,
+    requestId: item.collaborationRequestId,
     senderId: item.senderId,
     senderNickname: item.senderNickname,
     planId: item.planId,

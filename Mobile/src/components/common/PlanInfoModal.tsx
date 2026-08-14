@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Modal, Pressable, TouchableOpacity } from 'react-native';
-import { X } from 'lucide-react-native';
+import X from 'lucide-react-native/dist/esm/icons/x';
 import { styles } from './PlanInfoModal.styles';
 
 type PlanInfoModalProps = {

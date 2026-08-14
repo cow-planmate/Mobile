@@ -12,17 +12,15 @@ import {
   View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import {
-  Check,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Circle,
-  Pencil,
-  RefreshCw,
-  Trash2,
-  X,
-} from 'lucide-react-native';
+import Check from 'lucide-react-native/dist/esm/icons/check';
+import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
+import ChevronDown from 'lucide-react-native/dist/esm/icons/chevron-down';
+import ChevronUp from 'lucide-react-native/dist/esm/icons/chevron-up';
+import Circle from 'lucide-react-native/dist/esm/icons/circle';
+import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
+import RefreshCw from 'lucide-react-native/dist/esm/icons/refresh-cw';
+import Trash2 from 'lucide-react-native/dist/esm/icons/trash-2';
+import X from 'lucide-react-native/dist/esm/icons/x';
 import {
   CHECKLIST_CONTENT_MAX_LENGTH,
   ChecklistItem,

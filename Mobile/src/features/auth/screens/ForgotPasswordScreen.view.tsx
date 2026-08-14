@@ -7,14 +7,12 @@ import Animated, {
   FadeInRight,
   FadeInLeft,
 } from 'react-native-reanimated';
-import {
-  ArrowLeft,
-  Check,
-  AlertCircle,
-  CheckCircle2,
-  XCircle,
-  Loader,
-} from 'lucide-react-native';
+import ArrowLeft from 'lucide-react-native/dist/esm/icons/arrow-left';
+import Check from 'lucide-react-native/dist/esm/icons/check';
+import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
+import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
+import XCircle from 'lucide-react-native/dist/esm/icons/circle-x';
+import Loader from 'lucide-react-native/dist/esm/icons/loader';
 import { styles } from './ForgotPasswordScreen.styles';
 import { COLORS } from '../authTokens';
 import { sf } from '../../../design/scale';

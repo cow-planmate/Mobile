@@ -9,14 +9,12 @@ import {
 } from 'react-native';
 import { styles, COLORS } from './ScheduleEditModal.styles';
 import DatePicker from 'react-native-date-picker';
-import {
-  X,
-  Plus,
-  Minus,
-  CalendarDays,
-  Clock,
-  ChevronDown,
-} from 'lucide-react-native';
+import X from 'lucide-react-native/dist/esm/icons/x';
+import Plus from 'lucide-react-native/dist/esm/icons/plus';
+import Minus from 'lucide-react-native/dist/esm/icons/minus';
+import CalendarDays from 'lucide-react-native/dist/esm/icons/calendar-days';
+import Clock from 'lucide-react-native/dist/esm/icons/clock';
+import ChevronDown from 'lucide-react-native/dist/esm/icons/chevron-down';
 import { useAlert } from '../../contexts/AlertContext';
 import { timeToMinutes } from '../../utils/timeUtils';
 import { findInvalidDateOrder } from '../../utils/scheduleEditSync';

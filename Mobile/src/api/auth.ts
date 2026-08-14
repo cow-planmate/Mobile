@@ -8,6 +8,22 @@ import axios from 'axios';
  * 공유해 쓰는 것만 둔다.
  */
 
+/**
+ * 닉네임 중복 확인
+ * POST /api/auth/register/nickname/verify — { nicknameAvailable }
+ *
+ * 서버는 중복 여부만 본다. 길이 규칙은 utils/nickname이 호출 전에 거른다.
+ */
+export const verifyNicknameAvailable = async (
+  nickname: string,
+): Promise<boolean> => {
+  const { data } = await axios.post<{ nicknameAvailable: boolean }>(
+    '/api/auth/register/nickname/verify',
+    { nickname },
+  );
+  return data.nicknameAvailable;
+};
+
 /** 비밀번호 변경 요청 (ChangePasswordRequest) */
 export interface ChangePasswordRequest {
   currentPassword: string;

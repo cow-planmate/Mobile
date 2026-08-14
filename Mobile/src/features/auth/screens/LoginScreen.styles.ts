@@ -15,19 +15,26 @@ export const styles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
+  /**
+   * 위에서부터 쌓는다. 세로 가운데 정렬은 오류 배너가 나타나거나 키보드가
+   * 오르내릴 때마다 폼 전체가 위아래로 밀려, 방금 보던 칸이 움직인다.
+   */
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
     paddingHorizontal: sf(24),
-    paddingVertical: sf(24),
+    paddingTop: sf(32),
+    paddingBottom: sf(24),
   },
+  /**
+   * 제목도 폼과 같은 축에서 시작한다. 가운데 정렬이던 제목은 왼쪽 정렬인
+   * 입력 라벨과 축이 어긋나 시선 출발점이 두 개가 된다.
+   */
   title: {
     fontSize: sp(TYPO.display.fontSize),
     fontFamily: TYPO.display.fontFamily,
     lineHeight: sp(TYPO.display.lineHeight),
     letterSpacing: TYPO.display.letterSpacing,
-    textAlign: 'center',
-    marginBottom: sf(32),
+    marginBottom: sf(28),
     color: COLORS.text,
   },
   inputGroup: {
@@ -111,31 +118,36 @@ export const styles = StyleSheet.create({
     lineHeight: sp(TYPO.label.lineHeight),
   },
 
+  /**
+   * 비밀번호 칸에 딸린 보조 동선. 칸 오른쪽 끝에 맞춰 두면 입력 흐름을
+   * 끊지 않으면서도 눈에 들어온다.
+   */
+  fieldAssistRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: sf(2),
+    marginRight: sf(-8),
+  },
   /** 버튼 자체는 AuthSubmitButton이 그린다. 여기서는 간격만 준다. */
   submitButtonSpacing: {
+    marginTop: sf(16),
+  },
+  /** 마지막 사용 수단이 이메일일 때. 소셜 배지와 같은 역할을 폼 쪽에서 한다. */
+  lastUsedHint: {
+    marginTop: sf(10),
+    textAlign: 'center',
+    color: COLORS.textSecondary,
+    fontSize: sp(TYPO.caption.fontSize),
+    fontFamily: TYPO.caption.fontFamily,
+    lineHeight: sp(TYPO.caption.lineHeight),
+  },
+  /** 로그인 수단들과 같은 층위의 선택지. 꼬리 문구와 묶지 않는다. */
+  signupRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
     marginTop: sf(24),
-  },
-  linksContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-    marginTop: sf(20),
-  },
-  /**
-   * 계정 없음 안내와 개인정보 링크를 한 꼬리로 묶는 바깥 그룹.
-   * 위 소셜 로그인 섹션과의 간격은 여기 하나에서만 준다.
-   */
-  tailLinksGroup: {
-    width: '100%',
-    marginTop: sf(20),
-    alignItems: 'center',
-  },
-  tailLinksRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
   },
   linkButton: {
     paddingVertical: sf(13),
@@ -217,14 +229,18 @@ export const styles = StyleSheet.create({
   },
 
   /**
-   * ── Privacy Policy Link ──
-   * tailLinksGroup 안에 붙어 있으므로 여백은 회원가입 행과의 거리만큼만
-   * 작게 둔다. 예전처럼 20을 주면 같은 꼬리인데도 독립 섹션처럼 보였다.
+   * ── 화면 바닥 고지 ──
+   * 스크롤과 함께 움직이지 않도록 컨테이너 바닥에 붙인다. 선택지 사이에
+   * 끼어 있으면 조작으로 오인되고, 스크롤 끝까지 내려야만 보였다.
    */
+  footer: {
+    paddingTop: sf(4),
+    alignItems: 'center',
+    backgroundColor: COLORS.bg,
+  },
   privacyLinkButton: {
     alignSelf: 'center',
-    marginTop: sf(4),
-    paddingVertical: sf(12),
+    paddingVertical: sf(10),
     paddingHorizontal: sf(12),
   },
   privacyLinkText: {

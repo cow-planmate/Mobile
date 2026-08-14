@@ -1,17 +1,26 @@
 import { getChecklist } from '../src/api/checklist';
-import { useChecklist } from '../src/features/itinerary/hooks/useChecklistQueries';
-import { useQuery } from '@tanstack/react-query';
+import {
+  useChecklist,
+  useToggleChecklistItem,
+} from '../src/features/itinerary/hooks/useChecklistQueries';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 jest.mock('@tanstack/react-query', () => ({
   useQuery: jest.fn(),
+  useMutation: jest.fn(),
+  useQueryClient: jest.fn(),
 }));
 
 jest.mock('../src/api/checklist', () => ({
   getChecklist: jest.fn(),
+  editChecklistItemChecked: jest.fn(),
+  reorderChecklistItems: jest.fn(),
 }));
 
 const mockedGetChecklist = getChecklist as jest.MockedFunction<typeof getChecklist>;
 const mockUseQuery = useQuery as jest.Mock;
+const mockUseMutation = useMutation as jest.Mock;
+const mockUseQueryClient = useQueryClient as jest.Mock;
 const PLAN_ID = '3f6c1b7e-0000-4000-8000-000000000001';
 
 describe('useChecklist', () => {
@@ -34,5 +43,82 @@ describe('useChecklist', () => {
     options.queryFn();
 
     expect(mockedGetChecklist).toHaveBeenCalledWith(PLAN_ID, 'shared');
+  });
+});
+
+describe('useToggleChecklistItem', () => {
+  const QUERY_KEY = ['checklist', PLAN_ID, 'shared'];
+
+  /** 훅이 쓰는 QueryClient를 준비한다. 훅 호출은 각 테스트 본문에서 한다. */
+  const mockQueryClient = (fetchStatus: 'fetching' | 'idle') => {
+    const queryClient = {
+      cancelQueries: jest.fn().mockResolvedValue(undefined),
+      getQueryState: jest.fn().mockReturnValue({ fetchStatus }),
+      getQueryData: jest.fn().mockReturnValue([
+        { itemId: 1, content: '여권', isChecked: false, sortOrder: 0 },
+      ]),
+      setQueryData: jest.fn(),
+      invalidateQueries: jest.fn(),
+    };
+    mockUseQueryClient.mockReturnValue(queryClient);
+    return queryClient;
+  };
+
+  const toggleOptions = () => mockUseMutation.mock.calls[0][0];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('진행 중이던 조회를 끊었으면 성공 후 목록을 다시 맞춘다', async () => {
+    const queryClient = mockQueryClient('fetching');
+    useToggleChecklistItem(PLAN_ID, 'shared');
+    const options = toggleOptions();
+
+    const context = await options.onMutate({ itemId: 1, isChecked: true });
+    expect(queryClient.cancelQueries).toHaveBeenCalledWith({
+      queryKey: QUERY_KEY,
+    });
+    expect(context.cancelledFetch).toBe(true);
+
+    options.onSettled(undefined, null, { itemId: 1, isChecked: true }, context);
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: QUERY_KEY,
+    });
+  });
+
+  it('끊은 조회가 없으면 성공 후 재조회하지 않는다', async () => {
+    const queryClient = mockQueryClient('idle');
+    useToggleChecklistItem(PLAN_ID, 'shared');
+    const options = toggleOptions();
+
+    const context = await options.onMutate({ itemId: 1, isChecked: true });
+    expect(context.cancelledFetch).toBe(false);
+
+    options.onSettled(undefined, null, { itemId: 1, isChecked: true }, context);
+    expect(queryClient.invalidateQueries).not.toHaveBeenCalled();
+  });
+
+  it('실패하면 직전 목록으로 되돌리고 재조회한다', async () => {
+    const queryClient = mockQueryClient('idle');
+    useToggleChecklistItem(PLAN_ID, 'shared');
+    const options = toggleOptions();
+
+    const context = await options.onMutate({ itemId: 1, isChecked: true });
+    options.onError(new Error('boom'), { itemId: 1, isChecked: true }, context);
+    expect(queryClient.setQueryData).toHaveBeenLastCalledWith(
+      QUERY_KEY,
+      context.previousItems,
+    );
+
+    options.onSettled(
+      undefined,
+      new Error('boom'),
+      { itemId: 1, isChecked: true },
+      context,
+    );
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: QUERY_KEY,
+    });
   });
 });

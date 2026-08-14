@@ -16,15 +16,13 @@ import {
 } from 'react-native';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import {
-  faBed,
-  faCircleInfo,
-  faMagnifyingGlass,
-  faPencil,
-  faUmbrellaBeach,
-  faUtensils,
-} from '@fortawesome/free-solid-svg-icons';
-import { X } from 'lucide-react-native';
+import { faBed } from '@fortawesome/free-solid-svg-icons/faBed';
+import { faCircleInfo } from '@fortawesome/free-solid-svg-icons/faCircleInfo';
+import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons/faMagnifyingGlass';
+import { faPencil } from '@fortawesome/free-solid-svg-icons/faPencil';
+import { faUmbrellaBeach } from '@fortawesome/free-solid-svg-icons/faUmbrellaBeach';
+import { faUtensils } from '@fortawesome/free-solid-svg-icons/faUtensils';
+import X from 'lucide-react-native/dist/esm/icons/x';
 import { Place } from './TimelineItem';
 import KakaoMapView from './KakaoMapView';
 import { resolveApiUrl } from '../../../utils/apiUrl';

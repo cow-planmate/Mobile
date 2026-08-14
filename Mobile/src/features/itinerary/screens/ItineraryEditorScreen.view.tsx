@@ -48,23 +48,19 @@ import {
   DEFAULT_DAY_END,
 } from '../../../utils/timeUtils';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import {
-  faCalendar,
-  faCalendarDays,
-  faMapPin,
-  faCheck,
-  faCircleInfo,
-  faRedo,
-  faUserPlus,
-  faUndo,
-  faUsers,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
-import {
-  Map as MapOutlineIcon,
-  ChevronLeft,
-  ListChecks,
-} from 'lucide-react-native';
+import { faCalendar } from '@fortawesome/free-solid-svg-icons/faCalendar';
+import { faCalendarDays } from '@fortawesome/free-solid-svg-icons/faCalendarDays';
+import { faMapPin } from '@fortawesome/free-solid-svg-icons/faMapPin';
+import { faCheck } from '@fortawesome/free-solid-svg-icons/faCheck';
+import { faCircleInfo } from '@fortawesome/free-solid-svg-icons/faCircleInfo';
+import { faRedo } from '@fortawesome/free-solid-svg-icons/faRedo';
+import { faUserPlus } from '@fortawesome/free-solid-svg-icons/faUserPlus';
+import { faUndo } from '@fortawesome/free-solid-svg-icons/faUndo';
+import { faUsers } from '@fortawesome/free-solid-svg-icons/faUsers';
+import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
+import MapOutlineIcon from 'lucide-react-native/dist/esm/icons/map';
+import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
+import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
 
 const Tab = createMaterialTopTabNavigator();
 const TabNavigatorAny = Tab.Navigator as any;

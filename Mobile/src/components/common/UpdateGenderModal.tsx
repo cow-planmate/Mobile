@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, Pressable, TouchableOpacity } from 'react-native';
 import { styles } from './UpdateGenderModal.styles';
-import { X } from 'lucide-react-native';
+import X from 'lucide-react-native/dist/esm/icons/x';
 
 type UpdateGenderModalProps = {
   visible: boolean;

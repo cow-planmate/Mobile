@@ -13,6 +13,12 @@ const INVALID_CREDENTIALS_CODE = 'AUTH_003';
 
 const EMAIL_REGEX = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$/;
 
+/** SNS 로그인 실패 리다이렉트의 reason별 안내 (OAuthController.buildFailRedirect) */
+const SNS_FAIL_MESSAGES: Record<string, string> = {
+  INVALID_STATE: '인증이 만료되었어요. 처음부터 다시 시도해 주세요.',
+  UNSUPPORTED_PROVIDER: '지원하지 않는 소셜 로그인이에요.',
+};
+
 type LoginScreenProps = {
   navigation: { navigate: (screen: string, params?: any) => void };
 };
@@ -126,8 +132,15 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           if (code) {
             try {
               await oauthLogin(code, snsProvider ?? 'google');
-            } catch (e: any) {
-              setErrors({ form: '소셜 로그인에 실패했어요. 다시 시도해 주세요.' });
+            } catch (e) {
+              // 가입 세션 만료(OAUTH_002)·이미 가입된 계정(OAUTH_004)처럼 서버가
+              // 사유를 구분해 주므로, 있으면 그 문구를 그대로 쓴다.
+              setErrors({
+                form: getDisplayErrorMessage(
+                  e,
+                  '소셜 로그인에 실패했어요. 다시 시도해 주세요.',
+                ),
+              });
             }
           }
         } else if (status === 'NEED_ADDITIONAL_INFO') {
@@ -143,9 +156,13 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             });
           }
         } else {
+          // 서버는 실패 리다이렉트에 reason을 붙인다(UNSUPPORTED_PROVIDER ·
+          // INVALID_STATE · UNKNOWN). 재시도로 풀리는 경우와 아닌 경우를 나눈다.
           showAlert({
             title: '오류',
-            message: '소셜 로그인 중 오류가 발생했습니다.',
+            message:
+              SNS_FAIL_MESSAGES[params.get('reason') ?? ''] ??
+              '소셜 로그인 중 오류가 발생했습니다.',
           });
         }
       }

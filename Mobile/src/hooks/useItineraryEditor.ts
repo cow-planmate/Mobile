@@ -6,6 +6,7 @@ import {
   useCallback,
 } from 'react';
 import { ScrollView } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { resolveApiUrl } from '../utils/apiUrl';
 import {
@@ -23,6 +24,7 @@ import {
   DEFAULT_DAY_END,
 } from '../utils/timeUtils';
 import { createTempPlaceId } from '../utils/planSyncPayload';
+import { dropPlanComplete } from './planCompleteCache';
 import { MINUTE_HEIGHT } from '../features/itinerary/screens/ItineraryEditorScreen.styles';
 import Toast from 'react-native-toast-message';
 
@@ -52,6 +54,7 @@ const formatDate = (date: Date) => {
  * @param _navigation 네비게이션 객체
  */
 export const useItineraryEditor = (route: any, _navigation: any) => {
+  const queryClient = useQueryClient();
   const {
     days,
     setDays,
@@ -80,6 +83,8 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   const timelineScrollRef = useRef<ScrollView>(null);
   /** days에 이미 담겨 있는 일정의 planId. 다른 plan의 응답과 비교하지 않기 위한 기준. */
   const loadedPlanIdRef = useRef<string | null>(null);
+  /** 최초 일정 조회가 끝났는지. 화면 진입 시 전체화면 로딩을 이 값으로 판단한다. */
+  const [isInitialPlanLoading, setIsInitialPlanLoading] = useState(true);
 
   const initDaysFromDates = useCallback(() => {
     if (!route.params?.startDate || !route.params?.endDate) return;
@@ -246,6 +251,21 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   }, [route.params?.planId, initDaysFromDates, setDays]);
 
   /**
+   * 편집 화면을 벗어나면 이 일정의 상세 응답 캐시를 버린다.
+   *
+   * 편집 중 바뀐 날짜·블록은 이 캐시에 반영되지 않는다. 남겨 두면 프로필 목록이
+   * 편집 이전 기간을 다시 보여준다.
+   */
+  useEffect(() => {
+    const editingPlanId = route.params?.planId;
+    return () => {
+      if (editingPlanId) {
+        dropPlanComplete(queryClient, String(editingPlanId));
+      }
+    };
+  }, [route.params?.planId, queryClient]);
+
+  /**
    * 편집 대상 plan이 바뀌면 조회 전에 먼저 전역 일정 상태를 비웁니다.
    *
    * 레이아웃 이펙트는 항상 일반 이펙트보다 먼저 실행되므로, 소스 순서와 무관하게
@@ -262,6 +282,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     if (scopedPlanIdRef.current === nextPlanId) return;
     scopedPlanIdRef.current = nextPlanId;
     isInitialized.current = false;
+    setIsInitialPlanLoading(true);
     resetItinerary();
   }, [route.params?.planId, resetItinerary]);
 
@@ -269,7 +290,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   useEffect(() => {
     if (isInitialized.current) return;
     isInitialized.current = true;
-    fetchPlanDetails();
+    fetchPlanDetails().finally(() => setIsInitialPlanLoading(false));
   }, [fetchPlanDetails]);
 
 
@@ -381,5 +402,6 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     selectedDay,
     planMetadata,
     fetchPlanDetails,
+    isInitialPlanLoading,
   };
 };

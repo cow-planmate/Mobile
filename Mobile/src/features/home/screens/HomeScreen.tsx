@@ -1,15 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useFocusEffect } from '@react-navigation/native';
 import { AppState, AppStateStatus, Modal, BackHandler } from 'react-native';
 import { AppStackParamList } from '../../../navigation/types';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { HomeScreenView } from './HomeScreen.view';
 import {
-  getPendingInvitations,
   acceptInvitation,
   rejectInvitation,
-  PendingInvitation,
 } from '../../../api/trips';
 import { useAlert } from '../../../contexts/AlertContext';
 import { useInvitationSse } from '../../../hooks/useInvitationSse';
@@ -20,6 +17,10 @@ import {
 import { AirplaneLoading } from '../../../components/common';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
 import { invalidatePlanCaches } from '../../../hooks/planCache';
+import {
+  usePendingInvitationActions,
+  usePendingInvitations,
+} from '../../../hooks/usePendingInvitations';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatDateLocal } from '../../../utils/timeUtils';
 import {
@@ -70,34 +71,16 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [travelId, setTravelId] = useState<number>(0);
 
   const [isSearchModalVisible, setSearchModalVisible] = useState(false);
-  const [pendingRequests, setPendingRequests] = useState<PendingInvitation[]>(
-    [],
-  );
+  const { data: pendingRequests = [] } = usePendingInvitations(!!user);
+  const pendingInvitations = usePendingInvitationActions();
   const [isNotificationModalVisible, setNotificationModalVisible] =
     useState(false);
   const [appState, setAppState] = useState<AppStateStatus>(
     AppState.currentState,
   );
 
-  const fetchPendingRequests = useCallback(async () => {
-    try {
-      const requests = await getPendingInvitations();
-      if (requests) {
-        setPendingRequests(requests);
-      }
-    } catch (error) {
-      console.log('초대 요청 목록 조회 실패:', error);
-    }
-  }, []);
-
-
-
-  // 화면 포커스 시 알림 자동 갱신
-  useFocusEffect(
-    useCallback(() => {
-      void fetchPendingRequests();
-    }, [fetchPendingRequests]),
-  );
+  // 목록은 캐시가 신선하면 그대로 쓴다. 새 요청은 SSE·FCM이 알려 준다.
+  const fetchPendingRequests = pendingInvitations.invalidate;
 
   /**
    * 내가 보낸 초대·편집 권한 요청이 처리된 결과.
@@ -161,7 +144,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       // 무효화하지 않으면 내 일정 목록에 최대 staleTime(5분)만큼 나타나지 않는다.
       void invalidatePlanCaches(queryClient);
       showAlert({ title: '수락 완료', message: describeAcceptResult(type) });
-      setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
+      pendingInvitations.remove(requestId);
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
       }
@@ -182,7 +165,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     try {
       await rejectInvitation(requestId);
       showAlert({ title: '거절 완료', message: describeRejectResult(type) });
-      setPendingRequests(prev => prev.filter(r => r.requestId !== requestId));
+      pendingInvitations.remove(requestId);
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
       }

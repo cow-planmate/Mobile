@@ -10,10 +10,16 @@ import {
   getDisplayErrorMessage,
 } from '../../../utils/errorHandler';
 import { toBirthdateString } from '../../../utils/birthdate';
+import { getNicknameLengthError } from '../../../utils/nickname';
+import { getPasswordRequirements } from '../../../utils/passwordPolicy';
+import { verifyNicknameAvailable } from '../../../api/auth';
 import { setAdjustNothing, setAdjustResize } from '../../../utils/softInputMode';
 
 /** 이미 가입된 이메일일 때 서버가 주는 코드 (AUTH_004) */
 const DUPLICATE_EMAIL_CODE = 'AUTH_004';
+
+/** 화면 선택값 → 서버 Gender enum. 서버에는 OTHER도 있으나 화면은 둘만 받는다. */
+const GENDER_ENUM: Record<string, string> = { male: 'MALE', female: 'FEMALE' };
 
 const EMAIL_REGEX = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$/;
 
@@ -235,7 +241,7 @@ export default function SignupScreen() {
         },
       );
 
-      const token = response.data.verificationToken || response.data.token;
+      const token = response.data.verificationToken;
       if (!token) {
         setForm(prev => ({ ...prev, verificationCode: '' }));
         setFieldError('verificationCode', '인증번호가 올바르지 않아요.');
@@ -318,18 +324,24 @@ export default function SignupScreen() {
       return;
     }
 
+    // 서버 중복 확인은 길이를 보지 않는다. 2자 미만을 그대로 보내면 '사용 가능'을
+    // 받은 뒤 가입 요청에서야 400이 난다.
+    const lengthError = getNicknameLengthError(nickname);
+    if (lengthError) {
+      setNicknameStatus('idle');
+      setErrors(prev => ({ ...prev, nickname: lengthError }));
+      return;
+    }
+
     setNicknameStatus('checking');
     const seq = ++nicknameSeqRef.current;
 
     const id = setTimeout(async () => {
       try {
-        const response = await axios.post(
-          '/api/auth/register/nickname/verify',
-          { nickname },
-        );
+        const available = await verifyNicknameAvailable(nickname);
         // 빠르게 입력하면 이전 요청이 나중에 도착할 수 있다.
         if (seq !== nicknameSeqRef.current) return;
-        setNicknameStatus(response.data.nicknameAvailable ? 'available' : 'taken');
+        setNicknameStatus(available ? 'available' : 'taken');
       } catch (error) {
         if (seq !== nicknameSeqRef.current) return;
         setNicknameStatus('idle');
@@ -362,7 +374,8 @@ export default function SignupScreen() {
       setFieldError('birthdate', '생년월일을 다시 확인해 주세요.');
       return;
     }
-    if (!form.gender) {
+    const genderEnum = GENDER_ENUM[form.gender];
+    if (!genderEnum) {
       setFieldError('gender', '성별을 선택해 주세요.');
       return;
     }
@@ -377,7 +390,7 @@ export default function SignupScreen() {
         signupToken: emailAuthToken,
         nickname: form.nickname.trim(),
         password: form.password,
-        gender: form.gender === 'male' ? 'MALE' : 'FEMALE',
+        gender: genderEnum,
         birthdate: form.birthdate,
       });
 
@@ -420,13 +433,10 @@ export default function SignupScreen() {
 
   /* ── 단계 이동 ── */
 
-  const passwordRequirements = useMemo(() => {
-    const hasMinLength = form.password.length >= 8;
-    const hasCombination = /(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*])/.test(
-      form.password,
-    );
-    return { hasMinLength, hasCombination };
-  }, [form.password]);
+  const passwordRequirements = useMemo(
+    () => getPasswordRequirements(form.password),
+    [form.password],
+  );
 
   const isPasswordMatch = useMemo(
     () =>
@@ -473,8 +483,9 @@ export default function SignupScreen() {
       }
     }
     if (step === totalSteps) {
-      if (!form.nickname.trim()) {
-        setFieldError('nickname', '닉네임을 입력해 주세요.');
+      const nicknameError = getNicknameLengthError(form.nickname);
+      if (nicknameError) {
+        setFieldError('nickname', nicknameError);
         return;
       }
       if (nicknameStatus === 'taken') {

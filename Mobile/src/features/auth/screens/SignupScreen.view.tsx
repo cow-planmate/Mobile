@@ -17,15 +17,13 @@ import Animated, {
   FadeInLeft,
 } from 'react-native-reanimated';
 import DatePicker from 'react-native-date-picker';
-import {
-  ArrowLeft,
-  Eye,
-  EyeOff,
-  Check,
-  Circle,
-  AlertCircle,
-  Loader,
-} from 'lucide-react-native';
+import ArrowLeft from 'lucide-react-native/dist/esm/icons/arrow-left';
+import Eye from 'lucide-react-native/dist/esm/icons/eye';
+import EyeOff from 'lucide-react-native/dist/esm/icons/eye-off';
+import Check from 'lucide-react-native/dist/esm/icons/check';
+import Circle from 'lucide-react-native/dist/esm/icons/circle';
+import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
+import Loader from 'lucide-react-native/dist/esm/icons/loader';
 import { styles } from './SignupScreen.styles';
 import { COLORS } from '../authTokens';
 import { sf } from '../../../design/scale';
@@ -33,6 +31,8 @@ import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
+import { PASSWORD_MAX_LENGTH } from '../../../utils/passwordPolicy';
+import { NICKNAME_MAX_LENGTH } from '../../../utils/nickname';
 import { revealStep, PUSH_TRANSITION_MS } from '../motion';
 import {
   formatBirthdate,
@@ -560,6 +560,7 @@ export const SignupScreenView = ({
                       placeholderTextColor={COLORS.textSecondary}
                       onChangeText={v => onChange('password', v)}
                       secureTextEntry={!isPasswordVisible}
+                      maxLength={PASSWORD_MAX_LENGTH}
                       autoCapitalize="none"
                       autoCorrect={false}
                       autoComplete="password-new"
@@ -618,6 +619,7 @@ export const SignupScreenView = ({
                       placeholderTextColor={COLORS.textSecondary}
                       onChangeText={v => onChange('confirmPassword', v)}
                       secureTextEntry={!isConfirmPasswordVisible}
+                      maxLength={PASSWORD_MAX_LENGTH}
                       autoCapitalize="none"
                       autoCorrect={false}
                       autoComplete="password-new"
@@ -682,7 +684,7 @@ export const SignupScreenView = ({
                       importantForAutofill="yes"
                       returnKeyType="next"
                       onSubmitEditing={() => setBirthdatePickerOpen(true)}
-                      maxLength={20}
+                      maxLength={NICKNAME_MAX_LENGTH}
                       onFocus={() => setFocusedField('nickname')}
                       onBlur={() => setFocusedField(null)}
                       accessibilityLabel="닉네임"

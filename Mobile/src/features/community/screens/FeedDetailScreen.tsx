@@ -11,16 +11,14 @@ import FastImage from 'react-native-fast-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
-  CalendarDays,
-  ChevronLeft,
-  Copy,
-  Eye,
-  MapPin,
-  Pencil,
-  ThumbsDown,
-  ThumbsUp,
-} from 'lucide-react-native';
+import CalendarDays from 'lucide-react-native/dist/esm/icons/calendar-days';
+import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
+import Copy from 'lucide-react-native/dist/esm/icons/copy';
+import Eye from 'lucide-react-native/dist/esm/icons/eye';
+import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
+import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
+import ThumbsDown from 'lucide-react-native/dist/esm/icons/thumbs-down';
+import ThumbsUp from 'lucide-react-native/dist/esm/icons/thumbs-up';
 import { normalize } from '../../../utils/normalize';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAuthStore } from '../../../store/useAuthStore';

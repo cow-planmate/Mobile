@@ -7,20 +7,20 @@ import { ItineraryProvider } from './src/contexts/ItineraryContext';
 import { WebSocketProvider } from './src/contexts/WebSocketContext';
 import { PlacesProvider } from './src/contexts/PlacesContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider, focusManager } from '@tanstack/react-query';
 import { queryClient } from './src/api/queryClient';
 
 // axios 인터셉터 설정 초기화
 import './src/api/axiosConfig';
 
-import { StyleSheet, StatusBar } from 'react-native';
+import { StyleSheet, StatusBar, AppState, AppStateStatus } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from './src/components/common/toastConfig';
 
 // 글로벌 폰트 스케일링 가드는 index.js에서 최우선 적용된다.
 // (React 19에서 defaultProps가 제거되어 utils/fontScalingGuard로 대체)
 
-const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && true;
+const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && false;
 
 /**
  * 토스트 스타일.
@@ -40,6 +40,19 @@ function App() {
   React.useEffect(() => {
     void initializeAuth();
   }, [initializeAuth]);
+
+  React.useEffect(() => {
+    // react-query는 웹의 window focus/blur로 포커스를 판단하는데 RN에는 없다.
+    // AppState로 대체해, 백그라운드에서 돌아왔을 때 stale 쿼리를 자동 재조회한다.
+    const handleAppStateChange = (status: AppStateStatus) => {
+      focusManager.setFocused(status === 'active');
+    };
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange,
+    );
+    return () => subscription.remove();
+  }, []);
 
   if (SHOW_STORYBOOK) {
     // Storybook 런타임(+ 모든 *.stories 모듈)이 앱 콜드 스타트에 실행되지 않도록

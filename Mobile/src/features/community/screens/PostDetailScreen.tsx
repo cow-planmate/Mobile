@@ -10,17 +10,15 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
-  CheckCircle2,
-  ChevronLeft,
-  Eye,
-  MapPin,
-  Pencil,
-  ThumbsDown,
-  ThumbsUp,
-  Trash2,
-  Users,
-} from 'lucide-react-native';
+import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
+import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
+import Eye from 'lucide-react-native/dist/esm/icons/eye';
+import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
+import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
+import ThumbsDown from 'lucide-react-native/dist/esm/icons/thumbs-down';
+import ThumbsUp from 'lucide-react-native/dist/esm/icons/thumbs-up';
+import Trash2 from 'lucide-react-native/dist/esm/icons/trash-2';
+import Users from 'lucide-react-native/dist/esm/icons/users';
 import { normalize } from '../../../utils/normalize';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAuthStore } from '../../../store/useAuthStore';

@@ -8,14 +8,12 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
-import {
-  Bus,
-  Car,
-  ChevronDown,
-  ChevronUp,
-  Footprints,
-  X,
-} from 'lucide-react-native';
+import Bus from 'lucide-react-native/dist/esm/icons/bus';
+import Car from 'lucide-react-native/dist/esm/icons/car';
+import ChevronDown from 'lucide-react-native/dist/esm/icons/chevron-down';
+import ChevronUp from 'lucide-react-native/dist/esm/icons/chevron-up';
+import Footprints from 'lucide-react-native/dist/esm/icons/footprints';
+import X from 'lucide-react-native/dist/esm/icons/x';
 import { TransitRouteOption, TransitStep } from '../../../api/route';
 import { SegmentInfo } from '../hooks/useRouteQueries';
 import {

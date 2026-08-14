@@ -2,17 +2,16 @@ import React, { useRef } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
-import {
-  ArrowLeft,
-  Eye,
-  EyeOff,
-  Check,
-  Circle,
-  AlertCircle,
-} from 'lucide-react-native';
+import ArrowLeft from 'lucide-react-native/dist/esm/icons/arrow-left';
+import Eye from 'lucide-react-native/dist/esm/icons/eye';
+import EyeOff from 'lucide-react-native/dist/esm/icons/eye-off';
+import Check from 'lucide-react-native/dist/esm/icons/check';
+import Circle from 'lucide-react-native/dist/esm/icons/circle';
+import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import { styles } from './ChangePasswordScreen.styles';
 import { COLORS } from '../authTokens';
 import { sf } from '../../../design/scale';
+import { PASSWORD_MAX_LENGTH } from '../../../utils/passwordPolicy';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
 
@@ -206,6 +205,7 @@ export const ChangePasswordScreenView = ({
                 value={form.newPassword}
                 onChangeText={value => onChange('newPassword', value)}
                 secureTextEntry={!isNewVisible}
+                maxLength={PASSWORD_MAX_LENGTH}
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="new-password"
@@ -271,6 +271,7 @@ export const ChangePasswordScreenView = ({
                 value={form.confirmPassword}
                 onChangeText={value => onChange('confirmPassword', value)}
                 secureTextEntry={!isConfirmVisible}
+                maxLength={PASSWORD_MAX_LENGTH}
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="new-password"

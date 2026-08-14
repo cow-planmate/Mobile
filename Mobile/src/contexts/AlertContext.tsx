@@ -22,13 +22,11 @@ import Animated, {
   runOnJS,
   Easing,
 } from 'react-native-reanimated';
-import {
-  AlertCircle,
-  CheckCircle2,
-  Info,
-  XCircle,
-  LucideIcon,
-} from 'lucide-react-native';
+import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
+import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
+import Info from 'lucide-react-native/dist/esm/icons/info';
+import XCircle from 'lucide-react-native/dist/esm/icons/circle-x';
+import type { LucideIcon } from 'lucide-react-native';
 
 // ── Types ──
 

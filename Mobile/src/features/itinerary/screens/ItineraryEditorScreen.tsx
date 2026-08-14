@@ -46,7 +46,9 @@ import PlaceEditModal from '../components/PlaceEditModal';
 import RouteMapSection from '../components/RouteMapSection';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faMap, faUsers, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faMap } from '@fortawesome/free-solid-svg-icons/faMap';
+import { faUsers } from '@fortawesome/free-solid-svg-icons/faUsers';
+import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
 
 /**
  * Normalize raw categoryId to 0-4 range used by backend.
@@ -114,6 +116,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     selectedDay,
     planMetadata,
     fetchPlanDetails,
+    isInitialPlanLoading,
   } = useItineraryEditor(route, navigation);
 
   const [activeTab, setActiveTab] = useState<'타임라인' | '장소추가'>('타임라인');
@@ -164,7 +167,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   }, []);
 
   const [isPlanInfoVisible, setPlanInfoVisible] = useState(false);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isBacking, setIsBacking] = useState(false);
   const isBackingRef = useRef(false);
   const isCompletingRef = useRef(false);
@@ -172,13 +174,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const handleGoBack = useCallback(() => {
     navigation.goBack();
   }, [navigation]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsInitialLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
 
   const { updatePlaceDetails, setDays, reorderPlacesInDay } = useItinerary();
   const {
@@ -1119,7 +1114,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         childCount={planMetadata?.childCount ?? route.params.children ?? 0}
       />
       <Modal
-        visible={isInitialLoading || days.length === 0 || isSaving || isBacking}
+        visible={isInitialPlanLoading || days.length === 0 || isSaving || isBacking}
         transparent={false}
         animationType="fade"
         onRequestClose={() => {}}

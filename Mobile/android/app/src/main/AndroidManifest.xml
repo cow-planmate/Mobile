@@ -10,7 +10,6 @@
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="false"
       android:theme="@style/AppTheme"
-      android:usesCleartextTraffic="true"
       android:supportsRtl="true">
       <!--
         세로 고정: 앱의 모든 치수가 utils/normalize의 (화면 폭 / 360)으로 스케일되고,

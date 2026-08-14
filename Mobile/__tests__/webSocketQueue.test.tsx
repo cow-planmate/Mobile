@@ -47,6 +47,7 @@ jest.mock('@stomp/stompjs', () => {
       mockClient = instance;
       return instance;
     }),
+    ReconnectionTimeMode: { LINEAR: 'linear', EXPONENTIAL: 'exponential' },
   };
 });
 

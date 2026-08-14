@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import EventSource, { MessageEvent } from 'react-native-sse';
 
 import { resolveApiUrl } from '../utils/apiUrl';
+import { ensureFreshAccessToken, refreshAccessToken } from '../api/axiosConfig';
 import {
   CollaborationRequestResult,
   parseCollaborationRequestResult,
@@ -51,6 +51,7 @@ const resolveSseUrl = (): string => {
 
   return resolveApiUrl(DEFAULT_INVITATION_SSE_PATH, baseUrl);
 };
+
 
 /**
  * 실시간 일정 초댓장 및 협업 요청 알림을 위한 SSE(Server-Sent Events) 구독 훅
@@ -125,7 +126,9 @@ export function useInvitationSse({
       return;
     }
 
-    const token = await AsyncStorage.getItem('accessToken');
+    // 만료가 임박했으면 스트림을 열기 전에 갱신한다. 스트림은 한 번 열리면
+    // 30분(서버 emitter 타임아웃)까지 유지되므로 여는 시점의 토큰이 중요하다.
+    const token = await ensureFreshAccessToken();
 
     // 토큰을 읽는 동안 언마운트(또는 비활성화)됐을 수 있다. 그 사이 cleanup이
     // 지나갔다면 sourceRef가 아직 비어 있어서, 여기서 스트림을 새로 열면
@@ -241,10 +244,28 @@ export function useInvitationSse({
         `[SSE] 초대 스트림 오류: status=${xhrStatus}, state=${xhrState}`,
       );
 
-      // 서버에서 권한을 거부(401/403)한 경우 재연결 시도를 중지하고 폴링 방식에 의존
-      if (xhrStatus === '401' || xhrStatus === '403') {
+      // 403은 권한 자체가 없는 것이라 재시도로 해결되지 않는다.
+      if (xhrStatus === '403') {
         shouldReconnectRef.current = false;
         disconnect();
+        return;
+      }
+
+      // 401은 대부분 액세스 토큰 만료다. 앱을 오래 유휴 상태로 두면(SSE emitter
+      // 타임아웃 30분 > 토큰 수명 15분) 다른 API 호출이 없어 토큰이 갱신될 기회가
+      // 없다. 여기서 직접 한 번 갱신을 시도하고, 성공하면 그 토큰으로 재연결한다.
+      // 갱신도 실패하면(리프레시 토큰까지 만료) 예전처럼 재시도를 멈춘다.
+      if (xhrStatus === '401') {
+        disconnect();
+        refreshAccessToken().then(newToken => {
+          if (!shouldReconnectRef.current) return;
+          if (!newToken) {
+            shouldReconnectRef.current = false;
+            return;
+          }
+          reconnectDelayRef.current = INITIAL_RECONNECT_DELAY_MS;
+          scheduleReconnect(connect);
+        });
         return;
       }
 
