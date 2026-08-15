@@ -9,6 +9,7 @@ import {
 } from '../constants/storageKeys';
 import { observeAccessToken } from '../api/axiosConfig';
 import { queryClient } from '../api/queryClient';
+import { clearWebViewCookies } from '../features/auth/webViewCookies';
 
 /**
  * 로그인한 사용자 세션 정보
@@ -279,6 +280,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // 서버 상태 캐시는 계정에 묶여 있다. 남겨 두면 같은 기기에서 다른 계정으로
     // 로그인했을 때 이전 사용자의 프로필·일정이 잠시 그대로 그려진다.
     queryClient.clear();
+    // 소셜 제공자 세션도 함께 끊는다. 남겨 두면 다음 로그인에서 계정을 바꿀 수 없다.
+    await clearWebViewCookies();
   },
 
   revokeRefreshToken: async () => {

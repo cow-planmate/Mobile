@@ -65,3 +65,13 @@ jest.mock('react-native-date-picker', () => {
 jest.mock('@react-native-community/netinfo', () =>
   require('@react-native-community/netinfo/jest/netinfo-mock'),
 );
+
+// 네이티브 모듈이 없으면 import 시점에 invariant로 바로 깨진다.
+jest.mock('@react-native-cookies/cookies', () => ({
+  clearAll: jest.fn(() => Promise.resolve(true)),
+  getAll: jest.fn(() => Promise.resolve({})),
+  get: jest.fn(() => Promise.resolve({})),
+  set: jest.fn(() => Promise.resolve(true)),
+  clearByName: jest.fn(() => Promise.resolve(true)),
+  flush: jest.fn(() => Promise.resolve()),
+}));

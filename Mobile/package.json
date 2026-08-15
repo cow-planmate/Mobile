@@ -20,6 +20,7 @@
     "@react-native-community/datetimepicker": "^8.6.0",
     "@react-native-community/netinfo": "^11.5.2",
     "@react-native-community/slider": "^5.1.2",
+    "@react-native-cookies/cookies": "^6.2.1",
     "@react-native-firebase/app": "^23.8.8",
     "@react-native-firebase/messaging": "^23.8.8",
     "@react-navigation/bottom-tabs": "^7.4.8",
