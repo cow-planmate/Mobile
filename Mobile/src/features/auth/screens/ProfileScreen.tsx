@@ -9,11 +9,10 @@ import {
   type ImagePickerResponse,
 } from 'react-native-image-picker';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../../../store/useAuthStore';
+import { useWebSocket } from '../../../contexts/WebSocketContext';
 import ProfileScreenView from './ProfileScreen.view';
 import { resolveApiUrl } from '../../../utils/apiUrl';
-import { LOGOUT_CLEARED_KEYS } from '../../../constants/storageKeys';
 import { changePassword } from '../../../api/auth';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 import {
@@ -42,6 +41,7 @@ const EMPTY_PROFILE: UserProfile = {
 
 export default function ProfileScreen({ route }: any) {
   const { showAlert } = useAlert();
+  const { disconnect } = useWebSocket();
   const queryClient = useQueryClient();
   const { data, isLoading, isError, refetch } = useUserProfile();
   const { data: communityStats, isLoading: isCommunityStatsLoading } = useMyStats();
@@ -203,11 +203,25 @@ export default function ProfileScreen({ route }: any) {
     }
   };
 
+  /**
+   * 회원 탈퇴.
+   *
+   * 서버는 계정을 소프트 삭제만 하고(UserService.resignAccount) 리프레시 토큰은
+   * Redis에 남겨 두므로 앱이 먼저 폐기한다. 세션 정리는 완료 안내를 확인한 뒤에
+   * 한다 — 먼저 하면 루트 네비게이터가 로그인 화면으로 바꿔 버려 안내가 사라진다.
+   */
   const handleResign = () => {
+    const finishResign = async () => {
+      const { clearSession } = useAuthStore.getState();
+      disconnect();
+      await clearSession({ forgetLoginMethod: true });
+    };
+
     showAlert({
       title: '회원 탈퇴',
-      message:
-        '정말로 탈퇴하시겠습니까? 탈퇴 후에는 모든 데이터가 삭제되며 복구할 수 없습니다.',
+      message: user.socialLogin
+        ? '정말로 탈퇴하시겠습니까? 작성한 데이터는 삭제됩니다. 다만 같은 소셜 계정으로 다시 로그인하면 계정이 복구됩니다.'
+        : '정말로 탈퇴하시겠습니까? 탈퇴 후에는 모든 데이터가 삭제되며 복구할 수 없습니다.',
       type: 'confirm',
       buttons: [
         { text: '취소', style: 'cancel' },
@@ -221,16 +235,19 @@ export default function ProfileScreen({ route }: any) {
               );
 
               if (response.status >= 200 && response.status < 300) {
-                useAuthStore.getState().setUser(null);
-                await AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS);
+                await useAuthStore.getState().revokeRefreshToken();
 
                 showAlert({
                   title: '탈퇴 완료',
                   message: '회원 탈퇴가 완료되었습니다.',
                   type: 'success',
+                  // 버튼 하나뿐이라 하드웨어 뒤로가기(onRequestClose)도 이 핸들러를 탄다.
                   buttons: [
                     {
                       text: '확인',
+                      onPress: () => {
+                        void finishResign();
+                      },
                     },
                   ],
                 });

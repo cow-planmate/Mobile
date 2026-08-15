@@ -78,6 +78,7 @@ export default function ChecklistSheet({
     sharedItems,
     personalItems,
     counts,
+    isRealtime,
     isLoading,
     isFetching,
     isError,
@@ -450,6 +451,17 @@ export default function ChecklistSheet({
               />
             </View>
           </View>
+
+          {/*
+            공동 목록은 편집 세션에 붙어 있을 때만 다른 기기에 바로 전달된다.
+            세션 밖(REST) 변경은 서버가 push하지 않아 상대는 재입장해야 본다.
+          */}
+          {scope === 'shared' && !isRealtime && (
+            <Text style={styles.syncHint}>
+              실시간 연결이 아니라 변경이 바로 전달되지 않아요. 새로고침으로 최신
+              목록을 확인해 주세요.
+            </Text>
+          )}
 
           {body}
 

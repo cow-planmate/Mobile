@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { LoginScreenView, LoginErrors } from './LoginScreen.view';
@@ -43,6 +43,15 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [snsAuthUrl, setSnsAuthUrl] = useState<string | null>(null);
   /** WebView가 성공 콜백으로 돌아왔을 때 어느 제공자였는지 알아야 lastLoginMethod를 기록할 수 있다 */
   const [snsProvider, setSnsProvider] = useState<'google' | 'naver' | null>(null);
+  /**
+   * 이미 처리한 콜백 URL.
+   *
+   * onNavigationStateChange는 같은 URL에 대해 로드 시작과 완료로 두 번 발화한다.
+   * setSnsAuthUrl(null)은 다음 렌더에서야 WebView를 내리므로 그 사이 두 번째
+   * 이벤트가 통과할 수 있는데, 서버 loginCode는 1회용이라(Redis consume) 두 번째
+   * 교환은 실패한다. 로그인은 성공했는데 오류 문구만 남는 상황을 막는다.
+   */
+  const handledSnsUrlRef = useRef<string | null>(null);
 
   /** 입력을 고치면 그 필드의 오류와 폼 전체 오류를 함께 지운다. */
   const handleChange = (key: 'email' | 'password', value: string) => {
@@ -99,15 +108,15 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     }
   };
 
-  const handleGoogleLogin = () => {
-    setSnsProvider('google');
-    setSnsAuthUrl(resolveApiUrl('/api/oauth/google'));
+  const startSnsLogin = (provider: 'google' | 'naver') => {
+    handledSnsUrlRef.current = null;
+    setSnsProvider(provider);
+    setSnsAuthUrl(resolveApiUrl(`/api/oauth/${provider}`));
   };
 
-  const handleNaverLogin = () => {
-    setSnsProvider('naver');
-    setSnsAuthUrl(resolveApiUrl('/api/oauth/naver'));
-  };
+  const handleGoogleLogin = () => startSnsLogin('google');
+
+  const handleNaverLogin = () => startSnsLogin('naver');
 
   const handleSnsNavigationStateChange = async (navState: any) => {
     const url = navState.url;
@@ -116,6 +125,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       url.includes('status=NEED_ADDITIONAL_INFO') ||
       url.includes('status=FAIL')
     ) {
+      if (handledSnsUrlRef.current === url) return;
+      handledSnsUrlRef.current = url;
+
       setSnsAuthUrl(null);
       // parse query strings
       const queryParams = url.split('?')[1];
@@ -126,7 +138,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           const code = params.get('code');
           if (code) {
             try {
-              await oauthLogin(code, snsProvider ?? 'google');
+              // 제공자를 모르면 기록하지 않는다. 기본값을 두면 네이버 로그인이
+              // 구글로 남아 다음 방문에 엉뚱한 버튼에 '마지막 사용'이 붙는다.
+              await oauthLogin(code, snsProvider);
             } catch (e) {
               // 가입 세션 만료(OAUTH_002)·이미 가입된 계정(OAUTH_004)처럼 서버가
               // 사유를 구분해 주므로, 있으면 그 문구를 그대로 쓴다.
@@ -143,7 +157,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           const needEmailStr = params.get('needEmail');
           const needEmail = needEmailStr === 'true';
           if (signupId) {
-            navigation.navigate('OAuthAdditionalInfo', { signupId, needEmail });
+            navigation.navigate('OAuthAdditionalInfo', {
+              signupId,
+              needEmail,
+              provider: snsProvider,
+            });
           } else {
             showAlert({
               title: '오류',

@@ -16,6 +16,11 @@ jest.mock('../src/store/useAuthStore', () => ({
   }),
 }));
 
+// 로그아웃 시 소켓을 끊는다. 실제 컨텍스트는 AsyncStorage·STOMP까지 끌고 온다.
+jest.mock('../src/contexts/WebSocketContext', () => ({
+  useWebSocket: () => ({ disconnect: jest.fn() }),
+}));
+
 // Mock gravatarUrl
 jest.mock('../src/utils/gravatarUrl', () => () => 'mock-avatar-url');
 

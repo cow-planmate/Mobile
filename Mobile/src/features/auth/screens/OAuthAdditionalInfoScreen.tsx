@@ -32,7 +32,7 @@ export default function OAuthAdditionalInfoScreen({
   route,
   navigation,
 }: OAuthAdditionalInfoScreenProps) {
-  const { signupId, needEmail } = route.params;
+  const { signupId, needEmail, provider } = route.params;
   const oauthComplete = useAuthStore(state => state.oauthComplete);
 
   const [form, setForm] = useState<OAuthAdditionalInfoForm>({
@@ -106,12 +106,15 @@ export default function OAuthAdditionalInfoScreen({
     setErrors({});
     setIsSubmitting(true);
     try {
-      await oauthComplete({
-        signupId,
-        email: needEmail ? form.email.trim() : null,
-        birthdate: form.birthdate,
-        gender: GENDER_ENUM[form.gender],
-      });
+      await oauthComplete(
+        {
+          signupId,
+          email: needEmail ? form.email.trim() : null,
+          birthdate: form.birthdate,
+          gender: GENDER_ENUM[form.gender],
+        },
+        provider,
+      );
       // 성공하면 스토어가 user를 채우고 루트 네비게이터가 화면을 바꾼다.
     } catch (e) {
       setErrors({
@@ -120,7 +123,7 @@ export default function OAuthAdditionalInfoScreen({
     } finally {
       setIsSubmitting(false);
     }
-  }, [validate, oauthComplete, signupId, needEmail, form]);
+  }, [validate, oauthComplete, signupId, needEmail, form, provider]);
 
   const handleBack = useCallback(() => navigation.goBack(), [navigation]);
 
