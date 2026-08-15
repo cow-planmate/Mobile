@@ -17,6 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 import UserIcon from 'lucide-react-native/dist/esm/icons/user';
 import LogOut from 'lucide-react-native/dist/esm/icons/log-out';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useWebSocket } from '../../contexts/WebSocketContext';
 import { normalize } from '../../utils/normalize';
 import gravatarUrl from '../../utils/gravatarUrl';
 
@@ -37,6 +38,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const navigation = useNavigation<any>();
   const logout = useAuthStore((state) => state.logout);
+  const { disconnect } = useWebSocket();
   const insets = useSafeAreaInsets();
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 16 });
@@ -64,6 +66,9 @@ const Header: React.FC<HeaderProps> = ({
           navigation.navigate('Profile');
         }
       } else if (action === 'logout') {
+        // 소켓은 앱 루트에 붙어 있어 화면 전환만으로는 끊기지 않는다. 남겨 두면
+        // 다른 참여자의 접속자 목록에 로그아웃한 사용자가 계속 보인다.
+        disconnect();
         void logout();
       }
     }, 100);

@@ -8,6 +8,8 @@ import {
   LAST_LOGIN_METHOD_KEY,
 } from '../constants/storageKeys';
 import { observeAccessToken } from '../api/axiosConfig';
+import { queryClient } from '../api/queryClient';
+import { clearWebViewCookies } from '../features/auth/webViewCookies';
 
 /**
  * 로그인한 사용자 세션 정보
@@ -40,18 +42,42 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   /** 사용자 로그아웃 처리 */
   logout: () => Promise<void>;
-  /** OAuth 인가 코드로 토큰 교환 로그인 */
-  oauthLogin: (code: string, provider: 'google' | 'naver') => Promise<void>;
+  /**
+   * 로컬 세션 정리. 사용자·토큰·FCM 표시와 서버 상태 캐시를 함께 비운다.
+   * 로그아웃과 회원 탈퇴가 같은 정리를 거치도록 한곳에 둔다.
+   *
+   * @param options.forgetLoginMethod '마지막 사용' 기록까지 지운다. 탈퇴에서 쓴다 —
+   * 소셜 계정은 같은 수단으로 다시 로그인하면 서버가 계정을 복구하므로, 그 버튼을
+   * 앞에 놓고 배지까지 달아 두면 탈퇴 직후 실수로 되살리기 쉽다.
+   */
+  clearSession: (options?: { forgetLoginMethod?: boolean }) => Promise<void>;
+  /**
+   * 서버에 남은 리프레시 토큰을 폐기한다.
+   * 탈퇴는 계정만 소프트 삭제하고 토큰은 그대로 두므로(UserService.resignAccount)
+   * 앱이 직접 정리한다. 실패해도 예외를 올리지 않는다.
+   */
+  revokeRefreshToken: () => Promise<void>;
+  /**
+   * OAuth 인가 코드로 토큰 교환 로그인.
+   * provider를 모르면(null) '마지막 사용' 기록만 건너뛰고 로그인은 그대로 진행한다.
+   */
+  oauthLogin: (
+    code: string,
+    provider: 'google' | 'naver' | null,
+  ) => Promise<void>;
   /** OAuth 신규 회원 추가 정보 등록 및 로그인 완료 */
-  oauthComplete: (data: {
-    signupId: string;
-    email: string | null;
-    birthdate: string;
-    gender: string;
-  }) => Promise<void>;
+  oauthComplete: (
+    data: {
+      signupId: string;
+      email: string | null;
+      birthdate: string;
+      gender: string;
+    },
+    provider?: 'google' | 'naver' | null,
+  ) => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isLoading: false,
   isInitializing: true,
@@ -182,11 +208,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         ['accessToken', accessToken],
         ['refreshToken', refreshToken],
         [ACCESS_TOKEN_RECEIVED_AT_KEY, String(receivedAtMs)],
-        [LAST_LOGIN_METHOD_KEY, provider],
+        ...(provider ? [[LAST_LOGIN_METHOD_KEY, provider] as [string, string]] : []),
       ]);
       observeAccessToken(accessToken, receivedAtMs);
 
-      set({ user: userData, lastLoginMethod: provider });
+      set({ user: userData, ...(provider ? { lastLoginMethod: provider } : {}) });
     } catch (error) {
       console.error('OAuth Login error:', error);
       throw error;
@@ -195,7 +221,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  oauthComplete: async (data) => {
+  oauthComplete: async (data, provider) => {
     set({ isLoading: true });
     try {
       const response = await axios.post(
@@ -213,15 +239,21 @@ export const useAuthStore = create<AuthState>((set) => ({
           nickname: nickname || '사용자',
           email: email || data.email || '',
         };
+        // 소셜 가입도 로그인 수단이 확정된 순간이다. 기록하지 않으면 신규 가입자만
+        // 다음 방문에 '마지막 사용' 표시를 받지 못한다.
         await AsyncStorage.multiSet([
           ['user', JSON.stringify(userData)],
           ['accessToken', accessToken],
           ['refreshToken', refreshToken],
           [ACCESS_TOKEN_RECEIVED_AT_KEY, String(receivedAtMs)],
+          ...(provider ? [[LAST_LOGIN_METHOD_KEY, provider] as [string, string]] : []),
         ]);
         observeAccessToken(accessToken, receivedAtMs);
 
-        set({ user: userData });
+        set({
+          user: userData,
+          ...(provider ? { lastLoginMethod: provider } : {}),
+        });
       } else {
         throw new Error('서버 응답 형식이 올바르지 않습니다.');
       }
@@ -233,6 +265,39 @@ export const useAuthStore = create<AuthState>((set) => ({
       throw error;
     } finally {
       set({ isLoading: false });
+    }
+  },
+
+  clearSession: async (options) => {
+    const forgetLoginMethod = options?.forgetLoginMethod ?? false;
+
+    set({ user: null, ...(forgetLoginMethod ? { lastLoginMethod: null } : {}) });
+    await AsyncStorage.multiRemove(
+      forgetLoginMethod
+        ? [...LOGOUT_CLEARED_KEYS, LAST_LOGIN_METHOD_KEY]
+        : LOGOUT_CLEARED_KEYS,
+    );
+    // 서버 상태 캐시는 계정에 묶여 있다. 남겨 두면 같은 기기에서 다른 계정으로
+    // 로그인했을 때 이전 사용자의 프로필·일정이 잠시 그대로 그려진다.
+    queryClient.clear();
+    // 소셜 제공자 세션도 함께 끊는다. 남겨 두면 다음 로그인에서 계정을 바꿀 수 없다.
+    await clearWebViewCookies();
+  },
+
+  revokeRefreshToken: async () => {
+    try {
+      const accessToken = await AsyncStorage.getItem('accessToken');
+      const refreshToken = await AsyncStorage.getItem('refreshToken');
+      if (!accessToken || !refreshToken) return;
+
+      await axios.post(
+        resolveApiUrl('/api/auth/logout'),
+        { refreshToken },
+        { headers: { Authorization: `Bearer ${accessToken}` } },
+      );
+    } catch (error) {
+      // 서버 정리에 실패해도 로컬 세션은 반드시 끊는다. 리프레시 토큰은 TTL로 만료된다.
+      console.error('리프레시 토큰 폐기 실패:', error);
     }
   },
 
@@ -254,8 +319,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (error) {
       console.error('서버 로그아웃 요청 실패:', error);
     } finally {
-      set({ user: null });
-      await AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS);
+      await get().clearSession();
       set({ isLoading: false });
     }
   },

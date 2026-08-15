@@ -20,6 +20,33 @@ export interface ChecklistItem {
   sortOrder: number;
 }
 
+export type ChecklistSyncAction = 'create' | 'update' | 'delete';
+
+export interface PlanChecklistSyncItem {
+  checklistItemId?: number;
+  content?: string;
+  isChecked?: boolean;
+  sortOrder?: number;
+  planId: string;
+}
+
+export interface PlanChecklistSyncMessage {
+  entity: 'planchecklistitem';
+  action: ChecklistSyncAction;
+  planChecklistItemDtos: PlanChecklistSyncItem[];
+}
+
+export function createPlanChecklistSyncMessage(
+  action: ChecklistSyncAction,
+  items: PlanChecklistSyncItem | PlanChecklistSyncItem[],
+): PlanChecklistSyncMessage {
+  return {
+    entity: 'planchecklistitem',
+    action,
+    planChecklistItemDtos: Array.isArray(items) ? items : [items],
+  };
+}
+
 /** 서버 content 컬럼 길이 제한과 동일하다. */
 export const CHECKLIST_CONTENT_MAX_LENGTH = 255;
 

@@ -8,6 +8,16 @@ import axios from 'axios';
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
+const mockWebSocketConnect = jest.fn();
+const mockWebSocketDisconnect = jest.fn();
+
+jest.mock('../src/contexts/WebSocketContext', () => ({
+  useWebSocket: () => ({
+    connect: mockWebSocketConnect,
+    disconnect: mockWebSocketDisconnect,
+  }),
+}));
+
 jest.mock('../src/api/trips', () => ({
   fetchWeather: jest.fn(),
 }));

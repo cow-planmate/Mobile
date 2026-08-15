@@ -30,6 +30,7 @@ import {
   fetchWeather,
 } from '../../../api/trips';
 import { useAlert } from '../../../contexts/AlertContext';
+import { useWebSocket } from '../../../contexts/WebSocketContext';
 import { usePlanOwnership } from '../../../hooks/usePlanOwnership';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
 // DTO Interfaces — 서버 PlanFrameDetailDto와 1:1로 맞춘다.
@@ -86,6 +87,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [isShareModalVisible, setShareModalVisible] = useState(false);
   const [isChecklistVisible, setChecklistVisible] = useState(false);
+  const { connect, disconnect } = useWebSocket();
   const { isOwner: isPlanOwner } = usePlanOwnership(planId);
   const [isMapVisible, setMapVisible] = useState(false);
   const [isBacking, setIsBacking] = useState(false);
@@ -229,6 +231,20 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       setIsWeatherLoading(false);
     }
   }, [planId, fetchCompletePlan, initialDays]);
+
+  useEffect(() => {
+    if (!planId) return;
+
+    connect(planId);
+    const unsubscribeFocus = navigation.addListener('focus', () => connect(planId));
+    const unsubscribeBlur = navigation.addListener('blur', disconnect);
+
+    return () => {
+      unsubscribeFocus();
+      unsubscribeBlur();
+      disconnect();
+    };
+  }, [connect, disconnect, navigation, planId]);
 
   // 날씨 조회 범위. 일수가 같아도 날짜가 바뀌면 다시 조회해야 한다.
   const weatherRangeStart = days.length > 0 ? formatDateLocal(days[0].date) : '';

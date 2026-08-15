@@ -96,5 +96,7 @@ export type AuthStackParamList = {
   OAuthAdditionalInfo: {
     signupId: string;
     needEmail: boolean;
+    /** 가입을 시작한 소셜 제공자. 가입 완료 후 '마지막 사용' 표시에 쓴다. */
+    provider: 'google' | 'naver' | null;
   };
 };

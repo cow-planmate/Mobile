@@ -32,7 +32,7 @@ export default function OAuthAdditionalInfoScreen({
   route,
   navigation,
 }: OAuthAdditionalInfoScreenProps) {
-  const { signupId, needEmail } = route.params;
+  const { signupId, needEmail, provider } = route.params;
   const oauthComplete = useAuthStore(state => state.oauthComplete);
 
   const [form, setForm] = useState<OAuthAdditionalInfoForm>({
@@ -83,7 +83,9 @@ export default function OAuthAdditionalInfoScreen({
     if (!form.birthdate) {
       next.birthdate = '생년월일을 선택해 주세요.';
     } else if (form.birthdate >= toBirthdateString(new Date())) {
-      // 서버 birthdate는 @Past다. 오늘 이후 날짜는 여기서 걸러 낸다.
+      // 서버 OAuthCompleteRequest는 birthdate를 검증하지 않는다. 오늘 이후
+      // 날짜가 그대로 저장되면 나이 계산이 음수가 되어 프로필 표시가 깨지므로
+      // 앱에서 걸러 낸다.
       next.birthdate = '생년월일을 다시 확인해 주세요.';
     }
 
@@ -104,12 +106,15 @@ export default function OAuthAdditionalInfoScreen({
     setErrors({});
     setIsSubmitting(true);
     try {
-      await oauthComplete({
-        signupId,
-        email: needEmail ? form.email.trim() : null,
-        birthdate: form.birthdate,
-        gender: GENDER_ENUM[form.gender],
-      });
+      await oauthComplete(
+        {
+          signupId,
+          email: needEmail ? form.email.trim() : null,
+          birthdate: form.birthdate,
+          gender: GENDER_ENUM[form.gender],
+        },
+        provider,
+      );
       // 성공하면 스토어가 user를 채우고 루트 네비게이터가 화면을 바꾼다.
     } catch (e) {
       setErrors({
@@ -118,7 +123,7 @@ export default function OAuthAdditionalInfoScreen({
     } finally {
       setIsSubmitting(false);
     }
-  }, [validate, oauthComplete, signupId, needEmail, form]);
+  }, [validate, oauthComplete, signupId, needEmail, form, provider]);
 
   const handleBack = useCallback(() => navigation.goBack(), [navigation]);
 

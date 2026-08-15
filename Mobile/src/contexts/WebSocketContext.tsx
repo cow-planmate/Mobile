@@ -14,6 +14,7 @@ import FastImage from 'react-native-fast-image';
 import gravatarUrl from '../utils/gravatarUrl';
 import { resolveApiUrl } from '../utils/apiUrl';
 import { ensureFreshAccessToken } from '../api/axiosConfig';
+import { createPlanChecklistSyncMessage } from '../api/checklist';
 
 declare var global: any;
 
@@ -76,6 +77,15 @@ interface WebSocketContextType {
   onlineUsers: UserPresence[];
   connect: (planId: string) => void;
   disconnect: () => void;
+  /**
+   * 현재 연결된 방(planId).
+   *
+   * sendMessage는 인자로 받은 대상이 아니라 이 방으로 발행한다. 다른 일정에
+   * 붙어 있는 동안 보낸 편집은 엉뚱한 방으로 나가 아무에게도 닿지 않으므로,
+   * 호출부가 보내기 전에 대조할 수 있어야 한다. 값이 렌더가 아니라 전송 시점에
+   * 필요하고 ref가 원본이라 함수로 노출한다.
+   */
+  getCurrentRoomId: () => string | null;
   sendMessage: (
     action: string,
     targetName: string,
@@ -158,6 +168,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       );
     });
   }, []);
+
+  const getCurrentRoomId = useCallback(() => currentPlanId.current, []);
 
   const subscribeToMessages = useCallback((callback: (msg: any) => void) => {
     messageListeners.current.add(callback);
@@ -461,6 +473,9 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
           planDtos: Array.isArray(target) ? target : [target],
         };
         break;
+      case 'planchecklistitem':
+        payload = createPlanChecklistSyncMessage(action as 'create' | 'update' | 'delete', target);
+        break;
       default:
         payload = {
           entity: targetName,
@@ -522,6 +537,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     onlineUsers,
     connect,
     disconnect,
+    getCurrentRoomId,
     sendMessage,
     subscribeToMessages,
     unsubscribeFromMessages,
@@ -530,6 +546,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     onlineUsers,
     connect,
     disconnect,
+    getCurrentRoomId,
     sendMessage,
     subscribeToMessages,
     unsubscribeFromMessages,

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { LoginScreenView, LoginErrors } from './LoginScreen.view';
 import { resolveApiUrl } from '../../../utils/apiUrl';
+import { resolveSnsFailMessage } from '../snsFailMessage';
 import {
   parseBackendError,
   getDisplayErrorMessage,
@@ -12,12 +13,6 @@ import {
 const INVALID_CREDENTIALS_CODE = 'AUTH_003';
 
 const EMAIL_REGEX = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$/;
-
-/** SNS 로그인 실패 리다이렉트의 reason별 안내 (OAuthController.buildFailRedirect) */
-const SNS_FAIL_MESSAGES: Record<string, string> = {
-  INVALID_STATE: '인증이 만료되었어요. 처음부터 다시 시도해 주세요.',
-  UNSUPPORTED_PROVIDER: '지원하지 않는 소셜 로그인이에요.',
-};
 
 type LoginScreenProps = {
   navigation: { navigate: (screen: string, params?: any) => void };
@@ -48,6 +43,15 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [snsAuthUrl, setSnsAuthUrl] = useState<string | null>(null);
   /** WebView가 성공 콜백으로 돌아왔을 때 어느 제공자였는지 알아야 lastLoginMethod를 기록할 수 있다 */
   const [snsProvider, setSnsProvider] = useState<'google' | 'naver' | null>(null);
+  /**
+   * 이미 처리한 콜백 URL.
+   *
+   * onNavigationStateChange는 같은 URL에 대해 로드 시작과 완료로 두 번 발화한다.
+   * setSnsAuthUrl(null)은 다음 렌더에서야 WebView를 내리므로 그 사이 두 번째
+   * 이벤트가 통과할 수 있는데, 서버 loginCode는 1회용이라(Redis consume) 두 번째
+   * 교환은 실패한다. 로그인은 성공했는데 오류 문구만 남는 상황을 막는다.
+   */
+  const handledSnsUrlRef = useRef<string | null>(null);
 
   /** 입력을 고치면 그 필드의 오류와 폼 전체 오류를 함께 지운다. */
   const handleChange = (key: 'email' | 'password', value: string) => {
@@ -104,15 +108,15 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     }
   };
 
-  const handleGoogleLogin = () => {
-    setSnsProvider('google');
-    setSnsAuthUrl(resolveApiUrl('/api/oauth/google'));
+  const startSnsLogin = (provider: 'google' | 'naver') => {
+    handledSnsUrlRef.current = null;
+    setSnsProvider(provider);
+    setSnsAuthUrl(resolveApiUrl(`/api/oauth/${provider}`));
   };
 
-  const handleNaverLogin = () => {
-    setSnsProvider('naver');
-    setSnsAuthUrl(resolveApiUrl('/api/oauth/naver'));
-  };
+  const handleGoogleLogin = () => startSnsLogin('google');
+
+  const handleNaverLogin = () => startSnsLogin('naver');
 
   const handleSnsNavigationStateChange = async (navState: any) => {
     const url = navState.url;
@@ -121,6 +125,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       url.includes('status=NEED_ADDITIONAL_INFO') ||
       url.includes('status=FAIL')
     ) {
+      if (handledSnsUrlRef.current === url) return;
+      handledSnsUrlRef.current = url;
+
       setSnsAuthUrl(null);
       // parse query strings
       const queryParams = url.split('?')[1];
@@ -131,7 +138,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           const code = params.get('code');
           if (code) {
             try {
-              await oauthLogin(code, snsProvider ?? 'google');
+              // 제공자를 모르면 기록하지 않는다. 기본값을 두면 네이버 로그인이
+              // 구글로 남아 다음 방문에 엉뚱한 버튼에 '마지막 사용'이 붙는다.
+              await oauthLogin(code, snsProvider);
             } catch (e) {
               // 가입 세션 만료(OAUTH_002)·이미 가입된 계정(OAUTH_004)처럼 서버가
               // 사유를 구분해 주므로, 있으면 그 문구를 그대로 쓴다.
@@ -148,7 +157,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           const needEmailStr = params.get('needEmail');
           const needEmail = needEmailStr === 'true';
           if (signupId) {
-            navigation.navigate('OAuthAdditionalInfo', { signupId, needEmail });
+            navigation.navigate('OAuthAdditionalInfo', {
+              signupId,
+              needEmail,
+              provider: snsProvider,
+            });
           } else {
             showAlert({
               title: '오류',
@@ -156,13 +169,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             });
           }
         } else {
-          // 서버는 실패 리다이렉트에 reason을 붙인다(UNSUPPORTED_PROVIDER ·
-          // INVALID_STATE · UNKNOWN). 재시도로 풀리는 경우와 아닌 경우를 나눈다.
           showAlert({
             title: '오류',
-            message:
-              SNS_FAIL_MESSAGES[params.get('reason') ?? ''] ??
-              '소셜 로그인 중 오류가 발생했습니다.',
+            message: resolveSnsFailMessage(params.get('reason')),
           });
         }
       }

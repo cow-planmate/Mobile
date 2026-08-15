@@ -84,6 +84,13 @@ export const styles = StyleSheet.create({
     paddingTop: normalize(14),
     paddingBottom: normalize(10),
   },
+  syncHint: {
+    paddingHorizontal: normalize(20),
+    paddingTop: normalize(8),
+    fontSize: normalize(11),
+    fontFamily: theme.typography.fontFamily.regular,
+    color: COLORS.textTertiary,
+  },
   progressHeader: {
     flexDirection: 'row',
     alignItems: 'center',
