@@ -14,12 +14,22 @@ if (!normalizedApiUrl && __DEV__) {
   console.warn('[axiosConfig] API_URL이 비어 있습니다. .env 설정을 확인하세요.');
 }
 
-/** 토큰을 자동으로 첨부하지 않는 경로 (인증 불필요 · 토큰 재발급 포함) */
+/**
+ * 토큰을 자동으로 첨부하지 않는 경로 (인증 불필요 · 토큰 재발급 포함).
+ *
+ * 서버 SecurityWhitelist에서 permitAll인 경로들이다. OAuth 교환·가입 완료는
+ * 아직 세션이 없는 상태에서 부르는데, 지난 세션의 만료 토큰이 붙으면 서버가
+ * 그 토큰을 먼저 걸러 401을 준다. 401 응답의 AUTH_001도 일회용 code가 만료·
+ * 소진됐다는 뜻이지 내 토큰이 만료됐다는 뜻이 아니므로, 아래 응답 인터셉터의
+ * 재발급 대상에서도 이 목록을 그대로 제외한다.
+ */
 const NO_AUTH_PATHS = [
   '/api/auth/login',
   '/api/auth/token',
   '/api/auth/email/verification',
   '/api/auth/register/nickname/verify',
+  '/api/oauth/exchange',
+  '/api/oauth/complete',
   '/api/beta/feedback',
 ];
 
@@ -223,12 +233,13 @@ axios.interceptors.response.use(
     // 토큰 문제로 401이 났고 재시도하지 않은 요청인 경우에만 갱신을 시도한다.
     // 인증번호·현재 비밀번호 확인 실패도 401이라, 코드를 보지 않으면 오타 한 번에
     // 재발급과 재요청이 따라붙는다(utils/authError).
+    // 토큰을 붙이지 않는 경로는 401이 나도 내 토큰 문제일 수 없으므로 제외한다.
     // (절대 URL로 호출되는 경우가 있어 경로는 includes로 비교한다)
     if (
       isTokenAuthFailure(error) &&
       originalRequest &&
       !originalRequest._retry &&
-      !matchesPath(originalRequest.url, ['/api/auth/login', '/api/auth/token'])
+      !matchesPath(originalRequest.url, NO_AUTH_PATHS)
     ) {
       // 재시도 표시를 먼저 해야 재발급 후 재요청이 또 401을 받았을 때
       // 무한 재발급 루프에 빠지지 않는다.

@@ -3,6 +3,7 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { LoginScreenView, LoginErrors } from './LoginScreen.view';
 import { resolveApiUrl } from '../../../utils/apiUrl';
+import { resolveSnsFailMessage } from '../snsFailMessage';
 import {
   parseBackendError,
   getDisplayErrorMessage,
@@ -12,12 +13,6 @@ import {
 const INVALID_CREDENTIALS_CODE = 'AUTH_003';
 
 const EMAIL_REGEX = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$/;
-
-/** SNS 로그인 실패 리다이렉트의 reason별 안내 (OAuthController.buildFailRedirect) */
-const SNS_FAIL_MESSAGES: Record<string, string> = {
-  INVALID_STATE: '인증이 만료되었어요. 처음부터 다시 시도해 주세요.',
-  UNSUPPORTED_PROVIDER: '지원하지 않는 소셜 로그인이에요.',
-};
 
 type LoginScreenProps = {
   navigation: { navigate: (screen: string, params?: any) => void };
@@ -156,13 +151,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             });
           }
         } else {
-          // 서버는 실패 리다이렉트에 reason을 붙인다(UNSUPPORTED_PROVIDER ·
-          // INVALID_STATE · UNKNOWN). 재시도로 풀리는 경우와 아닌 경우를 나눈다.
           showAlert({
             title: '오류',
-            message:
-              SNS_FAIL_MESSAGES[params.get('reason') ?? ''] ??
-              '소셜 로그인 중 오류가 발생했습니다.',
+            message: resolveSnsFailMessage(params.get('reason')),
           });
         }
       }

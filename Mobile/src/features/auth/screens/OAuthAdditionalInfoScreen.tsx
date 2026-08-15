@@ -83,7 +83,9 @@ export default function OAuthAdditionalInfoScreen({
     if (!form.birthdate) {
       next.birthdate = '생년월일을 선택해 주세요.';
     } else if (form.birthdate >= toBirthdateString(new Date())) {
-      // 서버 birthdate는 @Past다. 오늘 이후 날짜는 여기서 걸러 낸다.
+      // 서버 OAuthCompleteRequest는 birthdate를 검증하지 않는다. 오늘 이후
+      // 날짜가 그대로 저장되면 나이 계산이 음수가 되어 프로필 표시가 깨지므로
+      // 앱에서 걸러 낸다.
       next.birthdate = '생년월일을 다시 확인해 주세요.';
     }
 
