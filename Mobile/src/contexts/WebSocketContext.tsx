@@ -14,6 +14,7 @@ import FastImage from 'react-native-fast-image';
 import gravatarUrl from '../utils/gravatarUrl';
 import { resolveApiUrl } from '../utils/apiUrl';
 import { ensureFreshAccessToken } from '../api/axiosConfig';
+import { createPlanChecklistSyncMessage } from '../api/checklist';
 
 declare var global: any;
 
@@ -460,6 +461,9 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
           action: action,
           planDtos: Array.isArray(target) ? target : [target],
         };
+        break;
+      case 'planchecklistitem':
+        payload = createPlanChecklistSyncMessage(action as 'create' | 'update' | 'delete', target);
         break;
       default:
         payload = {

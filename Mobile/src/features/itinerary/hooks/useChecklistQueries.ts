@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   ChecklistItem,
   ChecklistScope,
+  ChecklistSyncAction,
+  PlanChecklistSyncItem,
   createChecklistItem,
   deleteChecklistItem,
   editChecklistItemChecked,
@@ -10,6 +12,7 @@ import {
   getChecklist,
   reorderChecklistItems,
 } from '../../../api/checklist';
+import { useWebSocket } from '../../../contexts/WebSocketContext';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 
 /**
@@ -31,6 +34,78 @@ export const checklistKeys = {
 };
 
 const CHECKLIST_ERROR_FALLBACK = '체크리스트를 저장하지 못했습니다.';
+
+interface ChecklistSyncEvent {
+  action?: string;
+  planChecklistItemDtos?: PlanChecklistSyncItem[];
+}
+
+interface ChecklistTransportResult {
+  transport: 'websocket';
+}
+
+interface OptimisticChecklistContext {
+  previousItems: ChecklistItem[] | undefined;
+  cancelledFetch: boolean;
+}
+
+const isChecklistTransportResult = (
+  value: unknown,
+): value is ChecklistTransportResult =>
+  typeof value === 'object' &&
+  value !== null &&
+  'transport' in value &&
+  (value as ChecklistTransportResult).transport === 'websocket';
+
+export function applyChecklistSync(
+  currentItems: ChecklistItem[] | undefined,
+  event: ChecklistSyncEvent,
+): ChecklistItem[] | undefined {
+  if (!currentItems) return currentItems;
+
+  const action = String(event.action ?? '').toLowerCase();
+  const nextItems = [...currentItems];
+
+  event.planChecklistItemDtos?.forEach(syncItem => {
+    const itemId = syncItem.checklistItemId;
+    if (itemId === undefined) return;
+
+    const currentIndex = nextItems.findIndex(item => item.itemId === itemId);
+    if (action === 'delete') {
+      if (currentIndex >= 0) nextItems.splice(currentIndex, 1);
+      return;
+    }
+
+    const currentItem = currentIndex >= 0 ? nextItems[currentIndex] : undefined;
+    const nextItem: ChecklistItem = {
+      itemId,
+      content: syncItem.content ?? currentItem?.content ?? '',
+      isChecked: syncItem.isChecked ?? currentItem?.isChecked ?? false,
+      sortOrder: syncItem.sortOrder ?? currentItem?.sortOrder ?? nextItems.length,
+    };
+
+    if (currentIndex >= 0) nextItems[currentIndex] = nextItem;
+    else nextItems.push(nextItem);
+  });
+
+  return nextItems.sort(
+    (a, b) => a.sortOrder - b.sortOrder || a.itemId - b.itemId,
+  );
+}
+
+function useSharedChecklistTransport(
+  planId: string | null | undefined,
+  scope: ChecklistScope,
+) {
+  const { isConnected, sendMessage } = useWebSocket();
+
+  return (action: ChecklistSyncAction, items: PlanChecklistSyncItem[]) => {
+    if (scope !== 'shared' || !planId || !isConnected) return false;
+
+    sendMessage(action, 'planchecklistitem', items);
+    return true;
+  };
+}
 
 /** 조회 실패·저장 실패 시 화면에 그대로 띄울 수 있는 문구를 만든다. */
 export function getChecklistErrorMessage(error: unknown): string {
@@ -67,12 +142,31 @@ export function useCreateChecklistItem(
   scope: ChecklistScope,
 ) {
   const invalidateScope = useInvalidateScope(planId);
+  const queryClient = useQueryClient();
+  const sendSharedChecklist = useSharedChecklistTransport(planId, scope);
 
-  return useMutation({
-    mutationFn: (content: string) =>
-      createChecklistItem(planId as string, scope, content),
-    onSuccess: () => {
-      void invalidateScope(scope);
+  return useMutation<number | ChecklistTransportResult, unknown, string>({
+    mutationFn: async content => {
+      const sharedItems =
+        queryClient.getQueryData<ChecklistItem[]>(
+          checklistKeys.scope(planId ?? '', 'shared'),
+        ) ?? [];
+      const sent = sendSharedChecklist('create', [
+        {
+          planId: planId as string,
+          content,
+          isChecked: false,
+          sortOrder: sharedItems.length,
+        },
+      ]);
+
+      return sent
+        ? ({ transport: 'websocket' } satisfies ChecklistTransportResult)
+        : createChecklistItem(planId as string, scope, content);
+    },
+    onSuccess: result => {
+      if (isChecklistTransportResult(result)) return;
+      Promise.resolve(invalidateScope(scope)).catch(() => undefined);
     },
   });
 }
@@ -83,12 +177,39 @@ export function useEditChecklistItemContent(
   scope: ChecklistScope,
 ) {
   const invalidateScope = useInvalidateScope(planId);
+  const queryClient = useQueryClient();
+  const sendSharedChecklist = useSharedChecklistTransport(planId, scope);
 
-  return useMutation({
-    mutationFn: ({ itemId, content }: { itemId: number; content: string }) =>
-      editChecklistItemContent(planId as string, scope, itemId, content),
-    onSuccess: () => {
-      void invalidateScope(scope);
+  return useMutation<
+    void | ChecklistTransportResult,
+    unknown,
+    { itemId: number; content: string }
+  >({
+    mutationFn: async ({ itemId, content }) => {
+      const currentItem = queryClient
+        .getQueryData<ChecklistItem[]>(
+          checklistKeys.scope(planId ?? '', 'shared'),
+        )
+        ?.find(item => item.itemId === itemId);
+      const sent = currentItem
+        ? sendSharedChecklist('update', [
+            {
+              planId: planId as string,
+              checklistItemId: itemId,
+              content,
+              isChecked: currentItem.isChecked,
+              sortOrder: currentItem.sortOrder,
+            },
+          ])
+        : false;
+
+      return sent
+        ? ({ transport: 'websocket' } satisfies ChecklistTransportResult)
+        : editChecklistItemContent(planId as string, scope, itemId, content);
+    },
+    onSuccess: result => {
+      if (isChecklistTransportResult(result)) return;
+      Promise.resolve(invalidateScope(scope)).catch(() => undefined);
     },
   });
 }
@@ -105,10 +226,36 @@ export function useToggleChecklistItem(
 ) {
   const queryClient = useQueryClient();
   const queryKey = checklistKeys.scope(planId ?? '', scope);
+  const sendSharedChecklist = useSharedChecklistTransport(planId, scope);
 
-  return useMutation({
-    mutationFn: ({ itemId, isChecked }: { itemId: number; isChecked: boolean }) =>
-      editChecklistItemChecked(planId as string, scope, itemId, isChecked),
+  return useMutation<
+    void | ChecklistTransportResult,
+    unknown,
+    { itemId: number; isChecked: boolean },
+    OptimisticChecklistContext
+  >({
+    mutationFn: async ({ itemId, isChecked }) => {
+      const currentItem = queryClient
+        .getQueryData<ChecklistItem[]>(
+          checklistKeys.scope(planId ?? '', 'shared'),
+        )
+        ?.find(item => item.itemId === itemId);
+      const sent = currentItem
+        ? sendSharedChecklist('update', [
+            {
+              planId: planId as string,
+              checklistItemId: itemId,
+              content: currentItem.content,
+              isChecked,
+              sortOrder: currentItem.sortOrder,
+            },
+          ])
+        : false;
+
+      return sent
+        ? ({ transport: 'websocket' } satisfies ChecklistTransportResult)
+        : editChecklistItemChecked(planId as string, scope, itemId, isChecked);
+    },
     onMutate: async ({ itemId, isChecked }) => {
       const cancelledFetch =
         queryClient.getQueryState(queryKey)?.fetchStatus === 'fetching';
@@ -134,7 +281,9 @@ export function useToggleChecklistItem(
     // 응답은 영영 오지 않으므로, 그때는 끊긴 조회를 대신해 다시 맞춰야 한다.
     onSettled: (_data, error, _variables, context) => {
       if (error || context?.cancelledFetch) {
-        void queryClient.invalidateQueries({ queryKey });
+        Promise.resolve(queryClient.invalidateQueries({ queryKey })).catch(
+          () => undefined,
+        );
       }
     },
   });
@@ -146,13 +295,22 @@ export function useDeleteChecklistItem(
   scope: ChecklistScope,
 ) {
   const invalidateScope = useInvalidateScope(planId);
+  const sendSharedChecklist = useSharedChecklistTransport(planId, scope);
 
-  return useMutation({
-    mutationFn: (itemId: number) =>
-      deleteChecklistItem(planId as string, scope, itemId),
-    onSettled: () => {
+  return useMutation<void | ChecklistTransportResult, unknown, number>({
+    mutationFn: async itemId => {
+      const sent = sendSharedChecklist('delete', [
+        { planId: planId as string, checklistItemId: itemId },
+      ]);
+
+      return sent
+        ? ({ transport: 'websocket' } satisfies ChecklistTransportResult)
+        : deleteChecklistItem(planId as string, scope, itemId);
+    },
+    onSettled: result => {
+      if (isChecklistTransportResult(result)) return;
       // 이미 삭제된 항목(404)이어도 목록을 서버 기준으로 다시 맞춘다.
-      void invalidateScope(scope);
+      Promise.resolve(invalidateScope(scope)).catch(() => undefined);
     },
   });
 }
@@ -169,10 +327,42 @@ export function useReorderChecklistItems(
 ) {
   const queryClient = useQueryClient();
   const queryKey = checklistKeys.scope(planId ?? '', scope);
+  const sendSharedChecklist = useSharedChecklistTransport(planId, scope);
 
-  return useMutation({
-    mutationFn: (itemIds: number[]) =>
-      reorderChecklistItems(planId as string, scope, itemIds),
+  return useMutation<
+    void | ChecklistTransportResult,
+    unknown,
+    number[],
+    OptimisticChecklistContext
+  >({
+    mutationFn: async itemIds => {
+      const itemsById = new Map(
+        (
+          queryClient.getQueryData<ChecklistItem[]>(
+            checklistKeys.scope(planId ?? '', 'shared'),
+          ) ?? []
+        ).map(item => [item.itemId, item]),
+      );
+      const syncItems = itemIds.flatMap((itemId, sortOrder) => {
+        const item = itemsById.get(itemId);
+        return item
+          ? [
+              {
+                planId: planId as string,
+                checklistItemId: item.itemId,
+                content: item.content,
+                isChecked: item.isChecked,
+                sortOrder,
+              },
+            ]
+          : [];
+      });
+      const sent = syncItems.length > 0 && sendSharedChecklist('update', syncItems);
+
+      return sent
+        ? ({ transport: 'websocket' } satisfies ChecklistTransportResult)
+        : reorderChecklistItems(planId as string, scope, itemIds);
+    },
     onMutate: async itemIds => {
       const cancelledFetch =
         queryClient.getQueryState(queryKey)?.fetchStatus === 'fetching';
@@ -199,7 +389,9 @@ export function useReorderChecklistItems(
     // 토글과 같은 이유로 성공 경로에서는 재조회하지 않는다. 보낸 순서가 곧 결과다.
     onSettled: (_data, error, _variables, context) => {
       if (error || context?.cancelledFetch) {
-        void queryClient.invalidateQueries({ queryKey });
+        Promise.resolve(queryClient.invalidateQueries({ queryKey })).catch(
+          () => undefined,
+        );
       }
     },
   });
@@ -215,8 +407,36 @@ export function usePlanChecklists(
   planId: string | null | undefined,
   enabled = true,
 ) {
+  const queryClient = useQueryClient();
+  const { subscribeToMessages, unsubscribeFromMessages } = useWebSocket();
   const sharedQuery = useChecklist(planId, 'shared', enabled);
   const personalQuery = useChecklist(planId, 'personal', enabled);
+
+  useEffect(() => {
+    if (!planId || !enabled || !subscribeToMessages || !unsubscribeFromMessages) {
+      return;
+    }
+
+    const handleChecklistMessage = (message: any) => {
+      const entity = String(message?.target ?? message?.entity ?? '').toLowerCase();
+      if (entity !== 'planchecklistitem') return;
+
+      const event = (message?.data ?? message) as ChecklistSyncEvent;
+      const eventPlanId = event.planChecklistItemDtos?.find(item => item.planId)?.planId;
+      if (eventPlanId && eventPlanId !== planId) return;
+
+      const queryKey = checklistKeys.scope(planId, 'shared');
+      queryClient.setQueryData<ChecklistItem[]>(queryKey, items =>
+        applyChecklistSync(items, event),
+      );
+      Promise.resolve(queryClient.invalidateQueries({ queryKey })).catch(
+        () => undefined,
+      );
+    };
+
+    subscribeToMessages(handleChecklistMessage);
+    return () => unsubscribeFromMessages(handleChecklistMessage);
+  }, [enabled, planId, queryClient, subscribeToMessages, unsubscribeFromMessages]);
 
   const sharedItems = useMemo(
     () => sharedQuery.data ?? [],

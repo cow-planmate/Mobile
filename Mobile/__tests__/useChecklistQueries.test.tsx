@@ -5,6 +5,17 @@ import {
 } from '../src/features/itinerary/hooks/useChecklistQueries';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+const mockChecklistWebSocket = {
+  isConnected: false,
+  sendMessage: jest.fn(),
+  subscribeToMessages: jest.fn(),
+  unsubscribeFromMessages: jest.fn(),
+};
+
+jest.mock('../src/contexts/WebSocketContext', () => ({
+  useWebSocket: () => mockChecklistWebSocket,
+}));
+
 jest.mock('@tanstack/react-query', () => ({
   useQuery: jest.fn(),
   useMutation: jest.fn(),
