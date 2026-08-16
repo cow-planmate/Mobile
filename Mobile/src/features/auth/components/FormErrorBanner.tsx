@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import { COLORS, RADIUS, TYPO } from '../authTokens';
-import { sf, sp } from '../../../design/scale';
+import { sf, sp } from '../../../utils/normalize';
 
 /**
  * 폼 전체에 걸린 오류.

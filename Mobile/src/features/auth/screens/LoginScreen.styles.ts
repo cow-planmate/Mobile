@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { COLORS, FONTS, RADIUS, TYPO } from '../authTokens';
-import { sf, sp } from '../../../design/scale';
+import { sf, sp } from '../../../utils/normalize';
 
 export const styles = StyleSheet.create({
   container: {

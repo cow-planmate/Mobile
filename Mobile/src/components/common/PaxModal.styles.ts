@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { sf as normalize } from '../../design/scale';
+import { normalize } from '../../utils/normalize';
 
 export const COLORS = {
   primary: '#1344FF',

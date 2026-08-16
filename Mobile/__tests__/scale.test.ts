@@ -1,6 +1,6 @@
-import { getScaleForWidth } from '../src/design/scale';
+import { getScaleForWidth } from '../src/utils/normalize';
 
-describe('design scale', () => {
+describe('scale utility', () => {
   it('clamps compact screens to the minimum scale', () => {
     expect(getScaleForWidth(320)).toBe(0.95);
   });

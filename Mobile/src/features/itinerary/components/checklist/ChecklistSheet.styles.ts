@@ -1,7 +1,13 @@
 import { StyleSheet } from 'react-native';
 import { theme } from '../../../../theme/theme';
-import { RADIUS } from '../../../../design/tokens';
 import { normalize } from '../../../../utils/normalize';
+
+const RADIUS = {
+  xs: 6,
+  sm: 10,
+  md: 14,
+  lg: 20,
+};
 
 export const COLORS = theme.colors;
 

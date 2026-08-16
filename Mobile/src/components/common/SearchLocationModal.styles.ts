@@ -1,9 +1,7 @@
 import { StyleSheet, Dimensions } from 'react-native';
-import { sf } from '../../design/scale';
+import { normalize } from '../../utils/normalize';
 
 const { height } = Dimensions.get('window');
-/** design/scale.ts의 클램프된 스케일러를 그대로 쓴다. 모달마다 따로 정의하면 태블릿/폴더블에서 화면과 다르게 커진다. */
-export const normalize = sf;
 
 export const COLORS = {
   primary: '#1344FF',

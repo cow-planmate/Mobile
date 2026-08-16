@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import { COLORS, RADIUS, TYPO } from '../authTokens';
-import { sf, sp } from '../../../design/scale';
+import { sf, sp } from '../../../utils/normalize';
 
 type PrivacyVariant = 'policy' | 'consent';
 

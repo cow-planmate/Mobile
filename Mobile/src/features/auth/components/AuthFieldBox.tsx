@@ -8,7 +8,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { COLORS, TYPO } from '../authTokens';
-import { sf, sp } from '../../../design/scale';
+import { sf, sp } from '../../../utils/normalize';
 
 export type FieldState = 'default' | 'focus' | 'error' | 'success';
 

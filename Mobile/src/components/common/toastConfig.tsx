@@ -4,22 +4,21 @@ import type { ToastConfig } from 'react-native-toast-message';
 import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
 import Info from 'lucide-react-native/dist/esm/icons/info';
 import XCircle from 'lucide-react-native/dist/esm/icons/circle-x';
-import { COLORS, RADIUS, TYPO } from '../../design/tokens';
-import { sf, sp } from '../../design/scale';
+import { sf, sp } from '../../utils/normalize';
 
 const toastStyles = StyleSheet.create({
   container: {
     paddingHorizontal: sf(16),
     paddingVertical: sf(12),
-    borderRadius: RADIUS.md,
+    borderRadius: 14,
     marginHorizontal: sf(24),
     marginTop: sf(8),
-    backgroundColor: COLORS.surfaceRaised,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'flex-start',
     flexDirection: 'row',
     borderWidth: 1,
-    borderColor: COLORS.borderStrong,
+    borderColor: '#D1D5DB',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -27,32 +26,32 @@ const toastStyles = StyleSheet.create({
     elevation: 2,
   },
   text: {
-    color: COLORS.text,
-    fontSize: sp(TYPO.label.fontSize),
-    fontFamily: TYPO.label.fontFamily,
+    color: '#111827',
+    fontSize: sp(13),
+    fontFamily: 'Pretendard-Medium',
     textAlign: 'left',
     marginLeft: sf(8),
     flexShrink: 1,
-    lineHeight: sp(TYPO.label.lineHeight),
+    lineHeight: sp(18),
   },
 });
 
 export const toastConfig: ToastConfig = {
   error: ({ text1 }) => (
     <View style={toastStyles.container}>
-      <XCircle size={18} color={COLORS.error} strokeWidth={2.5} />
+      <XCircle size={18} color="#D92D20" strokeWidth={2.5} />
       <Text style={toastStyles.text}>{text1 ?? ''}</Text>
     </View>
   ),
   success: ({ text1 }) => (
     <View style={toastStyles.container}>
-      <CheckCircle2 size={18} color={COLORS.success} strokeWidth={2.5} />
+      <CheckCircle2 size={18} color="#067647" strokeWidth={2.5} />
       <Text style={toastStyles.text}>{text1 ?? ''}</Text>
     </View>
   ),
   info: ({ text1 }) => (
     <View style={toastStyles.container}>
-      <Info size={18} color={COLORS.primary} strokeWidth={2.5} />
+      <Info size={18} color="#1344FF" strokeWidth={2.5} />
       <Text style={toastStyles.text}>{text1 ?? ''}</Text>
     </View>
   ),

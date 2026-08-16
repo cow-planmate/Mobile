@@ -14,7 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import PressableScale from './PressableScale';
 import { COLORS, RADIUS, TYPO } from '../authTokens';
-import { sf, sp } from '../../../design/scale';
+import { sf, sp } from '../../../utils/normalize';
 
 const FADE = { duration: 180, easing: Easing.out(Easing.quad) };
 
