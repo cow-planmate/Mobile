@@ -1,13 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!--
-      평문(HTTP) 통신은 디버그 빌드에서만 허용한다.
-
-      Metro 번들러와 개발용 백엔드는 LAN의 http://로 뜨므로 개발 중에는 필요하지만,
-      릴리스에서 열어 두면 앱 전체가 평문 통신을 허용하게 된다. 운영 API_URL·WEB_URL은
-      모두 https라 릴리스에서 막아도 동작에 영향이 없다.
-    -->
+    
     <application
         android:usesCleartextTraffic="true"
         tools:targetApi="28" />

@@ -13,9 +13,7 @@
   </filter>
   <style xmlns="http://www.w3.org/2000/svg" type="text/css"><![CDATA[
 
-    /*
-** RAIN
-*/
+    
       @keyframes am-weather-rain {
         0% {
           stroke-dashoffset: 0;
@@ -67,9 +65,7 @@
         -ms-animation-iteration-count: infinite;
         animation-iteration-count: infinite;
       }
-/*
-** CLOUDS
-*/
+
 @keyframes am-weather-cloud-1 {
   0% {
     -webkit-transform: translate(-5px,0px);
@@ -146,9 +142,7 @@
           animation-iteration-count: infinite;
 }
 
-/*
-** STROKE
-*/
+
 @keyframes am-weather-stroke {
   0% {
     -webkit-transform: translate(0.0px,0.0px);

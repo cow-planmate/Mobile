@@ -14,9 +14,7 @@
     </filter>
     <style type="text/css">
       <![CDATA[
-      /*
-** SUN
-*/
+      
       @keyframes am-weather-sun {
         0% {
           -webkit-transform: rotate(0deg);

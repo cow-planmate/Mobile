@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- (c) ammap.com | SVG weather icons -->
+
 <svg width="56" height="48" version="1.1" xmlns="http://www.w3.org/2000/svg">
  <defs>
   <filter id="blur" x="-.24684" y="-.19575" width="1.4937" height="1.4959">
@@ -14,9 +14,7 @@
    </feMerge>
   </filter>
   <style type="text/css"><![CDATA[
-/*
-** CLOUDS
-*/
+
 @keyframes am-weather-cloud-1 {
   0% {
     -webkit-transform: translate(-5px,0px);
@@ -93,9 +91,7 @@
           animation-iteration-count: infinite;
 }
 
-/*
-** STROKE
-*/
+
 @keyframes am-weather-stroke {
   0% {
     -webkit-transform: translate(0.0px,0.0px);

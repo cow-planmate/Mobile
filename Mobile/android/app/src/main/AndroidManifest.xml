@@ -11,12 +11,7 @@
       android:allowBackup="false"
       android:theme="@style/AppTheme"
       android:supportsRtl="true">
-      <!--
-        세로 고정: 앱의 모든 치수가 utils/normalize의 (화면 폭 / 360)으로 스케일되고,
-        그 폭을 모듈 로드 시점에 한 번만 읽는다. configChanges에 orientation이 있어
-        회전해도 Activity가 재생성되지 않으므로 가로에서는 세로 기준 값이 그대로
-        늘어난 채로 남는다. 가로를 지원하려면 스케일 체계부터 반응형으로 바꿔야 한다.
-      -->
+      
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
