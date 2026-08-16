@@ -10,12 +10,6 @@ import { changePassword } from '../../../api/auth';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 import { getPasswordRequirements } from '../../../utils/passwordPolicy';
 
-/**
- * 비밀번호 변경 컨테이너.
- *
- * 규칙은 회원가입과 같다. 서버도 8자 이상을 요구하므로(@Size(min=8)) 여기서
- * 먼저 걸러 왕복을 아낀다.
- */
 export default function ChangePasswordScreen() {
   const navigation = useNavigation();
 
@@ -63,7 +57,6 @@ export default function ChangePasswordScreen() {
     passwordRequirements.hasCombination &&
     isPasswordMatch;
 
-  /** 막지 않고, 눌렀을 때 무엇이 모자란지 칸마다 붙인다. */
   const validate = useCallback((): ChangePasswordErrors => {
     const next: ChangePasswordErrors = {};
 
@@ -99,7 +92,7 @@ export default function ChangePasswordScreen() {
         form.newPassword,
         form.confirmPassword,
       );
-      // 화면을 벗어난 뒤에도 결과가 남도록 토스트로 알린다.
+
       Toast.show({
         type: 'success',
         text1: '비밀번호를 변경했어요.',

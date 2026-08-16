@@ -11,14 +11,12 @@ import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 
 const EMAIL_REGEX = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$/;
 
-/** 인증번호 유효 시간 */
 const CODE_TTL_SECONDS = 300;
-/** 재전송을 다시 누를 수 있게 되기까지 */
+
 const RESEND_COOLDOWN_SECONDS = 30;
-/** 인증 성공 표시를 잠깐 보여준 뒤 임시 비밀번호 발송을 시작하기까지 */
+
 const ADVANCE_DELAY_MS = 700;
 
-/** 발송 실패 문구. 계정 존재 여부가 드러나지 않도록 사유를 구분하지 않는다. */
 const FALLBACK_TEMP_PASSWORD_ERROR =
   '임시 비밀번호를 보내지 못했어요. 잠시 후 다시 시도해 주세요.';
 
@@ -29,13 +27,6 @@ const formatTime = (seconds: number) => {
   return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 };
 
-/**
- * 비밀번호 찾기.
- *
- * 서버가 지원하는 건 '이메일로 임시 비밀번호 발송'뿐이라, 인증이 끝나면 사람이
- * 한 번 더 누르게 하지 않고 그 자리에서 바로 발송을 시작한다. 2단계는 더 이상
- * 입력을 받는 화면이 아니라 그 결과(발송 중 · 완료 · 실패)를 보여주는 화면이다.
- */
 export default function ForgotPasswordScreen() {
   const navigation = useNavigation<any>();
 
@@ -82,7 +73,6 @@ export default function ForgotPasswordScreen() {
     });
   }, []);
 
-  /* 시스템 뒤로가기. 결과 화면에서는 이메일 입력으로 되돌아간다. */
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       if (step > 1) {
@@ -94,7 +84,6 @@ export default function ForgotPasswordScreen() {
     return () => sub.remove();
   }, [step]);
 
-  /* 인증번호 타이머. 0이 되면 만료로 두고 다시 300으로 되돌리지 않는다. */
   useEffect(() => {
     if (!isTimerActive) return;
     if (timeLeft <= 0) {
@@ -161,7 +150,6 @@ export default function ForgotPasswordScreen() {
     }
   }, [email, setFieldError, clearError]);
 
-  /** 인증이 끝나면 사용자가 한 번 더 누르지 않고 바로 임시 비밀번호를 보낸다. */
   const sendTempPassword = useCallback(async (token: string) => {
     setTempPasswordStatus('sending');
     try {
@@ -174,9 +162,7 @@ export default function ForgotPasswordScreen() {
       setTempPasswordStatus('failed');
       setErrors({
         form:
-          // 404는 '그 이메일로 가입한 일반 계정이 없다'는 뜻이라, 서버 문구를 그대로
-          // 띄우면 계정 존재 여부가 드러난다. 서버가 인증번호 발송 단계에서 계정
-          // 유무로 분기하지 않는 이유와 같은 근거로 여기서도 밝히지 않는다.
+
           status === 404 || status === 403
             ? FALLBACK_TEMP_PASSWORD_ERROR
             : getDisplayErrorMessage(error, FALLBACK_TEMP_PASSWORD_ERROR),
@@ -212,7 +198,6 @@ export default function ForgotPasswordScreen() {
       setIsEmailVerified(true);
       setIsTimerActive(false);
 
-      // 성공 표시를 잠깐 보여준 뒤 결과 화면으로 넘어가 발송을 시작한다.
       advanceTimerRef.current = setTimeout(() => {
         setStep(2);
         void sendTempPassword(token);
@@ -236,7 +221,6 @@ export default function ForgotPasswordScreen() {
     sendTempPassword,
   ]);
 
-  /** 여섯 자리가 채워지면 바로 확인한다. */
   useEffect(() => {
     if (step !== 1) return;
     if (!showVerificationInput || isEmailVerified || isCodeExpired) return;
@@ -251,7 +235,6 @@ export default function ForgotPasswordScreen() {
     handleVerifyCode,
   ]);
 
-  /** 이메일을 고치러 돌아간다. 인증 상태를 전부 되돌린다. */
   const handleEditEmail = useCallback(() => {
     if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
     setShowVerificationInput(false);
@@ -266,8 +249,7 @@ export default function ForgotPasswordScreen() {
   }, []);
 
   const handleRetryTempPassword = useCallback(() => {
-    // 토큰은 검증 시점에만 잠깐 들고 있었으므로, 실패 시 재시도는 처음부터
-    // 다시 인증하게 한다. 토큰을 오래 들고 있으면 그사이 만료될 수 있다.
+
     setErrors({});
     handleEditEmail();
     setStep(1);

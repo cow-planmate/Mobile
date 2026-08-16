@@ -39,7 +39,6 @@ jest.mock('../src/store/useAuthStore', () => ({
   )
 }));
 
-
 jest.mock('../src/contexts/AlertContext', () => {
   const React = require('react');
 

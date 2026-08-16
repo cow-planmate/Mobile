@@ -3,7 +3,6 @@ import renderer, { act } from 'react-test-renderer';
 import { Text, TouchableOpacity } from 'react-native';
 import NotificationModal, { Invitation } from '../src/components/common/NotificationModal';
 
-// Mock lucide-react-native
 jest.mock('lucide-react-native', () => {
   const React = require('react');
   const { View } = require('react-native');
@@ -62,12 +61,11 @@ describe('NotificationModal', () => {
     });
     const json = component.toJSON();
     expect(json).toBeDefined();
-    
-    // Check if senderNickname and planName are rendered
+
     const textJoined = getTestInstanceText(component.root);
     expect(textJoined).toContain('홍길동');
     expect(textJoined).toContain('제주도 여행');
-    // type이 없으면 기존과 동일하게 초대로 본다
+
     expect(textJoined).toContain('일정에 초대했습니다.');
   });
 
@@ -120,7 +118,7 @@ describe('NotificationModal', () => {
         />
       );
     });
-    
+
     const touchables = component.root.findAllByType(TouchableOpacity);
     const closeButton = touchables.find((t: any) => {
       try {
@@ -155,7 +153,7 @@ describe('NotificationModal', () => {
     });
 
     const touchables = component.root.findAllByType(TouchableOpacity);
-    
+
     const rejectButton = touchables.find((t: any) => {
       try {
         const text = t.findByType(Text);

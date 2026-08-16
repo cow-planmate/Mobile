@@ -2,13 +2,6 @@ import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-/**
- * 공동 체크리스트의 실시간 전송 경로 검증.
- *
- * 확인 대상은 세 가지다 — 다른 방에 붙어 있으면 REST로 돌아가는지, 브로드캐스트가
- * 돌아와야만 성공으로 보는지, 수신한 이벤트를 반영할 때 재조회를 걸지 않는지.
- */
-
 const mockWs = {
   isConnected: true,
   roomId: 'plan-1' as string | null,
@@ -50,15 +43,10 @@ import {
   usePlanChecklists,
 } from '../useChecklistQueries';
 
-/** 서버가 같은 eventId를 실어 돌려주는 브로드캐스트를 흉내 낸다. */
 const emit = (message: any) => {
   [...mockWs.listeners].forEach(listener => listener(message));
 };
 
-/**
- * react-query가 mutationFn·queryFn을 실행하고 결과를 컴포넌트에 알릴 때까지 기다린다.
- * v5의 notifyManager는 알림을 setTimeout(0)으로 미루므로 마이크로태스크만으로는 부족하다.
- */
 const tick = async ({ fakeTimers = false } = {}) => {
   await act(async () => {
     for (let i = 0; i < 5; i += 1) {
@@ -72,7 +60,6 @@ const tick = async ({ fakeTimers = false } = {}) => {
   });
 };
 
-/** 렌더한 트리와 QueryClient. 정리하지 않으면 gc 타이머가 남아 jest가 종료되지 않는다. */
 const mounted: Array<() => void> = [];
 
 const cleanupMounted = () => {
@@ -159,7 +146,6 @@ describe('공동 체크리스트 실시간 전송', () => {
 
     expect(mockWs.sent).toHaveLength(1);
 
-    // 전송된 eventId 그대로 되돌려 준다.
     await act(async () => {
       emit({ eventId: mockWs.sent[0].eventId });
       await pending;
@@ -189,7 +175,6 @@ describe('공동 체크리스트 실시간 전송', () => {
       await pending;
     });
 
-    // 재전송하면 같은 항목이 두 개 남는다.
     expect(mockCreateChecklistItem).not.toHaveBeenCalled();
     expect(caught).toBeInstanceOf(ChecklistAckTimeoutError);
   });
@@ -199,7 +184,6 @@ describe('공동 체크리스트 실시간 전송', () => {
       useCreateChecklistItem('plan-1', 'shared'),
     );
 
-    // 0번을 지워 번호가 비어 있는 상태. 개수(2)를 쓰면 sortOrder 2와 겹친다.
     client.setQueryData(checklistKeys.scope('plan-1', 'shared'), [
       { itemId: 2, content: '충전기', isChecked: false, sortOrder: 1 },
       { itemId: 3, content: '상비약', isChecked: false, sortOrder: 2 },
@@ -259,7 +243,7 @@ describe('공동 체크리스트 이벤트 수신', () => {
     await tick();
 
     expect(holder.current!.sharedItems[0].isChecked).toBe(true);
-    // 재조회가 붙으면 늦게 도착한 응답이 방금 반영한 변경을 덮는다.
+
     expect(mockGetChecklist.mock.calls.length).toBe(fetchesAfterLoad);
   });
 

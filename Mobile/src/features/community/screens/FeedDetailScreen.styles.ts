@@ -50,7 +50,6 @@ export const styles = StyleSheet.create({
     color: COLORS.primary,
   },
 
-  /* ── 헤더 이미지 ── */
   hero: {
     width: '100%',
     height: normalize(190),
@@ -105,7 +104,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: normalize(6),
   },
-  /** 작성자 아바타 + 닉네임을 함께 누를 수 있게 묶는다 */
+
   authorTouchable: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -127,7 +126,6 @@ export const styles = StyleSheet.create({
     gap: normalize(3),
   },
 
-  /* ── 가져가기 ── */
   forkBar: {
     paddingHorizontal: normalize(16),
     paddingVertical: normalize(12),
@@ -160,7 +158,6 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  /* ── 일정 ── */
   section: {
     paddingHorizontal: normalize(16),
     paddingTop: normalize(16),

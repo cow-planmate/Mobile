@@ -5,7 +5,7 @@ import { normalize } from '../../../utils/normalize';
 export const COLORS = theme.colors;
 
 export const styles = StyleSheet.create({
-  /* ── Sheet shell ── */
+
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(17, 24, 39, 0.35)',
@@ -51,7 +51,6 @@ export const styles = StyleSheet.create({
     paddingBottom: normalize(16),
   },
 
-  /* ── States ── */
   stateBox: {
     paddingVertical: normalize(40),
     alignItems: 'center',
@@ -64,7 +63,6 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  /* ── Segment card ── */
   segment: {
     paddingHorizontal: normalize(20),
     paddingVertical: normalize(14),
@@ -102,7 +100,6 @@ export const styles = StyleSheet.create({
     color: COLORS.primary,
   },
 
-  /* ── Mode row (차량 / 도보 / 대중교통) ── */
   modeRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -125,7 +122,6 @@ export const styles = StyleSheet.create({
     color: COLORS.textTertiary,
   },
 
-  /* ── Transit expand toggle ── */
   expandButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -139,7 +135,6 @@ export const styles = StyleSheet.create({
     color: COLORS.primary,
   },
 
-  /* ── Filter chips ── */
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -165,7 +160,6 @@ export const styles = StyleSheet.create({
     color: COLORS.white,
   },
 
-  /* ── Transit route card ── */
   routeCard: {
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -195,7 +189,6 @@ export const styles = StyleSheet.create({
     color: COLORS.textTertiary,
   },
 
-  /* ── Proportional bar ── */
   bar: {
     flexDirection: 'row',
     height: normalize(18),
@@ -219,7 +212,6 @@ export const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
 
-  /* ── Step detail rows ── */
   stepRow: {
     marginTop: normalize(4),
   },
@@ -268,7 +260,6 @@ export const styles = StyleSheet.create({
     color: COLORS.textTertiary,
   },
 
-  /* ── Pass stops ── */
   passStopsButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -291,7 +282,6 @@ export const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
 
-  /* ── Map toggle ── */
   mapToggle: {
     marginTop: normalize(10),
     paddingVertical: normalize(7),

@@ -11,22 +11,16 @@ import {
 
 const DEFAULT_INVITATION_SSE_PATH = '/api/sse/subscribe';
 
-/**
- * 개발 전용 로그.
- *
- * 연결이 불안정하면 error/close 핸들러와 지수 백오프 재연결이 반복되며
- * 로그가 계속 쌓인다. RN에서 console.log는 브리지를 타므로 릴리스에서는 끈다.
- */
 const sseLog = (...args: unknown[]) => {
   if (__DEV__) {
     console.log(...args);
   }
 };
 const INITIAL_RECONNECT_DELAY_MS = 1000;
-/** 중복 처리 방지용으로 기억해 둘 이벤트 ID 개수 상한 */
+
 const SEEN_EVENT_ID_LIMIT = 200;
 const MAX_RECONNECT_DELAY_MS = 30000;
-/** 내가 보낸 요청의 처리 결과. 목록 갱신이 아니라 그 자리에서 알려야 한다. */
+
 const REQUEST_RESULT_EVENT = 'requestResult';
 
 const CUSTOM_EVENT_TYPES = [
@@ -41,7 +35,7 @@ type InvitationCustomEvent = (typeof CUSTOM_EVENT_TYPES)[number];
 interface UseInvitationSseParams {
   enabled: boolean;
   onInvitationEvent: () => void | Promise<void>;
-  /** 내가 보낸 초대·편집 권한 요청이 수락/거절됐을 때 */
+
   onRequestResult?: (result: CollaborationRequestResult) => void;
 }
 
@@ -52,12 +46,6 @@ const resolveSseUrl = (): string => {
   return resolveApiUrl(DEFAULT_INVITATION_SSE_PATH, baseUrl);
 };
 
-
-/**
- * 실시간 일정 초댓장 및 협업 요청 알림을 위한 SSE(Server-Sent Events) 구독 훅
- *
- * @param params enabled 활성화 여부 및 이벤트 수신 콜백 함수
- */
 export function useInvitationSse({
   enabled,
   onInvitationEvent,
@@ -126,13 +114,8 @@ export function useInvitationSse({
       return;
     }
 
-    // 만료가 임박했으면 스트림을 열기 전에 갱신한다. 스트림은 한 번 열리면
-    // 30분(서버 emitter 타임아웃)까지 유지되므로 여는 시점의 토큰이 중요하다.
     const token = await ensureFreshAccessToken();
 
-    // 토큰을 읽는 동안 언마운트(또는 비활성화)됐을 수 있다. 그 사이 cleanup이
-    // 지나갔다면 sourceRef가 아직 비어 있어서, 여기서 스트림을 새로 열면
-    // 아무도 닫을 수 없는 EventSource가 남는다.
     if (!shouldReconnectRef.current) {
       return;
     }
@@ -147,7 +130,7 @@ export function useInvitationSse({
         Authorization: `Bearer ${token}`,
       },
       method: 'GET',
-      // 스트림 연결 상태를 유지하고 서버 하트비트를 사용하도록 설정
+
       pollingInterval: 0,
       timeout: 60000,
     });
@@ -171,8 +154,7 @@ export function useInvitationSse({
       }
 
       if (eventId) {
-        // 장시간 실행 시 무한히 커지지 않도록 오래된 것부터 버린다.
-        // (useFcmNotifications의 seenMessageIds와 같은 방식)
+
         if (seenEventIdsRef.current.size >= SEEN_EVENT_ID_LIMIT) {
           const oldest = seenEventIdsRef.current.values().next().value;
           if (oldest !== undefined) {
@@ -191,11 +173,9 @@ export function useInvitationSse({
       try {
         payload = JSON.parse(rawData);
       } catch (_error) {
-        // JSON 형태가 아닌 하트비트 메시지는 무시합니다.
+
       }
 
-      // 요청 결과는 서버가 저장하지 않아 다시 조회할 수 없다.
-      // 목록을 새로 받는 대신 이 페이로드를 그대로 화면에 넘긴다.
       if (event.type === REQUEST_RESULT_EVENT) {
         const result = parseCollaborationRequestResult(payload);
         if (result) {
@@ -244,17 +224,12 @@ export function useInvitationSse({
         `[SSE] 초대 스트림 오류: status=${xhrStatus}, state=${xhrState}`,
       );
 
-      // 403은 권한 자체가 없는 것이라 재시도로 해결되지 않는다.
       if (xhrStatus === '403') {
         shouldReconnectRef.current = false;
         disconnect();
         return;
       }
 
-      // 401은 대부분 액세스 토큰 만료다. 앱을 오래 유휴 상태로 두면(SSE emitter
-      // 타임아웃 30분 > 토큰 수명 15분) 다른 API 호출이 없어 토큰이 갱신될 기회가
-      // 없다. 여기서 직접 한 번 갱신을 시도하고, 성공하면 그 토큰으로 재연결한다.
-      // 갱신도 실패하면(리프레시 토큰까지 만료) 예전처럼 재시도를 멈춘다.
       if (xhrStatus === '401') {
         disconnect();
         refreshAccessToken().then(newToken => {
@@ -278,7 +253,6 @@ export function useInvitationSse({
       disconnect();
       scheduleReconnect(connect);
     };
-
 
     source.addEventListener('open', onOpen);
     source.addEventListener('message', onMessage);

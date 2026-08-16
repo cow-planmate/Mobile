@@ -1,4 +1,4 @@
-/** ISO 날짜 문자열을 "3시간 전" 형태의 한국어 상대시간으로 변환 */
+
 export const timeAgo = (iso: string | null | undefined): string => {
   if (!iso) return '';
   const date = new Date(iso);

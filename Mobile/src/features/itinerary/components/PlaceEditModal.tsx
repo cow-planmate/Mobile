@@ -59,7 +59,7 @@ export default function PlaceEditModal({
   useEffect(() => {
     if (visible && place) {
       setMemo(place.memo || '');
-      // Parse time string "HH:mm:ss" to Date object
+
       const today = new Date();
       const [sh, sm] = (place.startTime || '09:00').split(':').map(Number);
       const [eh, em] = (place.endTime || '10:00').split(':').map(Number);
@@ -82,7 +82,6 @@ export default function PlaceEditModal({
         .padStart(2, '0')}:00`;
     };
 
-    // 종료가 시작보다 이르면 duration이 음수가 되어 시간 충돌 해결이 붕괴한다.
     if (
       startTime.getHours() * 60 + startTime.getMinutes() >=
       endTime.getHours() * 60 + endTime.getMinutes()
@@ -108,12 +107,6 @@ export default function PlaceEditModal({
     onClose();
   };
 
-  /**
-   * 외부 지도 앱으로 연다. place_url이 있으면 그것을, 없으면 좌표를 쓴다.
-   *
-   * place_url은 외부 장소 API에서 온 값이라 웹 링크인지 확인하고 연다.
-   * 웹 링크가 아니면 좌표로 대신 연다.
-   */
   const handleOpenMap = () => {
     if (openExternalUrl(place.place_url)) {
       return;
@@ -156,7 +149,7 @@ export default function PlaceEditModal({
             showsVerticalScrollIndicator={false}
             bounces={false}
           >
-            {/* ── 장소 정보 ── */}
+
             <View style={styles.infoSection}>
               {place.imageUrl ? (
                 <FastImage

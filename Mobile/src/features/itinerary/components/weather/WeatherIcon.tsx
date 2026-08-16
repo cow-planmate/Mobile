@@ -10,15 +10,9 @@ import Svg, {
 } from 'react-native-svg';
 import type { StyleProp, ViewStyle } from 'react-native';
 
-/**
- * react-native-svg의 G는 props 타입에 style을 선언하지 않는다.
- * 런타임에서는 Animated가 style을 적용하므로, 애니메이션 style을 받도록 타입만 넓힌다.
- */
 const AnimatedG = Animated.createAnimatedComponent(G) as React.ComponentType<
   React.ComponentProps<typeof G> & { style?: StyleProp<ViewStyle> }
 >;
-
-// ── Reusable primitives ──
 
 const SunRays = ({ stroke = '#ffa500' }: { stroke?: string }) => {
   const rotation = useRef(new Animated.Value(0)).current;
@@ -291,8 +285,6 @@ const Lightning = ({ tx = 4, ty = 28 }: { tx?: number; ty?: number }) => {
   );
 };
 
-// ── 10 weather icons ──
-
 const ClearDay = (props: SvgProps) => (
   <Svg viewBox="0 0 50 50" {...props}>
     <G translate="25,25">
@@ -407,7 +399,6 @@ const Thunderstorms = (props: SvgProps) => (
   </Svg>
 );
 
-// ── Description → Component mapping ──
 const WEATHER_MAP: Record<string, React.FC<SvgProps>> = {
   맑음: ClearDay,
   '대체로 맑음': CloudyDay1,
@@ -442,8 +433,6 @@ function getIcon(description: string): React.FC<SvgProps> {
   }
   return CloudyOriginal;
 }
-
-// ── Public component ──
 
 interface WeatherIconProps {
   description: string;

@@ -19,7 +19,6 @@ import { BOARDS, BoardKey } from '../constants/levels';
 import { useHotPosts, usePosts } from '../hooks/queries';
 import CommunityScreenView from './CommunityScreen.view';
 
-/** 검색어를 매 글자마다 서버로 보내지 않기 위한 지연(ms) */
 const SEARCH_DEBOUNCE_MS = 350;
 
 export default function CommunityScreen() {
@@ -36,7 +35,6 @@ export default function CommunityScreen() {
   const { data: pendingRequests = [] } = usePendingInvitations(!!user);
   const pendingInvitations = usePendingInvitationActions();
 
-  // 검색어 입력이 멈춘 뒤에만 조회한다
   useEffect(() => {
     const timer = setTimeout(
       () => setDebouncedQuery(searchQuery.trim()),
@@ -48,20 +46,15 @@ export default function CommunityScreen() {
   const postsQuery = usePosts(category, 'latest', debouncedQuery);
   const hotQuery = useHotPosts(category);
 
-  /** 무한 스크롤로 받아온 페이지를 한 배열로 합친다 */
   const posts = useMemo(
     () => postsQuery.data?.pages.flatMap(page => page.items) ?? [],
     [postsQuery.data],
   );
 
-  // 검색 중에는 핫글이 맥락에 맞지 않으므로 숨긴다
   const hotPosts = debouncedQuery ? [] : hotQuery.data ?? [];
 
-  // 목록은 홈·여행기 화면과 같은 캐시를 본다. 탭을 옮길 때마다 다시 부르지 않고,
-  // 한 화면에서 처리한 결과가 다른 화면 배지에도 그대로 반영된다.
   const fetchPendingRequests = pendingInvitations.invalidate;
 
-  /** 실패 안내 제목은 초대/편집 권한 요청에 따라 달라진다. */
   const findRequestNoun = useCallback(
     (requestId: number) =>
       collaborationRequestNoun(
@@ -75,7 +68,7 @@ export default function CommunityScreen() {
       const noun = findRequestNoun(requestId);
       try {
         await acceptInvitation(requestId);
-        // 편집 권한이 생겨 프로필의 editablePlans가 바뀐다.
+
         void invalidatePlanCaches(queryClient);
         await fetchPendingRequests();
       } catch (error) {

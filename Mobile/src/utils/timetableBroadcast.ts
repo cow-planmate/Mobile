@@ -1,13 +1,3 @@
-/**
- * WebSocket으로 수신한 timetable(create/update/delete) 브로드캐스트를
- * 로컬 일차 목록에 반영하는 순수 병합 로직.
- *
- * timetableId를 우선 매칭한다. 날짜만으로 매칭하면 날짜를 옮긴 일차(일정 변경이
- * update로 전달됨, utils/scheduleEditSync 참고)가 옛 로컬 날짜와 매칭되지 않아
- * 새 일차로 추가되고, 장소를 가진 원래 일차는 옛 날짜인 채로 남아 같은
- * timetableId를 가진 일차가 중복 생성된다. 로컬에 아직 서버 ID가 없는 신규
- * 일차(생성 요청 응답 대기 중)만 날짜로 폴백해 매칭한다.
- */
 
 import type { Day } from '../contexts/ItineraryContext';
 import {

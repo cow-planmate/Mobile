@@ -47,12 +47,10 @@ interface ChangePasswordScreenViewProps {
   setIsConfirmVisible: (visible: boolean) => void;
 }
 
-/* ── 비밀번호 조건 한 줄 ── */
-
 const PasswordRequirement = React.memo(
   ({ met, label }: { met: boolean; label: string }) => (
     <View style={styles.requirementRow}>
-      {/* 색만 바꾸면 색각 이상 사용자가 구분하지 못한다. 형태를 바꾼다. */}
+
       {met ? (
         <Check size={sf(15)} color={COLORS.success} strokeWidth={3} />
       ) : (
@@ -69,8 +67,6 @@ const PasswordRequirement = React.memo(
     </View>
   ),
 );
-
-/* ── 인라인 오류 ── */
 
 const InlineError = ({ message }: { message: string }) => (
   <Animated.View
@@ -111,7 +107,7 @@ export const ChangePasswordScreenView = ({
 
   return (
     <View style={styles.container}>
-      {/* ── 헤더: 뒤로가기는 항상 왼쪽 ── */}
+
       <View style={styles.header}>
         <Pressable
           style={styles.headerBackButton}
@@ -231,7 +227,6 @@ export const ChangePasswordScreenView = ({
             </View>
           </AuthFieldBox>
 
-          {/* 조건은 입력 전부터 보여 준다. 눌러 보고 나서 알게 하지 않는다. */}
           <View style={styles.requirementsContainer}>
             <PasswordRequirement
               met={passwordRequirements.hasMinLength}

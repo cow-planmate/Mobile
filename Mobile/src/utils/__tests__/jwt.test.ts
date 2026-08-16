@@ -4,7 +4,6 @@ import {
   isTokenExpiringSoon,
 } from '../jwt';
 
-/** 서명은 검증하지 않으므로 헤더·서명 자리는 아무 값이나 채워도 된다. */
 const makeToken = (payload: object): string => {
   const base64Url = (value: string) =>
     Buffer.from(value, 'utf8')
@@ -22,7 +21,7 @@ const makeToken = (payload: object): string => {
 
 describe('getJwtExpiryMs', () => {
   it('exp 클레임을 밀리초로 변환한다', () => {
-    const expSeconds = 1893456000; // 2030-01-01T00:00:00Z
+    const expSeconds = 1893456000;
     expect(getJwtExpiryMs(makeToken({ exp: expSeconds }))).toBe(
       expSeconds * 1000,
     );
@@ -35,7 +34,6 @@ describe('getJwtExpiryMs', () => {
   });
 
   it('패딩이 필요한 길이의 페이로드도 처리한다', () => {
-    // base64 길이가 4의 배수가 아니면 '=' 패딩이 생략된다.
     const expSeconds = 1893456000;
     const token = makeToken({ exp: expSeconds, a: 'bc' });
     expect(getJwtExpiryMs(token)).toBe(expSeconds * 1000);
@@ -89,10 +87,9 @@ describe('isTokenExpiringSoon', () => {
   });
 
   const HOUR_MS = 60 * 60 * 1000;
-  const ACCESS_TOKEN_LIFETIME_SECONDS = 900; // 서버 액세스 토큰 수명 15분
+  const ACCESS_TOKEN_LIFETIME_SECONDS = 900;
 
   it('시계가 앞선 기기에서도 갓 발급된 토큰은 만료로 보지 않는다', () => {
-    // 기기 시계가 1시간 빠르면 서버 기준 exp는 이미 지난 시각으로 보인다.
     const serverNowSeconds = nowSeconds() - HOUR_MS / 1000;
     const token = makeToken({
       iat: serverNowSeconds,

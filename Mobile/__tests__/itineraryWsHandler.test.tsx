@@ -103,7 +103,7 @@ describe('ItineraryContext WebSocket 수신 핸들러', () => {
     expect(ctx.days[0].places).toHaveLength(1);
     expect(ctx.days[0].places[0].id).toBe('5001');
     expect(ctx.days[0].places[0].name).toBe('경복궁');
-    // 다른 날짜로 복제되지 않아야 한다
+
     expect(ctx.days[1].places).toHaveLength(0);
   });
 
@@ -159,9 +159,6 @@ describe('ItineraryContext WebSocket 수신 핸들러', () => {
       ],
     });
 
-    // 겹치는 시간대에 블록이 들어왔다. 시간을 조정할 권한은 보낸 쪽에 있고,
-    // 밀린 블록은 별도 update 브로드캐스트로 온다. 받는 쪽이 임의로 옮기면
-    // 서버에 없는 시간이 화면에만 남는다.
     emit({
       action: 'create',
       entity: 'timetableplaceblock',
@@ -206,8 +203,6 @@ describe('ItineraryContext WebSocket 수신 핸들러', () => {
       });
     });
 
-    // 앞 블록이 길어져 뒤 블록과 겹친다. 뒤 블록을 밀지 여부는 보낸 쪽이 정하고,
-    // 밀었다면 그 블록의 update가 따로 온다.
     emit({
       action: 'update',
       entity: 'timetableplaceblock',
@@ -235,7 +230,6 @@ describe('ItineraryContext WebSocket 수신 핸들러', () => {
   it('update 응답의 이름·주소 변경을 반영한다', () => {
     mount();
 
-    // 다른 참여자가 이미 만들어 둔 블록
     emit({
       action: 'create',
       entity: 'timetableplaceblock',
@@ -251,7 +245,6 @@ describe('ItineraryContext WebSocket 수신 핸들러', () => {
       ],
     });
 
-    // 그 참여자가 장소 정보를 고쳤다. 편집 화면은 이름·주소도 함께 보낸다.
     emit({
       action: 'update',
       entity: 'timetableplaceblock',
@@ -296,7 +289,6 @@ describe('ItineraryContext WebSocket 수신 핸들러', () => {
       ],
     });
 
-    // 시간만 바뀐 응답. 이름·주소를 지우면 안 된다.
     emit({
       action: 'update',
       entity: 'timetableplaceblock',
@@ -375,7 +367,6 @@ describe('ItineraryContext WebSocket 수신 핸들러', () => {
   it('undo 브로드캐스트의 timetableplaceblocks 키를 처리한다', () => {
     mount();
 
-    // 서버 HistoryService는 payload 키를 '{entity}s'로 만든다.
     emit({
       type: 'delete',
       target: 'timetableplaceblock',
@@ -390,7 +381,6 @@ describe('ItineraryContext WebSocket 수신 핸들러', () => {
     });
     expect(ctx.days[0].places).toHaveLength(0);
 
-    // undo(CREATE) 결과로 다시 생성되는 경우
     emit({
       type: 'create',
       target: 'timetableplaceblock',

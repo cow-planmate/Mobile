@@ -3,7 +3,6 @@ import ReactTestRenderer from 'react-test-renderer';
 import HomeScreen from '../src/features/home/screens/HomeScreen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Mocking Navigation
 const mockNavigate = jest.fn();
 const mockAddListener = jest.fn((event, callback) => {
   return () => {};
@@ -66,7 +65,6 @@ jest.mock('react-native-date-picker', () => {
   return (props: any) => React.createElement(View, props);
 });
 
-// Mocking useAuthStore
 jest.mock('../src/store/useAuthStore', () => ({
   useAuthStore: (selector: any) =>
     selector({
@@ -74,7 +72,6 @@ jest.mock('../src/store/useAuthStore', () => ({
     }),
 }));
 
-// Mocking AlertContext
 const mockShowAlert = jest.fn();
 jest.mock('../src/contexts/AlertContext', () => ({
   useAlert: () => ({
@@ -82,7 +79,6 @@ jest.mock('../src/contexts/AlertContext', () => ({
   }),
 }));
 
-// Mocking Trips APIs
 const mockMutateAsync = jest.fn<Promise<{ planId?: string }>, []>(() =>
   Promise.resolve({ planId: 'new-plan-123' }),
 );
@@ -98,7 +94,6 @@ jest.mock('../src/api/trips', () => ({
   rejectInvitation: jest.fn(() => Promise.resolve()),
 }));
 
-// Mocking FCM & SSE hooks
 jest.mock('../src/hooks/useFcmNotifications', () => ({
   useFcmNotifications: jest.fn(),
   IS_FCM_RUNTIME_ENABLED: false,
@@ -107,7 +102,6 @@ jest.mock('../src/hooks/useInvitationSse', () => ({
   useInvitationSse: jest.fn(),
 }));
 
-// Mocking lucide-react-native
 jest.mock('lucide-react-native', () => {
   const React = require('react');
   const { View } = require('react-native');
@@ -117,7 +111,6 @@ jest.mock('lucide-react-native', () => {
   };
 });
 
-// Mocking other native / third-party modules that might be used inside view
 jest.mock('@fortawesome/react-native-fontawesome', () => ({
   FontAwesomeIcon: () => null,
 }));
@@ -173,17 +166,14 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
     const viewComponent = renderer!.root.findByType(require('../src/features/home/screens/HomeScreen.view').HomeScreenView);
     expect(viewComponent).toBeTruthy();
 
-    // 1. Select destination to satisfy validations
     await ReactTestRenderer.act(async () => {
       viewComponent.props.onSelectLocation('제주도', 3);
     });
 
-    // 2. Trigger creation
     await ReactTestRenderer.act(async () => {
       await viewComponent.props.onCreateItinerary();
     });
 
-    // 3. Verify mutateAsync is called and navigate to ItineraryEditor is called with planId
     expect(mockMutateAsync).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith(
       'ItineraryEditor',

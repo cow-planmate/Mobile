@@ -11,7 +11,6 @@ const place = (id: string, lat = 37.5, lng = 127.0): OrderablePlace => ({
   longitude: lng,
 });
 
-/** 직접 추가 장소는 좌표가 0,0으로 저장된다. */
 const noCoordPlace = (id: string): OrderablePlace => place(id, 0, 0);
 
 describe('hasMapPosition', () => {
@@ -29,8 +28,7 @@ describe('buildOptimizedOrder', () => {
   });
 
   it('좌표 없는 장소는 원래 자리에 남기고 나머지만 재배치한다', () => {
-    // b는 직접 추가 장소라 서버 전송 대상에서 빠진다.
-    // 좌표 있는 [a, c, d]의 최적 순서가 [d, a, c]여도 결과 길이는 4여야 한다.
+
     const places = [place('a'), noCoordPlace('b'), place('c'), place('d')];
 
     const result = buildOptimizedOrder(places, [2, 0, 1]);

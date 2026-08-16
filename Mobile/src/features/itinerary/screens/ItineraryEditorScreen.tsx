@@ -50,9 +50,6 @@ import { faMap } from '@fortawesome/free-solid-svg-icons/faMap';
 import { faUsers } from '@fortawesome/free-solid-svg-icons/faUsers';
 import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
 
-/**
- * Normalize raw categoryId to 0-4 range used by backend.
- */
 const normalizeCategoryId = (
   rawId: number | undefined,
   type?: string,
@@ -76,23 +73,17 @@ const normalizeCategoryId = (
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
-/**
- * 일정표 타임라인 편집, 장소 배치/수정, 실시간 소켓 동기화 화면 컨테이너 컴포넌트
- *
- * @param props route 라우트 파라미터 및 navigation 프로퍼티
- */
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const { showAlert } = useAlert();
   const currentUser = useAuthStore(state => state.user);
   const { isOwner: isPlanOwner } = usePlanOwnership(route.params.planId);
   let queryClient: any = null;
   try {
-    // useQueryClient는 Provider가 없으면 예외를 던진다. 내부적으로 useContext를
-    // 먼저 호출하므로 훅 호출 순서는 어느 경로에서도 동일하다.
+
     // eslint-disable-next-line react-hooks/rules-of-hooks
     queryClient = useQueryClient();
   } catch (e) {
-    // Graceful fallback for test environments without QueryClientProvider
+
   }
   const createFullPlanMutation = useCreateFullPlan();
   const {
@@ -200,7 +191,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const [isParticipantsVisible, setParticipantsVisible] = useState(false);
   const [isMapPreviewVisible, setMapPreviewVisible] = useState(false);
 
-
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
       if (isCompletingRef.current) {
@@ -216,9 +206,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         return;
       }
 
-      // 일정을 아직/끝내 불러오지 못한 상태. 지킬 변경사항이 없으므로 그대로
-      // 내보낸다. 예전에는 여기서도 preventDefault를 걸어, 조회가 실패해 days가
-      // 비면 전체화면 로딩 뒤에 갇혀 화면을 빠져나올 수 없었다.
       if (days.length === 0) {
         return;
       }
@@ -259,37 +246,14 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     };
   }, [days.length, disconnect, isSaving, navigation, showAlert]);
 
-
-
-
-  // ── Undo ──
-  // 되돌리기는 서버 히스토리(history:undo:{planId}:{sessionId})를 사용한다.
-  // 로컬 스냅샷 방식은 원격 수신분까지 함께 되감아 다른 참여자의 편집을 되돌린다.
-
-  // ── Weather state ──
   const [weatherMap, setWeatherMap] = useState<
     Record<string, SimpleWeatherInfo>
   >({});
 
-  // 날씨 조회 범위. 날짜 문자열로 좁혀 두면 장소를 편집할 때마다 재조회하지 않고,
-  // 일정 기간이 실제로 바뀔 때만(일수가 그대로여도) 다시 조회한다.
   const weatherRangeStart = days.length > 0 ? formatDateLocal(days[0].date) : '';
   const weatherRangeEnd =
     days.length > 0 ? formatDateLocal(days[days.length - 1].date) : '';
 
-  /**
-   * 실시간 편집(WS)으로 보낼 plan 변경 페이로드를 만든다.
-   *
-   * SharedSync가 캐시를 병합할 때 값이 null인 필드만 건너뛰는데, PlanDto의
-   * adultCount·childCount는 원시 타입이라 페이로드에서 빠지면 null이 아니라 0으로
-   * 역직렬화된다. 그래서 이름만 담아 보내면 인원수가 0으로 덮어써지고, 그 캐시가
-   * 그대로 DB까지 내려간다. 바꾸지 않는 값이라도 반드시 실제 값을 함께 실어야 한다.
-   *
-   * isShared는 싣지 않는다. Plan 엔티티에 @IgnoreShared가 붙어 생성된 PlanDto에
-   * 필드 자체가 없고, DTO는 ignoreUnknown이라 보내도 폐기된다. 예전에는 이 값을
-   * 채우려고 전송 직전 공유 상태를 조회했는데, 왕복이 늘고 조회가 실패하면 이름
-   * 실시간 반영까지 통째로 건너뛰는 부작용만 있었다.
-   */
   const buildPlanSyncPayload = useCallback(
     (targetPlanId: string, planName: string) => ({
       planId: targetPlanId,
@@ -300,11 +264,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     [planMetadata, route.params.adults, route.params.children],
   );
 
-  /**
-   * 서버와 마지막으로 맞춘 일정 이름.
-   *
-   * 완료 시 이름이 그대로면 plan 전송을 통째로 건너뛰기 위해 둔다.
-   */
   const syncedTripNameRef = useRef<string | null>(null);
   useEffect(() => {
     if (planMetadata?.planName) {
@@ -312,7 +271,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     }
   }, [planMetadata?.planName]);
 
-  /** 날씨 조회 기준 여행지. 서버는 도시명이 아니라 destinationId를 받는다. */
   const weatherDestinationId =
     (route.params as any)?.destinationId ||
     route.params.travelId ||
@@ -328,7 +286,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     const startDate = weatherRangeStart;
     const endDate = weatherRangeEnd;
 
-    // 기간이 연달아 바뀌면 먼저 보낸 응답이 나중에 도착해 최신 결과를 덮어쓸 수 있다.
     let cancelled = false;
 
     fetchWeather(Number(weatherDestinationId), startDate, endDate)
@@ -344,8 +301,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       })
       .catch(error => {
         if (cancelled) return;
-        // 예전에는 실패 시 고정값(18°/26°/맑음)을 채워 넣어, 조회가 계속 실패해도
-        // 정상처럼 보였다. 이제는 비워 두어 날씨 영역 자체가 표시되지 않게 한다.
+
         console.warn('날씨 조회 실패:', error);
         setWeatherMap({});
       });
@@ -358,35 +314,20 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const hasInitialFetchedRef = useRef(false);
   const isConnectedRef = useRef(isConnected);
   isConnectedRef.current = isConnected;
-  // 백그라운드 전환으로 우리가 의도적으로 끊은 경우를 표시한다. 이 경우는
-  // active 핸들러가 이미 재조회를 처리하므로 아래 자동 복구 effect가
-  // 중복 실행되지 않도록 구분해야 한다.
+
   const intentionalDisconnectRef = useRef(false);
-  // fetchPlanDetails는 route.params(startDate/endDate)가 바뀌면 identity가 바뀐다.
-  // 아래 연결 관리 effect의 의존성에 두면 타임라인 시간대를 수정하는 것만으로
-  // cleanup의 disconnect()가 실행되는데, 화면은 이미 포커스 상태라 focus 이벤트가
-  // 다시 오지 않아 재연결되지 않는다. ref로 우회해 최신 함수만 참조한다.
+
   const fetchPlanDetailsRef = useRef(fetchPlanDetails);
   fetchPlanDetailsRef.current = fetchPlanDetails;
 
   useEffect(() => {
     if (!planId) return;
 
-    /**
-     * GET /api/plan/{id}/complete는 PlanSnapshotReader가 Redis 캐시를 우선 읽지만,
-     * 세션이 완전히 종료돼 캐시가 비워진 뒤에는 DB로 폴백하며 DB 반영에는
-     * 지연이 있다(주기 동기화/disconnect 동기화). 연결이 살아있는 상태에서
-     * 재조회하면 방금 한 편집을 낡은 데이터로 덮어쓸 수 있으므로,
-     * 세션이 끊겼다 다시 붙는 경우에만 재조회한다.
-     */
     const resyncIfDisconnected = () => {
       if (isConnectedRef.current) return;
       void fetchPlanDetailsRef.current();
     };
 
-    // effect가 다시 돌면 cleanup에서 연결이 끊긴다. 이미 포커스된 화면에는
-    // focus 이벤트가 오지 않으므로 여기서 직접 붙인다. connect는 같은 방이면
-    // no-op이라 focus 핸들러와 중복 호출돼도 안전하다.
     connect(planId);
 
     const unsubscribeFocus = navigation.addListener('focus', () => {
@@ -398,29 +339,14 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       }
     });
 
-    /*
-     * blur는 듣지 않는다.
-     *
-     * 이 화면이 가려지는 경로는 완료 후 ItineraryView 이동과 뒤로가기뿐이고,
-     * 둘 다 이동 전에 스스로 연결을 끊는다. 장소 추가와 지도는 화면 이동이
-     * 아니라 각각 중첩 탭(ItineraryEditorScreen.view.tsx)과 Modal이라 blur
-     * 자체가 발생하지 않는다.
-     *
-     * 화면 이동을 새로 추가한다면 그 자리에서 연결을 끊어야 한다. 빠뜨리면
-     * 사용자가 자리를 떠도 다른 참여자의 접속자 목록에 남는다.
-     */
-
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active') {
-        // 가려진 채로 복귀한 경우엔 되붙이지 않는다. 다시 앞으로 나올 때
-        // focus 핸들러가 연결을 맡는다.
+
         if (!navigation.isFocused()) return;
         connect(planId);
         resyncIfDisconnected();
       } else if (nextAppState === 'background') {
-        // 'inactive'는 알림 센터를 내리거나 앱 전환기를 띄우는 등 실제 이탈이
-        // 아닌 전이에서도 발생한다. 그때마다 끊으면 복귀할 때 세션이 새로 생기고,
-        // 직전 세션은 종료가 서버에 닿지 못해 유령으로 남기 쉽다.
+
         intentionalDisconnectRef.current = true;
         disconnect();
       }
@@ -433,7 +359,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       appStateSubscription.remove();
       disconnect();
     };
-    // fetchPlanDetails는 의존성에서 제외한다(위 ref 주석 참고).
+
   }, [planId, connect, disconnect, navigation]);
 
   const wasConnectedRef = useRef(false);
@@ -442,8 +368,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   useEffect(() => {
     if (isConnected) {
       if (awaitingAutoResyncRef.current) {
-        // 화면 전환 없이 소켓만 끊겼다 서버가 자동 재연결한 경우.
-        // 끊긴 동안 보낸 메시지가 서버 예외로 유실됐을 수 있어 재조회로 맞춘다.
+
         awaitingAutoResyncRef.current = false;
         void fetchPlanDetailsRef.current();
       }
@@ -455,22 +380,12 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       intentionalDisconnectRef.current = false;
       wasConnectedRef.current = false;
     }
-    // isConnected 전이에만 반응해야 한다. fetchPlanDetails를 의존성에 두면
-    // 같은 isConnected 값으로 effect가 다시 돌면서 intentionalDisconnectRef를
-    // 지워 버려 의도적 종료가 자동 재연결 대기로 오인된다.
+
   }, [isConnected]);
 
-  // 이름 입력 중에는 원격 값을 반영하지 않는다. 내가 타이핑하던 이름이
-  // 남의 편집이나 내 전송의 에코로 되돌아가면 입력이 통째로 날아간다.
   const isEditingTripNameRef = useRef(isEditingTripName);
   isEditingTripNameRef.current = isEditingTripName;
 
-  /**
-   * 다른 참여자의 일정 이름 변경을 받아 반영합니다.
-   *
-   * 블록·타임테이블은 ItineraryContext가 처리하지만 일정 이름은 이 화면이 들고 있어
-   * 여기서 따로 구독한다. 리스너는 Set으로 관리되므로 중복 구독이 아니다.
-   */
   useEffect(() => {
     const handlePlanMessage = (msg: any) => {
       if (!msg) return;
@@ -479,7 +394,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       const action = msg.action || msg.type;
       if (entity !== 'plan' || action === 'delete') return;
 
-      // undo/redo 브로드캐스트는 payload 키가 '{entity}s'(=plans)다.
       const raw =
         msg.planDtos ||
         msg.plans ||
@@ -502,20 +416,12 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   const fetchedDestIdRef = useRef<number | null>(null);
 
-  /**
-   * 추천 장소 조회 기준 여행지 ID.
-   *
-   * 서버 PlanFrameDetailDto는 destinationId를 준다. 내 일정 목록에서 진입하면
-   * route.params에 travelId가 없으므로 조회한 planFrame에서 가져와야 한다.
-   * 이 값은 추천 목록 컴포넌트에도 그대로 내려보내 새로고침이 같은 ID를 쓰게 한다.
-   */
   const recommendationDestId =
     (route.params as any)?.destinationId ||
     route.params.travelId ||
     planMetadata?.destinationId ||
     null;
 
-  // Fetch place recommendations via PlacesContext
   useEffect(() => {
     if (!recommendationDestId) return;
     if (fetchedDestIdRef.current === recommendationDestId) return;
@@ -533,8 +439,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     fetchAllRecommendationsNoAuth,
   ]);
 
-  // 정리는 언마운트에서만 한다. 이전에는 의존성이 하나라도 바뀌면 cleanup이 돌아
-  // planMetadata가 도착하는 순간 목록을 비우고 추천 3종을 처음부터 다시 조회했다.
   useEffect(() => {
     return () => {
       resetPlaces();
@@ -549,11 +453,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   const handlePlaceSave = useCallback(
     (updatedPlace: any) => {
-      // Normalize time to "HH:mm" format for local state
+
       const normalizeTime = (t: string) =>
         t && t.length >= 5 ? t.substring(0, 5) : t;
 
-      // Update local state + send WebSocket via context (matches Frontend flow)
       updatePlaceDetails(selectedDayIndex, updatedPlace.id, {
         startTime: normalizeTime(updatedPlace.startTime),
         endTime: normalizeTime(updatedPlace.endTime),
@@ -568,12 +471,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     [updatePlaceDetails, selectedDayIndex],
   );
 
-  /**
-   * 제목 편집을 확정한다. TextInput의 onBlur와 onSubmitEditing, 그리고 뷰의
-   * keyboardDidHide 리스너까지 겹쳐서 호출될 수 있다(키보드를 내리면 blur와
-   * keyboardDidHide가 함께 발생). 이름이 바뀌지 않았으면 WS 전송과 PATCH를
-   * 건너뛰어 같은 편집에 중복 요청이 나가지 않게 한다.
-   */
   const handleSaveTripName = useCallback(async () => {
     setIsEditingTripName(false);
     if (!tripName || !planId) return;
@@ -581,8 +478,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
     sendMessage('update', 'plan', buildPlanSyncPayload(planId, tripName));
     syncedTripNameRef.current = tripName;
-    // 이름 변경 REST는 서버가 OWNER만 허용한다. 편집자의 변경은 위 WebSocket
-    // 전송으로 이미 반영되므로, 403이 확정된 요청을 굳이 보내지 않는다.
+
     if (isPlanOwner) {
       try {
         await axios.patch(
@@ -606,7 +502,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setParticipantsVisible(true);
   }, []);
 
-  /** 지도에서 계산한 방문 순서를 현재 선택된 날짜에 반영한다. */
   const handleApplyOptimizedOrder = useCallback(
     (orderedPlaceIds: string[]) => {
       reorderPlacesInDay(selectedDayIndex, orderedPlaceIds);
@@ -628,31 +523,13 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setMapPreviewVisible(false);
   }, []);
 
-  /**
-   * 서버 히스토리에 되돌리기를 요청한다. 결과는 /topic/{planId} 브로드캐스트로
-   * 돌아와 다른 참여자에게도 동일하게 반영된다. 로컬 상태는 직접 건드리지 않는다.
-   */
   const handleUndo = useCallback(() => {
     if (!planId) return;
     sendMessage('undo', 'history', null);
   }, [planId, sendMessage]);
 
-  /**
-   * 다시 실행은 지원하지 않아 핸들러를 전달하지 않는다(버튼이 비활성으로 렌더된다).
-   * 서버 HistoryService.publishChange가 redo 시 항상 afterData를 싣는데,
-   * DELETE 기록의 afterData는 null이라 삭제 redo가 대상 ID 없는 페이로드를
-   * 브로드캐스트한다. 클라이언트가 어느 블록인지 알 수 없어 서버와 어긋난다.
-   * 서버가 DELETE redo에 beforeData의 ID를 실어주면 해제할 수 있다.
-   */
   const handleRedo = undefined;
 
-  /**
-   * 일정 변경 모달의 확정 결과를 반영한다.
-   *
-   * 일차는 인덱스로 대조한다. 날짜로 대조하면 날짜를 옮긴 일차가 삭제+생성으로
-   * 해석돼 그날의 장소가 통째로 사라지고, 서버가 옛 타임테이블을 DB에서 지우지
-   * 못해 재진입 시 옛 날짜로 되돌아간다(utils/scheduleEditSync 주석 참고).
-   */
   const onConfirmScheduleEdit = (updatedDays: any[]) => {
     if (updatedDays.length === 0) return;
 
@@ -671,12 +548,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     }
 
     setDays(prevDays => mergeScheduleEditDays(prevDays, updatedDays));
-    // 일수가 줄어 selectedDayIndex가 범위를 벗어나는 경우는
-    // useItineraryEditor의 클램프 이펙트가 처리한다(원격 삭제와 공통 경로).
+
     setScheduleEditVisible(false);
-    // startDate/endDate는 planId가 없을 때 초기 날짜 골격을 만드는 용도라
-    // 여기서 되돌려 쓸 필요가 없다. setParams로 갱신하면 fetchPlanDetails의
-    // identity만 바뀌어 불필요한 재조회와 재연결을 유발한다.
+
   };
 
   const onConfirmTimePicker = (date: Date) => {
@@ -719,17 +593,13 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setEditingTime(null);
   };
 
-
-
   const onComplete = async () => {
-    // 중복 방지 가드는 WS 전송보다 먼저 걸어야 연타 시 프레임이 중복되지 않는다.
-    // state는 리렌더 전까지 갱신되지 않으므로 ref로 판단한다.
+
     if (isSavingRef.current) return;
     isSavingRef.current = true;
     setIsSaving(true);
     isCompletingRef.current = true;
 
-    // 이름이 이미 서버와 맞아 있으면 보내지 않는다.
     if (
       route.params.planId &&
       tripName &&
@@ -743,15 +613,12 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       syncedTripNameRef.current = tripName;
     }
 
-    // If plan already exists (editing from MySchedule or pre-created from Home), update title for owner and navigate to view
     if (route.params.planId) {
-      // REST 호출보다 먼저 끊는다. 뒤로 미루면 그 왕복이 끝날 때까지 다른 참여자의
-      // 접속자 목록에 그대로 남는다. 위 publish와 DISCONNECT는 같은 소켓에 순서대로
-      // 실리므로, 곧바로 끊어도 방금 보낸 이름 변경이 유실되지 않는다.
+
       disconnect();
 
       try {
-        // 이름 변경은 서버가 OWNER만 허용한다. 소유자가 아니면 보내지 않는다.
+
         if (isPlanOwner && tripName) {
           await axios.patch(
             resolveApiUrl(`/api/plan/${route.params.planId}/name`),
@@ -785,7 +652,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       return;
     }
 
-    // New plan: create on server, then navigate to view with planId
     try {
       const timetableVOs = days.map(day => ({
         date: formatDateLocal(day.date),
@@ -848,8 +714,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         return;
       }
 
-      // 백엔드가 생성 시 planName을 무시하고 강제로 목적지명 등으로 생성할 수 있으므로,
-      // 생성이 끝난 직후 신규 planId에 대해 즉각 이름 변경 PATCH API를 추가 호출하여 동기화합니다.
       if (newPlanId && tripName) {
         try {
           await axios.patch(
@@ -990,9 +854,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
                   const isMe =
                     !!currentUser &&
                     String(currentUser.userId || '').toLowerCase() === userUidLower;
-                  // 소유자는 내 계정에 대해서만 판정할 수 있다. 일정 조회 응답
-                  // (PlanFrameDetailDto)에도, 편집자 목록(EDITOR만 반환)에도
-                  // 소유자 정보가 없어 다른 참여자의 소유 여부는 알 방법이 없다.
+
                   const isOwner = isMe && isPlanOwner;
 
                   return (
@@ -1083,7 +945,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         planId={planId as string}
         isOwner={isPlanOwner}
       />
-      {/* 닫혀 있을 때는 마운트하지 않는다. 조회 훅이 그동안 헛돌 이유가 없다. */}
+
       {isChecklistVisible && (
         <ChecklistSheet
           visible

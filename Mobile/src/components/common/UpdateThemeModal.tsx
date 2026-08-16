@@ -57,8 +57,7 @@ export default function UpdateThemeModal({
   const fetchUserThemes = useCallback(async () => {
     try {
       setLoading(true);
-      // 이 모달은 프로필 화면에서만 열린다. 방금 받은 프로필 캐시에 선호 테마가
-      // 들어 있으므로 같은 응답을 다시 받지 않는다.
+
       const cachedThemes = queryClient.getQueryData<UserProfile>(
         USER_PROFILE_QUERY_KEY,
       )?.preferredThemes;
@@ -67,11 +66,7 @@ export default function UpdateThemeModal({
         (await axios.get(resolveApiUrl('/api/user/profile'))).data
           .preferredThemes ??
         [];
-      // 카테고리별로 그룹화.
-      // 서버 응답에는 카테고리 ID가 없고 category enum만 있으므로 CATEGORY_MAP으로 변환한다.
-      // 예전에는 존재하지 않는 preferredThemeCategoryId로 묶어 모든 테마가
-      // 'undefined' 키 하나에 몰렸고, 저장 시 Number('undefined') = NaN이 되어
-      // 항상 실패했다.
+
       const grouped: ThemeSelectorResult = {};
       themes.forEach(t => {
         const categoryId = CATEGORY_MAP[t.category]?.id;
@@ -103,8 +98,7 @@ export default function UpdateThemeModal({
   const handleSave = async () => {
     try {
       setSaving(true);
-      // 세 카테고리를 한 요청에 담는다. 선택이 없는 카테고리는 빈 배열로 보내
-      // 기존 선택을 지운다. 나눠 보내면 중간에 실패했을 때 일부만 반영된다.
+
       const themeIdsByCategoryId: Record<number, number[]> = {};
       for (const catId of [0, 1, 2]) {
         themeIdsByCategoryId[catId] =

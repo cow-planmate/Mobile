@@ -29,7 +29,7 @@ describe('요청 종류별 문구', () => {
   });
 
   it('수락 결과는 요청 종류에 따라 주체가 다르다', () => {
-    // 초대 수락은 내가 참여하는 것, 권한 요청 수락은 상대를 편집자로 넣는 것
+
     expect(describeAcceptResult('INVITE')).toBe('일정에 참여했습니다.');
     expect(describeAcceptResult('REQUEST')).toBe('편집자로 추가했습니다.');
   });

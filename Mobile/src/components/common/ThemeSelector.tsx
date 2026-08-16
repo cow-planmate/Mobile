@@ -14,10 +14,6 @@ import { useAlert } from '../../contexts/AlertContext';
 
 const MAX_PER_CATEGORY = 5;
 
-/**
- * 서버가 내려주는 category enum ↔ 앱에서 쓰는 카테고리 ID.
- * PreferredThemeVO에는 카테고리 ID 필드가 없으므로 이 표로만 변환한다.
- */
 export const CATEGORY_MAP: Record<
   PreferredThemeVO['category'],
   { id: number; name: string }
@@ -61,7 +57,6 @@ export default function ThemeSelector({
       const response = await getPreferredThemes();
       const themes = response.preferredThemes;
 
-      // 카테고리별로 그룹화
       const categoryMap = new Map<
         number,
         { name: string; themes: PreferredThemeVO[] }
@@ -79,7 +74,6 @@ export default function ThemeSelector({
         categoryMap.get(catId)!.themes.push(theme);
       });
 
-      // 카테고리 ID 순으로 정렬
       const sortedKeys = Array.from(categoryMap.keys()).sort((a, b) => a - b);
       const cats = sortedKeys.map(k => ({
         id: k,
@@ -90,7 +84,6 @@ export default function ThemeSelector({
       setCategories(cats);
       setThemesByCategory(grouped);
 
-      // 초기 선택값 설정
       const initSets = sortedKeys.map(catId => {
         if (initialSelections && initialSelections[catId]) {
           return new Set(initialSelections[catId].map(t => t.preferredThemeId));
@@ -141,7 +134,7 @@ export default function ThemeSelector({
     if (currentStep < categories.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // 마지막 단계 - 완료
+
       const result: ThemeSelectorResult = {};
       categories.forEach((cat, idx) => {
         const themes = themesByCategory[idx].filter(t =>
@@ -160,7 +153,7 @@ export default function ThemeSelector({
   };
 
   const handleSkip = () => {
-    // 현재 카테고리 선택 초기화 후 다음으로
+
     setSelectedIds(prev => {
       const updated = prev.map(set => new Set(set));
       updated[currentStep] = new Set();

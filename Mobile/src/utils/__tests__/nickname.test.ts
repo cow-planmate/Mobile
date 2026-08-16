@@ -16,7 +16,7 @@ describe('getNicknameLengthError', () => {
   });
 
   it('한 글자는 서버 중복 확인을 보내기 전에 걸러 낸다', () => {
-    // 서버 verify는 길이를 보지 않아 '사용 가능'을 돌려준다.
+
     expect(getNicknameLengthError('가')).toBe(
       `닉네임은 ${NICKNAME_MIN_LENGTH}자 이상이어야 해요.`,
     );

@@ -260,7 +260,7 @@ export const styles = StyleSheet.create({
   timelineStage: {
     flex: 1,
     position: 'relative',
-    backgroundColor: COLORS.surface, // timelineSceneBackdrop
+    backgroundColor: COLORS.surface, 
   },
   timelineSceneBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -317,10 +317,10 @@ export const styles = StyleSheet.create({
   quarterBlock: {
     height: HOUR_HEIGHT / 4,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB', // Enhanced from COLORS.borderLight (#F3F4F6)
+    borderTopColor: '#E5E7EB', 
   },
   firstQuarterBlock: {
-    borderTopColor: '#9CA3AF', // Enhanced from COLORS.border (#E5E7EB)
+    borderTopColor: '#9CA3AF', 
   },
   footer: {
     flexDirection: 'row',

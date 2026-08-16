@@ -18,7 +18,6 @@ export const styles = StyleSheet.create({
     backgroundColor: '#F8F9FA',
   },
 
-  /* ── Web Tab Bar Styles ── */
   tabBarContainer: {
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
@@ -47,7 +46,6 @@ export const styles = StyleSheet.create({
     color: '#1344FF',
   },
 
-  /* ── Search & Write Button Row ── */
   searchBarRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -100,7 +98,6 @@ export const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  /* ── HOT Posts Section Styles ── */
   listHeaderContainer: {
     backgroundColor: '#F8F9FA',
   },
@@ -264,7 +261,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  /* ── Regular Post List Styles ── */
   postList: {
     paddingBottom: normalize(32),
   },
@@ -376,7 +372,6 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  /* ── List states ── */
   listFooterLoading: {
     paddingVertical: normalize(20),
     alignItems: 'center',

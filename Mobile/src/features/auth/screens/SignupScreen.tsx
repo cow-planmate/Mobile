@@ -15,28 +15,22 @@ import { getPasswordRequirements } from '../../../utils/passwordPolicy';
 import { verifyNicknameAvailable } from '../../../api/auth';
 import { setAdjustNothing, setAdjustResize } from '../../../utils/softInputMode';
 
-/** 이미 가입된 이메일일 때 서버가 주는 코드 (AUTH_004) */
 const DUPLICATE_EMAIL_CODE = 'AUTH_004';
 
-/** 화면 선택값 → 서버 Gender enum. 서버에는 OTHER도 있으나 화면은 둘만 받는다. */
 const GENDER_ENUM: Record<string, string> = { male: 'MALE', female: 'FEMALE' };
 
 const EMAIL_REGEX = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$/;
 
-/** 인증번호 유효 시간 */
 const CODE_TTL_SECONDS = 300;
-/** 재전송을 다시 누를 수 있게 되기까지 */
+
 const RESEND_COOLDOWN_SECONDS = 30;
-/** 인증 성공 표시를 잠깐 보여준 뒤 다음 단계로 넘어가기까지 */
+
 const ADVANCE_DELAY_MS = 700;
-/** 닉네임 입력이 멈춘 뒤 중복 검사를 보내기까지 */
+
 const NICKNAME_DEBOUNCE_MS = 500;
 
 export type NicknameStatus = 'idle' | 'checking' | 'available' | 'taken';
 
-/**
- * 타이머 남은 시간을 'M:SS' 포맷으로 변환하는 헬퍼 함수
- */
 const formatTime = (seconds: number) => {
   const safe = Math.max(0, seconds);
   const minutes = Math.floor(safe / 60);
@@ -44,9 +38,6 @@ const formatTime = (seconds: number) => {
   return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 };
 
-/**
- * 이메일 인증, 비밀번호 입력, 닉네임 검증 및 회원가입 단계별 폼 컨테이너 컴포넌트
- */
 export default function SignupScreen() {
   const navigation = useNavigation<any>();
   const login = useAuthStore(state => state.login);
@@ -65,7 +56,7 @@ export default function SignupScreen() {
     confirmPassword: '',
     nickname: '',
     gender: '',
-    /** 'YYYY-MM-DD'. 나이를 받아 역산하면 실제 월·일이 사라진다. */
+
     birthdate: '',
   });
 
@@ -78,7 +69,6 @@ export default function SignupScreen() {
   const [isAgreed, setIsAgreed] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  /** 개별 동작마다 따로 둔다. 인증 확인 중에 재전송이 함께 잠기면 안 된다. */
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -112,13 +102,6 @@ export default function SignupScreen() {
     });
   }, []);
 
-  /* ────────────────────────────────────────────────
-   * 시스템 뒤로가기
-   *
-   * 단계는 컴포넌트 안의 state라 네비게이션 스택에는 이 화면 하나뿐이다.
-   * 처리하지 않으면 갤럭시에서 가장자리를 스와이프했을 때 이메일 인증부터
-   * 닉네임까지 입력한 것이 전부 사라진 채 화면을 벗어난다.
-   * ──────────────────────────────────────────────── */
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       if (step > 1) {
@@ -130,10 +113,6 @@ export default function SignupScreen() {
     return () => sub.remove();
   }, [step]);
 
-  /**
-   * 이 화면에 있는 동안만 키보드가 떠도 레이아웃이 움직이지 않게 한다.
-   * 벗어나면 다른 화면(채팅 등)이 쓰는 기본 리사이즈 동작으로 되돌린다.
-   */
   useFocusEffect(
     useCallback(() => {
       setAdjustNothing();
@@ -141,7 +120,6 @@ export default function SignupScreen() {
     }, []),
   );
 
-  /* 인증번호 타이머. 0이 되면 만료로 두고 다시 300으로 되돌리지 않는다. */
   useEffect(() => {
     if (!isTimerActive) return;
     if (timeLeft <= 0) {
@@ -153,7 +131,6 @@ export default function SignupScreen() {
     return () => clearTimeout(id);
   }, [isTimerActive, timeLeft]);
 
-  /* 재전송 쿨다운 */
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const id = setTimeout(() => setResendCooldown(c => c - 1), 1000);
@@ -175,8 +152,6 @@ export default function SignupScreen() {
     },
     [clearError],
   );
-
-  /* ── 1단계: 이메일 인증 ── */
 
   const isEmailFormatValid = EMAIL_REGEX.test(form.email.trim());
 
@@ -208,7 +183,7 @@ export default function SignupScreen() {
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
       setFocusSeq(seq => seq + 1);
     } catch (error) {
-      // 문구가 아니라 에러 코드로 판단한다.
+
       const { code } = parseBackendError(error);
       setFieldError(
         'email',
@@ -252,7 +227,6 @@ export default function SignupScreen() {
       setIsEmailVerified(true);
       setIsTimerActive(false);
 
-      // 성공 표시를 잠깐 보여준 뒤 다음 단계로 넘어간다.
       advanceTimerRef.current = setTimeout(() => {
         setStep(2);
         setFocusSeq(seq => seq + 1);
@@ -275,11 +249,6 @@ export default function SignupScreen() {
     setFieldError,
   ]);
 
-  /**
-   * 여섯 자리가 채워지면 바로 확인한다.
-   * 예전에는 입력을 마친 뒤 '인증번호 확인'을 눌러야 했고, 그 버튼이 다시
-   * '다음'으로 바뀌어 한 단계를 넘는 데 세 번을 눌러야 했다.
-   */
   useEffect(() => {
     if (step !== 1) return;
     if (!showVerificationInput || isEmailVerified || isCodeExpired) return;
@@ -294,7 +263,6 @@ export default function SignupScreen() {
     handleVerifyCode,
   ]);
 
-  /** 이메일을 고치러 돌아간다. 인증 상태를 전부 되돌린다. */
   const handleEditEmail = useCallback(() => {
     if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
     setShowVerificationInput(false);
@@ -309,13 +277,6 @@ export default function SignupScreen() {
     setFocusSeq(seq => seq + 1);
   }, []);
 
-  /* ── 3단계: 닉네임 & 내 정보 ── */
-
-  /**
-   * 입력이 멈추면 중복 검사를 보낸다.
-   * '중복확인' 버튼을 눌러야 '다음'이 나타나던 구조라, 닉네임을 한 글자만
-   * 고쳐도 처음부터 다시 눌러야 했다.
-   */
   useEffect(() => {
     if (step !== 3) return;
     const nickname = form.nickname.trim();
@@ -324,8 +285,6 @@ export default function SignupScreen() {
       return;
     }
 
-    // 서버 중복 확인은 길이를 보지 않는다. 2자 미만을 그대로 보내면 '사용 가능'을
-    // 받은 뒤 가입 요청에서야 400이 난다.
     const lengthError = getNicknameLengthError(nickname);
     if (lengthError) {
       setNicknameStatus('idle');
@@ -339,7 +298,7 @@ export default function SignupScreen() {
     const id = setTimeout(async () => {
       try {
         const available = await verifyNicknameAvailable(nickname);
-        // 빠르게 입력하면 이전 요청이 나중에 도착할 수 있다.
+
         if (seq !== nicknameSeqRef.current) return;
         setNicknameStatus(available ? 'available' : 'taken');
       } catch (error) {
@@ -355,8 +314,6 @@ export default function SignupScreen() {
     return () => clearTimeout(id);
   }, [form.nickname, step]);
 
-  /* ── 가입 완료 제출 ── */
-
   const handleSignup = useCallback(async () => {
     if (!emailAuthToken) {
       showAlert({
@@ -369,7 +326,7 @@ export default function SignupScreen() {
       setFieldError('birthdate', '생년월일을 선택해 주세요.');
       return;
     }
-    // 서버 birthdate는 @Past다. 오늘 이후 날짜는 여기서 걸러 낸다.
+
     if (form.birthdate >= toBirthdateString(new Date())) {
       setFieldError('birthdate', '생년월일을 다시 확인해 주세요.');
       return;
@@ -394,11 +351,10 @@ export default function SignupScreen() {
         birthdate: form.birthdate,
       });
 
-      // 회원가입 성공 → 자동 로그인 후 테마 선택
       try {
         setNeedsThemeSelection(true);
         await login(form.email.trim(), form.password);
-        // login 성공 시 AppNavigator가 AppStack으로 전환 + ThemeSelector 표시
+
       } catch (loginError) {
         setNeedsThemeSelection(false);
         showAlert({
@@ -430,8 +386,6 @@ export default function SignupScreen() {
     showAlert,
     setFieldError,
   ]);
-
-  /* ── 단계 이동 ── */
 
   const passwordRequirements = useMemo(
     () => getPasswordRequirements(form.password),
@@ -470,7 +424,6 @@ export default function SignupScreen() {
     isAgreed,
   ]);
 
-  /** 다음으로 못 넘어갈 때 이유를 필드에 붙인다. 버튼을 회색으로 죽이지 않는다. */
   const handleNextStep = useCallback(() => {
     if (step === 2) {
       if (!passwordRequirements.hasMinLength || !passwordRequirements.hasCombination) {

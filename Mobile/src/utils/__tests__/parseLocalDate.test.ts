@@ -10,8 +10,7 @@ describe('parseLocalDate', () => {
   });
 
   it('formatDateLocal과 왕복해도 날짜가 밀리지 않는다', () => {
-    // new Date('2026-08-10')은 UTC 자정이라 UTC보다 이른 타임존에서는
-    // formatDateLocal이 전날을 돌려준다. 이 왕복이 항상 성립해야 한다.
+
     ['2026-01-01', '2026-08-10', '2026-12-31'].forEach(iso => {
       expect(formatDateLocal(parseLocalDate(iso))).toBe(iso);
     });

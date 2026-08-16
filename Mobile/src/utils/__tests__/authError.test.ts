@@ -17,7 +17,7 @@ describe('isTokenAuthFailure', () => {
   });
 
   it('토큰과 무관한 401은 재발급 대상이 아니다', () => {
-    // 로그인 자격 증명 · 인증번호 · 현재 비밀번호 확인 실패
+
     expect(isTokenAuthFailure(makeError(401, 'AUTH_003'))).toBe(false);
     expect(isTokenAuthFailure(makeError(401, 'AUTH_006'))).toBe(false);
     expect(isTokenAuthFailure(makeError(401, 'AUTH_007'))).toBe(false);

@@ -6,7 +6,6 @@ export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   flex1: { flex: 1 },
 
-  /* ── 헤더 — 뒤로가기는 항상 왼쪽 ── */
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -65,22 +64,14 @@ export const styles = StyleSheet.create({
     marginBottom: sf(32),
   },
 
-  /* ── 입력 ── */
   inputGroup: { marginBottom: sf(16) },
-  /**
-   * 라벨이 테두리 위로 올라가면서 입력 칸 위에 라벨 절반만큼 여백이 생겼다.
-   * 가운데 정렬이면 옆의 인증요청 버튼과 4dp 어긋나므로 아래를 맞춘다.
-   */
+
   fieldRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: sf(8),
   },
-  /**
-   * 테두리 굵기를 상태와 무관하게 1.5로 고정한다. 포커스될 때만 굵어지면
-   * 박스 크기가 함께 바뀌어 입력 중에 글자가 흔들린다.
-   * 색은 AuthFieldBox가 상태에 따라 전환한다.
-   */
+
   authInputContainer: {
     width: '100%',
     minHeight: sf(52),
@@ -119,7 +110,6 @@ export const styles = StyleSheet.create({
     includeFontPadding: false,
   },
 
-  /** 아이콘 전용 버튼은 48dp를 채운다 */
   eyeButton: {
     width: sf(44),
     height: sf(44),
@@ -128,7 +118,6 @@ export const styles = StyleSheet.create({
     marginRight: sf(-10),
   },
 
-  /* ── 필드에 붙는 인라인 버튼 ── */
   inlineButton: {
     height: sf(52),
     paddingHorizontal: sf(16),
@@ -159,7 +148,6 @@ export const styles = StyleSheet.create({
     lineHeight: sp(TYPO.body.lineHeight),
   },
 
-  /* ── 타이머 · 재전송 ── */
   timerText: {
     color: COLORS.textSecondary,
     fontFamily: FONTS.semibold,
@@ -190,7 +178,6 @@ export const styles = StyleSheet.create({
   },
   resendButtonTextDisabled: { color: COLORS.textSecondary },
 
-  /* ── 상태 한 줄 (닉네임 · 인증 완료) ── */
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -217,7 +204,6 @@ export const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
 
-  /* ── 인라인 오류 ── */
   errorRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -234,7 +220,6 @@ export const styles = StyleSheet.create({
     lineHeight: sp(TYPO.label.lineHeight),
   },
 
-  /* ── 비밀번호 조건 ── */
   requirementsContainer: {
     marginTop: sf(12),
     paddingHorizontal: sf(2),
@@ -251,8 +236,6 @@ export const styles = StyleSheet.create({
     lineHeight: sp(TYPO.label.lineHeight),
   },
 
-  /* ── 성별 ── */
-  /** 박스 밖에 놓이는 그룹 라벨. 입력 칸 안의 라벨과 크기를 맞춘다. */
   groupLabel: {
     fontSize: sp(TYPO.caption.fontSize),
     color: COLORS.textSecondary,
@@ -275,7 +258,7 @@ export const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: COLORS.border,
   },
-  /** 감싸던 박스를 없앤 자리. 오류는 버튼 테두리가 대신 알린다. */
+
   genderButtonError: { borderColor: COLORS.error },
   genderButtonSelected: {
     backgroundColor: COLORS.primary,
@@ -289,7 +272,6 @@ export const styles = StyleSheet.create({
   },
   genderButtonTextSelected: { color: COLORS.onPrimary },
 
-  /* ── 약관 동의 — 체크박스와 보기 링크를 분리한다 ── */
   agreementRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -341,7 +323,6 @@ export const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 
-  /* ── 하단 ── */
   footer: {
     paddingHorizontal: sf(24),
     paddingTop: sf(12),

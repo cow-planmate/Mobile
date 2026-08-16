@@ -1,4 +1,3 @@
-// Auto-generated common components index
 
 export { default as AirplaneLoading } from './AirplaneLoading';
 export { default as CalendarModal } from './CalendarModal';

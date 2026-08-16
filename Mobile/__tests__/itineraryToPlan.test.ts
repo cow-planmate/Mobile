@@ -1,7 +1,7 @@
 import { buildCreatePlanRequest } from '../src/features/community/utils/itineraryToPlan';
 import { Itinerary, ItineraryItem } from '../src/features/community/types';
 
-const START_DATE = new Date(2026, 7, 3); // 2026-08-03 (로컬)
+const START_DATE = new Date(2026, 7, 3); 
 
 const item = (over: Partial<ItineraryItem>): ItineraryItem => ({
   time: '09:00',
@@ -36,9 +36,7 @@ describe('buildCreatePlanRequest — 블록 시각', () => {
   });
 
   it('자정을 넘겨도 시작 시각이 겹치지 않는다', () => {
-    // 22:00부터 1시간짜리 블록 6개 → 그대로 밀면 04:00까지 넘어간다.
-    // 23:59로 잘라내면 여러 블록의 시작 시각이 23:59로 같아져
-    // 서버 validateNoDuplicateBlockTimes에 걸린다.
+
     const { body } = buildCreatePlanRequest(
       itinerary(
         Array.from({ length: 6 }, () =>
@@ -107,7 +105,7 @@ describe('buildCreatePlanRequest — 블록 카테고리', () => {
   });
 
   it('enum 밖의 값과 빈 값은 FREE로 떨어뜨린다', () => {
-    // 구 스냅샷에 남아 있는 한글 분류나 숫자 ID가 그대로 나가면 요청 전체가 400이 된다.
+
     const { body } = buildCreatePlanRequest(
       itinerary([
         item({ category: '관광지' }),
@@ -149,7 +147,7 @@ describe('buildCreatePlanRequest — 일차 시각', () => {
   });
 
   it('종료가 시작보다 이르면 하루 끝으로 늘린다', () => {
-    // 서버 TimetableDto의 @AssertTrue(시작 ≤ 종료)에 걸리는 조합이다.
+
     expect(timetable({ startTime: '22:00', endTime: '02:00' })).toMatchObject({
       timeTableStartTime: '22:00:00',
       timeTableEndTime: '23:59:00',

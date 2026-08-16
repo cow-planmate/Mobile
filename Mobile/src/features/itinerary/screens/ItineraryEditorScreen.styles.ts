@@ -24,7 +24,7 @@ export const HOUR_HEIGHT = 180;
 export const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
 export const MIN_ITEM_HEIGHT = 45;
 export const GRID_SNAP_HEIGHT = HOUR_HEIGHT / 4;
-/** timelineWrapper.paddingVertical(20) + gridContainer.paddingVertical(20) */
+
 export const GRID_TOP_OFFSET = 40;
 export const BOTTOM_TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 85 : 60;
 
@@ -382,10 +382,10 @@ export const styles = StyleSheet.create({
   quarterBlock: {
     height: HOUR_HEIGHT / 4,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB', // Enhanced from COLORS.borderLight (#F3F4F6)
+    borderTopColor: '#E5E7EB', 
   },
   firstQuarterBlock: {
-    borderTopColor: '#9CA3AF', // Enhanced from COLORS.border (#E5E7EB)
+    borderTopColor: '#9CA3AF', 
   },
   addPlaceListContainer: {
     flex: 1,
@@ -530,7 +530,7 @@ export const styles = StyleSheet.create({
   marginTop20: {
     marginTop: 20,
   },
-  // Online Users Styles
+
   onlineUsersContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -564,7 +564,6 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
   },
 
-  // Overflow warning banner
   overflowBanner: {
     position: 'absolute',
     bottom: 16,
@@ -586,7 +585,7 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: FONTS.semibold,
   },
-  // Floating History Actions
+
   floatingHistoryContainer: {
     position: 'absolute',
     bottom: BOTTOM_TAB_BAR_HEIGHT + 16,

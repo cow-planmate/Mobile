@@ -18,23 +18,14 @@ import {
   fetchRestaurantPlacesNoAuth,
 } from '../api/trips';
 
-// ────────────────────────────────────────────────
-// Utils
-// ────────────────────────────────────────────────
-
 const mergePlaces = (prev: PlaceVO[], newPlaces: PlaceVO[]) => {
   const existingIds = new Set(prev.map(p => p.placeId));
   const filtered = newPlaces.filter(p => !existingIds.has(p.placeId));
   return [...prev, ...filtered];
 };
 
-/**
- * Storybook 등 서버 없이 화면을 띄울 때 쓰는 데모 여행지 ID.
- * 실제 destination은 1~28이라 충돌하지 않는다.
- */
 const DEMO_DESTINATION_ID = 123;
 
-/** 데모 픽스처. __DEV__ 분기 안에서만 쓰이므로 릴리스 번들에서는 제거된다. */
 const demoPlace = (p: Partial<PlaceVO> & Pick<PlaceVO, 'placeId' | 'name'>): PlaceVO => ({
   categoryId: 0,
   url: '',
@@ -46,10 +37,6 @@ const demoPlace = (p: Partial<PlaceVO> & Pick<PlaceVO, 'placeId' | 'name'>): Pla
   iconUrl: '',
   ...p,
 });
-
-// ────────────────────────────────────────────────
-// Types
-// ────────────────────────────────────────────────
 
 export interface PlacesState {
   tour: PlaceVO[];
@@ -69,29 +56,24 @@ export interface PlacesState {
 }
 
 interface PlacesContextType extends PlacesState {
-  /** 일정 추천 장소(관광지, 숙소, 식당) 전체 조회 (force: true 시 강제 갱신) */
+
   fetchAllRecommendations: (destinationId: number, force?: boolean) => Promise<void>;
-  /** 비인증 추천 장소 전체 조회 */
+
   fetchAllRecommendationsNoAuth: (
     destinationId: number,
     force?: boolean,
   ) => Promise<void>;
-  /** 장소 카테고리별 다음 페이지 추가 조회 */
+
   loadMorePlaces: (
     field: 'tour' | 'lodging' | 'restaurant',
   ) => Promise<void>;
-  /** 전체 장소 상태 초기화 */
+
   resetPlaces: () => void;
-  /** 반려동물 동반 필터링 상태 설정 */
+
   setPetFriendly: (val: boolean) => void;
 }
 
-
 const PlacesContext = createContext<PlacesContextType | undefined>(undefined);
-
-// ────────────────────────────────────────────────
-// Provider
-// ────────────────────────────────────────────────
 
 export function PlacesProvider({children}: PropsWithChildren) {
   const [tour, setTour] = useState<PlaceVO[]>([]);
@@ -116,7 +98,7 @@ export function PlacesProvider({children}: PropsWithChildren) {
 
   const fetchAllRecommendations = useCallback(
     async (destinationId: number, force: boolean = false) => {
-      // 동일한 destinationId에 대한 중복 및 동시 조회 요청 방지 가드
+
       if (
         !force &&
         (lastFetchedDestRef.current.isFetching ||
@@ -200,8 +182,7 @@ export function PlacesProvider({children}: PropsWithChildren) {
         setRestaurantHasNext(!!restaurantData.hasNext);
       } catch (err) {
         console.error('추천 장소 조회 실패:', err);
-        // 실패한 destinationId를 "조회 완료"로 남겨두면 이후 재진입 시
-        // 중복 가드에 걸려 영영 다시 조회하지 않는다.
+
         lastFetchedDestRef.current.destinationId = null;
       } finally {
         lastFetchedDestRef.current.isFetching = false;
@@ -251,7 +232,6 @@ export function PlacesProvider({children}: PropsWithChildren) {
     },
     [],
   );
-
 
   const loadMorePlaces = useCallback(
     async (field: 'tour' | 'lodging' | 'restaurant') => {
@@ -344,10 +324,6 @@ export function PlacesProvider({children}: PropsWithChildren) {
     </PlacesContext.Provider>
   );
 }
-
-// ────────────────────────────────────────────────
-// Hook
-// ────────────────────────────────────────────────
 
 export function usePlaces() {
   const context = useContext(PlacesContext);

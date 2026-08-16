@@ -78,7 +78,7 @@ describe('체크리스트 API', () => {
     });
 
     it('sortOrder가 같으면 itemId 오름차순으로 순서를 고정한다', () => {
-      // 서버가 삭제 후 번호를 다시 매기지 않아 값이 겹칠 수 있다.
+
       const items = normalizeChecklistItems({
         items: [
           { itemId: 9, content: '나중 항목', isChecked: false, sortOrder: 2 },

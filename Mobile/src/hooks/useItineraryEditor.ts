@@ -28,9 +28,6 @@ import { dropPlanComplete } from './planCompleteCache';
 import { MINUTE_HEIGHT } from '../features/itinerary/screens/ItineraryEditorScreen.styles';
 import Toast from 'react-native-toast-message';
 
-/**
- * 여행지 명칭에서 시/도 단위 접두사를 제거하고 도시명을 추출합니다.
- */
 const parseDestinationName = (destination?: string) => {
   const normalized = destination?.trim() || '';
   if (!normalized) return '';
@@ -38,21 +35,12 @@ const parseDestinationName = (destination?: string) => {
   return parts.length <= 1 ? normalized : parts.slice(1).join(' ');
 };
 
-/**
- * 'MM.DD.' 표기. 렌더마다 새로 만들면 뷰의 메모이제이션이 깨지므로 모듈 스코프에 둔다.
- */
 const formatDate = (date: Date) => {
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
   return `${month}.${day}.`;
 };
 
-/**
- * 일정 편집 화면의 상태 관리, 실시간 WebSocket동기화 및 장소 편집 로직을 제공하는 커스텀 훅
- *
- * @param route 네비게이션 라우트 파라미터
- * @param _navigation 네비게이션 객체
- */
 export const useItineraryEditor = (route: any, _navigation: any) => {
   const queryClient = useQueryClient();
   const {
@@ -81,9 +69,9 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
 
   const isInitialized = useRef(false);
   const timelineScrollRef = useRef<ScrollView>(null);
-  /** days에 이미 담겨 있는 일정의 planId. 다른 plan의 응답과 비교하지 않기 위한 기준. */
+
   const loadedPlanIdRef = useRef<string | null>(null);
-  /** 최초 일정 조회가 끝났는지. 화면 진입 시 전체화면 로딩을 이 값으로 판단한다. */
+
   const [isInitialPlanLoading, setIsInitialPlanLoading] = useState(true);
 
   const initDaysFromDates = useCallback(() => {
@@ -120,12 +108,11 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     }
 
     const targetPlanId = String(route.params.planId);
-    // 아래 stale 가드는 "같은 plan을 재조회할 때"만 의미가 있다. 다른 plan을
-    // 처음 불러오는 중이라면 로컬 days는 비교 대상이 아니라 남은 찌꺼기다.
+
     const isSamePlan = loadedPlanIdRef.current === targetPlanId;
 
     try {
-      // 토큰은 axios 요청 인터셉터가 붙인다.
+
       const response = await axios.get(
         resolveApiUrl(`/api/plan/${route.params.planId}/complete`),
       );
@@ -167,7 +154,6 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
               const contentTypeIdStr = String(pb.placeContentTypeId || '');
               const rawCategoryId = (pb.placeCategoryId ?? pb.placeCategory) as number;
 
-              // 정규화된 카테고리 ID 분류 (0:관광지, 1:숙소, 2:식당, 3:직접추가, 4:검색)
               const normalizedCategoryId = (() => {
                 if (blockCat === 'ATTRACTION' || contentTypeIdStr === '12' || [0, 12, 14, 15, 28].includes(rawCategoryId)) return 0;
                 if (blockCat === 'ACCOMMODATION' || contentTypeIdStr === '32' || rawCategoryId === 1 || rawCategoryId === 32) return 1;
@@ -197,8 +183,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
               const realBlockId = pb.blockId ?? pb.timetablePlaceBlockId ?? pb.id;
 
               return {
-                // blockId가 없으면 서버에 존재하지 않는 블록이므로 임시 ID를 부여한다.
-                // 외부 placeId(숫자 문자열)를 blockId로 쓰면 남의 블록을 덮어쓴다.
+
                 id:
                   realBlockId !== undefined && realBlockId !== null
                     ? String(realBlockId)
@@ -222,17 +207,13 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
             timetableId: ttId,
             date: date,
             dayNumber: index + 1,
-            // 서버가 내려주는 운영시간을 반영해야 타임라인 그리드 범위와
-            // 충돌 해결 상한이 실제 일정과 일치한다.
+
             startTime: tt.timeTableStartTime || DEFAULT_DAY_START,
             endTime: tt.timeTableEndTime || DEFAULT_DAY_END,
             places: resolveConflictsAndSort(dayPlaces),
           };
         });
-        // 방금 편집한 내용이 아직 DB에 반영되지 않은 시점의 재조회는
-        // 로컬보다 적은 place를 가진 stale 응답일 수 있다. 그 경우 무시한다.
-        // 단 다른 plan을 처음 불러오는 중이면 무조건 받아들인다. 그러지 않으면
-        // 장소가 0개인 새 일정이 이전 일정보다 "덜 완전"하다고 판정돼 폐기된다.
+
         setDays(prevDays =>
           !isSamePlan || isFetchAtLeastAsComplete(newDays, prevDays)
             ? newDays
@@ -250,12 +231,6 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     }
   }, [route.params?.planId, initDaysFromDates, setDays]);
 
-  /**
-   * 편집 화면을 벗어나면 이 일정의 상세 응답 캐시를 버린다.
-   *
-   * 편집 중 바뀐 날짜·블록은 이 캐시에 반영되지 않는다. 남겨 두면 프로필 목록이
-   * 편집 이전 기간을 다시 보여준다.
-   */
   useEffect(() => {
     const editingPlanId = route.params?.planId;
     return () => {
@@ -265,16 +240,6 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     };
   }, [route.params?.planId, queryClient]);
 
-  /**
-   * 편집 대상 plan이 바뀌면 조회 전에 먼저 전역 일정 상태를 비웁니다.
-   *
-   * 레이아웃 이펙트는 항상 일반 이펙트보다 먼저 실행되므로, 소스 순서와 무관하게
-   * 아래 초기 조회보다 앞서 리셋된다. 조회 뒤에 비우면 응답을 덮어써 버린다.
-   *
-   * scopedPlanIdRef는 "이 화면이 어느 plan을 다루는지"이고 loadedPlanIdRef는
-   * "days에 실제로 담긴 plan"이라 갱신 시점이 다르다. 하나로 합치면 최초 조회가
-   * 같은 plan 재조회로 오인돼 stale 가드에 걸린다.
-   */
   const scopedPlanIdRef = useRef<string | null | undefined>(undefined);
   useLayoutEffect(() => {
     const nextPlanId =
@@ -286,22 +251,14 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     resetItinerary();
   }, [route.params?.planId, resetItinerary]);
 
-  // 마운트 시 초기 일정 조회
   useEffect(() => {
     if (isInitialized.current) return;
     isInitialized.current = true;
     fetchPlanDetails().finally(() => setIsInitialPlanLoading(false));
   }, [fetchPlanDetails]);
 
-
   const selectedDay = days[selectedDayIndex];
 
-  /**
-   * 다른 참여자가 마지막 일차를 삭제하거나(원격 timetable delete) 일수를 줄이면
-   * selectedDayIndex가 범위를 벗어나 selectedDay가 undefined가 된다. 뷰는
-   * selectedDay가 없으면 로딩 화면에 고정되므로 여기서 항상 유효한 인덱스로 되돌린다.
-   * onConfirmScheduleEdit의 로컬 클램프는 "내가" 일수를 줄인 경우만 커버한다.
-   */
   useEffect(() => {
     if (days.length === 0) return;
     if (selectedDayIndex > days.length - 1) {
@@ -322,15 +279,13 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
         const dayStartTimeStr = selectedDay.startTime || '09:00:00';
         const minHour = Math.floor(timeToMinutes(dayStartTimeStr) / 60);
         const offsetMinutes = minHour * 60;
-        
-        // 타임라인 시작 위치 오프셋을 차감하여 적절한 상대 Y 위치로 스크롤
+
         const yOffset = Math.max(0, (timeToMinutes(newPlace.startTime) - offsetMinutes) * MINUTE_HEIGHT);
         timelineScrollRef.current.scrollTo({ y: yOffset, animated: true });
         setLastAddedPlaceId(null);
       }
     }
   }, [lastAddedPlaceId, selectedDay, setLastAddedPlaceId]);
-
 
   const handleEditTime = useCallback(
     (placeId: string, type: 'startTime' | 'endTime', time: string) => {

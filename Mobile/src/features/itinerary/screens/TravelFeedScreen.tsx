@@ -45,18 +45,15 @@ import {
   describeRejectResult,
 } from '../../../utils/collaborationRequest';
 
-/** 썸네일이 없는 여행기에 쓸 대체 이미지 */
 const FEED_FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=800';
 
-/** 화면의 기간 필터 → 서버 파라미터 */
 const DURATION_RANGES: Record<string, { minDays?: number; maxDays?: number }> = {
   '1일': { minDays: 1, maxDays: 1 },
   '2-3일': { minDays: 2, maxDays: 3 },
   '4일 이상': { minDays: 4 },
 };
 
-/** 화면의 정렬 → 서버 파라미터 */
 const SORT_PARAMS: Record<string, string> = {
   최신순: 'latest',
   인기순: 'views',
@@ -72,9 +69,6 @@ const REGION_COORDINATES: Record<string, { lat: number; lng: number; name: strin
   '전주': { lat: 35.8242, lng: 127.1480, name: '전주' },
 };
 
-/**
- * 여행 피드 피드 목록 및 지역 검색/지도 탐색 화면 컨테이너 컴포넌트
- */
 export default function TravelFeedScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { showAlert } = useAlert();
@@ -88,14 +82,12 @@ export default function TravelFeedScreen() {
   const [filterRegion, setFilterRegion] = useState('전체');
   const [filterDuration, setFilterDuration] = useState('전체');
 
-  // 모달 상태
   const [isFilterModalVisible, setFilterModalVisible] = useState(false);
   const [isNotificationModalVisible, setNotificationModalVisible] = useState(false);
   const [isMapModalVisible, setMapModalVisible] = useState(false);
   const { data: pendingRequests = [] } = usePendingInvitations(!!user);
   const pendingInvitations = usePendingInvitationActions();
 
-  // 임시 필터 상태
   const [tempSortBy, setTempSortBy] = useState('최신순');
   const [tempRegion, setTempRegion] = useState('전체');
   const [tempDuration, setTempDuration] = useState('전체');
@@ -119,7 +111,6 @@ export default function TravelFeedScreen() {
 
   const isFilterApplied = filterRegion !== '전체' || filterDuration !== '전체' || sortBy !== '최신순';
 
-  // 검색어를 매 글자마다 서버로 보내지 않는다
   const [debouncedQuery, setDebouncedQuery] = useState('');
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 350);
@@ -133,7 +124,6 @@ export default function TravelFeedScreen() {
     }
   }, [filterRegion, regions]);
 
-  /** 화면의 한국어 필터를 서버 파라미터로 옮긴다 */
   const feedFilters: FeedFilterParams = useMemo(() => {
     const duration = DURATION_RANGES[filterDuration];
     return {
@@ -148,7 +138,6 @@ export default function TravelFeedScreen() {
 
   const feedQuery = useFeedPosts(feedFilters);
 
-  /** 서버 응답을 목록 카드가 기대하는 형태로 옮긴다 */
   const feedItems: TravelFeedItem[] = useMemo(
     () =>
       (feedQuery.data?.pages ?? [])
@@ -180,10 +169,6 @@ export default function TravelFeedScreen() {
     }
   }, [feedQuery]);
 
-  // 목록은 홈·커뮤니티 화면과 같은 캐시를 본다. 탭을 옮길 때마다 다시 부르지 않고,
-  // 새 요청은 홈 화면의 SSE·FCM 수신이 무효화해 여기에도 반영된다.
-
-  /** 알림 문구는 초대/편집 권한 요청에 따라 달라지므로 목록에서 종류를 찾는다. */
   const findRequestType = (requestId: number) =>
     pendingRequests.find(r => r.requestId === requestId)?.type;
 
@@ -191,8 +176,7 @@ export default function TravelFeedScreen() {
     const type = findRequestType(requestId);
     try {
       await acceptInvitation(requestId);
-      // 편집 권한이 생겨 프로필의 editablePlans가 바뀐다. 무효화하지 않으면
-      // 내 일정 목록에 최대 staleTime(5분)만큼 나타나지 않는다.
+
       void invalidatePlanCaches(queryClient);
       showAlert({ title: '수락 완료', message: describeAcceptResult(type) });
       pendingInvitations.remove(requestId);
@@ -245,7 +229,6 @@ export default function TravelFeedScreen() {
     navigation.navigate('FeedCreate');
   };
 
-
   const openFilterModal = () => {
     setTempSortBy(sortBy);
     setTempRegion(filterRegion);
@@ -266,7 +249,6 @@ export default function TravelFeedScreen() {
     setTempDuration('전체');
   };
 
-  // 지도 마커 장소 변환
   const mapPlaces = useMemo((): MapPlace[] => {
     return Object.keys(REGION_COORDINATES).map((key, idx) => {
       const coord = REGION_COORDINATES[key];
@@ -290,10 +272,10 @@ export default function TravelFeedScreen() {
         onNotificationPress={onNotificationPress}
         onNavigateProfile={onNavigateProfile}
       />
-      
+
       <View style={{ flex: 1, position: 'relative' }}>
         <View style={{ flex: 1 }}>
-          {/* 🔍 1행 통합 컨트롤 바 (검색창 + 레이아웃 + 필터) */}
+
           <View style={styles.controlRowContainer}>
             <View style={styles.searchBar}>
               <Search size={18} color="#9CA3AF" style={styles.searchIcon} />
@@ -330,7 +312,6 @@ export default function TravelFeedScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* 🏷️ 가로 스크롤 태그 필터 바 */}
           <View style={styles.tagBarContainer}>
             <ScrollView
               horizontal
@@ -405,8 +386,6 @@ export default function TravelFeedScreen() {
 
       </View>
 
-
-      {/* 🧭 바텀 시트 상세 필터 모달 */}
       <Modal
         visible={isFilterModalVisible}
         transparent={true}
@@ -424,7 +403,7 @@ export default function TravelFeedScreen() {
             </View>
 
             <ScrollView style={styles.bottomSheetBody} showsVerticalScrollIndicator={false}>
-              {/* 지역 필터 */}
+
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionLabel}>여행지</Text>
                 <View style={styles.chipsContainer}>
@@ -452,7 +431,6 @@ export default function TravelFeedScreen() {
                 </View>
               </View>
 
-              {/* 기간 필터 */}
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionLabel}>여행 기간</Text>
                 <View style={styles.chipsContainer}>
@@ -478,7 +456,6 @@ export default function TravelFeedScreen() {
                 </View>
               </View>
 
-              {/* 정렬 필터 */}
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionLabel}>정렬 기준</Text>
                 <View style={styles.chipsContainer}>
@@ -525,7 +502,6 @@ export default function TravelFeedScreen() {
         </View>
       </Modal>
 
-      {/* 🗺️ 전체 여행지 지도 모달 */}
       <Modal
         visible={isMapModalVisible}
         transparent={false}
@@ -711,7 +687,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: 'bold',
   },
-  // 모달 / 바텀시트 스타일
+
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
@@ -818,7 +794,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
   },
-  // 지도 모달 스타일
+
   mapModalContainer: {
     flex: 1,
     backgroundColor: '#FFFFFF',

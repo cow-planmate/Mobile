@@ -42,7 +42,6 @@ import { styles, COLORS } from './PostDetailScreen.styles';
 
 type DetailRoute = RouteProp<CommunityStackParamList, 'CommunityDetail'>;
 
-/** 게시글 상세 (자유/Q&A/메이트/장소추천 공용) */
 export default function PostDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<DetailRoute>();
@@ -107,10 +106,6 @@ export default function PostDetailScreen() {
     });
   };
 
-  /**
-   * 메이트 참여. 이미 참여한 상태면 서버가 에러를 주므로, 그때는 참여 취소를
-   * 물어본다 (웹과 동일한 흐름).
-   */
   const handleJoinMate = async () => {
     try {
       await joinMate.mutateAsync();
@@ -240,7 +235,7 @@ export default function PostDetailScreen() {
           <Text style={styles.title}>{post.title}</Text>
 
           <View style={styles.metaRow}>
-            {/* 작성자를 누르면 공개 프로필을 보여준다 */}
+
             <TouchableOpacity
               style={styles.authorTouchable}
               onPress={() => setAuthorProfileVisible(true)}

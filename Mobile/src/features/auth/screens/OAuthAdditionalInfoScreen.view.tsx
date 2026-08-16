@@ -27,7 +27,7 @@ export interface OAuthAdditionalInfoErrors {
 
 export interface OAuthAdditionalInfoForm {
   email: string;
-  /** 'YYYY-MM-DD'. 나이를 받아 역산하면 실제 월·일이 사라진다. */
+
   birthdate: string;
   gender: OAuthGender;
 }
@@ -46,8 +46,6 @@ interface OAuthAdditionalInfoScreenViewProps {
   setFocusedField: (field: string | null) => void;
   setBirthdatePickerOpen: (open: boolean) => void;
 }
-
-/* ── 인라인 오류 ── */
 
 const InlineError = ({ message }: { message: string }) => (
   <Animated.View
@@ -80,7 +78,7 @@ export const OAuthAdditionalInfoScreenView = ({
 
   return (
     <View style={styles.container}>
-      {/* ── 헤더: 뒤로가기는 항상 왼쪽 ── */}
+
       <View style={styles.header}>
         <Pressable
           style={styles.headerBackButton}
@@ -162,11 +160,6 @@ export const OAuthAdditionalInfoScreenView = ({
           {!!errors.birthdate && <InlineError message={errors.birthdate} />}
         </View>
 
-        {/*
-          성별은 값을 적는 칸이 아니라 고르는 컨트롤이다. 입력 칸 테두리로
-          한 번 더 감싸면 테두리 안의 테두리가 되어 무거워진다.
-          라벨만 밖에 두고 버튼을 바로 놓는다.
-        */}
         <View style={styles.inputGroup}>
           <Text style={styles.groupLabel}>성별</Text>
           <View style={styles.genderContainer}>
@@ -228,7 +221,6 @@ export const OAuthAdditionalInfoScreenView = ({
         />
       </View>
 
-      {/* 생년월일 선택기. 나이를 받아 역산하면 실제 월·일이 소실된다. */}
       <DatePicker
         modal
         mode="date"

@@ -60,7 +60,6 @@ describe('useChecklist', () => {
 describe('useToggleChecklistItem', () => {
   const QUERY_KEY = ['checklist', PLAN_ID, 'shared'];
 
-  /** 훅이 쓰는 QueryClient를 준비한다. 훅 호출은 각 테스트 본문에서 한다. */
   const mockQueryClient = (fetchStatus: 'fetching' | 'idle') => {
     const queryClient = {
       cancelQueries: jest.fn().mockResolvedValue(undefined),

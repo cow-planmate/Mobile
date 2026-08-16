@@ -38,7 +38,6 @@ import { styles, COLORS } from './FeedDetailScreen.styles';
 
 type FeedDetailRoute = RouteProp<FeedStackParamList, 'FeedDetail'>;
 
-/** 여행기 상세 — 일정 스냅샷을 보여주고 "가져가기"로 내 일정에 복제한다 */
 export default function FeedDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<FeedDetailRoute>();
@@ -88,10 +87,6 @@ export default function FeedDetailScreen() {
     setDateModalVisible(true);
   };
 
-  /**
-   * 고른 시작일 기준으로 일정을 복제한다.
-   * 스냅샷의 원래 날짜는 버리고 1일차부터 시작일에 맞춰 밀어 넣는다.
-   */
   const handleForkConfirm = async ({ startDate }: { startDate: Date }) => {
     setDateModalVisible(false);
     if (!post?.itinerary) return;
@@ -225,7 +220,7 @@ export default function FeedDetailScreen() {
           </View>
 
           <View style={styles.metaRow}>
-            {/* 작성자를 누르면 공개 프로필을 보여준다 */}
+
             <TouchableOpacity
               style={styles.authorTouchable}
               onPress={() => setAuthorProfileVisible(true)}

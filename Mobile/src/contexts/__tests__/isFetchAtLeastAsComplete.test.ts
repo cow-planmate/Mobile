@@ -50,8 +50,7 @@ describe('isFetchAtLeastAsComplete', () => {
   });
 
   it('timetableId는 같지만 날짜가 다른 응답은 거부한다', () => {
-    // 방금 날짜를 8/10 -> 8/15로 바꾼 직후, 그 변경이 서버 캐시에 아직 반영되기 전에
-    // 도착한 재조회 응답. 장소·시간이 모두 일치해도 날짜가 다르면 되돌리면 안 된다.
+
     const current = [day(100, 2026, 8, 15, [place('1')])];
     const fetched = [day(100, 2026, 8, 10, [place('1')])];
 

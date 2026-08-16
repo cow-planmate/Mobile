@@ -33,7 +33,7 @@ import { useAlert } from '../../../contexts/AlertContext';
 import { useWebSocket } from '../../../contexts/WebSocketContext';
 import { usePlanOwnership } from '../../../hooks/usePlanOwnership';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
-// DTO Interfaces — 서버 PlanFrameDetailDto와 1:1로 맞춘다.
+
 interface PlanFrameVO {
   planId: string;
   planName: string;
@@ -56,16 +56,10 @@ interface GetCompletePlanResponse {
   }[];
 }
 
-/** route.params.days 기본값. 인라인 []는 렌더마다 새 배열이라 이펙트가 매번 돈다. */
 const EMPTY_DAYS: Day[] = [];
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 
-/**
- * 완공된 여행 일정표 조회 및 날씨/경로 요약 확인 화면 컨테이너 컴포넌트
- *
- * @param props route 라우트 파라미터 및 navigation 프로퍼티
- */
 export default function ItineraryViewScreen({ route, navigation }: Props) {
   const { showAlert } = useAlert();
   const queryClient = useQueryClient();
@@ -98,11 +92,10 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   }, [navigation]);
   const scrollRef = useRef<ScrollView>(null);
 
-  // Weather
   const [weatherMap, setWeatherMap] = useState<
     Record<string, SimpleWeatherInfo>
   >({});
-  /** 날씨 조회 기준 여행지 ID. 서버는 도시명이 아니라 destinationId를 받는다. */
+
   const [weatherDestinationId, setWeatherDestinationId] = useState<number | null>(
     route.params?.travelId ?? null,
   );
@@ -114,12 +107,11 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const fetchCompletePlan = useCallback(async () => {
     if (!planId) return;
     try {
-      // 토큰은 요청 인터셉터가 붙인다. 직접 헤더를 심으면 만료 직전 사전 갱신을
-      // 건너뛰어 401 왕복이 한 번 더 생긴다(axiosConfig 참고).
+
       const response = await axios.get<GetCompletePlanResponse>(
         resolveApiUrl(`/api/plan/${planId}/complete`),
       );
-      // 프로필 목록이 같은 응답을 다시 받지 않도록 공유 캐시에 넣는다.
+
       cachePlanComplete(queryClient, String(planId), response.data);
       const { planFrame, placeBlocks, timetables } = response.data;
 
@@ -157,7 +149,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
             const contentTypeIdStr = String(pb.placeContentTypeId || '');
             const rawCategoryId = (pb.placeCategoryId ?? pb.placeCategory) as number;
 
-            // Resolve normalized categoryId (0:관광지, 1:숙소, 2:식당, 3:직접추가, 4:검색)
             const normalizedCategoryId = (() => {
               if (blockCat === 'ATTRACTION' || contentTypeIdStr === '12' || [0, 12, 14, 15, 28].includes(rawCategoryId)) return 0;
               if (blockCat === 'ACCOMMODATION' || contentTypeIdStr === '32' || rawCategoryId === 1 || rawCategoryId === 32) return 1;
@@ -206,8 +197,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
           };
         });
 
-        // 편집 직후 곧바로 조회하면 서버 DB가 아직 최신 편집을 반영하기 전(주기/지연 동기화 대기 중)일 수 있다.
-        // 그 stale 응답이 방금 저장한 로컬 데이터보다 place가 적으면 무시하고 로컬을 유지한다.
         setDays(prevDays =>
           isFetchAtLeastAsComplete(fetchedDays, prevDays)
             ? fetchedDays
@@ -246,12 +235,10 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     };
   }, [connect, disconnect, navigation, planId]);
 
-  // 날씨 조회 범위. 일수가 같아도 날짜가 바뀌면 다시 조회해야 한다.
   const weatherRangeStart = days.length > 0 ? formatDateLocal(days[0].date) : '';
   const weatherRangeEnd =
     days.length > 0 ? formatDateLocal(days[days.length - 1].date) : '';
 
-  // Fetch weather when destination and days are available
   useEffect(() => {
     if (!weatherDestinationId || !weatherRangeStart || !weatherRangeEnd) {
       setWeatherMap({});
@@ -262,7 +249,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
 
     const startDate = weatherRangeStart;
     const endDate = weatherRangeEnd;
-    // 기간이 연달아 바뀌면 먼저 보낸 응답이 나중에 도착해 최신 결과를 덮어쓸 수 있다.
+
     let cancelled = false;
 
     fetchWeather(weatherDestinationId, startDate, endDate)
@@ -278,7 +265,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       })
       .catch(error => {
         if (cancelled) return;
-        // 실패 시 고정값을 채우면 조회가 계속 실패해도 정상처럼 보인다. 비워 둔다.
+
         console.warn('날씨 조회 실패:', error);
         setWeatherMap({});
       })
@@ -305,9 +292,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         return;
       }
 
-      // 일정을 아직/끝내 불러오지 못한 상태. 붙잡아 둘 이유가 없으므로 그대로
-      // 내보낸다. 예전에는 여기서도 preventDefault를 걸어, 조회가 실패해 days가
-      // 비면 화면을 빠져나올 수 없었다.
       if (days.length === 0) {
         return;
       }
@@ -352,8 +336,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   }, [selectedDay]);
 
   const handleConfirm = async () => {
-    // Plan is already created/saved in ItineraryEditorScreen.
-    // Navigate to My Page (Profile) to see the created plan.
+
     showAlert({
       title: '성공',
       message: '일정이 저장되었습니다.',
@@ -377,8 +360,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       ],
     });
   };
-
-
 
   return (
     <ItineraryViewScreenView

@@ -54,16 +54,6 @@ interface ChecklistSheetProps {
   planId: string | null | undefined;
 }
 
-/**
- * 준비물 체크리스트 시트.
- *
- * 공동(일정 참여자 공용)과 개인(나만 보기) 목록을 탭으로 나눠 보여준다.
- * 목록은 시트를 열었을 때만 조회하고, 닫으면 다음 열람 시 다시 가져온다 —
- * 서버가 실시간 편집 세션에 REST 변경을 push하지 않아 열어 둔 채로는 다른
- * 참여자의 변경을 알 수 없기 때문이다.
- *
- * 항목별 상·하 이동으로 정렬을 변경하며, 서버에는 전체 항목 ID 순서를 보낸다.
- */
 export default function ChecklistSheet({
   visible,
   onClose,
@@ -452,10 +442,6 @@ export default function ChecklistSheet({
             </View>
           </View>
 
-          {/*
-            공동 목록은 편집 세션에 붙어 있을 때만 다른 기기에 바로 전달된다.
-            세션 밖(REST) 변경은 서버가 push하지 않아 상대는 재입장해야 본다.
-          */}
           {scope === 'shared' && !isRealtime && (
             <Text style={styles.syncHint}>
               실시간 연결이 아니라 변경이 바로 전달되지 않아요. 새로고침으로 최신

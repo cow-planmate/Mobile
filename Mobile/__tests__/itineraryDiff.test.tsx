@@ -115,7 +115,6 @@ describe('전송 대상 축소 (F-4)', () => {
   it('밀려난 블록만 함께 전송하고 무관한 블록은 건드리지 않는다', () => {
     mount();
 
-    // 1002를 14:30까지 늘리면 1003(14:00~15:00)만 뒤로 밀린다.
     act(() => {
       ctx.updatePlaceTimes(0, '1002', '11:00', '14:30');
     });
@@ -123,7 +122,7 @@ describe('전송 대상 축소 (F-4)', () => {
 
     const ids = blockSends().map(c => c[2].blockId).sort();
     expect(ids).toEqual([1002, 1003]);
-    // 09:00 블록과 17:00 블록은 영향이 없다
+
     expect(ids).not.toContain(1001);
     expect(ids).not.toContain(1004);
   });
@@ -265,7 +264,7 @@ describe('운영시간 상한 폴백 (N-2)', () => {
         timetableId: 101,
         date: new Date(2026, 7, 1),
         dayNumber: 1,
-        // startTime/endTime 없음 — 폴백 경로
+
         places: [
           place('2001', '18:00', '19:00'),
           place('2002', '19:00', '20:00'),
@@ -273,7 +272,6 @@ describe('운영시간 상한 폴백 (N-2)', () => {
       },
     ]);
 
-    // 2001을 19:30까지 늘리면 2002가 뒤로 밀린다.
     act(() => {
       ctx.updatePlaceTimes(0, '2001', '18:00', '19:30');
     });
@@ -393,7 +391,6 @@ describe('blockId 판별 (F-18)', () => {
     });
     flushTimers();
 
-    // 임시 ID이므로 전송 자체가 보류되어야 한다
     expect(blockSends()).toHaveLength(0);
   });
 

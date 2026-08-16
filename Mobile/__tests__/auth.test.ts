@@ -19,8 +19,6 @@ describe('Auth Store - Social Login & Complete', () => {
     useAuthStore.setState({ user: null, isLoading: false });
   });
 
-  // 서버 exchange는 code를 본문(@RequestBody)으로 받고 일반 로그인과 같은
-  // LoginResponse(userId 포함)를 돌려준다. 프로필을 따로 조회하지 않는다.
   it('should successfully login via oauth exchange', async () => {
     const mockExchangeResponse = {
       data: {
@@ -51,7 +49,6 @@ describe('Auth Store - Social Login & Complete', () => {
     expect(AsyncStorage.multiSet).toHaveBeenCalled();
   });
 
-  // userId 없이 세션을 만들면 자기 일정에서도 소유자로 인식되지 않는다.
   it('should reject oauth exchange response without userId', async () => {
     mockedAxios.post.mockResolvedValueOnce({
       data: {

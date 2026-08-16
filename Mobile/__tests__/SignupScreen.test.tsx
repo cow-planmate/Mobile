@@ -3,10 +3,8 @@ import ReactTestRenderer from 'react-test-renderer';
 import SignupScreen from '../src/features/auth/screens/SignupScreen';
 import { SignupScreenView } from '../src/features/auth/screens/SignupScreen.view';
 
-// Mocking axios
 jest.mock('axios');
 
-// Mocking Navigation
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
 jest.mock('@react-navigation/native', () => {
@@ -16,14 +14,12 @@ jest.mock('@react-navigation/native', () => {
       goBack: mockGoBack,
       navigate: mockNavigate,
     }),
-    // 회원가입 화면은 포커스 동안 소프트 키보드 모드를 바꾼다.
-    // 테스트에는 네비게이터가 없으므로 마운트 시 한 번 도는 이펙트로 대체한다.
+
     useFocusEffect: (effect: React.EffectCallback) =>
       React.useEffect(effect, [effect]),
   };
 });
 
-// Mocking useAuthStore
 const mockLogin = jest.fn(() => Promise.resolve());
 const mockSetNeedsThemeSelection = jest.fn();
 jest.mock('../src/store/useAuthStore', () => ({
@@ -35,7 +31,6 @@ jest.mock('../src/store/useAuthStore', () => ({
     }),
 }));
 
-// Mocking AlertContext
 const mockShowAlert = jest.fn();
 jest.mock('../src/contexts/AlertContext', () => ({
   useAlert: () => ({
@@ -43,7 +38,6 @@ jest.mock('../src/contexts/AlertContext', () => ({
   }),
 }));
 
-// Mocking Toast
 jest.mock('react-native-toast-message', () => ({
   show: jest.fn(),
 }));
@@ -56,9 +50,7 @@ jest.mock('react-native-reanimated', () => {
   const React = require('react');
   const View = ({ children, ...rest }: any) =>
     React.createElement('View', rest, children);
-  // entering/exiting은 .duration().delay().easing()처럼 체이닝하므로
-  // 어떤 빌더 메서드를 부르든 자기 자신을 돌려준다.
-  // (features/auth/motion.ts가 FadeInUp에 세 개를 이어 붙인다)
+
   const animation: any = new Proxy(
     {},
     { get: () => () => animation },
@@ -67,7 +59,7 @@ jest.mock('react-native-reanimated', () => {
     __esModule: true,
     default: {
       View,
-      // PressableScale이 Pressable을 감싸 쓴다. 목에서는 원본을 그대로 돌려준다.
+
       createAnimatedComponent: (Component: any) => Component,
     },
     useSharedValue: (value: any) => ({ value }),
@@ -151,7 +143,7 @@ describe('SignupScreen components & agreement validation', () => {
           timeLeft={300}
           passwordRequirements={{ hasMinLength: true, hasCombination: true }}
           isPasswordMatch={true}
-          isNextEnabled={false} // 동의 전이므로 아직 false
+          isNextEnabled={false} 
           isAgreed={false}
           onChangeAgreement={mockOnChangeAgreement}
           onChange={mockOnChange}
@@ -167,7 +159,6 @@ describe('SignupScreen components & agreement validation', () => {
       );
     });
 
-    // Verify checkbox is rendered and can be clicked
     const checkboxWrapper = view.root.findByProps({ testID: 'agreement-checkbox' });
     expect(checkboxWrapper).toBeTruthy();
 

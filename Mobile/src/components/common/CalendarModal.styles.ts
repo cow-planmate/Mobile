@@ -3,7 +3,7 @@ import { normalize } from '../../utils/normalize';
 
 export const COLORS = {
   primary: '#1344FF',
-  primaryLight: '#E8EDFF', // 범위 연결 영역 배경
+  primaryLight: '#E8EDFF', 
   white: '#FFFFFF',
   surface: '#F3F4F6',
   text: '#111827',
@@ -82,8 +82,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
-  /* ── Custom Calendar Styles ── */
+
   calendarContainer: {
     width: '100%',
     paddingHorizontal: normalize(4),
@@ -133,14 +132,13 @@ export const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   dayCell: {
-    width: '14.28%', // 7열로 정확히 배분
+    width: '14.28%', 
     aspectRatio: 1,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
   },
-  
-  /* 범위 선택 시 물결 모양의 백그라운드 */
+
   rangeBg: {
     position: 'absolute',
     left: 0,
@@ -150,16 +148,16 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.primaryLight,
   },
   rangeBgStart: {
-    left: '50%', // 시작일은 오른쪽 절반만 배경 칠함
+    left: '50%', 
     borderTopLeftRadius: 0,
     borderBottomLeftRadius: 0,
   },
   rangeBgEnd: {
-    right: '50%', // 종료일은 왼쪽 절반만 배경 칠함
+    right: '50%', 
     borderTopRightRadius: 0,
     borderBottomRightRadius: 0,
   },
-  
+
   dayCircle: {
     width: normalize(32),
     height: normalize(32),
@@ -190,18 +188,15 @@ export const styles = StyleSheet.create({
     color: COLORS.primary,
     fontFamily: FONTS.bold,
   },
-  /**
-   * 인접 월의 날짜. 눌러서 그 달로 이동할 수 있는 살아 있는 컨트롤이므로
-   * 읽히는 밝기를 유지한다(#6B7280, 흰 배경 대비 4.83:1).
-   */
+
   dayTextOutside: {
     color: COLORS.subtextMuted,
   },
-  /** 지난 날짜. 누를 수 없으므로 흐리게 두고 대비 기준에서 제외한다. */
+
   dayTextPast: {
     color: COLORS.placeholder,
   },
-  
+
   confirmFooter: {
     width: '100%',
     marginTop: normalize(16),

@@ -14,18 +14,11 @@ export type FeedStackParamList = {
       }
     | undefined;
   FeedDetail: {
-    /** 커뮤니티 여행기(category=feed) 게시글 ID */
+
     postId: string;
   };
 };
 
-/**
- * 화면들이 `AppStackParamList`로 참조하는 라우트 목록.
- *
- * 실제로는 ScheduleStack(Home/MySchedule)과 루트 AppStack(Profile/
- * ItineraryEditor/...)이 합쳐진 표면이다. 두 네비게이터를 오가며 navigate를
- * 호출하므로 여기에 모두 선언해 두어야 타입 검사가 동작한다.
- */
 export type ScheduleStackParamList = {
   MainTabs: undefined;
   MySchedule: undefined;
@@ -48,7 +41,7 @@ export type ScheduleStackParamList = {
     pendingPlace?: any;
   };
   ItineraryView: {
-    /** 편집 화면에서 넘어올 때만 채워진다. 목록에서 진입하면 화면이 직접 조회한다. */
+
     days?: Day[];
     tripName?: string;
     planId?: string;
@@ -65,7 +58,6 @@ export type ScheduleStackParamList = {
   ChangePassword: undefined;
 };
 
-// Aliased for compatibility with existing components using AppStackParamList
 export type AppStackParamList = ScheduleStackParamList;
 
 export type CommunityStackParamList = {
@@ -75,7 +67,7 @@ export type CommunityStackParamList = {
   };
   CommunityCreate:
     | {
-        /** 목록에서 보고 있던 게시판을 미리 선택한다 */
+
         category?: 'free' | 'qna' | 'mate' | 'recommend';
         postId?: string;
       }
@@ -96,7 +88,7 @@ export type AuthStackParamList = {
   OAuthAdditionalInfo: {
     signupId: string;
     needEmail: boolean;
-    /** 가입을 시작한 소셜 제공자. 가입 완료 후 '마지막 사용' 표시에 쓴다. */
+
     provider: 'google' | 'naver' | null;
   };
 };

@@ -67,7 +67,6 @@ export const styles = StyleSheet.create({
     paddingBottom: normalize(40),
   },
 
-  /* ── New Web Style Profile ── */
   profileCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: normalize(16),
@@ -245,7 +244,6 @@ export const styles = StyleSheet.create({
     color: '#6B7280',
   },
 
-  /* ── Achievements Area ── */
   achievementCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: normalize(16),
@@ -305,7 +303,6 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  /* ── Edit Profile Dialog Styles ── */
   editDialogCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: normalize(24),
@@ -434,7 +431,7 @@ export const styles = StyleSheet.create({
     fontSize: normalize(12),
     color: '#6B7280',
   },
-  /** textInput 스타일을 터치 가능한 선택 필드로 쓸 때의 정렬 보정 */
+
   pickerField: {
     justifyContent: 'center',
   },
@@ -607,7 +604,6 @@ export const styles = StyleSheet.create({
     width: '100%',
   },
 
-  /* ── Itinerary Details Area ── */
   itineraryDetailCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: normalize(16),
@@ -693,7 +689,6 @@ export const styles = StyleSheet.create({
     paddingVertical: normalize(16),
   },
 
-  /* ── Itinerary Card Items ── */
   itineraryCardWrapper: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -814,7 +809,6 @@ export const styles = StyleSheet.create({
     color: '#4B5563',
   },
 
-  /* ── Past Plan Compact List Styles ── */
   pastPlansContainer: {
     gap: normalize(10),
   },
@@ -872,7 +866,6 @@ export const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  /* ── Batch Edit Mode Header & Items ── */
   editModeHeaderActions: {
     flexDirection: 'row',
     alignItems: 'center',

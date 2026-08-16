@@ -5,7 +5,6 @@ import axios from 'axios';
 import { resolveApiUrl } from '../utils/apiUrl';
 import { FCM_STORAGE_KEYS } from '../constants/storageKeys';
 
-/** FCM 푸시 알림 훅 파라미터 인터페이스 */
 interface UseFcmNotificationsParams {
   enabled: boolean;
   onInvitationPush?: () => void | Promise<void>;
@@ -14,7 +13,6 @@ interface UseFcmNotificationsParams {
 const [FCM_TOKEN_STORAGE_KEY, FCM_TOKEN_LAST_SYNCED_KEY] = FCM_STORAGE_KEYS;
 export const IS_FCM_RUNTIME_ENABLED = true;
 
-/** 최근 처리한 메시지 ID 보관 개수 상한 (중복 처리 방지용) */
 const SEEN_MESSAGE_ID_LIMIT = 200;
 
 const fcmLog = (...args: unknown[]) => {
@@ -23,9 +21,6 @@ const fcmLog = (...args: unknown[]) => {
   }
 };
 
-/**
- * FCM 모듈 지연 로드 (앱 기동 시 네이티브 모듈 미연결로 인한 크래시 방지)
- */
 const getMessaging = () => {
   try {
     return require('@react-native-firebase/messaging').default;
@@ -45,7 +40,6 @@ const INVITATION_HINTS = [
   '거절',
 ];
 
-/** Android 13(API 33) 이상 알림 권한 요청 */
 const requestAndroidNotificationPermission = async (): Promise<boolean> => {
   if (Platform.OS !== 'android') {
     return true;
@@ -62,7 +56,6 @@ const requestAndroidNotificationPermission = async (): Promise<boolean> => {
   return granted === PermissionsAndroid.RESULTS.GRANTED;
 };
 
-/** 초대 관련 푸시 메시지 여부 판단 */
 const isInvitationMessage = (remoteMessage: any): boolean => {
   const data = remoteMessage.data || {};
   const notificationText = [
@@ -81,7 +74,6 @@ const isInvitationMessage = (remoteMessage: any): boolean => {
   return INVITATION_HINTS.some((hint: string) => joined.includes(hint));
 };
 
-/** FCM 토큰 백엔드 동기화 */
 const syncFcmToken = async (token: string, force: boolean = false) => {
   try {
     if (!force) {
@@ -101,9 +93,6 @@ const syncFcmToken = async (token: string, force: boolean = false) => {
   }
 };
 
-/**
- * FCM 푸시 알림 수신 및 초대 수신 이벤트를 처리하는 커스텀 훅
- */
 export function useFcmNotifications({
   enabled,
   onInvitationPush,
@@ -131,7 +120,7 @@ export function useFcmNotifications({
       }
 
       if (messageId) {
-        // 장시간 실행 시 무한히 커지지 않도록 오래된 것부터 버린다.
+
         if (seenMessageIdsRef.current.size >= SEEN_MESSAGE_ID_LIMIT) {
           const oldest = seenMessageIdsRef.current.values().next().value;
           if (oldest !== undefined) {
@@ -218,5 +207,3 @@ export function useFcmNotifications({
     };
   }, [enabled]);
 }
-
-

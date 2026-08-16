@@ -29,9 +29,8 @@ import {
   parseBackendError,
 } from '../../utils/errorHandler';
 
-/** 이미 편집 권한이 있는 사용자 (COLLAB_002) */
 const ALREADY_MEMBER_CODE = 'COLLAB_002';
-/** 이미 대기 중인 요청이 있는 사용자 (COLLAB_003) */
+
 const DUPLICATE_PENDING_CODE = 'COLLAB_003';
 
 const COLORS = theme.colors;
@@ -55,8 +54,7 @@ export default function ShareModal({
   onClose,
   planId,
   isMock = false,
-  // 소유자만 쓸 수 있는 조작(공유 토글·편집자 삭제)은 서버가 OWNER를 요구한다.
-  // 판정을 못 넘겨받았으면 숨긴다 — 눌러도 403이 나는 버튼을 보여주지 않는다.
+
   isOwner = false,
 }: ShareModalProps) {
   const { showAlert } = useAlert();
@@ -104,8 +102,6 @@ export default function ShareModal({
   const handleCopyLink = () => {
     if (!shareLink) return;
 
-    // RN에는 navigator.clipboard가 없다. 네이티브 모듈을 먼저 쓰고,
-    // 모듈이 링크되지 않은 환경에서는 공유 시트로 대체한다.
     const hasNativeClipboard = !!NativeModules.RNCClipboard;
     if (hasNativeClipboard) {
       try {
@@ -122,7 +118,7 @@ export default function ShareModal({
         console.warn('Failed to copy to native clipboard:', e);
       }
     }
-    
+
     console.warn('Native RNCClipboard module not available. Falling back to native Share API.');
     handleShareLink();
   };
@@ -167,7 +163,7 @@ export default function ShareModal({
 
   const handleInvite = async () => {
     const receiverNickname = nickname.trim();
-    // 서버도 @Size(2, 20)으로 막는다. 먼저 걸러야 원문 검증 문구가 뜨지 않는다.
+
     const lengthError = getNicknameLengthError(receiverNickname);
     if (lengthError) {
       showAlert({ title: '오류', message: lengthError });
@@ -198,8 +194,7 @@ export default function ShareModal({
       }
     } catch (error) {
       console.error('Invite failed:', error);
-      // 409는 두 가지다. 이미 편집자인 경우와 수락을 기다리는 중인 경우를 같은
-      // 문구로 묶으면, 이미 참여 중인 사람을 계속 다시 초대하게 된다.
+
       const { code } = parseBackendError(error);
       if (code === ALREADY_MEMBER_CODE) {
         showAlert({

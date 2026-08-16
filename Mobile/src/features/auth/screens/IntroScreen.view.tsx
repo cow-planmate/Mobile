@@ -10,11 +10,6 @@ interface IntroScreenViewProps {
   onLogin: () => void;
 }
 
-/**
- * 로고 → 제목 → 설명 → 하단 순으로 살짝 어긋나며 떠오른다.
- * 앱 첫 화면인데 지금까지 아무 등장 동작이 없어 다른 화면(AuthSubmitButton,
- * Signup 단계 전환)과 달리 정적으로 느껴졌다.
- */
 const IntroScreenView = ({ onStart, onLogin }: IntroScreenViewProps) => {
   return (
     <View style={styles.container}>
@@ -40,7 +35,6 @@ const IntroScreenView = ({ onStart, onLogin }: IntroScreenViewProps) => {
         </Animated.Text>
       </View>
 
-      {/* 하단 여백 */}
       <Animated.View
         style={[styles.footer, { paddingBottom: normalize(16) }]}
         entering={revealStep(3)}
@@ -49,7 +43,7 @@ const IntroScreenView = ({ onStart, onLogin }: IntroScreenViewProps) => {
 
         <View style={styles.loginPromptContainer}>
           <Text style={styles.loginPromptText}>이미 계정이 있나요?</Text>
-          {/* 텍스트 크기 그대로 두면 손가락이 닿지 않는다. 48dp를 채운다. */}
+
           <Pressable
             style={styles.loginActionButton}
             onPress={onLogin}

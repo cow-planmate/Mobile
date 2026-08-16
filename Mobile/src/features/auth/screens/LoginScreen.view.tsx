@@ -27,8 +27,6 @@ import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
 import FormErrorBanner from '../components/FormErrorBanner';
 
-/* ── Inline SVG icons for social login ── */
-
 const GoogleIcon = ({ size = 28 }: { size?: number }) => (
   <Svg width={size} height={size} viewBox="0 0 48 48">
     <Path
@@ -60,8 +58,6 @@ const NaverIcon = ({ size = 28 }: { size?: number }) => (
   </Svg>
 );
 
-/* ── 인라인 오류 한 줄 ── */
-
 const InlineError = ({ message }: { message: string }) => (
   <Animated.View
     style={styles.errorRow}
@@ -74,19 +70,17 @@ const InlineError = ({ message }: { message: string }) => (
   </Animated.View>
 );
 
-/* ── Props ── */
-
 export interface LoginErrors {
   email?: string;
   password?: string;
-  /** 어느 필드에도 귀속되지 않는 오류 (자격 증명 불일치, 네트워크 등) */
+
   form?: string;
 }
 
 export interface LoginScreenViewProps {
   form: { email: string; password: string };
   errors: LoginErrors;
-  /** 검증 실패 시 증가한다. 값이 바뀌면 첫 번째 문제 필드로 포커스를 옮긴다. */
+
   focusSeq: number;
   isLoading: boolean;
   focused: string | null;
@@ -98,7 +92,7 @@ export interface LoginScreenViewProps {
   onNavigateToForgotPassword: () => void;
   onGoogleLogin: () => void;
   onNaverLogin: () => void;
-  /** 가장 최근에 로그인을 성공시킨 수단. 해당 버튼에 '마지막 사용' 배지를 띄운다 */
+
   lastLoginMethod: 'email' | 'google' | 'naver' | null;
   snsAuthUrl: string | null;
   onSnsClose: () => void;
@@ -130,28 +124,17 @@ export const LoginScreenView = ({
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
 
-  /**
-   * 검증에 걸린 첫 필드로 포커스를 옮긴다.
-   * 오류 객체가 아니라 focusSeq를 보는 이유는, 같은 오류가 다시 나도(같은 값으로
-   * 재시도) 포커스가 움직여야 하기 때문이다.
-   */
   useEffect(() => {
     if (focusSeq === 0) return;
     if (errors.email) emailRef.current?.focus();
     else if (errors.password) passwordRef.current?.focus();
-    // errors는 focusSeq와 함께 갱신되므로 의존성에 넣지 않는다.
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusSeq]);
 
   const fieldState = (invalid: boolean, isFocused: boolean): FieldState =>
     invalid ? 'error' : isFocused ? 'focus' : 'default';
 
-  /**
-   * 소셜 버튼 목록.
-   *
-   * 마지막으로 쓴 수단을 맨 앞에 둔다. 재방문 사용자는 대부분 같은 수단으로
-   * 다시 들어오는데, 배지만 달아 두면 아래쪽에 있을 때 눈에 늦게 들어온다.
-   */
   const socialOptions = useMemo(() => {
     const options = [
       {
@@ -200,10 +183,7 @@ export const LoginScreenView = ({
         </Animated.Text>
 
         <Animated.View entering={revealStep(1, PUSH_TRANSITION_MS)}>
-          {/*
-            폼 전역 오류는 폼 머리에 둔다. 두 칸이 함께 붉어지는 오류라
-            비밀번호 칸 아래에 두면 비밀번호만 틀린 것으로 읽힌다.
-          */}
+
           {!!errors.form && <FormErrorBanner message={errors.form} />}
 
           <View style={styles.inputGroup}>
@@ -279,10 +259,6 @@ export const LoginScreenView = ({
             </AuthFieldBox>
             {!!errors.password && <InlineError message={errors.password} />}
 
-            {/*
-              비밀번호가 기억나지 않는 순간은 이 칸을 채우려 할 때다. 제출
-              버튼 아래에 두면 한 번 실패한 뒤에야 눈에 들어온다.
-            */}
             <View style={styles.fieldAssistRow}>
               <Pressable
                 style={styles.linkButton}
@@ -308,7 +284,6 @@ export const LoginScreenView = ({
             </Text>
           )}
 
-          {/* Social Login */}
           <View style={styles.socialContainer}>
             <View style={styles.socialDivider}>
               <View style={styles.socialDividerLine} />
@@ -344,11 +319,6 @@ export const LoginScreenView = ({
             </View>
           </View>
 
-          {/*
-            회원가입은 계정이 없는 사람에게 남은 유일한 길이다. 개인정보 링크와
-            한 덩어리로 묶여 있으면 '읽고 넘기는 꼬리 문구'로 보여 지나치기 쉽다.
-            로그인 수단들과 같은 층위의 선택지로 떼어 둔다.
-          */}
           <View style={styles.signupRow}>
             <Text style={styles.linkText}>계정이 없으신가요?</Text>
             <Pressable
@@ -366,10 +336,6 @@ export const LoginScreenView = ({
         </Animated.View>
       </ScrollView>
 
-      {/*
-        약관 링크는 조작이 아니라 고지다. 스크롤을 따라다니며 선택지 사이에
-        끼어 있을 이유가 없어 화면 바닥에 고정해 둔다.
-      */}
       <View style={[styles.footer, { paddingBottom: sf(8) }]}>
         <Pressable
           onPress={() => setShowPrivacyModal(true)}

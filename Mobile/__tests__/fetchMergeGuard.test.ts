@@ -46,9 +46,9 @@ describe('countPlaces', () => {
 
 describe('isFetchAtLeastAsComplete (생성 직후 조회 싱크 불일치 방지)', () => {
   it('fetch 결과가 로컬보다 place가 적으면 신뢰하지 않는다', () => {
-    // 방금 추가한 블록이 아직 DB에 flush되지 않아 GET 응답에서 빠진 상황
+
     const current = [day(1, ['a', 'b', 'c'])];
-    const fetched = [day(1, ['a', 'b'])]; // 방금 추가한 'c'가 stale 응답에는 없음
+    const fetched = [day(1, ['a', 'b'])]; 
     expect(isFetchAtLeastAsComplete(fetched, current)).toBe(false);
   });
 
@@ -62,12 +62,12 @@ describe('isFetchAtLeastAsComplete (생성 직후 조회 싱크 불일치 방지
 
   it('최초 진입(로컬이 비어있음)은 항상 fetch 결과를 받아들인다', () => {
     const current: Day[] = [];
-    const fetched = [day(1, [])]; // 장소가 아예 없는 신규 일정도 허용
+    const fetched = [day(1, [])]; 
     expect(isFetchAtLeastAsComplete(fetched, current)).toBe(true);
   });
 
   it('여러 날짜에 걸쳐 일부만 stale해도 총합으로 판단한다', () => {
-    // 1일차는 이미 DB에 반영됐지만 2일차 방금 추가분은 아직 반영 전
+
     const current = [day(1, ['a']), day(2, ['b', 'c'])];
     const fetched = [day(1, ['a']), day(2, ['b'])];
     expect(isFetchAtLeastAsComplete(fetched, current)).toBe(false);

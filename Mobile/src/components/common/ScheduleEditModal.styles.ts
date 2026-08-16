@@ -26,7 +26,7 @@ export const FONTS = {
 };
 
 export const styles = StyleSheet.create({
-  /* ── Overlay & Modal ── */
+
   overlay: {
     flex: 1,
     justifyContent: 'center',
@@ -46,7 +46,6 @@ export const styles = StyleSheet.create({
     elevation: 20,
   },
 
-  /* ── Header ── */
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -80,7 +79,6 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  /* ── Day Counter ── */
   counterSection: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -124,7 +122,6 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  /* ── Divider ── */
   divider: {
     height: 1,
     backgroundColor: COLORS.border,
@@ -132,13 +129,11 @@ export const styles = StyleSheet.create({
     marginVertical: normalize(14),
   },
 
-  /* ── Scroll ── */
   scrollArea: {
     maxHeight: normalize(300),
     paddingHorizontal: normalize(22),
   },
 
-  /* ── Day Card ── */
   dayCard: {
     backgroundColor: COLORS.surface,
     borderRadius: normalize(14),
@@ -185,7 +180,6 @@ export const styles = StyleSheet.create({
     color: COLORS.subtext,
   },
 
-  /* ── Time Row ── */
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -214,15 +208,14 @@ export const styles = StyleSheet.create({
     color: COLORS.subtext,
   },
 
-  /* ── Footer ── */
   footer: {
     paddingHorizontal: normalize(22),
     paddingTop: normalize(14),
   },
   confirmBtn: {
     width: '100%',
-    height: normalize(52), // 높이 52 통일
-    borderRadius: normalize(12), // 둥글기 12 통일
+    height: normalize(52), 
+    borderRadius: normalize(12), 
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,

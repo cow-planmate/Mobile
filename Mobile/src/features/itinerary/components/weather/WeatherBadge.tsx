@@ -6,7 +6,7 @@ interface WeatherBadgeProps {
   description: string;
   tempMin: number;
   tempMax: number;
-  /** Render in a light style (for selected/primary-bg day tabs) */
+
   light?: boolean;
   size?: 'small' | 'medium';
 }

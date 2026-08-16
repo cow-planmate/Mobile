@@ -7,11 +7,6 @@ import {
   LOGOUT_CLEARED_KEYS,
 } from '../../constants/storageKeys';
 
-/**
- * 세션 정리는 로그아웃과 탈퇴가 함께 쓰는 경로다. 무엇을 지우고 무엇을 남기는지가
- * 계정 전환·탈퇴 후 복구와 직결되므로 대상 목록을 고정해 둔다.
- */
-
 jest.mock('@react-native-async-storage/async-storage', () => ({
   multiRemove: jest.fn(() => Promise.resolve()),
   multiGet: jest.fn(() => Promise.resolve([])),
@@ -37,7 +32,7 @@ describe('clearSession', () => {
 
     expect(AsyncStorage.multiRemove).toHaveBeenCalledWith(LOGOUT_CLEARED_KEYS);
     expect(useAuthStore.getState().user).toBeNull();
-    // 다음 방문에 같은 수단을 더 쉽게 찾도록 남겨 둔다.
+
     expect(useAuthStore.getState().lastLoginMethod).toBe('google');
   });
 
@@ -54,7 +49,6 @@ describe('clearSession', () => {
   it('제공자 세션이 남지 않도록 웹뷰 쿠키를 지운다', async () => {
     await useAuthStore.getState().clearSession();
 
-    // 남겨 두면 다음 SNS 로그인에서 계정을 바꿀 수 없고, 탈퇴 계정도 한 번에 복구된다.
     expect(CookieManager.clearAll).toHaveBeenCalled();
   });
 

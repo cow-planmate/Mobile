@@ -1,7 +1,6 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 
-/** 마지막으로 생성된 가짜 STOMP 클라이언트 */
 let mockClient: any = null;
 
 jest.mock('@stomp/stompjs', () => {
@@ -24,17 +23,17 @@ jest.mock('@stomp/stompjs', () => {
         activate: jest.fn(() => {
           instance.active = true;
         }),
-        /** 서버 CONNECTED 프레임 도착 시뮬레이션 */
+
         simulateConnect() {
           instance.connected = true;
           config.onConnect({ headers: {} });
         },
-        /** 소켓 절단 시뮬레이션 (STOMP 자동 재연결 진입) */
+
         simulateSocketClose() {
           instance.connected = false;
           config.onWebSocketClose();
         },
-        /** presence 브로드캐스트 도착 시뮬레이션 */
+
         simulatePresence(users: any[] = []) {
           const cb = subscriptions.get(
             [...subscriptions.keys()].find(k =>
@@ -98,7 +97,6 @@ const mount = () => {
   });
 };
 
-/** connect()는 AsyncStorage await가 있어 마이크로태스크 flush가 필요하다. */
 const connectTo = async (planId: string) => {
   await act(async () => {
     ws.connect(planId);
@@ -133,7 +131,6 @@ describe('세션 매핑 확립 전 전송 큐 (F-7)', () => {
     });
     send();
 
-    // presence 미수신 상태 — 서버가 조용히 버리는 구간이므로 보내면 안 된다
     expect(mockClient.publish).not.toHaveBeenCalled();
   });
 
@@ -200,12 +197,10 @@ describe('세션 매핑 확립 전 전송 큐 (F-7)', () => {
       mockClient.simulatePresence([]);
     });
 
-    // 소켓이 끊기면 서버 세션도 사라진다
     act(() => {
       mockClient.simulateSocketClose();
     });
 
-    // STOMP 자동 재연결: CONNECTED만 온 상태
     act(() => {
       mockClient.simulateConnect();
     });
@@ -293,7 +288,6 @@ describe('disconnect 시 큐 보존 (F-8)', () => {
       ws.disconnect();
     });
 
-    // 재연결
     await connectTo(PLAN_A);
     act(() => {
       mockClient.simulateConnect();

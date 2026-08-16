@@ -32,11 +32,6 @@ import {
 } from '../../../utils/collaborationRequest';
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
-/**
- * 메인 대시보드 홈 화면 컨테이너 컴포넌트
- *
- * @param props navigation 프로퍼티
- */
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const user = useAuthStore((state) => state.user);
   const { showAlert } = useAlert();
@@ -79,15 +74,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     AppState.currentState,
   );
 
-  // 목록은 캐시가 신선하면 그대로 쓴다. 새 요청은 SSE·FCM이 알려 준다.
   const fetchPendingRequests = pendingInvitations.invalidate;
 
-  /**
-   * 내가 보낸 초대·편집 권한 요청이 처리된 결과.
-   *
-   * 서버가 결과를 보관하지 않아 나중에 조회할 방법이 없다. 이벤트를 받은
-   * 그 자리에서 알리고, 놓치면 그대로 사라진다(FCM 푸시로 한 번 더 온다).
-   */
   const handleRequestResult = useCallback(
     (result: CollaborationRequestResult) => {
       showAlert({
@@ -130,9 +118,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     };
   }, [appState, fetchPendingRequests, user]);
 
-
-
-  /** 알림 문구는 초대/편집 권한 요청에 따라 달라지므로 목록에서 종류를 찾는다. */
   const findRequestType = (requestId: number) =>
     pendingRequests.find(r => r.requestId === requestId)?.type;
 
@@ -140,8 +125,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     const type = findRequestType(requestId);
     try {
       await acceptInvitation(requestId);
-      // 수락하면 편집 권한이 생겨 프로필의 editablePlans가 바뀐다.
-      // 무효화하지 않으면 내 일정 목록에 최대 staleTime(5분)만큼 나타나지 않는다.
+
       void invalidatePlanCaches(queryClient);
       showAlert({ title: '수락 완료', message: describeAcceptResult(type) });
       pendingInvitations.remove(requestId);
@@ -181,10 +165,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     }
   };
 
-  /**
-   * 거절은 되돌릴 수 없다. 서버가 처리 결과를 보관하지 않아 목록에서 사라지면
-   * 다시 찾을 방법이 없으므로, 누르기 전에 한 번 확인한다.
-   */
   const handleReject = (requestId: number) => {
     const request = pendingRequests.find(r => r.requestId === requestId);
     showAlert({
@@ -314,7 +294,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     } catch (error) {
       console.error('일정 생성 준비 실패:', error);
       setIsCreating(false);
-      /** 입력값은 그대로 남아 있으므로 이 자리에서 바로 다시 시도할 수 있다. */
+
       showAlert({
         title: '일정을 만들지 못했습니다',
         message:

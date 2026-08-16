@@ -17,8 +17,8 @@ const timeToMinutes = (time: string) => {
 const IS_COMPACT_VIEW_THRESHOLD_MINUTES = 30;
 
 export type Place = {
-  id: string; // Internal Block ID (or temp ID)
-  placeRefId?: string; // External Reference ID (e.g., Google Place ID)
+  id: string; 
+  placeRefId?: string; 
   name: string;
   type: '관광지' | '숙소' | '식당' | '직접 추가' | '검색' | '기타';
   categoryId?: number;
@@ -33,7 +33,7 @@ export type Place = {
   place_url?: string;
   contentTypeId?: string;
   copyrightDivCd?: string;
-  /** 서버 원본 카테고리 enum(ATTRACTION 등). 정규화 전 값이 실려 올 수 있다. */
+
   category?: string;
 };
 

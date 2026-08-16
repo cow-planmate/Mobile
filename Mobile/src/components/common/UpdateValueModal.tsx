@@ -16,7 +16,7 @@ type UpdateValueModalProps = {
   label: string;
   initialValue: string;
   keyboardType?: 'default' | 'number-pad' | 'email-address';
-  /** 서버가 길이를 제한하는 값이면 입력 단계에서 막는다. */
+
   maxLength?: number;
   onClose: () => void;
   onConfirm: (value: string) => void;

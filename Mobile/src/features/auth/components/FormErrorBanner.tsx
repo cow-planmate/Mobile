@@ -5,15 +5,6 @@ import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import { COLORS, RADIUS, TYPO } from '../authTokens';
 import { sf, sp } from '../../../utils/normalize';
 
-/**
- * 폼 전체에 걸린 오류.
- *
- * 자격 증명 불일치처럼 어느 한 칸의 문제가 아닌 오류를 특정 입력칸 아래에
- * 붙이면, 그 칸만 틀린 것으로 읽힌다. 로그인 실패는 두 칸이 함께 테두리가
- * 붉어지므로 메시지도 두 칸을 아우르는 자리(폼 머리)에 있어야 한다.
- *
- * 칸 하나에 귀속되는 오류는 그 칸 아래 InlineError가 맡는다.
- */
 export default function FormErrorBanner({ message }: { message: string }) {
   return (
     <Animated.View

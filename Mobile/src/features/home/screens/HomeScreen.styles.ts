@@ -22,14 +22,14 @@ export const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
   },
-  // [NEW] Hero Section with Background Image
+
   heroSection: {
     width: '100%',
     height: normalize(180),
     backgroundColor: '#E5E7EB',
-    justifyContent: 'flex-end', // 중앙에서 아래쪽 정렬로 변경
+    justifyContent: 'flex-end', 
     paddingHorizontal: normalize(24),
-    paddingBottom: normalize(24), // 하단 여백 추가
+    paddingBottom: normalize(24), 
   },
   heroImage: {
     ...StyleSheet.absoluteFillObject,
@@ -45,13 +45,12 @@ export const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#FFFFFF',
     lineHeight: normalize(38),
-    textAlign: 'left', // 왼쪽 정렬 명시
+    textAlign: 'left', 
   },
 
-  // [NEW] Main Action Card (White portion)
   actionContainer: {
     backgroundColor: 'transparent',
-    marginTop: normalize(16), // -normalize(40)에서 양수 값으로 변경하여 겹침 제거 및 간격 추가
+    marginTop: normalize(16), 
     paddingHorizontal: normalize(16),
     paddingBottom: normalize(40),
   },
@@ -59,7 +58,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: normalize(20),
-    // Shadow for elevation
+
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -79,7 +78,7 @@ export const styles = StyleSheet.create({
   inputRowLast: {
     marginBottom: normalize(8),
   },
-  // DESIGN.md ink-label(#4B5563, 7.0:1) / ink-muted(#6B7280, 4.83:1). #9CA3AF는 2.54:1로 미달이었다.
+
   label: {
     fontSize: normalize(12),
     fontFamily: FONTS.medium,

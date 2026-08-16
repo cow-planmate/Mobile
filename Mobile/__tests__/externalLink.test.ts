@@ -9,7 +9,7 @@ describe('isSafeExternalUrl', () => {
   });
 
   it('웹이 아닌 스킴은 막는다', () => {
-    // 안드로이드에서 다른 앱 컴포넌트를 실행할 수 있다
+
     expect(isSafeExternalUrl('intent://scan/#Intent;scheme=zxing;end')).toBe(
       false,
     );

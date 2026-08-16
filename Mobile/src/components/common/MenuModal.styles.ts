@@ -8,7 +8,7 @@ export const COLORS = {
   border: '#E5E7EB',
   surface: '#F3F4F6',
   error: '#FF3B30',
-  /** 보조 텍스트. 정의가 없어 cancelButtonText의 color가 undefined였다. */
+
   textSecondary: '#6B7280',
 };
 

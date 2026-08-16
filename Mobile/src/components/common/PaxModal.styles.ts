@@ -23,12 +23,12 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)', // 0.45 백드롭 투명도 통일
+    backgroundColor: 'rgba(0,0,0,0.45)', 
   },
   modalView: {
     margin: normalize(20),
     backgroundColor: COLORS.white,
-    borderRadius: normalize(20), // 20 둥글기 통일
+    borderRadius: normalize(20), 
     paddingHorizontal: normalize(24),
     paddingTop: normalize(24),
     paddingBottom: normalize(28),
@@ -122,8 +122,8 @@ export const styles = StyleSheet.create({
   },
   confirmButton: {
     width: '100%',
-    height: normalize(52), // 높이 52 통일
-    borderRadius: normalize(12), // 둥글기 12 통일
+    height: normalize(52), 
+    borderRadius: normalize(12), 
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,

@@ -106,7 +106,7 @@ const AirplaneLoading = () => {
 
   return (
     <View style={styles.container}>
-      {/* Background Clouds */}
+
       <View style={StyleSheet.absoluteFill}>
         <Cloud duration={8000} top="20%" style={{ width: 120, height: 40 }} />
         <Cloud duration={12000} top="60%" style={{ width: 80, height: 25 }} opacity={0.6} scale={0.8} />
@@ -124,12 +124,11 @@ const AirplaneLoading = () => {
             <Path d="M482.3 192c34.2 0 93.7 29 93.7 64c0 36-59.5 64-93.7 64l-116.6 0L265.2 495.9c-5.7 10-16.3 16.1-27.8 16.1l-56.2 0c-10.6 0-18.3-10.2-15.4-20.4l49-171.6L112 320 68.8 377.6c-3 4-8 6.4-13.4 6.4l-42 0c-7.8 0-13.6-7.3-11.7-14.8L35.6 256 1.7 142.8C-.2 135.3 5.6 128 13.4 128l42 0c5.4 0 10.4 2.4 13.4 6.4L112 192l102.9 0-49-171.6C162.9 10.2 170.6 0 181.2 0l56.2 0c11.5 0 22.1 6.2 27.8 16.1L365.7 192l116.6 0z" />
           </Svg>
         </Animated.View>
-        
+
         <Text style={styles.title}>일정 정보를 불러오는 중...</Text>
         <Text style={styles.subtitle}>PlanMate가 당신의 완벽한 여행을 그리고 있어요</Text>
       </View>
 
-      {/* Foreground Clouds */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <Cloud duration={6000} top="35%" style={{ width: 200, height: 60 }} opacity={0.95} />
         <Cloud duration={5000} top="65%" style={{ width: 250, height: 75 }} opacity={0.9} />
@@ -141,7 +140,7 @@ const AirplaneLoading = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F9FF', // bg-sky-50
+    backgroundColor: '#F0F9FF', 
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -160,13 +159,13 @@ const styles = StyleSheet.create({
     marginTop: 32,
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#374151', // text-gray-700
+    color: '#374151', 
     letterSpacing: 0.5,
   },
   subtitle: {
     marginTop: 8,
     fontSize: 14,
-    color: '#6B7280', // text-gray-500
+    color: '#6B7280', 
     fontWeight: '500',
   },
   cloudBase: {

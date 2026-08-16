@@ -6,7 +6,6 @@ export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   flex1: { flex: 1 },
 
-  /* ── 헤더 — 뒤로가기는 항상 왼쪽 ── */
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -43,13 +42,8 @@ export const styles = StyleSheet.create({
     marginBottom: sf(32),
   },
 
-  /* ── 입력 ── */
   inputGroup: { marginBottom: sf(16) },
-  /**
-   * 테두리 굵기를 상태와 무관하게 1.5로 고정한다. 포커스될 때만 굵어지면
-   * 박스 크기가 함께 바뀌어 입력 중에 글자가 흔들린다.
-   * 색은 AuthFieldBox가 상태에 따라 전환한다.
-   */
+
   authInputContainer: {
     width: '100%',
     minHeight: sf(52),
@@ -77,7 +71,6 @@ export const styles = StyleSheet.create({
     textAlignVertical: 'center',
   },
 
-  /** 아이콘 전용 버튼은 44dp를 채운다 */
   eyeButton: {
     width: sf(44),
     height: sf(44),
@@ -86,7 +79,6 @@ export const styles = StyleSheet.create({
     marginRight: sf(-10),
   },
 
-  /* ── 인라인 오류 ── */
   errorRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -103,7 +95,6 @@ export const styles = StyleSheet.create({
     lineHeight: sp(TYPO.label.lineHeight),
   },
 
-  /* ── 비밀번호 조건 ── */
   requirementsContainer: {
     marginTop: sf(12),
     paddingHorizontal: sf(2),
@@ -120,7 +111,6 @@ export const styles = StyleSheet.create({
     lineHeight: sp(TYPO.label.lineHeight),
   },
 
-  /* ── 하단 ── */
   footer: {
     paddingHorizontal: sf(24),
     paddingTop: sf(12),

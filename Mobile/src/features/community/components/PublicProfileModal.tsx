@@ -20,21 +20,14 @@ import UserAvatar from './UserAvatar';
 interface PublicProfileModalProps {
   visible: boolean;
   onClose: () => void;
-  /** 조회 대상 사용자 ID. null이면 조회하지 않는다. */
+
   userId: string | null;
-  /** 응답 전 표시할 닉네임(목록에 이미 있는 값) */
+
   fallbackName?: string;
 }
 
-/** 비공개 프로필 응답 코드 (ErrorCode.PROFILE_PRIVATE) */
 const PROFILE_PRIVATE_CODE = 'USER_002';
 
-/**
- * 커뮤니티 작성자의 공개 프로필.
- *
- * 서버는 이메일·생년월일·성별 등 개인정보를 응답에 아예 담지 않으므로
- * 여기서 따로 가릴 것은 없다. 상대가 비공개로 두면 403이 온다.
- */
 export default function PublicProfileModal({
   visible,
   onClose,

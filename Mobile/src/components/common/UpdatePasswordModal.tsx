@@ -20,7 +20,7 @@ import {
 type UpdatePasswordModalProps = {
   visible: boolean;
   onClose: () => void;
-  /** 실패하면 예외를 던져야 한다. 그래야 입력을 지우지 않고 모달을 열어 둔다. */
+
   onConfirm: (current: string, newPass: string) => void | Promise<void>;
 };
 
@@ -88,8 +88,7 @@ export default function UpdatePasswordModal({
       showAlert({ title: '오류', message: '모든 필드를 입력해주세요.' });
       return;
     }
-    // 가입 화면과 같은 기준으로 먼저 거른다. 서버는 길이만 보므로 조합 규칙까지
-    // 여기서 확인해야 화면마다 통과 기준이 달라지지 않는다.
+
     const { hasMinLength, hasCombination } =
       getPasswordRequirements(newPassword);
     if (!hasMinLength || !hasCombination) {
@@ -113,11 +112,11 @@ export default function UpdatePasswordModal({
 
     setIsSubmitting(true);
     try {
-      // 성공했을 때만 닫는다. 실패하면 입력이 남아 있어야 다시 시도할 수 있다.
+
       await onConfirm(currentPassword, newPassword);
       handleClose();
     } catch (_error) {
-      // 실패 사유는 호출부가 토스트로 알린다.
+
     } finally {
       setIsSubmitting(false);
     }

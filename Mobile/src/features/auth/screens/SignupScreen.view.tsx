@@ -40,12 +40,10 @@ import {
 } from '../../../utils/birthdate';
 import type { NicknameStatus } from './SignupScreen';
 
-/* ── 비밀번호 조건 한 줄 ── */
-
 export const PasswordRequirement = React.memo(
   ({ met, label }: { met: boolean; label: string }) => (
     <View style={styles.requirementRow}>
-      {/* 색만 바꾸면 색각 이상 사용자가 구분하지 못한다. 형태를 바꾼다. */}
+
       {met ? (
         <Check size={sf(15)} color={COLORS.success} strokeWidth={3} />
       ) : (
@@ -63,8 +61,6 @@ export const PasswordRequirement = React.memo(
   ),
 );
 
-/* ── 인라인 오류 ── */
-
 const InlineError = ({ message }: { message: string }) => (
   <Animated.View
     style={styles.errorRow}
@@ -76,8 +72,6 @@ const InlineError = ({ message }: { message: string }) => (
     <Text style={styles.errorText}>{message}</Text>
   </Animated.View>
 );
-
-/* ── Props ── */
 
 export interface SignupErrors {
   email?: string;
@@ -172,15 +166,6 @@ export const SignupScreenView = ({
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
 
-  /**
-   * 안드로이드의 windowSoftInputMode="adjustResize"는 키보드가 뜨면 창 자체를
-   * 줄여서 이 화면의 flex:1 컨테이너도 함께 줄어들고, 그 아래 붙은 하단 '다음'
-   * 버튼이 키보드 위로 따라 올라온다. 1·2단계는 필드의 리턴 키로 바로 다음
-   * 단계로 넘어가 버튼을 볼 필요가 없고, 3단계는 닉네임 입력을 마치면 생년월일
-   * ·성별처럼 키보드가 필요 없는 컨트롤로 넘어가므로, 버튼이 키보드를 따라
-   * 움직일 필요가 없다. 마운트 시점의 화면 높이를 고정값으로 박아 두면 창이
-   * 줄어들어도 이 컨테이너는 반응하지 않는다.
-   */
   const [screenHeight] = useState(() => Dimensions.get('window').height);
 
   const emailRef = useRef<TextInput>(null);
@@ -189,18 +174,12 @@ export const SignupScreenView = ({
   const confirmRef = useRef<TextInput>(null);
   const nicknameRef = useRef<TextInput>(null);
 
-  /** 단계가 늘었는지 줄었는지에 따라 들어오는 방향을 바꾼다. */
   const prevStepRef = useRef(step);
   const goingForward = step >= prevStepRef.current;
   useEffect(() => {
     prevStepRef.current = step;
   }, [step]);
 
-  /**
-   * 최초 진입(화면 push 직후)과 단계 간 전환을 다른 모션으로 구분한다.
-   * 최초 진입은 화면 슬라이드와 축이 겹치지 않게 revealStep으로,
-   * 이후 단계 전환만 기존 수평 슬라이드를 쓴다.
-   */
   const hasMountedRef = useRef(false);
   useEffect(() => {
     hasMountedRef.current = true;
@@ -209,10 +188,6 @@ export const SignupScreenView = ({
     ? (goingForward ? FadeInRight : FadeInLeft).duration(220)
     : revealStep(1, PUSH_TRANSITION_MS);
 
-  /**
-   * 오류가 있으면 그 필드로, 없으면 이번 단계의 첫 필드로 포커스를 옮긴다.
-   * 단계 내용이 먼저 붙어야 ref가 살아 있으므로 한 프레임 뒤에 실행한다.
-   */
   useEffect(() => {
     if (focusSeq === 0) return;
     const id = setTimeout(() => {
@@ -231,7 +206,7 @@ export const SignupScreenView = ({
       if (step === 3) return nicknameRef.current?.focus();
     }, 120);
     return () => clearTimeout(id);
-    // errors·step은 focusSeq와 함께 갱신된다.
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusSeq]);
 
@@ -298,7 +273,7 @@ export const SignupScreenView = ({
     <View
       style={[styles.container, { height: screenHeight }]}
     >
-      {/* ── 헤더: 뒤로가기는 항상 왼쪽 ── */}
+
       <Animated.View style={styles.header} entering={revealStep(0, PUSH_TRANSITION_MS)}>
         <Pressable
           style={styles.headerBackButton}
@@ -342,7 +317,6 @@ export const SignupScreenView = ({
           <Text style={styles.title}>{STEP_TITLES[step - 1]}</Text>
           <Text style={styles.description}>{STEP_DESCRIPTIONS[step - 1]}</Text>
 
-          {/* ══ 1단계: 이메일 인증 ══ */}
           {step === 1 && (
             <>
               <View style={styles.inputGroup}>
@@ -537,7 +511,6 @@ export const SignupScreenView = ({
             </>
           )}
 
-          {/* ══ 2단계: 비밀번호 ══ */}
           {step === 2 && (
             <>
               <View style={styles.inputGroup}>
@@ -661,7 +634,6 @@ export const SignupScreenView = ({
             </>
           )}
 
-          {/* ══ 3단계: 닉네임 & 내 정보 ══ */}
           {step === 3 && (
             <>
               <View style={styles.inputGroup}>
@@ -724,11 +696,6 @@ export const SignupScreenView = ({
                 )}
               </View>
 
-              {/*
-                성별은 값을 적는 칸이 아니라 고르는 컨트롤이다. 입력 칸 테두리로
-                한 번 더 감싸면 테두리 안의 테두리가 되어 무거워진다.
-                라벨만 밖에 두고 버튼을 바로 놓는다.
-              */}
               <View style={styles.inputGroup}>
                 <Text style={styles.groupLabel}>성별</Text>
                 <View style={styles.genderContainer}>
@@ -779,7 +746,6 @@ export const SignupScreenView = ({
                 {!!errors.gender && <InlineError message={errors.gender} />}
               </View>
 
-              {/* 개인정보 수집 및 이용 동의 — 체크박스와 보기 링크를 분리한다 */}
               <View style={styles.agreementRow}>
                 <Pressable
                   testID="agreement-checkbox"
@@ -822,7 +788,6 @@ export const SignupScreenView = ({
         </Animated.View>
       </ScrollView>
 
-      {/* ── 하단: 주 버튼은 항상 '다음' 하나 ── */}
       <View style={[styles.footer, { paddingBottom: sf(16) }]}>
         <AuthSubmitButton
           label={step === totalSteps ? '회원가입 완료' : '다음'}
@@ -839,7 +804,6 @@ export const SignupScreenView = ({
         variant="consent"
       />
 
-      {/* 생년월일 선택기. 나이를 받아 역산하면 실제 월·일이 소실된다. */}
       <DatePicker
         modal
         mode="date"

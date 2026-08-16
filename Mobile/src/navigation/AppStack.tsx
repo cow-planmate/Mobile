@@ -34,12 +34,6 @@ const CommunityStackNavigator = createNativeStackNavigator<CommunityStackParamLi
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
-/**
- * height/paddingBottom을 여기서 지정하지 않는다. @react-navigation/bottom-tabs는
- * 커스텀 tabBarStyle을 자신의 인셋 기반 값(paddingBottom: insets.bottom 등) 뒤에
- * 펼쳐 넣으므로, 여기서 숫자를 주면 실제 하단 인셋을 완전히 덮어써 제스처 내비게이션
- * 영역에 탭바가 깔린다. 배경·테두리만 책임지고 크기는 라이브러리에 맡긴다.
- */
 const baseTabBarStyle = {
   backgroundColor: '#FFFFFF',
   borderTopWidth: 1,

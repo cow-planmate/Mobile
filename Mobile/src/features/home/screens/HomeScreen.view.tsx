@@ -100,7 +100,7 @@ export interface HomeScreenViewProps {
 export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   nickname,
   email,
-  pendingRequestsCount, // 알림 뱃지 등에 활용 가능
+  pendingRequestsCount, 
   destination,
   dateText,
   paxText,
@@ -160,7 +160,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* 2. Hero Section */}
+
         <View style={styles.heroSection}>
           <FastImage
             source={{ uri: HERO_IMAGES[heroIndex], priority: FastImage.priority.normal }}
@@ -174,13 +174,12 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
           </Text>
         </View>
 
-        {/* 3. Action Card Section */}
         <View style={styles.actionContainer}>
           <View style={styles.cardWrapper}>
             <InputRow
               label="여행지"
               value={destination}
-              placeholder="여행지 입력" // '어디로 떠나시나요?' 에서 '여행지 입력'으로 수정
+              placeholder="여행지 입력" 
               icon={faLocationDot}
               onPress={onOpenSearchModal}
             />
@@ -201,7 +200,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               onPress={onOpenPaxModal}
             />
 
-            {/* Create Button */}
             <TouchableOpacity
               style={[
                 styles.submitButton,
@@ -226,7 +224,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         </View>
       </ScrollView>
 
-      {/* Modals - 기존 유지 */}
       <SearchLocationModal
         visible={isSearchModalVisible}
         onClose={onCloseSearchModal}

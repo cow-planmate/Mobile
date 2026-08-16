@@ -27,11 +27,6 @@ import {
 import { styles, COLORS } from './RouteSegmentSheet.styles';
 import { normalize } from '../../../utils/normalize';
 
-// ────────────────────────────────────────────────
-// 표기 포매터
-// ────────────────────────────────────────────────
-
-/** 분 → "X분" / "H시간 M분" */
 const formatMinutes = (minutes?: number | null): string | null => {
   if (minutes == null || Number.isNaN(minutes)) return null;
   const rounded = Math.round(minutes);
@@ -43,13 +38,11 @@ const formatMinutes = (minutes?: number | null): string | null => {
   return `${rounded}분`;
 };
 
-/** 초 → "X분" (최소 1분) */
 const formatSeconds = (seconds?: number | null): string | null => {
   if (seconds == null || Number.isNaN(seconds)) return null;
   return formatMinutes(Math.max(1, Math.round(seconds / 60)));
 };
 
-/** 미터 → "850m" / "3.4km" */
 const formatMeters = (meters?: number | null): string | null => {
   if (meters == null || Number.isNaN(meters)) return null;
   return meters < 1000
@@ -57,12 +50,6 @@ const formatMeters = (meters?: number | null): string | null => {
     : `${(meters / 1000).toFixed(1)}km`;
 };
 
-/**
- * 요금 → "1,550원"
- *
- * `toLocaleString`은 엔진의 Intl 지원 여부에 따라 구분자가 빠질 수 있어
- * 직접 끊는다.
- */
 const formatPayment = (payment?: number | null): string | null => {
   if (payment == null || Number.isNaN(payment)) return null;
   const grouped = String(Math.round(payment)).replace(
@@ -72,15 +59,10 @@ const formatPayment = (payment?: number | null): string | null => {
   return `${grouped}원`;
 };
 
-/** null 항목을 빼고 " · "로 잇는다. 전부 null이면 null */
 const joinParts = (...parts: (string | null | undefined)[]): string | null => {
   const filtered = parts.filter(Boolean) as string[];
   return filtered.length > 0 ? filtered.join(' · ') : null;
 };
-
-// ────────────────────────────────────────────────
-// 작은 조각들
-// ────────────────────────────────────────────────
 
 const NumberBadge = ({ number }: { number: number }) => (
   <View style={styles.numberBadge}>
@@ -111,7 +93,6 @@ const ModeRow = ({
   </View>
 );
 
-/** 경로 하나의 시간 비율 막대 (도보=회색, 버스=초록, 지하철=노선색) */
 const RouteBar = ({ steps }: { steps: TransitStep[] }) => (
   <View style={styles.bar}>
     {steps.map((step, i) => {
@@ -142,7 +123,6 @@ const RouteBar = ({ steps }: { steps: TransitStep[] }) => (
   </View>
 );
 
-/** 구간의 경유 정류장 목록 토글 */
 const PassStopsToggle = ({ step }: { step: TransitStep }) => {
   const [open, setOpen] = useState(false);
   const passStops = step.passStops;
@@ -179,7 +159,6 @@ const PassStopsToggle = ({ step }: { step: TransitStep }) => {
   );
 };
 
-/** 대중교통 경로의 구간별 상세 행 (도보는 표시하지 않는다) */
 const StepDetailRow = ({ step }: { step: TransitStep }) => {
   if (step.trafficType === TRAFFIC_TYPE.BUS) {
     return (
@@ -234,7 +213,6 @@ const StepDetailRow = ({ step }: { step: TransitStep }) => {
   return null;
 };
 
-/** 경로 카드 하나 */
 const TransitRouteCard = ({
   route,
   laneKey,
@@ -297,7 +275,6 @@ const TransitRouteCard = ({
   );
 };
 
-/** 대중교통 요약 행 + 다중 경로 목록 (구간마다 독립적인 펼침 상태) */
 const TransitInfo = ({
   transit,
   isLoading,
@@ -414,30 +391,19 @@ const TransitInfo = ({
   );
 };
 
-// ────────────────────────────────────────────────
-// 시트 본체
-// ────────────────────────────────────────────────
-
 export interface RouteSegmentSheetProps {
   visible: boolean;
   onClose: () => void;
-  /** 방문 순서대로 정렬된 장소 이름. 구간 i는 i번째 → i+1번째 */
+
   placeNames: string[];
   data?: SegmentInfo;
   isLoading: boolean;
   isError: boolean;
-  /** 지도에 표시 중인 노선 키 (`${segmentIndex}-${routeIndex}`) */
+
   activeLaneKey: string | null;
   onToggleLane: (mapObj: string, key: string) => void;
 }
 
-/**
- * 구간 정보 시트.
- *
- * 일정의 연속한 두 장소 사이 이동 정보(차량/도보/대중교통)를 보여준다.
- * ODsay 호출량이 제한적이라 조회는 시트를 처음 열 때만 일어나고, 같은 좌표
- * 조합은 캐시된 결과를 재사용한다(`useSegmentInfo`).
- */
 export default function RouteSegmentSheet({
   visible,
   onClose,
@@ -449,10 +415,7 @@ export default function RouteSegmentSheet({
   onToggleLane,
 }: RouteSegmentSheetProps) {
   const segmentCount = Math.max(placeNames.length - 1, 0);
-  /**
-   * 값이 이미 있으면 배경 재조회 중이어도 "불러오는 중"으로 되돌리지 않는다.
-   * 좌표가 그대로면 결과도 그대로라 깜빡임만 남는다.
-   */
+
   const showRowLoading = isLoading && !data;
 
   return (

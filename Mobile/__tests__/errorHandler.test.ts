@@ -57,7 +57,7 @@ describe('errorHandler Utility', () => {
     });
 
     it('should not leak an internal Error message to the screen', () => {
-      // 401을 만나면 인터셉터가 토큰 재발급을 시도하다 이 오류를 대신 던진다.
+
       const interceptorError = new Error(
         'No refresh token found or token creation failed',
       );

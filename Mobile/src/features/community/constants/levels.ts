@@ -1,9 +1,3 @@
-/**
- * 커뮤니티 사용자 레벨.
- *
- * 서버(UserStatsRepository.recalculateLevel)와 동일한 기준이다.
- * 활동 점수 = 게시글 수 * 3 + 댓글 수, 구간 [0, 10, 30, 70, 150) = Lv1~5
- */
 
 export const POST_SCORE_WEIGHT = 3;
 export const COMMENT_SCORE_WEIGHT = 1;
@@ -11,7 +5,7 @@ export const COMMENT_SCORE_WEIGHT = 1;
 export interface LevelTier {
   level: number;
   name: string;
-  /** 이 레벨에 진입하는 최소 활동 점수 */
+
   min: number;
 }
 
@@ -26,7 +20,6 @@ export const LEVEL_TIERS: LevelTier[] = [
 export const levelName = (level: number): string =>
   (LEVEL_TIERS.find(tier => tier.level === level) ?? LEVEL_TIERS[0]).name;
 
-/** 레벨별 배지 색 */
 export const LEVEL_BADGE_COLORS: Record<number, { bg: string; text: string }> = {
   1: { bg: '#F3F4F6', text: '#6B7280' },
   2: { bg: '#DBEAFE', text: '#2563EB' },
@@ -60,7 +53,6 @@ export const getLevelProgress = (postCount: number, commentCount: number) => {
   return { score, currentTier, nextTier, progressPercent };
 };
 
-/** 게시판 코드 ↔ 표기 이름 */
 export const BOARDS = [
   { key: 'free', label: '자유게시판' },
   { key: 'qna', label: 'Q&A' },

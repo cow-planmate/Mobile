@@ -8,7 +8,6 @@ interface LevelBadgeProps {
   level: number;
 }
 
-/** 작성자 레벨 배지 (Lv.1 ~ Lv.5) */
 export default function LevelBadge({ level }: LevelBadgeProps) {
   const color = levelBadgeColor(level);
 

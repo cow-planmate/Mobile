@@ -15,7 +15,6 @@ export interface MapPlace {
   place_url?: string;
 }
 
-/** 지도에 겹쳐 그릴 대중교통 노선 한 구간 */
 export interface MapTransitLane {
   color: string;
   path: RoutePoint[];
@@ -23,28 +22,13 @@ export interface MapTransitLane {
 
 interface KakaoMapViewProps {
   places: MapPlace[];
-  /**
-   * 도로를 따라가는 실제 경로 좌표.
-   * 비어 있으면 장소를 잇는 직선(점선 + 화살표)으로 대체된다.
-   */
+
   routePath?: RoutePoint[];
-  /** 선택한 대중교통 경로의 노선별 폴리라인 */
+
   transitLanes?: MapTransitLane[];
   style?: object;
 }
 
-/**
- * <script> 안에 안전하게 넣을 수 있는 JSON 문자열을 만든다.
- *
- * 장소 이름 같은 서버 문자열에 '</script>'가 들어 있으면 스크립트 태그가 그
- * 자리에서 닫혀 지도가 통째로 깨진다. U+2028/2029도 파서에 따라 문제가 된다.
- */
-/**
- * 카카오 지도 앱 키 존재 여부.
- *
- * .env에 KAKAO_APP_KEY가 없으면 @env가 undefined를 주고, 그대로 SDK URL에
- * 끼워 넣으면 appkey=undefined로 요청돼 지도가 뜨지 않는다.
- */
 const hasKakaoAppKey = !!(KAKAO_APP_KEY ?? '').trim();
 
 const toScriptSafeJson = (value: unknown): string =>
@@ -60,10 +44,7 @@ export default function KakaoMapView({
   style,
 }: KakaoMapViewProps) {
   const webViewRef = useRef<WebView>(null);
-  /**
-   * WebView 문서가 로드되기 전에 injectJavaScript를 부르면 아무 일도 일어나지
-   * 않는다. 로드 완료 시점을 추적했다가 그때 최신 장소/경로를 밀어 넣는다.
-   */
+
   const isLoadedRef = useRef(false);
 
   const validPlaces = useMemo(
@@ -71,13 +52,6 @@ export default function KakaoMapView({
     [places],
   );
 
-  /**
-   * 지도에 장소/경로/노선을 반영한다.
-   *
-   * HTML은 최초 1회만 만들고(아래 html useMemo가 places에 더 이상 의존하지 않음),
-   * 장소가 바뀔 때마다 이 함수로 밀어 넣는다. 예전에는 장소가 바뀔 때마다 HTML을
-   * 다시 만들어 WebView가 통째로 리로드(SDK 재초기화 포함)되며 지도가 깜빡였다.
-   */
   const pushMapState = useCallback(() => {
     if (!isLoadedRef.current || !webViewRef.current) {
       return;
@@ -130,7 +104,6 @@ export default function KakaoMapView({
     html, body { width: 100%; height: 100%; overflow: hidden; }
     #map { width: 100%; height: 100%; }
 
-    /* ── Marker: pill with number + pin tail ── */
     .marker-wrap {
       display: flex;
       flex-direction: column;
@@ -162,7 +135,6 @@ export default function KakaoMapView({
       margin-top: -1px;
     }
 
-    /* ── Info Window ── */
     .info-card {
       padding: 10px 14px;
       min-width: 160px;
@@ -230,8 +202,6 @@ export default function KakaoMapView({
 <body>
   <div id="map"></div>
   <script>
-    // 지도가 준비되기 전에 RN이 장소/경로를 밀어 넣을 수 있다. 그때는 값만 쥐고
-    // 있다가 지도 생성 직후 흘려보낸다.
     var __pending = { places: null, route: null, lanes: null };
     window.__setPlaces = function(places) { __pending.places = places; };
     window.__setRoute = function(path) { __pending.route = path; };
@@ -242,21 +212,17 @@ export default function KakaoMapView({
     kakao.maps.load(function() {
       var container = document.getElementById('map');
       var options = {
-        // 첫 장소 목록은 __setPlaces로 뒤늦게 도착하므로 임시 중심으로 시작한다.
-        // setBounds/setCenter가 곧이어 실제 위치로 옮긴다.
         center: new kakao.maps.LatLng(36.5, 127.8),
         level: 13
       };
       var map = new kakao.maps.Map(container, options);
 
-      // ── 장소 마커/인포윈도우 (장소가 바뀔 때마다 __setPlaces가 다시 그린다) ──
       var markerOverlays = [];
       var clickMarkers = [];
       var infoWindows = [];
       var openInfowindow = null;
       var straightOverlays = [];
 
-      // ── RN에서 밀어 넣는 경로 레이어 ──
       var roadPolyline = null;
       var lanePolylines = [];
 
@@ -298,7 +264,6 @@ export default function KakaoMapView({
           bounds.extend(position);
           linePath.push(position);
 
-          // 커스텀 마커 (pill + tail)
           var markerContent =
             '<div class="marker-wrap">' +
               '<div class="marker-pill">' + place.order + '</div>' +
@@ -312,7 +277,6 @@ export default function KakaoMapView({
           customOverlay.setMap(map);
           markerOverlays.push(customOverlay);
 
-          // 인포윈도우
           var infoContent =
             '<div class="info-card">' +
               '<div class="place-name">' + place.name + '</div>' +
@@ -331,7 +295,6 @@ export default function KakaoMapView({
           });
           infoWindows.push(infowindow);
 
-          // 투명 마커 (클릭 이벤트용)
           var marker = new kakao.maps.Marker({
             position: position,
             map: map,
@@ -346,7 +309,6 @@ export default function KakaoMapView({
           });
         });
 
-        // ── 직선 폴백 (도로 경로가 없을 때만 보인다) ──
         if (linePath.length > 1) {
           var polyline = new kakao.maps.Polyline({
             path: linePath,
@@ -358,7 +320,6 @@ export default function KakaoMapView({
           polyline.setMap(map);
           straightOverlays.push(polyline);
 
-          // 점선 가운데 화살표 추가
           for (var i = 0; i < places.length - 1; i++) {
             var p1 = places[i];
             var p2 = places[i + 1];
@@ -367,7 +328,6 @@ export default function KakaoMapView({
             var midLng = (p1.lng + p2.lng) / 2;
             var midPosition = new kakao.maps.LatLng(midLat, midLng);
 
-            // 각도 계산 (화면 좌표계를 기준으로 시계방향 회전각도 산출)
             var dy = p1.lat - p2.lat;
             var dx = p2.lng - p1.lng;
             var angle = Math.atan2(dy, dx) * 180 / Math.PI;
@@ -389,10 +349,8 @@ export default function KakaoMapView({
             straightOverlays.push(arrowOverlay);
           }
         }
-        // 이미 RN이 도로 경로(__setRoute)를 밀어 넣은 상태라면 직선 폴백을 덮지 않는다.
         showStraight(!roadPolyline);
 
-        // 영역 조절
         if (places.length > 1) {
           map.setBounds(bounds);
         } else {
@@ -408,7 +366,6 @@ export default function KakaoMapView({
         }
 
         if (!path || path.length < 2) {
-          // 도로 경로가 없으면 직선 폴백으로 되돌린다
           showStraight(true);
           return;
         }
@@ -450,7 +407,6 @@ export default function KakaoMapView({
         });
       };
 
-      // 지도 준비 전에 도착한 값을 반영
       if (__pending.places) window.__setPlaces(__pending.places);
       if (__pending.route) window.__setRoute(__pending.route);
       if (__pending.lanes) window.__setLanes(__pending.lanes);
@@ -459,14 +415,9 @@ export default function KakaoMapView({
   </script>
 </body>
 </html>`;
-    // 장소가 바뀌어도 이 HTML은 재생성하지 않는다 — 재생성하면 WebView가 통째로
-    // 리로드된다. 장소는 pushMapState()가 __setPlaces로 갱신한다.
+
   }, []);
 
-  /**
-   * 키가 없으면 SDK 스크립트가 appkey=undefined로 실려 조용히 실패한다.
-   * 빈 WebView만 남아 앱이 깨진 것처럼 보이므로 원인을 밝혀 준다.
-   */
   if (!hasKakaoAppKey) {
     return (
       <View style={[mapStyles.container, style]}>

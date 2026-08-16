@@ -23,12 +23,6 @@ import { styles, COLORS } from './PostCreateScreen.styles';
 
 type CreateRoute = RouteProp<CommunityStackParamList, 'CommunityCreate'>;
 
-/**
- * 게시글 작성.
- *
- * 웹은 BlockNote 에디터로 서식 있는 글을 쓰지만 앱은 평문만 받는다. 저장 직전
- * 평문을 문단 블록으로 변환해 보내므로, 웹에서 열어도 정상 문단으로 보인다.
- */
 export default function PostCreateScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<CreateRoute>();
@@ -82,9 +76,7 @@ export default function PostCreateScreen() {
       const created = isEditMode
         ? await updatePost.mutateAsync(payload)
         : await createPost.mutateAsync(payload);
-      // 서버가 작성 응답에 게시글을 담아주면 바로 상세로 보낸다.
-      // 본문 없이 성공만 알려주는 경우도 있으므로, id가 없으면 목록으로
-      // 돌아간다 — 목록은 이미 무효화되어 새 글이 올라와 있다.
+
       if (created?.id != null) {
         navigation.replace('CommunityDetail', { postId: String(created.id) });
       } else {

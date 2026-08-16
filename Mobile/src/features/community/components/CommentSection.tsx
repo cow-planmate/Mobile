@@ -33,19 +33,13 @@ interface CommentSectionProps {
   commentCount: number;
 }
 
-/**
- * 입력 중인 글자를 부모가 아니라 입력창이 직접 들고 있게 한다.
- *
- * 예전에는 본문·답글·수정 텍스트가 모두 CommentSection의 state였다. 목록도 같은
- * 컴포넌트가 그리기 때문에 한 글자 칠 때마다 모든 댓글 행이 다시 렌더됐다.
- */
 interface CommentComposerProps {
   placeholder: string;
   editable?: boolean;
   submitting?: boolean;
-  /** 답글 입력창은 들여쓰기가 달라 바깥 여백을 따로 받는다. */
+
   containerStyle?: StyleProp<ViewStyle>;
-  /** 등록에 성공하면 true. 그때만 입력창을 비운다. */
+
   onSubmit: (text: string) => Promise<boolean>;
 }
 
@@ -122,7 +116,6 @@ const CommentEditor = React.memo(function CommentEditor({
   );
 });
 
-/** 댓글 목록 + 작성/수정/삭제. 대댓글은 한 단계까지만 지원한다. */
 export default function CommentSection({
   postId,
   commentCount,
@@ -131,8 +124,6 @@ export default function CommentSection({
   const user = useAuthStore(state => state.user);
   const isLoggedIn = !!user;
 
-  // 입력 중인 글자는 각 입력창이 들고 있다. 여기서는 "어느 댓글이 답글/수정
-  // 중인지"만 안다.
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -141,10 +132,6 @@ export default function CommentSection({
   const updateComment = useUpdateComment(postId);
   const deleteComment = useDeleteComment(postId);
 
-  /**
-   * 평면 목록(parentId 포함)을 부모-대댓글로 묶는다.
-   * 부모가 현재 페이지에 없으면 고아가 되지 않도록 최상위로 올린다.
-   */
   const { topLevel, repliesByParent } = useMemo(() => {
     const items = mergeCommentPages(commentsQuery.data?.pages);
     const ids = new Set(items.map(c => c.id));

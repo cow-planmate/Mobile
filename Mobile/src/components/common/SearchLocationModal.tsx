@@ -42,7 +42,6 @@ type Props = {
   currentValue?: string;
 };
 
-/** 서버 응답과 폴백을 합쳐 화면에서 쓰는 형태로 정규화한다. */
 const toTravelVO = (item: any): TravelVO => {
   const dId = item.destinationId ?? item.travelId ?? -1;
   const dName = item.destinationName ?? item.travelName ?? '';
@@ -66,11 +65,11 @@ const FALLBACK_DESTINATIONS: TravelVO[] = DESTINATIONS_28.map(d => ({
 const fetchDestinations = async (): Promise<TravelVO[]> => {
   try {
     const response = await axios.get(resolveApiUrl('/api/destination'));
-    // DestinationListResponse는 destinations 하나뿐이다.
+
     const rawList: DestinationDto[] = response.data.destinations || [];
 
     const serverData = rawList.map(toTravelVO);
-    // 서버가 빈 목록을 주면 내장 28개 목록으로 대체한다.
+
     return serverData.length > 0 ? serverData : FALLBACK_DESTINATIONS;
   } catch (error) {
     console.error('Failed to fetch destinations:', error);
@@ -78,12 +77,6 @@ const fetchDestinations = async (): Promise<TravelVO[]> => {
   }
 };
 
-/**
- * 여행지 목록.
- *
- * 28개 고정 데이터라 사실상 변하지 않는데 모달을 열 때마다 다시 불러오고 있었다.
- * 앱 실행 중에는 캐시를 재사용한다.
- */
 const useDestinations = (enabled: boolean) =>
   useQuery({
     queryKey: ['destinations'],
@@ -112,7 +105,6 @@ export default function SearchLocationModal({
     }
   }, [visible]);
 
-  // 목록이 준비되면 현재 값과 일치하는 항목을 미리 골라 둔다.
   useEffect(() => {
     if (!visible || !currentValue || !data) return;
     const initialMatch = data.find(d => isRegionMatch(d.travelName, currentValue));
@@ -161,7 +153,7 @@ export default function SearchLocationModal({
           </View>
         ) : (
           <>
-            {/* 권역 선택 카테고리 칩 */}
+
             <View style={styles.chipSectionContainer}>
               <View style={styles.sectionHeader}>
                 <Map size={16} color={COLORS.primary} strokeWidth={1.5} />
@@ -193,7 +185,6 @@ export default function SearchLocationModal({
               </View>
             </View>
 
-            {/* 28개 여행지 목록 칩 */}
             <View style={styles.chipSectionContainer}>
               <View style={styles.sectionHeader}>
                 <MapPin size={16} color={COLORS.primary} strokeWidth={1.5} />
@@ -230,7 +221,6 @@ export default function SearchLocationModal({
         )}
       </ScrollView>
 
-      {/* 확인 버튼 */}
       <View style={styles.confirmFooter}>
         <Pressable
           style={[
@@ -270,7 +260,7 @@ export default function SearchLocationModal({
       >
         <Pressable style={styles.backdrop} onPress={onClose} />
         <View style={styles.modalView}>
-          {/* Header */}
+
           <View style={styles.header}>
             <View style={styles.headerTextContainer}>
               <Text style={styles.headerTitle}>{title}</Text>
@@ -288,7 +278,6 @@ export default function SearchLocationModal({
             </TouchableOpacity>
           </View>
 
-          {/* Content */}
           <View style={styles.contentContainer}>
             {renderDestinationContent()}
           </View>

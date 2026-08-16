@@ -28,7 +28,7 @@ export const FONTS = {
 };
 
 export const styles = StyleSheet.create({
-  /* ── Layout ── */
+
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -51,7 +51,6 @@ export const styles = StyleSheet.create({
     elevation: 20,
   },
 
-  /* ── Header ── */
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -86,7 +85,6 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  /* ── Search Bar ── */
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -125,13 +123,11 @@ export const styles = StyleSheet.create({
     marginRight: normalize(4),
   },
 
-  /* ── Content ── */
   contentContainer: {
     flex: 1,
     backgroundColor: COLORS.white,
   },
 
-  /* ── Section Headers ── */
   sectionContainer: {
     marginBottom: normalize(24),
   },
@@ -147,7 +143,6 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
   },
 
-  /* ── Tags (Recent Searches) ── */
   tagContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -177,7 +172,6 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
   },
 
-  /* ── Departure Results ── */
   emptyStateContainer: {
     flex: 1,
     paddingHorizontal: normalize(24),
@@ -217,7 +211,6 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
   },
 
-  /* ── Empty / No Result States ── */
   emptyResultContainer: {
     alignItems: 'center',
     paddingTop: normalize(48),
@@ -244,7 +237,6 @@ export const styles = StyleSheet.create({
     color: COLORS.subtext,
   },
 
-  /* ── Inline Loader ── */
   inlineLoaderContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -258,7 +250,6 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
   },
 
-  /* ── Destination Layout ── */
   destinationWrapper: {
     flex: 1,
   },
@@ -275,10 +266,7 @@ export const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: normalize(8),
   },
-  /**
-   * 세로 패딩을 12로 올려 실제 탭 높이를 키운다. 촘촘히 줄바꿈되는 칩
-   * 목록이라 hitSlop을 쓰면 옆·아래 칩의 히트 영역과 겹쳐 오탭을 만든다.
-   */
+
   chip: {
     paddingHorizontal: normalize(12),
     paddingVertical: normalize(12),
@@ -301,7 +289,6 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.semibold,
   },
 
-  /* ── Confirm Footer ── */
   confirmFooter: {
     paddingHorizontal: normalize(24),
     paddingVertical: normalize(16),
@@ -327,10 +314,7 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     color: COLORS.white,
   },
-  /**
-   * "여행지를 선택해주세요"는 비활성 버튼 안에 있어도 다음 행동을 알리는
-   * 유일한 문구다. COLORS.disabled(#D1D5DB, 1.34:1)로는 거의 안 보였다.
-   */
+
   confirmButtonTextDisabled: {
     color: COLORS.subtext,
   },

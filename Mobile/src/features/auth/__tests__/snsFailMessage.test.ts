@@ -5,8 +5,6 @@ describe('resolveSnsFailMessage', () => {
     expect(resolveSnsFailMessage('INVALID_STATE')).toContain('다시 시도');
   });
 
-  // 서버 OAuthLoginService가 내보내는 사유. 같은 버튼을 다시 눌러도 결과가
-  // 같으므로, 이메일 로그인으로 옮기라는 안내가 빠지면 빠져나올 길이 없다.
   it('이메일 충돌은 이메일 로그인으로 안내한다', () => {
     const message = resolveSnsFailMessage('EMAIL_CONFLICT');
     expect(message).toContain('이미');

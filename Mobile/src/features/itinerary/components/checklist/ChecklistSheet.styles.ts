@@ -12,7 +12,7 @@ const RADIUS = {
 export const COLORS = theme.colors;
 
 export const styles = StyleSheet.create({
-  /* ── 시트 골격 ── */
+
   keyboardArea: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -57,7 +57,6 @@ export const styles = StyleSheet.create({
     padding: normalize(4),
   },
 
-  /* ── 탭 ── */
   tabRow: {
     flexDirection: 'row',
     marginHorizontal: normalize(20),
@@ -84,7 +83,6 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
   },
 
-  /* ── 진행률 ── */
   progressBox: {
     paddingHorizontal: normalize(20),
     paddingTop: normalize(14),
@@ -125,7 +123,6 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
 
-  /* ── 목록 ── */
   list: {
     paddingHorizontal: normalize(20),
     paddingBottom: normalize(12),
@@ -168,7 +165,6 @@ export const styles = StyleSheet.create({
     borderBottomColor: COLORS.primary,
   },
 
-  /* ── 상태 표시 ── */
   stateBox: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -197,7 +193,6 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
   },
 
-  /* ── 입력 ── */
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',

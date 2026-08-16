@@ -59,7 +59,6 @@ describe('route API requests', () => {
     );
   });
 
-  // 화면을 벗어나면 react-query가 signal을 취소해 진행 중인 요청을 끊는다.
   it('취소 시그널을 axios로 넘긴다', async () => {
     const controller = new AbortController();
     const waypoints = [

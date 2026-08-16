@@ -41,7 +41,7 @@ describe('isPasswordPolicyMet', () => {
   });
 
   it('최대 길이 이내면 길이 자체는 문제 삼지 않는다', () => {
-    // 초과 입력은 입력칸 maxLength가 막는다.
+
     expect(isPasswordPolicyMet(`${'a'.repeat(PASSWORD_MAX_LENGTH - 2)}1!`)).toBe(
       true,
     );

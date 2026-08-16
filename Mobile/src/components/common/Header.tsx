@@ -64,8 +64,7 @@ const Header: React.FC<HeaderProps> = ({
           navigation.navigate('Profile');
         }
       } else if (action === 'logout') {
-        // 소켓은 앱 루트에 붙어 있어 화면 전환만으로는 끊기지 않는다. 남겨 두면
-        // 다른 참여자의 접속자 목록에 로그아웃한 사용자가 계속 보인다.
+
         disconnect();
         logout();
       }
@@ -119,7 +118,6 @@ const Header: React.FC<HeaderProps> = ({
         </TouchableOpacity>
       </View>
 
-      {/* 프로필 드롭다운 메뉴 모달 */}
       <Modal
         visible={menuVisible}
         transparent={true}
@@ -223,7 +221,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 6,
     right: 6,
-    // 토큰 error(#D92D20)는 iOS 스타일 #FF3B30보다 흰 글자 대비가 높다(4.83:1 vs 3.59:1).
+
     backgroundColor: '#D92D20',
     borderRadius: 10,
     minWidth: 18,

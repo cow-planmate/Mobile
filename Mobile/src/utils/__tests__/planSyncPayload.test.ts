@@ -14,7 +14,7 @@ describe('resolveBlockId', () => {
   });
 
   it('임시 ID는 서버 blockId가 아니다', () => {
-    // 외부 placeId가 숫자라서 blockId로 새어 들어가면 남의 블록을 덮어쓴다.
+
     expect(resolveBlockId(createTempPlaceId())).toBeNull();
     expect(resolveBlockId(`${TEMP_PLACE_ID_PREFIX}1700000000_0.5`)).toBeNull();
   });
@@ -110,7 +110,7 @@ describe('buildTimeTableDto', () => {
   });
 
   it('planId는 그대로 실어 보낸다', () => {
-    // 서버 캐시가 plan 하위로 인덱싱하지 못하면 다른 참여자에게 전파되지 않는다.
+
     expect(
       buildTimeTableDto({ dateString: '2026-08-12', planId }).planId,
     ).toBe(planId);

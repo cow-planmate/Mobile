@@ -8,35 +8,17 @@ import { asBlocks, inlineToText } from '../utils/blocks';
 import { isUnreachableHostUrl } from '../utils/avatar';
 import { openExternalUrl } from '../../../utils/externalLink';
 
-/**
- * 게시글 본문 뷰어.
- *
- * 본문은 웹 에디터(BlockNote)가 만든 블록 JSON으로 저장된다. 앱에 BlockNote를
- * 올릴 수는 없으므로, 실제로 쓰이는 블록 타입만 골라 RN 컴포넌트로 그린다.
- * 여기서 다루지 않는 타입(표, 임베드 등)은 안에 든 평문만 문단으로 떨어뜨리고,
- * 블록 자체를 해석할 수 없으면 서버가 함께 내려주는 contentText로 폴백한다.
- * 즉 어떤 글이든 최소한 읽을 수는 있다.
- */
-
 interface PostContentViewProps {
   content: unknown;
   contentText?: string;
 }
 
-/** 글자가 없어도 그 자체로 의미가 있는 블록 (평문 폴백 대상에서 제외) */
 const VISUAL_BLOCK_TYPES = new Set(['image', 'divider', 'separator']);
 
-/**
- * 본문 링크 열기.
- *
- * 본문은 사용자가 웹 에디터로 쓴 내용이라 href를 그대로 믿을 수 없다.
- * openExternalUrl이 웹 링크(http/https)만 통과시킨다.
- */
 const openLink = (href?: string) => {
   openExternalUrl(href);
 };
 
-/** 굵게·기울임·밑줄·취소선·인라인코드와 링크를 반영해 인라인 조각을 그린다. */
 function InlineContent({
   content,
 }: {
@@ -93,7 +75,7 @@ function BlockItem({
   depth,
 }: {
   block: ContentBlock;
-  /** numberedListItem일 때의 순번 (1부터) */
+
   ordinal: number;
   depth: number;
 }) {
@@ -194,11 +176,11 @@ function BlockItem({
         return <View style={styles.divider} />;
 
       default: {
-        // 모르는 타입이어도 안에 글자가 있으면 문단으로 보여준다
+
         const text = inlineToText(block.content);
         if (!text) {
           if (VISUAL_BLOCK_TYPES.has(type)) return null;
-          // 빈 문단은 줄바꿈으로서 의미가 있으므로 간격만 남긴다
+
           return <View style={styles.emptyLine} />;
         }
         return (
@@ -236,7 +218,7 @@ function BlockList({
   return (
     <>
       {blocks.map((block, index) => {
-        // 번호 목록은 연속된 구간에서만 이어서 센다
+
         if (block?.type === 'numberedListItem') {
           ordinal += 1;
         } else {

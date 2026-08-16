@@ -5,20 +5,15 @@ import { theme } from '../../../theme/theme';
 import { resolveAvatarUrl } from '../utils/avatar';
 
 interface UserAvatarProps {
-  /** 이니셜 폴백에 쓰는 닉네임 */
+
   name?: string | null;
-  /** 사용자가 올린 프로필 사진 URL */
+
   imageUrl?: string | null;
-  /** 서버가 내려준 이메일 해시 (Gravatar 식별자) */
+
   avatarHash?: string | null;
   size?: number;
 }
 
-/**
- * 작성자 프로필 아이콘.
- * 프로필 사진 → Gravatar → 닉네임 이니셜 순으로 떨어진다.
- * 이미지 로딩이 실패해도(삭제된 사진, Gravatar 차단 등) 이니셜로 되돌아간다.
- */
 export default function UserAvatar({
   name,
   imageUrl,

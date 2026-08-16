@@ -43,7 +43,6 @@ export interface CommunityScreenViewProps {
   onRefresh: () => void;
   onLoadMore: () => void;
 
-  // Header & Notification Modal Props
   user?: any;
   pendingRequests: any[];
   isNotificationModalVisible: boolean;
@@ -54,13 +53,6 @@ export interface CommunityScreenViewProps {
   onRejectInvitation: (requestId: number) => void;
 }
 
-/**
- * 게시글 목록 카드.
- *
- * memo로 감싸 목록이 리렌더될 때 항목까지 함께 다시 그려지지 않게 한다.
- * onPress는 item을 클로저로 잡지 않고 id만 넘겨 부모의 핸들러 identity가
- * 유지되도록 한다(그래야 memo가 실제로 걸린다).
- */
 const PostListItem = React.memo(function PostListItem({
   item,
   onPress,
@@ -92,7 +84,6 @@ const PostListItem = React.memo(function PostListItem({
         </View>
       </View>
 
-      {/* 썸네일 + 통계 */}
       <View style={styles.postRightSection}>
         {item.image ? (
           <FastImage
@@ -162,20 +153,10 @@ export default function CommunityScreenView({
     [onPostPress],
   );
 
-  /**
-   * 아래 세 개는 FlatList에 **엘리먼트**로 넘긴다.
-   *
-   * 컴포넌트(함수)로 넘기면 렌더마다 함수 identity가 바뀌어 React가 다른 타입으로
-   * 보고 헤더 전체를 언마운트 후 다시 마운트한다. 헤더에 검색 TextInput이 있어
-   * 한 글자 입력할 때마다 포커스와 키보드가 사라졌다.
-   *
-   * 엘리먼트는 useMemo로 고정한다. 헤더가 가로 ScrollView 두 개(게시판 탭·핫글)를
-   * 품고 있어, 목록이 리렌더될 때마다 새로 만들면 그 트리 전체가 함께 다시 그려진다.
-   */
   const listHeader = useMemo(
     () => (
     <View style={styles.listHeaderContainer}>
-      {/* 게시판 탭 */}
+
       <View style={styles.tabBarContainer}>
         <ScrollView
           horizontal
@@ -205,7 +186,6 @@ export default function CommunityScreenView({
         </ScrollView>
       </View>
 
-      {/* 검색 + 글쓰기 */}
       <View style={styles.searchBarRow}>
         <View style={styles.searchBarContainer}>
           <Search size={18} color="#9CA3AF" style={styles.searchIcon} />
@@ -228,7 +208,6 @@ export default function CommunityScreenView({
         </TouchableOpacity>
       </View>
 
-      {/* 핫글 */}
       {hotPosts.length > 0 && (
         <View style={styles.hotSectionContainer}>
           <View style={styles.hotHeaderRow}>
@@ -380,10 +359,7 @@ export default function CommunityScreenView({
         ListEmptyComponent={listEmpty}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.4}
-        // 게시글 카드는 높이가 일정하지 않아 getItemLayout을 줄 수 없다.
-        // 대신 초기 렌더량과 유지 창을 좁혀 스크롤 중 렌더 부하를 낮춘다.
-        // removeClippedSubviews는 쓰지 않는다 — 헤더에 검색 입력과 가로 스크롤이
-        // 들어 있어, 안드로이드에서 스크롤 후 그 영역이 빈 채로 남을 수 있다.
+
         initialNumToRender={8}
         maxToRenderPerBatch={8}
         windowSize={7}

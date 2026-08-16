@@ -11,8 +11,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 
 const mockedStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
 
-// axiosConfig는 전역 axios 인스턴스에 인터셉터를 등록한다. 실제 요청을 보내지
-// 않고 등록된 핸들러만 직접 호출해 경로 분기를 검증한다.
 const interceptors = axios.interceptors as any;
 const requestHandler = interceptors.request.handlers[0].fulfilled;
 const responseHandler = interceptors.response.handlers[0].rejected;
@@ -31,8 +29,6 @@ describe('OAuth 경로의 토큰 처리', () => {
     jest.clearAllMocks();
   });
 
-  // 서버 SecurityWhitelist에서 permitAll인 경로다. 지난 세션의 만료 토큰이
-  // 붙으면 서버가 그 토큰을 먼저 걸러 401을 준다.
   it.each(['/api/oauth/exchange', '/api/oauth/complete'])(
     '%s 요청에는 저장된 토큰을 붙이지 않는다',
     async path => {
@@ -54,8 +50,6 @@ describe('OAuth 경로의 토큰 처리', () => {
     expect(config.headers.Authorization).toBe('Bearer stored-access-token');
   });
 
-  // exchange의 AUTH_001은 일회용 code가 만료·소진됐다는 뜻이다. 내 토큰이
-  // 만료된 것으로 오인하면 재발급과 재요청이 따라붙고 세션까지 정리된다.
   it('OAuth 교환의 401 AUTH_001은 토큰 재발급을 유발하지 않는다', async () => {
     const error = make401(
       'https://planmate.example/api/oauth/exchange',

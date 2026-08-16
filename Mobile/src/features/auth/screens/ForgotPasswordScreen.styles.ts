@@ -6,7 +6,6 @@ export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   flex1: { flex: 1 },
 
-  /* ── 헤더 — 뒤로가기는 항상 왼쪽 ── */
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -63,12 +62,8 @@ export const styles = StyleSheet.create({
     marginBottom: sf(32),
   },
 
-  /* ── 입력 ── */
   inputGroup: { marginBottom: sf(16) },
-  /**
-   * 라벨이 테두리 위로 올라가면서 입력 칸 위에 라벨 절반만큼 여백이 생겼다.
-   * 가운데 정렬이면 옆의 인증요청 버튼과 4dp 어긋나므로 아래를 맞춘다.
-   */
+
   fieldRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -111,7 +106,6 @@ export const styles = StyleSheet.create({
     includeFontPadding: false,
   },
 
-  /* ── 필드에 붙는 인라인 버튼 ── */
   inlineButton: {
     height: sf(52),
     paddingHorizontal: sf(16),
@@ -142,7 +136,6 @@ export const styles = StyleSheet.create({
     lineHeight: sp(TYPO.body.lineHeight),
   },
 
-  /* ── 타이머 · 재전송 ── */
   timerText: {
     color: COLORS.textSecondary,
     fontFamily: FONTS.semibold,
@@ -173,7 +166,6 @@ export const styles = StyleSheet.create({
   },
   resendButtonTextDisabled: { color: COLORS.textSecondary },
 
-  /* ── 상태 한 줄 ── */
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -188,7 +180,6 @@ export const styles = StyleSheet.create({
     color: COLORS.success,
   },
 
-  /* ── 인라인 오류 ── */
   errorRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -205,10 +196,6 @@ export const styles = StyleSheet.create({
     lineHeight: sp(TYPO.label.lineHeight),
   },
 
-  /* ── 2단계: 결과 화면 ──
-   * 이 단계는 더 이상 입력을 받지 않는다. 인증이 끝나면 임시 비밀번호 발송을
-   * 자동으로 시작하고, 그 결과(발송 중 · 완료 · 실패)만 보여준다.
-   */
   resultContainer: {
     alignItems: 'center',
     paddingTop: sf(24),
@@ -255,7 +242,6 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  /* ── 하단 ── */
   footer: {
     paddingHorizontal: sf(24),
     paddingTop: sf(12),

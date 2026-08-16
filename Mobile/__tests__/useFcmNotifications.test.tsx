@@ -60,7 +60,7 @@ describe('useFcmNotifications', () => {
       ReactTestRenderer.create(
         <TestComponent enabled={true} onInvitationPush={jest.fn()} />,
       );
-      // Wait for async promises inside initialize
+
       await new Promise(resolve => setTimeout(resolve, 50));
     });
 
@@ -78,7 +78,6 @@ describe('useFcmNotifications', () => {
 
     expect(mockGetToken).toHaveBeenCalledTimes(1);
 
-    // Re-render with a new inline function instance
     await act(async () => {
       renderer.update(
         <TestComponent enabled={true} onInvitationPush={() => {}} />,
@@ -86,7 +85,6 @@ describe('useFcmNotifications', () => {
       await new Promise(resolve => setTimeout(resolve, 50));
     });
 
-    // getToken is only called during initialize on mount
     expect(mockGetToken).toHaveBeenCalledTimes(1);
   });
 });

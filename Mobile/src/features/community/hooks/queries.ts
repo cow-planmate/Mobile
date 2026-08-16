@@ -40,13 +40,6 @@ import {
   ReactionType,
 } from '../types';
 
-/**
- * 커뮤니티 React Query 훅.
- *
- * 웹은 페이지 번호 방식이지만 앱 목록은 무한 스크롤이므로 목록만
- * `useInfiniteQuery`로 바꿨다. 나머지 키 구조와 무효화 규칙은 웹과 맞춘다.
- */
-
 const PAGE_SIZE = 20;
 
 const KEYS = {
@@ -59,11 +52,6 @@ const KEYS = {
     ['community', 'comments', String(postId)] as const,
 };
 
-// ────────────────────────────────────────────────
-// 조회
-// ────────────────────────────────────────────────
-
-/** 게시판 목록 (무한 스크롤) */
 export const usePosts = (category: string, sort = 'latest', q = '') =>
   useInfiniteQuery({
     queryKey: KEYS.posts(category, sort, q),
@@ -75,7 +63,6 @@ export const usePosts = (category: string, sort = 'latest', q = '') =>
     staleTime: 30_000,
   });
 
-/** 여행기(FEED) 목록 — 지역·기간·태그 필터는 서버가 처리한다 */
 export const useFeedPosts = (filters: FeedFilterParams, size = 12) =>
   useInfiniteQuery({
     queryKey: ['community', 'posts', 'feed', filters, size] as const,
@@ -87,7 +74,6 @@ export const useFeedPosts = (filters: FeedFilterParams, size = 12) =>
     staleTime: 30_000,
   });
 
-/** 여행기 지역별 글 수 */
 export const useFeedRegionCounts = () =>
   useQuery({
     queryKey: ['community', 'feed-regions'],
@@ -95,7 +81,6 @@ export const useFeedRegionCounts = () =>
     staleTime: 60_000,
   });
 
-/** 게시판별 핫글 */
 export const useHotPosts = (category: string) =>
   useQuery({
     queryKey: KEYS.hot(category),
@@ -103,7 +88,6 @@ export const useHotPosts = (category: string) =>
     staleTime: 60_000,
   });
 
-/** 게시글 상세 */
 export const usePost = (postId: number | string | undefined) =>
   useQuery({
     queryKey: KEYS.post(postId ?? ''),
@@ -111,7 +95,6 @@ export const usePost = (postId: number | string | undefined) =>
     enabled: postId !== undefined && postId !== null && postId !== '',
   });
 
-/** 댓글 목록 */
 export const useComments = (
   postId: number | string | undefined,
   size = 20,
@@ -126,7 +109,6 @@ export const useComments = (
     enabled: postId !== undefined && postId !== null && postId !== '',
   });
 
-/** 내 활동 통계 */
 export const useMyStats = (enabled = true) =>
   useQuery({
     queryKey: ['community', 'me', 'stats'],
@@ -155,15 +137,6 @@ export const useMyComments = (size = PAGE_SIZE) =>
     staleTime: 30_000,
   });
 
-// ────────────────────────────────────────────────
-// 변경 (공통 무효화 규칙)
-// ────────────────────────────────────────────────
-
-/**
- * 변경 후 어떤 캐시를 버릴지 한곳에 모은다.
- * 예를 들어 댓글을 달면 댓글 목록뿐 아니라 목록의 댓글 수도 틀어지므로 함께
- * 무효화한다.
- */
 const useInvalidate = () => {
   const queryClient = useQueryClient();
   return {
@@ -215,14 +188,6 @@ export const useDeletePost = () => {
   });
 };
 
-/**
- * 목록류 캐시(게시판/여행기 무한 스크롤, 핫글, 내 글/좋아요)에서 postId와 일치하는
- * 항목에만 patch를 반영한다.
- *
- * 좋아요는 스크롤 중 자주 일어나는데, invalidateQueries로 무효화하면 무한 스크롤로
- * 이미 불러온 페이지 전체가 다시 요청된다. 서버가 반응 결과에 최신 likes/dislikes를
- * 그대로 돌려주므로, 그 값을 캐시에 직접 써 넣으면 재요청 없이 목록도 갱신된다.
- */
 const patchPostSummaryInCaches = (
   queryClient: ReturnType<typeof useQueryClient>,
   postId: number | string,
@@ -232,7 +197,6 @@ const patchPostSummaryInCaches = (
   const patchItem = (item: CommunityPostSummary) =>
     String(item.id) === idStr ? { ...item, ...patch } : item;
 
-  // 게시판(usePosts)·여행기(useFeedPosts) 무한 스크롤 — 둘 다 ['community','posts',...]
   queryClient.setQueriesData({ queryKey: ['community', 'posts'] }, (data: any) => {
     if (!data?.pages) return data;
     return {
@@ -244,13 +208,11 @@ const patchPostSummaryInCaches = (
     };
   });
 
-  // 핫글 — 페이지네이션 없는 단순 배열
   queryClient.setQueriesData(
     { queryKey: ['community', 'hot'] },
     (data: CommunityPostSummary[] | undefined) => data?.map(patchItem),
   );
 
-  // 내 글 / 내가 좋아요한 글
   (['posts', 'liked'] as const).forEach(key => {
     queryClient.setQueriesData(
       { queryKey: ['community', 'me', key] },
@@ -377,11 +339,6 @@ export const useUpdateAnswered = (postId: number | string) => {
   });
 };
 
-/**
- * 여행기 가져가기.
- * 스냅샷으로 새 플랜을 만든 뒤 포크를 집계하므로, 성공하면 내 일정 목록과
- * 여행기 집계가 모두 바뀐다.
- */
 export const useForkItinerary = (postId: number | string) => {
   const invalidate = useInvalidate();
   const queryClient = useQueryClient();

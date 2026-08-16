@@ -5,7 +5,7 @@ export const normalize = (size: number) =>
   Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
 
 const COLORS = {
-  primary: '#1344FF', // Planmate Primary Blue
+  primary: '#1344FF', 
   text: '#111827',
   textSecondary: '#6B7280',
   white: '#FFFFFF',
@@ -59,7 +59,7 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
     textAlign: 'center',
   },
-  /** 하단 여백은 화면이 insets로 채운다. 여기서 고정하지 않는다. */
+
   footer: {
     width: '100%',
     alignItems: 'center',

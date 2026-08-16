@@ -13,12 +13,12 @@ describe('regionMatcher', () => {
     });
 
     it('접미사를 떼면 한 글자만 남는 이름은 그대로 둔다', () => {
-      // '대구'에서 '구'를 떼면 '대'가 되어 다른 지역과 쉽게 충돌한다.
+
       expect(getRegionBase('대구')).toBe('대구');
       expect(getRegionBase('대구광역시')).toBe('대구');
       expect(getRegionBase('중구')).toBe('중구');
       expect(getRegionBase('남구')).toBe('남구');
-      // 세 글자 이상이면 기존대로 접미사를 뗀다
+
       expect(getRegionBase('동대문구')).toBe('동대문');
       expect(getRegionBase('해운대구')).toBe('해운대');
     });

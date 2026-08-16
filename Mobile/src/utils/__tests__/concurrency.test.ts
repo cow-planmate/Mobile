@@ -3,7 +3,6 @@ import {
   mapWithConcurrency,
 } from '../concurrency';
 
-/** 동시 실행 수를 관찰하기 위한 헬퍼. 최고 동시 실행 수를 기록한다. */
 const makeTracker = () => {
   let active = 0;
   let peak = 0;

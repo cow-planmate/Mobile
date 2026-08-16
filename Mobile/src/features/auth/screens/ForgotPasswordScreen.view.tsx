@@ -19,8 +19,6 @@ import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
 
-/* ── 인라인 오류 ── */
-
 const InlineError = ({ message }: { message: string }) => (
   <Animated.View
     style={styles.errorRow}
@@ -32,8 +30,6 @@ const InlineError = ({ message }: { message: string }) => (
     <Text style={styles.errorText}>{message}</Text>
   </Animated.View>
 );
-
-/* ── Props ── */
 
 export interface ForgotPasswordErrors {
   email?: string;
@@ -170,7 +166,7 @@ export const ForgotPasswordScreenView = ({
         style={styles.flex1}
         contentContainerStyle={[
           styles.scrollContainer,
-          // step 1은 하단 버튼이 없어 스크롤 영역이 곧 화면 맨 아래다.
+
           step === 1 && { paddingBottom: sf(32) },
         ]}
         keyboardShouldPersistTaps="handled"
@@ -423,12 +419,6 @@ export const ForgotPasswordScreenView = ({
         </Animated.View>
       </ScrollView>
 
-      {/*
-        1단계는 하단에 별도 버튼을 두지 않는다. 이메일 옆 '인증요청'이 유일한
-        능동 액션이고, 인증번호 여섯 자리를 채우면 자동으로 다음으로 넘어간다.
-        누른다고 뭔가 더 진행되지 않는 버튼을 상시 띄워두는 대신, 진행할 수
-        없을 때는 아예 보여주지 않는다.
-      */}
       {step === 2 && (
         <View
           style={[styles.footer, { paddingBottom: sf(16) }]}

@@ -32,7 +32,6 @@ interface PendingPlaceCreate {
   dateString: string;
 }
 
-/** 모든 날짜에 걸친 장소 총개수. */
 export const countPlaces = (days: Day[]): number =>
   days.reduce((sum, d) => sum + d.places.length, 0);
 
@@ -55,24 +54,6 @@ const isSamePlaceForFetch = (current: Place, fetched: Place): boolean =>
   normalizeTimeForComparison(current.endTime) ===
     normalizeTimeForComparison(fetched.endTime);
 
-/**
- * 서버 조회 결과로 로컬 상태를 덮어써도 되는지 판단합니다.
- *
- * 서버는 편집을 Redis 캐시에만 반영하고 DB에는 주기 동기화(수십 초) 또는
- * 마지막 세션 종료 후 지연 동기화 시점에만 반영합니다. 방금 편집을 마치고
- * 화면을 이동해 조회하면, 이 지연 구간에 걸려 REST 응답이 로컬보다 적은
- * place 개수를 가진 stale 스냅샷일 수 있습니다. 그런 응답으로 전체를
- * 덮어쓰면 방금 저장한 내용이 화면에서 사라집니다.
- *
- * 그래서 장소 수가 적지 않고, 로컬에 있는 날짜·장소의 시간과 메모가 모두 일치할 때만
- * 서버 응답을 신뢰합니다.
- * 로컬이 비어 있으면(최초 진입) 항상 서버 응답을 받아들입니다.
- *
- * 일차를 timetableId로 매칭하는 경우 날짜 일치 여부는 검사되지 않았다.
- * 일정 변경으로 날짜만 바꾼 직후, 그 변경이 아직 서버 캐시에 반영되기 전에
- * REST 재조회가 끼어들면 옛 날짜의 응답이 이 검사를 그대로 통과해 방금 바꾼
- * 날짜를 되돌려 버린다. 날짜도 같아야만 신뢰한다.
- */
 export const isFetchAtLeastAsComplete = (
   fetched: Day[],
   current: Day[],
@@ -105,13 +86,8 @@ export const isFetchAtLeastAsComplete = (
   });
 };
 
-/** 블록 최소 길이(분). resolveConflictsAndSort의 스냅 단위와 동일하게 둔다. */
 const MIN_BLOCK_MINUTES = 15;
 
-/**
- * 종료가 시작보다 이르거나 같으면 최소 길이로 보정합니다.
- * duration이 음수가 되면 시간 충돌 해결의 밀어내기 계산이 역방향으로 붕괴합니다.
- */
 const ensureValidRange = (
   startTime: string,
   endTime: string,
@@ -122,10 +98,6 @@ const ensureValidRange = (
   return { startTime, endTime: minutesToTime(start + MIN_BLOCK_MINUTES) };
 };
 
-/**
- * 시간이 실제로 바뀐 블록만 골라냅니다.
- * 그날 전체를 전송하면 동시 편집 중인 다른 사용자의 변경까지 옛 값으로 덮어씁니다.
- */
 const pickTimeChanged = (before: Place[], after: Place[]): Place[] => {
   const prevById = new Map(before.map(p => [p.id, p]));
   return after.filter(p => {
@@ -149,7 +121,6 @@ import {
   resolveBlockId,
 } from '../utils/planSyncPayload';
 import { applyTimetableBroadcast } from '../utils/timetableBroadcast';
-
 
 interface ItineraryContextType {
   days: Day[];
@@ -176,7 +147,7 @@ interface ItineraryContextType {
       Pick<Place, 'startTime' | 'endTime' | 'memo' | 'name' | 'address'>
     >,
   ) => void;
-  /** 하루의 방문 순서를 주어진 ID 순서로 재배치 */
+
   reorderPlacesInDay: (dayIndex: number, orderedPlaceIds: string[]) => void;
 }
 
@@ -184,10 +155,6 @@ const ItineraryContext = createContext<ItineraryContextType | undefined>(
   undefined,
 );
 
-/**
- * categoryId를 표시용 라벨로 변환합니다.
- * 0=관광지 기준이며, `api/trips.ts`의 `categoryEnumMap`(ATTRACTION→0)과 같은 규칙입니다.
- */
 export const categoryMapping = (
   id: number,
 ): '관광지' | '숙소' | '식당' | '직접 추가' | '검색' | '기타' => {
@@ -199,18 +166,15 @@ export const categoryMapping = (
   return '기타';
 };
 
-/**
- * Normalize raw categoryId (e.g. Google API IDs) to 0-4 range used by the app.
- */
 const normalizeCategoryId = (
   rawId: number | undefined,
   type?: string,
 ): number => {
   const id = rawId ?? 4;
   if ([0, 1, 2, 3, 4].includes(id)) return id;
-  if ([12, 14, 15, 28].includes(id)) return 0; // 관광지
-  if (id === 32) return 1; // 숙소
-  if (id === 39) return 2; // 식당
+  if ([12, 14, 15, 28].includes(id)) return 0; 
+  if (id === 32) return 1; 
+  if (id === 39) return 2; 
   switch (type) {
     case '관광지':
       return 0;
@@ -252,25 +216,17 @@ const blockCategoryToCategoryId = (blockCategory?: string, rawCategoryId?: any):
   return 4;
 };
 
-/**
- * 서버 TimeTablePlaceBlockDto와 키가 정확히 일치하는 페이로드를 만듭니다.
- *
- * DTO는 @JsonIgnoreProperties(ignoreUnknown = true)라 없는 키는 조용히 버려진다.
- * 예전 백엔드 스키마의 키(xLocation/yLocation, photoUrl, placeCategoryId,
- * startTime/endTime, date 등)를 함께 실어 보내고 있었는데, 받는 쪽에서 쓰이지 않으면서
- * 어떤 키가 실제로 반영되는지 읽기 어렵게 만들 뿐이라 걷어냈다.
- */
 const mapToTimetablePlaceBlockDto = (place: Place, timetableId?: number) => {
-  // Remap category IDs to backend table IDs (0:관광지, 1:숙소, 2:식당, 3:직접추가, 4:검색)
+
   let categoryId = place.categoryId ?? 4;
 
   if (![0, 1, 2, 3, 4].includes(categoryId)) {
     if ([12, 14, 15, 28].includes(categoryId)) {
-      categoryId = 0; // 관광지
+      categoryId = 0; 
     } else if (categoryId === 32) {
-      categoryId = 1; // 숙소
+      categoryId = 1; 
     } else if (categoryId === 39) {
-      categoryId = 2; // 식당
+      categoryId = 2; 
     } else {
       switch (place.type) {
         case '관광지':
@@ -283,12 +239,11 @@ const mapToTimetablePlaceBlockDto = (place: Place, timetableId?: number) => {
           categoryId = 2;
           break;
         default:
-          categoryId = 4; // 검색
+          categoryId = 4; 
       }
     }
   }
 
-  // Formatting time to "HH:mm:00" for LocalTime compatibility
   const startTime =
     place.startTime.length === 5 ? place.startTime + ':00' : place.startTime;
   const endTime =
@@ -320,19 +275,9 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
   const { sendMessage, subscribeToMessages, unsubscribeFromMessages } =
     useWebSocket();
 
-  // 서버가 blockId를 확정하기 전인 블록의 update/delete 보류분. key는 임시 ID.
   const pendingBlockSyncRef = useRef<Map<string, PendingBlockSync>>(new Map());
   const pendingPlaceCreateRef = useRef<PendingPlaceCreate[]>([]);
 
-  /**
-   * 다른 plan으로 진입할 때 이전 일정 상태를 비웁니다.
-   *
-   * Provider가 앱 루트에 상주해 days가 앱 수명 내내 유지되므로, 초기화하지 않으면
-   * 새로 만든 일정 화면에 직전 일정의 날짜·장소가 그대로 남는다. 남은 days의
-   * timetableId는 이전 plan 소속이라 편집 시 남의 일정을 덮어쓸 수도 있다.
-   *
-   * days만 비우면 임시 ID로 보류 중인 전송분이 새 방으로 flush되므로 함께 정리한다.
-   */
   const resetItinerary = useCallback(() => {
     setDays([]);
     setLastAddedPlaceId(null);
@@ -362,16 +307,11 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     [sendMessage],
   );
 
-  /**
-   * 블록 변경을 전송합니다. blockId가 아직 없으면 서버가 create 응답으로
-   * 실제 ID를 돌려줄 때까지 보류합니다. ID 없이 보낸 update는 서버에서
-   * 예외로 통째 폐기되고, delete는 조용히 무시됩니다.
-   */
   const sendBlockSync = useCallback(
     (action: 'update' | 'delete', place: Place, timetableId: number) => {
       if (isTempPlaceId(place.id)) {
         const prev = pendingBlockSyncRef.current.get(place.id);
-        if (prev?.action === 'delete') return; // 삭제가 이미 예약된 블록
+        if (prev?.action === 'delete') return; 
         pendingBlockSyncRef.current.set(place.id, {
           action,
           place,
@@ -389,11 +329,6 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     [sendMessage],
   );
 
-  /**
-   * 임시 ID가 실제 blockId로 확정된 시점에 보류분을 재작성해 전송합니다.
-   *
-   * @returns 실제로 전송한 보류 동작. 없으면 undefined.
-   */
   const flushPendingBlockSync = useCallback(
     (tempId: string, realId: string): PendingBlockSync['action'] | undefined => {
       const pending = pendingBlockSyncRef.current.get(tempId);
@@ -417,7 +352,6 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     (msg: any) => {
       if (!msg) return;
 
-      // Extract properties supporting both legacy (type, target, data) and backend-v2 (action, entity, timeTablePlaceBlockDtos) STOMP formats
       const action = msg.action || msg.type;
       const entity = msg.entity || msg.target;
       const eventId = msg.eventId;
@@ -442,7 +376,6 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
               ? String(respVO.blockId || respVO.timetablePlaceBlockId)
               : null;
 
-          // 임시 ID로 보류해 둔 update/delete를 확정된 blockId로 재전송
           const flushedAction =
             action === 'create' && realId && isTempPlaceId(eventId)
               ? flushPendingBlockSync(eventId, realId)
@@ -476,8 +409,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
             const targetId = realId || eventId;
 
             if (action === 'create') {
-              // 확정을 기다리는 동안 지운 블록이다. 지금 온 응답은 그 삭제 이전의
-              // create라, 목록에 다시 넣으면 서버에서는 지워졌는데 화면에만 남는다.
+
               if (flushedAction === 'delete') {
                 return prevDays;
               }
@@ -531,9 +463,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                     contentTypeId: respVO.placeContentTypeId || '',
                     copyrightDivCd: respVO.placeCopyrightDivCd || '',
                   };
-                  // 시작 시각으로 끼워 넣기만 한다. 겹친다고 여기서 다른 블록을
-                  // 밀어내면 그 조정은 서버로 나가지 않아 화면에만 남는다.
-                  // 보낸 쪽이 밀어낸 블록은 별도 update 브로드캐스트로 온다.
+
                   dayToUpdate.places = [...dayToUpdate.places, newPlace].sort(
                     (a, b) =>
                       timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
@@ -564,9 +494,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
                   existingPlaces[placeIndex] = {
                     ...existingPlaces[placeIndex],
-                    // 편집 화면은 이름·주소도 함께 보낸다(updatePlaceDetails).
-                    // 시간·메모만 받아 넣으면 다른 참여자 화면에는 이름이 바뀌지
-                    // 않은 채 남아, 화면을 다시 열기 전까지 서로 다른 값을 본다.
+
                     name: respVO.placeName || existingPlaces[placeIndex].name,
                     address:
                       respVO.placeAddress ?? existingPlaces[placeIndex].address,
@@ -581,9 +509,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                         ? respVO.memo
                         : existingPlaces[placeIndex].memo,
                   };
-                  // create와 같은 이유로 재배치하지 않는다. 밀어낸 결과는 보낸
-                  // 쪽이 각 블록의 update로 알려주므로, 여기서 또 밀면 서버에
-                  // 없는 시간이 화면에만 생긴다.
+
                   dayToUpdate.places = existingPlaces.sort(
                     (a, b) =>
                       timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
@@ -604,7 +530,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
           });
         });
       } else if (entity === 'timetable') {
-        // undo/redo 브로드캐스트는 payload 키가 '{entity}s'(=timetables)다.
+
         const rawDataList =
           msg.timeTableDtos ||
           (msg.data
@@ -677,7 +603,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
       const updatedDays = [...prevDays];
       const dayToUpdate = { ...updatedDays[dayIndex] };
-      // resolveConflictsAndSort가 내부에서 복사하므로 여기서 또 복사하지 않는다.
+
       const newPlacesList = [...dayToUpdate.places, placeToAdd];
 
       dayToUpdate.places = resolveConflictsAndSort(
@@ -690,7 +616,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       finalPlace = dayToUpdate.places.find(p => p.id === newId);
       dayTimetableId = dayToUpdate.timetableId;
       dayDateString = formatDateLocal(dayToUpdate.date);
-      // 신규 블록에 밀려 시간이 바뀐 기존 블록만 동기화한다.
+
       otherPlacesToSync = pickTimeChanged(
         prevDays[dayIndex].places,
         dayToUpdate.places,
@@ -776,8 +702,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       const dayToUpdate = { ...updatedDays[dayIndex] };
 
       const safeRange = ensureValidRange(newStartTime, newEndTime);
-      // 바뀐 블록만 새 객체로 만든다. 나머지는 참조를 유지해야
-      // resolveConflictsAndSort가 변경 없는 블록의 참조를 그대로 되돌려 줄 수 있다.
+
       const newPlacesList = dayToUpdate.places.map(p =>
         p.id === placeId ? { ...p, ...safeRange } : p,
       );
@@ -885,7 +810,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       singlePlaceToSync = dayToUpdate.places.find(p => p.id === placeId);
 
       if (isTimeChanged) {
-        // 시간이 밀린 블록 + 편집 대상 블록(메모/이름 등도 함께 바뀔 수 있음)
+
         const shifted = pickTimeChanged(
           prevDays[dayIndex].places,
           dayToUpdate.places,
@@ -914,13 +839,6 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     }, 0);
   }, [sendBlockSync]);
 
-  /**
-   * 하루의 방문 순서를 재배치한다.
-   *
-   * 기존 시간대(시작·종료 쌍)를 시간순 그대로 두고, 그 슬롯에 새 순서의 장소를
-   * 채워 넣는다. 시간대 자체는 바뀌지 않으므로 겹침이 새로 생기지 않는다.
-   * 시간이 실제로 달라진 블록만 서버에 전송한다.
-   */
   const reorderPlacesInDay = useCallback(
     (dayIndex: number, orderedPlaceIds: string[]) => {
       let placesToSync: Place[] = [];
@@ -938,9 +856,8 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
           .map(id => byId.get(id))
           .filter((p): p is Place => !!p);
 
-        // 요청한 ID 집합이 그날 블록과 정확히 일치할 때만 적용한다.
         if (reordered.length !== day.places.length) {
-          // 조용히 무시하면 호출부는 성공한 줄 알고 안내를 띄운다.
+
           console.warn(
             `[Itinerary] 재정렬 무시: 요청 ${orderedPlaceIds.length}건 중 ` +
               `${reordered.length}건만 일치(그날 블록 ${day.places.length}건)`,
@@ -948,7 +865,6 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
           return prevDays;
         }
 
-        // 원래 시간대를 시간순으로 모아 새 순서에 그대로 씌운다.
         const slots = day.places
           .map(p => ({ startTime: p.startTime, endTime: p.endTime }))
           .sort(

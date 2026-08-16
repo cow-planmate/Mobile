@@ -226,7 +226,7 @@ export interface ItineraryViewScreenViewProps {
   setShareModalVisible: (visible: boolean) => void;
   isChecklistVisible: boolean;
   setChecklistVisible: (visible: boolean) => void;
-  /** 공유 토글·편집자 삭제는 소유자만 쓸 수 있다. */
+
   isPlanOwner: boolean;
   scrollRef: React.RefObject<ScrollView | null>;
   gridHours: number[];
@@ -239,7 +239,7 @@ export interface ItineraryViewScreenViewProps {
   weatherMap: Record<string, SimpleWeatherInfo>;
   tripName: string;
   isBacking: boolean;
-  /** 컨테이너가 전달하는 날씨 로딩 상태. 현재 뷰는 표시에 사용하지 않는다. */
+
   isWeatherLoading: boolean;
 }
 
@@ -375,7 +375,6 @@ export default function ItineraryViewScreenView({
           })}
         </ScrollView>
 
-        {/* 좌측 페이드 */}
         {showLeftFade && (
           <LinearGradient
             colors={['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0)']}
@@ -393,7 +392,6 @@ export default function ItineraryViewScreenView({
           />
         )}
 
-        {/* 우측 페이드 */}
         {showRightFade && (
           <LinearGradient
             colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.95)']}
@@ -401,7 +399,7 @@ export default function ItineraryViewScreenView({
             end={{ x: 1, y: 0 }}
             style={{
               position: 'absolute',
-              right: 0, // dayEditButton이 없으므로 0
+              right: 0, 
               top: 0,
               bottom: 0,
               width: 24,
@@ -482,7 +480,7 @@ export default function ItineraryViewScreenView({
         planId={planId ?? ''}
         isOwner={isPlanOwner}
       />
-      {/* 닫혀 있을 때는 마운트하지 않는다. 조회 훅이 그동안 헛돌 이유가 없다. */}
+
       {isChecklistVisible && (
         <ChecklistSheet
           visible

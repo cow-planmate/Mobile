@@ -28,8 +28,6 @@ import Info from 'lucide-react-native/dist/esm/icons/info';
 import XCircle from 'lucide-react-native/dist/esm/icons/circle-x';
 import type { LucideIcon } from 'lucide-react-native';
 
-// ── Types ──
-
 type AlertType = 'success' | 'error' | 'info' | 'warning' | 'confirm';
 
 interface AlertButton {
@@ -49,8 +47,6 @@ interface AlertContextType {
   showAlert: (options: AlertOptions) => void;
 }
 
-// ── Context ──
-
 const AlertContext = createContext<AlertContextType | null>(null);
 
 export function useAlert(): AlertContextType {
@@ -61,8 +57,6 @@ export function useAlert(): AlertContextType {
   return ctx;
 }
 
-// ── Icon mapping ──
-
 const ICON_MAP: Record<AlertType, { Icon: LucideIcon; color: string }> = {
   success: { Icon: CheckCircle2, color: '#34C759' },
   error: { Icon: XCircle, color: '#FF3B30' },
@@ -71,24 +65,14 @@ const ICON_MAP: Record<AlertType, { Icon: LucideIcon; color: string }> = {
   confirm: { Icon: AlertCircle, color: '#1344FF' },
 };
 
-// ── Provider ──
-
 export function AlertProvider({ children }: { children: React.ReactNode }) {
   const [visible, setVisible] = useState(false);
   const [options, setOptions] = useState<AlertOptions | null>(null);
   const queueRef = useRef<AlertOptions[]>([]);
   const pendingCallbackRef = useRef<(() => void) | undefined>(undefined);
-  /**
-   * showAlert의 참조를 고정하기 위한 표시 여부 미러.
-   *
-   * showAlert가 visible state에 의존하면 알림이 열리고 닫힐 때마다 컨텍스트
-   * 값이 새로 만들어져 useAlert를 쓰는 모든 화면(26곳)이 재렌더된다.
-   * 같은 틱에 showAlert가 두 번 호출될 때 state는 아직 갱신되지 않아
-   * 두 번째 알림이 큐에 들어가지 않고 첫 알림을 덮어쓰는 문제도 함께 해결된다.
-   */
+
   const visibleRef = useRef(false);
 
-  // Animation values
   const backdrop = useSharedValue(0);
   const scale = useSharedValue(0.92);
   const opacity = useSharedValue(0);
@@ -99,7 +83,6 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
     setVisible(true);
   }, []);
 
-  // Stable JS callback invoked via runOnJS after animate-out finishes
   const onAnimateOutDone = useCallback(() => {
     visibleRef.current = false;
     setVisible(false);
@@ -107,7 +90,7 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
     const cb = pendingCallbackRef.current;
     pendingCallbackRef.current = undefined;
     cb?.();
-    // Process queue
+
     if (queueRef.current.length > 0) {
       const next = queueRef.current.shift()!;
       setTimeout(() => showAlertInternal(next), 120);
@@ -155,11 +138,11 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (visible && options) {
-      // Reset to initial values before animating in
+
       backdrop.value = 0;
       scale.value = 0.92;
       opacity.value = 0;
-      // Small delay to let Modal mount
+
       const t = setTimeout(animateIn, 50);
       return () => clearTimeout(t);
     }
@@ -176,7 +159,6 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
     [showAlertInternal],
   );
 
-  // showAlert 참조가 고정되므로 컨텍스트 값도 마운트 이후 변하지 않는다.
   const contextValue = useMemo(() => ({ showAlert }), [showAlert]);
 
   const handlePress = useCallback(
@@ -195,7 +177,6 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
     transform: [{ scale: scale.value }],
   }));
 
-  // Determine buttons
   const buttons: AlertButton[] =
     options?.buttons && options.buttons.length > 0
       ? options.buttons
@@ -219,20 +200,17 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
         <View style={s.overlay}>
           <Animated.View style={[s.backdrop, backdropStyle]} />
           <Animated.View style={[s.card, cardStyle]}>
-            {/* Icon */}
+
             <View style={[s.iconWrap, { backgroundColor: color + '14' }]}>
               <Icon size={28} color={color} strokeWidth={2} />
             </View>
 
-            {/* Title */}
             <Text style={s.title}>{options?.title}</Text>
 
-            {/* Message */}
             {options?.message ? (
               <Text style={s.message}>{options.message}</Text>
             ) : null}
 
-            {/* Buttons */}
             <View
               style={[s.buttonRow, buttons.length === 1 && s.buttonRowSingle]}
             >
@@ -278,8 +256,6 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ── Helpers ──
-
 function inferType(title?: string): AlertType {
   if (!title) return 'info';
   if (/성공|완료|사용 가능|수락|발송/.test(title)) return 'success';
@@ -287,8 +263,6 @@ function inferType(title?: string): AlertType {
   if (/삭제|탈퇴|거절/.test(title)) return 'confirm';
   return 'info';
 }
-
-// ── Styles ──
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_W = Math.min(SCREEN_W - 56, 320);
@@ -306,16 +280,16 @@ const s = StyleSheet.create({
   card: {
     width: CARD_W,
     backgroundColor: '#FFF',
-    borderRadius: 20, // More rounded, modern corners
+    borderRadius: 20, 
     paddingTop: 32,
     paddingBottom: 24,
     paddingHorizontal: 24,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#F3F4F6', // Delicate border to define edge
+    borderColor: '#F3F4F6', 
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.06, // Smoother floating shadow
+    shadowOpacity: 0.06, 
     shadowRadius: 20,
     elevation: 8,
   },
@@ -353,8 +327,8 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   button: {
-    height: 46, // Taller buttons for better tap target
-    borderRadius: 12, // Modern rounded corners
+    height: 46, 
+    borderRadius: 12, 
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
@@ -380,6 +354,6 @@ const s = StyleSheet.create({
     color: '#FFFFFF',
   },
   buttonTextCancel: {
-    color: '#4B5563', // Slightly darker cancel text color
+    color: '#4B5563', 
   },
 });

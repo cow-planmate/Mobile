@@ -36,10 +36,6 @@ const FONTS = {
   bold: 'Pretendard-Bold',
 };
 
-// ────────────────────────────────────────────────
-// Category helpers (matching Frontend)
-// ────────────────────────────────────────────────
-
 const getCategoryType = (
   id: number,
 ): '관광지' | '숙소' | '식당' | '직접 추가' | '검색' | '기타' => {
@@ -61,7 +57,6 @@ const TAB_COLORS: { [key in PlaceTab]: string } = {
 
 type PlaceTab = '관광지' | '숙소' | '식당' | '직접 추가' | '검색';
 
-/** 서버 페이징이 있는 탭만 → PlacesContext의 페이지네이션 필드 */
 const TAB_TO_PLACES_FIELD: Partial<
   Record<PlaceTab, 'tour' | 'lodging' | 'restaurant'>
 > = {
@@ -79,7 +74,6 @@ type EmptyStateConfig = {
   note?: string;
 };
 
-// '검색' 탭은 서버에 키워드 검색이 없어 renderEmpty에서 따로 안내한다.
 const EMPTY_STATE_CONFIG: Record<
   Exclude<PlaceTab, '검색'>,
   EmptyStateConfig
@@ -115,13 +109,6 @@ const EMPTY_STATE_CONFIG: Record<
   },
 };
 
-// ────────────────────────────────────────────────
-// Convert PlaceVO to Place (for TimelineItem compat)
-// ────────────────────────────────────────────────
-
-/**
- * Normalize raw categoryId to 0-4 range used by the app's display components.
- */
 const normalizeCategoryId = (
   rawId: number | undefined,
   type?: string,
@@ -166,10 +153,6 @@ function placeVOToPlace(
   };
 }
 
-// ────────────────────────────────────────────────
-// PlaceImage with fallback (matching Frontend pattern)
-// ────────────────────────────────────────────────
-
 const PlaceImage = React.memo(
   ({
     placeId,
@@ -213,10 +196,6 @@ const PlaceImage = React.memo(
     );
   },
 );
-
-// ────────────────────────────────────────────────
-// PlaceMapModal — shows single place on Kakao Map
-// ────────────────────────────────────────────────
 
 const PlaceMapModal = React.memo(
   ({
@@ -268,13 +247,9 @@ const PlaceMapModal = React.memo(
   },
 );
 
-// ────────────────────────────────────────────────
-// Component
-// ────────────────────────────────────────────────
-
 interface PlaceRecommendationListProps {
   destination?: string;
-  /** 추천 장소 조회 기준 여행지 ID (서버 destinationId) */
+
   travelId: number | null;
   onAddPlace: (place: Omit<Place, 'startTime' | 'endTime'>) => void;
 }
@@ -302,14 +277,10 @@ export default function PlaceRecommendationList({
   const [customPlaceName, setCustomPlaceName] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Reset pet friendly filter on mount
   useEffect(() => {
     setPetFriendly(false);
   }, [setPetFriendly]);
 
-  // ─── 당겨서 새로고침 ───
-  // planId를 대체 ID로 쓰지 않는다. planId는 UUID라 Number()가 NaN이 되어
-  // 조회가 조용히 실패한다. 여행지 ID는 travelId 하나로만 판단한다.
   const handleRefresh = useCallback(async () => {
     if (!travelId || isRefreshing) return;
     setIsRefreshing(true);
@@ -319,7 +290,6 @@ export default function PlaceRecommendationList({
       setIsRefreshing(false);
     }
   }, [travelId, isRefreshing, fetchAllRecommendations]);
-
 
   const handleDirectAdd = useCallback(() => {
     const trimmedName = customPlaceName.trim();
@@ -344,7 +314,6 @@ export default function PlaceRecommendationList({
     setCustomPlaceName('');
   }, [customPlaceName, destination, onAddPlace]);
 
-  // ─── Data ───
   const getTabData = (): PlaceVO[] => {
     let rawData: PlaceVO[] = [];
     switch (selectedTab) {
@@ -395,7 +364,6 @@ export default function PlaceRecommendationList({
     loadMorePlaces(field);
   }, [hasMoreData, isLoading, loadMorePlaces, selectedTab]);
 
-  // ─── Map modal state ───
   const [mapPlace, setMapPlace] = useState<PlaceVO | null>(null);
   const [isMapVisible, setMapVisible] = useState(false);
 
@@ -413,7 +381,6 @@ export default function PlaceRecommendationList({
       return;
     }
 
-    // Google Maps Universal Link (works on both iOS and Android)
     const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${item.placeId}`;
 
     try {
@@ -421,7 +388,7 @@ export default function PlaceRecommendationList({
       if (supported) {
         await Linking.openURL(url);
       } else {
-        // Fallback for cases where the link can't be opened
+
         Alert.alert('오류', '구글 지도를 열 수 없습니다.');
       }
     } catch (error) {
@@ -429,7 +396,6 @@ export default function PlaceRecommendationList({
     }
   }, []);
 
-  // ─── Render ───
   const renderPlaceItem = useCallback(({ item }: { item: PlaceVO }) => {
     const type = getCategoryType(item.categoryId);
 
@@ -439,14 +405,13 @@ export default function PlaceRecommendationList({
         activeOpacity={0.7}
         onPress={() => onAddPlace(placeVOToPlace(item, type))}
       >
-        {/* Image */}
+
         <PlaceImage
           placeId={item.placeId}
           iconUrl={item.iconUrl}
           name={item.name}
         />
 
-        {/* Info */}
         <View style={plStyles.placeInfo}>
           <Text style={plStyles.placeName} numberOfLines={1}>
             {item.name}
@@ -464,7 +429,6 @@ export default function PlaceRecommendationList({
           </View>
         </View>
 
-        {/* Action Buttons */}
         <View style={plStyles.actionGroup}>
           <TouchableOpacity
             style={plStyles.mapButton}
@@ -505,7 +469,6 @@ export default function PlaceRecommendationList({
   const renderEmpty = useCallback(() => {
     if (isLoading) return null;
 
-    // 서버에 키워드 검색 엔드포인트가 없다. 입력란 없이 상태만 알린다.
     if (selectedTab === '검색') {
       return (
         <View style={plStyles.emptyContainer}>
@@ -556,8 +519,7 @@ export default function PlaceRecommendationList({
   }, [isLoading, selectedTab]);
 
   const renderHeader = useCallback(() => {
-    // 검색 탭: 입력란을 두면 아무 일도 일어나지 않아 오작동으로 보인다.
-    // 안내(renderEmpty)만 남긴다.
+
     if (selectedTab === '검색') {
       return null;
     }
@@ -600,7 +562,7 @@ export default function PlaceRecommendationList({
 
   return (
     <View style={plStyles.container}>
-      {/* Category Tabs */}
+
       <View style={plStyles.tabContainer}>
         {(['관광지', '숙소', '식당', '직접 추가', '검색'] as PlaceTab[]).map(
           tab => {
@@ -642,15 +604,11 @@ export default function PlaceRecommendationList({
         )}
       </View>
 
-
-
-      {/* Place List */}
       <FlatList
         data={tabData}
         keyExtractor={(item, index) => `${item.placeId}_${index}`}
         renderItem={renderPlaceItem}
-        // 컴포넌트가 아니라 엘리먼트로 넘긴다. 함수로 넘기면 렌더마다 타입이 바뀌어
-        // 헤더가 통째로 리마운트되고, 헤더 안의 검색 TextInput이 포커스를 잃는다.
+
         ListEmptyComponent={renderEmpty()}
         ListHeaderComponent={renderHeader()}
         ListFooterComponent={renderFooter()}
@@ -671,7 +629,6 @@ export default function PlaceRecommendationList({
         }
       />
 
-      {/* Map Modal */}
       <PlaceMapModal
         visible={isMapVisible}
         place={mapPlace}
@@ -680,10 +637,6 @@ export default function PlaceRecommendationList({
     </View>
   );
 }
-
-// ────────────────────────────────────────────────
-// Styles
-// ────────────────────────────────────────────────
 
 const plStyles = StyleSheet.create({
   container: {

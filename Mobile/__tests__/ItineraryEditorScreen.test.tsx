@@ -2,7 +2,6 @@ import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 import { View, Text, Button } from 'react-native';
 
-// Mock React Navigation material top tabs
 jest.mock('@react-navigation/material-top-tabs', () => {
   const React = require('react');
   const { View } = require('react-native');
@@ -24,7 +23,6 @@ jest.mock('@react-navigation/material-top-tabs', () => {
   };
 });
 
-// Mock other external and native dependencies
 jest.mock('@react-navigation/native', () => ({
   TabActions: {
     jumpTo: jest.fn(),
@@ -187,7 +185,6 @@ import ItineraryEditorScreenView from '../src/features/itinerary/screens/Itinera
 import ItineraryEditorScreen from '../src/features/itinerary/screens/ItineraryEditorScreen';
 import { Day } from '../src/contexts/ItineraryContext';
 
-// Mocks for ItineraryEditorScreen container component
 const mockShowAlert = jest.fn();
 jest.mock('../src/contexts/AlertContext', () => ({
   useAlert: () => ({
@@ -195,7 +192,6 @@ jest.mock('../src/contexts/AlertContext', () => ({
   }),
 }));
 
-// 소유권 조회는 이 테스트 관심사가 아니다. Provider 없이 useQuery가 돌지 않도록 대체한다.
 jest.mock('../src/hooks/usePlanOwnership', () => ({
   usePlanOwnership: () => ({ isOwner: true, isLoading: false, isError: false }),
 }));
@@ -309,7 +305,7 @@ const mockDays: Day[] = [
 
 describe('ItineraryEditorScreenView Component', () => {
   it('correctly propagates Context values when the selected day index changes', async () => {
-    // Wrapper component to simulate State updates in parent
+
     const TestWrapper = () => {
       const [selectedDayIndex, setSelectedDayIndex] = React.useState(0);
 
@@ -383,27 +379,23 @@ describe('ItineraryEditorScreenView Component', () => {
 
     expect(rendererInstance).toBeDefined();
 
-    // Verify day 1 places (제주국제공항) are initially rendered in the Timeline tab screen
     const timelineScreenDay1 = rendererInstance!.root.findByProps({
       testID: 'mock-tab-screen-타임라인',
     });
     expect(timelineScreenDay1.findByProps({ testID: 'timeline-item-1' })).toBeTruthy();
     expect(() => timelineScreenDay1.findByProps({ testID: 'timeline-item-2' })).toThrow();
 
-    // Trigger state change (switch to day 2)
     const btnDay2 = rendererInstance!.root.findByProps({ testID: 'btn-day-2' });
     await act(async () => {
       btnDay2.props.onPress();
     });
 
-    // Verify day 2 places (애월 카페거리) are now rendered and day 1 places are gone, indicating Context was successfully updated
     const timelineScreenDay2 = rendererInstance!.root.findByProps({
       testID: 'mock-tab-screen-타임라인',
     });
     expect(timelineScreenDay2.findByProps({ testID: 'timeline-item-2' })).toBeTruthy();
     expect(() => timelineScreenDay2.findByProps({ testID: 'timeline-item-1' })).toThrow();
 
-    // Trigger state change back (switch to day 1)
     const btnDay1 = rendererInstance!.root.findByProps({ testID: 'btn-day-1' });
     await act(async () => {
       btnDay1.props.onPress();
@@ -510,11 +502,10 @@ describe('ItineraryEditorScreen Component', () => {
   });
 
   it('registers beforeRemove listener and shows warning alert on exit', async () => {
-    // Setup mock days to trigger the exit warning check
+
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
 
-    // addListener는 항상 unsubscribe 함수를 반환한다(React Navigation 계약).
     const mockAddListener = jest.fn<() => jest.Mock, [string, (...args: any[]) => void]>(() => jest.fn());
     const mockDispatch = jest.fn();
     const mockNavigation = {
@@ -532,24 +523,20 @@ describe('ItineraryEditorScreen Component', () => {
       },
     } as any;
 
-    // Render component
     await act(async () => {
       renderer.create(
         <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
       );
     });
 
-    // Verify beforeRemove listener was registered
     expect(mockAddListener).toHaveBeenCalledWith('beforeRemove', expect.any(Function));
 
-    // Find the beforeRemove handler callback
     const beforeRemoveHandler = mockAddListener.mock.calls.find(
       (call) => call[0] === 'beforeRemove'
     )?.[1];
 
     expect(beforeRemoveHandler).toBeDefined();
 
-    // Trigger beforeRemove event
     const mockPreventDefault = jest.fn();
     const mockAction = { type: 'GO_BACK' };
     const mockEvent = {
@@ -561,10 +548,8 @@ describe('ItineraryEditorScreen Component', () => {
       beforeRemoveHandler!(mockEvent);
     });
 
-    // Alert should have been prevented
     expect(mockPreventDefault).toHaveBeenCalled();
 
-    // Custom Alert should be shown
     expect(mockShowAlert).toHaveBeenCalledWith(
       expect.objectContaining({
         title: '변경사항 저장 안 됨',
@@ -573,21 +558,18 @@ describe('ItineraryEditorScreen Component', () => {
       })
     );
 
-    // Get the buttons passed to showAlert
     const alertOptions = mockShowAlert.mock.calls[0][0];
     const leaveButton = alertOptions.buttons.find(
       (btn: any) => btn.text === '나가기'
     );
     expect(leaveButton).toBeDefined();
 
-    // Press '나가기' (leave) button
     await act(async () => {
       leaveButton.onPress();
     });
 
-    // Dispatch should be called after 1200ms timeout
     expect(mockDispatch).not.toHaveBeenCalled();
-    
+
     await act(async () => {
       jest.advanceTimersByTime(1200);
     });
@@ -599,7 +581,6 @@ describe('ItineraryEditorScreen Component', () => {
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
 
-    // addListener는 항상 unsubscribe 함수를 반환한다(React Navigation 계약).
     const mockAddListener = jest.fn<() => jest.Mock, [string, (...args: any[]) => void]>(() => jest.fn());
     const mockNavigation = {
       addListener: mockAddListener,
@@ -624,22 +605,18 @@ describe('ItineraryEditorScreen Component', () => {
       );
     });
 
-    // Find ItineraryEditorScreenView to call onComplete
     const viewComponent = rendererInstance!.root.findByType(ItineraryEditorScreenView);
     expect(viewComponent).toBeDefined();
 
-    // Trigger completion
     await act(async () => {
       viewComponent.props.onComplete();
     });
 
-    // Get the registered beforeRemove handler
     const beforeRemoveHandler = mockAddListener.mock.calls.find(
       (call) => call[0] === 'beforeRemove'
     )?.[1];
     expect(beforeRemoveHandler).toBeDefined();
 
-    // Trigger beforeRemove
     const mockPreventDefault = jest.fn();
     const mockEvent = {
       preventDefault: mockPreventDefault,
@@ -650,7 +627,6 @@ describe('ItineraryEditorScreen Component', () => {
       beforeRemoveHandler!(mockEvent);
     });
 
-    // It should NOT call preventDefault or showAlert, letting the native transition go through
     expect(mockPreventDefault).not.toHaveBeenCalled();
     expect(mockShowAlert).not.toHaveBeenCalled();
   });
@@ -674,7 +650,6 @@ describe('ItineraryEditorScreen Component', () => {
 
     let rendererInstance: renderer.ReactTestRenderer | undefined;
 
-    // 연결된 상태로 마운트 — 최초 연결 시점에는 재조회하지 않아야 한다.
     await act(async () => {
       rendererInstance = renderer.create(
         <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
@@ -682,7 +657,6 @@ describe('ItineraryEditorScreen Component', () => {
     });
     expect(mockItineraryEditor.fetchPlanDetails).not.toHaveBeenCalled();
 
-    // blur/appstate를 거치지 않고 소켓만 예기치 않게 끊김
     mockWebSocket.isConnected = false;
     await act(async () => {
       rendererInstance!.update(
@@ -691,7 +665,6 @@ describe('ItineraryEditorScreen Component', () => {
     });
     expect(mockItineraryEditor.fetchPlanDetails).not.toHaveBeenCalled();
 
-    // 서버가 자동 재연결
     mockWebSocket.isConnected = true;
     await act(async () => {
       rendererInstance!.update(
@@ -703,8 +676,7 @@ describe('ItineraryEditorScreen Component', () => {
   });
 
   it('제목을 다시 저장해도 값이 그대로면 요청을 한 번만 보낸다', async () => {
-    // TextInput의 onBlur와 뷰의 keyboardDidHide 리스너가 겹쳐 handleSaveTripName이
-    // 같은 편집에 두 번 불릴 수 있다. 이름이 안 바뀌었으면 두 번째 호출은 건너뛰어야 한다.
+
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
     mockItineraryEditor.tripName = '제주도 여행';

@@ -9,7 +9,7 @@ jest.mock('../src/contexts/WebSocketContext', () => ({
 import { categoryMapping } from '../src/contexts/ItineraryContext';
 
 describe('categoryMapping (N-4)', () => {
-  // api/trips.ts categoryEnumMap: ATTRACTION→0, ACCOMMODATION→1, RESTAURANT→2
+
   it('서버 카테고리 enum 순서와 일치한다', () => {
     expect(categoryMapping(0)).toBe('관광지');
     expect(categoryMapping(1)).toBe('숙소');

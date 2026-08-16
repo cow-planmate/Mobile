@@ -2,7 +2,6 @@ import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 import TravelFeedList from '../TravelFeedList';
 
-// Mock @shopify/flash-list to avoid native dependency issues in jest
 jest.mock('@shopify/flash-list', () => {
   const { View } = require('react-native');
   return {
@@ -24,7 +23,6 @@ jest.mock('@shopify/flash-list', () => {
   };
 });
 
-// Mock lucide-react-native icons
 jest.mock('lucide-react-native', () => {
   const { View } = require('react-native');
   return {
@@ -37,7 +35,6 @@ jest.mock('lucide-react-native', () => {
   };
 });
 
-// Mock theme and normalize
 jest.mock('../../../../theme/theme', () => ({
   theme: {
     colors: {
@@ -71,20 +68,18 @@ describe('TravelFeedList Component', () => {
 
   it('renders correctly and loads mock data after timer', async () => {
     let component: any;
-    
+
     await act(async () => {
       component = renderer.create(<TravelFeedList items={[]} />);
     });
 
-    // Run timers to resolve the mock api setTimeout delay
     await act(async () => {
       jest.runAllTimers();
     });
 
     const tree = component.toJSON();
     expect(tree).toBeTruthy();
-    
-    // Check if container structure exists
+
     expect(JSON.stringify(tree)).toContain('mock-flash-list');
   });
 });

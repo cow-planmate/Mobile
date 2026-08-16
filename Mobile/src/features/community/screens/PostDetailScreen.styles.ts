@@ -10,7 +10,6 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
 
-  /* ── 상단 바 ── */
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -36,7 +35,6 @@ export const styles = StyleSheet.create({
     gap: normalize(4),
   },
 
-  /* ── 상태 ── */
   stateBox: {
     flex: 1,
     alignItems: 'center',
@@ -56,7 +54,6 @@ export const styles = StyleSheet.create({
     color: COLORS.primary,
   },
 
-  /* ── 헤더 ── */
   header: {
     paddingHorizontal: normalize(16),
     paddingTop: normalize(16),
@@ -91,7 +88,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: normalize(6),
   },
-  /** 작성자 아바타 + 닉네임을 함께 누를 수 있게 묶는다 */
+
   authorTouchable: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -113,7 +110,6 @@ export const styles = StyleSheet.create({
     gap: normalize(3),
   },
 
-  /* ── 작성자 액션 ── */
   authorActions: {
     flexDirection: 'row',
     gap: normalize(6),
@@ -146,7 +142,6 @@ export const styles = StyleSheet.create({
     color: '#059669',
   },
 
-  /* ── 메이트 바 ── */
   mateBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -182,13 +177,11 @@ export const styles = StyleSheet.create({
     color: COLORS.white,
   },
 
-  /* ── 본문 ── */
   body: {
     paddingHorizontal: normalize(16),
     paddingVertical: normalize(18),
   },
 
-  /* ── 반응 ── */
   reactionRow: {
     flexDirection: 'row',
     justifyContent: 'center',

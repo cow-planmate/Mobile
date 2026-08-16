@@ -23,31 +23,31 @@ export const CATEGORY_COLORS = {
     bg: '#f7fee7',
     textMain: '#064e3b',
     textSub: '#4d7c0f',
-  }, // 관광지 (Lime)
+  }, 
   1: {
     border: '#f97316',
     bg: '#fff7ed',
     textMain: '#7c2d12',
     textSub: '#c2410c',
-  }, // 숙소 (Orange)
+  }, 
   2: {
     border: '#3b82f6',
     bg: '#eff6ff',
     textMain: '#1e3a8a',
     textSub: '#1d4ed8',
-  }, // 식당 (Blue)
+  }, 
   3: {
     border: '#8b5cf6',
     bg: '#f5f3ff',
     textMain: '#4c1d95',
     textSub: '#6d28d9',
-  }, // 직접 추가 (Violet)
+  }, 
   4: {
     border: '#6b7280',
     bg: '#f9fafb',
     textMain: '#111827',
     textSub: '#4b5563',
-  }, // 검색/기타 (Gray)
+  }, 
 };
 
 export const styles = StyleSheet.create({
@@ -80,7 +80,7 @@ export const styles = StyleSheet.create({
   nameText: {
     fontSize: 15,
     fontFamily: FONTS.semibold,
-    color: '#064e3b', // default for lime-900 like
+    color: '#064e3b', 
   },
   metaRow: {
     flexDirection: 'row',
@@ -89,7 +89,7 @@ export const styles = StyleSheet.create({
   metaText: {
     fontSize: 12,
     fontFamily: FONTS.regular,
-    color: '#4d7c0f', // default for lime-600 like
+    color: '#4d7c0f', 
   },
   actionContainer: {
     flexDirection: 'row',

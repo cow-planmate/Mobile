@@ -22,18 +22,13 @@ interface AuthSubmitButtonProps {
   label: string;
   onPress: () => void;
   loading?: boolean;
-  /**
-   * 아직 다음으로 넘어갈 수 없는 상태.
-   * 눌리지 않게 막지는 않는다. 회색으로 죽여 두면 무엇이 모자란지 알려줄
-   * 기회가 사라지므로, 흐리게만 두고 누르면 이유를 띄운다.
-   */
+
   muted?: boolean;
   disabled?: boolean;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
 }
 
-/** 인증 화면의 주 버튼. 로딩은 라벨과 스피너를 겹쳐 교차 전환한다. */
 export default function AuthSubmitButton({
   label,
   onPress,

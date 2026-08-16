@@ -21,13 +21,6 @@ import {
   useItinerary,
 } from '../src/contexts/ItineraryContext';
 
-/**
- * 서버가 blockId를 확정하기 전 블록의 update/delete 보류 흐름.
- *
- * ID 없이 보낸 update는 서버에서 예외로 통째 폐기되고 delete는 조용히 무시되므로,
- * 확정 전 변경은 보류했다가 create 응답이 온 뒤 실제 ID로 다시 보내야 한다.
- */
-
 let context: ReturnType<typeof useItinerary>;
 const Probe = () => {
   context = useItinerary();
@@ -63,7 +56,6 @@ const flushTimers = async () => {
   });
 };
 
-/** 장소를 하나 추가하고, 그때 부여된 임시 ID를 돌려준다. */
 const addPlace = async (): Promise<string> => {
   act(() => {
     context.addPlaceToDay(0, {
@@ -85,7 +77,6 @@ const addPlace = async (): Promise<string> => {
   return createCall![3];
 };
 
-/** 서버가 create를 확정해 실제 blockId를 브로드캐스트한 상황 */
 const emitCreateConfirmation = (tempId: string) => {
   act(() => {
     mockHandlers.forEach(handler =>
@@ -159,7 +150,6 @@ describe('임시 ID 블록의 변경 보류', () => {
     });
     await flushTimers();
 
-    // 아직 서버에 없는 블록이라 이 시점에는 아무것도 보내지 않는다.
     expect(callsOf('delete')).toHaveLength(0);
 
     emitCreateConfirmation(tempId);
@@ -167,7 +157,7 @@ describe('임시 ID 블록의 변경 보류', () => {
     const deletes = callsOf('delete');
     expect(deletes).toHaveLength(1);
     expect(deletes[0][2]).toMatchObject({ blockId: REAL_BLOCK_ID });
-    // 삭제가 예약된 블록에 update가 섞여 나가면 지운 블록이 되살아난다.
+
     expect(callsOf('update')).toHaveLength(0);
   });
 
@@ -180,7 +170,6 @@ describe('임시 ID 블록의 변경 보류', () => {
     });
     await flushTimers();
 
-    // 내가 보낸 create의 응답이다. 그사이 지웠으므로 목록에 다시 넣으면 안 된다.
     emitCreateConfirmation(tempId);
 
     expect(context.days[0].places).toHaveLength(0);

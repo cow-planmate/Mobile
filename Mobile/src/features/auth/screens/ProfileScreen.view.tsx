@@ -85,14 +85,13 @@ import {
 } from '../../../utils/nickname';
 import { styles, COLORS } from './ProfileScreen.styles';
 
-/** 편집 권한 일정에서 나갈 때 동시에 띄울 최대 요청 수. */
 const LEAVE_EDITOR_CONCURRENCY = 4;
 
 const getFormattedPeriod = (start?: string, end?: string) => {
   if (!start) return '날짜 확인 필요';
   const cleanedStart = start.replace(/-/g, '.');
   const cleanedEnd = end ? end.replace(/-/g, '.') : '';
-  
+
   if (!cleanedEnd || cleanedStart === cleanedEnd) {
     return cleanedStart;
   }
@@ -107,21 +106,12 @@ interface PlanItem {
   isShared?: boolean;
 }
 
-
-
-/**
- * 일정 카드의 날짜 문자열('YYYY.MM.DD' 또는 'YYYY-MM-DD')을 로컬 자정 Date로 바꾼다.
- *
- * new Date('2026-08-10')은 UTC 자정으로 해석되어 UTC보다 이른 타임존에서
- * 하루가 밀린다. D-Day와 지난 일정 판정이 하루씩 어긋나므로 로컬로 파싱한다.
- */
 const parsePlanDate = (value?: string): Date | null => {
   if (!value) return null;
   const parsed = parseLocalDate(value.replace(/\./g, '-').substring(0, 10));
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-/** 내가 만든 일정의 설정 메뉴 */
 export const PLAN_MENU_OPTIONS = [
   { label: '제목 바꾸기', action: 'rename', icon: faT },
   { label: '수정하기', action: 'edit', icon: faPen },
@@ -129,9 +119,6 @@ export const PLAN_MENU_OPTIONS = [
   { label: '삭제하기', action: 'delete', icon: faTrash, isDestructive: true },
 ];
 
-/** 편집 권한만 받은 일정의 설정 메뉴 (삭제 대신 권한 포기) */
-// 제목 바꾸기는 넣지 않는다. 서버가 PATCH /api/plan/{planId}/name을 OWNER에게만
-// 허용해 편집자가 누르면 403이 온다. 일정 편집 화면에서는 실시간 편집으로 바꿀 수 있다.
 export const SHARED_PLAN_MENU_OPTIONS = [
   { label: '수정하기', action: 'edit', icon: faPen },
   { label: '공유 및 초대', action: 'share', icon: faShare },
@@ -143,14 +130,6 @@ export const SHARED_PLAN_MENU_OPTIONS = [
   },
 ];
 
-/**
- * 일정 카드.
- *
- * 화면 최상위에 편집 모달 입력 state가 있어, memo가 없으면 닉네임을 한 글자
- * 칠 때마다 카드 전체가 다시 렌더된다. 핸들러도 호출부에서 useCallback으로
- * 고정해야 memo가 실제로 걸린다(선택 토글은 planId를 인자로 받아 카드마다
- * 새 클로저를 만들지 않는다).
- */
 const ItineraryCardItem = React.memo(function ItineraryCardItem({
   plan,
   onOpenMenu,
@@ -169,7 +148,6 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
   onOpenChecklist: (plan: PlanItem) => void;
 }) {
 
-  // D-Day 계산
   const getDDay = (startDateStr?: string) => {
     const start = parsePlanDate(startDateStr);
     if (!start) return 'D-Day';
@@ -187,13 +165,6 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
   const dDay = getDDay(plan.startDate);
   const formattedPeriod = getFormattedPeriod(plan.startDate, plan.endDate);
 
-  /**
-   * 준비물 요약.
-   *
-   * 목록 스크롤만으로 카드 수만큼 요청이 나가지 않도록 조회는 끄고 캐시만 읽는다.
-   * 시트를 한 번이라도 연 일정은 캐시가 채워져 있고, 시트에서 항목을 바꾸면
-   * 같은 캐시를 구독하는 이 카드도 함께 갱신된다.
-   */
   const { data: sharedChecklist } = useChecklist(plan.planId, 'shared', false);
   const { data: personalChecklist } = useChecklist(
     plan.planId,
@@ -207,8 +178,6 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
   const hasChecklistCache = !!sharedChecklist || !!personalChecklist;
   const completedCount = checklistItems.filter(item => item.isChecked).length;
 
-
-  // 테마 색상 분기 (공유받은 일정이면 오렌지색, 생성한 일정이면 파란색)
   const themeColor = plan.isShared ? '#F97316' : '#1344FF';
 
   const handleSelectToggle = () => onSelectToggle(plan.planId);
@@ -235,7 +204,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
           : (pressed ? { borderColor: themeColor, borderWidth: 2, backgroundColor: '#F3F4F6' } : null)
       ]}
     >
-      {/* 카드 상단 배지 및 설정 버튼 */}
+
       <View style={styles.cardHeaderRow}>
         <View style={styles.badgeRow}>
           {isEditMode && (
@@ -269,7 +238,6 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
         )}
       </View>
 
-      {/* 카드 본문 타이틀 및 날짜 - 터치는 부모 Pressable이 처리함 */}
       <View style={{ pointerEvents: 'none' }}>
         <Text style={styles.cardTitleText} numberOfLines={1}>{plan.planName}</Text>
         <View style={styles.dateInfoRow}>
@@ -278,7 +246,6 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
         </View>
       </View>
 
-      {/* 체크리스트 영역 */}
       <TouchableOpacity
         style={styles.checklistContainer}
         onPress={() => onOpenChecklist(plan)}
@@ -335,7 +302,6 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
         )}
       </TouchableOpacity>
 
-      {/* 공유 일정 전용 SHARED 코너 배지 */}
       {plan.isShared && (
         <View style={styles.sharedBadge}>
           <User size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
@@ -348,7 +314,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
 
 interface ProfileScreenViewProps {
   loading: boolean;
-  /** 프로필 조회 실패. 빈 프로필을 그리지 않고 재시도 화면을 보여준다. */
+
   loadError?: boolean;
   onRetryLoad?: () => void;
   user: any;
@@ -364,13 +330,13 @@ interface ProfileScreenViewProps {
   handleUpdateTheme: () => void;
   handleUpdatePassword: (cur: string, n: string) => void;
   handleResign: () => void;
-  /** 일정 제목 변경 (서버 반영 + 프로필 캐시 갱신은 컨테이너가 담당) */
+
   onRenamePlan: (planId: string, newName: string) => Promise<void>;
-  /** 프로필 공개 여부 변경 */
+
   onChangeProfileVisibility: (profilePublic: boolean) => Promise<void>;
-  /** 갤러리에서 선택한 프로필 사진 업로드 */
+
   onChangeProfileImage: () => Promise<void>;
-  /** 등록된 프로필 사진 삭제 */
+
   onDeleteProfileImage: () => Promise<void>;
   isProfileImageUpdating: boolean;
   scrollToItinerary?: boolean;
@@ -413,22 +379,20 @@ export default function ProfileScreenView({
   const [plans, setPlans] = useState<any[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPlanIds, setSelectedPlanIds] = useState<string[]>([]);
-  /** 준비물 시트를 연 일정. null이면 시트가 닫힌 상태다. */
+
   const [checklistPlan, setChecklistPlan] = useState<PlanItem | null>(null);
   const scrollRef = React.useRef<ScrollView>(null);
   const [itineraryY, setItineraryY] = useState(0);
 
-  // 스크롤 및 페이드 상태 관련 State
   const [showBottomFade, setShowBottomFade] = useState(false);
   const contentHeightRef = useRef(0);
   const layoutHeightRef = useRef(0);
-  
-  // 힌트 화살표 애니메이션 객체
+
   const bounceAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (editModalVisible && showBottomFade) {
-      // 스크롤 유도 바운싱 애니메이션 루프 시작
+
       Animated.loop(
         Animated.sequence([
           Animated.timing(bounceAnim, {
@@ -448,7 +412,6 @@ export default function ProfileScreenView({
     }
   }, [editModalVisible, showBottomFade, bounceAnim]);
 
-  // 바닥 감지 및 스크롤 가능 여부 체크 헬퍼
   const checkScrollState = (contentHeight: number, layoutHeight: number, offsetY: number) => {
     const isScrollable = contentHeight > layoutHeight + 5;
     const isCloseToBottom = layoutHeight + offsetY >= contentHeight - 25;
@@ -475,20 +438,16 @@ export default function ProfileScreenView({
     }
   }, [user]);
 
-  // 스위치는 즉시 반응해야 하므로 낙관적으로 바꾸고, 실패하면 되돌린다.
   const [isProfilePublic, setIsProfilePublic] = useState(user.profilePublic);
   useEffect(() => {
     setIsProfilePublic(user.profilePublic);
   }, [user.profilePublic]);
 
-  // ── 일정 카드 설정 메뉴 ──
   const [menuPlan, setMenuPlan] = useState<PlanItem | null>(null);
   const [isPlanMenuVisible, setPlanMenuVisible] = useState(false);
   const [isRenameVisible, setRenameVisible] = useState(false);
   const [isPlanShareVisible, setPlanShareVisible] = useState(false);
 
-  // 카드에 넘기는 핸들러는 참조를 고정한다. 매 렌더 새 함수를 주면 카드의
-  // React.memo가 매번 무효화돼 메모이제이션이 없는 것과 같아진다.
   const handleOpenPlanMenu = useCallback((plan: PlanItem) => {
     setMenuPlan(plan);
     setPlanMenuVisible(true);
@@ -532,7 +491,7 @@ export default function ProfileScreenView({
     try {
       await onRenamePlan(menuPlan.planId, newName);
     } catch (e) {
-      // 실패 문구는 컨테이너가 띄운다. 목록은 그대로 두고 모달만 닫는다.
+
       setRenameVisible(false);
       return;
     }
@@ -558,8 +517,7 @@ export default function ProfileScreenView({
               try {
                 await leaveAsEditor(planId);
                 setPlans(prev => prev.filter(p => p.planId !== planId));
-                // 로컬 목록만 지우면 캐시(staleTime 5분)에는 그대로 남아
-                // 화면을 다시 열 때 되살아난다.
+
                 void invalidatePlanCaches(queryClient);
                 Toast.show({
                   type: 'success',
@@ -567,8 +525,7 @@ export default function ProfileScreenView({
                   position: 'top',
                 });
               } catch (e) {
-                // 실패인데 성공으로 알리고 목록에서 지우면, 서버에는 남아 있는데
-                // 화면에서만 사라져 사용자가 상태를 오해한다.
+
                 console.error('편집 권한 포기 실패:', e);
                 Toast.show({
                   type: 'error',
@@ -593,8 +550,7 @@ export default function ProfileScreenView({
               try {
                 await axios.delete(resolveApiUrl(`/api/plan/${planId}`));
                 setPlans(prev => prev.filter(p => p.planId !== planId));
-                // 로컬 목록만 지우면 캐시(staleTime 5분)에는 그대로 남아
-                // 화면을 다시 열 때 되살아난다.
+
                 void invalidatePlanCaches(queryClient);
                 Toast.show({
                   type: 'success',
@@ -616,7 +572,6 @@ export default function ProfileScreenView({
     }
   };
 
-  /** 종료일(없으면 시작일)이 오늘보다 이전이면 지난 일정으로 본다. */
   const isPastPlan = (endDateStr?: string, startDateStr?: string) => {
     const targetDate = parsePlanDate(endDateStr || startDateStr);
     if (!targetDate) return false;
@@ -627,7 +582,6 @@ export default function ProfileScreenView({
     return targetDate.getTime() < today.getTime();
   };
 
-  // 렌더마다 두 번 훑고 항목마다 Date를 새로 만들던 자리다. plans가 바뀔 때만 계산한다.
   const { upcomingPlans, pastPlans } = useMemo(
     () => ({
       upcomingPlans: plans.filter(p => !isPastPlan(p.endDate, p.startDate)),
@@ -640,7 +594,6 @@ export default function ProfileScreenView({
   const allPlanIds = useMemo(() => plans.map(p => p.planId), [plans]);
   const isAllSelected = allPlanIds.length > 0 && allPlanIds.every(id => selectedPlanIds.includes(id));
 
-  // 전체 선택 핸들러
   const handleSelectAll = () => {
     if (isAllSelected) {
       setSelectedPlanIds([]);
@@ -649,7 +602,6 @@ export default function ProfileScreenView({
     }
   };
 
-  // 선택 삭제 핸들러
   const handleDeleteSelected = () => {
     if (selectedPlanIds.length === 0) return;
     Alert.alert(
@@ -670,8 +622,6 @@ export default function ProfileScreenView({
             const processedIds: string[] = [];
             let failed = 0;
 
-            // 내가 소유한 일정은 일괄 삭제 API로 한 번에 처리한다.
-            // 서버가 소유분만 걸러 실제 삭제된 ID를 돌려주므로 그 결과를 신뢰한다.
             if (ownedIds.length > 0) {
               try {
                 const deleted = await deletePlans(ownedIds);
@@ -683,8 +633,6 @@ export default function ProfileScreenView({
               }
             }
 
-            // 편집 권한만 있는 일정은 일괄 API 대상이 아니라 개별 처리한다.
-            // 선택 개수만큼 한꺼번에 띄우지 않도록 동시 실행 수를 제한한다.
             if (sharedIds.length > 0) {
               const results = await allSettledWithConcurrency(
                 sharedIds.map(id => () => leaveAsEditor(id)),
@@ -699,13 +647,9 @@ export default function ProfileScreenView({
               });
             }
 
-            // 실제로 처리된 것만 화면에서 지운다.
-            // 예전에는 실패해도 전부 지우고 성공 토스트를 띄워, 서버에는 남아 있는데
-            // 목록에서는 사라진 것처럼 보였다.
             if (processedIds.length > 0) {
               setPlans(prev => prev.filter(p => !processedIds.includes(p.planId)));
-              // 로컬 목록만 지우면 캐시(staleTime 5분)에는 그대로 남아
-              // 화면을 다시 열 때 되살아난다.
+
               void invalidatePlanCaches(queryClient);
             }
             setSelectedPlanIds([]);
@@ -734,7 +678,6 @@ export default function ProfileScreenView({
     );
   };
 
-  // 취소 핸들러
   const handleCancelEditMode = () => {
     setSelectedPlanIds([]);
     setIsEditMode(false);
@@ -765,14 +708,8 @@ export default function ProfileScreenView({
     );
   }
 
-  // 선호테마 추출 및 파싱
-  // 나이는 저장하지 않고 생년월일에서 파생해 표시한다.
   const profileAge = toKoreanAge(user.birthdate);
 
-  /**
-   * 아바타 URL. 서버에 올린 프로필 이미지가 있으면 그것을 쓰고,
-   * 없을 때만 이메일 기반 Gravatar로 대체한다.
-   */
   const avatarUri =
     user.profileImageUrl || (user.email ? gravatarUrl(user.email, 200) : '');
 
@@ -833,11 +770,10 @@ export default function ProfileScreenView({
     setTempBirthdate(user.birthdate || '');
     setTempGender(user.gender);
     setEditModalVisible(true);
-    // 모달이 열릴 때 스크롤 상태 초기화
+
     setShowBottomFade(false);
   };
 
-  /** 서버에 실제로 물어본다. 저장 단계에서야 중복을 알게 되면 되돌릴 것이 많다. */
   const handleCheckNickname = async () => {
     const nickname = tempNickname.trim();
     const lengthError = getNicknameLengthError(nickname);
@@ -875,7 +811,7 @@ export default function ProfileScreenView({
         Toast.show({ type: 'error', text1: nicknameError, position: 'top' });
         return;
       }
-      // 서버 birthdate는 @Past다. 피커가 오늘까지 열려 있어 한 번 더 막는다.
+
       if (tempBirthdate && tempBirthdate >= toBirthdateString(new Date())) {
         Toast.show({
           type: 'error',
@@ -898,7 +834,7 @@ export default function ProfileScreenView({
         await handleUpdateGender(tempGender);
         hasChange = true;
       }
-      
+
       if (hasChange) {
         Toast.show({
           type: 'success',
@@ -908,8 +844,7 @@ export default function ProfileScreenView({
       }
       setEditModalVisible(false);
     } catch (err) {
-      // 실패 사유는 각 핸들러가 토스트로 알린다. 여기서는 모달을 닫지 않아
-      // 사용자가 값을 고쳐 다시 저장할 수 있게 둔다.
+
       if (__DEV__) console.log('Failed to save profile modifications', err);
     }
   };
@@ -942,10 +877,10 @@ export default function ProfileScreenView({
         contentContainerStyle={[styles.scrollContainer, { paddingBottom: normalize(40) }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── 1. 프로필 카드 ── */}
+
         <View style={styles.profileCard}>
           <View style={styles.profileHeaderRow}>
-            {/* 프로필 이미지 & 설정 버튼 */}
+
             <View style={styles.avatarContainer}>
               {avatarUri ? (
                 <FastImage
@@ -967,7 +902,6 @@ export default function ProfileScreenView({
               </TouchableOpacity>
             </View>
 
-            {/* 닉네임, 등급, 이메일, 성별/나이 */}
             <View style={styles.profileTextInfo}>
               <View style={styles.nicknameRow}>
                 <Text style={styles.nicknameText}>{user.name || '사용자'}</Text>
@@ -991,7 +925,6 @@ export default function ProfileScreenView({
             </View>
           </View>
 
-          {/* 경험치 프로그레스 바 */}
           <View style={styles.experienceSection}>
             <View style={styles.experienceLabelRow}>
               <Text style={styles.experienceTitle}>현재 활동 점수</Text>
@@ -1010,7 +943,6 @@ export default function ProfileScreenView({
             </View>
           </View>
 
-          {/* 관심 분야 태그 */}
           <View style={styles.tagSection}>
             {displayThemes.map((theme: string, idx: number) => (
               <View key={idx} style={styles.interestTag}>
@@ -1021,7 +953,6 @@ export default function ProfileScreenView({
             ))}
           </View>
 
-          {/* 통계 수치 3종 */}
           <View style={styles.statsSection}>
             <View style={styles.statBlock}>
               <Text style={styles.statNumber}>
@@ -1044,7 +975,6 @@ export default function ProfileScreenView({
           </View>
         </View>
 
-        {/* ── 2. 내 업적 카드 ── */}
         <View style={[styles.achievementCard, { opacity: 0.6 }]} pointerEvents="none">
           <View style={styles.achievementHeader}>
             <View style={styles.achievementTitleRow}>
@@ -1057,31 +987,27 @@ export default function ProfileScreenView({
           </View>
 
           <View style={styles.badgeList}>
-            {/* 업적 1 */}
+
             <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
               <Lock size={11} color="#9CA3AF" />
               <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>첫 걸음</Text>
             </View>
 
-            {/* 업적 2 */}
             <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
               <Lock size={11} color="#9CA3AF" />
               <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>계획의 달인</Text>
             </View>
 
-            {/* 업적 3 */}
             <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
               <Lock size={11} color="#9CA3AF" />
               <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>열혈 리뷰어</Text>
             </View>
 
-            {/* 업적 4 */}
             <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
               <Lock size={11} color="#9CA3AF" />
               <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>베스트 파트너</Text>
             </View>
 
-            {/* 업적 5 */}
             <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
               <Lock size={11} color="#9CA3AF" />
               <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>전국 제패</Text>
@@ -1089,12 +1015,10 @@ export default function ProfileScreenView({
           </View>
         </View>
 
-        {/* ── 2.1. 여행 상세 일정 카드 ── */}
         <View 
           style={styles.itineraryDetailCard}
           onLayout={e => setItineraryY(e.nativeEvent.layout.y)}
         >
-
 
           <View style={styles.itineraryHeader}>
             <View style={styles.itineraryTitleRow}>
@@ -1121,10 +1045,9 @@ export default function ProfileScreenView({
             )}
           </View>
 
-          {/* 일정 관리 다중 선택 서브 툴바 */}
           {isEditMode && (
             <View style={styles.editSubToolbar}>
-              {/* 전체 선택 */}
+
               <TouchableOpacity 
                 style={styles.editActionSelectAll} 
                 onPress={handleSelectAll}
@@ -1139,7 +1062,6 @@ export default function ProfileScreenView({
                 <Text style={styles.editActionSelectAllText}>전체 선택</Text>
               </TouchableOpacity>
 
-              {/* 선택 삭제 */}
               <TouchableOpacity 
                 style={[
                   styles.editActionDeleteSelected,
@@ -1155,7 +1077,6 @@ export default function ProfileScreenView({
             </View>
           )}
 
-          {/* 진행 중/예정된 일정 블록 */}
           {upcomingPlans.length > 0 ? (
             <View style={{ marginBottom: normalize(16) }}>
               <View style={styles.sectionSubtitleRow}>
@@ -1189,7 +1110,6 @@ export default function ProfileScreenView({
             </View>
           )}
 
-          {/* 지난 여행 기록 블록 */}
           <View style={styles.pastRecordBox}>
             <Text style={styles.pastRecordTitle}>지난 여행 기록</Text>
             {pastPlans.length > 0 ? (
@@ -1197,7 +1117,7 @@ export default function ProfileScreenView({
                 {pastPlans.map((plan: any) => {
                   const isSelected = selectedPlanIds.includes(plan.planId);
                   const isPastShared = !!plan.isShared;
-                  const pastThemeColor = '#6B7280'; // 지난 여행의 테두리 및 체크박스는 회색으로 통일
+                  const pastThemeColor = '#6B7280'; 
                   const onSelectToggle = () => handleSelectToggle(plan.planId);
 
                   return (
@@ -1234,7 +1154,7 @@ export default function ProfileScreenView({
                             </View>
                           </TouchableOpacity>
                         )}
-                        
+
                         <View style={styles.pastPlanLeft}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                             <Text style={styles.pastPlanTitleText}>{plan.planName}</Text>
@@ -1278,7 +1198,6 @@ export default function ProfileScreenView({
         <ProfileActivitySections plans={plans} />
       </ScrollView>
 
-      {/* 생년월일 선택기. 수정 모달 위에 떠야 하므로 형제로 둔다. */}
       <DatePicker
         modal
         mode="date"
@@ -1296,7 +1215,6 @@ export default function ProfileScreenView({
         onCancel={() => setBirthdatePickerOpen(false)}
       />
 
-      {/* ── 3. 통합 프로필 수정 모달 ── */}
       <Modal
         visible={editModalVisible}
         transparent={true}
@@ -1305,7 +1223,7 @@ export default function ProfileScreenView({
       >
         <View style={styles.modalOverlay}>
           <View style={styles.editDialogCard}>
-            {/* 상단 파란색 배경 헤더 */}
+
             <View style={styles.editDialogHeader}>
               <TouchableOpacity 
                 style={styles.closeModalButton}
@@ -1315,7 +1233,6 @@ export default function ProfileScreenView({
                 <X size={18} color="#FFFFFF" />
               </TouchableOpacity>
 
-              {/* 프로필 이미지 & 카메라 배지 */}
               <TouchableOpacity
                 style={styles.avatarEditContainer}
                 onPress={handleProfileImagePress}
@@ -1360,7 +1277,6 @@ export default function ProfileScreenView({
               <Text style={styles.editDialogTitle}>프로필 수정</Text>
               <Text style={styles.editDialogSubtitle}>나를 표현하는 정보를 변경해보세요</Text>
 
-              {/* 이메일 계정 (Read-only) */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>이메일 계정</Text>
                 <TextInput
@@ -1371,7 +1287,6 @@ export default function ProfileScreenView({
                 />
               </View>
 
-              {/* 닉네임 */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>닉네임</Text>
                 <View style={styles.rowInputWrap}>
@@ -1406,14 +1321,12 @@ export default function ProfileScreenView({
                 </View>
               </View>
 
-              {/* 나이 & 성별 가로 배치 */}
               <View style={styles.twoColumnRow}>
-                {/* 생년월일 */}
+
                 <View style={[styles.inputGroup, { flex: 1, marginRight: 12 }]}>
                   <Text style={styles.inputLabel}>생년월일</Text>
                   <TouchableOpacity
-                    // textInput은 TextInput용이라 높이만 있고 정렬이 없다.
-                    // View로 쓰려면 세로 가운데 정렬을 직접 준다.
+
                     style={[styles.textInput, styles.pickerField]}
                     onPress={() => setBirthdatePickerOpen(true)}
                     activeOpacity={0.8}
@@ -1430,7 +1343,6 @@ export default function ProfileScreenView({
                   </TouchableOpacity>
                 </View>
 
-                {/* 성별 */}
                 <View style={[styles.inputGroup, { flex: 1 }]}>
                   <Text style={styles.inputLabel}>성별</Text>
                   <View style={styles.genderSelectTrack}>
@@ -1452,9 +1364,8 @@ export default function ProfileScreenView({
                 </View>
               </View>
 
-              {/* 여행 취향 & 보안 설정 가로 배치 */}
               <View style={styles.twoColumnRow}>
-                {/* 여행 취향 */}
+
                 <View style={[styles.inputGroup, { flex: 1, marginRight: 12 }]}>
                   <Text style={styles.inputLabel}>여행 취향</Text>
                   <TouchableOpacity 
@@ -1467,7 +1378,6 @@ export default function ProfileScreenView({
                   </TouchableOpacity>
                 </View>
 
-                {/* 보안 설정 */}
                 <View style={[styles.inputGroup, { flex: 1 }]}>
                   <Text style={styles.inputLabel}>보안 설정</Text>
                   <TouchableOpacity 
@@ -1486,7 +1396,6 @@ export default function ProfileScreenView({
                 </View>
               </View>
 
-              {/* 프로필 공개 설정 */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>프로필 공개</Text>
                 <View style={styles.visibilityRow}>
@@ -1516,7 +1425,6 @@ export default function ProfileScreenView({
                 </TouchableOpacity>
               </View>
 
-              {/* 오작동 우려로 스크롤 영역 하단 맨 끝에 계정 탈퇴하기 배치 */}
               <TouchableOpacity 
                 style={styles.resignLinkButton}
                 onPress={() => {
@@ -1532,7 +1440,6 @@ export default function ProfileScreenView({
               </TouchableOpacity>
             </ScrollView>
 
-            {/* 동적으로 나타나고 유도 화살표가 적용된 하단 그라데이션 레이어 */}
             {showBottomFade && (
               <View style={styles.fadeOverlayContainer} pointerEvents="none">
                 <LinearGradient
@@ -1551,7 +1458,6 @@ export default function ProfileScreenView({
               </View>
             )}
 
-            {/* 스크롤 영역 밖 하단에 항시 고정된 변경사항 저장하기 버튼 */}
             <View style={styles.fixedBottomArea}>
               <TouchableOpacity 
                 style={styles.saveButton}
@@ -1565,7 +1471,6 @@ export default function ProfileScreenView({
         </View>
       </Modal>
 
-      {/* ── 기존 Modal 포탈들 ── */}
       <UpdateThemeModal
         visible={isThemeModalVisible}
         onClose={() => setThemeModalVisible(false)}
@@ -1581,7 +1486,6 @@ export default function ProfileScreenView({
         onClose={() => setFeedbackModalVisible(false)}
       />
 
-      {/* ── 일정 카드 설정 메뉴 ── */}
       <MenuModal
         visible={isPlanMenuVisible}
         title={menuPlan?.planName ?? '일정 설정'}

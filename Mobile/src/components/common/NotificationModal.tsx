@@ -19,7 +19,7 @@ export interface Invitation {
   requestId: number;
   senderNickname: string;
   planName: string;
-  /** INVITE(초대받음) / REQUEST(편집 권한 요청받음). 없으면 초대로 본다. */
+
   type?: CollaborationRequestType;
 }
 
@@ -120,14 +120,14 @@ export default React.memo(NotificationModal);
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)', // 0.45 백드롭 투명도 통일
+    backgroundColor: 'rgba(0,0,0,0.45)', 
     justifyContent: 'center',
     alignItems: 'center',
   },
   container: {
     width: '85%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20, // 둥글기 20 통일
+    borderRadius: 20, 
     padding: 24,
     maxHeight: '70%',
     borderWidth: 1,
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F3F4F6', // 둥근 회색 닫기 버튼 통일
+    backgroundColor: '#F3F4F6', 
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -47,12 +47,10 @@ export default function ProfileScreen({ route }: any) {
   const { data: communityStats, isLoading: isCommunityStatsLoading } = useMyStats();
   const user = data ?? EMPTY_PROFILE;
 
-  // 닉네임·나이·성별은 뷰가 하나의 편집 모달에서 함께 다룬다.
   const [isThemeModalVisible, setThemeModalVisible] = useState(false);
   const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
   const [isProfileImageUpdating, setIsProfileImageUpdating] = useState(false);
 
-  /** 서버 반영 후 프로필 캐시만 부분 갱신한다(재조회 없이 즉시 화면에 반영). */
   const patchProfile = useCallback(
     (patch: Partial<UserProfile>) => {
       queryClient.setQueryData<UserProfile>(USER_PROFILE_QUERY_KEY, prev =>
@@ -67,8 +65,6 @@ export default function ProfileScreen({ route }: any) {
     [queryClient],
   );
 
-  // 화면에 돌아왔을 때 캐시가 낡았을 때만 다시 조회한다.
-  // 무조건 조회하면 일정 수만큼의 상세 요청(N+1)이 매번 반복된다.
   useFocusEffect(
     useCallback(() => {
       void queryClient.refetchQueries({
@@ -79,10 +75,6 @@ export default function ProfileScreen({ route }: any) {
     }, [queryClient]),
   );
 
-  /**
-   * 세 항목 모두 실패를 그대로 올린다. 삼키면 편집 모달이 실패한 변경까지
-   * 저장된 것으로 안내하고 닫힌다.
-   */
   const handleUpdateNickname = async (newNickname: string) => {
     try {
       await axios.patch(resolveApiUrl('/api/user/nickname'), {
@@ -98,7 +90,7 @@ export default function ProfileScreen({ route }: any) {
     } catch (e) {
       Toast.show({
         type: 'error',
-        // 중복(AUTH_005)인지 형식 문제인지 서버 문구로 구분해 알린다.
+
         text1: getDisplayErrorMessage(e, '닉네임 변경에 실패했습니다.'),
         position: 'top',
         visibilityTime: 2500,
@@ -107,12 +99,6 @@ export default function ProfileScreen({ route }: any) {
     }
   };
 
-  /**
-   * 생년월일을 그대로 저장한다.
-   *
-   * 예전에는 나이만 받아 `${올해 - 나이}-01-01`로 되돌려 저장했는데,
-   * 그러면 사용자의 실제 월·일이 1월 1일로 덮어써졌다.
-   */
   const handleUpdateBirthdate = async (newBirthdate: string) => {
     try {
       await axios.patch(resolveApiUrl('/api/user/birthdate'), {
@@ -174,13 +160,6 @@ export default function ProfileScreen({ route }: any) {
     setThemeModalVisible(false);
   };
 
-  /**
-   * 비밀번호 변경.
-   *
-   * PATCH가 현재 비밀번호를 이미 검증하므로(PasswordService.changePassword)
-   * /api/auth/password/verify를 먼저 부르지 않는다. 모달이 성공 여부로 닫힘을
-   * 판단하도록 실패는 그대로 올린다.
-   */
   const handleUpdatePassword = async (current: string, newPass: string) => {
     try {
       await changePassword(current, newPass, newPass);
@@ -203,13 +182,6 @@ export default function ProfileScreen({ route }: any) {
     }
   };
 
-  /**
-   * 회원 탈퇴.
-   *
-   * 서버는 계정을 소프트 삭제만 하고(UserService.resignAccount) 리프레시 토큰은
-   * Redis에 남겨 두므로 앱이 먼저 폐기한다. 세션 정리는 완료 안내를 확인한 뒤에
-   * 한다 — 먼저 하면 루트 네비게이터가 로그인 화면으로 바꿔 버려 안내가 사라진다.
-   */
   const handleResign = () => {
     const finishResign = async () => {
       const { clearSession } = useAuthStore.getState();
@@ -241,7 +213,7 @@ export default function ProfileScreen({ route }: any) {
                   title: '탈퇴 완료',
                   message: '회원 탈퇴가 완료되었습니다.',
                   type: 'success',
-                  // 버튼 하나뿐이라 하드웨어 뒤로가기(onRequestClose)도 이 핸들러를 탄다.
+
                   buttons: [
                     {
                       text: '확인',
@@ -265,10 +237,6 @@ export default function ProfileScreen({ route }: any) {
     });
   };
 
-  /**
-   * 일정 제목 변경. 성공하면 프로필 캐시의 해당 항목만 갈아끼워
-   * N+1 재조회 없이 화면에 즉시 반영한다.
-   */
   const handleRenamePlan = useCallback(
     async (planId: string, newName: string) => {
       const trimmed = newName.trim();
@@ -301,15 +269,13 @@ export default function ProfileScreen({ route }: any) {
           position: 'top',
           visibilityTime: 2500,
         });
-        // 뷰가 목록을 미리 바꿔 두므로 실패를 알려야 한다. 삼키면 서버가 거절한
-        // 이름이 화면에만 남는다.
+
         throw e;
       }
     },
     [queryClient],
   );
 
-  /** 프로필 공개 여부 변경. 실패는 뷰가 스위치를 되돌리도록 예외를 그대로 던진다. */
   const handleChangeProfileVisibility = useCallback(
     async (profilePublic: boolean) => {
       await changeProfileVisibility(profilePublic);
@@ -406,8 +372,7 @@ export default function ProfileScreen({ route }: any) {
   return (
     <ProfileScreenView
       loading={isLoading}
-      // 조회에 실패하면 빈 프로필이 그려진다. 값이 없는 계정과 구분되지 않으므로
-      // 실패는 실패로 알리고 다시 시도할 수단을 준다.
+
       loadError={isError}
       onRetryLoad={refetch}
       user={user}

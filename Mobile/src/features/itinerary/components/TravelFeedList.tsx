@@ -39,27 +39,21 @@ export interface TravelFeedItem {
 }
 
 interface TravelFeedListProps {
-  /** 표시할 여행기 목록 (조회·필터는 화면이 담당한다) */
+
   items: TravelFeedItem[];
   onItemPress?: (item: TravelFeedItem) => void;
   viewMode?: 'list' | 'grid';
-  /** 첫 조회 중 */
+
   isLoading?: boolean;
-  /** 다음 페이지를 불러오는 중 */
+
   isLoadingMore?: boolean;
   isRefreshing?: boolean;
-  /** 필터/검색이 걸린 상태인지 — 빈 목록 문구를 가른다 */
+
   isFiltered?: boolean;
   onRefresh?: () => void;
   onLoadMore?: () => void;
 }
 
-/**
- * 여행기 카드 한 장.
- *
- * memo로 감싸 목록이 리렌더될 때 카드까지 함께 다시 그려지지 않게 한다.
- * 카드마다 FastImage가 1~2개씩 들어 있어 재렌더 비용이 크다.
- */
 const FeedListItem = React.memo(function FeedListItem({
   item,
   isGrid,
@@ -224,12 +218,6 @@ const FeedListItem = React.memo(function FeedListItem({
   );
 });
 
-/**
- * 여행기 목록 (표시 전용).
- *
- * 조회·필터·페이지네이션은 서버가 처리하고 화면(TravelFeedScreen)이 관리한다.
- * 이 컴포넌트는 받은 목록을 그리는 일만 한다.
- */
 export default function TravelFeedList({
   items,
   onItemPress,
