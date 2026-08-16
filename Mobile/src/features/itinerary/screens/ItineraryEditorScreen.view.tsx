@@ -9,7 +9,6 @@ import {
   Keyboard,
   Pressable,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { TabActions } from '@react-navigation/native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
@@ -1193,7 +1192,6 @@ export default function ItineraryEditorScreenView({
   activeTab,
   setActiveTab,
 }: ItineraryEditorScreenViewProps) {
-  const insets = useSafeAreaInsets();
   const [inputWidth, setInputWidth] = useState(120);
   const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
   const [dayScrollLayoutWidth, setDayScrollLayoutWidth] = useState(0);
@@ -1268,7 +1266,7 @@ export default function ItineraryEditorScreenView({
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <View style={styles.topBarHeader}>
         <TouchableOpacity
           style={styles.topBarBackButton}

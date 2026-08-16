@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, Pressable, Image } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated';
 import { styles, normalize } from './IntroScreen.styles';
 import AuthSubmitButton from '../components/AuthSubmitButton';
@@ -17,10 +16,8 @@ interface IntroScreenViewProps {
  * Signup 단계 전환)과 달리 정적으로 느껴졌다.
  */
 const IntroScreenView = ({ onStart, onLogin }: IntroScreenViewProps) => {
-  const insets = useSafeAreaInsets();
-
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <View style={styles.content}>
         <Animated.View style={styles.logoContainer} entering={revealStep(0)}>
           <Image
@@ -43,9 +40,9 @@ const IntroScreenView = ({ onStart, onLogin }: IntroScreenViewProps) => {
         </Animated.Text>
       </View>
 
-      {/* 하단 여백은 기기가 알려 주는 값을 쓴다. 고정하면 제스처 바에 깔린다. */}
+      {/* 하단 여백 */}
       <Animated.View
-        style={[styles.footer, { paddingBottom: insets.bottom + normalize(16) }]}
+        style={[styles.footer, { paddingBottom: normalize(16) }]}
         entering={revealStep(3)}
       >
         <AuthSubmitButton label="시작하기" onPress={onStart} />

@@ -13,7 +13,6 @@ import {
   Animated,
   Switch,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -402,7 +401,6 @@ export default function ProfileScreenView({
   scrollToItinerary,
 }: ProfileScreenViewProps) {
   const navigation = useNavigation<any>();
-  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [isFeedbackModalVisible, setFeedbackModalVisible] = useState(false);
@@ -925,7 +923,7 @@ export default function ProfileScreenView({
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
         <TouchableOpacity
@@ -941,7 +939,7 @@ export default function ProfileScreenView({
       <ScrollView
         ref={scrollRef}
         style={{ backgroundColor: '#F8F9FA' }}
-        contentContainerStyle={[styles.scrollContainer, { paddingBottom: insets.bottom + normalize(40) }]}
+        contentContainerStyle={[styles.scrollContainer, { paddingBottom: normalize(40) }]}
         showsVerticalScrollIndicator={false}
       >
         {/* ── 1. 프로필 카드 ── */}

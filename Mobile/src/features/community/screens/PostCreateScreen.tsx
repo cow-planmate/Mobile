@@ -9,7 +9,6 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
@@ -31,7 +30,6 @@ type CreateRoute = RouteProp<CommunityStackParamList, 'CommunityCreate'>;
  * 평문을 문단 블록으로 변환해 보내므로, 웹에서 열어도 정상 문단으로 보인다.
  */
 export default function PostCreateScreen() {
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<CreateRoute>();
   const { showAlert } = useAlert();
@@ -123,7 +121,7 @@ export default function PostCreateScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top }]}
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />

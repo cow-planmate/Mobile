@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FastImage from 'react-native-fast-image';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faUser } from '@fortawesome/free-solid-svg-icons/faUser';
@@ -130,9 +129,8 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   onCloseNotificationModal,
   onAcceptNotification,
   onRejectNotification,
-}) => {
+}: HomeScreenViewProps) => {
   const [heroIndex, setHeroIndex] = useState(0);
-  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -142,7 +140,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   }, []);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
       <Header
@@ -157,7 +155,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         style={styles.scroll}
         contentContainerStyle={[
           styles.scrollContainer,
-          { paddingBottom: insets.bottom + normalize(24) },
+          { paddingBottom: normalize(24) },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

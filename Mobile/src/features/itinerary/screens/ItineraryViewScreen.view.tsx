@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Modal,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faShareNodes } from '@fortawesome/free-solid-svg-icons/faShareNodes';
 import { faPencil } from '@fortawesome/free-solid-svg-icons/faPencil';
@@ -267,7 +266,6 @@ export default function ItineraryViewScreenView({
   tripName,
   isBacking,
 }: ItineraryViewScreenViewProps) {
-  const insets = useSafeAreaInsets();
   const selectedDay = days[selectedDayIndex];
   const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
   const [dayScrollLayoutWidth, setDayScrollLayoutWidth] = useState(0);
@@ -278,7 +276,7 @@ export default function ItineraryViewScreenView({
   const endHourVal = endHour ?? (gridHours.length > 0 ? gridHours[gridHours.length - 1] : 20);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <View style={styles.topBarHeader}>
         <TouchableOpacity
           style={styles.topBarBackButton}

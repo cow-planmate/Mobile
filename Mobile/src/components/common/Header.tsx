@@ -8,7 +8,6 @@ import {
   Pressable,
   Dimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FastImage from 'react-native-fast-image';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faUser } from '@fortawesome/free-solid-svg-icons/faUser';
@@ -39,7 +38,6 @@ const Header: React.FC<HeaderProps> = ({
   const navigation = useNavigation<any>();
   const logout = useAuthStore((state) => state.logout);
   const { disconnect } = useWebSocket();
-  const insets = useSafeAreaInsets();
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 16 });
   const profileRef = useRef<React.ComponentRef<typeof TouchableOpacity>>(null);
@@ -49,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({
       const screenWidth = Dimensions.get('window').width;
       const right = screenWidth - (pageX + width);
       setMenuPosition({
-        top: pageY + height - insets.top + 3,
+        top: pageY + height + 3,
         right: Math.max(16, right),
       });
       setMenuVisible(true);
@@ -69,13 +67,13 @@ const Header: React.FC<HeaderProps> = ({
         // 소켓은 앱 루트에 붙어 있어 화면 전환만으로는 끊기지 않는다. 남겨 두면
         // 다른 참여자의 접속자 목록에 로그아웃한 사용자가 계속 보인다.
         disconnect();
-        void logout();
+        logout();
       }
-    }, 100);
+    }, 150);
   };
 
   return (
-    <View style={[styles.topBar, { paddingTop: insets.top + normalize(8) }]}>
+    <View style={styles.topBar}>
       <Text style={styles.logo}>planMate</Text>
       <View style={styles.topIcons}>
         <TouchableOpacity
@@ -165,7 +163,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: normalize(16),
-    // paddingTop은 useSafeAreaInsets()로 실제 상태바 높이에 맞춰 인라인으로 채워진다.
+    paddingTop: normalize(8),
     paddingBottom: normalize(8),
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,

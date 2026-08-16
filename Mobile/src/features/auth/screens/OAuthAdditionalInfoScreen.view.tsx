@@ -1,13 +1,12 @@
 import React from 'react';
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import DatePicker from 'react-native-date-picker';
 import ArrowLeft from 'lucide-react-native/dist/esm/icons/arrow-left';
 import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import { styles } from './OAuthAdditionalInfoScreen.styles';
 import { COLORS } from '../authTokens';
-import { sf } from '../../../design/scale';
+import { sf } from '../../../utils/normalize';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
@@ -76,13 +75,11 @@ export const OAuthAdditionalInfoScreenView = ({
   setFocusedField,
   setBirthdatePickerOpen,
 }: OAuthAdditionalInfoScreenViewProps) => {
-  const insets = useSafeAreaInsets();
-
   const fieldState = (invalid: boolean, isFocused: boolean): FieldState =>
     invalid ? 'error' : isFocused ? 'focus' : 'default';
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       {/* ── 헤더: 뒤로가기는 항상 왼쪽 ── */}
       <View style={styles.header}>
         <Pressable
@@ -221,7 +218,7 @@ export const OAuthAdditionalInfoScreenView = ({
         {!!errors.form && <InlineError message={errors.form} />}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + sf(16) }]}>
+      <View style={[styles.footer, { paddingBottom: sf(16) }]}>
         <AuthSubmitButton
           label="완료"
           onPress={onComplete}

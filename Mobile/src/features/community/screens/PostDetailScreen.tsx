@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   StatusBar,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
@@ -45,7 +44,6 @@ type DetailRoute = RouteProp<CommunityStackParamList, 'CommunityDetail'>;
 
 /** 게시글 상세 (자유/Q&A/메이트/장소추천 공용) */
 export default function PostDetailScreen() {
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<DetailRoute>();
   const { showAlert } = useAlert();
@@ -165,7 +163,7 @@ export default function PostDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.container}>
         {renderTopBar()}
         <View style={styles.stateBox}>
           <ActivityIndicator color={COLORS.primary} />
@@ -177,7 +175,7 @@ export default function PostDetailScreen() {
 
   if (isError || !post) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.container}>
         {renderTopBar()}
         <View style={styles.stateBox}>
           <Text style={styles.stateText}>
@@ -194,7 +192,7 @@ export default function PostDetailScreen() {
   const isRecruiting = post.status === 'recruiting';
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       {renderTopBar()}
 

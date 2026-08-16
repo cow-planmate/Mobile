@@ -10,7 +10,6 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { WebView } from 'react-native-webview';
 import X from 'lucide-react-native/dist/esm/icons/x';
@@ -20,7 +19,7 @@ import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { styles } from './LoginScreen.styles';
 import { COLORS } from '../authTokens';
-import { sf } from '../../../design/scale';
+import { sf } from '../../../utils/normalize';
 import { revealStep, PUSH_TRANSITION_MS } from '../motion';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
@@ -125,7 +124,6 @@ export const LoginScreenView = ({
   onSnsClose,
   onSnsNavigationStateChange,
 }: LoginScreenViewProps) => {
-  const insets = useSafeAreaInsets();
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [isPasswordVisible, setPasswordVisible] = useState(false);
 
@@ -185,13 +183,10 @@ export const LoginScreenView = ({
   );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + sf(24) },
-        ]}
+        contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
@@ -375,7 +370,7 @@ export const LoginScreenView = ({
         약관 링크는 조작이 아니라 고지다. 스크롤을 따라다니며 선택지 사이에
         끼어 있을 이유가 없어 화면 바닥에 고정해 둔다.
       */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + sf(8) }]}>
+      <View style={[styles.footer, { paddingBottom: sf(8) }]}>
         <Pressable
           onPress={() => setShowPrivacyModal(true)}
           disabled={isLoading}
@@ -399,12 +394,7 @@ export const LoginScreenView = ({
           animationType="slide"
           onRequestClose={onSnsClose}
         >
-          <View
-            style={[
-              styles.snsContainer,
-              { paddingTop: insets.top, paddingBottom: insets.bottom },
-            ]}
-          >
+          <View style={styles.snsContainer}>
             <View style={styles.snsHeader}>
               <TouchableOpacity
                 onPress={onSnsClose}

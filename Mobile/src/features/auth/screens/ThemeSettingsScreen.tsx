@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  SafeAreaView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import ArrowLeft from 'lucide-react-native/dist/esm/icons/arrow-left';
@@ -70,7 +69,7 @@ export default function ThemeSettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
       {/* Header */}
@@ -145,7 +144,7 @@ export default function ThemeSettingsScreen() {
           <Text style={styles.applyButtonText}>테마 적용하기</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

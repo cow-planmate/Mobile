@@ -9,7 +9,6 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeInDown,
   FadeOut,
@@ -26,7 +25,7 @@ import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import Loader from 'lucide-react-native/dist/esm/icons/loader';
 import { styles } from './SignupScreen.styles';
 import { COLORS } from '../authTokens';
-import { sf } from '../../../design/scale';
+import { sf } from '../../../utils/normalize';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
@@ -170,7 +169,6 @@ export const SignupScreenView = ({
   setIsConfirmPasswordVisible,
   formatTime,
 }: SignupScreenViewProps) => {
-  const insets = useSafeAreaInsets();
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
 
@@ -298,7 +296,7 @@ export const SignupScreenView = ({
 
   return (
     <View
-      style={[styles.container, { paddingTop: insets.top, height: screenHeight }]}
+      style={[styles.container, { height: screenHeight }]}
     >
       {/* ── 헤더: 뒤로가기는 항상 왼쪽 ── */}
       <Animated.View style={styles.header} entering={revealStep(0, PUSH_TRANSITION_MS)}>
@@ -825,7 +823,7 @@ export const SignupScreenView = ({
       </ScrollView>
 
       {/* ── 하단: 주 버튼은 항상 '다음' 하나 ── */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + sf(16) }]}>
+      <View style={[styles.footer, { paddingBottom: sf(16) }]}>
         <AuthSubmitButton
           label={step === totalSteps ? '회원가입 완료' : '다음'}
           onPress={onNextStep}

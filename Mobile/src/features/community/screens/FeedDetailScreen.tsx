@@ -8,7 +8,6 @@ import {
   StatusBar,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import CalendarDays from 'lucide-react-native/dist/esm/icons/calendar-days';
@@ -41,7 +40,6 @@ type FeedDetailRoute = RouteProp<FeedStackParamList, 'FeedDetail'>;
 
 /** 여행기 상세 — 일정 스냅샷을 보여주고 "가져가기"로 내 일정에 복제한다 */
 export default function FeedDetailScreen() {
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<FeedDetailRoute>();
   const { showAlert } = useAlert();
@@ -156,7 +154,7 @@ export default function FeedDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.container}>
         {renderTopBar()}
         <View style={styles.stateBox}>
           <ActivityIndicator color={COLORS.primary} />
@@ -168,7 +166,7 @@ export default function FeedDetailScreen() {
 
   if (isError || !post) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.container}>
         {renderTopBar()}
         <View style={styles.stateBox}>
           <Text style={styles.stateText}>
@@ -187,7 +185,7 @@ export default function FeedDetailScreen() {
   const regionLabel = post.location ?? post.region;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       {renderTopBar()}
 

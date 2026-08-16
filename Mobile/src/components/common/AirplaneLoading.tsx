@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, SafeAreaView, DimensionValue } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, DimensionValue } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -105,7 +105,7 @@ const AirplaneLoading = () => {
   }));
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* Background Clouds */}
       <View style={StyleSheet.absoluteFill}>
         <Cloud duration={8000} top="20%" style={{ width: 120, height: 40 }} />
@@ -134,7 +134,7 @@ const AirplaneLoading = () => {
         <Cloud duration={6000} top="35%" style={{ width: 200, height: 60 }} opacity={0.95} />
         <Cloud duration={5000} top="65%" style={{ width: 250, height: 75 }} opacity={0.9} />
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

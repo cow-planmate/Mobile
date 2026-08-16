@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeInDown,
   FadeOut,
@@ -15,7 +14,7 @@ import XCircle from 'lucide-react-native/dist/esm/icons/circle-x';
 import Loader from 'lucide-react-native/dist/esm/icons/loader';
 import { styles } from './ForgotPasswordScreen.styles';
 import { COLORS } from '../authTokens';
-import { sf } from '../../../design/scale';
+import { sf } from '../../../utils/normalize';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
@@ -99,8 +98,6 @@ export const ForgotPasswordScreenView = ({
   setFocusedField,
   formatTime,
 }: ForgotPasswordScreenViewProps) => {
-  const insets = useSafeAreaInsets();
-
   const emailRef = useRef<TextInput>(null);
   const codeRef = useRef<TextInput>(null);
 
@@ -141,7 +138,7 @@ export const ForgotPasswordScreenView = ({
     : 'default';
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <Pressable
           style={styles.headerBackButton}
@@ -174,7 +171,7 @@ export const ForgotPasswordScreenView = ({
         contentContainerStyle={[
           styles.scrollContainer,
           // step 1은 하단 버튼이 없어 스크롤 영역이 곧 화면 맨 아래다.
-          step === 1 && { paddingBottom: insets.bottom + sf(32) },
+          step === 1 && { paddingBottom: sf(32) },
         ]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -434,7 +431,7 @@ export const ForgotPasswordScreenView = ({
       */}
       {step === 2 && (
         <View
-          style={[styles.footer, { paddingBottom: insets.bottom + sf(16) }]}
+          style={[styles.footer, { paddingBottom: sf(16) }]}
         >
           {tempPasswordStatus === 'sent' && (
             <AuthSubmitButton
