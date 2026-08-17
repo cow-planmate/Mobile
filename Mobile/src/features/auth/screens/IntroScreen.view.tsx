@@ -49,6 +49,7 @@ const IntroScreenView = ({ onStart, onLogin }: IntroScreenViewProps) => {
             onPress={onLogin}
             accessibilityRole="button"
             accessibilityLabel="로그인"
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
             <Text style={styles.loginActionText}>로그인</Text>
           </Pressable>

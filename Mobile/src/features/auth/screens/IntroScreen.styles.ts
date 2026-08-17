@@ -5,7 +5,7 @@ export const normalize = (size: number) =>
   Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
 
 const COLORS = {
-  primary: '#1344FF', 
+  primary: '#1344FF',
   text: '#111827',
   textSecondary: '#6B7280',
   white: '#FFFFFF',
@@ -56,18 +56,19 @@ export const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: normalize(24),
     letterSpacing: 0.1,
-    color: COLORS.text,
+    color: COLORS.textSecondary,
     textAlign: 'center',
   },
 
   footer: {
     width: '100%',
     alignItems: 'center',
+    paddingBottom: normalize(20),
   },
   loginPromptContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: normalize(4),
+    marginTop: normalize(8),
   },
   loginActionButton: {
     minHeight: normalize(48),
