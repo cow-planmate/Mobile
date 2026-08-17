@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import CalendarIcon from 'lucide-react-native/dist/esm/icons/calendar';
+import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
+import UserIcon from 'lucide-react-native/dist/esm/icons/user';
 import {
   View,
   Text,
@@ -7,13 +10,10 @@ import {
   StatusBar,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faUser } from '@fortawesome/free-solid-svg-icons/faUser';
-import { faLocationDot } from '@fortawesome/free-solid-svg-icons/faLocationDot';
-import { faCalendar } from '@fortawesome/free-solid-svg-icons/faCalendar';
 import { CalendarModal, Header, Invitation, NotificationModal, PaxModal, SearchLocationModal } from '../../../components/common';
 import { normalize } from '../../../utils/normalize';
 import { styles } from './HomeScreen.styles';
+import { tokens } from '../../../theme/tokens';
 
 const HERO_IMAGES = [
   'https://images.unsplash.com/photo-1608463123864-40a2961b7d00?auto=format&fit=crop&w=800&q=80',
@@ -24,7 +24,7 @@ type InputRowProps = {
   label: string;
   value: string;
   placeholder?: string;
-  icon: any;
+  icon: React.ComponentType<{ size?: number; color?: string }>;
   onPress?: () => void;
   isLast?: boolean;
 };
@@ -33,7 +33,7 @@ const InputRow = ({
   label,
   value,
   placeholder,
-  icon,
+  icon: Icon,
   onPress,
   isLast,
 }: InputRowProps) => {
@@ -56,7 +56,7 @@ const InputRow = ({
           <Text style={styles.placeholderText}>{placeholder}</Text>
         )}
         <View style={styles.rowIcon}>
-          <FontAwesomeIcon icon={icon} color="#6B7280" size={18} />
+          <Icon color={tokens.colors.textSecondary} size={18} />
         </View>
       </View>
     </TouchableOpacity>
@@ -180,7 +180,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               label="여행지"
               value={destination}
               placeholder="여행지 입력" 
-              icon={faLocationDot}
+              icon={MapPin}
               onPress={onOpenSearchModal}
             />
 
@@ -188,7 +188,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               label="기간"
               value={dateText}
               placeholder="언제 떠나시나요?"
-              icon={faCalendar}
+              icon={CalendarIcon}
               onPress={onOpenCalendar}
             />
 
@@ -196,7 +196,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               label="인원수"
               value={paxText}
               placeholder="누구와 함께하시나요?"
-              icon={faUser}
+              icon={UserIcon}
               onPress={onOpenPaxModal}
             />
 

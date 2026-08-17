@@ -1,20 +1,15 @@
 import { StyleSheet } from 'react-native';
-import { theme } from '../../../theme/theme';
+import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 
-export const COLORS = theme.colors;
+export const COLORS = tokens.colors;
 
-export const FONTS = {
-  regular: 'Pretendard-Regular',
-  medium: 'Pretendard-Medium',
-  semibold: 'Pretendard-SemiBold',
-  bold: 'Pretendard-Bold',
-};
+export const FONTS = tokens.fontFamily;
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: tokens.colors.surface,
   },
   scroll: {
     flex: 1,
@@ -25,11 +20,11 @@ export const styles = StyleSheet.create({
 
   heroSection: {
     width: '100%',
-    height: normalize(180),
-    backgroundColor: '#E5E7EB',
-    justifyContent: 'flex-end', 
+    height: normalize(200),
+    backgroundColor: tokens.colors.border,
+    justifyContent: 'flex-end',
     paddingHorizontal: normalize(24),
-    paddingBottom: normalize(24), 
+    paddingBottom: normalize(28),
   },
   heroImage: {
     ...StyleSheet.absoluteFillObject,
@@ -37,53 +32,42 @@ export const styles = StyleSheet.create({
   },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(10, 15, 40, 0.38)',
   },
   heroTitle: {
-    fontSize: normalize(28),
-    fontFamily: FONTS.bold,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    lineHeight: normalize(38),
-    textAlign: 'left', 
+    fontSize: normalize(tokens.fontSize.xl),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
+    lineHeight: normalize(34),
   },
 
   actionContainer: {
-    backgroundColor: 'transparent',
-    marginTop: normalize(16), 
+    marginTop: normalize(-20),
     paddingHorizontal: normalize(16),
     paddingBottom: normalize(40),
   },
   cardWrapper: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: tokens.colors.white,
+    borderRadius: tokens.radius.xl,
     padding: normalize(20),
-
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 5,
+    ...tokens.shadows.md,
   },
   inputRow: {
-    backgroundColor: 'transparent',
-    borderRadius: 0,
-    borderWidth: 0,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-    paddingHorizontal: 0,
-    paddingVertical: normalize(10),
-    marginBottom: normalize(16),
+    borderBottomColor: tokens.colors.border,
+    paddingVertical: normalize(12),
+    marginBottom: normalize(12),
   },
   inputRowLast: {
-    marginBottom: normalize(8),
+    borderBottomWidth: 0,
+    marginBottom: 0,
   },
 
   label: {
-    fontSize: normalize(12),
-    fontFamily: FONTS.medium,
-    color: '#4B5563',
-    marginBottom: normalize(4),
+    fontSize: normalize(tokens.fontSize.xs),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.textSecondary,
+    marginBottom: normalize(6),
   },
   valueContainer: {
     flexDirection: 'row',
@@ -91,36 +75,36 @@ export const styles = StyleSheet.create({
   },
   valueText: {
     flex: 1,
-    fontSize: normalize(15),
-    fontFamily: FONTS.medium,
-    color: '#111827',
+    fontSize: normalize(tokens.fontSize.m),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
   },
   placeholderText: {
     flex: 1,
-    fontSize: normalize(15),
-    fontFamily: FONTS.medium,
-    color: '#6B7280',
+    fontSize: normalize(tokens.fontSize.m),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textTertiary,
   },
   rowIcon: {
     marginLeft: normalize(8),
   },
   submitButton: {
-    backgroundColor: '#0047FF',
-    height: normalize(50),
-    borderRadius: 8,
+    backgroundColor: tokens.colors.primary,
+    height: normalize(52),
+    borderRadius: tokens.radius.l,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: normalize(24),
   },
   submitButtonText: {
-    fontSize: normalize(16),
-    fontFamily: FONTS.bold,
-    color: '#FFFFFF',
+    fontSize: normalize(tokens.fontSize.m),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
   },
   submitButtonDisabled: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: tokens.colors.borderLight,
   },
   submitButtonTextDisabled: {
-    color: '#9CA3AF',
+    color: tokens.colors.textTertiary,
   },
 });
