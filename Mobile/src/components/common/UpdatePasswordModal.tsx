@@ -12,6 +12,7 @@ import EyeOff from 'lucide-react-native/dist/esm/icons/eye-off';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import { styles, COLORS } from './UpdatePasswordModal.styles';
 import { useAlert } from '../../contexts/AlertContext';
+import { tokens } from '../../theme/tokens';
 import {
   PASSWORD_MAX_LENGTH,
   getPasswordRequirements,
@@ -141,7 +142,7 @@ export default function UpdatePasswordModal({
           <View style={styles.header}>
             <Text style={styles.title}>비밀번호 변경</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeButton} activeOpacity={0.7}>
-              <X size={20} color="#9CA3AF" strokeWidth={1.5} />
+              <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
 

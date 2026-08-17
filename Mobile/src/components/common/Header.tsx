@@ -9,16 +9,15 @@ import {
   Dimensions,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faUser } from '@fortawesome/free-solid-svg-icons/faUser';
-import { faBell } from '@fortawesome/free-regular-svg-icons/faBell';
 import { useNavigation } from '@react-navigation/native';
 import UserIcon from 'lucide-react-native/dist/esm/icons/user';
 import LogOut from 'lucide-react-native/dist/esm/icons/log-out';
+import Bell from 'lucide-react-native/dist/esm/icons/bell';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useWebSocket } from '../../contexts/WebSocketContext';
 import { normalize } from '../../utils/normalize';
 import gravatarUrl from '../../utils/gravatarUrl';
+import { tokens } from '../../theme/tokens';
 
 export interface HeaderProps {
   nickname?: string;
@@ -64,8 +63,8 @@ const Header: React.FC<HeaderProps> = ({
           navigation.navigate('Profile');
         }
       } else if (action === 'logout') {
-
-        disconnect();
+        // 스토리북처럼 WebSocketProvider 밖에서 렌더될 수 있어 존재할 때만 끊는다
+        disconnect?.();
         logout();
       }
     }, 150);
@@ -92,7 +91,7 @@ const Header: React.FC<HeaderProps> = ({
                 accessible={false}
               />
             ) : (
-              <FontAwesomeIcon icon={faUser} size={14} color="#9CA3AF" />
+              <UserIcon size={14} color={tokens.colors.textTertiary} />
             )}
           </View>
           <Text style={[styles.userNickname, menuVisible && styles.userNicknameActive]}>
@@ -109,7 +108,7 @@ const Header: React.FC<HeaderProps> = ({
             pendingRequestsCount > 0 ? `알림 ${pendingRequestsCount}건` : '알림'
           }
         >
-          <FontAwesomeIcon icon={faBell} size={25} color="#000" />
+          <Bell size={25} color="#000" />
           {pendingRequestsCount > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{pendingRequestsCount}</Text>
@@ -163,16 +162,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     paddingTop: normalize(8),
     paddingBottom: normalize(8),
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: tokens.colors.borderLight,
     zIndex: 10,
   },
   logo: {
     fontSize: normalize(22),
     fontFamily: 'Pretendard-Bold',
     fontWeight: '800',
-    color: '#0047FF',
+    color: tokens.colors.primary,
   },
   topIcons: {
     flexDirection: 'row',
@@ -189,14 +188,14 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   profileBadgeActive: {
-    backgroundColor: '#F0F4FF',
+    backgroundColor: tokens.colors.primaryTint,
     borderColor: '#E0E7FF',
   },
   userAvatar: {
     width: normalize(24),
     height: normalize(24),
     borderRadius: normalize(12),
-    backgroundColor: '#E5E7EB',
+    backgroundColor: tokens.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -242,12 +241,12 @@ const styles = StyleSheet.create({
   },
   dropdownMenu: {
     position: 'absolute',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.white,
     borderRadius: normalize(16),
     paddingVertical: normalize(8),
     width: normalize(140),
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
     elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -270,7 +269,7 @@ const styles = StyleSheet.create({
   },
   logoutItem: {
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: tokens.colors.borderLight,
     marginTop: normalize(4),
     paddingTop: normalize(12),
   },

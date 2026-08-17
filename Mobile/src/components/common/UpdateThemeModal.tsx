@@ -19,15 +19,16 @@ import { styles, COLORS } from './UpdateThemeModal.styles';
 import { useAlert } from '../../contexts/AlertContext';
 import { resolveApiUrl } from '../../utils/apiUrl';
 import { useQueryClient } from '@tanstack/react-query';
+import { tokens } from '../../theme/tokens';
 import {
   USER_PROFILE_QUERY_KEY,
   UserProfile,
 } from '../../hooks/useUserProfile';
 
 const CATEGORY_ICONS: Record<number, React.ReactNode> = {
-  0: <Map size={16} color="#6B7280" strokeWidth={1.5} />,
-  1: <Bed size={16} color="#6B7280" strokeWidth={1.5} />,
-  2: <UtensilsCrossed size={16} color="#6B7280" strokeWidth={1.5} />,
+  0: <Map size={16} color={tokens.colors.textSecondary} strokeWidth={1.5} />,
+  1: <Bed size={16} color={tokens.colors.textSecondary} strokeWidth={1.5} />,
+  2: <UtensilsCrossed size={16} color={tokens.colors.textSecondary} strokeWidth={1.5} />,
 };
 
 const CATEGORY_NAMES: Record<number, string> = {
@@ -141,7 +142,7 @@ export default function UpdateThemeModal({
             <View style={styles.header}>
               <Text style={styles.title}>선호 테마 변경</Text>
               <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.7}>
-                <X size={20} color="#9CA3AF" strokeWidth={1.5} />
+                <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
               </TouchableOpacity>
             </View>
 

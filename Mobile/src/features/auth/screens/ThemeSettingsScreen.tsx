@@ -13,6 +13,7 @@ import Check from 'lucide-react-native/dist/esm/icons/check';
 import Palette from 'lucide-react-native/dist/esm/icons/palette';
 import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
+import { tokens } from '../../../theme/tokens';
 
 const COLORS = theme.colors;
 const FONTS = {
@@ -34,13 +35,13 @@ const THEME_OPTIONS: ThemeOption[] = [
     id: 'light',
     name: '라이트 모드 ☀️',
     description: '눈이 편안하고 깔끔한 기본 테마',
-    primaryColor: '#1344FF',
+    primaryColor: tokens.colors.primary,
   },
   {
     id: 'dark',
     name: '다크 모드 🌙',
     description: '어두운 곳에서 눈의 피로를 덜어주는 테마',
-    primaryColor: '#1F2937',
+    primaryColor: tokens.colors.text,
   },
   {
     id: 'indigo',

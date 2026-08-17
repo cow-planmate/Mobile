@@ -17,7 +17,9 @@ npm run storybook-generate  # storybook 스토리 재생성
 
 - 저장소 루트: `App/` — 실제 React Native 프로젝트는 `App/Mobile/`에 있습니다.
 - 기능별 디렉토리: `Mobile/src/features/{auth,community,home,itinerary}`
-- 화면 파일은 관례적으로 4개로 분리됩니다: `Screen.tsx`(컨테이너/로직), `Screen.view.tsx`(순수 뷰), `Screen.styles.ts`(styled-components 스타일), `Screen.stories.tsx`(Storybook)
+- 화면 파일은 관례적으로 4개로 분리됩니다: `Screen.tsx`(컨테이너/로직), `Screen.view.tsx`(순수 뷰), `Screen.styles.ts`(`StyleSheet.create` + `normalize()` 스타일), `Screen.stories.tsx`(Storybook)
+- 디자인 토큰은 `Mobile/src/theme/tokens.ts` 한 곳에서 가져옵니다. 색상 하드코딩을 지양하고, 공용 UI 프리미티브(`Mobile/src/components/ui`: Card, SectionHeader, Chip, Badge, StatRow, EmptyState, UnderlineTabs)를 재사용합니다.
+- 아이콘은 `lucide-react-native` 딥임포트만 사용합니다 (`lucide-react-native/dist/esm/icons/<name>`).
 - 상태관리: zustand(`src/store`), 서버 상태: `@tanstack/react-query`, 실시간: STOMP(WebSocket)
 - `Backend-v2`, `planmate2.0`은 이 저장소 밖(`../`)에 있는 참고 전용 저장소입니다.
 

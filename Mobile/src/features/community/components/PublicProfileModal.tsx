@@ -16,6 +16,7 @@ import { normalize } from '../../../utils/normalize';
 import { parseBackendError } from '../../../utils/errorHandler';
 import { fetchPublicProfile } from '../../../api/user';
 import UserAvatar from './UserAvatar';
+import { tokens } from '../../../theme/tokens';
 
 interface PublicProfileModalProps {
   visible: boolean;
@@ -58,7 +59,7 @@ export default function PublicProfileModal({
           <View style={styles.header}>
             <Text style={styles.title}>프로필</Text>
             <TouchableOpacity onPress={onClose} hitSlop={8}>
-              <X size={20} color="#9CA3AF" strokeWidth={1.5} />
+              <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
 
@@ -68,7 +69,7 @@ export default function PublicProfileModal({
             </View>
           ) : isPrivate ? (
             <View style={styles.stateBox}>
-              <Lock size={28} color="#9CA3AF" strokeWidth={1.5} />
+              <Lock size={28} color={tokens.colors.textTertiary} strokeWidth={1.5} />
               <Text style={styles.stateTitle}>비공개 프로필이에요</Text>
               <Text style={styles.stateText}>
                 {fallbackName ? `${fallbackName}님이 ` : ''}프로필을 공개하지
@@ -134,7 +135,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '85%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.white,
     borderRadius: normalize(16),
     padding: normalize(20),
   },
@@ -147,7 +148,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: normalize(16),
     fontFamily: theme.typography.fontFamily.bold,
-    color: '#111827',
+    color: tokens.colors.text,
   },
   stateBox: {
     alignItems: 'center',
@@ -158,11 +159,11 @@ const styles = StyleSheet.create({
   stateTitle: {
     fontSize: normalize(14),
     fontFamily: theme.typography.fontFamily.semibold,
-    color: '#111827',
+    color: tokens.colors.text,
   },
   stateText: {
     fontSize: normalize(12),
-    color: '#6B7280',
+    color: tokens.colors.textSecondary,
     textAlign: 'center',
   },
   body: {
@@ -172,7 +173,7 @@ const styles = StyleSheet.create({
   nickname: {
     fontSize: normalize(17),
     fontFamily: theme.typography.fontFamily.bold,
-    color: '#111827',
+    color: tokens.colors.text,
   },
   statRow: {
     flexDirection: 'row',
@@ -186,7 +187,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: normalize(28),
-    backgroundColor: '#E5E7EB',
+    backgroundColor: tokens.colors.border,
   },
   statValue: {
     fontSize: normalize(18),
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: normalize(11),
-    color: '#6B7280',
+    color: tokens.colors.textSecondary,
     marginTop: normalize(2),
   },
   themeSection: {
@@ -204,7 +205,7 @@ const styles = StyleSheet.create({
   },
   themeLabel: {
     fontSize: normalize(12),
-    color: '#6B7280',
+    color: tokens.colors.textSecondary,
     marginBottom: normalize(6),
   },
   themeList: {
@@ -213,13 +214,13 @@ const styles = StyleSheet.create({
     gap: normalize(6),
   },
   themeTag: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: tokens.colors.borderLight,
     paddingHorizontal: normalize(8),
     paddingVertical: normalize(4),
     borderRadius: normalize(6),
   },
   themeTagText: {
     fontSize: normalize(11),
-    color: '#4B5563',
+    color: tokens.colors.textSecondary,
   },
 });

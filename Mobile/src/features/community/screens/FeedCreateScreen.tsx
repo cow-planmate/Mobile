@@ -24,6 +24,7 @@ import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { FeedStackParamList } from '../../../navigation/types';
 import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
 import { textToBlocks } from '../utils/blocks';
+import { tokens } from '../../../theme/tokens';
 import {
   buildFeedUpdatePayload,
   parseFeedTags,
@@ -144,7 +145,7 @@ export default function FeedCreateScreen() {
     >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-          <ChevronLeft size={24} color="#111827" />
+          <ChevronLeft size={24} color={tokens.colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {isEditMode ? '여행기 수정' : '여행기 발행'}
@@ -155,7 +156,7 @@ export default function FeedCreateScreen() {
       <ScrollView contentContainerStyle={styles.body}>
         <Text style={styles.label}>공개할 일정</Text>
         {isEditMode && existingPost.isLoading ? (
-          <ActivityIndicator color="#1344FF" />
+          <ActivityIndicator color={tokens.colors.primary} />
         ) : isEditMode &&
           (existingPost.isError ||
             (existingPost.data &&
@@ -164,7 +165,7 @@ export default function FeedCreateScreen() {
           <Text style={styles.emptyText}>여행기를 불러올 수 없어요.</Text>
         ) : isEditMode && existingPost.data?.itinerary ? (
           <View style={styles.snapshotInfo}>
-            <MapPin size={16} color="#1344FF" />
+            <MapPin size={16} color={tokens.colors.primary} />
             <Text style={styles.snapshotText}>
               {existingPost.data.itinerary.plan?.destinationName ??
                 existingPost.data.location ??
@@ -173,7 +174,7 @@ export default function FeedCreateScreen() {
             </Text>
           </View>
         ) : isProfileLoading ? (
-          <ActivityIndicator color="#1344FF" />
+          <ActivityIndicator color={tokens.colors.primary} />
         ) : ownedPlans.length === 0 ? (
           <Text style={styles.emptyText}>발행할 내 일정이 없어요.</Text>
         ) : (
@@ -196,9 +197,9 @@ export default function FeedCreateScreen() {
                   </Text>
                 </View>
                 {isLoading ? (
-                  <ActivityIndicator color="#1344FF" />
+                  <ActivityIndicator color={tokens.colors.primary} />
                 ) : selected ? (
-                  <Check size={20} color="#1344FF" />
+                  <Check size={20} color={tokens.colors.primary} />
                 ) : null}
               </Pressable>
             );
@@ -207,7 +208,7 @@ export default function FeedCreateScreen() {
 
         {!isEditMode && snapshot && (
           <View style={styles.snapshotInfo}>
-            <MapPin size={16} color="#1344FF" />
+            <MapPin size={16} color={tokens.colors.primary} />
             <Text style={styles.snapshotText}>
               {snapshot.destinationName} · {snapshot.itinerary.days.length}일 일정이 공개됩니다.
             </Text>
@@ -321,7 +322,7 @@ export default function FeedCreateScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1, backgroundColor: tokens.colors.white },
   header: {
     height: 56,
     paddingHorizontal: 16,
@@ -329,26 +330,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: tokens.colors.border,
   },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#111827' },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: tokens.colors.text },
   headerSpace: { width: 24 },
   body: { padding: 20, gap: 10 },
   label: { marginTop: 8, fontSize: 14, fontWeight: '700', color: '#374151' },
   planCard: {
     minHeight: 64,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
     borderRadius: 12,
     padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  planCardSelected: { borderColor: '#1344FF', backgroundColor: '#EFF6FF' },
-  planName: { fontSize: 15, fontWeight: '600', color: '#111827' },
-  planDate: { marginTop: 4, fontSize: 12, color: '#6B7280' },
-  emptyText: { paddingVertical: 16, color: '#6B7280', textAlign: 'center' },
+  planCardSelected: { borderColor: tokens.colors.primary, backgroundColor: '#EFF6FF' },
+  planName: { fontSize: 15, fontWeight: '600', color: tokens.colors.text },
+  planDate: { marginTop: 4, fontSize: 12, color: tokens.colors.textSecondary },
+  emptyText: { paddingVertical: 16, color: tokens.colors.textSecondary, textAlign: 'center' },
   snapshotInfo: {
     flexDirection: 'row',
     gap: 6,
@@ -360,7 +361,7 @@ const styles = StyleSheet.create({
   snapshotText: { flex: 1, fontSize: 13, color: '#1D4ED8' },
   itineraryPreview: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -370,26 +371,26 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontSize: 13,
     fontWeight: '700',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: tokens.colors.surface,
   },
   previewDay: {
     flexDirection: 'row',
     gap: 10,
     padding: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: tokens.colors.borderLight,
   },
   previewDayLabel: {
     alignSelf: 'flex-start',
     paddingHorizontal: 7,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: '#E8EDFF',
+    backgroundColor: tokens.colors.sub,
   },
-  previewDayText: { color: '#1344FF', fontSize: 11, fontWeight: '700' },
+  previewDayText: { color: tokens.colors.primary, fontSize: 11, fontWeight: '700' },
   previewPlaces: { flex: 1, gap: 3 },
   previewPlace: { color: '#374151', fontSize: 13 },
-  previewMore: { color: '#9CA3AF', fontSize: 12 },
+  previewMore: { color: tokens.colors.textTertiary, fontSize: 12 },
   input: {
     minHeight: 48,
     borderWidth: 1,
@@ -397,17 +398,17 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     fontSize: 14,
-    color: '#111827',
+    color: tokens.colors.text,
   },
   contentInput: { minHeight: 120, paddingTop: 12 },
-  footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#E5E7EB' },
+  footer: { padding: 16, borderTopWidth: 1, borderTopColor: tokens.colors.border },
   submitButton: {
     minHeight: 52,
     borderRadius: 12,
-    backgroundColor: '#1344FF',
+    backgroundColor: tokens.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  submitDisabled: { backgroundColor: '#9CA3AF' },
-  submitText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  submitDisabled: { backgroundColor: tokens.colors.textTertiary },
+  submitText: { color: tokens.colors.white, fontSize: 15, fontWeight: '700' },
 });

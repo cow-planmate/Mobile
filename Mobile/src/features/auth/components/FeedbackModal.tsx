@@ -14,6 +14,7 @@ import Toast from 'react-native-toast-message';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import { submitFeedback, FEEDBACK_EMPTY_MESSAGE } from '../../../api/feedback';
 import { styles } from './FeedbackModal.styles';
+import { tokens } from '../../../theme/tokens';
 
 type FeedbackModalProps = {
   visible: boolean;
@@ -76,7 +77,7 @@ export default function FeedbackModal({ visible, onClose }: FeedbackModalProps) 
                 onPress={onClose}
                 style={styles.closeButton}
               >
-                <X size={20} color="#6B7280" strokeWidth={1.5} />
+                <X size={20} color={tokens.colors.textSecondary} strokeWidth={1.5} />
               </TouchableOpacity>
             </View>
             <Text style={styles.description}>
@@ -89,7 +90,7 @@ export default function FeedbackModal({ visible, onClose }: FeedbackModalProps) 
               multiline
               onChangeText={setContent}
               placeholder="피드백을 입력해 주세요."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={tokens.colors.textTertiary}
               style={styles.input}
               value={content}
             />

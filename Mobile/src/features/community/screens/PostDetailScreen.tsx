@@ -39,6 +39,7 @@ import PublicProfileModal from '../components/PublicProfileModal';
 import LevelBadge from '../components/LevelBadge';
 import { ReactionType } from '../types';
 import { styles, COLORS } from './PostDetailScreen.styles';
+import { tokens } from '../../../theme/tokens';
 
 type DetailRoute = RouteProp<CommunityStackParamList, 'CommunityDetail'>;
 
@@ -188,7 +189,7 @@ export default function PostDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
       {renderTopBar()}
 
       <ScrollView showsVerticalScrollIndicator={false}>

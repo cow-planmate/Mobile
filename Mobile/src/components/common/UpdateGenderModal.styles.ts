@@ -1,16 +1,17 @@
 import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
+import { tokens } from '../../theme/tokens';
 
 const { width } = Dimensions.get('window');
 const normalize = (size: number) =>
   Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
 
 export const COLORS = {
-  primary: '#1344FF',
-  text: '#111827',
-  placeholder: '#9CA3AF',
-  white: '#FFFFFF',
-  border: '#E5E7EB',
-  surface: '#F3F4F6',
+  primary: tokens.colors.primary,
+  text: tokens.colors.text,
+  placeholder: tokens.colors.textTertiary,
+  white: tokens.colors.white,
+  border: tokens.colors.border,
+  surface: tokens.colors.borderLight,
 };
 
 export const FONTS = {

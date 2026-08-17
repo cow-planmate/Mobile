@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
+import { tokens } from '../../../theme/tokens';
 
 export const COLORS = theme.colors;
 
@@ -277,8 +278,8 @@ export const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   reactionButtonActiveDislike: {
-    backgroundColor: '#4B5563',
-    borderColor: '#4B5563',
+    backgroundColor: tokens.colors.textSecondary,
+    borderColor: tokens.colors.textSecondary,
   },
   reactionText: {
     fontSize: normalize(12),

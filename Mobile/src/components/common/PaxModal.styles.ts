@@ -1,13 +1,14 @@
 import { StyleSheet } from 'react-native';
 import { normalize } from '../../utils/normalize';
+import { tokens } from '../../theme/tokens';
 
 export const COLORS = {
-  primary: '#1344FF',
-  text: '#111827',
-  placeholder: '#9CA3AF',
-  white: '#FFFFFF',
-  border: '#E5E7EB',
-  surface: '#F3F4F6',
+  primary: tokens.colors.primary,
+  text: tokens.colors.text,
+  placeholder: tokens.colors.textTertiary,
+  white: tokens.colors.white,
+  border: tokens.colors.border,
+  surface: tokens.colors.borderLight,
   lightBlue: '#E0E7FF',
 };
 

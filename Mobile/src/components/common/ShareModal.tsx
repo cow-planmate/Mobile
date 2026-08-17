@@ -24,6 +24,7 @@ import {
 import { theme } from '../../theme/theme';
 import { useAlert } from '../../contexts/AlertContext';
 import { getNicknameLengthError } from '../../utils/nickname';
+import { tokens } from '../../theme/tokens';
 import {
   getDisplayErrorMessage,
   parseBackendError,
@@ -263,7 +264,7 @@ export default function ShareModal({
           <View style={styles.header}>
             <Text style={styles.title}>일정 공유 및 초대</Text>
             <TouchableOpacity onPress={onClose}>
-              <X size={22} color="#9CA3AF" strokeWidth={1.5} />
+              <X size={22} color={tokens.colors.textTertiary} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
 
@@ -275,7 +276,7 @@ export default function ShareModal({
                   value={isShared}
                   onValueChange={handleToggleShare}
                   trackColor={{ false: '#D1D5DB', true: COLORS.primary }}
-                  thumbColor="#FFFFFF"
+                  thumbColor={tokens.colors.white}
                 />
               </View>
             )}
@@ -368,12 +369,12 @@ const styles = StyleSheet.create({
   },
   container: {
     width: '90%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.white,
     borderRadius: 20,
     padding: 24,
     maxHeight: '80%',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
   },
   header: {
     flexDirection: 'row',
@@ -384,7 +385,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontFamily: FONTS.bold,
-    color: '#111827',
+    color: tokens.colors.text,
   },
   section: {
     marginBottom: 24,
@@ -392,22 +393,22 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontFamily: FONTS.semibold,
-    color: '#6B7280',
+    color: tokens.colors.textSecondary,
     marginBottom: 8,
   },
   linkContainer: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: tokens.colors.borderLight,
     borderRadius: 8,
     padding: 4,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
   },
   linkInput: {
     flex: 1,
     padding: 12,
     fontSize: 14,
-    color: '#111827',
+    color: tokens.colors.text,
     fontFamily: FONTS.regular,
   },
   copyButton: {
@@ -419,7 +420,7 @@ const styles = StyleSheet.create({
     margin: 4,
   },
   copyButtonText: {
-    color: '#FFFFFF',
+    color: tokens.colors.white,
     fontFamily: FONTS.semibold,
     fontSize: 13,
   },
@@ -440,13 +441,13 @@ const styles = StyleSheet.create({
   },
   helperText: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: tokens.colors.textTertiary,
     marginTop: 6,
     fontFamily: FONTS.regular,
   },
   divider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: tokens.colors.border,
     marginBottom: 24,
   },
   inviteContainer: {
@@ -455,14 +456,14 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: tokens.colors.borderLight,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 14,
     fontFamily: FONTS.regular,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
   },
   inviteButton: {
     backgroundColor: COLORS.primary,
@@ -475,7 +476,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   inviteButtonText: {
-    color: '#FFFFFF',
+    color: tokens.colors.white,
     fontFamily: FONTS.semibold,
     fontSize: 14,
   },
@@ -494,18 +495,18 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: tokens.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
     fontSize: 14,
     fontFamily: FONTS.semibold,
-    color: '#6B7280',
+    color: tokens.colors.textSecondary,
   },
   editorName: {
     fontSize: 14,
-    color: '#111827',
+    color: tokens.colors.text,
     fontFamily: FONTS.regular,
   },
   removeButton: {
@@ -517,19 +518,19 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
   },
   confirmButton: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: tokens.colors.borderLight,
     borderRadius: 12,
     height: 52,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
   },
   confirmButtonText: {
     fontSize: 16,
     fontFamily: FONTS.semibold,
-    color: '#111827',
+    color: tokens.colors.text,
   },
   switchRow: {
     flexDirection: 'row',

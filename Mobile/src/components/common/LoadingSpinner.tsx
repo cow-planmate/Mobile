@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { tokens } from '../../theme/tokens';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,7 +11,7 @@ import Animated, {
 
 const DOT_COUNT = 3;
 const DOT_SIZE = 10;
-const PRIMARY = '#1344FF';
+const PRIMARY = tokens.colors.primary;
 
 interface LoadingSpinnerProps {
   size?: 'small' | 'large';

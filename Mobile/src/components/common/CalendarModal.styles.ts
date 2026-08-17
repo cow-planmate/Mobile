@@ -1,16 +1,17 @@
 import { StyleSheet } from 'react-native';
 import { normalize } from '../../utils/normalize';
+import { tokens } from '../../theme/tokens';
 
 export const COLORS = {
-  primary: '#1344FF',
-  primaryLight: '#E8EDFF', 
-  white: '#FFFFFF',
-  surface: '#F3F4F6',
-  text: '#111827',
-  subtext: '#4B5563',
-  subtextMuted: '#6B7280',
-  placeholder: '#9CA3AF',
-  border: '#E5E7EB',
+  primary: tokens.colors.primary,
+  primaryLight: tokens.colors.sub, 
+  white: tokens.colors.white,
+  surface: tokens.colors.borderLight,
+  text: tokens.colors.text,
+  subtext: tokens.colors.textSecondary,
+  subtextMuted: tokens.colors.textSecondary,
+  placeholder: tokens.colors.textTertiary,
+  border: tokens.colors.border,
   danger: '#EF4444',
   weekendBlue: '#2563EB',
 };

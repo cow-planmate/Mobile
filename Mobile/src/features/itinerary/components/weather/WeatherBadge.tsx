@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import WeatherIcon from './WeatherIcon';
+import { tokens } from '../../../../theme/tokens';
 
 interface WeatherBadgeProps {
   description: string;
@@ -40,7 +41,7 @@ const s = StyleSheet.create({
   tempText: {
     fontSize: 10,
     fontFamily: 'Pretendard-Medium',
-    color: '#6B7280',
+    color: tokens.colors.textSecondary,
   },
   tempTextLight: {
     color: 'rgba(255,255,255,0.85)',

@@ -1,13 +1,15 @@
 import React from 'react';
 import { Modal, View, Text, Pressable, TouchableOpacity } from 'react-native';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { styles } from './MenuModal.styles';
+import { tokens } from '../../theme/tokens';
+
+export type MenuIcon = React.ComponentType<{ size?: number; color?: string }>;
 
 export type MenuOption = {
   label: string;
   action: string;
   isDestructive?: boolean;
-  icon: any;
+  icon: MenuIcon;
 };
 
 type MenuModalProps = {
@@ -49,10 +51,13 @@ export default function MenuModal({
                 onPress={() => onSelect(option.action)}
                 activeOpacity={0.75}
               >
-                <FontAwesomeIcon
-                  icon={option.icon}
+                <option.icon
                   size={16}
-                  color={option.isDestructive ? '#EF4444' : '#111827'}
+                  color={
+                    option.isDestructive
+                      ? tokens.tones.danger.fg
+                      : tokens.colors.text
+                  }
                 />
                 <Text
                   style={[

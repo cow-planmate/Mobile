@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, Pressable, TouchableOpacity } from 'react-native';
 import { styles } from './UpdateGenderModal.styles';
 import X from 'lucide-react-native/dist/esm/icons/x';
+import { tokens } from '../../theme/tokens';
 
 type UpdateGenderModalProps = {
   visible: boolean;
@@ -41,7 +42,7 @@ export default function UpdateGenderModal({
           <View style={styles.header}>
             <Text style={styles.title}>성별 변경</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.7}>
-              <X size={20} color="#9CA3AF" strokeWidth={1.5} />
+              <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
 

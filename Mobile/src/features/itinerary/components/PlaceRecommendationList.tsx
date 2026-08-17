@@ -14,21 +14,20 @@ import {
   Linking,
   Alert,
 } from 'react-native';
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faBed } from '@fortawesome/free-solid-svg-icons/faBed';
-import { faCircleInfo } from '@fortawesome/free-solid-svg-icons/faCircleInfo';
-import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons/faMagnifyingGlass';
-import { faPencil } from '@fortawesome/free-solid-svg-icons/faPencil';
-import { faUmbrellaBeach } from '@fortawesome/free-solid-svg-icons/faUmbrellaBeach';
-import { faUtensils } from '@fortawesome/free-solid-svg-icons/faUtensils';
 import X from 'lucide-react-native/dist/esm/icons/x';
+import Bed from 'lucide-react-native/dist/esm/icons/bed';
+import InfoIcon from 'lucide-react-native/dist/esm/icons/info';
+import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
+import SearchIcon from 'lucide-react-native/dist/esm/icons/search';
+import Umbrella from 'lucide-react-native/dist/esm/icons/umbrella';
+import Utensils from 'lucide-react-native/dist/esm/icons/utensils';
 import { Place } from './TimelineItem';
 import KakaoMapView from './KakaoMapView';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { usePlaces } from '../../../contexts/PlacesContext';
 import { PlaceVO } from '../../../api/trips';
 import { GoogleMapsIcon } from '../../../components/common';
+import { tokens } from '../../../theme/tokens';
 const FONTS = {
   regular: 'Pretendard-Regular',
   medium: 'Pretendard-Medium',
@@ -52,7 +51,7 @@ const TAB_COLORS: { [key in PlaceTab]: string } = {
   숙소: '#f97316',
   식당: '#3b82f6',
   '직접 추가': '#8b5cf6',
-  검색: '#6b7280',
+  검색: tokens.colors.textSecondary,
 };
 
 type PlaceTab = '관광지' | '숙소' | '식당' | '직접 추가' | '검색';
@@ -66,7 +65,7 @@ const TAB_TO_PLACES_FIELD: Partial<
 };
 
 type EmptyStateConfig = {
-  icon: IconDefinition;
+  icon: React.ComponentType<{ size?: number; color?: string }>;
   iconColor: string;
   iconBackground: string;
   title: string;
@@ -79,28 +78,28 @@ const EMPTY_STATE_CONFIG: Record<
   EmptyStateConfig
 > = {
   관광지: {
-    icon: faUmbrellaBeach,
+    icon: Umbrella,
     iconColor: '#84cc16',
     iconBackground: '#ecfccb',
     title: '관광지 추천장소가 존재하지 않아요.',
     subtitle: "'직접 추가' 탭에서 장소를 직접 넣을 수 있어요!",
   },
   숙소: {
-    icon: faBed,
+    icon: Bed,
     iconColor: '#f97316',
     iconBackground: '#ffedd5',
     title: '숙소 추천장소가 존재하지 않아요.',
     subtitle: "'직접 추가' 탭에서 장소를 직접 넣을 수 있어요!",
   },
   식당: {
-    icon: faUtensils,
+    icon: Utensils,
     iconColor: '#3b82f6',
     iconBackground: '#dbeafe',
     title: '식당 추천장소가 존재하지 않아요.',
     subtitle: "'직접 추가' 탭에서 장소를 직접 넣을 수 있어요!",
   },
   '직접 추가': {
-    icon: faPencil,
+    icon: Pencil,
     iconColor: '#8b5cf6',
     iconBackground: '#ede9fe',
     title: "위 일정에 맞춰 장소 이름을 입력하고 '추가' 버튼을 눌러보세요.",
@@ -237,7 +236,7 @@ const PlaceMapModal = React.memo(
               {place.name}
             </Text>
             <TouchableOpacity onPress={onClose} style={plStyles.mapModalClose}>
-              <X size={16} color="#9CA3AF" strokeWidth={1.5} />
+              <X size={16} color={tokens.colors.textTertiary} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
           <KakaoMapView places={mapPlaces} style={plStyles.mapModalMap} />
@@ -449,7 +448,7 @@ export default function PlaceRecommendationList({
     if (isLoading) {
       return (
         <View style={plStyles.footerLoading}>
-          <ActivityIndicator size="small" color="#1344FF" />
+          <ActivityIndicator size="small" color={tokens.colors.primary} />
         </View>
       );
     }
@@ -473,11 +472,7 @@ export default function PlaceRecommendationList({
       return (
         <View style={plStyles.emptyContainer}>
           <View style={[plStyles.emptyIconWrapper, plStyles.emptyIconSearch]}>
-            <FontAwesomeIcon
-              icon={faMagnifyingGlass}
-              size={28}
-              color="#9CA3AF"
-            />
+            <SearchIcon size={28} color={tokens.colors.textTertiary} />
           </View>
           <Text style={plStyles.emptyTitle}>장소 검색은 준비 중이에요.</Text>
           <Text style={plStyles.emptySubtitle}>
@@ -500,17 +495,13 @@ export default function PlaceRecommendationList({
             { backgroundColor: config.iconBackground },
           ]}
         >
-          <FontAwesomeIcon
-            icon={config.icon}
-            size={28}
-            color={config.iconColor}
-          />
+          <config.icon size={28} color={config.iconColor} />
         </View>
         <Text style={plStyles.emptyTitle}>{config.title}</Text>
         <Text style={plStyles.emptySubtitle}>{config.subtitle}</Text>
         {config.note && (
           <View style={plStyles.emptyNotePill}>
-            <FontAwesomeIcon icon={faCircleInfo} size={12} color="#6B7280" />
+            <InfoIcon size={12} color={tokens.colors.textSecondary} />
             <Text style={plStyles.emptyNoteText}>{config.note}</Text>
           </View>
         )}
@@ -528,13 +519,13 @@ export default function PlaceRecommendationList({
       return (
         <View style={plStyles.searchContainer}>
           <View style={plStyles.searchField}>
-            <FontAwesomeIcon icon={faPencil} size={16} color="#8B5CF6" />
+            <Pencil size={16} color="#8B5CF6" />
             <TextInput
               value={customPlaceName}
               onChangeText={setCustomPlaceName}
               onSubmitEditing={handleDirectAdd}
               placeholder="장소 이름을 입력하세요"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={tokens.colors.textTertiary}
               returnKeyType="done"
               style={plStyles.searchInput}
               autoCorrect={false}
@@ -575,11 +566,11 @@ export default function PlaceRecommendationList({
                 style={[
                   plStyles.tab,
                   {
-                    backgroundColor: '#FFFFFF',
+                    backgroundColor: tokens.colors.white,
                     borderTopLeftRadius: 8,
                     borderTopRightRadius: 8,
                     borderWidth: 1,
-                    borderColor: '#E5E7EB',
+                    borderColor: tokens.colors.border,
                     borderBottomWidth: 0,
                     marginBottom: -1,
                   },
@@ -593,7 +584,7 @@ export default function PlaceRecommendationList({
                   style={[
                     plStyles.tabText,
                     { fontSize: 13 },
-                    isSelected && { color: '#FFFFFF', fontFamily: FONTS.bold },
+                    isSelected && { color: tokens.colors.white, fontFamily: FONTS.bold },
                   ]}
                 >
                   {tab}
@@ -623,8 +614,8 @@ export default function PlaceRecommendationList({
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            colors={['#1344FF']}
-            tintColor="#1344FF"
+            colors={[tokens.colors.primary]}
+            tintColor={tokens.colors.primary}
           />
         }
       />
@@ -641,16 +632,16 @@ export default function PlaceRecommendationList({
 const plStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.white,
   },
   tabContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: tokens.colors.border,
   },
   tab: {
     flex: 1,
@@ -659,7 +650,7 @@ const plStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   tabSelected: {
-    borderBottomColor: '#1344FF',
+    borderBottomColor: tokens.colors.primary,
   },
   tabInner: {
     flexDirection: 'row',
@@ -677,10 +668,10 @@ const plStyles = StyleSheet.create({
   tabText: {
     fontSize: 15,
     fontFamily: FONTS.medium,
-    color: '#9CA3AF',
+    color: tokens.colors.textTertiary,
   },
   tabTextSelected: {
-    color: '#1344FF',
+    color: tokens.colors.primary,
     fontFamily: FONTS.bold,
   },
   listContent: {
@@ -692,18 +683,18 @@ const plStyles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: tokens.colors.border,
     gap: 10,
   },
   searchField: {
     flex: 1,
     minHeight: 46,
     borderRadius: 16,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: tokens.colors.surface,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
@@ -713,7 +704,7 @@ const plStyles = StyleSheet.create({
     flex: 1,
     paddingVertical: 0,
     fontSize: 15,
-    color: '#111827',
+    color: tokens.colors.text,
     fontFamily: FONTS.regular,
   },
   searchActionButton: {
@@ -731,7 +722,7 @@ const plStyles = StyleSheet.create({
     backgroundColor: '#D1D5DB',
   },
   searchActionButtonText: {
-    color: '#FFFFFF',
+    color: tokens.colors.white,
     fontSize: 14,
     fontFamily: FONTS.bold,
   },
@@ -741,8 +732,8 @@ const plStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderBottomColor: tokens.colors.border,
+    backgroundColor: tokens.colors.white,
   },
   placeImage: {
     width: 48,
@@ -757,7 +748,7 @@ const plStyles = StyleSheet.create({
   placeholderText: {
     fontSize: 16,
     fontFamily: FONTS.bold,
-    color: '#9CA3AF',
+    color: tokens.colors.textTertiary,
   },
   placeInfo: {
     flex: 1,
@@ -792,7 +783,7 @@ const plStyles = StyleSheet.create({
   addressText: {
     flex: 1,
     fontSize: 14,
-    color: '#6B7280',
+    color: tokens.colors.textSecondary,
     fontFamily: FONTS.regular,
   },
   actionGroup: {
@@ -804,7 +795,7 @@ const plStyles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.white,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -812,7 +803,7 @@ const plStyles = StyleSheet.create({
   },
   mapModalContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.white,
   },
   mapModalHeader: {
     flexDirection: 'row',
@@ -822,21 +813,21 @@ const plStyles = StyleSheet.create({
     paddingVertical: 14,
     paddingTop: 50,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderBottomColor: tokens.colors.border,
+    backgroundColor: tokens.colors.white,
   },
   mapModalTitle: {
     flex: 1,
     fontSize: 17,
     fontFamily: FONTS.semibold,
-    color: '#111827',
+    color: tokens.colors.text,
     marginRight: 12,
   },
   mapModalClose: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: tokens.colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -852,15 +843,15 @@ const plStyles = StyleSheet.create({
     marginVertical: 12,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: tokens.colors.surface,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
   },
   loadMoreText: {
     fontSize: 14,
     fontFamily: FONTS.semibold,
-    color: '#1344FF',
+    color: tokens.colors.primary,
   },
   emptyContainer: {
     flex: 1,
@@ -879,12 +870,12 @@ const plStyles = StyleSheet.create({
     marginBottom: 18,
   },
   emptyIconSearch: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: tokens.colors.borderLight,
   },
   emptyTitle: {
     fontSize: 18,
     lineHeight: 25,
-    color: '#111827',
+    color: tokens.colors.text,
     fontFamily: FONTS.bold,
     textAlign: 'center',
     letterSpacing: -0.2,
@@ -892,7 +883,7 @@ const plStyles = StyleSheet.create({
   emptySubtitle: {
     fontSize: 13,
     lineHeight: 19,
-    color: '#9CA3AF',
+    color: tokens.colors.textTertiary,
     fontFamily: FONTS.regular,
     marginTop: 10,
     textAlign: 'center',
@@ -902,13 +893,13 @@ const plStyles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 999,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: tokens.colors.borderLight,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
   emptyNoteText: {
-    color: '#6B7280',
+    color: tokens.colors.textSecondary,
     fontSize: 12,
     lineHeight: 16,
     fontFamily: FONTS.medium,
@@ -919,9 +910,9 @@ const plStyles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: tokens.colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: tokens.colors.border,
   },
   filterLabelRow: {
     flexDirection: 'column',
@@ -930,12 +921,12 @@ const plStyles = StyleSheet.create({
   filterLabelText: {
     fontSize: 14,
     fontFamily: FONTS.semibold,
-    color: '#111827',
+    color: tokens.colors.text,
   },
   filterSubText: {
     fontSize: 11,
     fontFamily: FONTS.regular,
-    color: '#6B7280',
+    color: tokens.colors.textSecondary,
   },
   filterToggle: {
     width: 44,
@@ -954,7 +945,7 @@ const plStyles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.white,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,

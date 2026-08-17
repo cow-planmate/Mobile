@@ -7,6 +7,7 @@ import { BlockInlineContent, ContentBlock } from '../types';
 import { asBlocks, inlineToText } from '../utils/blocks';
 import { isUnreachableHostUrl } from '../utils/avatar';
 import { openExternalUrl } from '../../../utils/externalLink';
+import { tokens } from '../../../theme/tokens';
 
 interface PostContentViewProps {
   content: unknown;
@@ -349,7 +350,7 @@ const styles = StyleSheet.create({
   },
 
   codeBlock: {
-    backgroundColor: '#1F2937',
+    backgroundColor: tokens.colors.text,
     borderRadius: theme.borderRadius.m,
     padding: normalize(12),
     marginBottom: normalize(10),
@@ -358,7 +359,7 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     fontSize: normalize(12),
     lineHeight: normalize(18),
-    color: '#E5E7EB',
+    color: tokens.colors.border,
   },
 
   imageWrap: {

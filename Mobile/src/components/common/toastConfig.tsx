@@ -5,6 +5,7 @@ import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
 import Info from 'lucide-react-native/dist/esm/icons/info';
 import XCircle from 'lucide-react-native/dist/esm/icons/circle-x';
 import { sf, sp } from '../../utils/normalize';
+import { tokens } from '../../theme/tokens';
 
 const toastStyles = StyleSheet.create({
   container: {
@@ -13,7 +14,7 @@ const toastStyles = StyleSheet.create({
     borderRadius: 14,
     marginHorizontal: sf(24),
     marginTop: sf(8),
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.white,
     alignItems: 'center',
     justifyContent: 'flex-start',
     flexDirection: 'row',
@@ -26,7 +27,7 @@ const toastStyles = StyleSheet.create({
     elevation: 2,
   },
   text: {
-    color: '#111827',
+    color: tokens.colors.text,
     fontSize: sp(13),
     fontFamily: 'Pretendard-Medium',
     textAlign: 'left',
@@ -51,7 +52,7 @@ export const toastConfig: ToastConfig = {
   ),
   info: ({ text1 }) => (
     <View style={toastStyles.container}>
-      <Info size={18} color="#1344FF" strokeWidth={2.5} />
+      <Info size={18} color={tokens.colors.primary} strokeWidth={2.5} />
       <Text style={toastStyles.text}>{text1 ?? ''}</Text>
     </View>
   ),

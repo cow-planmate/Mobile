@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { styles } from './UpdateValueModal.styles';
 import X from 'lucide-react-native/dist/esm/icons/x';
+import { tokens } from '../../theme/tokens';
 
 type UpdateValueModalProps = {
   visible: boolean;
@@ -57,7 +58,7 @@ export default function UpdateValueModal({
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.7}>
-              <X size={20} color="#9CA3AF" strokeWidth={1.5} />
+              <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
 

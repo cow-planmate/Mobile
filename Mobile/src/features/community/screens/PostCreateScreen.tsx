@@ -20,6 +20,7 @@ import { BOARDS, BoardKey } from '../constants/levels';
 import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
 import { buildPostPayload } from '../utils/postPayload';
 import { styles, COLORS } from './PostCreateScreen.styles';
+import { tokens } from '../../../theme/tokens';
 
 type CreateRoute = RouteProp<CommunityStackParamList, 'CommunityCreate'>;
 
@@ -116,7 +117,7 @@ export default function PostCreateScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
 
       <View style={styles.topBar}>
         <TouchableOpacity

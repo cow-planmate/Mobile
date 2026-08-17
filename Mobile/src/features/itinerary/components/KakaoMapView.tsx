@@ -4,6 +4,10 @@ import { WebView } from 'react-native-webview';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import { KAKAO_APP_KEY } from '@env';
 import { RoutePoint } from '../../../api/route';
+import { tokens } from '../../../theme/tokens';
+
+/** WebView로 주입되는 SVG 문자열 안에서 쓰는 색 — JSX가 아니라 문자열이라 토큰을 직접 넣는다 */
+const ROUTE_ARROW_COLOR = tokens.colors.primary;
 
 export interface MapPlace {
   id: string;
@@ -124,7 +128,7 @@ export default function KakaoMapView({
       font-weight: 700;
       letter-spacing: 0.2px;
       border: 2px solid #fff;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     }
     .marker-tail {
       width: 0;
@@ -139,7 +143,7 @@ export default function KakaoMapView({
       padding: 10px 14px;
       min-width: 160px;
       max-width: 220px;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       border-radius: 10px;
       background: #fff;
     }
@@ -313,7 +317,7 @@ export default function KakaoMapView({
           var polyline = new kakao.maps.Polyline({
             path: linePath,
             strokeWeight: 3,
-            strokeColor: '#1344FF',
+            strokeColor: "${ROUTE_ARROW_COLOR}",
             strokeOpacity: 0.35,
             strokeStyle: 'dash'
           });
@@ -335,7 +339,7 @@ export default function KakaoMapView({
             var arrowContent =
               '<div style="transform: rotate(' + angle + 'deg); display: flex; align-items: center; justify-content: center; width: 28px; height: 28px;">' +
                 '<svg width="22" height="22" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-                  '<path d="M3 2L7 5L3 8" stroke="#1344FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.8"/>' +
+                  '<path d="M3 2L7 5L3 8" stroke="${ROUTE_ARROW_COLOR}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.8"/>' +
                 '</svg>' +
               '</div>';
 
@@ -375,7 +379,7 @@ export default function KakaoMapView({
             return new kakao.maps.LatLng(p.lat, p.lng);
           }),
           strokeWeight: 4,
-          strokeColor: '#1344FF',
+          strokeColor: "${ROUTE_ARROW_COLOR}",
           strokeOpacity: 0.6,
           strokeStyle: 'solid'
         });
@@ -477,12 +481,12 @@ const mapStyles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: tokens.colors.surface,
     gap: 8,
   },
   emptyText: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: tokens.colors.textTertiary,
     fontFamily: 'Pretendard-Medium',
   },
   emptyHint: {

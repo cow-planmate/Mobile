@@ -9,6 +9,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
+import { tokens } from '../../theme/tokens';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -165,7 +166,7 @@ const styles = StyleSheet.create({
   subtitle: {
     marginTop: 8,
     fontSize: 14,
-    color: '#6B7280', 
+    color: tokens.colors.textSecondary, 
     fontWeight: '500',
   },
   cloudBase: {

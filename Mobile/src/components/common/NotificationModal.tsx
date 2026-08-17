@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import { theme } from '../../theme/theme';
+import { tokens } from '../../theme/tokens';
 import {
   CollaborationRequestType,
   describeCollaborationRequest,
@@ -65,7 +66,7 @@ const NotificationModal = ({
               accessibilityRole="button"
               accessibilityLabel="닫기"
             >
-              <X size={20} color="#9CA3AF" strokeWidth={1.5} />
+              <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
 
@@ -126,12 +127,12 @@ const styles = StyleSheet.create({
   },
   container: {
     width: '85%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.white,
     borderRadius: 20, 
     padding: 24,
     maxHeight: '70%',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
   },
   header: {
     flexDirection: 'row',
@@ -143,13 +144,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: FONTS.bold,
     fontWeight: '700',
-    color: '#111827',
+    color: tokens.colors.text,
   },
   closeButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F3F4F6', 
+    backgroundColor: tokens.colors.borderLight, 
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -161,7 +162,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    color: '#9CA3AF',
+    color: tokens.colors.textTertiary,
     fontSize: 14,
     fontFamily: FONTS.regular,
   },
@@ -169,14 +170,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: tokens.colors.border,
   },
   textContainer: {
     marginBottom: 12,
   },
   inviteText: {
     fontSize: 14,
-    color: '#111827',
+    color: tokens.colors.text,
     lineHeight: 20,
     fontFamily: FONTS.regular,
   },
@@ -203,18 +204,18 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
   acceptButtonText: {
-    color: '#FFFFFF',
+    color: tokens.colors.white,
     fontSize: 13,
     fontFamily: FONTS.semibold,
     fontWeight: '600',
   },
   rejectButton: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: tokens.colors.borderLight,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
   },
   rejectButtonText: {
-    color: '#6B7280',
+    color: tokens.colors.textSecondary,
     fontSize: 13,
     fontFamily: FONTS.semibold,
     fontWeight: '600',

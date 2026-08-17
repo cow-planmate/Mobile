@@ -1,13 +1,14 @@
 import { StyleSheet } from 'react-native';
+import { tokens } from '../../../theme/tokens';
 
 export const COLORS = {
-  primary: '#1344FF',
-  card: '#FFFFFF',
-  text: '#111827',
-  placeholder: '#9CA3AF',
-  border: '#E5E7EB',
+  primary: tokens.colors.primary,
+  card: tokens.colors.white,
+  text: tokens.colors.text,
+  placeholder: tokens.colors.textTertiary,
+  border: tokens.colors.border,
   error: '#FF3B30',
-  surface: '#F3F4F6',
+  surface: tokens.colors.borderLight,
 };
 
 export const FONTS = {
@@ -43,10 +44,10 @@ export const CATEGORY_COLORS = {
     textSub: '#6d28d9',
   }, 
   4: {
-    border: '#6b7280',
-    bg: '#f9fafb',
-    textMain: '#111827',
-    textSub: '#4b5563',
+    border: tokens.colors.textSecondary,
+    bg: tokens.colors.surface,
+    textMain: tokens.colors.text,
+    textSub: tokens.colors.textSecondary,
   }, 
 };
 

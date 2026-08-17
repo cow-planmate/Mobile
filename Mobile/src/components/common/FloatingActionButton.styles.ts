@@ -1,9 +1,10 @@
 import { StyleSheet } from 'react-native';
+import { tokens } from '../../theme/tokens';
 
 export const COLORS = {
-  primary: '#1344FF',
-  white: '#FFFFFF',
-  border: '#E5E7EB',
+  primary: tokens.colors.primary,
+  white: tokens.colors.white,
+  border: tokens.colors.border,
 };
 
 export const styles = StyleSheet.create({

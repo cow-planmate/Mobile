@@ -1,10 +1,10 @@
 import React from 'react';
+import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
+import XIcon from 'lucide-react-native/dist/esm/icons/x';
 import { View, Text, Pressable, TouchableOpacity } from 'react-native';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPencil } from '@fortawesome/free-solid-svg-icons/faPencil';
-import { faTimes } from '@fortawesome/free-solid-svg-icons/faTimes';
 
 import { styles, CATEGORY_COLORS } from './TimelineItem.styles';
+import { tokens } from '../../../theme/tokens';
 
 const timeToMinutes = (time: string) => {
   if (!time || typeof time !== 'string' || !time.includes(':')) {
@@ -87,8 +87,8 @@ const TimelineItem = React.memo(function TimelineItem({
     CATEGORY_COLORS[4];
   const categoryName = CATEGORY_NAMES[categoryId] || item.type || '기타';
 
-  const textColorMain = categoryColor.textMain || '#111827';
-  const textColorSub = categoryColor.textSub || '#6B7280';
+  const textColorMain = categoryColor.textMain || tokens.colors.text;
+  const textColorSub = categoryColor.textSub || tokens.colors.textSecondary;
 
   return (
     <Pressable style={[styles.cardContainer, style]} onPress={onPress}>
@@ -126,10 +126,10 @@ const TimelineItem = React.memo(function TimelineItem({
               style={styles.actionButton}
               onPress={() => onEditTime?.('startTime')}
             >
-              <FontAwesomeIcon icon={faPencil} size={14} color={textColorMain} />
+              <Pencil size={14} color={textColorMain} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={onDelete}>
-              <FontAwesomeIcon icon={faTimes} size={16} color={textColorMain} />
+              <XIcon size={16} color={textColorMain} />
             </TouchableOpacity>
           </View>
         )}

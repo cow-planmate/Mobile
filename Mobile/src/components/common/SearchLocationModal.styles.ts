@@ -1,22 +1,23 @@
 import { StyleSheet, Dimensions } from 'react-native';
 import { normalize } from '../../utils/normalize';
+import { tokens } from '../../theme/tokens';
 
 const { height } = Dimensions.get('window');
 
 export const COLORS = {
-  primary: '#1344FF',
-  background: '#FFFFFF',
-  text: '#111827',
-  subtext: '#6B7280',
-  placeholder: '#9CA3AF',
-  border: '#E5E7EB',
-  lightGray: '#F9FAFB',
+  primary: tokens.colors.primary,
+  background: tokens.colors.white,
+  text: tokens.colors.text,
+  subtext: tokens.colors.textSecondary,
+  placeholder: tokens.colors.textTertiary,
+  border: tokens.colors.border,
+  lightGray: tokens.colors.surface,
   darkGray: '#505050',
-  white: '#FFFFFF',
+  white: tokens.colors.white,
   overlay: 'rgba(0,0,0,0.4)',
   lightBlue: '#E0E7FF',
   iconBg: '#F5F7FF',
-  surface: '#F3F4F6',
+  surface: tokens.colors.borderLight,
   disabled: '#D1D5DB',
 };
 

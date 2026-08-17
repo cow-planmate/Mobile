@@ -17,6 +17,7 @@ import { openExternalUrl } from '../../../utils/externalLink';
 import { theme } from '../../../theme/theme';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CATEGORY_COLORS } from './TimelineItem.styles';
+import { tokens } from '../../../theme/tokens';
 
 const CATEGORY_NAMES: { [key: number]: string } = {
   0: '관광지',
@@ -139,7 +140,7 @@ export default function PlaceEditModal({
           <View style={styles.header}>
             <Text style={styles.title}>장소 수정</Text>
             <TouchableOpacity onPress={onClose}>
-              <X size={20} color="#9CA3AF" strokeWidth={1.5} />
+              <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
 
@@ -211,7 +212,7 @@ export default function PlaceEditModal({
                 onPress={handleOpenMap}
                 activeOpacity={0.8}
               >
-                <MapIcon size={15} color="#111827" strokeWidth={1.5} />
+                <MapIcon size={15} color={tokens.colors.text} strokeWidth={1.5} />
                 <Text style={styles.mapButtonText}>지도에서 보기</Text>
               </TouchableOpacity>
             )}
@@ -319,11 +320,11 @@ const styles = StyleSheet.create({
   container: {
     width: '85%',
     maxHeight: '85%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.white,
     borderRadius: 16,
     padding: 24,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
   },
   contentScroll: {
     flexGrow: 0,
@@ -337,7 +338,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontFamily: FONTS.bold,
-    color: '#111827',
+    color: tokens.colors.text,
   },
   content: {
     gap: 16,
@@ -350,18 +351,18 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 10,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: tokens.colors.borderLight,
   },
   photoPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
   },
   photoPlaceholderText: {
     fontSize: 24,
     fontFamily: FONTS.bold,
-    color: '#9CA3AF',
+    color: tokens.colors.textTertiary,
   },
   infoTextGroup: {
     flex: 1,
@@ -370,7 +371,7 @@ const styles = StyleSheet.create({
   placeName: {
     fontSize: 16,
     fontFamily: FONTS.semibold,
-    color: '#111827',
+    color: tokens.colors.text,
     marginBottom: 6,
   },
   badgeRow: {
@@ -392,12 +393,12 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 12,
     fontFamily: FONTS.medium,
-    color: '#6B7280',
+    color: tokens.colors.textSecondary,
   },
   addressText: {
     fontSize: 12,
     fontFamily: FONTS.regular,
-    color: '#6B7280',
+    color: tokens.colors.textSecondary,
     lineHeight: 16,
   },
   mapButton: {
@@ -407,14 +408,14 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: tokens.colors.borderLight,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
   },
   mapButtonText: {
     fontSize: 13,
     fontFamily: FONTS.medium,
-    color: '#111827',
+    color: tokens.colors.text,
   },
   row: {
     flexDirection: 'row',
@@ -426,28 +427,28 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    color: '#6B7280',
+    color: tokens.colors.textSecondary,
     marginBottom: 4,
     fontFamily: FONTS.regular,
   },
   timeButton: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: tokens.colors.borderLight,
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
   },
   timeText: {
     fontSize: 14,
     fontFamily: FONTS.medium,
-    color: '#111827',
+    color: tokens.colors.text,
   },
   inputContainer: {
     marginTop: 8,
   },
   input: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: tokens.colors.borderLight,
     borderRadius: 8,
     padding: 12,
     fontSize: 14,
@@ -455,7 +456,7 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: 'top',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: tokens.colors.border,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -479,7 +480,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 14,
     fontFamily: FONTS.semibold,
-    color: '#FFFFFF',
+    color: tokens.colors.white,
   },
   deleteText: {
     color: '#EF4444',

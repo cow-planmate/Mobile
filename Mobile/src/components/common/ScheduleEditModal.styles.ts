@@ -1,18 +1,19 @@
 import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
+import { tokens } from '../../theme/tokens';
 
 const { width } = Dimensions.get('window');
 const normalize = (size: number) =>
   Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
 
 export const COLORS = {
-  primary: '#1344FF',
-  text: '#111827',
-  subtext: '#6B7280',
-  border: '#E5E7EB',
-  white: '#FFFFFF',
-  placeholder: '#9CA3AF',
+  primary: tokens.colors.primary,
+  text: tokens.colors.text,
+  subtext: tokens.colors.textSecondary,
+  border: tokens.colors.border,
+  white: tokens.colors.white,
+  placeholder: tokens.colors.textTertiary,
   overlay: 'rgba(0,0,0,0.45)',
-  surface: '#F3F4F6',
+  surface: tokens.colors.borderLight,
   lightBlue: '#E0E7FF',
   iconBg: '#F5F7FF',
   disabled: '#D1D5DB',
