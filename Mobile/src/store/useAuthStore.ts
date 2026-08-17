@@ -6,6 +6,7 @@ import {
   ACCESS_TOKEN_RECEIVED_AT_KEY,
   LOGOUT_CLEARED_KEYS,
   LAST_LOGIN_METHOD_KEY,
+  LAST_LOGIN_EMAIL_KEY,
 } from '../constants/storageKeys';
 import { observeAccessToken } from '../api/axiosConfig';
 import { queryClient } from '../api/queryClient';
@@ -27,6 +28,7 @@ interface AuthState {
   needsThemeSelection: boolean;
 
   lastLoginMethod: LoginMethod | null;
+  lastLoginEmail: string | null;
   setNeedsThemeSelection: (val: boolean) => void;
   setUser: (user: User | null) => void;
 
@@ -62,16 +64,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isInitializing: true,
   needsThemeSelection: false,
   lastLoginMethod: null,
+  lastLoginEmail: null,
   setNeedsThemeSelection: (val) => set({ needsThemeSelection: val }),
   setUser: (user) => set({ user }),
 
   initialize: async () => {
     try {
-      const [[, userJson], [, token], [, lastMethod], [, tokenReceivedAt]] =
+      const [[, userJson], [, token], [, lastMethod], [, lastEmail], [, tokenReceivedAt]] =
         await AsyncStorage.multiGet([
           'user',
           'accessToken',
           LAST_LOGIN_METHOD_KEY,
+          LAST_LOGIN_EMAIL_KEY,
           ACCESS_TOKEN_RECEIVED_AT_KEY,
         ]);
 
@@ -84,6 +88,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       if (lastMethod === 'email' || lastMethod === 'google' || lastMethod === 'naver') {
         set({ lastLoginMethod: lastMethod });
+      }
+      if (lastEmail) {
+        set({ lastLoginEmail: lastEmail });
       }
     } catch (error) {
       console.error('Failed to initialize auth store:', error);
@@ -127,21 +134,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           email: userEmail || email,
         };
 
+
         await AsyncStorage.multiSet([
           ['user', JSON.stringify(userData)],
           ['accessToken', accessToken],
           ['refreshToken', refreshToken],
           [ACCESS_TOKEN_RECEIVED_AT_KEY, String(receivedAtMs)],
           [LAST_LOGIN_METHOD_KEY, 'email'],
+          [LAST_LOGIN_EMAIL_KEY, email],
         ]);
         observeAccessToken(accessToken, receivedAtMs);
 
-        set({ user: userData, lastLoginMethod: 'email' });
+        set({ user: userData, lastLoginMethod: 'email', lastLoginEmail: email });
       } else {
         throw new Error(data.message || '서버 응답 형식이 올바르지 않습니다.');
       }
     } catch (error) {
-
       throw error;
     } finally {
       set({ isLoading: false });
@@ -238,7 +246,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   clearSession: async (options) => {
     const forgetLoginMethod = options?.forgetLoginMethod ?? false;
 
-    set({ user: null, ...(forgetLoginMethod ? { lastLoginMethod: null } : {}) });
+    set({ user: null, ...(forgetLoginMethod ? { lastLoginMethod: null, lastLoginEmail: null } : {}) });
     await AsyncStorage.multiRemove(
       forgetLoginMethod
         ? [...LOGOUT_CLEARED_KEYS, LAST_LOGIN_METHOD_KEY]

@@ -9,6 +9,7 @@ export const AUTH_STORAGE_KEYS = [
 ];
 
 export const LAST_LOGIN_METHOD_KEY = 'lastLoginMethod';
+export const LAST_LOGIN_EMAIL_KEY = 'lastLoginEmail';
 
 export const FCM_STORAGE_KEYS = ['fcmToken', 'lastSyncedFcmToken'];
 

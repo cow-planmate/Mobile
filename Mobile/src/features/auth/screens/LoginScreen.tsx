@@ -18,7 +18,8 @@ type LoginScreenProps = {
 };
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
-  const [form, setForm] = useState({ email: '', password: '' });
+  const lastLoginEmail = useAuthStore(state => state.lastLoginEmail);
+  const [form, setForm] = useState({ email: lastLoginEmail || '', password: '' });
   const [focused, setFocused] = useState<string | null>(null);
 
   const [errors, setErrors] = useState<LoginErrors>({});
@@ -34,6 +35,12 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [snsProvider, setSnsProvider] = useState<'google' | 'naver' | null>(null);
 
   const handledSnsUrlRef = useRef<string | null>(null);
+
+  React.useEffect(() => {
+    if (lastLoginEmail && !form.email) {
+      setForm(prev => ({ ...prev, email: lastLoginEmail }));
+    }
+  }, [lastLoginEmail]);
 
   const handleChange = (key: 'email' | 'password', value: string) => {
     setForm(prev => ({ ...prev, [key]: value }));
