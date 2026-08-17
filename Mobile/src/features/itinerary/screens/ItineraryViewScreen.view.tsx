@@ -7,13 +7,12 @@ import {
   TouchableOpacity,
   Modal,
 } from 'react-native';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faShareNodes } from '@fortawesome/free-solid-svg-icons/faShareNodes';
-import { faPencil } from '@fortawesome/free-solid-svg-icons/faPencil';
-import { faCheck } from '@fortawesome/free-solid-svg-icons/faCheck';
 import MapOutlineIcon from 'lucide-react-native/dist/esm/icons/map';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
+import CheckIcon from 'lucide-react-native/dist/esm/icons/check';
+import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
+import Share2 from 'lucide-react-native/dist/esm/icons/share-2';
 import RouteMapSection from '../components/RouteMapSection';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
 import { ShareModal, AirplaneLoading, LoadingSpinner } from '../../../components/common';
@@ -29,6 +28,7 @@ import {
   MINUTE_HEIGHT,
   MIN_ITEM_HEIGHT,
   GRID_TOP_OFFSET,
+  COLORS,
 } from './ItineraryViewScreen.styles';
 
 const timeToMinutes = (time: string) => {
@@ -283,7 +283,7 @@ export default function ItineraryViewScreenView({
           onPress={goBack}
           activeOpacity={0.7}
         >
-          <ChevronLeft size={24} color="#111827" />
+          <ChevronLeft size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.topBarHeaderTitle}>일정완성</Text>
         <View style={{ width: 28 }} />
@@ -303,29 +303,29 @@ export default function ItineraryViewScreenView({
             onPress={() => setMapVisible(!isMapVisible)}
             variant="outlineDark"
           >
-            <MapOutlineIcon color="#111827" size={17} strokeWidth={2} />
+            <MapOutlineIcon color={COLORS.text} size={17} strokeWidth={2} />
           </ToolbarIconButton>
           <ToolbarIconButton
             onPress={() => setChecklistVisible(true)}
             variant="outlineDark"
           >
-            <ListChecks size={17} color="#111827" strokeWidth={2} />
+            <ListChecks size={17} color={COLORS.text} strokeWidth={2} />
           </ToolbarIconButton>
           <ToolbarIconButton
             onPress={() => setShareModalVisible(true)}
             variant="outlineDark"
           >
-            <FontAwesomeIcon icon={faShareNodes} color="#111827" size={17} />
+            <Share2 color={COLORS.text} size={17} />
           </ToolbarIconButton>
           <ToolbarIconButton onPress={handleEdit} variant="filledGray">
-            <FontAwesomeIcon icon={faPencil} color="#111827" size={17} />
+            <Pencil color={COLORS.text} size={17} />
           </ToolbarIconButton>
           <ToolbarIconButton
             onPress={handleConfirm}
             variant="filledBlue"
             active
           >
-            <FontAwesomeIcon icon={faCheck} color="#FFFFFF" size={18} />
+            <CheckIcon color={COLORS.white} size={18} />
           </ToolbarIconButton>
         </View>
       </View>
@@ -497,8 +497,8 @@ export default function ItineraryViewScreenView({
         {days.length === 0 ? (
           <AirplaneLoading />
         ) : (
-          <View style={{ flex: 1, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' }}>
-            <LoadingSpinner color="#1344FF" />
+          <View style={{ flex: 1, backgroundColor: COLORS.white, justifyContent: 'center', alignItems: 'center' }}>
+            <LoadingSpinner color={COLORS.primary} />
           </View>
         )}
       </Modal>

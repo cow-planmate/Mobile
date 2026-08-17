@@ -1,24 +1,22 @@
 import { StyleSheet } from 'react-native';
+import { tokens } from '../../../theme/tokens';
 
 export const COLORS = {
-  primary: '#1344FF',
-  background: '#FFFFFF',
-  card: '#FFFFFF',
-  text: '#111827',
-  textSecondary: '#6B7280',
-  placeholder: '#9CA3AF',
-  border: '#E5E7EB',
-  borderLight: '#F3F4F6',
-  white: '#FFFFFF',
-  surface: '#F9FAFB',
+  primary: tokens.colors.primary,
+  primaryTint: tokens.colors.primaryTint,
+  background: tokens.colors.background,
+  card: tokens.colors.white,
+  text: tokens.colors.text,
+  textSecondary: tokens.colors.textSecondary,
+  placeholder: tokens.colors.textTertiary,
+  border: tokens.colors.border,
+  borderLight: tokens.colors.borderLight,
+  white: tokens.colors.white,
+  surface: tokens.colors.surface,
+  danger: tokens.tones.danger.fg,
 };
 
-export const FONTS = {
-  regular: 'Pretendard-Regular',
-  medium: 'Pretendard-Medium',
-  semibold: 'Pretendard-SemiBold',
-  bold: 'Pretendard-Bold',
-};
+export const FONTS = tokens.fontFamily;
 
 export const HOUR_HEIGHT = 180;
 export const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
@@ -37,9 +35,9 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     height: 52,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: COLORS.borderLight,
   },
   topBarBackButton: {
     padding: 4,
@@ -48,7 +46,7 @@ export const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: FONTS.bold,
     fontWeight: 'bold',
-    color: '#111827',
+    color: COLORS.text,
   },
   topToolbar: {
     flexDirection: 'row',
@@ -98,22 +96,22 @@ export const styles = StyleSheet.create({
     borderWidth: 0,
   },
   toolbarIconButtonInfo: {
-    backgroundColor: '#E5E7EB',
-    borderColor: '#E5E7EB',
+    backgroundColor: COLORS.border,
+    borderColor: COLORS.border,
   },
   toolbarIconButtonOutlineBlue: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderColor: COLORS.primary,
     borderWidth: 1.5,
   },
   toolbarIconButtonOutlineDark: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#D1D5DB',
+    backgroundColor: COLORS.white,
+    borderColor: COLORS.placeholder,
     borderWidth: 1.5,
   },
   toolbarIconButtonFilledGray: {
-    backgroundColor: '#E5E7EB',
-    borderColor: '#E5E7EB',
+    backgroundColor: COLORS.border,
+    borderColor: COLORS.border,
   },
   toolbarIconButtonFilledBlue: {
     backgroundColor: COLORS.primary,
@@ -133,7 +131,7 @@ export const styles = StyleSheet.create({
     minWidth: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: '#FF3B30',
+    backgroundColor: COLORS.danger,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 3,
@@ -191,7 +189,7 @@ export const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 7,
-    backgroundColor: '#E8EDFF',
+    backgroundColor: COLORS.primaryTint,
     borderRadius: 20,
     marginLeft: 5,
   },
@@ -226,7 +224,7 @@ export const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   dayTabUnselected: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
   },
   dayTabLabel: {
     textAlign: 'center',
@@ -317,10 +315,10 @@ export const styles = StyleSheet.create({
   quarterBlock: {
     height: HOUR_HEIGHT / 4,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB', 
+    borderTopColor: COLORS.border, 
   },
   firstQuarterBlock: {
-    borderTopColor: '#9CA3AF', 
+    borderTopColor: COLORS.placeholder, 
   },
   footer: {
     flexDirection: 'row',
