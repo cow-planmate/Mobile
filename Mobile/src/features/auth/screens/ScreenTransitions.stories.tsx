@@ -171,7 +171,7 @@ function ScreenTransitionsPreview() {
 }
 
 const meta = {
-  title: 'Screen Transitions',
+  title: 'Auth/화면 전환',
   component: ScreenTransitionsPreview,
 } satisfies Meta<typeof ScreenTransitionsPreview>;
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { action } from 'storybook/actions';
 import type { Meta, StoryObj } from '@storybook/react';
 import { SignupScreenView } from './SignupScreen.view';
 
@@ -13,7 +14,7 @@ const emptyForm = {
 };
 
 const meta = {
-  title: 'Auth/Signup',
+  title: 'Auth/회원가입',
   component: SignupScreenView,
   args: {
     step: 1,
@@ -38,15 +39,15 @@ const meta = {
     isPasswordMatch: false,
     isNextEnabled: false,
     isAgreed: false,
-    onChangeAgreement: () => {},
-    onChange: () => {},
-    onSendEmail: () => {},
-    onEditEmail: () => {},
-    onNextStep: () => {},
-    onPrevStep: () => {},
-    setFocusedField: () => {},
-    setIsPasswordVisible: () => {},
-    setIsConfirmPasswordVisible: () => {},
+    onChangeAgreement: action('onChangeAgreement'),
+    onChange: action('onChange'),
+    onSendEmail: action('onSendEmail'),
+    onEditEmail: action('onEditEmail'),
+    onNextStep: action('onNextStep'),
+    onPrevStep: action('onPrevStep'),
+    setFocusedField: action('setFocusedField'),
+    setIsPasswordVisible: action('setIsPasswordVisible'),
+    setIsConfirmPasswordVisible: action('setIsConfirmPasswordVisible'),
     formatTime: (seconds: number) =>
       `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`,
   },

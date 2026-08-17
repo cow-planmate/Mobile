@@ -1,12 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { action } from 'storybook/actions';
 import IntroScreenView from './IntroScreen.view';
 
 const meta = {
-  title: 'Auth/Intro',
+  title: 'Auth/인트로',
   component: IntroScreenView,
   args: {
-    onStart: () => console.log('start'),
-    onLogin: () => console.log('login'),
+    onStart: action('onStart'),
+    onLogin: action('onLogin'),
   },
 } satisfies Meta<typeof IntroScreenView>;
 
