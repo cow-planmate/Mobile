@@ -46,31 +46,30 @@ import {
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
 } from '../../../utils/timeUtils';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faCalendar } from '@fortawesome/free-solid-svg-icons/faCalendar';
-import { faCalendarDays } from '@fortawesome/free-solid-svg-icons/faCalendarDays';
-import { faMapPin } from '@fortawesome/free-solid-svg-icons/faMapPin';
-import { faCheck } from '@fortawesome/free-solid-svg-icons/faCheck';
-import { faCircleInfo } from '@fortawesome/free-solid-svg-icons/faCircleInfo';
-import { faRedo } from '@fortawesome/free-solid-svg-icons/faRedo';
-import { faUserPlus } from '@fortawesome/free-solid-svg-icons/faUserPlus';
-import { faUndo } from '@fortawesome/free-solid-svg-icons/faUndo';
-import { faUsers } from '@fortawesome/free-solid-svg-icons/faUsers';
-import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
 import MapOutlineIcon from 'lucide-react-native/dist/esm/icons/map';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
+import CalendarDaysIcon from 'lucide-react-native/dist/esm/icons/calendar-days';
+import CalendarIcon from 'lucide-react-native/dist/esm/icons/calendar';
+import CheckIcon from 'lucide-react-native/dist/esm/icons/check';
+import InfoIcon from 'lucide-react-native/dist/esm/icons/info';
+import MapPinIcon from 'lucide-react-native/dist/esm/icons/map-pin';
+import Redo2 from 'lucide-react-native/dist/esm/icons/redo-2';
+import Undo2 from 'lucide-react-native/dist/esm/icons/undo-2';
+import UserPlusIcon from 'lucide-react-native/dist/esm/icons/user-plus';
+import UsersIcon from 'lucide-react-native/dist/esm/icons/users';
+import XIcon from 'lucide-react-native/dist/esm/icons/x';
 
 const Tab = createMaterialTopTabNavigator();
 const TabNavigatorAny = Tab.Navigator as any;
 const TabScreenAny = Tab.Screen as any;
 
 const TimelineTabIcon = ({ color }: { color: string }) => (
-  <FontAwesomeIcon icon={faCalendar} color={color} size={24} />
+  <CalendarIcon color={color} size={24} />
 );
 
 const PlaceTabIcon = ({ color }: { color: string }) => (
-  <FontAwesomeIcon icon={faMapPin} color={color} size={24} />
+  <MapPinIcon color={color} size={24} />
 );
 
 const BottomMenuBar = ({
@@ -651,7 +650,7 @@ const DraggableTimelineItem = React.memo(({
       left: 60,
       right: 15,
       borderWidth: 2,
-      borderColor: '#1344FF',
+      borderColor: COLORS.primary,
       borderStyle: 'dashed',
       borderRadius: 12,
       backgroundColor: 'rgba(19, 68, 255, 0.08)',
@@ -873,7 +872,7 @@ const TimelineComponent = React.memo(
                       left: 60,
                       right: 15,
                       borderWidth: 2,
-                      borderColor: '#1344FF',
+                      borderColor: COLORS.primary,
                       borderStyle: 'dashed',
                       borderRadius: 12,
                       backgroundColor: 'rgba(19, 68, 255, 0.08)',
@@ -885,10 +884,10 @@ const TimelineComponent = React.memo(
                     }}
                   >
                     <View style={{ flex: 1, marginRight: 8 }}>
-                      <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#1344FF' }} numberOfLines={1}>
+                      <Text style={{ fontSize: 14, fontWeight: 'bold', color: COLORS.primary }} numberOfLines={1}>
                         {pendingPlace.name}
                       </Text>
-                      <Text style={{ fontSize: 12, color: '#6B7280' }}>
+                      <Text style={{ fontSize: 12, color: COLORS.textSecondary }}>
                         {previewStartTime} - {previewEndTime} ({pendingPlace.type})
                       </Text>
                     </View>
@@ -904,7 +903,7 @@ const TimelineComponent = React.memo(
                           justifyContent: 'center',
                         }}
                       >
-                        <FontAwesomeIcon icon={faXmark} color="#FFFFFF" size={14} />
+                        <XIcon color={COLORS.white} size={14} />
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={onConfirmPlacement}
@@ -917,7 +916,7 @@ const TimelineComponent = React.memo(
                           justifyContent: 'center',
                         }}
                       >
-                        <FontAwesomeIcon icon={faCheck} color="#FFFFFF" size={14} />
+                        <CheckIcon color={COLORS.white} size={14} />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -1024,7 +1023,7 @@ const TimelineTabScreen = React.memo(() => {
           onPress={onUndo}
           activeOpacity={0.8}
         >
-          <FontAwesomeIcon icon={faUndo} color="#111827" size={16} />
+          <Undo2 color={COLORS.text} size={16} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -1037,11 +1036,7 @@ const TimelineTabScreen = React.memo(() => {
           disabled={!onRedo}
           activeOpacity={0.8}
         >
-          <FontAwesomeIcon
-            icon={faRedo}
-            color={onRedo ? '#111827' : '#9CA3AF'}
-            size={16}
-          />
+          <Redo2 color={onRedo ? COLORS.text : COLORS.placeholder} size={16} />
         </TouchableOpacity>
       </View>
     </View>
@@ -1255,7 +1250,7 @@ export default function ItineraryEditorScreenView({
           onPress={onGoBack}
           activeOpacity={0.7}
         >
-          <ChevronLeft size={24} color="#111827" />
+          <ChevronLeft size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.topBarHeaderTitle}>일정편집</Text>
         <View style={{ width: 28 }} />
@@ -1296,7 +1291,7 @@ export default function ItineraryEditorScreenView({
                   { width: inputWidth, minWidth: 0, maxWidth: 170 },
                 ]}
                 placeholder="일정 이름"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={COLORS.placeholder}
               />
             </>
           ) : (
@@ -1315,10 +1310,10 @@ export default function ItineraryEditorScreenView({
             onPress={onOpenPlanInfo}
             variant="info"
           >
-            <FontAwesomeIcon icon={faCircleInfo} color="#111827" size={18} />
+            <InfoIcon color={COLORS.text} size={18} />
           </ToolbarIconButton>
           <ToolbarIconButton onPress={onOpenChecklist} variant="outlineDark">
-            <ListChecks color="#111827" size={17} strokeWidth={2} />
+            <ListChecks color={COLORS.text} size={17} strokeWidth={2} />
           </ToolbarIconButton>
         </View>
 
@@ -1328,16 +1323,16 @@ export default function ItineraryEditorScreenView({
             badgeCount={participantsCount}
             variant="outlineBlue"
           >
-            <FontAwesomeIcon icon={faUsers} color="#1344FF" size={17} />
+            <UsersIcon color={COLORS.primary} size={17} />
           </ToolbarIconButton>
           <ToolbarIconButton onPress={onOpenMap} variant="outlineDark">
-            <MapOutlineIcon color="#111827" size={17} strokeWidth={2} />
+            <MapOutlineIcon color={COLORS.text} size={17} strokeWidth={2} />
           </ToolbarIconButton>
           <ToolbarIconButton onPress={onOpenShare} variant="filledGray">
-            <FontAwesomeIcon icon={faUserPlus} color="#111827" size={17} />
+            <UserPlusIcon color={COLORS.text} size={17} />
           </ToolbarIconButton>
           <ToolbarIconButton onPress={onComplete} variant="filledBlue" active>
-            <FontAwesomeIcon icon={faCheck} color="#FFFFFF" size={18} />
+            <CheckIcon color={COLORS.white} size={18} />
           </ToolbarIconButton>
         </View>
       </View>
@@ -1393,7 +1388,7 @@ export default function ItineraryEditorScreenView({
           activeOpacity={0.85}
           hitSlop={8}
         >
-          <FontAwesomeIcon icon={faCalendarDays} color="#6B7280" size={22} />
+          <CalendarDaysIcon color={COLORS.textSecondary} size={22} />
         </TouchableOpacity>
 
         {showLeftFade && (
@@ -1434,7 +1429,7 @@ export default function ItineraryEditorScreenView({
       {pendingPlace && (
         <View
           style={{
-            backgroundColor: '#1344FF',
+            backgroundColor: COLORS.primary,
             paddingVertical: 10,
             paddingHorizontal: 16,
             flexDirection: 'row',
@@ -1442,7 +1437,7 @@ export default function ItineraryEditorScreenView({
             justifyContent: 'space-between',
           }}
         >
-          <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '600', flex: 1, marginRight: 8 }}>
+          <Text style={{ color: COLORS.white, fontSize: 13, fontWeight: '600', flex: 1, marginRight: 8 }}>
             '{pendingPlace.name}'을 배치할 타임라인의 빈 영역을 클릭해 주세요.
           </Text>
           <TouchableOpacity
@@ -1454,7 +1449,7 @@ export default function ItineraryEditorScreenView({
               borderRadius: 6,
             }}
           >
-            <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: 'bold' }}>취소</Text>
+            <Text style={{ color: COLORS.white, fontSize: 12, fontWeight: 'bold' }}>취소</Text>
           </TouchableOpacity>
         </View>
       )}

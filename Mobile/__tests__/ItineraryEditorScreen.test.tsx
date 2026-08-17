@@ -471,14 +471,15 @@ describe('ItineraryEditorScreenView Component', () => {
       testID: 'mock-tab-screen-타임라인',
     });
 
-    const iconViews = timelineScreen?.findAllByProps({ testID: 'mock-fa-icon' });
-    expect(iconViews?.length).toBeGreaterThanOrEqual(2);
-
     const undoButton = timelineScreen?.findByProps({ testID: 'btn-undo' });
     const redoButton = timelineScreen?.findByProps({ testID: 'btn-redo' });
 
     expect(undoButton).toBeDefined();
     expect(redoButton).toBeDefined();
+
+    // 아이콘은 lucide 딥임포트로 렌더된다 — 버튼마다 아이콘이 한 개씩 붙어 있는지 확인
+    expect(React.Children.count(undoButton?.props.children)).toBeGreaterThanOrEqual(1);
+    expect(React.Children.count(redoButton?.props.children)).toBeGreaterThanOrEqual(1);
 
     await act(async () => {
       undoButton?.props.onPress();

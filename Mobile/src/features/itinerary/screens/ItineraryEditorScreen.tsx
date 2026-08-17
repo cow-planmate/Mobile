@@ -1,16 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import FastImage from 'react-native-fast-image';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-
-  Modal,
-  ScrollView,
-  Pressable,
-  StyleSheet,
-  AppState,
-} from 'react-native';
+import { Modal, AppState } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAlert } from '../../../contexts/AlertContext';
 import Toast from 'react-native-toast-message';
@@ -43,12 +32,9 @@ import { SimpleWeatherInfo, fetchWeather } from '../../../api/trips';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { ShareModal, PlanInfoModal, AirplaneLoading } from '../../../components/common';
 import PlaceEditModal from '../components/PlaceEditModal';
-import RouteMapSection from '../components/RouteMapSection';
+import ParticipantsModal from '../components/ParticipantsModal';
+import PlanMapModal from '../components/PlanMapModal';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faMap } from '@fortawesome/free-solid-svg-icons/faMap';
-import { faUsers } from '@fortawesome/free-solid-svg-icons/faUsers';
-import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
 
 const normalizeCategoryId = (
   rawId: number | undefined,
@@ -800,145 +786,31 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
-      <Modal
+      <ParticipantsModal
         visible={isParticipantsVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setParticipantsVisible(false)}
-      >
-        <Pressable
-          style={modalStyles.overlay}
-          onPress={() => setParticipantsVisible(false)}
-        >
-          <Pressable
-            style={modalStyles.panel}
-            onPress={e => e.stopPropagation()}
-          >
-            <View style={modalStyles.panelHeader}>
-              <View style={modalStyles.panelHeaderTitleRow}>
-                <View style={modalStyles.panelHeaderIcon}>
-                  <FontAwesomeIcon icon={faUsers} color="#1344FF" size={18} />
-                </View>
-                <View>
-                  <Text style={modalStyles.panelTitle}>참여자</Text>
-                  <Text style={modalStyles.panelSubtitle}>
-                    현재 일정에 참여 중인 사람
-                  </Text>
-                </View>
-              </View>
-              <TouchableOpacity onPress={() => setParticipantsVisible(false)}>
-                <FontAwesomeIcon icon={faXmark} color="#9CA3AF" size={20} />
-              </TouchableOpacity>
-            </View>
+        onClose={() => setParticipantsVisible(false)}
+        users={onlineUsers}
+        currentUserId={currentUser?.userId}
+        isPlanOwner={isPlanOwner}
+      />
 
-            <ScrollView
-              style={modalStyles.participantList}
-              contentContainerStyle={modalStyles.participantListContent}
-              showsVerticalScrollIndicator={false}
-            >
-              {onlineUsers.length === 0 ? (
-                <View style={modalStyles.emptyState}>
-                  <Text style={modalStyles.emptyStateText}>
-                    현재 참여 중인 사람이 없습니다.
-                  </Text>
-                </View>
-              ) : (
-                onlineUsers.map((user, idx) => {
-                  const name =
-                    user.userNickname ||
-                    user.userInfo?.nickname ||
-                    '사용자';
-                  const initial = name.charAt(0) || '?';
-                  const userUidLower = String(user.uid || '').toLowerCase();
-
-                  const isMe =
-                    !!currentUser &&
-                    String(currentUser.userId || '').toLowerCase() === userUidLower;
-
-                  const isOwner = isMe && isPlanOwner;
-
-                  return (
-                    <View key={user.uid || `user-${idx}`} style={modalStyles.participantRow}>
-                      <View style={modalStyles.participantAvatar}>
-                        {user.avatarUrl ? (
-                          <FastImage
-                            source={{ uri: user.avatarUrl, priority: FastImage.priority.normal }}
-                            style={modalStyles.participantAvatarImage}
-                            resizeMode={FastImage.resizeMode.cover}
-                          />
-                        ) : (
-                          <Text style={modalStyles.participantAvatarText}>
-                            {initial}
-                          </Text>
-                        )}
-                      </View>
-                      <View style={modalStyles.participantInfo}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                          <Text style={modalStyles.participantName}>
-                            {name}
-                          </Text>
-                          {isMe && (
-                            <Text style={{ fontSize: 11, color: '#1344FF', fontWeight: '600' }}>(나)</Text>
-                          )}
-                          {isOwner && (
-                            <Text style={{ fontSize: 11, color: '#D97706', fontWeight: '600' }}>[소유자]</Text>
-                          )}
-                        </View>
-                        <Text style={modalStyles.participantStatus}>
-                          현재 일정에 접속 중
-                        </Text>
-                      </View>
-                    </View>
-                  );
-                })
-              )}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      <Modal
+      <PlanMapModal
         visible={isMapPreviewVisible}
-        transparent={false}
-        animationType="slide"
-        onRequestClose={handleCloseMap}
-      >
-        <View style={modalStyles.mapContainer}>
-          <View style={modalStyles.mapHeader}>
-            <View style={modalStyles.panelHeaderTitleRow}>
-              <View style={modalStyles.panelHeaderIcon}>
-                <FontAwesomeIcon icon={faMap} color="#1344FF" size={18} />
-              </View>
-              <View>
-                <Text style={modalStyles.panelTitle}>일정 지도</Text>
-                <Text style={modalStyles.panelSubtitle}>
-                  현재 선택한 일차의 장소를 보여줍니다
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity onPress={handleCloseMap}>
-              <FontAwesomeIcon icon={faXmark} color="#9CA3AF" size={20} />
-            </TouchableOpacity>
-          </View>
+        onClose={handleCloseMap}
+        onApplyOptimizedOrder={handleApplyOptimizedOrder}
+        places={
+          selectedDay?.places.map(place => ({
+            id: place.id,
+            name: place.name,
+            address: place.address,
+            latitude: place.latitude,
+            longitude: place.longitude,
+            placeRefId: place.placeRefId,
+            place_url: place.place_url,
+          })) || []
+        }
+      />
 
-          <View style={modalStyles.mapBody}>
-            <RouteMapSection
-              onApplyOptimizedOrder={handleApplyOptimizedOrder}
-              places={
-                selectedDay?.places.map(place => ({
-                  id: place.id,
-                  name: place.name,
-                  address: place.address,
-                  latitude: place.latitude,
-                  longitude: place.longitude,
-                  placeRefId: place.placeRefId,
-                  place_url: place.place_url,
-                })) || []
-              }
-            />
-          </View>
-        </View>
-      </Modal>
       <ShareModal
         visible={isShareModalVisible}
         onClose={() => setShareModalVisible(false)}
@@ -975,11 +847,12 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         adultCount={planMetadata?.adultCount ?? route.params.adults ?? 1}
         childCount={planMetadata?.childCount ?? route.params.children ?? 0}
       />
+      {/* 로딩이 끝나지 않으면 화면 전체를 덮는다 — 뒤로가기로 빠져나갈 수 있어야 한다 */}
       <Modal
         visible={isInitialPlanLoading || days.length === 0 || isSaving || isBacking}
         transparent={false}
         animationType="fade"
-        onRequestClose={() => {}}
+        onRequestClose={handleGoBack}
       >
         <AirplaneLoading />
       </Modal>
@@ -987,128 +860,3 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   );
 }
 
-const modalStyles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.42)',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  panel: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 18,
-    maxHeight: '78%',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  panelHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-  panelHeaderTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  panelHeaderIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E8EDFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  panelTitle: {
-    fontSize: 18,
-    fontFamily: 'Pretendard-Bold',
-    fontWeight: '700',
-    color: '#111827',
-  },
-  panelSubtitle: {
-    marginTop: 2,
-    fontSize: 12,
-    fontFamily: 'Pretendard-Regular',
-    color: '#6B7280',
-  },
-  participantList: {
-    flexGrow: 0,
-  },
-  participantListContent: {
-    gap: 10,
-    paddingBottom: 6,
-  },
-  participantRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 16,
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  participantAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1344FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    marginRight: 12,
-  },
-  participantAvatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  participantAvatarText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontFamily: 'Pretendard-Bold',
-    fontWeight: '700',
-  },
-  participantInfo: {
-    flex: 1,
-  },
-  participantName: {
-    fontSize: 15,
-    fontFamily: 'Pretendard-Bold',
-    fontWeight: '700',
-    color: '#111827',
-  },
-  participantStatus: {
-    marginTop: 2,
-    fontSize: 12,
-    fontFamily: 'Pretendard-Regular',
-    color: '#6B7280',
-  },
-  emptyState: {
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  emptyStateText: {
-    fontSize: 14,
-    fontFamily: 'Pretendard-Regular',
-    color: '#6B7280',
-  },
-  mapContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  mapHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  mapBody: {
-    flex: 1,
-    padding: 16,
-  },
-});
