@@ -33,11 +33,6 @@ import {
   leaveAsEditor,
 } from '../../../api/trips';
 import { invalidatePlanCaches } from '../../../hooks/planCache';
-import { faT } from '@fortawesome/free-solid-svg-icons/faT';
-import { faPen } from '@fortawesome/free-solid-svg-icons/faPen';
-import { faShare } from '@fortawesome/free-solid-svg-icons/faShare';
-import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash';
-import { faUserMinus } from '@fortawesome/free-solid-svg-icons/faUserMinus';
 
 import User from 'lucide-react-native/dist/esm/icons/user';
 import Settings from 'lucide-react-native/dist/esm/icons/settings';
@@ -55,6 +50,11 @@ import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ChevronDown from 'lucide-react-native/dist/esm/icons/chevron-down';
 import MoreVertical from 'lucide-react-native/dist/esm/icons/ellipsis-vertical';
 import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
+import PenLine from 'lucide-react-native/dist/esm/icons/pen-line';
+import Share2 from 'lucide-react-native/dist/esm/icons/share-2';
+import Trash2Icon from 'lucide-react-native/dist/esm/icons/trash-2';
+import Type from 'lucide-react-native/dist/esm/icons/type';
+import UserMinus from 'lucide-react-native/dist/esm/icons/user-minus';
 import FastImage from 'react-native-fast-image';
 import ChecklistSheet from '../../itinerary/components/checklist/ChecklistSheet';
 import { useChecklist } from '../../itinerary/hooks/useChecklistQueries';
@@ -75,7 +75,14 @@ import {
   levelBadgeColor,
   levelName,
 } from '../../community/constants/levels';
-import ProfileActivitySections from '../components/ProfileActivitySections';
+import {
+  ProfileCalendarSection,
+  ProfileCommunitySection,
+  ProfileFootprintSection,
+  ProfileTravelLogSection,
+} from '../components/ProfileActivitySections';
+import { UnderlineTabs } from '../../../components/ui';
+import { tokens } from '../../../theme/tokens';
 import FeedbackModal from '../components/FeedbackModal';
 import { verifyNicknameAvailable } from '../../../api/auth';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
@@ -86,6 +93,15 @@ import {
 import { styles, COLORS } from './ProfileScreen.styles';
 
 const LEAVE_EDITOR_CONCURRENCY = 4;
+
+type ProfileSection = 'travel' | 'community' | 'calendar';
+type TripTab = 'upcoming' | 'past';
+
+const PROFILE_SECTIONS = [
+  { key: 'travel', label: '여행' },
+  { key: 'community', label: '커뮤니티' },
+  { key: 'calendar', label: '캘린더' },
+];
 
 const getFormattedPeriod = (start?: string, end?: string) => {
   if (!start) return '날짜 확인 필요';
@@ -113,19 +129,19 @@ const parsePlanDate = (value?: string): Date | null => {
 };
 
 export const PLAN_MENU_OPTIONS = [
-  { label: '제목 바꾸기', action: 'rename', icon: faT },
-  { label: '수정하기', action: 'edit', icon: faPen },
-  { label: '공유 및 초대', action: 'share', icon: faShare },
-  { label: '삭제하기', action: 'delete', icon: faTrash, isDestructive: true },
+  { label: '제목 바꾸기', action: 'rename', icon: Type },
+  { label: '수정하기', action: 'edit', icon: PenLine },
+  { label: '공유 및 초대', action: 'share', icon: Share2 },
+  { label: '삭제하기', action: 'delete', icon: Trash2Icon, isDestructive: true },
 ];
 
 export const SHARED_PLAN_MENU_OPTIONS = [
-  { label: '수정하기', action: 'edit', icon: faPen },
-  { label: '공유 및 초대', action: 'share', icon: faShare },
+  { label: '수정하기', action: 'edit', icon: PenLine },
+  { label: '공유 및 초대', action: 'share', icon: Share2 },
   {
     label: '편집 권한 포기하기',
     action: 'leave',
-    icon: faUserMinus,
+    icon: UserMinus,
     isDestructive: true,
   },
 ];
@@ -178,7 +194,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
   const hasChecklistCache = !!sharedChecklist || !!personalChecklist;
   const completedCount = checklistItems.filter(item => item.isChecked).length;
 
-  const themeColor = plan.isShared ? '#F97316' : '#1344FF';
+  const themeColor = plan.isShared ? '#F97316' : tokens.colors.primary;
 
   const handleSelectToggle = () => onSelectToggle(plan.planId);
 
@@ -201,7 +217,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
         { overflow: 'hidden' },
         isSelected 
           ? { borderColor: themeColor, borderWidth: 2 } 
-          : (pressed ? { borderColor: themeColor, borderWidth: 2, backgroundColor: '#F3F4F6' } : null)
+          : (pressed ? { borderColor: themeColor, borderWidth: 2, backgroundColor: tokens.colors.borderLight } : null)
       ]}
     >
 
@@ -217,7 +233,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
                 styles.cardCheckboxSquare,
                 isSelected && { backgroundColor: themeColor, borderColor: themeColor }
               ]}>
-                {isSelected && <Check size={10} color="#FFFFFF" />}
+                {isSelected && <Check size={10} color={tokens.colors.white} />}
               </View>
             </TouchableOpacity>
           )}
@@ -233,7 +249,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
             hitSlop={8}
             style={plan.isShared ? { marginTop: normalize(16) } : null}
           >
-            <MoreVertical size={18} color="#9CA3AF" />
+            <MoreVertical size={18} color={tokens.colors.textTertiary} />
           </TouchableOpacity>
         )}
       </View>
@@ -241,7 +257,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
       <View style={{ pointerEvents: 'none' }}>
         <Text style={styles.cardTitleText} numberOfLines={1}>{plan.planName}</Text>
         <View style={styles.dateInfoRow}>
-          <Calendar size={12} color="#9CA3AF" style={{ marginRight: 4 }} />
+          <Calendar size={12} color={tokens.colors.textTertiary} style={{ marginRight: 4 }} />
           <Text style={styles.datePeriodText}>{formattedPeriod}</Text>
         </View>
       </View>
@@ -254,7 +270,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
       >
         <View style={styles.checklistHeader}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <ListChecks size={12} color="#6B7280" style={{ marginRight: 6 }} />
+            <ListChecks size={12} color={tokens.colors.textSecondary} style={{ marginRight: 6 }} />
             <Text style={styles.checklistTitle}>준비물</Text>
           </View>
           <Text style={styles.checklistProgressText}>
@@ -270,11 +286,11 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
               {item.isChecked ? (
                 <CheckCircle2
                   size={16}
-                  color="#1344FF"
+                  color={tokens.colors.primary}
                   style={{ marginRight: 8 }}
                 />
               ) : (
-                <Circle size={16} color="#D1D5DB" style={{ marginRight: 8 }} />
+                <Circle size={16} color={tokens.colors.textTertiary} style={{ marginRight: 8 }} />
               )}
               <Text
                 style={[
@@ -289,9 +305,9 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
           ))
         ) : (
           <View style={styles.taskItemRow}>
-            <Circle size={16} color="#D1D5DB" style={{ marginRight: 8 }} />
+            <Circle size={16} color={tokens.colors.textTertiary} style={{ marginRight: 8 }} />
             <Text
-              style={[styles.taskText, { color: '#9CA3AF' }]}
+              style={[styles.taskText, { color: tokens.colors.textTertiary }]}
               numberOfLines={1}
             >
               {hasChecklistCache
@@ -304,7 +320,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
 
       {plan.isShared && (
         <View style={styles.sharedBadge}>
-          <User size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
+          <User size={10} color={tokens.colors.white} style={{ marginRight: 2 }} />
           <Text style={styles.sharedBadgeText}>SHARED</Text>
         </View>
       )}
@@ -383,6 +399,12 @@ export default function ProfileScreenView({
   const [checklistPlan, setChecklistPlan] = useState<PlanItem | null>(null);
   const scrollRef = React.useRef<ScrollView>(null);
   const [itineraryY, setItineraryY] = useState(0);
+
+  // 섹션이 6개라 세로로 쌓으면 스크롤이 과도해진다 — 프로필 헤더만 고정하고
+  // 나머지는 탭으로 나눈다 (웹 마이페이지 섹션 구성을 모바일 깊이로 재배치)
+  const [profileSection, setProfileSection] = useState<ProfileSection>('travel');
+  // 여행 일정은 예정/지난을 탭으로 나눈다 (웹 TripSection과 동일)
+  const [tripTab, setTripTab] = useState<TripTab>('upcoming');
 
   const [showBottomFade, setShowBottomFade] = useState(false);
   const contentHeightRef = useRef(0);
@@ -866,14 +888,14 @@ export default function ProfileScreenView({
           onPress={handleBackPress}
           activeOpacity={0.7}
         >
-          <ChevronLeft size={24} color="#111827" />
+          <ChevronLeft size={24} color={tokens.colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>마이페이지</Text>
         <View style={{ width: 28 }} />
       </View>
       <ScrollView
         ref={scrollRef}
-        style={{ backgroundColor: '#F8F9FA' }}
+        style={{ backgroundColor: tokens.colors.surface }}
         contentContainerStyle={[styles.scrollContainer, { paddingBottom: normalize(40) }]}
         showsVerticalScrollIndicator={false}
       >
@@ -890,7 +912,7 @@ export default function ProfileScreenView({
                 />
               ) : (
                 <View style={styles.avatarPlaceholder}>
-                  <User size={40} color="#9CA3AF" />
+                  <User size={40} color={tokens.colors.textTertiary} />
                 </View>
               )}
               <TouchableOpacity
@@ -898,7 +920,7 @@ export default function ProfileScreenView({
                 onPress={handleOpenEditModal}
                 activeOpacity={0.8}
               >
-                <Settings size={12} color="#FFFFFF" />
+                <Settings size={12} color={tokens.colors.white} />
               </TouchableOpacity>
             </View>
 
@@ -975,54 +997,76 @@ export default function ProfileScreenView({
           </View>
         </View>
 
+        <View style={styles.sectionTabsWrap}>
+          <UnderlineTabs
+            items={PROFILE_SECTIONS}
+            selectedKey={profileSection}
+            onSelect={key => setProfileSection(key as ProfileSection)}
+            scrollable={false}
+          />
+        </View>
+
+        {profileSection === 'community' && (
         <View style={[styles.achievementCard, { opacity: 0.6 }]} pointerEvents="none">
           <View style={styles.achievementHeader}>
             <View style={styles.achievementTitleRow}>
-              <Award size={18} color="#9CA3AF" />
-              <Text style={[styles.achievementTitle, { color: '#9CA3AF' }]}>내 업적 (준비중)</Text>
+              <Award size={18} color={tokens.colors.textTertiary} />
+              <Text style={[styles.achievementTitle, { color: tokens.colors.textTertiary }]}>내 업적 (준비중)</Text>
             </View>
-            <View style={[styles.achievementProgressBadge, { backgroundColor: '#E5E7EB' }]}>
-              <Text style={[styles.achievementProgressText, { color: '#9CA3AF' }]}>0 / 5 달성</Text>
+            <View style={[styles.achievementProgressBadge, { backgroundColor: tokens.colors.border }]}>
+              <Text style={[styles.achievementProgressText, { color: tokens.colors.textTertiary }]}>0 / 5 달성</Text>
             </View>
           </View>
 
           <View style={styles.badgeList}>
 
-            <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
-              <Lock size={11} color="#9CA3AF" />
-              <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>첫 걸음</Text>
+            <View style={[styles.achievementBadge, { backgroundColor: tokens.colors.borderLight }]}>
+              <Lock size={11} color={tokens.colors.textTertiary} />
+              <Text style={[styles.badgeText, { color: tokens.colors.textTertiary }]}>첫 걸음</Text>
             </View>
 
-            <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
-              <Lock size={11} color="#9CA3AF" />
-              <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>계획의 달인</Text>
+            <View style={[styles.achievementBadge, { backgroundColor: tokens.colors.borderLight }]}>
+              <Lock size={11} color={tokens.colors.textTertiary} />
+              <Text style={[styles.badgeText, { color: tokens.colors.textTertiary }]}>계획의 달인</Text>
             </View>
 
-            <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
-              <Lock size={11} color="#9CA3AF" />
-              <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>열혈 리뷰어</Text>
+            <View style={[styles.achievementBadge, { backgroundColor: tokens.colors.borderLight }]}>
+              <Lock size={11} color={tokens.colors.textTertiary} />
+              <Text style={[styles.badgeText, { color: tokens.colors.textTertiary }]}>열혈 리뷰어</Text>
             </View>
 
-            <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
-              <Lock size={11} color="#9CA3AF" />
-              <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>베스트 파트너</Text>
+            <View style={[styles.achievementBadge, { backgroundColor: tokens.colors.borderLight }]}>
+              <Lock size={11} color={tokens.colors.textTertiary} />
+              <Text style={[styles.badgeText, { color: tokens.colors.textTertiary }]}>베스트 파트너</Text>
             </View>
 
-            <View style={[styles.achievementBadge, { backgroundColor: '#F3F4F6' }]}>
-              <Lock size={11} color="#9CA3AF" />
-              <Text style={[styles.badgeText, { color: '#9CA3AF' }]}>전국 제패</Text>
+            <View style={[styles.achievementBadge, { backgroundColor: tokens.colors.borderLight }]}>
+              <Lock size={11} color={tokens.colors.textTertiary} />
+              <Text style={[styles.badgeText, { color: tokens.colors.textTertiary }]}>전국 제패</Text>
             </View>
           </View>
         </View>
 
-        <View 
+        )}
+
+        {profileSection === 'community' && <ProfileCommunitySection />}
+
+        {profileSection === 'calendar' && (
+          <>
+            <ProfileCalendarSection plans={plans} />
+            <ProfileFootprintSection plans={plans} />
+          </>
+        )}
+
+        {profileSection === 'travel' && (
+        <View
           style={styles.itineraryDetailCard}
           onLayout={e => setItineraryY(e.nativeEvent.layout.y)}
         >
 
           <View style={styles.itineraryHeader}>
             <View style={styles.itineraryTitleRow}>
-              <Calendar size={18} color="#1344FF" />
+              <Calendar size={18} color={tokens.colors.primary} />
               <Text style={styles.itineraryTitle}>여행 상세 일정</Text>
             </View>
             {!isEditMode ? (
@@ -1031,7 +1075,7 @@ export default function ProfileScreenView({
                 onPress={() => setIsEditMode(true)}
                 activeOpacity={0.8}
               >
-                <Settings size={12} color="#4B5563" style={{ marginRight: 4 }} />
+                <Settings size={12} color={tokens.colors.textSecondary} style={{ marginRight: 4 }} />
                 <Text style={styles.itineraryManageText}>일정 관리</Text>
               </TouchableOpacity>
             ) : (
@@ -1057,7 +1101,7 @@ export default function ProfileScreenView({
                   styles.selectAllCheckSquare,
                   isAllSelected && styles.selectAllCheckSquareChecked
                 ]}>
-                  {isAllSelected && <Check size={8} color="#FFFFFF" />}
+                  {isAllSelected && <Check size={8} color={tokens.colors.white} />}
                 </View>
                 <Text style={styles.editActionSelectAllText}>전체 선택</Text>
               </TouchableOpacity>
@@ -1077,11 +1121,23 @@ export default function ProfileScreenView({
             </View>
           )}
 
-          {upcomingPlans.length > 0 ? (
-            <View style={{ marginBottom: normalize(16) }}>
-              <View style={styles.sectionSubtitleRow}>
-                <Text style={styles.sectionSubtitleText}>예정된 여행</Text>
-              </View>
+          <UnderlineTabs
+            items={[
+              {
+                key: 'upcoming',
+                label: '예정된 일정',
+                count: upcomingPlans.length,
+              },
+              { key: 'past', label: '지난 일정', count: pastPlans.length },
+            ]}
+            selectedKey={tripTab}
+            onSelect={key => setTripTab(key as TripTab)}
+            scrollable={false}
+            style={styles.tripTabs}
+          />
+
+          {tripTab === 'upcoming' ? (
+            upcomingPlans.length > 0 ? (
               <View>
                 {upcomingPlans.map((plan: any) => (
                   <ItineraryCardItem
@@ -1096,28 +1152,38 @@ export default function ProfileScreenView({
                   />
                 ))}
               </View>
-            </View>
+            ) : (
+              <View style={styles.dashedPlanBox}>
+                <Calendar
+                  size={36}
+                  color={tokens.colors.textTertiary}
+                  style={styles.dashedPlanIcon}
+                />
+                <Text style={styles.noPlanText}>
+                  진행 중이거나 예정된 여행 일정이 없습니다.
+                </Text>
+                <TouchableOpacity
+                  onPress={() =>
+                    navigation.navigate('MainTabs', {
+                      screen: 'ScheduleTab',
+                      params: { screen: 'Home' },
+                    })
+                  }
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.createPlanLink}>새로운 여행 계획하기</Text>
+                </TouchableOpacity>
+              </View>
+            )
           ) : (
-            <View style={styles.dashedPlanBox}>
-              <Calendar size={36} color="#D1D5DB" style={{ marginBottom: normalize(8) }} />
-              <Text style={styles.noPlanText}>진행 중이거나 예정된 여행 일정이 없습니다.</Text>
-              <TouchableOpacity 
-                onPress={() => navigation.navigate('MainTabs', { screen: 'ScheduleTab', params: { screen: 'Home' } })}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.createPlanLink}>새로운 여행 계획하기</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          <View style={styles.pastRecordBox}>
-            <Text style={styles.pastRecordTitle}>지난 여행 기록</Text>
-            {pastPlans.length > 0 ? (
+            <View style={styles.pastRecordBox}>
+              {pastPlans.length > 0 ? (
               <View style={styles.pastPlansContainer}>
                 {pastPlans.map((plan: any) => {
                   const isSelected = selectedPlanIds.includes(plan.planId);
                   const isPastShared = !!plan.isShared;
-                  const pastThemeColor = '#6B7280'; 
+                  const pastThemeColor = tokens.colors.textSecondary; 
                   const onSelectToggle = () => handleSelectToggle(plan.planId);
 
                   return (
@@ -1150,7 +1216,7 @@ export default function ProfileScreenView({
                               styles.cardCheckboxSquare,
                               isSelected && { backgroundColor: pastThemeColor, borderColor: pastThemeColor }
                             ]}>
-                              {isSelected && <Check size={10} color="#FFFFFF" />}
+                              {isSelected && <Check size={10} color={tokens.colors.white} />}
                             </View>
                           </TouchableOpacity>
                         )}
@@ -1159,8 +1225,8 @@ export default function ProfileScreenView({
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                             <Text style={styles.pastPlanTitleText}>{plan.planName}</Text>
                             {isPastShared && (
-                              <View style={[styles.pastPlanBadge, { backgroundColor: '#F3F4F6', borderColor: '#E5E7EB', borderWidth: 1 }]}>
-                                <Text style={[styles.pastPlanBadgeText, { color: '#6B7280' }]}>SHARED</Text>
+                              <View style={[styles.pastPlanBadge, { backgroundColor: tokens.colors.borderLight, borderColor: tokens.colors.border, borderWidth: 1 }]}>
+                                <Text style={[styles.pastPlanBadgeText, { color: tokens.colors.textSecondary }]}>SHARED</Text>
                               </View>
                             )}
                           </View>
@@ -1179,7 +1245,7 @@ export default function ProfileScreenView({
                           hitSlop={8}
                           style={{ padding: 4 }}
                         >
-                          <MoreVertical size={16} color="#9CA3AF" />
+                          <MoreVertical size={16} color={tokens.colors.textTertiary} />
                         </TouchableOpacity>
                       ) : (
                         <View style={styles.pastPlanBadge}>
@@ -1190,12 +1256,17 @@ export default function ProfileScreenView({
                   );
                 })}
               </View>
-            ) : (
-              <Text style={styles.noPastRecordText}>지난 여행 기록이 없습니다.</Text>
-            )}
-          </View>
+              ) : (
+                <Text style={styles.noPastRecordText}>
+                  지난 여행 기록이 없습니다.
+                </Text>
+              )}
+            </View>
+          )}
         </View>
-        <ProfileActivitySections plans={plans} />
+        )}
+
+        {profileSection === 'travel' && <ProfileTravelLogSection />}
       </ScrollView>
 
       <DatePicker
@@ -1230,7 +1301,7 @@ export default function ProfileScreenView({
                 onPress={() => setEditModalVisible(false)}
                 activeOpacity={0.8}
               >
-                <X size={18} color="#FFFFFF" />
+                <X size={18} color={tokens.colors.white} />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -1249,11 +1320,11 @@ export default function ProfileScreenView({
                   />
                 ) : (
                   <View style={styles.avatarEditPlaceholder}>
-                    <User size={50} color="#9CA3AF" />
+                    <User size={50} color={tokens.colors.textTertiary} />
                   </View>
                 )}
                 <View style={styles.cameraBadge}>
-                  <Camera size={12} color="#FFFFFF" />
+                  <Camera size={12} color={tokens.colors.white} />
                 </View>
               </TouchableOpacity>
             </View>
@@ -1283,7 +1354,7 @@ export default function ProfileScreenView({
                   style={[styles.textInput, styles.textInputDisabled]}
                   value={user.email}
                   editable={false}
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={tokens.colors.textTertiary}
                 />
               </View>
 
@@ -1295,7 +1366,7 @@ export default function ProfileScreenView({
                     value={tempNickname}
                     onChangeText={setTempNickname}
                     placeholder="닉네임을 입력하세요"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={tokens.colors.textTertiary}
                     maxLength={NICKNAME_MAX_LENGTH}
                   />
                   <TouchableOpacity
@@ -1311,7 +1382,7 @@ export default function ProfileScreenView({
                       style={[
                         styles.checkButtonText,
                         (isNicknameUnchanged || isNicknameChecking) && {
-                          color: '#9CA3AF',
+                          color: tokens.colors.textTertiary,
                         },
                       ]}
                     >
@@ -1374,7 +1445,7 @@ export default function ProfileScreenView({
                     activeOpacity={0.8}
                   >
                     <Text style={styles.actionNavButtonText}>테마 변경</Text>
-                    <Settings size={14} color="#9CA3AF" />
+                    <Settings size={14} color={tokens.colors.textTertiary} />
                   </TouchableOpacity>
                 </View>
 
@@ -1391,7 +1462,7 @@ export default function ProfileScreenView({
                     activeOpacity={0.8}
                   >
                     <Text style={styles.actionNavButtonText}>비밀번호 변경</Text>
-                    <Settings size={14} color="#9CA3AF" />
+                    <Settings size={14} color={tokens.colors.textTertiary} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1407,8 +1478,8 @@ export default function ProfileScreenView({
                   <Switch
                     value={isProfilePublic}
                     onValueChange={handleToggleProfilePublic}
-                    trackColor={{ false: '#D1D5DB', true: COLORS.primary }}
-                    thumbColor="#FFFFFF"
+                    trackColor={{ false: tokens.colors.textTertiary, true: COLORS.primary }}
+                    thumbColor={tokens.colors.white}
                   />
                 </View>
               </View>
@@ -1421,7 +1492,7 @@ export default function ProfileScreenView({
                   activeOpacity={0.8}
                 >
                   <Text style={styles.actionNavButtonText}>피드백 보내기</Text>
-                  <Settings size={14} color="#9CA3AF" />
+                  <Settings size={14} color={tokens.colors.textTertiary} />
                 </TouchableOpacity>
               </View>
 
@@ -1443,7 +1514,7 @@ export default function ProfileScreenView({
             {showBottomFade && (
               <View style={styles.fadeOverlayContainer} pointerEvents="none">
                 <LinearGradient
-                  colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.95)', '#FFFFFF']}
+                  colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.95)', tokens.colors.white]}
                   style={styles.fadeOverlay}
                 />
                 <Animated.View 
@@ -1452,7 +1523,7 @@ export default function ProfileScreenView({
                     { transform: [{ translateY: bounceAnim }] }
                   ]}
                 >
-                  <ChevronDown size={14} color="#1344FF" />
+                  <ChevronDown size={14} color={tokens.colors.primary} />
                   <Text style={styles.scrollHintText}>더 보려면 스크롤</Text>
                 </Animated.View>
               </View>

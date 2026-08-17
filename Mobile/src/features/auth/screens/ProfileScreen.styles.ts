@@ -1,57 +1,54 @@
 import { StyleSheet, Dimensions } from 'react-native';
 import { normalize } from '../../../utils/normalize';
+import { tokens } from '../../../theme/tokens';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const COLORS = {
-  primary: '#1344FF',
-  sub: '#E8EDFF',
-  background: '#FFFFFF',
-  card: '#FFFFFF',
-  text: '#111827',
-  textSecondary: '#6B7280',
-  placeholder: '#9CA3AF',
-  border: '#E5E7EB',
-  borderLight: '#F3F4F6',
-  white: '#FFFFFF',
-  error: '#EF4444',
-  surface: '#F9FAFB',
+  primary: tokens.colors.primary,
+  primaryTint: tokens.colors.primaryTint,
+  sub: tokens.colors.sub,
+  background: tokens.colors.background,
+  card: tokens.colors.white,
+  text: tokens.colors.text,
+  textSecondary: tokens.colors.textSecondary,
+  placeholder: tokens.colors.textTertiary,
+  border: tokens.colors.border,
+  borderLight: tokens.colors.borderLight,
+  white: tokens.colors.white,
+  error: tokens.tones.danger.fg,
+  surface: tokens.colors.surface,
 };
 
-export const FONTS = {
-  regular: 'Pretendard-Regular',
-  medium: 'Pretendard-Medium',
-  semibold: 'Pretendard-SemiBold',
-  bold: 'Pretendard-Bold',
-};
+export const FONTS = tokens.fontFamily;
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
   },
   loadErrorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     paddingHorizontal: normalize(32),
   },
   loadErrorText: {
     fontFamily: FONTS.medium,
     fontSize: normalize(15),
-    color: '#4B5563',
+    color: COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: normalize(16),
   },
   loadErrorButton: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.borderLight,
     borderRadius: normalize(12),
     paddingHorizontal: normalize(24),
     height: normalize(44),
@@ -61,20 +58,20 @@ export const styles = StyleSheet.create({
   loadErrorButtonText: {
     fontFamily: FONTS.semibold,
     fontSize: normalize(14),
-    color: '#4B5563',
+    color: COLORS.textSecondary,
   },
   scrollContainer: {
     paddingBottom: normalize(40),
   },
 
   profileCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderRadius: normalize(16),
     padding: normalize(20),
     marginHorizontal: normalize(16),
     marginTop: normalize(16),
     borderWidth: 1,
-    borderColor: '#EAECEF',
+    borderColor: COLORS.border,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -95,15 +92,15 @@ export const styles = StyleSheet.create({
     height: normalize(76),
     borderRadius: normalize(38),
     borderWidth: 2,
-    borderColor: '#1344FF',
+    borderColor: COLORS.primary,
   },
   avatarPlaceholder: {
     width: normalize(76),
     height: normalize(76),
     borderRadius: normalize(38),
     borderWidth: 2,
-    borderColor: '#1344FF',
-    backgroundColor: '#F3F4F6',
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -111,14 +108,14 @@ export const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#1344FF',
+    backgroundColor: COLORS.primary,
     width: normalize(24),
     height: normalize(24),
     borderRadius: normalize(12),
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: COLORS.white,
   },
   profileTextInfo: {
     flex: 1,
@@ -135,12 +132,12 @@ export const styles = StyleSheet.create({
     fontSize: normalize(22),
     fontFamily: FONTS.bold,
     fontWeight: '800',
-    color: '#111827',
+    color: COLORS.text,
   },
   levelBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1344FF',
+    backgroundColor: COLORS.primary,
     paddingHorizontal: normalize(8),
     paddingVertical: normalize(2),
     borderRadius: normalize(12),
@@ -148,7 +145,7 @@ export const styles = StyleSheet.create({
   },
   levelBadgeText: {
     fontSize: normalize(10),
-    color: '#FFFFFF',
+    color: COLORS.white,
     fontWeight: 'bold',
   },
   emailRow: {
@@ -158,22 +155,22 @@ export const styles = StyleSheet.create({
   },
   emailText: {
     fontSize: normalize(12),
-    color: '#6B7280',
+    color: COLORS.textSecondary,
   },
   emailDivider: {
     fontSize: normalize(12),
-    color: '#D1D5DB',
+    color: COLORS.placeholder,
     marginHorizontal: normalize(6),
   },
   genderAgeBadge: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.borderLight,
     paddingHorizontal: normalize(6),
     paddingVertical: normalize(2),
     borderRadius: normalize(4),
   },
   genderAgeBadgeText: {
     fontSize: normalize(10),
-    color: '#4B5563',
+    color: COLORS.textSecondary,
     fontWeight: '500',
   },
   experienceSection: {
@@ -187,23 +184,23 @@ export const styles = StyleSheet.create({
   },
   experienceTitle: {
     fontSize: normalize(12),
-    color: '#1344FF',
+    color: COLORS.primary,
     fontWeight: 'bold',
   },
   experienceValue: {
     fontSize: normalize(11),
-    color: '#9CA3AF',
+    color: COLORS.placeholder,
   },
   progressBarTrack: {
     height: normalize(6),
-    backgroundColor: '#E5E7EB',
+    backgroundColor: COLORS.border,
     borderRadius: normalize(3),
     width: '100%',
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#1344FF',
+    backgroundColor: COLORS.primary,
     borderRadius: normalize(3),
   },
   tagSection: {
@@ -213,21 +210,21 @@ export const styles = StyleSheet.create({
     marginBottom: normalize(20),
   },
   interestTag: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.borderLight,
     paddingHorizontal: normalize(8),
     paddingVertical: normalize(4),
     borderRadius: normalize(6),
   },
   interestTagText: {
     fontSize: normalize(11),
-    color: '#4B5563',
+    color: COLORS.textSecondary,
     fontWeight: '500',
   },
   statsSection: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: COLORS.borderLight,
     paddingTop: normalize(16),
   },
   statBlock: {
@@ -235,23 +232,23 @@ export const styles = StyleSheet.create({
   },
   statNumber: {
     fontSize: normalize(20),
-    color: '#1344FF',
+    color: COLORS.primary,
     fontWeight: 'bold',
     marginBottom: normalize(2),
   },
   statLabel: {
     fontSize: normalize(11),
-    color: '#6B7280',
+    color: COLORS.textSecondary,
   },
 
   achievementCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderRadius: normalize(16),
     padding: normalize(20),
     marginHorizontal: normalize(16),
     marginTop: normalize(16),
     borderWidth: 1,
-    borderColor: '#EAECEF',
+    borderColor: COLORS.border,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -272,17 +269,17 @@ export const styles = StyleSheet.create({
   achievementTitle: {
     fontSize: normalize(16),
     fontWeight: 'bold',
-    color: '#111827',
+    color: COLORS.text,
   },
   achievementProgressBadge: {
-    backgroundColor: '#E8F0FE',
+    backgroundColor: COLORS.primaryTint,
     paddingHorizontal: normalize(8),
     paddingVertical: normalize(2),
     borderRadius: normalize(12),
   },
   achievementProgressText: {
     fontSize: normalize(10),
-    color: '#1A73E8',
+    color: COLORS.primary,
     fontWeight: 'bold',
   },
   badgeList: {
@@ -304,7 +301,7 @@ export const styles = StyleSheet.create({
   },
 
   editDialogCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderRadius: normalize(24),
     width: SCREEN_WIDTH * 0.9,
     height: normalize(500),
@@ -318,7 +315,7 @@ export const styles = StyleSheet.create({
   },
   editDialogHeader: {
     height: normalize(110),
-    backgroundColor: '#1344FF',
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     position: 'relative',
     paddingTop: normalize(16),
@@ -353,15 +350,15 @@ export const styles = StyleSheet.create({
     height: normalize(90),
     borderRadius: normalize(45),
     borderWidth: 4,
-    borderColor: '#FFFFFF',
+    borderColor: COLORS.white,
   },
   avatarEditPlaceholder: {
     width: normalize(90),
     height: normalize(90),
     borderRadius: normalize(45),
     borderWidth: 4,
-    borderColor: '#FFFFFF',
-    backgroundColor: '#F3F4F6',
+    borderColor: COLORS.white,
+    backgroundColor: COLORS.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -369,14 +366,14 @@ export const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#1344FF',
+    backgroundColor: COLORS.primary,
     width: normalize(26),
     height: normalize(26),
     borderRadius: normalize(13),
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: COLORS.white,
   },
   editDialogBody: {
     paddingHorizontal: normalize(24),
@@ -391,13 +388,13 @@ export const styles = StyleSheet.create({
   editDialogTitle: {
     fontSize: normalize(20),
     fontWeight: 'bold',
-    color: '#111827',
+    color: COLORS.text,
     textAlign: 'center',
     marginBottom: normalize(4),
   },
   editDialogSubtitle: {
     fontSize: normalize(12),
-    color: '#6B7280',
+    color: COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: normalize(24),
   },
@@ -407,18 +404,18 @@ export const styles = StyleSheet.create({
   inputLabel: {
     fontSize: normalize(13),
     fontWeight: '700',
-    color: '#4B5563',
+    color: COLORS.textSecondary,
     marginBottom: normalize(8),
   },
   textInput: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.border,
     borderRadius: normalize(12),
     paddingHorizontal: normalize(16),
     height: normalize(44),
     fontSize: normalize(14),
-    color: '#111827',
+    color: COLORS.text,
   },
   visibilityRow: {
     flexDirection: 'row',
@@ -429,7 +426,7 @@ export const styles = StyleSheet.create({
   visibilityDescription: {
     flex: 1,
     fontSize: normalize(12),
-    color: '#6B7280',
+    color: COLORS.textSecondary,
   },
 
   pickerField: {
@@ -437,22 +434,22 @@ export const styles = StyleSheet.create({
   },
   pickerFieldText: {
     fontSize: normalize(14),
-    color: '#111827',
+    color: COLORS.text,
   },
   pickerFieldPlaceholder: {
-    color: '#9CA3AF',
+    color: COLORS.placeholder,
   },
   textInputDisabled: {
-    backgroundColor: '#F3F4F6',
-    color: '#9CA3AF',
-    borderColor: '#E5E7EB',
+    backgroundColor: COLORS.borderLight,
+    color: COLORS.placeholder,
+    borderColor: COLORS.border,
   },
   rowInputWrap: {
     flexDirection: 'row',
     gap: normalize(10),
   },
   checkButton: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.borderLight,
     borderRadius: normalize(12),
     justifyContent: 'center',
     alignItems: 'center',
@@ -462,7 +459,7 @@ export const styles = StyleSheet.create({
   checkButtonText: {
     fontSize: normalize(13),
     fontWeight: 'bold',
-    color: '#4B5563',
+    color: COLORS.textSecondary,
   },
   twoColumnRow: {
     flexDirection: 'row',
@@ -470,7 +467,7 @@ export const styles = StyleSheet.create({
   },
   genderSelectTrack: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.borderLight,
     borderRadius: normalize(12),
     height: normalize(44),
     padding: normalize(2),
@@ -483,7 +480,7 @@ export const styles = StyleSheet.create({
     borderRadius: normalize(10),
   },
   genderOptionActive: {
-    backgroundColor: '#1344FF',
+    backgroundColor: COLORS.primary,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -492,42 +489,42 @@ export const styles = StyleSheet.create({
   },
   genderOptionText: {
     fontSize: normalize(13),
-    color: '#9CA3AF',
+    color: COLORS.placeholder,
     fontWeight: '500',
   },
   genderOptionActiveText: {
-    color: '#FFFFFF',
+    color: COLORS.white,
     fontWeight: 'bold',
   },
   actionNavButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.border,
     borderRadius: normalize(12),
     paddingHorizontal: normalize(16),
     height: normalize(44),
   },
   actionNavButtonDisabled: {
-    backgroundColor: '#F3F4F6',
-    borderColor: '#E5E7EB',
+    backgroundColor: COLORS.borderLight,
+    borderColor: COLORS.border,
     opacity: 0.6,
   },
   actionNavButtonText: {
     fontSize: normalize(13),
-    color: '#4B5563',
+    color: COLORS.textSecondary,
     fontWeight: '500',
   },
   saveButton: {
-    backgroundColor: '#1344FF',
+    backgroundColor: COLORS.primary,
     borderRadius: normalize(14),
     height: normalize(48),
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 3,
-    shadowColor: '#1344FF',
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -536,7 +533,7 @@ export const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: normalize(15),
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: COLORS.white,
   },
   resignLinkButton: {
     flexDirection: 'row',
@@ -548,7 +545,7 @@ export const styles = StyleSheet.create({
   },
   resignLinkText: {
     fontSize: normalize(13),
-    color: '#EF4444',
+    color: COLORS.error,
     fontWeight: '600',
   },
   modalOverlay: {
@@ -586,7 +583,7 @@ export const styles = StyleSheet.create({
   scrollHintText: {
     fontSize: normalize(10),
     fontWeight: 'bold',
-    color: '#1344FF',
+    color: COLORS.primary,
   },
   keyboardAvoidingWrapper: {
     width: '100%',
@@ -597,21 +594,21 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(24),
     paddingBottom: normalize(20),
     paddingTop: normalize(12),
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     zIndex: 3,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: COLORS.borderLight,
     width: '100%',
   },
 
   itineraryDetailCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderRadius: normalize(16),
     padding: normalize(20),
     marginHorizontal: normalize(16),
     marginTop: normalize(16),
     borderWidth: 1,
-    borderColor: '#EAECEF',
+    borderColor: COLORS.border,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -632,26 +629,26 @@ export const styles = StyleSheet.create({
   itineraryTitle: {
     fontSize: normalize(16),
     fontWeight: 'bold',
-    color: '#111827',
+    color: COLORS.text,
   },
   itineraryManageButton: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.border,
     borderRadius: normalize(8),
     paddingHorizontal: normalize(10),
     paddingVertical: normalize(5),
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
   },
   itineraryManageText: {
     fontSize: normalize(11),
-    color: '#4B5563',
+    color: COLORS.textSecondary,
     fontWeight: 'bold',
   },
   dashedPlanBox: {
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: COLORS.placeholder,
     borderStyle: 'dashed',
     borderRadius: normalize(12),
     paddingVertical: normalize(32),
@@ -661,17 +658,17 @@ export const styles = StyleSheet.create({
   },
   noPlanText: {
     fontSize: normalize(12),
-    color: '#6B7280',
+    color: COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: normalize(10),
   },
   createPlanLink: {
     fontSize: normalize(13),
     fontWeight: 'bold',
-    color: '#1344FF',
+    color: COLORS.primary,
   },
   pastRecordBox: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.surface,
     borderRadius: normalize(12),
     padding: normalize(16),
     marginTop: normalize(16),
@@ -679,20 +676,20 @@ export const styles = StyleSheet.create({
   pastRecordTitle: {
     fontSize: normalize(13),
     fontWeight: 'bold',
-    color: '#111827',
+    color: COLORS.text,
     marginBottom: normalize(16),
   },
   noPastRecordText: {
     fontSize: normalize(12),
-    color: '#9CA3AF',
+    color: COLORS.placeholder,
     textAlign: 'center',
     paddingVertical: normalize(16),
   },
 
   itineraryCardWrapper: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.border,
     borderRadius: normalize(16),
     width: '100%',
     padding: normalize(16),
@@ -715,7 +712,7 @@ export const styles = StyleSheet.create({
     gap: normalize(6),
   },
   ddayBadge: {
-    backgroundColor: '#1344FF',
+    backgroundColor: COLORS.primary,
     paddingHorizontal: normalize(6),
     paddingVertical: normalize(2),
     borderRadius: normalize(4),
@@ -723,17 +720,17 @@ export const styles = StyleSheet.create({
   ddayText: {
     fontSize: normalize(10),
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: COLORS.white,
   },
   statusText: {
     fontSize: normalize(11),
-    color: '#6B7280',
+    color: COLORS.textSecondary,
     fontWeight: '500',
   },
   cardTitleText: {
     fontSize: normalize(18),
     fontWeight: 'bold',
-    color: '#111827',
+    color: COLORS.text,
     marginBottom: normalize(4),
   },
   dateInfoRow: {
@@ -743,10 +740,10 @@ export const styles = StyleSheet.create({
   },
   datePeriodText: {
     fontSize: normalize(12),
-    color: '#6B7280',
+    color: COLORS.textSecondary,
   },
   checklistContainer: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.surface,
     borderRadius: normalize(12),
     padding: normalize(12),
   },
@@ -759,12 +756,12 @@ export const styles = StyleSheet.create({
   checklistTitle: {
     fontSize: normalize(10),
     fontWeight: '700',
-    color: '#6B7280',
+    color: COLORS.textSecondary,
     letterSpacing: 0.5,
   },
   checklistProgressText: {
     fontSize: normalize(10),
-    color: '#4B5563',
+    color: COLORS.textSecondary,
     fontWeight: '600',
   },
   taskItemRow: {
@@ -778,23 +775,23 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   taskTextCompleted: {
-    color: '#9CA3AF',
+    color: COLORS.placeholder,
     textDecorationLine: 'line-through',
   },
   addTaskButton: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.border,
     borderStyle: 'dashed',
     borderRadius: normalize(8),
     paddingVertical: normalize(8),
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: normalize(8),
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
   },
   addTaskButtonText: {
     fontSize: normalize(12),
-    color: '#6B7280',
+    color: COLORS.textSecondary,
     fontWeight: '500',
   },
   sectionSubtitleRow: {
@@ -806,7 +803,7 @@ export const styles = StyleSheet.create({
   sectionSubtitleText: {
     fontSize: normalize(13),
     fontWeight: 'bold',
-    color: '#4B5563',
+    color: COLORS.textSecondary,
   },
 
   pastPlansContainer: {
@@ -816,9 +813,9 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.border,
     borderRadius: normalize(12),
     padding: normalize(14),
     width: '100%',
@@ -834,17 +831,17 @@ export const styles = StyleSheet.create({
   },
   pastPlanDateText: {
     fontSize: normalize(12),
-    color: '#9CA3AF',
+    color: COLORS.placeholder,
   },
   pastPlanBadge: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.borderLight,
     paddingHorizontal: normalize(8),
     paddingVertical: normalize(4),
     borderRadius: normalize(6),
   },
   pastPlanBadgeText: {
     fontSize: normalize(10),
-    color: '#6B7280',
+    color: COLORS.textSecondary,
     fontWeight: 'bold',
   },
   sharedBadge: {
@@ -863,7 +860,7 @@ export const styles = StyleSheet.create({
   sharedBadgeText: {
     fontSize: normalize(10),
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: COLORS.white,
   },
 
   editModeHeaderActions: {
@@ -875,8 +872,8 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#F9FAFB',
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
     borderRadius: normalize(8),
     paddingHorizontal: normalize(10),
     paddingVertical: normalize(6),
@@ -885,19 +882,19 @@ export const styles = StyleSheet.create({
     width: normalize(12),
     height: normalize(12),
     borderWidth: 1,
-    borderColor: '#9CA3AF',
+    borderColor: COLORS.placeholder,
     borderRadius: normalize(3),
     marginRight: normalize(4),
     alignItems: 'center',
     justifyContent: 'center',
   },
   selectAllCheckSquareChecked: {
-    backgroundColor: '#4B5563',
-    borderColor: '#4B5563',
+    backgroundColor: COLORS.textSecondary,
+    borderColor: COLORS.textSecondary,
   },
   editActionSelectAllText: {
     fontSize: normalize(11),
-    color: '#4B5563',
+    color: COLORS.textSecondary,
     fontWeight: 'bold',
   },
   editActionDeleteSelected: {
@@ -912,7 +909,7 @@ export const styles = StyleSheet.create({
   },
   editActionDeleteSelectedText: {
     fontSize: normalize(11),
-    color: '#EF4444',
+    color: COLORS.error,
     fontWeight: 'bold',
   },
   editActionCancel: {
@@ -921,7 +918,7 @@ export const styles = StyleSheet.create({
   },
   editActionCancelText: {
     fontSize: normalize(11),
-    color: '#6B7280',
+    color: COLORS.textSecondary,
     fontWeight: 'bold',
   },
   cardCheckboxWrap: {
@@ -931,22 +928,22 @@ export const styles = StyleSheet.create({
     width: normalize(16),
     height: normalize(16),
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: COLORS.placeholder,
     borderRadius: normalize(4),
     alignItems: 'center',
-    justifyContent: 'center',    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',    backgroundColor: COLORS.white,
   },
   editSubToolbar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.surface,
     paddingHorizontal: normalize(12),
     paddingVertical: normalize(8),
     borderRadius: normalize(12),
     marginBottom: normalize(16),
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: COLORS.borderLight,
   },
   header: {
     flexDirection: 'row',
@@ -954,9 +951,9 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: normalize(16),
     height: normalize(52),
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: COLORS.borderLight,
   },
   backButton: {
     padding: normalize(4),
@@ -965,6 +962,23 @@ export const styles = StyleSheet.create({
     fontSize: normalize(18),
     fontFamily: FONTS.bold,
     fontWeight: 'bold',
-    color: '#111827',
+    color: COLORS.text,
+  },
+
+  sectionTabsWrap: {
+    marginTop: normalize(16),
+    marginHorizontal: normalize(16),
+    borderRadius: tokens.radius.l,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  tripTabs: {
+    marginBottom: normalize(14),
+    marginHorizontal: normalize(-4),
+    borderBottomColor: COLORS.borderLight,
+  },
+  dashedPlanIcon: {
+    marginBottom: normalize(8),
   },
 });
