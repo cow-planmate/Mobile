@@ -488,11 +488,13 @@ export default function ItineraryViewScreenView({
           planId={planId}
         />
       )}
+      {/* 로딩이 끝나지 않으면 이 모달이 화면 전체를 덮는다 —
+          안드로이드 뒤로가기로 빠져나갈 수 있어야 갇히지 않는다 */}
       <Modal
         visible={days.length === 0 || isBacking}
         transparent={false}
         animationType="fade"
-        onRequestClose={() => {}}
+        onRequestClose={goBack}
       >
         {days.length === 0 ? (
           <AirplaneLoading />
