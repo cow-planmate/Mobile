@@ -104,24 +104,21 @@ export const styles = StyleSheet.create({
     lineHeight: sp(TYPO.label.lineHeight),
   },
 
+
   fieldAssistRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: sf(2),
-    marginRight: sf(-8),
+    marginTop: sf(6),
+  },
+
+  submitButtonWrapper: {
+    width: '100%',
+    position: 'relative',
+    marginTop: sf(16),
   },
 
   submitButtonSpacing: {
     marginTop: sf(16),
-  },
-
-  lastUsedHint: {
-    marginTop: sf(10),
-    textAlign: 'center',
-    color: COLORS.textSecondary,
-    fontSize: sp(TYPO.caption.fontSize),
-    fontFamily: TYPO.caption.fontFamily,
-    lineHeight: sp(TYPO.caption.lineHeight),
   },
 
   signupRow: {
@@ -148,14 +145,14 @@ export const styles = StyleSheet.create({
 
   socialContainer: {
     width: '100%',
-    marginTop: sf(12),
+    marginTop: sf(28),
     alignItems: 'center',
   },
   socialDivider: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    marginBottom: sf(14),
+    marginBottom: sf(18),
   },
   socialDividerLine: {
     flex: 1,
@@ -163,7 +160,7 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.border,
   },
   socialDividerText: {
-    marginHorizontal: sf(12),
+    marginHorizontal: sf(14),
     fontSize: sp(TYPO.caption.fontSize),
     fontFamily: TYPO.caption.fontFamily,
     lineHeight: sp(TYPO.caption.lineHeight),
@@ -194,38 +191,34 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
   },
 
-  lastUsedBadge: {
+  socialButtonWrapper: {
+    width: '100%',
+    position: 'relative',
+  },
+  lastUsedTooltip: {
     position: 'absolute',
-    right: sf(12),
-    backgroundColor: COLORS.surface,
+    top: sf(-9),
+    right: sf(16),
+    zIndex: 10,
+    backgroundColor: COLORS.primary,
     borderRadius: RADIUS.full,
-    paddingHorizontal: sf(8),
-    paddingVertical: sf(3),
+    paddingHorizontal: sf(9),
+    paddingVertical: sf(2.5),
+    elevation: 3,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
   },
-  lastUsedBadgeText: {
-    fontSize: sp(TYPO.caption.fontSize),
-    fontFamily: TYPO.caption.fontFamily,
-    lineHeight: sp(TYPO.caption.lineHeight),
-    color: COLORS.primary,
+  lastUsedTooltipText: {
+    fontSize: sp(10.5),
+    fontFamily: FONTS.bold,
+    lineHeight: sp(14),
+    color: COLORS.onPrimary,
+    letterSpacing: 0.1,
   },
-
-  footer: {
-    paddingTop: sf(4),
-    alignItems: 'center',
-    backgroundColor: COLORS.bg,
-  },
-  privacyLinkButton: {
-    alignSelf: 'center',
-    paddingVertical: sf(10),
-    paddingHorizontal: sf(12),
-  },
-  privacyLinkText: {
-    fontSize: sp(TYPO.caption.fontSize),
-    fontFamily: TYPO.caption.fontFamily,
-    lineHeight: sp(TYPO.caption.lineHeight),
-    color: COLORS.textSecondary,
-    textDecorationLine: 'underline',
-    textAlign: 'center',
+  socialButtonHighlighted: {
+    borderColor: COLORS.primary,
   },
 
   snsContainer: {

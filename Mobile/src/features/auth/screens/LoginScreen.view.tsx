@@ -24,7 +24,6 @@ import { revealStep, PUSH_TRANSITION_MS } from '../motion';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
-import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
 import FormErrorBanner from '../components/FormErrorBanner';
 
 const GoogleIcon = ({ size = 28 }: { size?: number }) => (
@@ -118,7 +117,6 @@ export const LoginScreenView = ({
   onSnsClose,
   onSnsNavigationStateChange,
 }: LoginScreenViewProps) => {
-  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [isPasswordVisible, setPasswordVisible] = useState(false);
 
   const emailRef = useRef<TextInput>(null);
@@ -265,24 +263,26 @@ export const LoginScreenView = ({
                 onPress={onNavigateToForgotPassword}
                 disabled={isLoading}
                 accessibilityRole="button"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Text style={styles.linkText}>비밀번호를 잊으셨나요?</Text>
               </Pressable>
             </View>
           </View>
 
-          <AuthSubmitButton
-            label="로그인"
-            onPress={onLogin}
-            loading={isLoading}
-            style={styles.submitButtonSpacing}
-          />
-
-          {lastLoginMethod === 'email' && (
-            <Text style={styles.lastUsedHint}>
-              마지막으로 이메일로 로그인했어요
-            </Text>
-          )}
+          <View style={styles.submitButtonWrapper}>
+            {lastLoginMethod === 'email' && (
+              <View style={styles.lastUsedTooltip}>
+                <Text style={styles.lastUsedTooltipText}>최근 로그인</Text>
+              </View>
+            )}
+            <AuthSubmitButton
+              label="로그인"
+              onPress={onLogin}
+              loading={isLoading}
+              muted={!form.email || !form.password}
+            />
+          </View>
 
           <View style={styles.socialContainer}>
             <View style={styles.socialDivider}>
@@ -291,31 +291,38 @@ export const LoginScreenView = ({
               <View style={styles.socialDividerLine} />
             </View>
             <View style={styles.socialButtons}>
-              {socialOptions.map(option => (
-                <PressableScale
-                  key={option.method}
-                  style={styles.socialButton}
-                  baseColor={COLORS.surfaceRaised}
-                  pressedColor={COLORS.surface}
-                  scaleTo={0.98}
-                  onPress={option.onPress}
-                  disabled={isLoading}
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    lastLoginMethod === option.method
-                      ? `${option.label}, 마지막으로 사용한 로그인 수단`
-                      : option.label
-                  }
-                >
-                  {option.icon}
-                  <Text style={styles.socialButtonText}>{option.label}</Text>
-                  {lastLoginMethod === option.method && (
-                    <View style={styles.lastUsedBadge}>
-                      <Text style={styles.lastUsedBadgeText}>마지막 사용</Text>
-                    </View>
-                  )}
-                </PressableScale>
-              ))}
+              {socialOptions.map(option => {
+                const isLastUsed = lastLoginMethod === option.method;
+                return (
+                  <View key={option.method} style={styles.socialButtonWrapper}>
+                    {isLastUsed && (
+                      <View style={styles.lastUsedTooltip}>
+                        <Text style={styles.lastUsedTooltipText}>최근 로그인</Text>
+                      </View>
+                    )}
+                    <PressableScale
+                      style={[
+                        styles.socialButton,
+                        isLastUsed && styles.socialButtonHighlighted,
+                      ]}
+                      baseColor={COLORS.surfaceRaised}
+                      pressedColor={COLORS.surface}
+                      scaleTo={0.98}
+                      onPress={option.onPress}
+                      disabled={isLoading}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        isLastUsed
+                          ? `${option.label}, 최근 사용한 로그인 수단`
+                          : option.label
+                      }
+                    >
+                      {option.icon}
+                      <Text style={styles.socialButtonText}>{option.label}</Text>
+                    </PressableScale>
+                  </View>
+                );
+              })}
             </View>
           </View>
 
@@ -336,23 +343,6 @@ export const LoginScreenView = ({
         </Animated.View>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: sf(8) }]}>
-        <Pressable
-          onPress={() => setShowPrivacyModal(true)}
-          disabled={isLoading}
-          style={styles.privacyLinkButton}
-          accessibilityRole="button"
-        >
-          <Text style={styles.privacyLinkText}>개인정보 처리방침</Text>
-        </Pressable>
-      </View>
-
-      <PrivacyPolicyModal
-        visible={showPrivacyModal}
-        onClose={() => setShowPrivacyModal(false)}
-        variant="policy"
-      />
-
       {snsAuthUrl && (
         <Modal
           visible={true}
@@ -367,6 +357,7 @@ export const LoginScreenView = ({
                 style={styles.snsCloseButton}
                 accessibilityRole="button"
                 accessibilityLabel="소셜 로그인 취소"
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               >
                 <X size={24} color={COLORS.textSecondary} />
               </TouchableOpacity>
