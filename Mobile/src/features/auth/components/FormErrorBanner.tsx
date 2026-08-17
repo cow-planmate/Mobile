@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
-import { COLORS, RADIUS, TYPO } from '../authTokens';
+import { COLORS, FONTS, RADIUS } from '../authTokens';
 import { sf, sp } from '../../../utils/normalize';
 
 export default function FormErrorBanner({ message }: { message: string }) {
@@ -14,7 +14,7 @@ export default function FormErrorBanner({ message }: { message: string }) {
       accessibilityLiveRegion="assertive"
       accessibilityRole="alert"
     >
-      <AlertCircle size={sf(16)} color={COLORS.error} />
+      <AlertCircle size={sf(17)} color={COLORS.error} />
       <View style={styles.messageWrap}>
         <Text style={styles.message}>{message}</Text>
       </View>
@@ -26,10 +26,10 @@ const styles = StyleSheet.create({
   banner: {
     width: '100%',
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: sf(8),
-    marginBottom: sf(16),
-    paddingVertical: sf(12),
+    alignItems: 'center',
+    gap: sf(9),
+    marginBottom: sf(20),
+    paddingVertical: sf(11),
     paddingHorizontal: sf(14),
     borderRadius: RADIUS.md,
     borderWidth: 1,
@@ -41,8 +41,9 @@ const styles = StyleSheet.create({
   },
   message: {
     color: COLORS.error,
-    fontSize: sp(TYPO.body.fontSize),
-    fontFamily: TYPO.body.fontFamily,
-    lineHeight: sp(TYPO.body.lineHeight),
+    fontSize: sp(13.5),
+    fontFamily: FONTS.medium,
+    lineHeight: sp(18),
+    letterSpacing: -0.2,
   },
 });

@@ -12,7 +12,7 @@ export const COLORS = {
   primaryPressed: tokens.colors.primaryPressed,
   onPrimary: tokens.colors.white,
   error: '#D92D20',
-  errorBorder: '#F04438',
+  errorBorder: '#FECDCA',
   errorSurface: '#FEF3F2',
   success: '#067647',
   scrim: 'rgba(16,20,27,0.45)',

@@ -137,13 +137,13 @@ export const LoginScreenView = ({
     const options = [
       {
         method: 'google' as const,
-        label: 'Google로 계속하기',
+        label: 'Google 로그인',
         icon: <GoogleIcon size={20} />,
         onPress: onGoogleLogin,
       },
       {
         method: 'naver' as const,
-        label: '네이버로 계속하기',
+        label: '네이버 로그인',
         icon: <NaverIcon size={20} />,
         onPress: onNaverLogin,
       },
@@ -155,11 +155,11 @@ export const LoginScreenView = ({
   }, [lastLoginMethod, onGoogleLogin, onNaverLogin]);
 
   const emailState = fieldState(
-    !!errors.email || !!errors.form,
+    !!errors.email,
     focused === 'email',
   );
   const passwordState = fieldState(
-    !!errors.password || !!errors.form,
+    !!errors.password,
     focused === 'password',
   );
 
