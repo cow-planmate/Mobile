@@ -15,7 +15,7 @@ import {
   usePendingInvitationActions,
   usePendingInvitations,
 } from '../../../hooks/usePendingInvitations';
-import { BOARDS, BoardKey } from '../constants/levels';
+import { BOARDS, BoardKey, SortKey } from '../constants/levels';
 import { useHotPosts, usePosts } from '../hooks/queries';
 import CommunityScreenView from './CommunityScreen.view';
 
@@ -28,6 +28,7 @@ export default function CommunityScreen() {
   const user = useAuthStore(state => state.user);
 
   const [category, setCategory] = useState<BoardKey>('free');
+  const [sort, setSort] = useState<SortKey>('latest');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isNotificationModalVisible, setNotificationModalVisible] =
@@ -43,8 +44,15 @@ export default function CommunityScreen() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const postsQuery = usePosts(category, 'latest', debouncedQuery);
+  const postsQuery = usePosts(category, sort, debouncedQuery);
   const hotQuery = useHotPosts(category);
+
+  // 게시판을 바꾸면 정렬·검색어를 초기 상태로 되돌린다 (웹 CommunityPage와 동일)
+  const handleSelectCategory = useCallback((next: BoardKey) => {
+    setCategory(next);
+    setSort('latest');
+    setSearchQuery('');
+  }, []);
 
   const posts = useMemo(
     () => postsQuery.data?.pages.flatMap(page => page.items) ?? [],
@@ -134,7 +142,9 @@ export default function CommunityScreen() {
       hotPosts={hotPosts}
       boards={BOARDS}
       selectedCategory={category}
-      onSelectCategory={setCategory}
+      onSelectCategory={handleSelectCategory}
+      selectedSort={sort}
+      onSelectSort={setSort}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
       onWritePost={handleWritePost}

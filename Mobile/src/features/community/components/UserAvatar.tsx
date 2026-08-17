@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import { theme } from '../../../theme/theme';
+import { tokens } from '../../../theme/tokens';
 import { resolveAvatarUrl } from '../utils/avatar';
 
 interface UserAvatarProps {
@@ -51,12 +51,12 @@ export default function UserAvatar({
 
 const styles = StyleSheet.create({
   fallback: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: tokens.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   initial: {
-    color: theme.colors.white,
-    fontFamily: theme.typography.fontFamily.bold,
+    color: tokens.colors.white,
+    fontFamily: tokens.fontFamily.bold,
   },
 });

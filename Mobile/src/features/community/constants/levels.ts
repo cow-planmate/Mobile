@@ -1,3 +1,4 @@
+import { tokens } from '../../../theme/tokens';
 
 export const POST_SCORE_WEIGHT = 3;
 export const COMMENT_SCORE_WEIGHT = 1;
@@ -21,11 +22,11 @@ export const levelName = (level: number): string =>
   (LEVEL_TIERS.find(tier => tier.level === level) ?? LEVEL_TIERS[0]).name;
 
 export const LEVEL_BADGE_COLORS: Record<number, { bg: string; text: string }> = {
-  1: { bg: '#F3F4F6', text: '#6B7280' },
+  1: { bg: tokens.colors.borderLight, text: tokens.colors.textSecondary },
   2: { bg: '#DBEAFE', text: '#2563EB' },
-  3: { bg: '#E0F2FE', text: '#0369A1' },
-  4: { bg: '#FEF3C7', text: '#D97706' },
-  5: { bg: '#FEE2E2', text: '#EF4444' },
+  3: { bg: '#F3E8FF', text: '#9333EA' },
+  4: { bg: '#FFEDD5', text: '#EA580C' },
+  5: { bg: '#F59E0B', text: tokens.colors.white },
 };
 
 export const levelBadgeColor = (level: number) =>
@@ -64,3 +65,11 @@ export type BoardKey = (typeof BOARDS)[number]['key'];
 
 export const boardLabel = (key: string): string =>
   BOARDS.find(board => board.key === key)?.label ?? key;
+
+export const SORT_OPTIONS = [
+  { key: 'latest', label: '최신순' },
+  { key: 'likes', label: '추천순' },
+  { key: 'views', label: '조회순' },
+] as const;
+
+export type SortKey = (typeof SORT_OPTIONS)[number]['key'];

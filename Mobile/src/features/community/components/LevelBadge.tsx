@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { theme } from '../../../theme/theme';
+import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import { levelBadgeColor } from '../constants/levels';
 
@@ -20,12 +20,13 @@ export default function LevelBadge({ level }: LevelBadgeProps) {
 
 const styles = StyleSheet.create({
   badge: {
+    flexShrink: 0,
     paddingHorizontal: normalize(5),
     paddingVertical: normalize(1),
-    borderRadius: theme.borderRadius.xs,
+    borderRadius: tokens.radius.xs,
   },
   text: {
     fontSize: normalize(9),
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: tokens.fontFamily.bold,
   },
 });

@@ -19,10 +19,21 @@ import Flame from 'lucide-react-native/dist/esm/icons/flame';
 import FastImage from 'react-native-fast-image';
 import { styles } from './CommunityScreen.styles';
 import { Header, NotificationModal } from '../../../components/common';
-import { theme } from '../../../theme/theme';
+import {
+  Badge,
+  Card,
+  Chip,
+  EmptyState,
+  SectionHeader,
+  StatItem,
+  StatRow,
+  UnderlineTabs,
+} from '../../../components/ui';
+import { tokens } from '../../../theme/tokens';
 import { CommunityPostSummary } from '../types';
-import { BoardKey } from '../constants/levels';
+import { BoardKey, SortKey, SORT_OPTIONS } from '../constants/levels';
 import LevelBadge from '../components/LevelBadge';
+import PostTypeBadges from '../components/PostTypeBadges';
 import UserAvatar from '../components/UserAvatar';
 
 export interface CommunityScreenViewProps {
@@ -31,6 +42,8 @@ export interface CommunityScreenViewProps {
   boards: readonly { key: BoardKey; label: string }[];
   selectedCategory: BoardKey;
   onSelectCategory: (category: BoardKey) => void;
+  selectedSort: SortKey;
+  onSelectSort: (sort: SortKey) => void;
   searchQuery: string;
   onSearchChange: (text: string) => void;
   onWritePost: () => void;
@@ -55,9 +68,11 @@ export interface CommunityScreenViewProps {
 
 const PostListItem = React.memo(function PostListItem({
   item,
+  category,
   onPress,
 }: {
   item: CommunityPostSummary;
+  category: BoardKey;
   onPress: (postId: string) => void;
 }) {
   const handlePress = useCallback(
@@ -66,55 +81,65 @@ const PostListItem = React.memo(function PostListItem({
   );
 
   return (
-    <TouchableOpacity
+    <Card
+      variant="outlined"
       style={styles.postCard}
       onPress={handlePress}
-      activeOpacity={0.8}
+      accessibilityLabel={item.title}
     >
       <View style={styles.postLeftSection}>
+        <PostTypeBadges post={item} category={category} />
+
         <Text style={styles.postTitle} numberOfLines={2}>
           {item.title}
         </Text>
 
         <View style={styles.postMetaRow}>
-          <Text style={styles.authorName}>{item.author}</Text>
+          <UserAvatar
+            name={item.author}
+            imageUrl={item.authorImage}
+            avatarHash={item.authorAvatarHash}
+            size={18}
+          />
+          <Text style={styles.authorName} numberOfLines={1}>
+            {item.author}
+          </Text>
           <LevelBadge level={item.level} />
-          <Text style={styles.metaDivider}>|</Text>
           <Text style={styles.postTime}>{item.createdAt}</Text>
         </View>
+
+        <StatRow style={styles.postStatsRow}>
+          <StatItem
+            icon={<ThumbsUp size={12} color={tokens.colors.primary} />}
+            value={item.likes}
+            label="추천"
+            active
+          />
+          <StatItem
+            icon={
+              <MessageSquare size={12} color={tokens.colors.textSecondary} />
+            }
+            value={item.comments}
+            label="댓글"
+          />
+          <StatItem
+            icon={<Eye size={12} color={tokens.colors.textSecondary} />}
+            value={item.views}
+            label="조회"
+          />
+        </StatRow>
       </View>
 
-      <View style={styles.postRightSection}>
-        {item.image ? (
+      {item.image ? (
+        <View style={styles.postRightSection}>
           <FastImage
             style={styles.thumbnailImage}
             source={{ uri: item.image }}
             resizeMode={FastImage.resizeMode.cover}
           />
-        ) : (
-          <View style={styles.thumbnailPlaceholder}>
-            <View style={styles.imagePlaceholderSymbol} />
-          </View>
-        )}
-
-        <View style={styles.postStatsOverlay}>
-          <View style={styles.statItem}>
-            <ThumbsUp size={11} color="#3B82F6" style={styles.statIcon} />
-            <Text style={[styles.statText, styles.statTextLikes]}>
-              {item.likes}
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <MessageSquare size={11} color="#6B7280" style={styles.statIcon} />
-            <Text style={styles.statText}>{item.comments}</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Eye size={11} color="#9CA3AF" style={styles.statIcon} />
-            <Text style={styles.statText}>{item.views}</Text>
-          </View>
         </View>
-      </View>
-    </TouchableOpacity>
+      ) : null}
+    </Card>
   );
 });
 
@@ -124,6 +149,8 @@ export default function CommunityScreenView({
   boards,
   selectedCategory,
   onSelectCategory,
+  selectedSort,
+  onSelectSort,
   searchQuery,
   onSearchChange,
   onWritePost,
@@ -146,160 +173,160 @@ export default function CommunityScreenView({
   const selectedLabel =
     boards.find(board => board.key === selectedCategory)?.label ?? '';
 
+  const tabItems = useMemo(
+    () => boards.map(board => ({ key: board.key, label: board.label })),
+    [boards],
+  );
+
   const renderPostItem = useCallback(
     ({ item }: { item: CommunityPostSummary }) => (
-      <PostListItem item={item} onPress={onPostPress} />
+      <PostListItem
+        item={item}
+        category={selectedCategory}
+        onPress={onPostPress}
+      />
     ),
-    [onPostPress],
+    [onPostPress, selectedCategory],
   );
 
   const listHeader = useMemo(
     () => (
-    <View style={styles.listHeaderContainer}>
+      <View style={styles.listHeaderContainer}>
+        <UnderlineTabs
+          items={tabItems}
+          selectedKey={selectedCategory}
+          onSelect={key => onSelectCategory(key as BoardKey)}
+        />
 
-      <View style={styles.tabBarContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabBarScroll}
-        >
-          {boards.map(board => {
-            const isActive = selectedCategory === board.key;
-            return (
-              <TouchableOpacity
-                key={board.key}
-                style={[styles.tabBarItem, isActive && styles.tabBarItemActive]}
-                onPress={() => onSelectCategory(board.key)}
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={[
-                    styles.tabBarText,
-                    isActive && styles.tabBarTextActive,
-                  ]}
-                >
-                  {board.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      <View style={styles.searchBarRow}>
-        <View style={styles.searchBarContainer}>
-          <Search size={18} color="#9CA3AF" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={`${selectedLabel} 내 검색...`}
-            placeholderTextColor="#9CA3AF"
-            value={searchQuery}
-            onChangeText={onSearchChange}
-            returnKeyType="search"
-          />
-        </View>
-        <TouchableOpacity
-          style={styles.writeButton}
-          onPress={onWritePost}
-          activeOpacity={0.8}
-        >
-          <PenSquare size={14} color="#FFFFFF" style={styles.writeIcon} />
-          <Text style={styles.writeButtonText}>글쓰기</Text>
-        </TouchableOpacity>
-      </View>
-
-      {hotPosts.length > 0 && (
-        <View style={styles.hotSectionContainer}>
-          <View style={styles.hotHeaderRow}>
-            <View style={styles.hotTitleRow}>
-              <View style={styles.hotIconWrap}>
-                <Flame size={16} color="#EF4444" />
-              </View>
-              <View>
-                <Text style={styles.hotTitle}>지금 뜨는 핫글</Text>
-                <Text style={styles.hotSubtitle}>
-                  실시간 가장 반응이 뜨거운 게시글입니다
-                </Text>
-              </View>
-            </View>
+        <View style={styles.searchBarRow}>
+          <View style={styles.searchBarContainer}>
+            <Search
+              size={18}
+              color={tokens.colors.textTertiary}
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={`${selectedLabel} 내 검색...`}
+              placeholderTextColor={tokens.colors.textTertiary}
+              value={searchQuery}
+              onChangeText={onSearchChange}
+              returnKeyType="search"
+            />
           </View>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.hotListScroll}
+          <TouchableOpacity
+            style={styles.writeButton}
+            onPress={onWritePost}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="글쓰기"
           >
-            {hotPosts.map((post, idx) => (
-              <TouchableOpacity
-                key={post.id}
-                style={styles.hotPostCard}
-                onPress={() => onPostPress(String(post.id))}
-                activeOpacity={0.8}
-              >
-                <View style={styles.hotCardLeft}>
-                  <View style={styles.hotRankRow}>
-                    <Text style={styles.hotRankNum}>{idx + 1}</Text>
-                    <View style={styles.hotBadge}>
-                      <Text style={styles.hotBadgeText}>HOT</Text>
-                    </View>
-                    <View style={styles.hotViewsWrap}>
-                      <Eye size={10} color="#9CA3AF" style={styles.statIcon} />
-                      <Text style={styles.hotViewsText}>{post.views}</Text>
-                    </View>
-                  </View>
-
-                  <Text style={styles.hotCardTitle} numberOfLines={1}>
-                    {post.title}
-                  </Text>
-
-                  <View style={styles.hotCardFooter}>
-                    <View style={styles.hotCardAuthorRow}>
-                      <UserAvatar
-                        name={post.author}
-                        imageUrl={post.authorImage}
-                        avatarHash={post.authorAvatarHash}
-                        size={18}
-                      />
-                      <Text style={styles.hotAuthorText}>{post.author}</Text>
-                    </View>
-                    <View style={styles.hotLikesWrap}>
-                      <ThumbsUp
-                        size={11}
-                        color="#EF4444"
-                        style={styles.statIcon}
-                      />
-                      <Text style={styles.hotLikesText}>{post.likes}</Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View style={styles.hotCardRight}>
-                  {post.image ? (
-                    <FastImage
-                      style={styles.hotThumbnail}
-                      source={{ uri: post.image }}
-                      resizeMode={FastImage.resizeMode.cover}
-                    />
-                  ) : (
-                    <View style={styles.hotThumbnailPlaceholder}>
-                      <View style={styles.imagePlaceholderSymbol} />
-                    </View>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+            <PenSquare
+              size={14}
+              color={tokens.colors.white}
+              style={styles.writeIcon}
+            />
+            <Text style={styles.writeButtonText}>글쓰기</Text>
+          </TouchableOpacity>
         </View>
-      )}
+
+        {hotPosts.length > 0 && (
+          <View style={styles.hotSectionContainer}>
+            <SectionHeader
+              title="지금 뜨는 핫글"
+              description="실시간 가장 반응이 뜨거운 게시글입니다"
+              icon={
+                <View style={styles.hotIconWrap}>
+                  <Flame size={15} color={tokens.tones.hot.fg} />
+                </View>
+              }
+              style={styles.hotHeaderRow}
+            />
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.hotListScroll}
+            >
+              {hotPosts.map((post, idx) => (
+                <Card
+                  key={post.id}
+                  variant="outlined"
+                  padding="s"
+                  style={styles.hotPostCard}
+                  onPress={() => onPostPress(String(post.id))}
+                  accessibilityLabel={post.title}
+                >
+                  <View style={styles.hotCardLeft}>
+                    <View style={styles.hotRankRow}>
+                      <Text style={styles.hotRankNum}>{idx + 1}</Text>
+                      <Badge label="HOT" tone="hot" />
+                      <View style={styles.hotViewsWrap}>
+                        <Eye size={10} color={tokens.colors.textTertiary} />
+                        <Text style={styles.hotViewsText}>{post.views}</Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.hotCardTitle} numberOfLines={2}>
+                      {post.title}
+                    </Text>
+
+                    <View style={styles.hotCardFooter}>
+                      <View style={styles.hotCardAuthorRow}>
+                        <UserAvatar
+                          name={post.author}
+                          imageUrl={post.authorImage}
+                          avatarHash={post.authorAvatarHash}
+                          size={18}
+                        />
+                        <Text style={styles.hotAuthorText} numberOfLines={1}>
+                          {post.author}
+                        </Text>
+                      </View>
+                      <View style={styles.hotLikesWrap}>
+                        <ThumbsUp size={10} color={tokens.tones.hot.fg} />
+                        <Text style={styles.hotLikesText}>{post.likes}</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {post.image ? (
+                    <View style={styles.hotCardRight}>
+                      <FastImage
+                        style={styles.hotThumbnail}
+                        source={{ uri: post.image }}
+                        resizeMode={FastImage.resizeMode.cover}
+                      />
+                    </View>
+                  ) : null}
+                </Card>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        <View style={styles.sortRow}>
+          {SORT_OPTIONS.map(option => (
+            <Chip
+              key={option.key}
+              label={option.label}
+              size="s"
+              selected={selectedSort === option.key}
+              onPress={() => onSelectSort(option.key)}
+            />
+          ))}
+        </View>
       </View>
     ),
     [
-      boards,
+      tabItems,
       selectedCategory,
       selectedLabel,
+      selectedSort,
       searchQuery,
       hotPosts,
       onSelectCategory,
+      onSelectSort,
       onSearchChange,
       onWritePost,
       onPostPress,
@@ -310,7 +337,7 @@ export default function CommunityScreenView({
     if (!isFetchingNextPage) return null;
     return (
       <View style={styles.listFooterLoading}>
-        <ActivityIndicator color={theme.colors.primary} />
+        <ActivityIndicator color={tokens.colors.primary} />
       </View>
     );
   }, [isFetchingNextPage]);
@@ -318,27 +345,38 @@ export default function CommunityScreenView({
   const listEmpty = useMemo(() => {
     if (isLoading) {
       return (
-        <View style={styles.listStateBox}>
-          <ActivityIndicator color={theme.colors.primary} />
-        </View>
+        <EmptyState
+          title="게시글을 불러오는 중..."
+          loading
+          style={styles.listStateBox}
+        />
+      );
+    }
+    if (isError) {
+      return (
+        <EmptyState
+          title="게시글을 불러오지 못했어요"
+          description="아래로 당겨 다시 시도해 주세요."
+          style={styles.listStateBox}
+        />
       );
     }
     return (
-      <View style={styles.listStateBox}>
-        <Text style={styles.listStateText}>
-          {isError
-            ? '게시글을 불러오지 못했어요.\n아래로 당겨 다시 시도해 주세요.'
-            : searchQuery
-            ? '검색 결과가 없습니다'
-            : '아직 게시글이 없습니다'}
-        </Text>
-      </View>
+      <EmptyState
+        title={searchQuery ? '검색 결과가 없습니다' : '아직 게시글이 없어요'}
+        description={
+          searchQuery ? undefined : '첫 글을 작성해 이야기를 시작해 보세요.'
+        }
+        actionLabel={searchQuery ? undefined : '글쓰기'}
+        onAction={searchQuery ? undefined : onWritePost}
+        style={styles.listStateBox}
+      />
     );
-  }, [isLoading, isError, searchQuery]);
+  }, [isLoading, isError, searchQuery, onWritePost]);
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
 
       <Header
         nickname={user?.nickname}
@@ -359,7 +397,6 @@ export default function CommunityScreenView({
         ListEmptyComponent={listEmpty}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.4}
-
         initialNumToRender={8}
         maxToRenderPerBatch={8}
         windowSize={7}
@@ -367,8 +404,8 @@ export default function CommunityScreenView({
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={onRefresh}
-            colors={[theme.colors.primary]}
-            tintColor={theme.colors.primary}
+            colors={[tokens.colors.primary]}
+            tintColor={tokens.colors.primary}
           />
         }
       />

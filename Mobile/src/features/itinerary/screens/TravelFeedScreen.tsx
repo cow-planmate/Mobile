@@ -19,27 +19,32 @@ import List from 'lucide-react-native/dist/esm/icons/list';
 import SlidersHorizontal from 'lucide-react-native/dist/esm/icons/sliders-horizontal';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
+import MapIcon from 'lucide-react-native/dist/esm/icons/map';
 import Plus from 'lucide-react-native/dist/esm/icons/plus';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { Header, NotificationModal } from '../../../components/common';
+import { Chip } from '../../../components/ui';
 import TravelFeedList, { TravelFeedItem } from '../components/TravelFeedList';
 import KakaoMapView, { MapPlace } from '../components/KakaoMapView';
-import {
-  acceptInvitation,
-  rejectInvitation,
-} from '../../../api/trips';
+import { acceptInvitation, rejectInvitation } from '../../../api/trips';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidatePlanCaches } from '../../../hooks/planCache';
 import {
   usePendingInvitationActions,
   usePendingInvitations,
 } from '../../../hooks/usePendingInvitations';
-import { useFeedPosts, useFeedRegionCounts } from '../../community/hooks/queries';
+import {
+  useFeedPosts,
+  useFeedRegionCounts,
+} from '../../community/hooks/queries';
 import { formatDuration } from '../../community/services/communityApi';
 import { resolveAvatarUrl } from '../../community/utils/avatar';
 import { buildFeedRegionOptions } from '../../community/utils/feedRegions';
+import { getRegionCoords } from '../../community/utils/regionCoords';
 import { FeedFilterParams } from '../../community/types';
+import { tokens } from '../../../theme/tokens';
+import { normalize } from '../../../utils/normalize';
 import {
   describeAcceptResult,
   describeRejectResult,
@@ -60,56 +65,55 @@ const SORT_PARAMS: Record<string, string> = {
   좋아요순: 'likes',
 };
 
-const REGION_COORDINATES: Record<string, { lat: number; lng: number; name: string }> = {
-  '서울': { lat: 37.5665, lng: 126.9780, name: '서울' },
-  '부산': { lat: 35.1796, lng: 129.0756, name: '부산' },
-  '제주도': { lat: 33.4996, lng: 126.5312, name: '제주도' },
-  '강릉': { lat: 37.7518, lng: 128.8761, name: '강릉' },
-  '경주': { lat: 35.8562, lng: 129.2247, name: '경주' },
-  '전주': { lat: 35.8242, lng: 127.1480, name: '전주' },
-};
+const ALL = '전체';
+const TAGS = ['#뚜벅이최적화', '#극한의J', '#여유로운P', '#동선낭비없는'];
+const DURATIONS = [ALL, '1일', '2-3일', '4일 이상'];
+const SORT_OPTIONS = ['최신순', '인기순', '좋아요순'];
 
 export default function TravelFeedScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { showAlert } = useAlert();
   const queryClient = useQueryClient();
-  const user = useAuthStore((state) => state.user);
+  const user = useAuthStore(state => state.user);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [sortBy, setSortBy] = useState('최신순');
-  const [filterRegion, setFilterRegion] = useState('전체');
-  const [filterDuration, setFilterDuration] = useState('전체');
+  const [filterRegion, setFilterRegion] = useState(ALL);
+  const [filterDuration, setFilterDuration] = useState(ALL);
 
   const [isFilterModalVisible, setFilterModalVisible] = useState(false);
-  const [isNotificationModalVisible, setNotificationModalVisible] = useState(false);
+  const [isNotificationModalVisible, setNotificationModalVisible] =
+    useState(false);
   const [isMapModalVisible, setMapModalVisible] = useState(false);
   const { data: pendingRequests = [] } = usePendingInvitations(!!user);
   const pendingInvitations = usePendingInvitationActions();
 
   const [tempSortBy, setTempSortBy] = useState('최신순');
-  const [tempRegion, setTempRegion] = useState('전체');
-  const [tempDuration, setTempDuration] = useState('전체');
+  const [tempDuration, setTempDuration] = useState(ALL);
+  const [tempTag, setTempTag] = useState<string | null>(null);
 
-  const tags = ['#뚜벅이최적화', '#극한의J', '#여유로운P', '#동선낭비없는'];
   const regionCountsQuery = useFeedRegionCounts();
   const regionOptions = useMemo(
     () => buildFeedRegionOptions(regionCountsQuery.data),
     [regionCountsQuery.data],
   );
   const regions = useMemo(
-    () => ['전체', ...regionOptions.map(option => option.region)],
+    () => [ALL, ...regionOptions.map(option => option.region)],
     [regionOptions],
   );
   const regionCountByName = useMemo(
     () => new Map(regionOptions.map(option => [option.region, option.count])),
     [regionOptions],
   );
-  const durations = ['전체', '1일', '2-3일', '4일 이상'];
-  const sortOptions = ['최신순', '인기순', '좋아요순'];
 
-  const isFilterApplied = filterRegion !== '전체' || filterDuration !== '전체' || sortBy !== '최신순';
+  const isFilterApplied =
+    filterDuration !== ALL || sortBy !== '최신순' || !!selectedTag;
+  const activeFilterCount =
+    (filterDuration !== ALL ? 1 : 0) +
+    (sortBy !== '최신순' ? 1 : 0) +
+    (selectedTag ? 1 : 0);
 
   const [debouncedQuery, setDebouncedQuery] = useState('');
   useEffect(() => {
@@ -118,16 +122,15 @@ export default function TravelFeedScreen() {
   }, [searchQuery]);
 
   useEffect(() => {
-    if (filterRegion !== '전체' && !regions.includes(filterRegion)) {
-      setFilterRegion('전체');
-      setTempRegion('전체');
+    if (filterRegion !== ALL && !regions.includes(filterRegion)) {
+      setFilterRegion(ALL);
     }
   }, [filterRegion, regions]);
 
   const feedFilters: FeedFilterParams = useMemo(() => {
     const duration = DURATION_RANGES[filterDuration];
     return {
-      region: filterRegion === '전체' ? undefined : filterRegion,
+      region: filterRegion === ALL ? undefined : filterRegion,
       minDays: duration?.minDays,
       maxDays: duration?.maxDays,
       tag: selectedTag ?? undefined,
@@ -149,6 +152,7 @@ export default function TravelFeedScreen() {
           author: post.author,
           authorAvatar:
             resolveAvatarUrl(post.authorImage, post.authorAvatarHash, 100) ?? '',
+          authorLevel: post.level,
           thumbnailUrl: post.image ?? FEED_FALLBACK_IMAGE,
           createdAt: post.createdAt,
           likes: post.likes,
@@ -231,36 +235,42 @@ export default function TravelFeedScreen() {
 
   const openFilterModal = () => {
     setTempSortBy(sortBy);
-    setTempRegion(filterRegion);
     setTempDuration(filterDuration);
+    setTempTag(selectedTag);
     setFilterModalVisible(true);
   };
 
   const applyFilters = () => {
     setSortBy(tempSortBy);
-    setFilterRegion(tempRegion);
     setFilterDuration(tempDuration);
+    setSelectedTag(tempTag);
     setFilterModalVisible(false);
   };
 
   const resetFilters = () => {
     setTempSortBy('최신순');
-    setTempRegion('전체');
-    setTempDuration('전체');
+    setTempDuration(ALL);
+    setTempTag(null);
   };
 
-  const mapPlaces = useMemo((): MapPlace[] => {
-    return Object.keys(REGION_COORDINATES).map((key, idx) => {
-      const coord = REGION_COORDINATES[key];
-      return {
-        id: String(idx + 1),
-        name: coord.name,
-        address: `${coord.name} 지역 여행지 지도`,
-        latitude: coord.lat,
-        longitude: coord.lng,
-      };
-    });
-  }, []);
+  // 게시글이 있는 지역 중 좌표를 아는 곳만 지도에 올린다
+  const mapPlaces = useMemo(
+    (): MapPlace[] =>
+      regionOptions
+        .map(option => {
+          const coords = getRegionCoords(option.region);
+          if (!coords) return null;
+          return {
+            id: option.region,
+            name: `${option.region} (${option.count})`,
+            address: `${option.region} 여행기 ${option.count}건`,
+            latitude: coords.lat,
+            longitude: coords.lng,
+          };
+        })
+        .filter((place): place is MapPlace => place !== null),
+    [regionOptions],
+  );
 
   return (
     <View style={styles.container}>
@@ -273,185 +283,184 @@ export default function TravelFeedScreen() {
         onNavigateProfile={onNavigateProfile}
       />
 
-      <View style={{ flex: 1, position: 'relative' }}>
-        <View style={{ flex: 1 }}>
-
-          <View style={styles.controlRowContainer}>
-            <View style={styles.searchBar}>
-              <Search size={18} color="#9CA3AF" style={styles.searchIcon} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="제목, 지역, 작성자로 검색..."
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholderTextColor="#9CA3AF"
-                clearButtonMode="while-editing"
-              />
-            </View>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
-              activeOpacity={0.8}
-            >
-              {viewMode === 'list' ? (
-                <LayoutGrid size={20} color="#4B5563" />
-              ) : (
-                <List size={20} color="#4B5563" />
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.iconButton,
-                isFilterApplied && styles.iconButtonActive
-              ]}
-              onPress={openFilterModal}
-              activeOpacity={0.8}
-            >
-              <SlidersHorizontal size={20} color={isFilterApplied ? '#1344FF' : '#4B5563'} />
-              {isFilterApplied && <View style={styles.activeFilterDot} />}
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.tagBarContainer}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.tagBarContent}
-            >
-              <TouchableOpacity
-                style={[
-                  styles.tagChip,
-                  selectedTag === null && styles.tagChipActive
-                ]}
-                onPress={() => setSelectedTag(null)}
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={[
-                    styles.tagText,
-                    selectedTag === null && styles.tagTextActive
-                  ]}
-                >
-                  전체
-                </Text>
-              </TouchableOpacity>
-              {tags.map((tag) => (
-                <TouchableOpacity
-                  key={tag}
-                  style={[
-                    styles.tagChip,
-                    selectedTag === tag && styles.tagChipActive
-                  ]}
-                  onPress={() => setSelectedTag(tag)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.tagText,
-                      selectedTag === tag && styles.tagTextActive
-                    ]}
-                  >
-                    {tag}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          <View style={styles.content}>
-            <TravelFeedList
-              items={feedItems}
-              onItemPress={handleFeedItemPress}
-              viewMode={viewMode}
-              isLoading={feedQuery.isLoading}
-              isLoadingMore={feedQuery.isFetchingNextPage}
-              isRefreshing={
-                feedQuery.isRefetching && !feedQuery.isFetchingNextPage
-              }
-              isFiltered={isFilterApplied || !!debouncedQuery || !!selectedTag}
-              onRefresh={() => feedQuery.refetch()}
-              onLoadMore={handleLoadMore}
+      <View style={styles.body}>
+        <View style={styles.controlRowContainer}>
+          <View style={styles.searchBar}>
+            <Search
+              size={18}
+              color={tokens.colors.textTertiary}
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="제목, 지역, 작성자로 검색..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholderTextColor={tokens.colors.textTertiary}
+              clearButtonMode="while-editing"
             />
           </View>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={
+              viewMode === 'list' ? '카드 보기로 전환' : '목록 보기로 전환'
+            }
+          >
+            {viewMode === 'list' ? (
+              <LayoutGrid size={20} color={tokens.colors.textSecondary} />
+            ) : (
+              <List size={20} color={tokens.colors.textSecondary} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.iconButton, isFilterApplied && styles.iconButtonActive]}
+            onPress={openFilterModal}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={
+              activeFilterCount > 0
+                ? `필터 ${activeFilterCount}개 적용됨`
+                : '필터'
+            }
+          >
+            <SlidersHorizontal
+              size={20}
+              color={
+                isFilterApplied
+                  ? tokens.colors.primary
+                  : tokens.colors.textSecondary
+              }
+            />
+            {activeFilterCount > 0 && (
+              <View style={styles.filterCountBadge}>
+                <Text style={styles.filterCountText}>{activeFilterCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.regionBarContainer}>
+          <TouchableOpacity
+            style={styles.mapButton}
+            onPress={() => setMapModalVisible(true)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="여행지 지도 보기"
+          >
+            <MapIcon size={16} color={tokens.colors.primary} />
+          </TouchableOpacity>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.regionBarContent}
+          >
+            {regions.map(region => (
+              <Chip
+                key={region}
+                label={region}
+                size="s"
+                count={
+                  region === ALL ? undefined : regionCountByName.get(region)
+                }
+                selected={filterRegion === region}
+                onPress={() => setFilterRegion(region)}
+              />
+            ))}
+          </ScrollView>
+        </View>
+
+        <View style={styles.content}>
+          <TravelFeedList
+            items={feedItems}
+            onItemPress={handleFeedItemPress}
+            viewMode={viewMode}
+            isLoading={feedQuery.isLoading}
+            isLoadingMore={feedQuery.isFetchingNextPage}
+            isRefreshing={
+              feedQuery.isRefetching && !feedQuery.isFetchingNextPage
+            }
+            isFiltered={
+              isFilterApplied || !!debouncedQuery || filterRegion !== ALL
+            }
+            onRefresh={() => feedQuery.refetch()}
+            onLoadMore={handleLoadMore}
+          />
         </View>
 
         <TouchableOpacity
           style={styles.createButton}
           onPress={handleCreateFeed}
           activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="여행기 발행"
         >
-          <Plus size={20} color="#FFFFFF" />
+          <Plus size={20} color={tokens.colors.white} />
           <Text style={styles.createButtonText}>여행기 발행</Text>
         </TouchableOpacity>
-
       </View>
 
       <Modal
         visible={isFilterModalVisible}
-        transparent={true}
+        transparent
         animationType="fade"
         onRequestClose={() => setFilterModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <Pressable style={styles.modalDismissOverlay} onPress={() => setFilterModalVisible(false)} />
+          <Pressable
+            style={styles.modalDismissOverlay}
+            onPress={() => setFilterModalVisible(false)}
+          />
           <View style={styles.bottomSheetContainer}>
             <View style={styles.bottomSheetHeader}>
               <Text style={styles.bottomSheetTitle}>상세 필터</Text>
-              <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
-                <X size={20} color="#4B5563" />
+              <TouchableOpacity
+                onPress={() => setFilterModalVisible(false)}
+                accessibilityRole="button"
+                accessibilityLabel="닫기"
+              >
+                <X size={20} color={tokens.colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.bottomSheetBody} showsVerticalScrollIndicator={false}>
-
+            <ScrollView
+              style={styles.bottomSheetBody}
+              showsVerticalScrollIndicator={false}
+            >
               <View style={styles.filterSection}>
-                <Text style={styles.filterSectionLabel}>여행지</Text>
+                <Text style={styles.filterSectionLabel}>여행 기간</Text>
                 <View style={styles.chipsContainer}>
-                  {regions.map((r) => (
-                    <TouchableOpacity
-                      key={r}
-                      style={[
-                        styles.filterChip,
-                        tempRegion === r && styles.filterChipActive
-                      ]}
-                      onPress={() => setTempRegion(r)}
-                    >
-                      <Text
-                        style={[
-                          styles.filterChipText,
-                          tempRegion === r && styles.filterChipTextActive
-                        ]}
-                      >
-                        {r === '전체'
-                          ? r
-                          : `${r} (${regionCountByName.get(r) ?? 0})`}
-                      </Text>
-                    </TouchableOpacity>
+                  {DURATIONS.map(duration => (
+                    <Chip
+                      key={duration}
+                      label={duration}
+                      variant="soft"
+                      selected={tempDuration === duration}
+                      onPress={() => setTempDuration(duration)}
+                    />
                   ))}
                 </View>
               </View>
 
               <View style={styles.filterSection}>
-                <Text style={styles.filterSectionLabel}>여행 기간</Text>
+                <Text style={styles.filterSectionLabel}>여행 스타일</Text>
                 <View style={styles.chipsContainer}>
-                  {durations.map((d) => (
-                    <TouchableOpacity
-                      key={d}
-                      style={[
-                        styles.filterChip,
-                        tempDuration === d && styles.filterChipActive
-                      ]}
-                      onPress={() => setTempDuration(d)}
-                    >
-                      <Text
-                        style={[
-                          styles.filterChipText,
-                          tempDuration === d && styles.filterChipTextActive
-                        ]}
-                      >
-                        {d}
-                      </Text>
-                    </TouchableOpacity>
+                  <Chip
+                    label={ALL}
+                    variant="soft"
+                    selected={tempTag === null}
+                    onPress={() => setTempTag(null)}
+                  />
+                  {TAGS.map(tag => (
+                    <Chip
+                      key={tag}
+                      label={tag}
+                      variant="soft"
+                      selected={tempTag === tag}
+                      onPress={() => setTempTag(tag)}
+                    />
                   ))}
                 </View>
               </View>
@@ -459,24 +468,14 @@ export default function TravelFeedScreen() {
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionLabel}>정렬 기준</Text>
                 <View style={styles.chipsContainer}>
-                  {sortOptions.map((s) => (
-                    <TouchableOpacity
-                      key={s}
-                      style={[
-                        styles.filterChip,
-                        tempSortBy === s && styles.filterChipActive
-                      ]}
-                      onPress={() => setTempSortBy(s)}
-                    >
-                      <Text
-                        style={[
-                          styles.filterChipText,
-                          tempSortBy === s && styles.filterChipTextActive
-                        ]}
-                      >
-                        {s}
-                      </Text>
-                    </TouchableOpacity>
+                  {SORT_OPTIONS.map(option => (
+                    <Chip
+                      key={option}
+                      label={option}
+                      variant="soft"
+                      selected={tempSortBy === option}
+                      onPress={() => setTempSortBy(option)}
+                    />
                   ))}
                 </View>
               </View>
@@ -487,6 +486,7 @@ export default function TravelFeedScreen() {
                 style={styles.resetButton}
                 onPress={resetFilters}
                 activeOpacity={0.8}
+                accessibilityRole="button"
               >
                 <Text style={styles.resetButtonText}>초기화</Text>
               </TouchableOpacity>
@@ -494,6 +494,7 @@ export default function TravelFeedScreen() {
                 style={styles.applyButton}
                 onPress={applyFilters}
                 activeOpacity={0.8}
+                accessibilityRole="button"
               >
                 <Text style={styles.applyButtonText}>적용하기</Text>
               </TouchableOpacity>
@@ -504,21 +505,27 @@ export default function TravelFeedScreen() {
 
       <Modal
         visible={isMapModalVisible}
-        transparent={false}
         animationType="slide"
         onRequestClose={() => setMapModalVisible(false)}
       >
         <View style={styles.mapModalContainer}>
           <View style={styles.mapModalHeader}>
             <View style={styles.mapModalTitleRow}>
-              <MapPin size={20} color="#1344FF" style={{ marginRight: 6 }} />
+              <MapPin size={20} color={tokens.colors.primary} />
               <Text style={styles.mapModalTitle}>전체 여행지 지도</Text>
+              <View style={styles.mapModalCountBadge}>
+                <Text style={styles.mapModalCountText}>
+                  {mapPlaces.length}곳
+                </Text>
+              </View>
             </View>
             <TouchableOpacity
               style={styles.mapModalCloseButton}
               onPress={() => setMapModalVisible(false)}
+              accessibilityRole="button"
+              accessibilityLabel="닫기"
             >
-              <X size={22} color="#111827" />
+              <X size={22} color={tokens.colors.text} />
             </TouchableOpacity>
           </View>
 
@@ -542,150 +549,112 @@ export default function TravelFeedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: tokens.colors.surface,
+  },
+  body: {
+    flex: 1,
   },
   content: {
     flex: 1,
   },
   createButton: {
     position: 'absolute',
-    right: 20,
-    bottom: 20,
-    minHeight: 48,
-    paddingHorizontal: 16,
-    borderRadius: 24,
-    backgroundColor: '#1344FF',
+    right: normalize(20),
+    bottom: normalize(20),
+    minHeight: normalize(48),
+    paddingHorizontal: normalize(16),
+    borderRadius: tokens.radius.round,
+    backgroundColor: tokens.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    elevation: 4,
+    gap: normalize(6),
+    ...tokens.shadows.lg,
   },
   createButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
+    color: tokens.colors.white,
+    fontSize: normalize(tokens.fontSize.s),
+    fontFamily: tokens.fontFamily.bold,
   },
   controlRowContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
+    backgroundColor: tokens.colors.white,
+    paddingHorizontal: normalize(16),
+    paddingVertical: normalize(10),
+    gap: normalize(8),
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    backgroundColor: tokens.colors.borderLight,
+    borderRadius: tokens.radius.l,
+    paddingHorizontal: normalize(12),
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: normalize(8),
   },
   searchInput: {
     flex: 1,
-    height: 40,
-    fontSize: 14,
-    color: '#111827',
+    height: normalize(40),
+    fontSize: normalize(tokens.fontSize.s),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.text,
     padding: 0,
   },
   iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: normalize(40),
+    height: normalize(40),
+    borderRadius: tokens.radius.l,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.white,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
   },
   iconButtonActive: {
-    borderColor: '#1344FF',
-    backgroundColor: '#F0F4FF',
+    borderColor: tokens.colors.primary,
+    backgroundColor: tokens.colors.primaryTint,
   },
-  activeFilterDot: {
+  filterCountBadge: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#1344FF',
-  },
-  tagBarContainer: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  tagBarContent: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  tagChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  tagChipActive: {
-    backgroundColor: '#1344FF',
-    borderColor: '#1344FF',
-  },
-  tagText: {
-    fontSize: 12,
-    color: '#4B5563',
-    fontWeight: '500',
-  },
-  tagTextActive: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-  floatingButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#1344FF',
-    justifyContent: 'center',
+    top: normalize(-5),
+    right: normalize(-5),
+    minWidth: normalize(17),
+    height: normalize(17),
+    paddingHorizontal: normalize(4),
+    borderRadius: tokens.radius.round,
+    backgroundColor: tokens.colors.primary,
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    zIndex: 99,
+    justifyContent: 'center',
   },
-  mapFloatingButton: {
-    position: 'absolute',
-    bottom: 26,
-    left: '50%',
-    transform: [{ translateX: -60 }],
-    width: 120,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#111827',
+  filterCountText: {
+    fontSize: normalize(tokens.fontSize.xxs),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
+  },
+  regionBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    zIndex: 98,
+    backgroundColor: tokens.colors.white,
+    paddingLeft: normalize(16),
+    paddingBottom: normalize(10),
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.border,
+    gap: normalize(8),
   },
-  mapFloatingButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: 'bold',
+  mapButton: {
+    width: normalize(32),
+    height: normalize(32),
+    borderRadius: tokens.radius.round,
+    backgroundColor: tokens.colors.primaryTint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  regionBarContent: {
+    paddingRight: normalize(16),
+    gap: normalize(6),
+    alignItems: 'center',
   },
 
   modalOverlay: {
@@ -701,132 +670,118 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   bottomSheetContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
+    backgroundColor: tokens.colors.white,
+    borderTopLeftRadius: normalize(24),
+    borderTopRightRadius: normalize(24),
+    padding: normalize(24),
     maxHeight: '80%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 20,
+    ...tokens.shadows.lg,
   },
   bottomSheetHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: normalize(20),
   },
   bottomSheetTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontSize: normalize(tokens.fontSize.ml),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
   },
   bottomSheetBody: {
-    marginBottom: 24,
+    marginBottom: normalize(24),
   },
   filterSection: {
-    marginBottom: 24,
+    marginBottom: normalize(24),
   },
   filterSectionLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#374151',
-    marginBottom: 12,
+    fontSize: normalize(tokens.fontSize.s),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+    marginBottom: normalize(12),
   },
   chipsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  filterChipActive: {
-    backgroundColor: '#F0F4FF',
-    borderColor: '#1344FF',
-  },
-  filterChipText: {
-    fontSize: 13,
-    color: '#4B5563',
-    fontWeight: '500',
-  },
-  filterChipTextActive: {
-    color: '#1344FF',
-    fontWeight: 'bold',
+    gap: normalize(8),
   },
   bottomSheetFooter: {
     flexDirection: 'row',
-    gap: 12,
-    paddingBottom: Platform.OS === 'ios' ? 12 : 0,
+    gap: normalize(12),
+    paddingBottom: Platform.OS === 'ios' ? normalize(12) : 0,
   },
   resetButton: {
     flex: 1,
-    height: 48,
-    borderRadius: 12,
+    height: normalize(48),
+    borderRadius: tokens.radius.l,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: tokens.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.white,
   },
   resetButtonText: {
-    fontSize: 14,
-    color: '#4B5563',
-    fontWeight: '600',
+    fontSize: normalize(tokens.fontSize.s),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.textSecondary,
   },
   applyButton: {
     flex: 2,
-    height: 48,
-    borderRadius: 12,
+    height: normalize(48),
+    borderRadius: tokens.radius.l,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1344FF',
+    backgroundColor: tokens.colors.primary,
   },
   applyButtonText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '700',
+    fontSize: normalize(tokens.fontSize.s),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
   },
 
   mapModalContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.white,
   },
   mapModalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 54 : 16,
-    paddingBottom: 16,
+    paddingHorizontal: normalize(16),
+    paddingTop: Platform.OS === 'ios' ? normalize(54) : normalize(16),
+    paddingBottom: normalize(16),
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: tokens.colors.border,
   },
   mapModalTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: normalize(6),
   },
   mapModalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontSize: normalize(tokens.fontSize.ml),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+  },
+  mapModalCountBadge: {
+    paddingHorizontal: normalize(8),
+    paddingVertical: normalize(2),
+    borderRadius: tokens.radius.round,
+    backgroundColor: tokens.colors.primaryTint,
+  },
+  mapModalCountText: {
+    fontSize: normalize(tokens.fontSize.xs),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.primary,
   },
   mapModalCloseButton: {
-    padding: 4,
+    padding: normalize(4),
   },
   mapContainer: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: tokens.colors.surface,
   },
   mapView: {
     flex: 1,
-    borderRadius: 0,
   },
 });
