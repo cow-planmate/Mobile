@@ -14,11 +14,15 @@ if (!normalizedApiUrl && __DEV__) {
   console.warn('[axiosConfig] API_URL이 비어 있습니다. .env 설정을 확인하세요.');
 }
 
+// 로그아웃 상태에서만 호출되는 경로. 만료된 토큰이 남아 있으면 요청 직전에
+// 불필요한 /api/auth/token 갱신 왕복이 끼어들기 때문에 인증 헤더 자체를 뗀다.
+// '/api/auth/register'는 '/api/auth/register/nickname/verify'까지 함께 덮는다.
 const NO_AUTH_PATHS = [
   '/api/auth/login',
   '/api/auth/token',
   '/api/auth/email/verification',
-  '/api/auth/register/nickname/verify',
+  '/api/auth/register',
+  '/api/auth/password/email',
   '/api/oauth/exchange',
   '/api/oauth/complete',
   '/api/beta/feedback',

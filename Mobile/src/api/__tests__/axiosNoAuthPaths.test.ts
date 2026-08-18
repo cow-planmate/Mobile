@@ -24,7 +24,7 @@ const make401 = (url: string, code: string) =>
     response: { status: 401, data: { code, message: '' } },
   } as unknown as AxiosError);
 
-describe('OAuth 경로의 토큰 처리', () => {
+describe('인증 없이 호출하는 경로의 토큰 처리', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -36,6 +36,19 @@ describe('OAuth 경로의 토큰 처리', () => {
 
       const config = await requestHandler(
         makeConfig(`https://planmate.example/${path}`),
+      );
+
+      expect(config.headers.Authorization).toBeUndefined();
+    },
+  );
+
+  it.each(['/api/auth/register', '/api/auth/password/email'])(
+    '로그아웃 상태 전용 경로 %s 에도 토큰을 붙이지 않는다',
+    async path => {
+      mockedStorage.getItem.mockResolvedValue('stored-access-token');
+
+      const config = await requestHandler(
+        makeConfig(`https://planmate.example${path}`),
       );
 
       expect(config.headers.Authorization).toBeUndefined();
