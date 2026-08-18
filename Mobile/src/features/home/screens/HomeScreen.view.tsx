@@ -15,9 +15,14 @@ import { normalize } from '../../../utils/normalize';
 import { styles } from './HomeScreen.styles';
 import { tokens } from '../../../theme/tokens';
 
+// 외부 URL 핫링크 대신 지역별 랜드마크 사진을 로컬로 번들한다 —
+// 네트워크 요청이 실패하면 히어로 전체가 깨지는 문제를 없앤다.
 const HERO_IMAGES = [
-  'https://images.unsplash.com/photo-1608463123864-40a2961b7d00?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?auto=format&fit=crop&w=800&q=80',
+  require('../../../assets/images/home/seoul-gyeongbokgung.jpg'),
+  require('../../../assets/images/home/busan-haeundae.jpg'),
+  require('../../../assets/images/home/jeju-seongsan-ilchulbong.jpg'),
+  require('../../../assets/images/home/gyeongju-cheomseongdae.jpg'),
+  require('../../../assets/images/home/jeonju-hanok-village.jpg'),
 ];
 
 type InputRowProps = {
@@ -163,7 +168,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
 
         <View style={styles.heroSection}>
           <FastImage
-            source={{ uri: HERO_IMAGES[heroIndex], priority: FastImage.priority.normal }}
+            source={HERO_IMAGES[heroIndex]}
             style={styles.heroImage}
             resizeMode={FastImage.resizeMode.cover}
             accessible={false}
