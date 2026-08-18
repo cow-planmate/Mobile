@@ -179,7 +179,7 @@ export const ForgotPasswordScreenView = ({
             <>
               <Text style={styles.title}>비밀번호 찾기</Text>
               <Text style={styles.description}>
-                가입하신 이메일 주소로 인증번호를 보내드려요.
+                비밀번호를 재설정할 이메일을 입력해 주세요.
               </Text>
 
               <View style={styles.inputGroup}>

@@ -16,7 +16,7 @@ const BORDER_COLOR: Record<FieldState, string> = {
   default: COLORS.border,
   focus: COLORS.primary,
   error: COLORS.errorBorder,
-  success: COLORS.success,
+  success: COLORS.successBorder,
 };
 
 const DURATION = 160;
@@ -50,7 +50,7 @@ const LABEL_COLOR: Record<FieldState, string> = {
   default: COLORS.textSecondary,
   focus: COLORS.primary,
   error: COLORS.error,
-  success: COLORS.textSecondary,
+  success: COLORS.success,
 };
 
 const LABEL_HEIGHT = sp(TYPO.caption.lineHeight);

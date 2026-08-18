@@ -129,7 +129,7 @@ export const ChangePasswordScreenView = ({
       >
         <Text style={styles.title}>비밀번호 변경</Text>
         <Text style={styles.description}>
-          현재 비밀번호를 확인한 뒤 새 비밀번호로 바꿉니다.
+          현재 비밀번호를 확인한 뒤 새 비밀번호를 설정해 주세요.
         </Text>
 
         <View style={styles.inputGroup}>

@@ -128,9 +128,9 @@ export interface SignupScreenViewProps {
 
 const STEP_TITLES = ['이메일 인증', '비밀번호 설정', '프로필 설정'];
 const STEP_DESCRIPTIONS = [
-  '로그인에 사용할 이메일을 인증해주세요.',
-  '안전하게 보호할 비밀번호를 만들어 주세요.',
-  '앱에서 사용할 닉네임과 맞춤형 여행 계획을 위한 정보를 입력해주세요.',
+  '로그인에 사용할 이메일을 인증해 주세요.',
+  '안전하게 사용할 비밀번호를 설정해 주세요.',
+  '프로필과 여행 맞춤 정보를 설정해 주세요.',
 ];
 
 export const SignupScreenView = ({
@@ -527,8 +527,6 @@ export const SignupScreenView = ({
                       ref={passwordRef}
                       style={styles.authInput}
                       value={form.password}
-                      placeholder="8자 이상"
-                      placeholderTextColor={COLORS.textSecondary}
                       onChangeText={v => onChange('password', v)}
                       secureTextEntry={!isPasswordVisible}
                       maxLength={PASSWORD_MAX_LENGTH}
@@ -586,8 +584,6 @@ export const SignupScreenView = ({
                       ref={confirmRef}
                       style={styles.authInput}
                       value={form.confirmPassword}
-                      placeholder="다시 한 번 입력해 주세요"
-                      placeholderTextColor={COLORS.textSecondary}
                       onChangeText={v => onChange('confirmPassword', v)}
                       secureTextEntry={!isConfirmPasswordVisible}
                       maxLength={PASSWORD_MAX_LENGTH}

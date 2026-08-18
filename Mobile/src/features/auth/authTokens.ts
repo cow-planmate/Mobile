@@ -15,6 +15,8 @@ export const COLORS = {
   errorBorder: '#FECDCA',
   errorSurface: '#FEF3F2',
   success: '#067647',
+  successBorder: '#A6F4C5',
+  successSurface: '#ECFDF3',
   scrim: 'rgba(16,20,27,0.45)',
 } as const;
 
