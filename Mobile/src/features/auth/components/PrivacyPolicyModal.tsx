@@ -8,6 +8,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  FadeInDown,
+  SlideInDown,
+  SlideOutDown,
+  Easing,
+} from 'react-native-reanimated';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import { COLORS, RADIUS, TYPO } from '../authTokens';
 import { sf, sp } from '../../../utils/normalize';
@@ -21,28 +29,32 @@ interface PrivacySection {
 
 const COMMON_SECTIONS: PrivacySection[] = [
   {
-    title: '1. 수집·이용 목적',
+    title: '1. 수집 및 이용 목적',
     bullets: [
-      '회원 관리 및 서비스 제공',
-      '문의 대응 및 공지사항 전달',
-      '맞춤형 서비스 제공 및 이벤트 안내',
+      '회원가입 시 본인 식별과 중복 가입 및 계정 도용 방지를 위해 이용합니다.',
+      '친구와의 실시간 여행 일정 공동 편집, 여행 피드 및 커뮤니티 서비스를 제공하기 위해 이용합니다.',
+      '고객 문의 응대와 서비스 품질 개선 및 안전한 이용 환경을 구축하기 위해 활용합니다.',
     ],
   },
   {
     title: '2. 수집하는 개인정보 항목',
-    bullets: ['필수 항목: 이메일, 비밀번호, 닉네임, 생년월일, 성별'],
+    bullets: [
+      '회원가입 시 이메일 주소, 비밀번호, 닉네임, 생년월일, 성별을 필수로 수집합니다.',
+      '서비스 이용 과정에서 기기 정보(OS 버전, 기기 모델명) 및 접속 로그가 자동으로 생성되어 수집될 수 있습니다.',
+    ],
   },
   {
-    title: '3. 개인정보 보유·이용 기간',
+    title: '3. 개인정보 보유 및 이용 기간',
     bullets: [
-      '회원 탈퇴 시 지체 없이 파기',
-      '단, 관련 법령에 따라 보존이 필요한 경우 해당 기간 동안 보관',
+      '회원 탈퇴 시 수집된 개인정보는 지체 없이 안전하게 파기하는 것을 원칙으로 합니다.',
+      '단, 관계 법령에 따라 접속 기록(통신비밀보호법)은 3개월, 소비자 불만 및 분쟁 처리 기록(전자상거래법)은 3년간 보관 후 파기합니다.',
     ],
   },
   {
     title: '4. 동의 거부 권리 및 불이익 안내',
     bullets: [
-      '회원가입 시 필수 항목 동의를 거부할 경우 회원가입이 불가합니다.',
+      '이용자는 개인정보 수집 및 이용에 대한 동의를 거부할 권리가 있습니다.',
+      '단, 안내된 항목은 서비스 제공을 위한 최소한의 필수 정보이므로, 동의하지 않으실 경우 회원가입이 불가합니다.',
     ],
   },
 ];
@@ -53,7 +65,7 @@ const POLICY_SECTIONS: PrivacySection[] = [
     ...COMMON_SECTIONS[1],
     bullets: [
       ...COMMON_SECTIONS[1].bullets,
-      'SNS 계정 로그인 시: 이메일 주소, 프로필 정보(닉네임, 프로필 이미지 등) 및 서비스 제공에 필요한 최소한의 계정 식별자',
+      'SNS 계정 로그인 시: 이메일 주소, 프로필 정보(닉네임, 프로필 이미지 등) 및 서비스 제공에 필요한 최소한의 계정 식별자를 수집합니다.',
     ],
   },
   ...COMMON_SECTIONS.slice(2, 3),
@@ -84,7 +96,7 @@ const CONTENT: Record<
     sections: POLICY_SECTIONS,
   },
   consent: {
-    title: '개인정보 수집·이용 동의',
+    title: '개인정보 수집 및 이용 동의',
     closeLabel: '닫기',
     sections: COMMON_SECTIONS,
   },
@@ -103,21 +115,41 @@ export default function PrivacyPolicyModal({
 }: PrivacyPolicyModalProps) {
   const content = CONTENT[variant];
 
+  const backdropEntering = (FadeIn ?? FadeInDown).duration(250);
+  const backdropExiting = FadeOut.duration(200);
+  const sheetEntering = (SlideInDown ?? FadeInDown)
+    .duration(280)
+    .easing(Easing.out(Easing.cubic));
+  const sheetExiting = (SlideOutDown ?? FadeOut).duration(220);
+
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={onClose}
     >
       <View style={styles.overlay} accessibilityViewIsModal>
-        <Pressable
+        <Animated.View
+          entering={backdropEntering}
+          exiting={backdropExiting}
           style={styles.backdrop}
-          onPress={onClose}
-          accessible={false}
-          importantForAccessibility="no"
-        />
-        <View style={styles.modal}>
+        >
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={onClose}
+            accessible={false}
+            importantForAccessibility="no"
+          />
+        </Animated.View>
+
+        <Animated.View
+          entering={sheetEntering}
+          exiting={sheetExiting}
+          style={styles.modal}
+        >
+          <View style={styles.handleBar} />
+
           <View style={styles.header}>
             <Text style={styles.title}>{content.title}</Text>
             <TouchableOpacity
@@ -130,27 +162,30 @@ export default function PrivacyPolicyModal({
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator
-          >
-            {content.sections.map(section => (
-              <View key={section.title}>
-                <Text style={styles.sectionTitle}>{section.title}</Text>
-                {section.bullets.map(bullet => (
-                  <Text key={bullet} style={styles.bullet}>
-                    • {bullet}
-                  </Text>
-                ))}
-              </View>
-            ))}
-          </ScrollView>
+          <View style={styles.scrollBox}>
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator
+              persistentScrollbar
+            >
+              {content.sections.map(section => (
+                <View key={section.title} style={styles.sectionBlock}>
+                  <Text style={styles.sectionTitle}>{section.title}</Text>
+                  {section.bullets.map(bullet => (
+                    <Text key={bullet} style={styles.bullet}>
+                      • {bullet}
+                    </Text>
+                  ))}
+                </View>
+              ))}
+            </ScrollView>
+          </View>
 
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Text style={styles.closeButtonText}>{content.closeLabel}</Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -159,9 +194,7 @@ export default function PrivacyPolicyModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: sf(16),
+    justifyContent: 'flex-end',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -169,16 +202,27 @@ const styles = StyleSheet.create({
   },
   modal: {
     width: '100%',
-    height: '80%',
+    height: '85%',
     backgroundColor: COLORS.surfaceRaised,
-    borderRadius: RADIUS.lg,
-    padding: sf(20),
+    borderTopLeftRadius: sf(24),
+    borderTopRightRadius: sf(24),
+    paddingHorizontal: sf(20),
+    paddingTop: sf(12),
+    paddingBottom: sf(24),
+  },
+  handleBar: {
+    width: sf(36),
+    height: sf(4),
+    borderRadius: sf(2),
+    backgroundColor: COLORS.border,
+    alignSelf: 'center',
+    marginBottom: sf(14),
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: sf(16),
+    marginBottom: sf(12),
   },
   title: {
     fontSize: sp(TYPO.headline.fontSize),
@@ -188,18 +232,30 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   closeIcon: {
-    width: sf(48),
-    height: sf(48),
+    width: sf(44),
+    height: sf(44),
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: sf(-10),
+    marginRight: sf(-8),
+  },
+  scrollBox: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: sf(14),
+    paddingTop: sf(12),
+    marginBottom: sf(16),
   },
   scroll: {
     flex: 1,
-    marginBottom: sf(16),
   },
   scrollContent: {
-    paddingBottom: sf(12),
+    paddingBottom: sf(14),
+  },
+  sectionBlock: {
+    marginBottom: sf(16),
   },
   sectionTitle: {
     fontSize: sp(TYPO.label.fontSize),
@@ -207,14 +263,13 @@ const styles = StyleSheet.create({
     letterSpacing: TYPO.label.letterSpacing,
     fontFamily: TYPO.label.fontFamily,
     color: COLORS.text,
-    marginTop: sf(12),
     marginBottom: sf(6),
   },
   bullet: {
-    fontSize: sp(TYPO.caption.fontSize),
-    lineHeight: sp(TYPO.caption.lineHeight),
+    fontSize: sp(13.5),
+    lineHeight: sp(21),
     letterSpacing: TYPO.caption.letterSpacing,
-    fontFamily: TYPO.caption.fontFamily,
+    fontFamily: TYPO.body.fontFamily,
     color: COLORS.textSecondary,
     marginBottom: sf(4),
     paddingLeft: sf(4),

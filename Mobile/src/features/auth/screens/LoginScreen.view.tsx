@@ -175,13 +175,12 @@ export const LoginScreenView = ({
       >
         <Animated.Text
           style={styles.title}
-          entering={revealStep(0, PUSH_TRANSITION_MS)}
+          entering={revealStep(0)}
         >
           로그인
         </Animated.Text>
 
-        <Animated.View entering={revealStep(1, PUSH_TRANSITION_MS)}>
-
+        <Animated.View entering={revealStep(1)}>
           {!!errors.form && <FormErrorBanner message={errors.form} />}
 
           <View style={styles.inputGroup}>
@@ -283,7 +282,9 @@ export const LoginScreenView = ({
               muted={!form.email || !form.password}
             />
           </View>
+        </Animated.View>
 
+        <Animated.View entering={revealStep(2)}>
           <View style={styles.socialContainer}>
             <View style={styles.socialDivider}>
               <View style={styles.socialDividerLine} />

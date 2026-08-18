@@ -312,15 +312,17 @@ export const styles = StyleSheet.create({
   },
   agreementViewButton: {
     minHeight: sf(48),
-    paddingHorizontal: sf(10),
+    paddingLeft: sf(8),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: sf(2),
     justifyContent: 'center',
   },
   agreementViewText: {
     fontSize: sp(TYPO.body.fontSize),
     fontFamily: TYPO.body.fontFamily,
     lineHeight: sp(TYPO.body.lineHeight),
-    color: COLORS.primary,
-    textDecorationLine: 'underline',
+    color: COLORS.textSecondary,
   },
 
   footer: {

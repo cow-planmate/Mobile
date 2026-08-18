@@ -14,6 +14,8 @@ import Animated, {
   FadeOut,
   FadeInRight,
   FadeInLeft,
+  FadeOutLeft,
+  FadeOutRight,
 } from 'react-native-reanimated';
 import DatePicker from 'react-native-date-picker';
 import ArrowLeft from 'lucide-react-native/dist/esm/icons/arrow-left';
@@ -22,6 +24,7 @@ import EyeOff from 'lucide-react-native/dist/esm/icons/eye-off';
 import Check from 'lucide-react-native/dist/esm/icons/check';
 import Circle from 'lucide-react-native/dist/esm/icons/circle';
 import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
+import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import Loader from 'lucide-react-native/dist/esm/icons/loader';
 import { styles } from './SignupScreen.styles';
 import { COLORS } from '../authTokens';
@@ -29,6 +32,7 @@ import { sf } from '../../../utils/normalize';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
+import AuthProgressBar from '../components/AuthProgressBar';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
 import { PASSWORD_MAX_LENGTH } from '../../../utils/passwordPolicy';
 import { NICKNAME_MAX_LENGTH } from '../../../utils/nickname';
@@ -186,7 +190,13 @@ export const SignupScreenView = ({
   }, []);
   const stepEntering = hasMountedRef.current
     ? (goingForward ? FadeInRight : FadeInLeft).duration(220)
-    : revealStep(1, PUSH_TRANSITION_MS);
+    : revealStep(1);
+
+  const stepExiting = (
+    goingForward
+      ? FadeOutLeft || FadeOut
+      : FadeOutRight || FadeOut
+  ).duration(180);
 
   useEffect(() => {
     if (focusSeq === 0) return;
@@ -274,7 +284,7 @@ export const SignupScreenView = ({
       style={[styles.container, { height: screenHeight }]}
     >
 
-      <Animated.View style={styles.header} entering={revealStep(0, PUSH_TRANSITION_MS)}>
+      <Animated.View style={styles.header} entering={revealStep(0)}>
         <Pressable
           style={styles.headerBackButton}
           onPress={onPrevStep}
@@ -285,17 +295,7 @@ export const SignupScreenView = ({
           <ArrowLeft size={22} color={COLORS.text} />
         </Pressable>
 
-        <View style={styles.progressTrack}>
-          {Array.from({ length: totalSteps }).map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.progressSegment,
-                i < step && styles.progressSegmentOn,
-              ]}
-            />
-          ))}
-        </View>
+        <AuthProgressBar step={step} totalSteps={totalSteps} />
 
         <Text style={styles.progressCount}>
           {step} / {totalSteps}
@@ -312,7 +312,7 @@ export const SignupScreenView = ({
         <Animated.View
           key={step}
           entering={stepEntering}
-          exiting={FadeOut.duration(180)}
+          exiting={stepExiting}
         >
           <Text style={styles.title}>{STEP_TITLES[step - 1]}</Text>
           <Text style={styles.description}>{STEP_DESCRIPTIONS[step - 1]}</Text>
@@ -767,8 +767,8 @@ export const SignupScreenView = ({
                     )}
                   </View>
                   <Text style={styles.agreementText}>
-                    개인정보 수집·이용에 동의합니다{' '}
-                    <Text style={styles.requiredText}>(필수)</Text>
+                    <Text style={styles.requiredText}>(필수) </Text>
+                    개인정보 수집 및 이용 동의
                   </Text>
                 </Pressable>
 
@@ -779,6 +779,7 @@ export const SignupScreenView = ({
                   accessibilityLabel="개인정보 수집 및 이용 약관 보기"
                 >
                   <Text style={styles.agreementViewText}>보기</Text>
+                  <ChevronRight size={sf(14)} color={COLORS.textSecondary} />
                 </Pressable>
               </View>
               {!!errors.agreement && <InlineError message={errors.agreement} />}

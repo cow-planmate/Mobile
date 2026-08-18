@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, Image } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { styles, normalize } from './IntroScreen.styles';
+import { styles } from './IntroScreen.styles';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import { revealStep } from '../motion';
 
@@ -27,16 +27,15 @@ const IntroScreenView = ({ onStart, onLogin }: IntroScreenViewProps) => {
           entering={revealStep(1)}
           accessibilityRole="header"
         >
-          어디서든 함께 하는 플랜메이트
+          함께 계획하고 떠나는 여행
         </Animated.Text>
         <Animated.Text style={styles.description} entering={revealStep(2)}>
-          친구와 함께하는 더 즐거운 여행,{'\n'}편리한 동시 여행 일정 생성을
-          시작해보세요!
+          친구와 실시간으로 일정을 짜고,{'\n'}나만의 특별한 여행을 완성해 보세요.
         </Animated.Text>
       </View>
 
       <Animated.View
-        style={[styles.footer, { paddingBottom: normalize(16) }]}
+        style={styles.footer}
         entering={revealStep(3)}
       >
         <AuthSubmitButton label="시작하기" onPress={onStart} />

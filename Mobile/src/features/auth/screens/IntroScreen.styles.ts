@@ -1,62 +1,42 @@
-import { StyleSheet, Dimensions, PixelRatio } from 'react-native';
-import { tokens } from '../../../theme/tokens';
-
-export const { width } = Dimensions.get('window');
-export const normalize = (size: number) =>
-  Math.round(PixelRatio.roundToNearestPixel(size * (width / 360)));
-
-const COLORS = {
-  primary: tokens.colors.primary,
-  text: tokens.colors.text,
-  textSecondary: tokens.colors.textSecondary,
-  white: tokens.colors.white,
-  border: tokens.colors.border,
-  gray: tokens.colors.surface,
-};
-
-const FONTS = {
-  regular: 'Pretendard-Regular',
-  medium: 'Pretendard-Medium',
-  semibold: 'Pretendard-SemiBold',
-  bold: 'Pretendard-Bold',
-};
+import { StyleSheet } from 'react-native';
+import { COLORS, FONTS } from '../authTokens';
+import { sf, sp } from '../../../utils/normalize';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
-    paddingHorizontal: normalize(20),
+    backgroundColor: COLORS.bg,
+    paddingHorizontal: sf(24),
   },
   content: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingBottom: sf(44),
   },
   logoContainer: {
-    marginBottom: normalize(40),
+    marginBottom: sf(40),
     alignItems: 'center',
   },
   logoImage: {
-    width: normalize(112),
-    height: normalize(112),
+    width: sf(112),
+    height: sf(112),
     resizeMode: 'contain',
   },
   title: {
-    fontSize: normalize(20),
+    fontSize: sp(24),
     fontFamily: FONTS.bold,
-    fontWeight: '700',
-    lineHeight: normalize(28),
-    letterSpacing: 0.2,
+    lineHeight: sp(32),
+    letterSpacing: -0.4,
     color: COLORS.text,
-    marginBottom: normalize(12),
+    marginBottom: sf(12),
     textAlign: 'center',
   },
   description: {
-    fontSize: normalize(15),
+    fontSize: sp(15),
     fontFamily: FONTS.regular,
-    fontWeight: '400',
-    lineHeight: normalize(24),
-    letterSpacing: 0.1,
+    lineHeight: sp(24),
+    letterSpacing: -0.2,
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
@@ -64,30 +44,28 @@ export const styles = StyleSheet.create({
   footer: {
     width: '100%',
     alignItems: 'center',
-    paddingBottom: normalize(20),
+    paddingBottom: sf(24),
   },
   loginPromptContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: normalize(8),
+    marginTop: sf(16),
   },
   loginActionButton: {
-    minHeight: normalize(48),
+    minHeight: sf(48),
     justifyContent: 'center',
-    paddingHorizontal: normalize(8),
+    paddingHorizontal: sf(8),
   },
   loginPromptText: {
-    fontSize: normalize(14),
+    fontSize: sp(14),
     fontFamily: FONTS.regular,
-    fontWeight: '400',
-    lineHeight: normalize(20),
+    lineHeight: sp(20),
     color: COLORS.textSecondary,
   },
   loginActionText: {
-    fontSize: normalize(14),
+    fontSize: sp(14),
     fontFamily: FONTS.bold,
-    fontWeight: '600',
-    lineHeight: normalize(20),
+    lineHeight: sp(20),
     color: COLORS.primary,
   },
 });

@@ -5,6 +5,8 @@ import Animated, {
   FadeOut,
   FadeInRight,
   FadeInLeft,
+  FadeOutLeft,
+  FadeOutRight,
 } from 'react-native-reanimated';
 import ArrowLeft from 'lucide-react-native/dist/esm/icons/arrow-left';
 import Check from 'lucide-react-native/dist/esm/icons/check';
@@ -18,6 +20,7 @@ import { sf } from '../../../utils/normalize';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
+import AuthProgressBar from '../components/AuthProgressBar';
 
 const InlineError = ({ message }: { message: string }) => (
   <Animated.View
@@ -145,17 +148,7 @@ export const ForgotPasswordScreenView = ({
           <ArrowLeft size={22} color={COLORS.text} />
         </Pressable>
 
-        <View style={styles.progressTrack}>
-          {Array.from({ length: totalSteps }).map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.progressSegment,
-                i < step && styles.progressSegmentOn,
-              ]}
-            />
-          ))}
-        </View>
+        <AuthProgressBar step={step} totalSteps={totalSteps} />
 
         <Text style={styles.progressCount}>
           {step} / {totalSteps}
@@ -176,6 +169,11 @@ export const ForgotPasswordScreenView = ({
         <Animated.View
           key={step}
           entering={(goingForward ? FadeInRight : FadeInLeft).duration(220)}
+          exiting={(
+            goingForward
+              ? FadeOutLeft || FadeOut
+              : FadeOutRight || FadeOut
+          ).duration(180)}
         >
           {step === 1 && (
             <>
