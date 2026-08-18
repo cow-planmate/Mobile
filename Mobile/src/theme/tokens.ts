@@ -29,6 +29,9 @@ export const tones = {
   mate: { bg: '#F5F3FF', fg: '#7C3AED' },
 };
 
+// 안드로이드는 shadowColor/Offset/Opacity/Radius를 렌더링하지 않고 elevation만 읽는다.
+// 그래서 그림자는 실제로 뜨는 요소(FAB, 바텀시트, 모달, 토스트)에만 md 하나로 통일해서 쓴다.
+// 일반 화면 콘텐츠(패널, 목록 카드)는 배경색 대비와 1px 보더로 구분한다 — Card.tsx 참고.
 export const shadows = {
   none: {
     shadowColor: 'transparent',
@@ -50,13 +53,6 @@ export const shadows = {
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
-  },
-  lg: {
-    shadowColor: '#1A1A1A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 5,
   },
 };
 

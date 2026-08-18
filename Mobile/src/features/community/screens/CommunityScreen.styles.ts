@@ -40,7 +40,6 @@ export const styles = StyleSheet.create({
     borderRadius: tokens.radius.l,
     paddingHorizontal: normalize(14),
     height: normalize(42),
-    ...tokens.shadows.sm,
   },
   searchIcon: {
     marginRight: normalize(8),
@@ -106,7 +105,6 @@ export const styles = StyleSheet.create({
   hotRankNum: {
     fontSize: normalize(tokens.fontSize.s),
     fontFamily: tokens.fontFamily.bold,
-    fontStyle: 'italic',
     color: tokens.tones.hot.fg,
   },
   hotViewsWrap: {

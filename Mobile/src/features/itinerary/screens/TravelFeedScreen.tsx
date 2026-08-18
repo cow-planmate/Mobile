@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: normalize(6),
-    ...tokens.shadows.lg,
+    ...tokens.shadows.md,
   },
   createButtonText: {
     color: tokens.colors.white,
@@ -675,7 +675,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: normalize(24),
     padding: normalize(24),
     maxHeight: '80%',
-    ...tokens.shadows.lg,
+    ...tokens.shadows.md,
   },
   bottomSheetHeader: {
     flexDirection: 'row',

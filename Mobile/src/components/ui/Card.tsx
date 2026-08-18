@@ -73,7 +73,6 @@ const styles = StyleSheet.create({
   outlined: {
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    ...tokens.shadows.sm,
   },
   flat: tokens.shadows.none,
 });

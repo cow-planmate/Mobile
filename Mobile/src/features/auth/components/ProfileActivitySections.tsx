@@ -98,7 +98,7 @@ export function ProfileCalendarSection({ plans }: { plans: ProfilePlan[] }) {
   };
 
   return (
-    <Card style={styles.card}>
+    <Card style={styles.card} variant="flat">
       <SectionHeader
         title="여행 캘린더"
         icon={<CalendarDays size={18} color={tokens.colors.primary} />}
@@ -224,7 +224,7 @@ export function ProfileCalendarSection({ plans }: { plans: ProfilePlan[] }) {
 
 export function ProfileFootprintSection({ plans }: { plans: ProfilePlan[] }) {
   return (
-    <Card style={styles.card}>
+    <Card style={styles.card} variant="flat">
       <SectionHeader
         title="여행 발자취"
         count={plans.length > 0 ? plans.length : undefined}
@@ -262,7 +262,7 @@ export function ProfileTravelLogSection() {
   const travelLogs = data?.items ?? [];
 
   return (
-    <Card style={styles.card}>
+    <Card style={styles.card} variant="flat">
       <SectionHeader
         title="나의 여행기"
         icon={<FileText size={18} color={tokens.colors.primary} />}
@@ -378,7 +378,7 @@ export function ProfileCommunitySection() {
   };
 
   return (
-    <Card style={styles.card} padding="none">
+    <Card style={styles.card} variant="flat" padding="none">
       <View style={styles.cardInnerHeader}>
         <SectionHeader
           title="커뮤니티 활동"
