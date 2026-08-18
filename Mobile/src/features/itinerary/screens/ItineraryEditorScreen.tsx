@@ -35,6 +35,7 @@ import PlaceEditModal from '../components/PlaceEditModal';
 import ParticipantsModal from '../components/ParticipantsModal';
 import PlanMapModal from '../components/PlanMapModal';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
+import EditAccessGate from '../components/EditAccessGate';
 
 const normalizeCategoryId = (
   rawId: number | undefined,
@@ -62,7 +63,11 @@ type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const { showAlert } = useAlert();
   const currentUser = useAuthStore(state => state.user);
-  const { isOwner: isPlanOwner } = usePlanOwnership(route.params.planId);
+  const {
+    isOwner: isPlanOwner,
+    canEdit,
+    isResolved: isMembershipResolved,
+  } = usePlanOwnership(route.params.planId);
   let queryClient: any = null;
   try {
 
@@ -152,6 +157,17 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     navigation.goBack();
   }, [navigation]);
 
+  // 새로 만드는 일정(planId 없음)은 판정 대상이 아니다. 소유/편집 목록 갱신이 끝난
+  // 뒤에만 권한 없음으로 단정한다 — 갱신 중에는 직전 목록이 남아 오판이 난다.
+  const isAccessDenied =
+    !!route.params.planId && isMembershipResolved && !canEdit;
+
+  const handleRefreshMembership = useCallback(() => {
+    if (queryClient) {
+      void invalidatePlanCaches(queryClient);
+    }
+  }, [queryClient]);
+
   const { updatePlaceDetails, setDays, reorderPlacesInDay } = useItinerary();
   const {
     connect,
@@ -184,6 +200,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       }
 
       if (isBackingRef.current) {
+        return;
+      }
+
+      // 편집이 막힌 화면에는 저장할 변경사항이 없다.
+      if (isAccessDenied) {
         return;
       }
 
@@ -230,7 +251,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     return () => {
       unsubscribe();
     };
-  }, [days.length, disconnect, isSaving, navigation, showAlert]);
+  }, [days.length, disconnect, isAccessDenied, isSaving, navigation, showAlert]);
 
   const [weatherMap, setWeatherMap] = useState<
     Record<string, SimpleWeatherInfo>
@@ -308,6 +329,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     if (!planId) return;
+    // 비멤버는 서버가 룸 입장을 거부한다 — 재연결만 반복하므로 아예 붙지 않는다.
+    if (isAccessDenied) return;
 
     const resyncIfDisconnected = () => {
       if (isConnectedRef.current) return;
@@ -346,7 +369,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       disconnect();
     };
 
-  }, [planId, connect, disconnect, navigation]);
+  }, [planId, connect, disconnect, isAccessDenied, navigation]);
 
   const wasConnectedRef = useRef(false);
   const awaitingAutoResyncRef = useRef(false);
@@ -849,13 +872,22 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       />
       {/* 로딩이 끝나지 않으면 화면 전체를 덮는다 — 뒤로가기로 빠져나갈 수 있어야 한다 */}
       <Modal
-        visible={isInitialPlanLoading || days.length === 0 || isSaving || isBacking}
+        visible={
+          !isAccessDenied &&
+          (isInitialPlanLoading || days.length === 0 || isSaving || isBacking)
+        }
         transparent={false}
         animationType="fade"
         onRequestClose={handleGoBack}
       >
         <AirplaneLoading />
       </Modal>
+      <EditAccessGate
+        visible={isAccessDenied}
+        planId={planId ?? null}
+        onGoBack={handleGoBack}
+        onStaleMembership={handleRefreshMembership}
+      />
     </>
   );
 }

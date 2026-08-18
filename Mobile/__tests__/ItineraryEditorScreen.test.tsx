@@ -183,6 +183,7 @@ jest.mock('react-native-date-picker', () => {
 
 import ItineraryEditorScreenView from '../src/features/itinerary/screens/ItineraryEditorScreen.view';
 import ItineraryEditorScreen from '../src/features/itinerary/screens/ItineraryEditorScreen';
+import EditAccessGate from '../src/features/itinerary/components/EditAccessGate';
 import { Day } from '../src/contexts/ItineraryContext';
 
 const mockShowAlert = jest.fn();
@@ -192,8 +193,16 @@ jest.mock('../src/contexts/AlertContext', () => ({
   }),
 }));
 
+const mockPlanOwnership = {
+  isOwner: true,
+  isEditor: false,
+  canEdit: true,
+  isResolved: true,
+  isLoading: false,
+  isError: false,
+};
 jest.mock('../src/hooks/usePlanOwnership', () => ({
-  usePlanOwnership: () => ({ isOwner: true, isLoading: false, isError: false }),
+  usePlanOwnership: () => mockPlanOwnership,
 }));
 
 const mockMutateAsync = jest.fn();
@@ -496,10 +505,60 @@ describe('ItineraryEditorScreen Component', () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
     mockWebSocket.isConnected = false;
+    mockPlanOwnership.isOwner = true;
+    mockPlanOwnership.isEditor = false;
+    mockPlanOwnership.canEdit = true;
+    mockPlanOwnership.isResolved = true;
   });
 
   afterEach(() => {
     jest.useRealTimers();
+  });
+
+  it('편집 권한이 없으면 요청 게이트를 띄우고 소켓·이탈 경고를 건너뛴다', async () => {
+    mockItineraryEditor.days = mockDays;
+    mockItineraryEditor.selectedDay = mockDays[0];
+    mockPlanOwnership.isOwner = false;
+    mockPlanOwnership.canEdit = false;
+
+    const mockAddListener = jest.fn<() => jest.Mock, [string, (...args: any[]) => void]>(() => jest.fn());
+    const mockNavigation = {
+      addListener: mockAddListener,
+      goBack: jest.fn(),
+      navigate: jest.fn(),
+      dispatch: jest.fn(),
+      setParams: jest.fn(),
+      isFocused: () => true,
+    } as any;
+
+    const mockRoute = {
+      params: { planId: 'plan-123', destination: '제주도' },
+    } as any;
+
+    let tree: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderer.create(
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+      );
+    });
+
+    expect(tree!.root.findByType(EditAccessGate).props.visible).toBe(true);
+    expect(mockWebSocket.connect).not.toHaveBeenCalled();
+
+    const beforeRemoveHandler = mockAddListener.mock.calls.find(
+      (call) => call[0] === 'beforeRemove'
+    )?.[1];
+
+    const mockPreventDefault = jest.fn();
+    await act(async () => {
+      beforeRemoveHandler!({
+        preventDefault: mockPreventDefault,
+        data: { action: { type: 'GO_BACK' } },
+      });
+    });
+
+    expect(mockPreventDefault).not.toHaveBeenCalled();
+    expect(mockShowAlert).not.toHaveBeenCalled();
   });
 
   it('registers beforeRemove listener and shows warning alert on exit', async () => {

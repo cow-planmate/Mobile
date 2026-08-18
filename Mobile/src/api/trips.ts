@@ -283,6 +283,17 @@ export async function inviteEditor(
   });
 }
 
+/**
+ * 편집 권한이 없는 사용자가 플랜 소유자에게 권한을 요청한다.
+ * 이미 멤버면 COLLAB_002, 대기 중인 요청이 있으면 COLLAB_003으로 409가 돌아온다.
+ */
+export async function requestEditAccess(planId: string): Promise<number> {
+  const response = await axios.post<{ collaborationRequestId: number }>(
+    resolveApiUrl(`/api/plan/${planId}/request-access`),
+  );
+  return Number(response.data?.collaborationRequestId);
+}
+
 export async function removeEditor(
   planId: string,
   userId: string | number,

@@ -9,6 +9,7 @@ import {
   TimePickerModal,
 } from '../../../components/common';
 import ChecklistSheet from './checklist/ChecklistSheet';
+import EditAccessGate from './EditAccessGate';
 import ParticipantsModal from './ParticipantsModal';
 import PlaceEditModal from './PlaceEditModal';
 import PlanMapModal from './PlanMapModal';
@@ -295,3 +296,15 @@ const styles = StyleSheet.create({
     color: tokens.colors.white,
   },
 });
+
+/** 편집 권한이 없는 플랜을 열었을 때 화면 전체를 덮는다 */
+export const EditAccessDenied: Story = {
+  render: () => (
+    <ModalStage
+      label="편집 권한 없음"
+      render={(visible, close) => (
+        <EditAccessGate visible={visible} planId="101" onGoBack={close} />
+      )}
+    />
+  ),
+};
