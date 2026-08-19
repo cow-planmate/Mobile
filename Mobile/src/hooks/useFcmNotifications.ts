@@ -30,15 +30,39 @@ const getMessaging = () => {
   }
 };
 
+// 서버가 타입을 실어 보내면 그것을 우선 신뢰한다. 문구 매칭은 타입이 없는
+// 메시지에 대한 폴백일 뿐이라, 범용 단어까지 넣으면 오탐이 늘어난다.
+const INVITATION_DATA_KEYS = ['type', 'notificationType', 'eventType'];
+
+const INVITATION_TYPES = new Set([
+  'invite',
+  'invitation',
+  'request',
+  'collaboration',
+  'collaboration_request',
+  'collaboration-request',
+  'requestresult',
+  'request_result',
+]);
+
 const INVITATION_HINTS = [
   'invite',
   'invitation',
   'collaboration',
   '초대',
-  '요청',
-  '수락',
-  '거절',
+  '편집 권한',
+  '함께 편집',
 ];
+
+const resolveDeclaredType = (data: Record<string, unknown>): string | null => {
+  for (const key of INVITATION_DATA_KEYS) {
+    const value = data[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim().toLowerCase();
+    }
+  }
+  return null;
+};
 
 const requestAndroidNotificationPermission = async (): Promise<boolean> => {
   if (Platform.OS !== 'android') {
@@ -56,11 +80,17 @@ const requestAndroidNotificationPermission = async (): Promise<boolean> => {
   return granted === PermissionsAndroid.RESULTS.GRANTED;
 };
 
-const isInvitationMessage = (remoteMessage: any): boolean => {
-  const data = remoteMessage.data || {};
+export const isInvitationMessage = (remoteMessage: any): boolean => {
+  const data = (remoteMessage?.data || {}) as Record<string, unknown>;
+
+  const declaredType = resolveDeclaredType(data);
+  if (declaredType) {
+    return INVITATION_TYPES.has(declaredType);
+  }
+
   const notificationText = [
-    remoteMessage.notification?.title,
-    remoteMessage.notification?.body,
+    remoteMessage?.notification?.title,
+    remoteMessage?.notification?.body,
   ]
     .filter(Boolean)
     .join(' ')

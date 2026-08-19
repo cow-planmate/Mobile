@@ -7,7 +7,10 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 );
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFcmNotifications } from '../src/hooks/useFcmNotifications';
+import {
+  useFcmNotifications,
+  isInvitationMessage,
+} from '../src/hooks/useFcmNotifications';
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -41,6 +44,43 @@ function TestComponent({
   useFcmNotifications({ enabled, onInvitationPush });
   return null;
 }
+
+describe('isInvitationMessage', () => {
+  it('서버가 보낸 타입을 우선 신뢰한다', () => {
+    expect(isInvitationMessage({ data: { type: 'INVITE' } })).toBe(true);
+    expect(isInvitationMessage({ data: { type: 'REQUEST' } })).toBe(true);
+    expect(isInvitationMessage({ data: { notificationType: 'comment' } })).toBe(
+      false,
+    );
+  });
+
+  it('타입이 있으면 문구는 보지 않는다', () => {
+    expect(
+      isInvitationMessage({
+        data: { type: 'comment' },
+        notification: { title: '초대', body: '초대가 도착했습니다' },
+      }),
+    ).toBe(false);
+  });
+
+  it('타입이 없으면 문구로 판별한다', () => {
+    expect(
+      isInvitationMessage({
+        data: {},
+        notification: { title: '여행 초대', body: '함께 편집해요' },
+      }),
+    ).toBe(true);
+  });
+
+  it('범용 단어만 있는 알림은 초대로 보지 않는다', () => {
+    expect(
+      isInvitationMessage({
+        data: {},
+        notification: { title: '댓글', body: '답변 요청이 등록되었습니다' },
+      }),
+    ).toBe(false);
+  });
+});
 
 describe('useFcmNotifications', () => {
   beforeEach(() => {
