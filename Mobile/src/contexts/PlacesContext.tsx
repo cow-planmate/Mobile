@@ -88,6 +88,12 @@ export function PlacesProvider({children}: PropsWithChildren) {
     isFetching: boolean;
   }>({ destinationId: null, isFetching: false });
 
+  const loadingMoreRef = useRef<Record<'tour' | 'lodging' | 'restaurant', boolean>>({
+    tour: false,
+    lodging: false,
+    restaurant: false,
+  });
+
   const fetchAllRecommendations = useCallback(
     async (destinationId: number, force: boolean = false) => {
 
@@ -190,6 +196,11 @@ export function PlacesProvider({children}: PropsWithChildren) {
 
       if (!destId) return;
 
+      // isLoading은 비동기로 반영되어 onEndReached가 한 틱에 두 번 불리면
+      // 같은 페이지를 두 번 요청한다. 동기적으로 읽히는 ref로 막는다.
+      if (loadingMoreRef.current[field]) return;
+      loadingMoreRef.current[field] = true;
+
       setIsLoading(true);
       try {
         if (field === 'tour') {
@@ -217,6 +228,7 @@ export function PlacesProvider({children}: PropsWithChildren) {
       } catch (err) {
         console.error(`Failed to load more ${field}:`, err);
       } finally {
+        loadingMoreRef.current[field] = false;
         setIsLoading(false);
       }
     },
@@ -241,6 +253,7 @@ export function PlacesProvider({children}: PropsWithChildren) {
     setLodgingHasNext(false);
     setRestaurantHasNext(false);
     lastFetchedDestRef.current = { destinationId: null, isFetching: false };
+    loadingMoreRef.current = { tour: false, lodging: false, restaurant: false };
   }, []);
 
   const contextValue = useMemo(() => ({
