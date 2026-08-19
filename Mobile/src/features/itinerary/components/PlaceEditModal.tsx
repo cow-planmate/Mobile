@@ -14,6 +14,7 @@ import FastImage from 'react-native-fast-image';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import MapIcon from 'lucide-react-native/dist/esm/icons/map';
 import { openExternalUrl } from '../../../utils/externalLink';
+import { dateToTime } from '../../../utils/timeUtils';
 import { theme } from '../../../theme/theme';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CATEGORY_COLORS } from './TimelineItem.styles';
@@ -225,11 +226,7 @@ export default function PlaceEditModal({
                   style={styles.timeButton}
                 >
                   <Text style={styles.timeText}>
-                    {startTime.toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: false,
-                    })}
+                    {dateToTime(startTime)}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -241,11 +238,7 @@ export default function PlaceEditModal({
                   style={styles.timeButton}
                 >
                   <Text style={styles.timeText}>
-                    {endTime.toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: false,
-                    })}
+                    {dateToTime(endTime)}
                   </Text>
                 </TouchableOpacity>
               </View>
