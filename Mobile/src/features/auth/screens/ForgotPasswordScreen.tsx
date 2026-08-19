@@ -8,6 +8,7 @@ import {
   TempPasswordStatus,
 } from './ForgotPasswordScreen.view';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
+import { deadlineFromNow, secondsUntil } from '../../../utils/countdown';
 
 const EMAIL_REGEX = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$/;
 
@@ -54,6 +55,8 @@ export default function ForgotPasswordScreen() {
     useState<TempPasswordStatus>('idle');
 
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const codeDeadlineRef = useRef<number | null>(null);
+  const resendDeadlineRef = useRef<number | null>(null);
 
   const setFieldError = useCallback(
     (field: keyof ForgotPasswordErrors, message: string) => {
@@ -91,13 +94,19 @@ export default function ForgotPasswordScreen() {
       setIsCodeExpired(true);
       return;
     }
-    const id = setTimeout(() => setTimeLeft(t => t - 1), 1000);
+    const id = setTimeout(() => {
+      const deadline = codeDeadlineRef.current;
+      setTimeLeft(deadline === null ? 0 : secondsUntil(deadline));
+    }, 1000);
     return () => clearTimeout(id);
   }, [isTimerActive, timeLeft]);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
-    const id = setTimeout(() => setResendCooldown(c => c - 1), 1000);
+    const id = setTimeout(() => {
+      const deadline = resendDeadlineRef.current;
+      setResendCooldown(deadline === null ? 0 : secondsUntil(deadline));
+    }, 1000);
     return () => clearTimeout(id);
   }, [resendCooldown]);
 
@@ -133,8 +142,10 @@ export default function ForgotPasswordScreen() {
       setShowVerificationInput(true);
       setVerificationCode('');
       setIsCodeExpired(false);
+      codeDeadlineRef.current = deadlineFromNow(CODE_TTL_SECONDS);
       setTimeLeft(CODE_TTL_SECONDS);
       setIsTimerActive(true);
+      resendDeadlineRef.current = deadlineFromNow(RESEND_COOLDOWN_SECONDS);
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
       setFocusSeq(seq => seq + 1);
     } catch (error) {
@@ -241,7 +252,9 @@ export default function ForgotPasswordScreen() {
     setIsEmailVerified(false);
     setIsTimerActive(false);
     setIsCodeExpired(false);
+    codeDeadlineRef.current = null;
     setTimeLeft(CODE_TTL_SECONDS);
+    resendDeadlineRef.current = null;
     setResendCooldown(0);
     setVerificationCode('');
     setErrors({});
