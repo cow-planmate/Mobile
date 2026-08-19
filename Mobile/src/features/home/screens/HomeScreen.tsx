@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppState, AppStateStatus, Modal, BackHandler } from 'react-native';
 import { AppStackParamList } from '../../../navigation/types';
@@ -39,6 +39,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const createFullPlanMutation = useCreateFullPlan();
 
   const [isCreating, setIsCreating] = useState(false);
+  // isCreating은 다음 렌더에야 반영되므로 같은 프레임의 연타를 막지 못한다.
+  // 일정이 중복 생성되지 않도록 동기적으로 읽히는 ref로 잠근다.
+  const isCreatingRef = useRef(false);
 
   useEffect(() => {
     if (!isCreating) return;
@@ -220,6 +223,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   };
 
   const handleCreateItinerary = async () => {
+    if (isCreatingRef.current) return;
     if (!isFormValid) {
       return;
     }
@@ -237,6 +241,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       return;
     }
 
+    isCreatingRef.current = true;
     setIsCreating(true);
 
     try {
@@ -271,6 +276,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
       if (!newPlanId) {
         console.error('Plan creation response did not include planId:', result);
+        isCreatingRef.current = false;
         setIsCreating(false);
         showAlert({
           title: '일정을 확인할 수 없습니다',
@@ -279,6 +285,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         return;
       }
 
+      isCreatingRef.current = false;
       setIsCreating(false);
 
       navigation.navigate('ItineraryEditor', {
@@ -293,6 +300,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       });
     } catch (error) {
       console.error('일정 생성 준비 실패:', error);
+      isCreatingRef.current = false;
       setIsCreating(false);
 
       showAlert({
@@ -358,6 +366,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           setPaxModalVisible(false);
         }}
         onCreateItinerary={handleCreateItinerary}
+        isCreating={isCreating}
       />
       <Modal
         visible={isCreating}

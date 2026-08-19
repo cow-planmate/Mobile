@@ -100,6 +100,7 @@ export interface HomeScreenViewProps {
   onClosePaxModal: () => void;
   onConfirmPax: (pax: { adults: number; children: number }) => void;
   onCreateItinerary: () => void;
+  isCreating?: boolean;
 }
 
 export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
@@ -129,6 +130,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   onClosePaxModal,
   onConfirmPax,
   onCreateItinerary,
+  isCreating = false,
   isNotificationModalVisible,
   pendingRequestList,
   onCloseNotificationModal,
@@ -208,21 +210,21 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
             <TouchableOpacity
               style={[
                 styles.submitButton,
-                !isFormValid && styles.submitButtonDisabled,
+                (!isFormValid || isCreating) && styles.submitButtonDisabled,
               ]}
               onPress={onCreateItinerary}
-              disabled={!isFormValid}
+              disabled={!isFormValid || isCreating}
               accessibilityRole="button"
               accessibilityLabel="일정생성"
-              accessibilityState={{ disabled: !isFormValid }}
+              accessibilityState={{ disabled: !isFormValid || isCreating }}
             >
               <Text
                 style={[
                   styles.submitButtonText,
-                  !isFormValid && styles.submitButtonTextDisabled,
+                  (!isFormValid || isCreating) && styles.submitButtonTextDisabled,
                 ]}
               >
-                일정생성
+                {isCreating ? '일정 만드는 중…' : '일정생성'}
               </Text>
             </TouchableOpacity>
           </View>

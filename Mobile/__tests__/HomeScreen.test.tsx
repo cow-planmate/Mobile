@@ -214,4 +214,44 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
       expect.objectContaining({ title: '일정을 확인할 수 없습니다' }),
     );
   });
+
+  it('연타해도 일정을 한 번만 생성한다', async () => {
+    let resolveCreate: (value: { planId?: string }) => void = () => {};
+    mockMutateAsync.mockImplementationOnce(
+      () =>
+        new Promise<{ planId?: string }>(resolve => {
+          resolveCreate = resolve;
+        }),
+    );
+
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <QueryClientProvider client={queryClient}>
+          <HomeScreen navigation={mockNavigation} route={mockRoute} />
+        </QueryClientProvider>,
+      );
+      mountedRenderers.push(renderer!);
+    });
+
+    const viewComponent = renderer!.root.findByType(
+      require('../src/features/home/screens/HomeScreen.view').HomeScreenView,
+    );
+    await ReactTestRenderer.act(async () => {
+      viewComponent.props.onSelectLocation('제주도', 3);
+    });
+
+    // 첫 요청이 아직 끝나지 않은 사이에 같은 프레임에서 한 번 더 누른 상황.
+    const first = viewComponent.props.onCreateItinerary();
+    const second = viewComponent.props.onCreateItinerary();
+
+    expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+
+    await ReactTestRenderer.act(async () => {
+      resolveCreate({ planId: 'new-plan-123' });
+      await Promise.all([first, second]);
+    });
+
+    expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+  });
 });
