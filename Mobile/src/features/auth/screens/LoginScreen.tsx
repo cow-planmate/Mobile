@@ -4,6 +4,7 @@ import { useAlert } from '../../../contexts/AlertContext';
 import { LoginScreenView, LoginErrors } from './LoginScreen.view';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { resolveSnsFailMessage } from '../snsFailMessage';
+import { isTrustedSnsCallbackUrl } from '../snsCallback';
 import {
   parseBackendError,
   getDisplayErrorMessage,
@@ -105,6 +106,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   const handleSnsNavigationStateChange = async (navState: any) => {
     const url = navState.url;
+
+    // code는 토큰으로 교환되는 자격 증명이므로 우리 API와 같은 출처에서 온
+    // 콜백만 처리한다.
+    if (!isTrustedSnsCallbackUrl(url, resolveApiUrl(''))) return;
+
     if (
       url.includes('status=SUCCESS') ||
       url.includes('status=NEED_ADDITIONAL_INFO') ||
