@@ -40,7 +40,31 @@ describe('errorHandler Utility', () => {
 
     const parsed = parseBackendError(mockError);
     expect(parsed.code).toBe('COMMON_005');
-    expect(parsed.message).toBe('Network Error');
+
+    expect(parsed.message).toBe('서버 오류가 발생했습니다.');
+  });
+
+  it('본문이 JSON이 아니면 상태 코드로 한국어 메시지를 고른다', () => {
+    const htmlErrorPage = {
+      response: { status: 404, data: '<html>Not Found</html>' },
+    };
+
+    const parsed = parseBackendError(htmlErrorPage);
+    expect(parsed.code).toBe('COMMON_004');
+    expect(parsed.message).toBe(BACKEND_ERROR_MESSAGES.COMMON_004);
+  });
+
+  it('알 수 없는 상태 코드는 일반 서버 오류로 처리한다', () => {
+    const badGateway = { response: { status: 502, data: '<html>502</html>' } };
+
+    const parsed = parseBackendError(badGateway);
+    expect(parsed.code).toBe('COMMON_005');
+    expect(parsed.message).toBe(BACKEND_ERROR_MESSAGES.COMMON_005);
+  });
+
+  it('응답 자체가 없으면 연결 실패로 안내한다', () => {
+    const parsed = parseBackendError({ response: undefined });
+    expect(parsed.message).toBe('네트워크 연결을 확인해주세요.');
   });
 
   describe('getDisplayErrorMessage', () => {

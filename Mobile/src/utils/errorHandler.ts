@@ -1,6 +1,17 @@
 import { AxiosError } from 'axios';
 import { ApiErrorResponse, BACKEND_ERROR_MESSAGES } from '../types/error';
 
+// 프록시·게이트웨이가 JSON 대신 HTML이나 빈 본문을 내려주는 경우가 있어,
+// 그때 axios의 영문 메시지가 그대로 노출되지 않도록 상태 코드로 대응한다.
+const STATUS_FALLBACK_CODE: Record<number, string> = {
+  400: 'COMMON_001',
+  401: 'COMMON_002',
+  403: 'COMMON_003',
+  404: 'COMMON_004',
+};
+
+const NETWORK_ERROR_MESSAGE = '네트워크 연결을 확인해주세요.';
+
 export function parseBackendError(error: unknown): ApiErrorResponse {
   if (error && typeof error === 'object' && 'response' in error) {
     const axiosError = error as AxiosError<ApiErrorResponse>;
@@ -15,13 +26,15 @@ export function parseBackendError(error: unknown): ApiErrorResponse {
 
       return { code, message };
     }
-  }
 
-  if (error instanceof Error) {
-    return {
-      code: 'COMMON_005',
-      message: error.message || '서버 오류가 발생했습니다.',
-    };
+    const status = axiosError.response?.status;
+    if (status !== undefined) {
+      const code = STATUS_FALLBACK_CODE[status] || 'COMMON_005';
+      return { code, message: BACKEND_ERROR_MESSAGES[code] };
+    }
+
+    // 응답 자체가 없으면 서버 오류가 아니라 연결 실패다.
+    return { code: 'COMMON_005', message: NETWORK_ERROR_MESSAGE };
   }
 
   return {
