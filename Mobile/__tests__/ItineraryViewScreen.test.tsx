@@ -106,8 +106,27 @@ jest.mock('../src/features/itinerary/components/KakaoMapView', () => {
 });
 
 describe('ItineraryViewScreen - Loading & Weather Logic', () => {
+  // 마운트한 트리를 정리하지 않으면 화면이 잡고 있는 구독·타이머가 남아
+  // jest 워커가 종료되지 못한다.
+  const mountedRenderers: ReactTestRenderer.ReactTestRenderer[] = [];
+
+  const mount = async (element: React.ReactElement) => {
+    let created: ReactTestRenderer.ReactTestRenderer | undefined;
+    await ReactTestRenderer.act(async () => {
+      created = ReactTestRenderer.create(element);
+    });
+    mountedRenderers.push(created!);
+    return created!;
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  afterEach(async () => {
+    await ReactTestRenderer.act(async () => {
+      mountedRenderers.splice(0).forEach(instance => instance.unmount());
+    });
   });
 
   it('maintains loading until weather is fully loaded', async () => {
@@ -140,17 +159,13 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
 
     mockFetchWeather.mockImplementationOnce(() => weatherPromise as any);
 
-    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
-
-    await ReactTestRenderer.act(async () => {
-      renderer = ReactTestRenderer.create(
-        <ItineraryViewScreen navigation={mockNavigation} route={mockRoute} />
-      );
-    });
+    const renderer = await mount(
+      <ItineraryViewScreen navigation={mockNavigation} route={mockRoute} />,
+    );
 
     expect(renderer).toBeDefined();
 
-    const viewComponent = renderer!.root.findByType(
+    const viewComponent = renderer.root.findByType(
       require('../src/features/itinerary/screens/ItineraryViewScreen.view').default
     );
     expect(viewComponent.props.isWeatherLoading).toBe(true);
@@ -176,7 +191,6 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
     mockedAxios.get.mockResolvedValueOnce({
       data: { message: 'success', planFrame: {}, placeBlocks: [], timetables: [] },
     });
-    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
     const route = {
       params: {
         planId: '123',
@@ -187,13 +201,11 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
       },
     } as any;
 
-    await ReactTestRenderer.act(async () => {
-      renderer = ReactTestRenderer.create(
-        <ItineraryViewScreen navigation={mockNavigation} route={route} />,
-      );
-    });
+    const renderer = await mount(
+      <ItineraryViewScreen navigation={mockNavigation} route={route} />,
+    );
 
-    const viewComponent = renderer!.root.findByType(
+    const viewComponent = renderer.root.findByType(
       require('../src/features/itinerary/screens/ItineraryViewScreen.view').default,
     );
     viewComponent.props.handleEdit();
