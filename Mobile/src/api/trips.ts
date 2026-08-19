@@ -196,10 +196,6 @@ export const fetchLodgingPlaces = (destinationId: number, page: number = 1, size
 
 export const fetchRestaurantPlaces = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlaces(destinationId, 'restaurant', page, size);
 
-export const fetchTourPlacesNoAuth = fetchTourPlaces;
-export const fetchLodgingPlacesNoAuth = fetchLodgingPlaces;
-export const fetchRestaurantPlacesNoAuth = fetchRestaurantPlaces;
-
 export type WeatherDataSource =
   | 'FORECAST'
   | 'LAST_YEAR_ACTUAL'

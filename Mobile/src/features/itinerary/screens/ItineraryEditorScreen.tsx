@@ -178,11 +178,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     subscribeToMessages,
     unsubscribeFromMessages,
   } = useWebSocket();
-  const {
-    fetchAllRecommendations,
-    fetchAllRecommendationsNoAuth,
-    resetPlaces,
-  } = usePlaces();
+  const { fetchAllRecommendations, resetPlaces } = usePlaces();
   const planId = route.params.planId;
   const destination = route.params.destination;
   const [isScheduleEditVisible, setScheduleEditVisible] = useState(false);
@@ -436,17 +432,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     if (fetchedDestIdRef.current === recommendationDestId) return;
 
     fetchedDestIdRef.current = recommendationDestId;
-    if (planId) {
-      fetchAllRecommendations(recommendationDestId);
-    } else {
-      fetchAllRecommendationsNoAuth(recommendationDestId);
-    }
-  }, [
-    recommendationDestId,
-    planId,
-    fetchAllRecommendations,
-    fetchAllRecommendationsNoAuth,
-  ]);
+    fetchAllRecommendations(recommendationDestId);
+  }, [recommendationDestId, fetchAllRecommendations]);
 
   useEffect(() => {
     return () => {

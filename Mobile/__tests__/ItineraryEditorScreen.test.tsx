@@ -236,7 +236,6 @@ jest.mock('../src/contexts/ItineraryContext', () => ({
 
 const mockPlaces = {
   fetchAllRecommendations: jest.fn(),
-  fetchAllRecommendationsNoAuth: jest.fn(),
   resetPlaces: jest.fn(),
 };
 jest.mock('../src/contexts/PlacesContext', () => ({

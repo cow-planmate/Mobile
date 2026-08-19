@@ -13,9 +13,6 @@ import {
   fetchTourPlaces,
   fetchLodgingPlaces,
   fetchRestaurantPlaces,
-  fetchTourPlacesNoAuth,
-  fetchLodgingPlacesNoAuth,
-  fetchRestaurantPlacesNoAuth,
 } from '../api/trips';
 
 const mergePlaces = (prev: PlaceVO[], newPlaces: PlaceVO[]) => {
@@ -58,11 +55,6 @@ export interface PlacesState {
 interface PlacesContextType extends PlacesState {
 
   fetchAllRecommendations: (destinationId: number, force?: boolean) => Promise<void>;
-
-  fetchAllRecommendationsNoAuth: (
-    destinationId: number,
-    force?: boolean,
-  ) => Promise<void>;
 
   loadMorePlaces: (
     field: 'tour' | 'lodging' | 'restaurant',
@@ -192,47 +184,6 @@ export function PlacesProvider({children}: PropsWithChildren) {
     [],
   );
 
-  const fetchAllRecommendationsNoAuth = useCallback(
-    async (destinationId: number, force: boolean = false) => {
-      if (
-        !force &&
-        (lastFetchedDestRef.current.isFetching ||
-          lastFetchedDestRef.current.destinationId === destinationId)
-      ) {
-        return;
-      }
-
-      lastFetchedDestRef.current = { destinationId, isFetching: true };
-      setIsLoading(true);
-      try {
-        const [tourData, lodgingData, restaurantData] = await Promise.all([
-          fetchTourPlacesNoAuth(destinationId),
-          fetchLodgingPlacesNoAuth(destinationId),
-          fetchRestaurantPlacesNoAuth(destinationId),
-        ]);
-
-        setTour(tourData.places || []);
-        setTourPage(1);
-        setTourHasNext(!!tourData.hasNext);
-
-        setLodging(lodgingData.places || []);
-        setLodgingPage(1);
-        setLodgingHasNext(!!lodgingData.hasNext);
-
-        setRestaurant(restaurantData.places || []);
-        setRestaurantPage(1);
-        setRestaurantHasNext(!!restaurantData.hasNext);
-      } catch (err) {
-        console.error('추천 장소 조회 실패 (비인증):', err);
-        lastFetchedDestRef.current.destinationId = null;
-      } finally {
-        lastFetchedDestRef.current.isFetching = false;
-        setIsLoading(false);
-      }
-    },
-    [],
-  );
-
   const loadMorePlaces = useCallback(
     async (field: 'tour' | 'lodging' | 'restaurant') => {
       const destId = lastFetchedDestRef.current.destinationId;
@@ -305,7 +256,6 @@ export function PlacesProvider({children}: PropsWithChildren) {
     isLoading,
     isPetFriendly,
     fetchAllRecommendations,
-    fetchAllRecommendationsNoAuth,
     loadMorePlaces,
     resetPlaces,
     setPetFriendly,
@@ -314,7 +264,7 @@ export function PlacesProvider({children}: PropsWithChildren) {
     tourPage, lodgingPage, restaurantPage,
     tourHasNext, lodgingHasNext, restaurantHasNext,
     isLoading, isPetFriendly,
-    fetchAllRecommendations, fetchAllRecommendationsNoAuth,
+    fetchAllRecommendations,
     loadMorePlaces, resetPlaces, setPetFriendly
   ]);
 
