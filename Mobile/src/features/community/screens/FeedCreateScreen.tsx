@@ -24,6 +24,7 @@ import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { FeedStackParamList } from '../../../navigation/types';
 import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
 import { textToBlocks } from '../utils/blocks';
+import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { tokens } from '../../../theme/tokens';
 import {
   buildFeedUpdatePayload,
@@ -94,49 +95,56 @@ export default function FeedCreateScreen() {
     }
   };
 
-  const handleSubmit = async () => {
-    const canEdit =
-      isEditMode &&
-      existingPost.data?.category === 'feed' &&
-      !!existingPost.data.itinerary;
+  const { isSubmitting, runExclusive } = useSubmitLock();
 
-    if ((!isEditMode && !snapshot) || (isEditMode && !canEdit) || !title.trim()) {
-      showAlert({
-        title: '입력 확인',
-        message: '공개할 일정과 여행기 제목을 입력해 주세요.',
-        type: 'error',
-      });
-      return;
-    }
+  const handleSubmit = () =>
+    runExclusive(async () => {
+      const canEdit =
+        isEditMode &&
+        existingPost.data?.category === 'feed' &&
+        !!existingPost.data.itinerary;
 
-    const contentText = content.trim() || title.trim();
-    try {
-      const created = isEditMode
-        ? await updatePost.mutateAsync(
-            buildFeedUpdatePayload({ title, content, tags, thumbnailUrl }),
-          )
-        : await createPost.mutateAsync({
-            category: 'feed',
-            title: title.trim(),
-            content: textToBlocks(contentText),
-            contentText,
-            thumbnailUrl: thumbnailUrl.trim() || null,
-            region: snapshot!.destinationName,
-            location: snapshot!.destinationName,
-            durationDays: snapshot!.itinerary.days.length,
-            itinerary: snapshot!.itinerary,
-            tags: parseFeedTags(tags),
-            sourcePlanId: snapshot!.planId,
-          });
-      navigation.replace('FeedDetail', { postId: String(created.id) });
-    } catch (error) {
-      showAlert({
-        title: isEditMode ? '여행기 수정 실패' : '여행기 발행 실패',
-        message: getBackendErrorMessage(error),
-        type: 'error',
-      });
-    }
-  };
+      if (
+        (!isEditMode && !snapshot) ||
+        (isEditMode && !canEdit) ||
+        !title.trim()
+      ) {
+        showAlert({
+          title: '입력 확인',
+          message: '공개할 일정과 여행기 제목을 입력해 주세요.',
+          type: 'error',
+        });
+        return;
+      }
+
+      const contentText = content.trim() || title.trim();
+      try {
+        const created = isEditMode
+          ? await updatePost.mutateAsync(
+              buildFeedUpdatePayload({ title, content, tags, thumbnailUrl }),
+            )
+          : await createPost.mutateAsync({
+              category: 'feed',
+              title: title.trim(),
+              content: textToBlocks(contentText),
+              contentText,
+              thumbnailUrl: thumbnailUrl.trim() || null,
+              region: snapshot!.destinationName,
+              location: snapshot!.destinationName,
+              durationDays: snapshot!.itinerary.days.length,
+              itinerary: snapshot!.itinerary,
+              tags: parseFeedTags(tags),
+              sourcePlanId: snapshot!.planId,
+            });
+        navigation.replace('FeedDetail', { postId: String(created.id) });
+      } catch (error) {
+        showAlert({
+          title: isEditMode ? '여행기 수정 실패' : '여행기 발행 실패',
+          message: getBackendErrorMessage(error),
+          type: 'error',
+        });
+      }
+    });
 
   return (
     <KeyboardAvoidingView
@@ -291,7 +299,8 @@ export default function FeedCreateScreen() {
                 (!existingPost.data?.itinerary ||
                   existingPost.data.category !== 'feed')) ||
               createPost.isPending ||
-              updatePost.isPending) &&
+              updatePost.isPending ||
+              isSubmitting) &&
               styles.submitDisabled,
           ]}
           onPress={() => {
@@ -303,7 +312,8 @@ export default function FeedCreateScreen() {
               (!existingPost.data?.itinerary ||
                 existingPost.data.category !== 'feed')) ||
             createPost.isPending ||
-            updatePost.isPending
+            updatePost.isPending ||
+            isSubmitting
           }
         >
           <Text style={styles.submitText}>

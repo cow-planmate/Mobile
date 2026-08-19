@@ -19,6 +19,7 @@ import { CommunityStackParamList } from '../../../navigation/types';
 import { BOARDS, BoardKey } from '../constants/levels';
 import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
 import { buildPostPayload } from '../utils/postPayload';
+import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { styles, COLORS } from './PostCreateScreen.styles';
 import { tokens } from '../../../theme/tokens';
 
@@ -54,43 +55,47 @@ export default function PostCreateScreen() {
     setLocation(post.location ?? '');
   }, [existingPost.data]);
 
+  const { isSubmitting, runExclusive } = useSubmitLock();
+
   const canSubmit =
     title.trim().length > 0 &&
     content.trim().length > 0 &&
     (!isEditMode ||
       (!!existingPost.data && existingPost.data.category !== 'feed')) &&
     !createPost.isPending &&
-    !updatePost.isPending;
+    !updatePost.isPending &&
+    !isSubmitting;
 
-  const handleSubmit = async () => {
-    if (!canSubmit) return;
+  const handleSubmit = () =>
+    runExclusive(async () => {
+      if (!canSubmit) return;
 
-    const payload = buildPostPayload({
-      category,
-      title,
-      content,
-      maxParticipants,
-      location,
-    });
-
-    try {
-      const created = isEditMode
-        ? await updatePost.mutateAsync(payload)
-        : await createPost.mutateAsync(payload);
-
-      if (created?.id != null) {
-        navigation.replace('CommunityDetail', { postId: String(created.id) });
-      } else {
-        navigation.goBack();
-      }
-    } catch (error) {
-      showAlert({
-        title: isEditMode ? '수정 실패' : '등록 실패',
-        message: getBackendErrorMessage(error),
-        type: 'error',
+      const payload = buildPostPayload({
+        category,
+        title,
+        content,
+        maxParticipants,
+        location,
       });
-    }
-  };
+
+      try {
+        const created = isEditMode
+          ? await updatePost.mutateAsync(payload)
+          : await createPost.mutateAsync(payload);
+
+        if (created?.id != null) {
+          navigation.replace('CommunityDetail', { postId: String(created.id) });
+        } else {
+          navigation.goBack();
+        }
+      } catch (error) {
+        showAlert({
+          title: isEditMode ? '수정 실패' : '등록 실패',
+          message: getBackendErrorMessage(error),
+          type: 'error',
+        });
+      }
+    });
 
   const handleBack = () => {
     if (!title.trim() && !content.trim()) {
