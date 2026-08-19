@@ -27,6 +27,7 @@ import { FeedStackParamList } from '../../../navigation/types';
 import { usePost, useReactToPost, useForkItinerary } from '../hooks/queries';
 import { formatDuration } from '../services/communityApi';
 import { canForkItinerary } from '../utils/itineraryToPlan';
+import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { resolveAvatarUrl } from '../utils/avatar';
 import PostContentView from '../components/PostContentView';
 import CommentSection from '../components/CommentSection';
@@ -77,6 +78,8 @@ export default function FeedDetailScreen() {
     }
   };
 
+  const { runExclusive } = useSubmitLock();
+
   const handleForkPress = () => {
     if (!isLoggedIn) {
       showAlert({
@@ -88,41 +91,44 @@ export default function FeedDetailScreen() {
     setDateModalVisible(true);
   };
 
-  const handleForkConfirm = async ({ startDate }: { startDate: Date }) => {
-    setDateModalVisible(false);
-    if (!post?.itinerary) return;
+  const handleForkConfirm = ({ startDate }: { startDate: Date }) =>
+    runExclusive(async () => {
+      setDateModalVisible(false);
+      if (!post?.itinerary) return;
 
-    try {
-      const { planId, adjustedBlocks } = await fork.mutateAsync({
-        itinerary: post.itinerary,
-        startDate,
-        title: post.title,
-      });
+      try {
+        const { planId, adjustedBlocks } = await fork.mutateAsync({
+          itinerary: post.itinerary,
+          startDate,
+          title: post.title,
+        });
 
-      showAlert({
-        title: '가져오기 완료',
-        message:
-          adjustedBlocks > 0
-            ? `내 일정에 담았어요. 시간이 겹치는 블록 ${adjustedBlocks}개는 뒤로 밀어 정리했습니다.`
-            : '내 일정에 담았어요.',
-        type: 'success',
-        buttons: [
-          { text: '닫기', style: 'cancel' },
-          {
-            text: '일정 보기',
-            onPress: () =>
-              navigation.navigate('ItineraryEditor', { planId: String(planId) }),
-          },
-        ],
-      });
-    } catch (error) {
-      showAlert({
-        title: '가져오기 실패',
-        message: getBackendErrorMessage(error),
-        type: 'error',
-      });
-    }
-  };
+        showAlert({
+          title: '가져오기 완료',
+          message:
+            adjustedBlocks > 0
+              ? `내 일정에 담았어요. 시간이 겹치는 블록 ${adjustedBlocks}개는 뒤로 밀어 정리했습니다.`
+              : '내 일정에 담았어요.',
+          type: 'success',
+          buttons: [
+            { text: '닫기', style: 'cancel' },
+            {
+              text: '일정 보기',
+              onPress: () =>
+                navigation.navigate('ItineraryEditor', {
+                  planId: String(planId),
+                }),
+            },
+          ],
+        });
+      } catch (error) {
+        showAlert({
+          title: '가져오기 실패',
+          message: getBackendErrorMessage(error),
+          type: 'error',
+        });
+      }
+    });
 
   const renderTopBar = () => (
     <View style={styles.topBar}>
