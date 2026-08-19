@@ -28,6 +28,11 @@ const ROOM_READY_FALLBACK_MS = 2000;
 
 const DISCONNECT_TIMEOUT_MS = 300;
 
+// 연결이 오래 끊겨 있어도 큐가 무한정 자라지 않도록 상한을 둔다.
+const MAX_QUEUED_MESSAGES = 500;
+
+const MAX_PREFETCHED_AVATARS = 200;
+
 const wsLog = (...args: unknown[]) => {
   if (__DEV__) {
     console.log(...args);
@@ -87,6 +92,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const messageListeners = useRef<Set<(msg: any) => void>>(new Set());
   const messageQueue = useRef<
     Array<{
+      planId: string;
       action: string;
       targetName: string;
       target: any;
@@ -101,7 +107,9 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const prefetchedAvatarsRef = useRef<Set<string>>(new Set());
 
-  const queuedPlanId = useRef<string | null>(null);
+  // disconnect가 currentPlanId를 비운 뒤에도 도착하는 지연 전송을 원래 방에
+  // 귀속시키기 위해 마지막으로 접속한 방을 따로 남긴다.
+  const lastPlanIdRef = useRef<string | null>(null);
 
   const markRoomReady = useCallback((client: Client, planId: string) => {
     if (readyFallbackTimer.current) {
@@ -112,9 +120,12 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     isRoomReadyRef.current = true;
 
     if (messageQueue.current.length === 0) return;
-    wsLog(`[WS] Flushing ${messageQueue.current.length} queued messages`);
-    const queued = [...messageQueue.current];
-    messageQueue.current = [];
+    const queued = messageQueue.current.filter(msg => msg.planId === planId);
+    messageQueue.current = messageQueue.current.filter(
+      msg => msg.planId !== planId,
+    );
+    if (queued.length === 0) return;
+    wsLog(`[WS] Flushing ${queued.length} queued messages`);
     queued.forEach(msg => {
       sendMessageInternal(
         client,
@@ -150,16 +161,17 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       disconnect();
     }
 
-    if (queuedPlanId.current && queuedPlanId.current !== planId) {
-      messageQueue.current = [];
-      queuedPlanId.current = null;
-    }
+    // 다른 방으로 옮기면 이전 방 앞으로 쌓인 미전송분은 버린다.
+    messageQueue.current = messageQueue.current.filter(
+      msg => msg.planId === planId,
+    );
 
     const generation = ++connectGenerationRef.current;
 
     isConnectingRef.current = true;
     isRoomReadyRef.current = false;
     currentPlanId.current = planId;
+    lastPlanIdRef.current = planId;
     setOnlineUsers([]);
 
     const token = await ensureFreshAccessToken();
@@ -247,6 +259,16 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
                   const url = email ? gravatarUrl(email) : undefined;
 
                   if (url && !prefetchedAvatarsRef.current.has(url)) {
+                    if (
+                      prefetchedAvatarsRef.current.size >= MAX_PREFETCHED_AVATARS
+                    ) {
+                      const oldest = prefetchedAvatarsRef.current
+                        .values()
+                        .next().value;
+                      if (oldest !== undefined) {
+                        prefetchedAvatarsRef.current.delete(oldest);
+                      }
+                    }
                     prefetchedAvatarsRef.current.add(url);
                     FastImage.preload([{ uri: url }]);
                   }
@@ -435,9 +457,26 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     const client = stompClient.current;
 
     if (!client || !client.connected || !planId || !isRoomReadyRef.current) {
+      // disconnect 직후 도착한 지연 전송은 currentPlanId가 비어 있으므로
+      // 마지막 접속 방으로 귀속시킨다. 귀속할 방이 없으면 버린다.
+      const targetPlanId = planId ?? lastPlanIdRef.current;
+      if (!targetPlanId) {
+        wsLog('[WS] Dropping message — no room to attribute:', action, targetName);
+        return;
+      }
       wsLog('[WS] Room not ready — queuing message:', action, targetName);
-      queuedPlanId.current = planId ?? queuedPlanId.current;
-      messageQueue.current.push({ action, targetName, target, eventId });
+      messageQueue.current.push({
+        planId: targetPlanId,
+        action,
+        targetName,
+        target,
+        eventId,
+      });
+      if (messageQueue.current.length > MAX_QUEUED_MESSAGES) {
+        const dropped = messageQueue.current.length - MAX_QUEUED_MESSAGES;
+        messageQueue.current = messageQueue.current.slice(dropped);
+        console.warn(`[WS] Queue overflow — dropped ${dropped} oldest messages.`);
+      }
       return;
     }
 

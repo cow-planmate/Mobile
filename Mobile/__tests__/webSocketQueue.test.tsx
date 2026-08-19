@@ -320,4 +320,57 @@ describe('disconnect 시 큐 보존 (F-8)', () => {
 
     expect(mockClient.publish).not.toHaveBeenCalled();
   });
+
+  it('disconnect 뒤 도착한 지연 전송도 다른 plan으로 새지 않는다', async () => {
+    mount();
+    await connectTo(PLAN_A);
+
+    act(() => {
+      mockClient.simulateConnect();
+      mockClient.simulatePresence([]);
+    });
+
+    // 편집 직후 화면을 빠져나가 disconnect가 먼저 실행된 상황.
+    act(() => {
+      ws.disconnect();
+    });
+    send({ blockId: 123 });
+
+    await connectTo(PLAN_B);
+    act(() => {
+      mockClient.simulateConnect();
+      mockClient.simulatePresence([]);
+    });
+
+    expect(
+      publishedBodies().filter((b: any) => b.entity === 'timetableplaceblock'),
+    ).toHaveLength(0);
+  });
+
+  it('disconnect 뒤 지연 전송은 같은 plan에 다시 들어가면 전송된다', async () => {
+    mount();
+    await connectTo(PLAN_A);
+
+    act(() => {
+      mockClient.simulateConnect();
+      mockClient.simulatePresence([]);
+    });
+
+    act(() => {
+      ws.disconnect();
+    });
+    send({ blockId: 321 });
+
+    await connectTo(PLAN_A);
+    act(() => {
+      mockClient.simulateConnect();
+      mockClient.simulatePresence([]);
+    });
+
+    const bodies = publishedBodies().filter(
+      (b: any) => b.entity === 'timetableplaceblock',
+    );
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0].timeTablePlaceBlockDtos[0].blockId).toBe(321);
+  });
 });
