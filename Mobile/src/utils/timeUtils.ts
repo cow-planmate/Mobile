@@ -7,6 +7,11 @@ export const timeToMinutes = (time: string) => {
     return 0;
   }
   const [hours, minutes] = time.split(':').map(Number);
+  // 여기서 NaN을 흘리면 이후 시간 계산이 전부 NaN이 되고 'NaN:NaN'이 그대로
+  // 저장·동기화된다. 파싱되지 않는 값은 없는 값과 같게 취급한다.
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    return 0;
+  }
   return hours * 60 + minutes;
 };
 
@@ -30,11 +35,13 @@ export const parseLocalDate = (value?: string | null): Date => {
   return new Date(year, month - 1, day);
 };
 
+// toLocaleTimeString은 엔진의 ICU 구현에 따라 'HH:mm'이 아닌 형식을 내줄 수
+// 있고, 그 결과가 timeToMinutes로 들어가면 NaN이 되어 시간이 통째로 깨진다.
+// 화면 표시가 아니라 계산에 쓰이는 값이므로 직접 조합한다.
 export const dateToTime = (date: Date) => {
-  return date.toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
 };
 
 export const MAX_MINUTES_IN_DAY = 23 * 60 + 45;

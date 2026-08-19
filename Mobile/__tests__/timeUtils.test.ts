@@ -3,6 +3,7 @@ import {
   minutesToTime,
   timeToMinutes,
   formatDateLocal,
+  dateToTime,
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
 } from '../src/utils/timeUtils';
@@ -147,5 +148,35 @@ describe('formatDateLocal', () => {
 
     expect(formatDateLocal(new Date(2026, 7, 1, 0, 0, 0))).toBe('2026-08-01');
     expect(formatDateLocal(new Date(2026, 0, 5, 23, 59, 59))).toBe('2026-01-05');
+  });
+});
+
+describe('dateToTime', () => {
+  it('로케일과 무관하게 HH:mm으로 만든다', () => {
+    expect(dateToTime(new Date(2026, 7, 1, 9, 5))).toBe('09:05');
+    expect(dateToTime(new Date(2026, 7, 1, 0, 0))).toBe('00:00');
+    expect(dateToTime(new Date(2026, 7, 1, 23, 45))).toBe('23:45');
+  });
+
+  it('결과를 timeToMinutes가 그대로 해석할 수 있다', () => {
+    // 이 값은 화면 표시가 아니라 시간 계산에 바로 들어간다.
+    expect(timeToMinutes(dateToTime(new Date(2026, 7, 1, 13, 30)))).toBe(810);
+    expect(timeToMinutes(dateToTime(new Date(2026, 7, 1, 0, 15)))).toBe(15);
+  });
+});
+
+describe('timeToMinutes', () => {
+  it('정상 형식을 분으로 바꾼다', () => {
+    expect(timeToMinutes('09:00')).toBe(540);
+    expect(timeToMinutes('09:00:00')).toBe(540);
+    expect(timeToMinutes('00:15')).toBe(15);
+  });
+
+  it('파싱되지 않는 값은 NaN을 흘리지 않고 0으로 처리한다', () => {
+    // NaN이 새면 이후 계산이 전부 NaN이 되어 'NaN:NaN'이 저장된다.
+    expect(timeToMinutes('09:00 AM')).toBe(0);
+    expect(timeToMinutes('bad:val')).toBe(0);
+    expect(timeToMinutes('')).toBe(0);
+    expect(timeToMinutes(undefined as unknown as string)).toBe(0);
   });
 });
