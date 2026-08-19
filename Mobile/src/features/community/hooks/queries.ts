@@ -244,6 +244,11 @@ export const useReactToPost = (postId: number | string) => {
         likes: result.likes,
         dislikes: result.dislikes,
       });
+      // 좋아요를 취소하면 '좋아요한 글' 목록에서 빠져야 하므로 개수만
+      // 갱신하지 않고 목록 자체를 다시 받는다.
+      void queryClient.invalidateQueries({
+        queryKey: ['community', 'me', 'liked'],
+      });
     },
   });
 };

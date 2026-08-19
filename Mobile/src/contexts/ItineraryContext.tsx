@@ -86,6 +86,10 @@ export const isFetchAtLeastAsComplete = (
   });
 };
 
+// timetableId가 0이어도 유효한 식별자이므로 truthiness로 판정하지 않는다.
+const hasTimetableId = (id: number | undefined): id is number =>
+  id !== undefined && id !== null;
+
 const MIN_BLOCK_MINUTES = 15;
 
 const ensureValidRange = (
@@ -628,7 +632,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setLastAddedPlaceId(newId);
 
     setTimeout(() => {
-      if (finalPlace && dayTimetableId && dayDateString) {
+      if (finalPlace && hasTimetableId(dayTimetableId) && dayDateString) {
         sendMessage(
           'create',
           'timetableplaceblock',
@@ -678,7 +682,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       pendingPlaceCreateRef.current = pendingPlaceCreateRef.current.filter(
         item => item.place.id !== placeId,
       );
-      if (placeToDelete && dayTimetableId && dayDateString) {
+      if (placeToDelete && hasTimetableId(dayTimetableId) && dayDateString) {
         sendBlockSync('delete', placeToDelete, dayTimetableId);
       }
     }, 0);
@@ -727,7 +731,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setLastAddedPlaceId(null);
 
     setTimeout(() => {
-      if (dayTimetableId && dayDateString) {
+      if (hasTimetableId(dayTimetableId) && dayDateString) {
         placesToSync.forEach(p => {
           sendBlockSync('update', p, dayTimetableId!);
         });
@@ -760,7 +764,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     });
 
     setTimeout(() => {
-      if (finalPlace && dayTimetableId && dayDateString) {
+      if (finalPlace && hasTimetableId(dayTimetableId) && dayDateString) {
         sendBlockSync('update', finalPlace, dayTimetableId);
       }
     }, 0);
@@ -831,7 +835,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setLastAddedPlaceId(null);
 
     setTimeout(() => {
-      if (dayTimetableId && dayDateString) {
+      if (hasTimetableId(dayTimetableId) && dayDateString) {
         placesToSync.forEach(p => {
           sendBlockSync('update', p, dayTimetableId!);
         });
@@ -893,7 +897,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       setLastAddedPlaceId(null);
 
       setTimeout(() => {
-        if (dayTimetableId && dayDateString) {
+        if (hasTimetableId(dayTimetableId) && dayDateString) {
           placesToSync.forEach(p => {
             sendBlockSync('update', p, dayTimetableId!);
           });
