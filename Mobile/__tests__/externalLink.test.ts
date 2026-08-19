@@ -14,6 +14,7 @@ describe('isSafeExternalUrl', () => {
       false,
     );
     expect(isSafeExternalUrl('file:///etc/passwd')).toBe(false);
+    // eslint-disable-next-line no-script-url -- 차단 대상 스킴을 검증하는 테스트다
     expect(isSafeExternalUrl('javascript:alert(1)')).toBe(false);
     expect(isSafeExternalUrl('tel:01012345678')).toBe(false);
     expect(isSafeExternalUrl('content://media/external/images/1')).toBe(false);

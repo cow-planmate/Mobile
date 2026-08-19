@@ -112,6 +112,9 @@ export function useFcmNotifications({
     let unsubscribeOnMessage: (() => void) | undefined;
     let unsubscribeOnTokenRefresh: (() => void) | undefined;
     let unsubscribeOnOpen: (() => void) | undefined;
+    // initialize가 await 중일 때 cleanup이 먼저 돌면 아직 등록되지 않은
+    // 리스너를 해제할 수 없다. 취소 여부를 보고 등록 자체를 건너뛴다.
+    let cancelled = false;
 
     const handleInvitationMessage = async (remoteMessage: any) => {
       const messageId = remoteMessage.messageId || undefined;
@@ -151,14 +154,18 @@ export function useFcmNotifications({
         fcmLog('[FCM] 알림 권한이 거부되었습니다.');
         return;
       }
+      if (cancelled) return;
 
       await messaging().registerDeviceForRemoteMessages();
+      if (cancelled) return;
 
       const token = await messaging().getToken();
+      if (cancelled) return;
       if (token) {
         await AsyncStorage.setItem(FCM_TOKEN_STORAGE_KEY, token);
         fcmLog('[FCM] 토큰 발급 완료');
         await syncFcmToken(token);
+        if (cancelled) return;
       }
 
       unsubscribeOnTokenRefresh = messaging().onTokenRefresh(
@@ -176,16 +183,40 @@ export function useFcmNotifications({
         },
       );
 
-      const initialNotification = await messaging().getInitialNotification();
-      if (initialNotification) {
-        await handleInvitationMessage(initialNotification);
-      }
-
       unsubscribeOnOpen = messaging().onNotificationOpenedApp(
         async (remoteMessage: any) => {
           await handleInvitationMessage(remoteMessage);
         },
       );
+
+      // 리스너 등록 도중 취소되었으면 즉시 되돌린다.
+      if (cancelled) {
+        teardown();
+        return;
+      }
+
+      const initialNotification = await messaging().getInitialNotification();
+      if (cancelled) return;
+      if (initialNotification) {
+        await handleInvitationMessage(initialNotification);
+      }
+    };
+
+    const teardown = () => {
+      if (unsubscribeOnMessage) {
+        unsubscribeOnMessage();
+        unsubscribeOnMessage = undefined;
+      }
+
+      if (unsubscribeOnTokenRefresh) {
+        unsubscribeOnTokenRefresh();
+        unsubscribeOnTokenRefresh = undefined;
+      }
+
+      if (unsubscribeOnOpen) {
+        unsubscribeOnOpen();
+        unsubscribeOnOpen = undefined;
+      }
     };
 
     initialize().catch(error => {
@@ -193,17 +224,8 @@ export function useFcmNotifications({
     });
 
     return () => {
-      if (unsubscribeOnMessage) {
-        unsubscribeOnMessage();
-      }
-
-      if (unsubscribeOnTokenRefresh) {
-        unsubscribeOnTokenRefresh();
-      }
-
-      if (unsubscribeOnOpen) {
-        unsubscribeOnOpen();
-      }
+      cancelled = true;
+      teardown();
     };
   }, [enabled]);
 }

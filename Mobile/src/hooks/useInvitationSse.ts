@@ -21,6 +21,9 @@ const INITIAL_RECONNECT_DELAY_MS = 1000;
 const SEEN_EVENT_ID_LIMIT = 200;
 const MAX_RECONNECT_DELAY_MS = 30000;
 
+// 토큰 갱신은 네트워크 장애로도 실패하므로 곧바로 포기하지 않는다.
+const MAX_AUTH_RETRIES = 5;
+
 const REQUEST_RESULT_EVENT = 'requestResult';
 
 const CUSTOM_EVENT_TYPES = [
@@ -56,6 +59,7 @@ export function useInvitationSse({
   const reconnectDelayRef = useRef(INITIAL_RECONNECT_DELAY_MS);
   const shouldReconnectRef = useRef(false);
   const seenEventIdsRef = useRef<Set<string>>(new Set());
+  const authRetryCountRef = useRef(0);
   const onInvitationEventRef = useRef(onInvitationEvent);
   const onRequestResultRef = useRef(onRequestResult);
 
@@ -90,10 +94,17 @@ export function useInvitationSse({
         return;
       }
 
-      clearReconnectTimer();
+      // error와 close가 연달아 오는 경우가 있어, 이미 예약된 재연결이 있으면
+      // 다시 잡지 않는다. 그러지 않으면 백오프가 두 배씩 빨리 늘어난다.
+      if (reconnectTimerRef.current) {
+        return;
+      }
+
       const delay = reconnectDelayRef.current;
 
       reconnectTimerRef.current = setTimeout(() => {
+        // 발화한 타이머 참조를 비워야 다음 재연결 예약이 막히지 않는다.
+        reconnectTimerRef.current = null;
         connect().catch(error => {
           sseLog('[SSE] Reconnect attempt failed:', error);
         });
@@ -104,7 +115,7 @@ export function useInvitationSse({
         MAX_RECONNECT_DELAY_MS,
       );
     },
-    [clearReconnectTimer],
+    [],
   );
 
   const connect = useCallback(async () => {
@@ -137,6 +148,7 @@ export function useInvitationSse({
 
     const onOpen = () => {
       reconnectDelayRef.current = INITIAL_RECONNECT_DELAY_MS;
+      authRetryCountRef.current = 0;
       sseLog('[SSE] 초대 스트림에 연결되었습니다.');
       Promise.resolve(onInvitationEventRef.current()).catch(error => {
         sseLog('[SSE] 초대 목록 재동기화 실패:', error);
@@ -234,11 +246,21 @@ export function useInvitationSse({
         disconnect();
         refreshAccessToken().then(newToken => {
           if (!shouldReconnectRef.current) return;
-          if (!newToken) {
+          if (newToken) {
+            authRetryCountRef.current = 0;
+            reconnectDelayRef.current = INITIAL_RECONNECT_DELAY_MS;
+            scheduleReconnect(connect);
+            return;
+          }
+
+          // 갱신 실패는 네트워크 장애로도 발생한다. 몇 차례는 백오프로 다시
+          // 시도하고, 계속 실패할 때만 인증 만료로 보고 포기한다.
+          authRetryCountRef.current += 1;
+          if (authRetryCountRef.current >= MAX_AUTH_RETRIES) {
+            sseLog('[SSE] 인증 갱신이 반복 실패해 초대 스트림을 중단합니다.');
             shouldReconnectRef.current = false;
             return;
           }
-          reconnectDelayRef.current = INITIAL_RECONNECT_DELAY_MS;
           scheduleReconnect(connect);
         });
         return;
@@ -267,6 +289,8 @@ export function useInvitationSse({
 
   useEffect(() => {
     shouldReconnectRef.current = enabled;
+    authRetryCountRef.current = 0;
+    reconnectDelayRef.current = INITIAL_RECONNECT_DELAY_MS;
 
     if (enabled) {
       connect().catch(error => {

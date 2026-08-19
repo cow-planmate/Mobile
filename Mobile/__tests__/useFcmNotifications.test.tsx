@@ -87,4 +87,46 @@ describe('useFcmNotifications', () => {
 
     expect(mockGetToken).toHaveBeenCalledTimes(1);
   });
+
+  it('초기화 도중 해제되면 리스너를 남기지 않는다', async () => {
+    const unsubscribeMessage = jest.fn();
+    const unsubscribeTokenRefresh = jest.fn();
+    const unsubscribeOpen = jest.fn();
+    mockOnMessage.mockReturnValue(unsubscribeMessage);
+    mockOnTokenRefresh.mockReturnValue(unsubscribeTokenRefresh);
+    mockOnNotificationOpenedApp.mockReturnValue(unsubscribeOpen);
+
+    // getToken이 늦게 끝나는 동안 cleanup이 먼저 실행되는 상황을 만든다.
+    let releaseToken: (value: string) => void = () => {};
+    mockGetToken.mockReturnValue(
+      new Promise<string>(resolve => {
+        releaseToken = resolve;
+      }),
+    );
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <TestComponent enabled={true} onInvitationPush={jest.fn()} />,
+      );
+    });
+
+    await act(async () => {
+      renderer.unmount();
+    });
+
+    await act(async () => {
+      releaseToken('late-token');
+      await new Promise(resolve => setTimeout(resolve, 50));
+    });
+
+    // 취소된 초기화는 리스너를 등록하지 않거나, 등록했다면 즉시 해제해야 한다.
+    expect(mockOnMessage.mock.calls.length).toBe(unsubscribeMessage.mock.calls.length);
+    expect(mockOnTokenRefresh.mock.calls.length).toBe(
+      unsubscribeTokenRefresh.mock.calls.length,
+    );
+    expect(mockOnNotificationOpenedApp.mock.calls.length).toBe(
+      unsubscribeOpen.mock.calls.length,
+    );
+  });
 });
