@@ -20,7 +20,7 @@ import Svg, { Path, Rect } from 'react-native-svg';
 import { styles } from './LoginScreen.styles';
 import { COLORS } from '../authTokens';
 import { sf } from '../../../utils/normalize';
-import { revealStep, PUSH_TRANSITION_MS } from '../motion';
+import { revealStep } from '../motion';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';

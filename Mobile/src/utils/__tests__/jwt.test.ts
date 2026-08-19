@@ -10,7 +10,7 @@ const makeToken = (payload: object): string => {
       .toString('base64')
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
-      .replace(/=+$/, '');
+      .replace(/[=]+$/, '');
 
   return [
     base64Url(JSON.stringify({ alg: 'RS256', typ: 'JWT' })),

@@ -69,3 +69,5 @@ storybook-static
 docs/
 
 ios/Podfile.lock
+
+/graphify-out/

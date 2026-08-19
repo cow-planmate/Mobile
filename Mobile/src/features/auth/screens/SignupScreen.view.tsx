@@ -36,7 +36,7 @@ import AuthProgressBar from '../components/AuthProgressBar';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
 import { PASSWORD_MAX_LENGTH } from '../../../utils/passwordPolicy';
 import { NICKNAME_MAX_LENGTH } from '../../../utils/nickname';
-import { revealStep, PUSH_TRANSITION_MS } from '../motion';
+import { revealStep } from '../motion';
 import {
   formatBirthdate,
   parseBirthdate,

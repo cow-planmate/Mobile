@@ -37,9 +37,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const handledSnsUrlRef = useRef<string | null>(null);
 
   React.useEffect(() => {
-    if (lastLoginEmail && !form.email) {
-      setForm(prev => ({ ...prev, email: lastLoginEmail }));
-    }
+    if (!lastLoginEmail) return;
+    setForm(prev => (prev.email ? prev : { ...prev, email: lastLoginEmail }));
   }, [lastLoginEmail]);
 
   const handleChange = (key: 'email' | 'password', value: string) => {

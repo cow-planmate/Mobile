@@ -3,6 +3,7 @@ module.exports = {
   extends: '@react-native',
   rules: {
     'no-alert': 'off',
+    'no-void': 'off',
   },
   overrides: [
     {
