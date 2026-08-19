@@ -58,6 +58,8 @@ const ButtonText = styled.Text<ButtonTextProps>`
   }}
 `;
 
+const iconTextStyle = { marginLeft: 8 };
+
 interface StyledButtonProps {
   title: string;
   onPress: () => void;
@@ -93,7 +95,7 @@ export const StyledButton: React.FC<StyledButtonProps> = ({
       ) : (
         <>
           {icon && <>{icon}</>}
-          <ButtonText variant={variant} style={icon ? { marginLeft: 8 } : {}}>
+          <ButtonText variant={variant} style={icon ? iconTextStyle : undefined}>
             {title}
           </ButtonText>
         </>

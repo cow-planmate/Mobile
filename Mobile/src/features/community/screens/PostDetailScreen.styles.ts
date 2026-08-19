@@ -77,6 +77,18 @@ export const styles = StyleSheet.create({
     fontSize: normalize(10),
     fontFamily: theme.typography.fontFamily.bold,
   },
+  statusTagAnswered: {
+    backgroundColor: '#D1FAE5',
+  },
+  statusTagPending: {
+    backgroundColor: '#FEF3C7',
+  },
+  statusTagTextAnswered: {
+    color: '#059669',
+  },
+  statusTagTextPending: {
+    color: '#D97706',
+  },
   title: {
     fontSize: normalize(19),
     lineHeight: normalize(27),

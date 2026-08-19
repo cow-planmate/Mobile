@@ -48,6 +48,9 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.text,
   },
+  topBarSpacer: {
+    width: 28,
+  },
   topToolbar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -162,6 +165,7 @@ export const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   dayTabsWrapper: {
+    position: 'relative',
     backgroundColor: COLORS.card,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
@@ -277,6 +281,9 @@ export const styles = StyleSheet.create({
     paddingBottom: 0,
     backgroundColor: 'transparent',
   },
+  timelineWeatherPadding: {
+    paddingTop: 62,
+  },
   timelineWrapper: {
     position: 'relative',
     paddingVertical: 20,
@@ -358,5 +365,33 @@ export const styles = StyleSheet.create({
   },
   flex1: {
     flex: 1,
+  },
+  hourHeightFull: {
+    height: HOUR_HEIGHT,
+  },
+  hourHeightZero: {
+    height: 0,
+  },
+  lastHourBorder: {
+    borderTopWidth: 1,
+  },
+  dayTabsFadeOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 24,
+    zIndex: 10,
+  },
+  dayTabsFadeOverlayLeft: {
+    left: 0,
+  },
+  dayTabsFadeOverlayRight: {
+    right: 0,
+  },
+  loadingModalContainer: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

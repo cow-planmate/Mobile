@@ -200,13 +200,13 @@ export default function PostDetailScreen() {
                 <View
                   style={[
                     styles.statusTag,
-                    { backgroundColor: post.isAnswered ? '#D1FAE5' : '#FEF3C7' },
+                    post.isAnswered ? styles.statusTagAnswered : styles.statusTagPending,
                   ]}
                 >
                   <Text
                     style={[
                       styles.statusTagText,
-                      { color: post.isAnswered ? '#059669' : '#D97706' },
+                      post.isAnswered ? styles.statusTagTextAnswered : styles.statusTagTextPending,
                     ]}
                   >
                     {post.isAnswered ? '답변완료' : '답변대기'}

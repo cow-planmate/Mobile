@@ -78,7 +78,7 @@ export default function ThemeSettingsScreen() {
           <ArrowLeft size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>테마 설정</Text>
-        <View style={{ width: 24 }} />
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -98,7 +98,8 @@ export default function ThemeSettingsScreen() {
                 key={item.id}
                 style={[
                   styles.card,
-                  isSelected && { borderColor: item.primaryColor, borderWidth: 2 },
+                  isSelected && styles.cardSelected,
+                  isSelected && { borderColor: item.primaryColor },
                 ]}
                 onPress={() => handleSelectTheme(item.id)}
                 activeOpacity={0.8}
@@ -165,6 +166,9 @@ const styles = StyleSheet.create({
   backButton: {
     padding: normalize(4),
   },
+  headerSpacer: {
+    width: 24,
+  },
   headerTitle: {
     fontSize: normalize(18),
     fontFamily: FONTS.bold,
@@ -209,6 +213,9 @@ const styles = StyleSheet.create({
     padding: normalize(16),
     borderWidth: 1,
     borderColor: COLORS.border,
+  },
+  cardSelected: {
+    borderWidth: 2,
   },
   cardHeader: {
     flexDirection: 'row',

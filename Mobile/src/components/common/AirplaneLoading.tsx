@@ -109,9 +109,9 @@ const AirplaneLoading = () => {
     <View style={styles.container}>
 
       <View style={StyleSheet.absoluteFill}>
-        <Cloud duration={8000} top="20%" style={{ width: 120, height: 40 }} />
-        <Cloud duration={12000} top="60%" style={{ width: 80, height: 25 }} opacity={0.6} scale={0.8} />
-        <Cloud duration={10000} top="80%" style={{ width: 150, height: 45 }} />
+        <Cloud duration={8000} top="20%" style={styles.cloudSmall} />
+        <Cloud duration={12000} top="60%" style={styles.cloudTiny} opacity={0.6} scale={0.8} />
+        <Cloud duration={10000} top="80%" style={styles.cloudMedium} />
       </View>
 
       <View style={styles.content}>
@@ -131,8 +131,8 @@ const AirplaneLoading = () => {
       </View>
 
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Cloud duration={6000} top="35%" style={{ width: 200, height: 60 }} opacity={0.95} />
-        <Cloud duration={5000} top="65%" style={{ width: 250, height: 75 }} opacity={0.9} />
+        <Cloud duration={6000} top="35%" style={styles.cloudLarge} opacity={0.95} />
+        <Cloud duration={5000} top="65%" style={styles.cloudXLarge} opacity={0.9} />
       </View>
     </View>
   );
@@ -197,6 +197,26 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     top: '-87%',
     right: '12%',
+  },
+  cloudTiny: {
+    width: 80,
+    height: 25,
+  },
+  cloudSmall: {
+    width: 120,
+    height: 40,
+  },
+  cloudMedium: {
+    width: 150,
+    height: 45,
+  },
+  cloudLarge: {
+    width: 200,
+    height: 60,
+  },
+  cloudXLarge: {
+    width: 250,
+    height: 75,
   },
 });
 

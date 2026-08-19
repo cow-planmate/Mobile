@@ -565,15 +565,7 @@ export default function PlaceRecommendationList({
                 onPress={() => setSelectedTab(tab)}
                 style={[
                   plStyles.tab,
-                  {
-                    backgroundColor: tokens.colors.white,
-                    borderTopLeftRadius: 8,
-                    borderTopRightRadius: 8,
-                    borderWidth: 1,
-                    borderColor: tokens.colors.border,
-                    borderBottomWidth: 0,
-                    marginBottom: -1,
-                  },
+                  plStyles.categoryTabBase,
                   isSelected && {
                     backgroundColor: tabColor,
                     borderColor: tabColor,
@@ -583,7 +575,7 @@ export default function PlaceRecommendationList({
                 <Text
                   style={[
                     plStyles.tabText,
-                    { fontSize: 13 },
+                    plStyles.categoryTabText,
                     isSelected && { color: tokens.colors.white, fontFamily: FONTS.bold },
                   ]}
                 >
@@ -673,6 +665,18 @@ const plStyles = StyleSheet.create({
   tabTextSelected: {
     color: tokens.colors.primary,
     fontFamily: FONTS.bold,
+  },
+  categoryTabBase: {
+    backgroundColor: tokens.colors.white,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    borderBottomWidth: 0,
+    marginBottom: -1,
+  },
+  categoryTabText: {
+    fontSize: 13,
   },
   listContent: {
     paddingBottom: 20,

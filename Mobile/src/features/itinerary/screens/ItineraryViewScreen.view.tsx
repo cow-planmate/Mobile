@@ -114,12 +114,12 @@ const TimeGridBackground = React.memo(
         return (
           <View
             key={hour}
-            style={[styles.hourBlock, { height: isLastHour ? 0 : HOUR_HEIGHT }]}
+            style={[styles.hourBlock, isLastHour ? styles.hourHeightZero : styles.hourHeightFull]}
           >
             <View
               style={[
                 styles.hourLabelContainer,
-                { height: isLastHour ? 0 : HOUR_HEIGHT },
+                isLastHour ? styles.hourHeightZero : styles.hourHeightFull,
               ]}
             >
               <Text style={[styles.timeLabelText, styles.timeLabelTop]}>
@@ -161,14 +161,14 @@ const TimeGridBackground = React.memo(
             <View
               style={[
                 styles.hourContent,
-                { height: isLastHour ? 0 : HOUR_HEIGHT },
+                isLastHour ? styles.hourHeightZero : styles.hourHeightFull,
               ]}
             >
               <View
                 style={[
                   styles.quarterBlock,
                   styles.firstQuarterBlock,
-                  isLastHour && { borderTopWidth: 1 },
+                  isLastHour && styles.lastHourBorder,
                 ]}
               />
               {!isLastHour && (
@@ -286,7 +286,7 @@ export default function ItineraryViewScreenView({
           <ChevronLeft size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.topBarHeaderTitle}>일정완성</Text>
-        <View style={{ width: 28 }} />
+        <View style={styles.topBarSpacer} />
       </View>
 
       <View style={styles.topToolbar}>
@@ -330,7 +330,7 @@ export default function ItineraryViewScreenView({
         </View>
       </View>
 
-      <View style={[styles.dayTabsWrapper, { position: 'relative' }]}>
+      <View style={styles.dayTabsWrapper}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -380,14 +380,7 @@ export default function ItineraryViewScreenView({
             colors={['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 24,
-              zIndex: 10,
-            }}
+            style={[styles.dayTabsFadeOverlay, styles.dayTabsFadeOverlayLeft]}
             pointerEvents="none"
           />
         )}
@@ -397,14 +390,7 @@ export default function ItineraryViewScreenView({
             colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.95)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={{
-              position: 'absolute',
-              right: 0, 
-              top: 0,
-              bottom: 0,
-              width: 24,
-              zIndex: 10,
-            }}
+            style={[styles.dayTabsFadeOverlay, styles.dayTabsFadeOverlayRight]}
             pointerEvents="none"
           />
         )}
@@ -454,8 +440,8 @@ export default function ItineraryViewScreenView({
                 contentContainerStyle={[
                   styles.timelineContentContainer,
                   weatherMap[formatDateLocal(selectedDay.date)]
-                    ? { paddingTop: 62 }
-                    : {},
+                    ? styles.timelineWeatherPadding
+                    : undefined,
                 ]}
               >
                 <View style={styles.timelineWrapper}>
@@ -499,7 +485,7 @@ export default function ItineraryViewScreenView({
         {days.length === 0 ? (
           <AirplaneLoading />
         ) : (
-          <View style={{ flex: 1, backgroundColor: COLORS.white, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={styles.loadingModalContainer}>
             <LoadingSpinner color={COLORS.primary} />
           </View>
         )}

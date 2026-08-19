@@ -51,6 +51,9 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.text,
   },
+  topBarSpacer: {
+    width: 28,
+  },
   topToolbar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -93,6 +96,17 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     color: COLORS.text,
     lineHeight: 20,
+  },
+  toolbarTitleMeasure: {
+    position: 'absolute',
+    opacity: 0,
+    width: 'auto',
+    minWidth: 0,
+    maxWidth: undefined,
+  },
+  toolbarTitleInputSized: {
+    minWidth: 0,
+    maxWidth: 170,
   },
   toolbarIconButton: {
     width: 32,
@@ -190,6 +204,7 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.semibold,
   },
   dayTabsWrapper: {
+    position: 'relative',
     backgroundColor: COLORS.card,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
@@ -383,7 +398,16 @@ export const styles = StyleSheet.create({
     borderTopColor: COLORS.border, 
   },
   firstQuarterBlock: {
-    borderTopColor: COLORS.placeholder, 
+    borderTopColor: COLORS.placeholder,
+  },
+  lastHourBorder: {
+    borderTopWidth: 1,
+  },
+  hourHeightFull: {
+    height: HOUR_HEIGHT,
+  },
+  hourHeightZero: {
+    height: 0,
   },
   addPlaceListContainer: {
     flex: 1,
@@ -613,5 +637,92 @@ export const styles = StyleSheet.create({
   floatingHistoryButtonDisabled: {
     backgroundColor: COLORS.borderLight,
     opacity: 0.5,
+  },
+
+  previewBanner: {
+    position: 'absolute',
+    left: 60,
+    right: 15,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    backgroundColor: 'rgba(19, 68, 255, 0.08)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    zIndex: 200,
+  },
+  previewBannerInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  previewBannerName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+  },
+  previewBannerTime: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  previewBannerActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  previewBannerActionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewBannerCancelButton: {
+    backgroundColor: '#EF4444',
+  },
+  previewBannerConfirmButton: {
+    backgroundColor: '#10B981',
+  },
+
+  dayTabsFadeOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 24,
+    zIndex: 10,
+  },
+  dayTabsFadeOverlayLeft: {
+    left: 0,
+  },
+  dayTabsFadeOverlayRight: {
+    right: 44,
+  },
+
+  pendingPlaceBanner: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  pendingPlaceBannerText: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+    marginRight: 8,
+  },
+  pendingPlaceBannerCancelButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+  },
+  pendingPlaceBannerCancelText: {
+    color: COLORS.white,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

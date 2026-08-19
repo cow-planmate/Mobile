@@ -944,4 +944,67 @@ export const styles = StyleSheet.create({
   dashedPlanIcon: {
     marginBottom: normalize(8),
   },
+
+  headerSpacer: {
+    width: 28,
+  },
+  cardInfoStatic: {
+    pointerEvents: 'none',
+  },
+  ddayBadgeShared: {
+    backgroundColor: '#F97316',
+  },
+  dateIconSpacing: {
+    marginRight: 4,
+  },
+  checklistHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checklistIconSpacing: {
+    marginRight: 6,
+  },
+  taskIconSpacing: {
+    marginRight: 8,
+  },
+  sharedBadgeIconSpacing: {
+    marginRight: 2,
+  },
+  achievementCardDisabled: {
+    opacity: 0.6,
+  },
+  disabledOpacity: {
+    opacity: 0.5,
+  },
+  iconSpacingSmall: {
+    marginRight: 4,
+  },
+  pastPlanItemSelectedBorder: {
+    borderWidth: 2,
+  },
+  pastPlanRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  pastPlanTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  pastPlanBadgeShared: {
+    backgroundColor: COLORS.borderLight,
+    borderColor: COLORS.border,
+    borderWidth: 1,
+  },
+  pastPlanMenuButton: {
+    padding: 4,
+  },
+  flex1: {
+    flex: 1,
+  },
+  flex1MarginRight12: {
+    flex: 1,
+    marginRight: 12,
+  },
 });

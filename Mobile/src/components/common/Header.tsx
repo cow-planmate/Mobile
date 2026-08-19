@@ -86,7 +86,7 @@ const Header: React.FC<HeaderProps> = ({
             {email ? (
               <FastImage
                 source={{ uri: gravatarUrl(email, 100), priority: FastImage.priority.normal }}
-                style={{ width: '100%', height: '100%' }}
+                style={styles.avatarImage}
                 resizeMode={FastImage.resizeMode.cover}
                 accessible={false}
               />
@@ -199,6 +199,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   userNickname: {
     fontSize: normalize(12),

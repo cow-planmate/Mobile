@@ -209,13 +209,13 @@ const TimeGridBackground = React.memo(
               key={hour}
               style={[
                 styles.hourBlock,
-                { height: isLastHour ? 0 : HOUR_HEIGHT },
+                isLastHour ? styles.hourHeightZero : styles.hourHeightFull,
               ]}
             >
               <View
                 style={[
                   styles.hourLabelContainer,
-                  { height: isLastHour ? 0 : HOUR_HEIGHT },
+                  isLastHour ? styles.hourHeightZero : styles.hourHeightFull,
                 ]}
               >
                 <Text style={[styles.timeLabelText, styles.timeLabelTop]}>
@@ -257,14 +257,14 @@ const TimeGridBackground = React.memo(
               <View
                 style={[
                   styles.hourContent,
-                  { height: isLastHour ? 0 : HOUR_HEIGHT },
+                  isLastHour ? styles.hourHeightZero : styles.hourHeightFull,
                 ]}
               >
                 <View
                   style={[
                     styles.quarterBlock,
                     styles.firstQuarterBlock,
-                    isLastHour && { borderTopWidth: 1 },
+                    isLastHour && styles.lastHourBorder,
                   ]}
                 />
                 {!isLastHour && (
@@ -857,64 +857,40 @@ const TimelineComponent = React.memo(
 
                 {pendingPlace && previewStartTime && previewEndTime && (
                   <View
-                    style={{
-                      position: 'absolute',
-                      top:
-                        (timeToMinutes(previewStartTime) - offsetMinutes) *
-                          MINUTE_HEIGHT +
-                        GRID_TOP_OFFSET,
-                      height: Math.max(
-                        (timeToMinutes(previewEndTime) -
-                          timeToMinutes(previewStartTime)) *
-                          MINUTE_HEIGHT,
-                        MIN_ITEM_HEIGHT,
-                      ),
-                      left: 60,
-                      right: 15,
-                      borderWidth: 2,
-                      borderColor: COLORS.primary,
-                      borderStyle: 'dashed',
-                      borderRadius: 12,
-                      backgroundColor: 'rgba(19, 68, 255, 0.08)',
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      paddingHorizontal: 12,
-                      zIndex: 200,
-                    }}
+                    style={[
+                      styles.previewBanner,
+                      {
+                        top:
+                          (timeToMinutes(previewStartTime) - offsetMinutes) *
+                            MINUTE_HEIGHT +
+                          GRID_TOP_OFFSET,
+                        height: Math.max(
+                          (timeToMinutes(previewEndTime) -
+                            timeToMinutes(previewStartTime)) *
+                            MINUTE_HEIGHT,
+                          MIN_ITEM_HEIGHT,
+                        ),
+                      },
+                    ]}
                   >
-                    <View style={{ flex: 1, marginRight: 8 }}>
-                      <Text style={{ fontSize: 14, fontWeight: 'bold', color: COLORS.primary }} numberOfLines={1}>
+                    <View style={styles.previewBannerInfo}>
+                      <Text style={styles.previewBannerName} numberOfLines={1}>
                         {pendingPlace.name}
                       </Text>
-                      <Text style={{ fontSize: 12, color: COLORS.textSecondary }}>
+                      <Text style={styles.previewBannerTime}>
                         {previewStartTime} - {previewEndTime} ({pendingPlace.type})
                       </Text>
                     </View>
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <View style={styles.previewBannerActions}>
                       <TouchableOpacity
                         onPress={onCancelPreview}
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 16,
-                          backgroundColor: '#EF4444',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
+                        style={[styles.previewBannerActionButton, styles.previewBannerCancelButton]}
                       >
                         <XIcon color={COLORS.white} size={14} />
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={onConfirmPlacement}
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 16,
-                          backgroundColor: '#10B981',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
+                        style={[styles.previewBannerActionButton, styles.previewBannerConfirmButton]}
                       >
                         <CheckIcon color={COLORS.white} size={14} />
                       </TouchableOpacity>
@@ -1238,6 +1214,13 @@ export default function ItineraryEditorScreenView({
     onCancelPreview,
   ]);
 
+  const renderTabBar = useCallback(
+    (props: any) => (
+      <BottomMenuBar {...props} activeTab={activeTab} setActiveTab={setActiveTab} />
+    ),
+    [activeTab, setActiveTab],
+  );
+
   if (!selectedDay) {
     return <AirplaneLoading />;
   }
@@ -1253,7 +1236,7 @@ export default function ItineraryEditorScreenView({
           <ChevronLeft size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.topBarHeaderTitle}>일정편집</Text>
-        <View style={{ width: 28 }} />
+        <View style={styles.topBarSpacer} />
       </View>
 
       <View style={styles.topToolbar}>
@@ -1261,16 +1244,7 @@ export default function ItineraryEditorScreenView({
           {isEditingTripName ? (
             <>
               <Text
-                style={[
-                  styles.toolbarTitleInput,
-                  {
-                    position: 'absolute',
-                    opacity: 0,
-                    width: 'auto',
-                    minWidth: 0,
-                    maxWidth: undefined,
-                  },
-                ]}
+                style={[styles.toolbarTitleInput, styles.toolbarTitleMeasure]}
                 onLayout={(e) => {
                   const { width } = e.nativeEvent.layout;
                   const finalWidth = Math.max(30, Math.min(170, width + 8));
@@ -1288,7 +1262,8 @@ export default function ItineraryEditorScreenView({
                 numberOfLines={1}
                 style={[
                   styles.toolbarTitleInput,
-                  { width: inputWidth, minWidth: 0, maxWidth: 170 },
+                  styles.toolbarTitleInputSized,
+                  { width: inputWidth },
                 ]}
                 placeholder="일정 이름"
                 placeholderTextColor={COLORS.placeholder}
@@ -1337,7 +1312,7 @@ export default function ItineraryEditorScreenView({
         </View>
       </View>
 
-      <View style={[styles.dayTabsWrapper, { position: 'relative' }]}>
+      <View style={styles.dayTabsWrapper}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -1396,14 +1371,7 @@ export default function ItineraryEditorScreenView({
             colors={['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 24,
-              zIndex: 10,
-            }}
+            style={[styles.dayTabsFadeOverlay, styles.dayTabsFadeOverlayLeft]}
             pointerEvents="none"
           />
         )}
@@ -1413,50 +1381,29 @@ export default function ItineraryEditorScreenView({
             colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.95)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={{
-              position: 'absolute',
-              right: 44, 
-              top: 0,
-              bottom: 0,
-              width: 24,
-              zIndex: 10,
-            }}
+            style={[styles.dayTabsFadeOverlay, styles.dayTabsFadeOverlayRight]}
             pointerEvents="none"
           />
         )}
       </View>
 
       {pendingPlace && (
-        <View
-          style={{
-            backgroundColor: COLORS.primary,
-            paddingVertical: 10,
-            paddingHorizontal: 16,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Text style={{ color: COLORS.white, fontSize: 13, fontWeight: '600', flex: 1, marginRight: 8 }}>
+        <View style={styles.pendingPlaceBanner}>
+          <Text style={styles.pendingPlaceBannerText}>
             '{pendingPlace.name}'을 배치할 타임라인의 빈 영역을 클릭해 주세요.
           </Text>
           <TouchableOpacity
             onPress={onCancelPlacement}
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              paddingVertical: 4,
-              paddingHorizontal: 10,
-              borderRadius: 6,
-            }}
+            style={styles.pendingPlaceBannerCancelButton}
           >
-            <Text style={{ color: COLORS.white, fontSize: 12, fontWeight: 'bold' }}>취소</Text>
+            <Text style={styles.pendingPlaceBannerCancelText}>취소</Text>
           </TouchableOpacity>
         </View>
       )}
 
       <EditorStateContext.Provider value={editorStateContextValue}>
         <TabNavigatorAny
-          tabBar={(props: any) => <BottomMenuBar {...props} activeTab={activeTab} setActiveTab={setActiveTab} />}
+          tabBar={renderTabBar}
           sceneStyle={styles.tabScene}
           initialRouteName={activeTab}
           screenOptions={{
