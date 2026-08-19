@@ -89,18 +89,21 @@ export const ensureFreshAccessToken = async (): Promise<string | null> => {
   return (await refreshAccessToken()) ?? token;
 };
 
+// 토큰 갱신 실패로 인한 강제 로그아웃도 수동 로그아웃과 같은 범위를 비워야
+// 다음 계정에 이전 사용자의 캐시·쿠키가 남지 않는다.
 const clearSession = async () => {
-  await AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS);
-
   try {
     const { useAuthStore } = require('../store/useAuthStore');
-    useAuthStore.getState().setUser(null);
+    await useAuthStore.getState().clearSession();
+    return;
   } catch (storeError) {
     console.error(
-      'Failed to update auth store on token refresh failure:',
+      'Failed to clear session through auth store on token refresh failure:',
       storeError,
     );
   }
+
+  await AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS);
 };
 
 if (axios && axios.defaults) {

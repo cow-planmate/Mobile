@@ -5,6 +5,7 @@ import { resolveApiUrl } from '../utils/apiUrl';
 import {
   ACCESS_TOKEN_RECEIVED_AT_KEY,
   LOGOUT_CLEARED_KEYS,
+  IDENTITY_CLEARED_KEYS,
   LAST_LOGIN_METHOD_KEY,
   LAST_LOGIN_EMAIL_KEY,
 } from '../constants/storageKeys';
@@ -249,7 +250,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user: null, ...(forgetLoginMethod ? { lastLoginMethod: null, lastLoginEmail: null } : {}) });
     await AsyncStorage.multiRemove(
       forgetLoginMethod
-        ? [...LOGOUT_CLEARED_KEYS, LAST_LOGIN_METHOD_KEY]
+        ? [...LOGOUT_CLEARED_KEYS, ...IDENTITY_CLEARED_KEYS]
         : LOGOUT_CLEARED_KEYS,
     );
 
