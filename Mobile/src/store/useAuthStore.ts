@@ -233,11 +233,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } else {
         throw new Error('서버 응답 형식이 올바르지 않습니다.');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('OAuth Complete error:', error);
-      if (error.response?.data?.message) {
-        throw new Error(error.response.data.message);
-      }
       throw error;
     } finally {
       set({ isLoading: false });

@@ -9,6 +9,7 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { AuthStackParamList } from '../../../navigation/types';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 import { toBirthdateString } from '../../../utils/birthdate';
+import { useSubmitLock } from '../../../hooks/useSubmitLock';
 
 const EMAIL_REGEX = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$/;
 
@@ -39,7 +40,7 @@ export default function OAuthAdditionalInfoScreen({
   const [errors, setErrors] = useState<OAuthAdditionalInfoErrors>({});
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isSubmitting, runExclusive: runCompleteExclusive } = useSubmitLock();
 
   const onChange = useCallback(
     (field: keyof OAuthAdditionalInfoForm, value: string) => {
@@ -97,26 +98,32 @@ export default function OAuthAdditionalInfoScreen({
     }
 
     setErrors({});
-    setIsSubmitting(true);
-    try {
-      await oauthComplete(
-        {
-          signupId,
-          email: needEmail ? form.email.trim() : null,
-          birthdate: form.birthdate,
-          gender: GENDER_ENUM[form.gender],
-        },
-        provider,
-      );
-
-    } catch (e) {
-      setErrors({
-        form: getDisplayErrorMessage(e, '가입 처리 중 문제가 생겼어요.'),
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [validate, oauthComplete, signupId, needEmail, form, provider]);
+    await runCompleteExclusive(async () => {
+      try {
+        await oauthComplete(
+          {
+            signupId,
+            email: needEmail ? form.email.trim() : null,
+            birthdate: form.birthdate,
+            gender: GENDER_ENUM[form.gender],
+          },
+          provider,
+        );
+      } catch (e) {
+        setErrors({
+          form: getDisplayErrorMessage(e, '가입 처리 중 문제가 생겼어요.'),
+        });
+      }
+    });
+  }, [
+    validate,
+    oauthComplete,
+    signupId,
+    needEmail,
+    form,
+    provider,
+    runCompleteExclusive,
+  ]);
 
   const handleBack = useCallback(() => navigation.goBack(), [navigation]);
 

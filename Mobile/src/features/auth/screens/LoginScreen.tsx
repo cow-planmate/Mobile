@@ -9,6 +9,7 @@ import {
   parseBackendError,
   getDisplayErrorMessage,
 } from '../../../utils/errorHandler';
+import { useSubmitLock } from '../../../hooks/useSubmitLock';
 
 const INVALID_CREDENTIALS_CODE = 'AUTH_003';
 
@@ -53,46 +54,49 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     });
   };
 
-  const handleLogin = async () => {
-    const email = form.email.trim();
-    const next: LoginErrors = {};
+  const { runExclusive: runLoginExclusive } = useSubmitLock();
 
-    if (!email) {
-      next.email = '이메일을 입력해 주세요.';
-    } else if (!EMAIL_REGEX.test(email)) {
-      next.email = '이메일 형식을 확인해 주세요.';
-    }
+  const handleLogin = () =>
+    runLoginExclusive(async () => {
+      const email = form.email.trim();
+      const next: LoginErrors = {};
 
-    if (!form.password) {
-      next.password = '비밀번호를 입력해 주세요.';
-    }
+      if (!email) {
+        next.email = '이메일을 입력해 주세요.';
+      } else if (!EMAIL_REGEX.test(email)) {
+        next.email = '이메일 형식을 확인해 주세요.';
+      }
 
-    if (next.email || next.password) {
-      setErrors(next);
-      setFocusSeq(seq => seq + 1);
-      return;
-    }
+      if (!form.password) {
+        next.password = '비밀번호를 입력해 주세요.';
+      }
 
-    setErrors({});
+      if (next.email || next.password) {
+        setErrors(next);
+        setFocusSeq(seq => seq + 1);
+        return;
+      }
 
-    try {
-      await login(email, form.password);
-    } catch (e) {
+      setErrors({});
 
-      const { code } = parseBackendError(e);
-      const isBadCredentials = code === INVALID_CREDENTIALS_CODE;
+      try {
+        await login(email, form.password);
+      } catch (e) {
 
-      setErrors({
-        form: isBadCredentials
-          ? '이메일 또는 비밀번호가 맞지 않아요. 다시 확인해 주세요.'
-          : getDisplayErrorMessage(
-              e,
-              '로그인에 실패했어요. 잠시 후 다시 시도해 주세요.',
-            ),
-      });
-      setFocusSeq(seq => seq + 1);
-    }
-  };
+        const { code } = parseBackendError(e);
+        const isBadCredentials = code === INVALID_CREDENTIALS_CODE;
+
+        setErrors({
+          form: isBadCredentials
+            ? '이메일 또는 비밀번호가 맞지 않아요. 다시 확인해 주세요.'
+            : getDisplayErrorMessage(
+                e,
+                '로그인에 실패했어요. 잠시 후 다시 시도해 주세요.',
+              ),
+        });
+        setFocusSeq(seq => seq + 1);
+      }
+    });
 
   const startSnsLogin = (provider: 'google' | 'naver') => {
     handledSnsUrlRef.current = null;
@@ -140,6 +144,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 ),
               });
             }
+          } else {
+            showAlert({
+              title: '오류',
+              message: '소셜 로그인 정보가 올바르지 않습니다.',
+            });
           }
         } else if (status === 'NEED_ADDITIONAL_INFO') {
           const signupId = params.get('signupId');
