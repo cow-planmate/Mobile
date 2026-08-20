@@ -30,14 +30,14 @@ export async function forkItinerary(
 
       planName: title.slice(0, 100),
     });
-  } catch {
-
+  } catch (error) {
+    console.warn(`[forkItinerary] 플랜 ${planId} 이름 지정 실패`, error);
   }
 
   try {
     await forkPost(postId);
-  } catch {
-
+  } catch (error) {
+    console.warn(`[forkItinerary] 게시글 ${postId} 가져가기 수 반영 실패`, error);
   }
 
   return { planId: String(planId), adjustedBlocks };

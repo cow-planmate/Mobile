@@ -12,7 +12,7 @@ import {
 import CornerDownRight from 'lucide-react-native/dist/esm/icons/corner-down-right';
 import MessageCircle from 'lucide-react-native/dist/esm/icons/message-circle';
 import Send from 'lucide-react-native/dist/esm/icons/send';
-import { theme } from '../../../theme/theme';
+import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAuthStore } from '../../../store/useAuthStore';
@@ -25,6 +25,7 @@ import {
 } from '../hooks/queries';
 import { CommunityComment } from '../types';
 import { mergeCommentPages } from '../utils/commentPages';
+import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import UserAvatar from './UserAvatar';
 import LevelBadge from './LevelBadge';
 
@@ -65,7 +66,7 @@ const CommentComposer = React.memo(function CommentComposer({
       <TextInput
         style={styles.input}
         placeholder={placeholder}
-        placeholderTextColor={theme.colors.textTertiary}
+        placeholderTextColor={tokens.colors.textTertiary}
         value={text}
         onChangeText={setText}
         editable={editable}
@@ -76,7 +77,7 @@ const CommentComposer = React.memo(function CommentComposer({
         onPress={handlePress}
         disabled={!editable || submitting}
       >
-        <Send size={normalize(15)} color={theme.colors.white} />
+        <Send size={normalize(15)} color={tokens.colors.white} />
       </TouchableOpacity>
     </View>
   );
@@ -155,6 +156,10 @@ export default function CommentSection({
     showAlert({ title: '로그인 필요', message: '로그인 후 이용할 수 있어요.' });
   }, [showAlert]);
 
+  const commentLock = useSubmitLock();
+  const replyLock = useSubmitLock();
+  const editLock = useSubmitLock();
+
   const handleSubmit = useCallback(
     async (text: string) => {
       if (!isLoggedIn) {
@@ -162,53 +167,61 @@ export default function CommentSection({
         return false;
       }
 
-      try {
-        await createComment.mutateAsync({ content: text });
-        return true;
-      } catch (error) {
-        showAlert({
-          title: '댓글 등록 실패',
-          message: getBackendErrorMessage(error),
-          type: 'error',
-        });
-        return false;
-      }
+      const result = await commentLock.runExclusive(async () => {
+        try {
+          await createComment.mutateAsync({ content: text });
+          return true;
+        } catch (error) {
+          showAlert({
+            title: '댓글 등록 실패',
+            message: getBackendErrorMessage(error),
+            type: 'error',
+          });
+          return false;
+        }
+      });
+      return result ?? false;
     },
-    [createComment, isLoggedIn, requireLogin, showAlert],
+    [commentLock, createComment, isLoggedIn, requireLogin, showAlert],
   );
 
   const handleReplySubmit = useCallback(
     async (parentId: number, text: string) => {
-      try {
-        await createComment.mutateAsync({ content: text, parentId });
-        setReplyingTo(null);
-        return true;
-      } catch (error) {
-        showAlert({
-          title: '답글 등록 실패',
-          message: getBackendErrorMessage(error),
-          type: 'error',
-        });
-        return false;
-      }
+      const result = await replyLock.runExclusive(async () => {
+        try {
+          await createComment.mutateAsync({ content: text, parentId });
+          setReplyingTo(null);
+          return true;
+        } catch (error) {
+          showAlert({
+            title: '답글 등록 실패',
+            message: getBackendErrorMessage(error),
+            type: 'error',
+          });
+          return false;
+        }
+      });
+      return result ?? false;
     },
-    [createComment, showAlert],
+    [createComment, replyLock, showAlert],
   );
 
   const handleEditSubmit = async (commentId: number, text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    try {
-      await updateComment.mutateAsync({ commentId, content: trimmed });
-      setEditingId(null);
-    } catch (error) {
-      showAlert({
-        title: '댓글 수정 실패',
-        message: getBackendErrorMessage(error),
-        type: 'error',
-      });
-    }
+    await editLock.runExclusive(async () => {
+      try {
+        await updateComment.mutateAsync({ commentId, content: trimmed });
+        setEditingId(null);
+      } catch (error) {
+        showAlert({
+          title: '댓글 수정 실패',
+          message: getBackendErrorMessage(error),
+          type: 'error',
+        });
+      }
+    });
   };
 
   const handleDelete = (commentId: number, hasReplies: boolean) => {
@@ -250,7 +263,7 @@ export default function CommentSection({
           {isReply && (
             <CornerDownRight
               size={normalize(13)}
-              color={theme.colors.textTertiary}
+              color={tokens.colors.textTertiary}
               style={styles.replyIcon}
             />
           )}
@@ -321,7 +334,7 @@ export default function CommentSection({
           <CommentComposer
             placeholder="답글을 입력하세요"
             containerStyle={styles.replyInputRow}
-            submitting={createComment.isPending}
+            submitting={createComment.isPending || replyLock.isSubmitting}
             onSubmit={text => handleReplySubmit(comment.id, text)}
           />
         )}
@@ -334,7 +347,7 @@ export default function CommentSection({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <MessageCircle size={normalize(16)} color={theme.colors.primary} />
+        <MessageCircle size={normalize(16)} color={tokens.colors.primary} />
         <Text style={styles.headerTitle}>댓글 {commentCount}</Text>
       </View>
 
@@ -343,14 +356,14 @@ export default function CommentSection({
           isLoggedIn ? '댓글을 입력하세요' : '로그인 후 댓글을 쓸 수 있어요'
         }
         editable={isLoggedIn}
-        submitting={createComment.isPending}
+        submitting={createComment.isPending || commentLock.isSubmitting}
         onSubmit={handleSubmit}
       />
 
       {commentsQuery.isLoading ? (
         <ActivityIndicator
           style={styles.loading}
-          color={theme.colors.primary}
+          color={tokens.colors.primary}
         />
       ) : topLevel.length === 0 ? (
         <Text style={styles.empty}>첫 댓글을 남겨보세요</Text>
@@ -364,7 +377,7 @@ export default function CommentSection({
               disabled={commentsQuery.isFetchingNextPage}
             >
               {commentsQuery.isFetchingNextPage ? (
-                <ActivityIndicator color={theme.colors.primary} />
+                <ActivityIndicator color={tokens.colors.primary} />
               ) : (
                 <Text style={styles.loadMoreText}>댓글 더 보기</Text>
               )}
@@ -379,7 +392,7 @@ export default function CommentSection({
 const styles = StyleSheet.create({
   container: {
     borderTopWidth: normalize(6),
-    borderTopColor: theme.colors.surface,
+    borderTopColor: tokens.colors.surface,
     paddingHorizontal: normalize(16),
     paddingTop: normalize(16),
     paddingBottom: normalize(24),
@@ -392,8 +405,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: normalize(14),
-    fontFamily: theme.typography.fontFamily.semibold,
-    color: theme.colors.text,
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.text,
   },
 
   inputRow: {
@@ -415,13 +428,13 @@ const styles = StyleSheet.create({
     maxHeight: normalize(110),
     paddingHorizontal: normalize(12),
     paddingVertical: normalize(9),
-    borderRadius: theme.borderRadius.l,
-    backgroundColor: theme.colors.surface,
+    borderRadius: tokens.radius.l,
+    backgroundColor: tokens.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: tokens.colors.border,
     fontSize: normalize(13),
-    fontFamily: theme.typography.fontFamily.regular,
-    color: theme.colors.text,
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.text,
     textAlignVertical: 'top',
   },
   editInput: {
@@ -429,25 +442,25 @@ const styles = StyleSheet.create({
     marginTop: normalize(4),
     paddingHorizontal: normalize(10),
     paddingVertical: normalize(8),
-    borderRadius: theme.borderRadius.m,
-    backgroundColor: theme.colors.surface,
+    borderRadius: tokens.radius.m,
+    backgroundColor: tokens.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.borderStrong,
+    borderColor: tokens.colors.borderStrong,
     fontSize: normalize(13),
-    fontFamily: theme.typography.fontFamily.regular,
-    color: theme.colors.text,
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.text,
     textAlignVertical: 'top',
   },
   sendButton: {
     width: normalize(38),
     height: normalize(38),
     borderRadius: normalize(19),
-    backgroundColor: theme.colors.primary,
+    backgroundColor: tokens.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sendButtonDisabled: {
-    backgroundColor: theme.colors.disabled,
+    backgroundColor: tokens.colors.disabled,
   },
 
   comment: {
@@ -455,7 +468,7 @@ const styles = StyleSheet.create({
     gap: normalize(8),
     paddingVertical: normalize(10),
     borderTopWidth: 1,
-    borderTopColor: theme.colors.borderLight,
+    borderTopColor: tokens.colors.borderLight,
   },
   commentReply: {
     paddingLeft: normalize(22),
@@ -474,19 +487,19 @@ const styles = StyleSheet.create({
   },
   commentAuthor: {
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.semibold,
-    color: theme.colors.text,
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.text,
   },
   commentTime: {
     fontSize: normalize(10),
-    fontFamily: theme.typography.fontFamily.regular,
-    color: theme.colors.textTertiary,
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textTertiary,
   },
   commentText: {
     fontSize: normalize(13),
     lineHeight: normalize(19),
-    fontFamily: theme.typography.fontFamily.regular,
-    color: theme.colors.textLabel,
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textLabel,
   },
   commentActions: {
     flexDirection: 'row',
@@ -495,18 +508,18 @@ const styles = StyleSheet.create({
   },
   action: {
     fontSize: normalize(11),
-    fontFamily: theme.typography.fontFamily.medium,
-    color: theme.colors.textSecondary,
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textSecondary,
   },
   actionPrimary: {
     fontSize: normalize(11),
-    fontFamily: theme.typography.fontFamily.semibold,
-    color: theme.colors.primary,
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.primary,
   },
   actionDanger: {
     fontSize: normalize(11),
-    fontFamily: theme.typography.fontFamily.medium,
-    color: theme.colors.danger,
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.tones.danger.fg,
   },
 
   loading: {
@@ -516,8 +529,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: normalize(24),
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.regular,
-    color: theme.colors.textTertiary,
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textTertiary,
   },
   loadMoreButton: {
     alignSelf: 'center',
@@ -527,12 +540,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: normalize(8),
     paddingHorizontal: normalize(14),
-    borderRadius: theme.borderRadius.l,
-    backgroundColor: theme.colors.surface,
+    borderRadius: tokens.radius.l,
+    backgroundColor: tokens.colors.surface,
   },
   loadMoreText: {
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.medium,
-    color: theme.colors.primary,
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.primary,
   },
 });

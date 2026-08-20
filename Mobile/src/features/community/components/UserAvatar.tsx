@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { tokens } from '../../../theme/tokens';
@@ -22,6 +22,10 @@ export default function UserAvatar({
 }: UserAvatarProps) {
   const [failed, setFailed] = useState(false);
   const uri = resolveAvatarUrl(imageUrl, avatarHash, size * 2);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [uri]);
 
   const shape = {
     width: size,

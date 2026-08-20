@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -44,16 +44,19 @@ export default function PostCreateScreen() {
   const existingPost = usePost(postId);
   const updatePost = useUpdatePost(Number(postId ?? 0));
 
+  const hydratedPostId = useRef<string | undefined>(undefined);
   useEffect(() => {
     const post = existingPost.data;
     if (!post || post.category === 'feed') return;
+    if (hydratedPostId.current === postId) return;
 
+    hydratedPostId.current = postId;
     setCategory(post.category as BoardKey);
     setTitle(post.title);
     setContent(post.contentText);
     setMaxParticipants(post.maxParticipants ? String(post.maxParticipants) : '');
     setLocation(post.location ?? '');
-  }, [existingPost.data]);
+  }, [existingPost.data, postId]);
 
   const { isSubmitting, runExclusive } = useSubmitLock();
 

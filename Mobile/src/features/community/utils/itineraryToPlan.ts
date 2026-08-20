@@ -171,9 +171,3 @@ export const buildCreatePlanRequest = (
     adjustedBlocks,
   };
 };
-
-export const getEndDate = (startDate: Date, dayCount: number): Date => {
-  const end = new Date(startDate);
-  end.setDate(end.getDate() + Math.max(0, dayCount - 1));
-  return end;
-};

@@ -52,6 +52,7 @@ export default function CommunityScreen() {
     setCategory(next);
     setSort('latest');
     setSearchQuery('');
+    setDebouncedQuery('');
   }, []);
 
   const posts = useMemo(
