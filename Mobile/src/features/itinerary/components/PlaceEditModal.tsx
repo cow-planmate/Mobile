@@ -80,19 +80,23 @@ export default function PlaceEditModal({
     let endMinutes = endTime.getHours() * 60 + endTime.getMinutes();
 
     // 시간대를 하루 범위 밖으로 잡으면 타임라인 그리드 밖으로 밀려나 화면에서
-    // 사라지므로, 저장 전에 그 날의 시작·종료 범위 안으로 당겨온다.
+    // 사라지므로, 저장 전에 그 날의 시작·종료 범위 안으로 당겨온다. 두 조건을
+    // 독립된 if로 순서대로 적용하면 지속시간이 하루 범위보다 긴 경우 한쪽을
+    // 맞추다 반대쪽이 다시 범위를 벗어날 수 있어, 지속시간부터 범위 안으로
+    // 줄인 뒤 시작 시간을 그 안에서만 움직이도록 한 번에 계산한다.
     if (dayStartTime || dayEndTime) {
-      const duration = endMinutes - startMinutes;
       const minMinutes = timeToMinutes(dayStartTime || '00:00');
       const maxMinutes = dayEndTime ? timeToMinutes(dayEndTime) : 24 * 60;
-      if (startMinutes < minMinutes) {
-        startMinutes = minMinutes;
-        endMinutes = minMinutes + duration;
-      }
-      if (endMinutes > maxMinutes) {
-        endMinutes = maxMinutes;
-        startMinutes = maxMinutes - duration;
-      }
+      const windowSize = Math.max(0, maxMinutes - minMinutes);
+      const duration = Math.max(
+        0,
+        Math.min(endMinutes - startMinutes, windowSize),
+      );
+      startMinutes = Math.max(
+        minMinutes,
+        Math.min(startMinutes, maxMinutes - duration),
+      );
+      endMinutes = startMinutes + duration;
     }
 
     if (startMinutes >= endMinutes) {

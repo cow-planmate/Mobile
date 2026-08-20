@@ -199,32 +199,7 @@ const blockCategoryToCategoryId = (blockCategory?: string, rawCategoryId?: any):
 };
 
 const mapToTimetablePlaceBlockDto = (place: Place, timetableId?: number) => {
-
-  let categoryId = place.categoryId ?? 4;
-
-  if (![0, 1, 2, 3, 4].includes(categoryId)) {
-    if ([12, 14, 15, 28].includes(categoryId)) {
-      categoryId = 0; 
-    } else if (categoryId === 32) {
-      categoryId = 1; 
-    } else if (categoryId === 39) {
-      categoryId = 2; 
-    } else {
-      switch (place.type) {
-        case '관광지':
-          categoryId = 0;
-          break;
-        case '숙소':
-          categoryId = 1;
-          break;
-        case '식당':
-          categoryId = 2;
-          break;
-        default:
-          categoryId = 4; 
-      }
-    }
-  }
+  const categoryId = normalizeCategoryId(place.categoryId, place.type);
 
   const startTime =
     place.startTime.length === 5 ? place.startTime + ':00' : place.startTime;
