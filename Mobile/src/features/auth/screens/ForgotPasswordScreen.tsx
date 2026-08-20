@@ -58,6 +58,7 @@ export default function ForgotPasswordScreen() {
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const codeDeadlineRef = useRef<number | null>(null);
   const resendDeadlineRef = useRef<number | null>(null);
+  const tempPasswordSeqRef = useRef(0);
 
   const setFieldError = useCallback(
     (field: keyof ForgotPasswordErrors, message: string) => {
@@ -156,13 +157,16 @@ export default function ForgotPasswordScreen() {
   }, [email, setFieldError, clearError, runSendEmailExclusive]);
 
   const sendTempPassword = useCallback(async (token: string) => {
+    const seq = ++tempPasswordSeqRef.current;
     setTempPasswordStatus('sending');
     try {
       await axios.post('/api/auth/password/email', {
         verificationToken: token,
       });
+      if (seq !== tempPasswordSeqRef.current) return;
       setTempPasswordStatus('sent');
     } catch (error: any) {
+      if (seq !== tempPasswordSeqRef.current) return;
       const status = error?.response?.status;
       setTempPasswordStatus('failed');
       setErrors({
