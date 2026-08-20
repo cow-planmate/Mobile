@@ -114,7 +114,7 @@ export default function ProfileScreen({ route }: any) {
     } catch (e) {
       Toast.show({
         type: 'error',
-        text1: '생년월일 변경에 실패했습니다.',
+        text1: getDisplayErrorMessage(e, '생년월일 변경에 실패했습니다.'),
         position: 'top',
         visibilityTime: 2500,
       });
@@ -141,7 +141,7 @@ export default function ProfileScreen({ route }: any) {
     } catch (e) {
       Toast.show({
         type: 'error',
-        text1: '성별 변경에 실패했습니다.',
+        text1: getDisplayErrorMessage(e, '성별 변경에 실패했습니다.'),
         position: 'top',
         visibilityTime: 2500,
       });
@@ -323,7 +323,6 @@ export default function ProfileScreen({ route }: any) {
       const profileImageUrl = await uploadProfileImage(selected.file);
       await FastImage.clearMemoryCache();
       patchProfile({ profileImageUrl });
-      await queryClient.invalidateQueries({ queryKey: USER_PROFILE_QUERY_KEY });
       Toast.show({
         type: 'success',
         text1: '프로필 사진이 변경되었습니다.',
@@ -341,7 +340,7 @@ export default function ProfileScreen({ route }: any) {
     } finally {
       setIsProfileImageUpdating(false);
     }
-  }, [patchProfile, queryClient]);
+  }, [patchProfile]);
 
   const handleDeleteProfileImage = useCallback(async () => {
     setIsProfileImageUpdating(true);
@@ -349,7 +348,6 @@ export default function ProfileScreen({ route }: any) {
       await deleteProfileImage();
       await FastImage.clearMemoryCache();
       patchProfile({ profileImageUrl: '' });
-      await queryClient.invalidateQueries({ queryKey: USER_PROFILE_QUERY_KEY });
       Toast.show({
         type: 'success',
         text1: '프로필 사진이 삭제되었습니다.',
@@ -367,7 +365,7 @@ export default function ProfileScreen({ route }: any) {
     } finally {
       setIsProfileImageUpdating(false);
     }
-  }, [patchProfile, queryClient]);
+  }, [patchProfile]);
 
   return (
     <ProfileScreenView

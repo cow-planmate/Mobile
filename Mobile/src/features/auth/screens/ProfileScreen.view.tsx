@@ -60,8 +60,13 @@ import ChecklistSheet from '../../itinerary/components/checklist/ChecklistSheet'
 import { useChecklist } from '../../itinerary/hooks/useChecklistQueries';
 import gravatarUrl from '../../../utils/gravatarUrl';
 import { normalize } from '../../../utils/normalize';
-import { parseLocalDate } from '../../../utils/timeUtils';
 import { allSettledWithConcurrency } from '../../../utils/concurrency';
+import { toPlanDate } from '../utils/profileCalendar';
+import {
+  USER_PROFILE_QUERY_KEY,
+  UserProfile,
+  ProfilePlan,
+} from '../../../hooks/useUserProfile';
 import DatePicker from 'react-native-date-picker';
 import {
   toKoreanAge,
@@ -122,12 +127,6 @@ interface PlanItem {
   isShared?: boolean;
 }
 
-const parsePlanDate = (value?: string): Date | null => {
-  if (!value) return null;
-  const parsed = parseLocalDate(value.replace(/\./g, '-').substring(0, 10));
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-};
-
 export const PLAN_MENU_OPTIONS = [
   { label: '제목 바꾸기', action: 'rename', icon: Type },
   { label: '수정하기', action: 'edit', icon: PenLine },
@@ -165,7 +164,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
 }) {
 
   const getDDay = (startDateStr?: string) => {
-    const start = parsePlanDate(startDateStr);
+    const start = toPlanDate(startDateStr);
     if (!start) return 'D-Day';
 
     const today = new Date();
@@ -393,6 +392,18 @@ export default function ProfileScreenView({
   const [isNicknameChecking, setIsNicknameChecking] = useState(false);
   const isNicknameUnchanged = tempNickname.trim() === user.name;
   const [plans, setPlans] = useState<any[]>([]);
+
+  // 로컬 plans 상태와 USER_PROFILE_QUERY_KEY 캐시를 한 번에 갱신해 두 값이
+  // 어긋나지 않게 한다. invalidatePlanCaches의 백그라운드 리페치가 끝나기 전에도
+  // 캐시가 이미 최신 상태라 화면 재진입 시 삭제/이름변경한 일정이 되살아나지 않는다.
+  const patchPlansCache = useCallback(
+    (mutate: (list: ProfilePlan[]) => ProfilePlan[]) => {
+      queryClient.setQueryData<UserProfile>(USER_PROFILE_QUERY_KEY, prev =>
+        prev ? { ...prev, myPlans: mutate(prev.myPlans) } : prev,
+      );
+    },
+    [queryClient],
+  );
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPlanIds, setSelectedPlanIds] = useState<string[]>([]);
 
@@ -413,25 +424,27 @@ export default function ProfileScreenView({
   const bounceAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (editModalVisible && showBottomFade) {
-
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(bounceAnim, {
-            toValue: 6,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(bounceAnim, {
-            toValue: 0,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    } else {
+    if (!(editModalVisible && showBottomFade)) {
       bounceAnim.setValue(0);
+      return;
     }
+
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: 6,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
   }, [editModalVisible, showBottomFade, bounceAnim]);
 
   const checkScrollState = (contentHeight: number, layoutHeight: number, offsetY: number) => {
@@ -539,6 +552,7 @@ export default function ProfileScreenView({
               try {
                 await leaveAsEditor(planId);
                 setPlans(prev => prev.filter(p => p.planId !== planId));
+                patchPlansCache(list => list.filter(p => p.planId !== planId));
 
                 void invalidatePlanCaches(queryClient);
                 Toast.show({
@@ -572,6 +586,7 @@ export default function ProfileScreenView({
               try {
                 await axios.delete(resolveApiUrl(`/api/plan/${planId}`));
                 setPlans(prev => prev.filter(p => p.planId !== planId));
+                patchPlansCache(list => list.filter(p => p.planId !== planId));
 
                 void invalidatePlanCaches(queryClient);
                 Toast.show({
@@ -595,7 +610,7 @@ export default function ProfileScreenView({
   };
 
   const isPastPlan = (endDateStr?: string, startDateStr?: string) => {
-    const targetDate = parsePlanDate(endDateStr || startDateStr);
+    const targetDate = toPlanDate(endDateStr || startDateStr);
     if (!targetDate) return false;
 
     const today = new Date();
@@ -670,6 +685,9 @@ export default function ProfileScreenView({
 
             if (processedIds.length > 0) {
               setPlans(prev => prev.filter(p => !processedIds.includes(p.planId)));
+              patchPlansCache(list =>
+                list.filter(p => !processedIds.includes(p.planId)),
+              );
 
               void invalidatePlanCaches(queryClient);
             }

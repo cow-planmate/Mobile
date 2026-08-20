@@ -1,5 +1,8 @@
 import { tokens } from '../../../theme/tokens';
 
+// 서버(UserStatsRepository.recalculateLevel)의 레벨 산정 로직을 그대로 미러링한다.
+// 진행률 바 표시용으로만 쓰이며, 실제 Lv.N 배지는 서버가 내려주는 MyStats.level을
+// 사용하므로 백엔드 기준이 바뀌면 이 값도 함께 맞춰야 한다.
 export const POST_SCORE_WEIGHT = 3;
 export const COMMENT_SCORE_WEIGHT = 1;
 
