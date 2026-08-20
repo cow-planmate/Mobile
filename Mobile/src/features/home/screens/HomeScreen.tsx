@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppState, AppStateStatus, Modal, BackHandler } from 'react-native';
 import { AppStackParamList } from '../../../navigation/types';
@@ -30,6 +30,7 @@ import {
   describeRequestResultMessage,
   describeRequestResultTitle,
 } from '../../../utils/collaborationRequest';
+import { useSubmitLock } from '../../../hooks/useSubmitLock';
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
@@ -38,10 +39,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const queryClient = useQueryClient();
   const createFullPlanMutation = useCreateFullPlan();
 
-  const [isCreating, setIsCreating] = useState(false);
-  // isCreating은 다음 렌더에야 반영되므로 같은 프레임의 연타를 막지 못한다.
-  // 일정이 중복 생성되지 않도록 동기적으로 읽히는 ref로 잠근다.
-  const isCreatingRef = useRef(false);
+  const { isSubmitting: isCreating, runExclusive: runCreateExclusive } =
+    useSubmitLock();
 
   useEffect(() => {
     if (!isCreating) return;
@@ -197,6 +196,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const isFormValid =
     destination !== '' &&
+    travelId > 0 &&
     startDate !== null &&
     endDate !== null &&
     adults !== null;
@@ -222,13 +222,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     return `${formatDate(startDate)} ~ ${formatDate(endDate)}`;
   };
 
-  const handleCreateItinerary = async () => {
-    if (isCreatingRef.current) return;
+  const handleCreateItinerary = () => {
     if (!isFormValid) {
       return;
     }
 
-    if (travelId === undefined || travelId <= 0) {
+    if (travelId <= 0) {
       showAlert({
         title: '알림',
         message:
@@ -241,78 +240,70 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       return;
     }
 
-    isCreatingRef.current = true;
-    setIsCreating(true);
+    return runCreateExclusive(async () => {
+      try {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
 
-    try {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      start.setHours(0, 0, 0, 0);
-      end.setHours(0, 0, 0, 0);
+        const timetableVOs: { date: string; timeTableStartTime: string; timeTableEndTime: string }[] = [];
+        const currentDate = new Date(start);
 
-      const timetableVOs: { date: string; timeTableStartTime: string; timeTableEndTime: string }[] = [];
-      const currentDate = new Date(start);
+        while (currentDate.getTime() <= end.getTime()) {
+          timetableVOs.push({
+            date: formatDateLocal(currentDate),
+            timeTableStartTime: '09:00:00',
+            timeTableEndTime: '20:00:00',
+          });
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
 
-      while (currentDate.getTime() <= end.getTime()) {
-        timetableVOs.push({
-          date: formatDateLocal(currentDate),
-          timeTableStartTime: '09:00:00',
-          timeTableEndTime: '20:00:00',
+        const result = await createFullPlanMutation.mutateAsync({
+          planFrame: {
+            destinationId: travelId,
+            adultCount: adults ?? 1,
+            childCount: children ?? 0,
+          },
+          timetables: timetableVOs,
+          timetablePlaceBlocks: [],
         });
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
 
-      const result = await createFullPlanMutation.mutateAsync({
-        planFrame: {
-          destinationId: travelId,
-          adultCount: adults ?? 1,
-          childCount: children ?? 0,
-        },
-        timetables: timetableVOs,
-        timetablePlaceBlocks: [],
-      });
+        const newPlanId = result?.planId;
 
-      const newPlanId = result?.planId;
+        if (!newPlanId) {
+          console.error('Plan creation response did not include planId:', result);
+          showAlert({
+            title: '일정을 확인할 수 없습니다',
+            message: '일정 생성 응답에 식별자가 없습니다. 내 일정에서 생성 여부를 확인해주세요.',
+          });
+          return;
+        }
 
-      if (!newPlanId) {
-        console.error('Plan creation response did not include planId:', result);
-        isCreatingRef.current = false;
-        setIsCreating(false);
+        navigation.navigate('ItineraryEditor', {
+          planId: newPlanId,
+          departure: 'SEOUL',
+          destination,
+          travelId: travelId || 0,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          adults: adults ?? 1,
+          children: children ?? 0,
+        });
+      } catch (error) {
+        console.error('일정 생성 준비 실패:', error);
+
         showAlert({
-          title: '일정을 확인할 수 없습니다',
-          message: '일정 생성 응답에 식별자가 없습니다. 내 일정에서 생성 여부를 확인해주세요.',
+          title: '일정을 만들지 못했습니다',
+          message:
+            '입력한 내용은 그대로 남아 있어요.\n네트워크 상태를 확인하고 다시 시도해주세요.',
+          buttons: [
+            { text: '닫기', style: 'cancel' },
+            { text: '다시 시도', onPress: () => void handleCreateItinerary() },
+          ],
         });
-        return;
       }
-
-      isCreatingRef.current = false;
-      setIsCreating(false);
-
-      navigation.navigate('ItineraryEditor', {
-        planId: newPlanId,
-        departure: 'SEOUL',
-        destination,
-        travelId: travelId || 0,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        adults: adults ?? 1,
-        children: children ?? 0,
-      });
-    } catch (error) {
-      console.error('일정 생성 준비 실패:', error);
-      isCreatingRef.current = false;
-      setIsCreating(false);
-
-      showAlert({
-        title: '일정을 만들지 못했습니다',
-        message:
-          '입력한 내용은 그대로 남아 있어요.\n네트워크 상태를 확인하고 다시 시도해주세요.',
-        buttons: [
-          { text: '닫기', style: 'cancel' },
-          { text: '다시 시도', onPress: () => void handleCreateItinerary() },
-        ],
-      });
-    }
+    });
   };
 
   const openSearchModal = () => {
