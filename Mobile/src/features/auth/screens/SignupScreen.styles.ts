@@ -20,21 +20,6 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  progressTrack: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: sf(5),
-  },
-  progressSegment: {
-    flex: 1,
-    height: sf(4),
-    borderRadius: sf(2),
-    backgroundColor: COLORS.border,
-  },
-  progressSegmentOn: {
-    backgroundColor: COLORS.primary,
-  },
   progressCount: {
     fontSize: sp(TYPO.label.fontSize),
     fontFamily: TYPO.label.fontFamily,

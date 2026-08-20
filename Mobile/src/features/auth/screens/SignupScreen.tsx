@@ -15,8 +15,10 @@ import { getPasswordRequirements } from '../../../utils/passwordPolicy';
 import { verifyNicknameAvailable } from '../../../api/auth';
 import { setAdjustNothing, setAdjustResize } from '../../../utils/softInputMode';
 import { deadlineFromNow, secondsUntil } from '../../../utils/countdown';
+import { useSubmitLock } from '../../../hooks/useSubmitLock';
 
 const DUPLICATE_EMAIL_CODE = 'AUTH_004';
+const NICKNAME_TAKEN_CODE = 'AUTH_005';
 
 const GENDER_ENUM: Record<string, string> = { male: 'MALE', female: 'FEMALE' };
 
@@ -72,7 +74,6 @@ export default function SignupScreen() {
 
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [showVerificationInput, setShowVerificationInput] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -327,6 +328,8 @@ export default function SignupScreen() {
     return () => clearTimeout(id);
   }, [form.nickname, step]);
 
+  const { isSubmitting, runExclusive: runSignupExclusive } = useSubmitLock();
+
   const handleSignup = useCallback(async () => {
     if (!emailAuthToken) {
       showAlert({
@@ -354,47 +357,53 @@ export default function SignupScreen() {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      await axios.post('/api/auth/register', {
-        signupToken: emailAuthToken,
-        nickname: form.nickname.trim(),
-        password: form.password,
-        gender: genderEnum,
-        birthdate: form.birthdate,
-      });
-
+    await runSignupExclusive(async () => {
       try {
-        setNeedsThemeSelection(true);
-        await login(form.email.trim(), form.password);
+        await axios.post('/api/auth/register', {
+          signupToken: emailAuthToken,
+          nickname: form.nickname.trim(),
+          password: form.password,
+          gender: genderEnum,
+          birthdate: form.birthdate,
+        });
 
-      } catch (loginError) {
-        setNeedsThemeSelection(false);
-        showAlert({
-          title: '환영합니다!',
-          message: '회원가입이 완료되었습니다. 로그인 해주세요.',
-          type: 'success',
-          buttons: [
-            { text: '확인', onPress: () => navigation.navigate('Login') },
-          ],
+        try {
+          setNeedsThemeSelection(true);
+          await login(form.email.trim(), form.password);
+
+        } catch (loginError) {
+          setNeedsThemeSelection(false);
+          showAlert({
+            title: '환영합니다!',
+            message: '회원가입이 완료되었습니다. 로그인 해주세요.',
+            type: 'success',
+            buttons: [
+              { text: '확인', onPress: () => navigation.navigate('Login') },
+            ],
+          });
+        }
+      } catch (error) {
+        const { code } = parseBackendError(error);
+        if (code === NICKNAME_TAKEN_CODE) {
+          setNicknameStatus('taken');
+          setFieldError('nickname', '이미 사용 중인 닉네임이에요.');
+          return;
+        }
+        setErrors({
+          form: getDisplayErrorMessage(
+            error,
+            '회원가입에 실패했어요. 다시 시도해 주세요.',
+          ),
         });
       }
-    } catch (error) {
-      setErrors({
-        form: getDisplayErrorMessage(
-          error,
-          '회원가입에 실패했어요. 다시 시도해 주세요.',
-        ),
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   }, [
     emailAuthToken,
     form,
     isAgreed,
     login,
     navigation,
+    runSignupExclusive,
     setNeedsThemeSelection,
     showAlert,
     setFieldError,
@@ -438,6 +447,12 @@ export default function SignupScreen() {
   ]);
 
   const handleNextStep = useCallback(() => {
+    if (step === 1) {
+      if (!isEmailVerified) {
+        setFieldError('email', '이메일 인증을 완료해 주세요.');
+        return;
+      }
+    }
     if (step === 2) {
       if (!passwordRequirements.hasMinLength || !passwordRequirements.hasCombination) {
         setFieldError('password', '비밀번호 조건을 모두 채워 주세요.');
@@ -468,6 +483,7 @@ export default function SignupScreen() {
   }, [
     step,
     totalSteps,
+    isEmailVerified,
     passwordRequirements,
     isPasswordMatch,
     form.nickname,
