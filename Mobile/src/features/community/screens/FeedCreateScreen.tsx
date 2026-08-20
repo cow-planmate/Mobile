@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -43,7 +43,12 @@ export default function FeedCreateScreen() {
     useNavigation<NativeStackNavigationProp<FeedStackParamList>>();
   const route = useRoute<FeedCreateRoute>();
   const { showAlert } = useAlert();
-  const { data: profile, isLoading: isProfileLoading } = useUserProfile();
+  const {
+    data: profile,
+    isLoading: isProfileLoading,
+    isError: isProfileError,
+    refetch: refetchProfile,
+  } = useUserProfile();
   const createPost = useCreatePost();
   const postId = route.params?.postId;
   const isEditMode = !!postId;
@@ -57,15 +62,18 @@ export default function FeedCreateScreen() {
   const [tags, setTags] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
 
+  const hydratedPostId = useRef<string | undefined>(undefined);
   useEffect(() => {
     const post = existingPost.data;
     if (!post || post.category !== 'feed') return;
+    if (hydratedPostId.current === postId) return;
 
+    hydratedPostId.current = postId;
     setTitle(post.title);
     setContent(post.contentText);
     setTags((post.tags ?? []).join(', '));
     setThumbnailUrl(post.image ?? '');
-  }, [existingPost.data]);
+  }, [existingPost.data, postId]);
 
   const ownedPlans = useMemo(
     () => (profile?.myPlans ?? []).filter(plan => !plan.isShared),
@@ -183,6 +191,12 @@ export default function FeedCreateScreen() {
           </View>
         ) : isProfileLoading ? (
           <ActivityIndicator color={tokens.colors.primary} />
+        ) : isProfileError ? (
+          <Pressable onPress={() => refetchProfile()}>
+            <Text style={styles.emptyText}>
+              일정을 불러오지 못했어요. 다시 시도하려면 눌러 주세요.
+            </Text>
+          </Pressable>
         ) : ownedPlans.length === 0 ? (
           <Text style={styles.emptyText}>발행할 내 일정이 없어요.</Text>
         ) : (

@@ -23,39 +23,71 @@ jest.mock('@shopify/flash-list', () => {
   };
 });
 
-jest.mock('lucide-react-native', () => {
-  const { View } = require('react-native');
-  return {
-    ThumbsUp: () => <View testID="mock-icon-thumbsup" />,
-    ThumbsDown: () => <View testID="mock-icon-thumbsdown" />,
-    MessageSquare: () => <View testID="mock-icon-message" />,
-    Eye: () => <View testID="mock-icon-eye" />,
-    Copy: () => <View testID="mock-icon-copy" />,
-    Clock: () => <View testID="mock-icon-clock" />,
-  };
-});
-
-jest.mock('../../../../theme/theme', () => ({
-  theme: {
-    colors: {
-      primary: '#000',
-      background: '#fff',
-      white: '#fff',
-      surface: '#eee',
-      borderLight: '#ddd',
-      border: '#ccc',
-      text: '#111',
-      textSecondary: '#666',
-      textTertiary: '#999',
-      textLabel: '#444',
-      sub: '#fafafa',
-    },
-  },
+jest.mock('lucide-react-native/dist/esm/icons/thumbs-up', () => ({
+  __esModule: true,
+  default: () =>
+    require('react').createElement(require('react-native').View, {
+      testID: 'mock-icon-thumbsup',
+    }),
+}));
+jest.mock('lucide-react-native/dist/esm/icons/thumbs-down', () => ({
+  __esModule: true,
+  default: () =>
+    require('react').createElement(require('react-native').View, {
+      testID: 'mock-icon-thumbsdown',
+    }),
+}));
+jest.mock('lucide-react-native/dist/esm/icons/message-square', () => ({
+  __esModule: true,
+  default: () =>
+    require('react').createElement(require('react-native').View, {
+      testID: 'mock-icon-message',
+    }),
+}));
+jest.mock('lucide-react-native/dist/esm/icons/eye', () => ({
+  __esModule: true,
+  default: () =>
+    require('react').createElement(require('react-native').View, {
+      testID: 'mock-icon-eye',
+    }),
+}));
+jest.mock('lucide-react-native/dist/esm/icons/copy', () => ({
+  __esModule: true,
+  default: () =>
+    require('react').createElement(require('react-native').View, {
+      testID: 'mock-icon-copy',
+    }),
+}));
+jest.mock('lucide-react-native/dist/esm/icons/clock', () => ({
+  __esModule: true,
+  default: () =>
+    require('react').createElement(require('react-native').View, {
+      testID: 'mock-icon-clock',
+    }),
 }));
 
 jest.mock('../../../../utils/normalize', () => ({
   normalize: (size: number) => size,
 }));
+
+const mockItem = {
+  id: '1',
+  title: '제주 3박4일',
+  description: '가족과 함께한 여행',
+  author: '민영',
+  authorAvatar: '',
+  authorLevel: 2,
+  thumbnailUrl: 'https://example.com/thumb.jpg',
+  createdAt: '2026.08.01',
+  likes: 3,
+  dislikes: 0,
+  comments: 1,
+  views: 10,
+  forks: 0,
+  tags: ['#뚜벅이최적화'],
+  location: '제주',
+  duration: '3박4일',
+};
 
 describe('TravelFeedList Component', () => {
   beforeEach(() => {
@@ -81,5 +113,33 @@ describe('TravelFeedList Component', () => {
     expect(tree).toBeTruthy();
 
     expect(JSON.stringify(tree)).toContain('mock-flash-list');
+  });
+
+  it('renders a populated list card', async () => {
+    let component: any;
+
+    await act(async () => {
+      component = renderer.create(
+        <TravelFeedList items={[mockItem]} viewMode="list" />,
+      );
+    });
+
+    const tree = JSON.stringify(component.toJSON());
+    expect(tree).toContain(mockItem.title);
+    expect(tree).toContain(mockItem.author);
+  });
+
+  it('renders a populated grid card with an author avatar fallback', async () => {
+    let component: any;
+
+    await act(async () => {
+      component = renderer.create(
+        <TravelFeedList items={[mockItem]} viewMode="grid" />,
+      );
+    });
+
+    const tree = JSON.stringify(component.toJSON());
+    expect(tree).toContain(mockItem.title);
+    expect(tree).toContain(mockItem.author.charAt(0));
   });
 });

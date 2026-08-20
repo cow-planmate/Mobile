@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Search from 'lucide-react-native/dist/esm/icons/search';
 import LayoutGrid from 'lucide-react-native/dist/esm/icons/layout-grid';
@@ -122,10 +123,20 @@ export default function TravelFeedScreen() {
   }, [searchQuery]);
 
   useEffect(() => {
-    if (filterRegion !== ALL && !regions.includes(filterRegion)) {
+    if (
+      regionCountsQuery.isSuccess &&
+      filterRegion !== ALL &&
+      !regions.includes(filterRegion)
+    ) {
       setFilterRegion(ALL);
+      Toast.show({
+        type: 'info',
+        text1: `'${filterRegion}' 지역의 여행기가 없어 전체로 되돌렸어요.`,
+        position: 'top',
+        visibilityTime: 2500,
+      });
     }
-  }, [filterRegion, regions]);
+  }, [filterRegion, regions, regionCountsQuery.isSuccess]);
 
   const feedFilters: FeedFilterParams = useMemo(() => {
     const duration = DURATION_RANGES[filterDuration];
