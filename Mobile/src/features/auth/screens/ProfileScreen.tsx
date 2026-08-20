@@ -46,6 +46,7 @@ export default function ProfileScreen({ route }: any) {
   const { data, isLoading, isError, refetch } = useUserProfile();
   const { data: communityStats, isLoading: isCommunityStatsLoading } = useMyStats();
   const user = data ?? EMPTY_PROFILE;
+  const authUser = useAuthStore(state => state.user);
 
   const [isThemeModalVisible, setThemeModalVisible] = useState(false);
   const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
@@ -56,8 +57,15 @@ export default function ProfileScreen({ route }: any) {
       queryClient.setQueryData<UserProfile>(USER_PROFILE_QUERY_KEY, prev =>
         prev ? { ...prev, ...patch } : prev,
       );
+      // 커뮤니티 게시글에서 본인 프로필 카드를 열 때 이름·사진이 변경 전 상태로
+      // 5분간 캐시되어 보이지 않도록, 본인 publicProfile 캐시도 함께 무효화한다.
+      if (authUser?.userId) {
+        void queryClient.invalidateQueries({
+          queryKey: ['publicProfile', authUser.userId],
+        });
+      }
     },
-    [queryClient],
+    [queryClient, authUser?.userId],
   );
 
   const refetchProfile = useCallback(
