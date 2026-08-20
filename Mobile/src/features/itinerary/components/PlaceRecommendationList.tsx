@@ -28,6 +28,7 @@ import { usePlaces } from '../../../contexts/PlacesContext';
 import { PlaceVO } from '../../../api/trips';
 import { GoogleMapsIcon } from '../../../components/common';
 import { tokens } from '../../../theme/tokens';
+import { normalizeCategoryId } from '../../../utils/placeCategory';
 const FONTS = {
   regular: 'Pretendard-Regular',
   medium: 'Pretendard-Medium',
@@ -106,27 +107,6 @@ const EMPTY_STATE_CONFIG: Record<
     subtitle: '추가된 장소는 일정에 바로 반영돼요.',
     note: '추가된 장소는 순서에 따라 자동 저장돼요.',
   },
-};
-
-const normalizeCategoryId = (
-  rawId: number | undefined,
-  type?: string,
-): number => {
-  const id = rawId ?? 4;
-  if ([0, 1, 2, 3, 4].includes(id)) return id;
-  if ([12, 14, 15, 28].includes(id)) return 0;
-  if (id === 32) return 1;
-  if (id === 39) return 2;
-  switch (type) {
-    case '관광지':
-      return 0;
-    case '숙소':
-      return 1;
-    case '식당':
-      return 2;
-    default:
-      return 4;
-  }
 };
 
 function placeVOToPlace(

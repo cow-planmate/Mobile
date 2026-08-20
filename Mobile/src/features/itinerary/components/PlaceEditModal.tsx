@@ -14,7 +14,7 @@ import FastImage from 'react-native-fast-image';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import MapIcon from 'lucide-react-native/dist/esm/icons/map';
 import { openExternalUrl } from '../../../utils/externalLink';
-import { dateToTime } from '../../../utils/timeUtils';
+import { dateToTime, timeToDate, timeToMinutes } from '../../../utils/timeUtils';
 import { theme } from '../../../theme/theme';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CATEGORY_COLORS } from './TimelineItem.styles';
@@ -39,6 +39,8 @@ const FONTS = {
 interface PlaceEditModalProps {
   visible: boolean;
   place: any;
+  dayStartTime?: string;
+  dayEndTime?: string;
   onClose: () => void;
   onSave: (updatedPlace: any) => void;
   onDelete: (placeId: string) => void;
@@ -47,6 +49,8 @@ interface PlaceEditModalProps {
 export default function PlaceEditModal({
   visible,
   place,
+  dayStartTime,
+  dayEndTime,
   onClose,
   onSave,
   onDelete,
@@ -61,33 +65,37 @@ export default function PlaceEditModal({
   useEffect(() => {
     if (visible && place) {
       setMemo(place.memo || '');
-
-      const today = new Date();
-      const [sh, sm] = (place.startTime || '09:00').split(':').map(Number);
-      const [eh, em] = (place.endTime || '10:00').split(':').map(Number);
-
-      const sDate = new Date(today);
-      sDate.setHours(sh, sm, 0);
-      setStartTime(sDate);
-
-      const eDate = new Date(today);
-      eDate.setHours(eh, em, 0);
-      setEndTime(eDate);
+      setStartTime(timeToDate(place.startTime || '09:00'));
+      setEndTime(timeToDate(place.endTime || '10:00'));
     }
   }, [visible, place]);
 
   const handleSave = () => {
-    const formatTime = (date: Date) => {
-      return `${date.getHours().toString().padStart(2, '0')}:${date
-        .getMinutes()
+    const formatMinutes = (minutes: number) =>
+      `${Math.floor(minutes / 60)
         .toString()
-        .padStart(2, '0')}:00`;
-    };
+        .padStart(2, '0')}:${(minutes % 60).toString().padStart(2, '0')}:00`;
 
-    if (
-      startTime.getHours() * 60 + startTime.getMinutes() >=
-      endTime.getHours() * 60 + endTime.getMinutes()
-    ) {
+    let startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
+    let endMinutes = endTime.getHours() * 60 + endTime.getMinutes();
+
+    // 시간대를 하루 범위 밖으로 잡으면 타임라인 그리드 밖으로 밀려나 화면에서
+    // 사라지므로, 저장 전에 그 날의 시작·종료 범위 안으로 당겨온다.
+    if (dayStartTime || dayEndTime) {
+      const duration = endMinutes - startMinutes;
+      const minMinutes = timeToMinutes(dayStartTime || '00:00');
+      const maxMinutes = dayEndTime ? timeToMinutes(dayEndTime) : 24 * 60;
+      if (startMinutes < minMinutes) {
+        startMinutes = minMinutes;
+        endMinutes = minMinutes + duration;
+      }
+      if (endMinutes > maxMinutes) {
+        endMinutes = maxMinutes;
+        startMinutes = maxMinutes - duration;
+      }
+    }
+
+    if (startMinutes >= endMinutes) {
       showAlert({
         title: '시간 설정 오류',
         message: '종료 시간은 시작 시간보다 늦어야 합니다.',
@@ -98,8 +106,8 @@ export default function PlaceEditModal({
     onSave({
       ...place,
       memo,
-      startTime: formatTime(startTime),
-      endTime: formatTime(endTime),
+      startTime: formatMinutes(startMinutes),
+      endTime: formatMinutes(endMinutes),
     });
     onClose();
   };

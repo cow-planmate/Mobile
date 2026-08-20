@@ -11,6 +11,7 @@ import React, {
 import { Place } from '../features/itinerary/components/TimelineItem';
 export type { Place };
 import { useWebSocket } from './WebSocketContext';
+import { normalizeCategoryId } from '../utils/placeCategory';
 
 export interface Day {
   timetableId?: number;
@@ -168,29 +169,6 @@ export const categoryMapping = (
   if (id === 3) return '직접 추가';
   if (id === 4) return '검색';
   return '기타';
-};
-
-const normalizeCategoryId = (
-  rawId: number | undefined,
-  type?: string,
-): number => {
-  const id = rawId ?? 4;
-  if ([0, 1, 2, 3, 4].includes(id)) return id;
-  if ([12, 14, 15, 28].includes(id)) return 0; 
-  if (id === 32) return 1; 
-  if (id === 39) return 2; 
-  switch (type) {
-    case '관광지':
-      return 0;
-    case '숙소':
-      return 1;
-    case '식당':
-      return 2;
-    case '직접 추가':
-      return 3;
-    default:
-      return 4;
-  }
 };
 
 const categoryToBlockCategory = (categoryId: number): string => {

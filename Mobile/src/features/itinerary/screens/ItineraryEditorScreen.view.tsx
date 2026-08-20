@@ -414,6 +414,8 @@ const DraggableTimelineItem = React.memo(({
     }
   };
 
+  React.useEffect(() => clearScrollInterval, []);
+
   const panGestureMove = Gesture.Pan()
     .minDistance(10)
     .onBegin(() => {

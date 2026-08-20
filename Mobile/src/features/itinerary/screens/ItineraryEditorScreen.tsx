@@ -36,27 +36,7 @@ import ParticipantsModal from '../components/ParticipantsModal';
 import PlanMapModal from '../components/PlanMapModal';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
 import EditAccessGate from '../components/EditAccessGate';
-
-const normalizeCategoryId = (
-  rawId: number | undefined,
-  type?: string,
-): number => {
-  const id = rawId ?? 4;
-  if ([0, 1, 2, 3, 4].includes(id)) return id;
-  if ([12, 14, 15, 28].includes(id)) return 0;
-  if (id === 32) return 1;
-  if (id === 39) return 2;
-  switch (type) {
-    case '관광지':
-      return 0;
-    case '숙소':
-      return 1;
-    case '식당':
-      return 2;
-    default:
-      return 4;
-  }
-};
+import { normalizeCategoryId } from '../../../utils/placeCategory';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
@@ -839,6 +819,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         <PlaceEditModal
           visible={isPlaceEditModalVisible}
           place={editingPlace}
+          dayStartTime={selectedDay?.startTime || DEFAULT_DAY_START}
+          dayEndTime={selectedDay?.endTime || DEFAULT_DAY_END}
           onClose={() => {
             setPlaceEditModalVisible(false);
             setEditingPlace(null);
