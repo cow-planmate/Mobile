@@ -75,6 +75,8 @@ export default function FeedCreateScreen() {
     setThumbnailUrl(post.image ?? '');
   }, [existingPost.data, postId]);
 
+  const isHydrating = isEditMode && hydratedPostId.current !== postId;
+
   const ownedPlans = useMemo(
     () => (profile?.myPlans ?? []).filter(plan => !plan.isShared),
     [profile?.myPlans],
@@ -272,7 +274,10 @@ export default function FeedCreateScreen() {
           value={title}
           onChangeText={setTitle}
           style={styles.input}
-          placeholder="여행기 제목을 입력하세요"
+          placeholder={
+            isHydrating ? '기존 내용을 불러오는 중…' : '여행기 제목을 입력하세요'
+          }
+          editable={!isHydrating}
           maxLength={100}
         />
 
@@ -282,6 +287,7 @@ export default function FeedCreateScreen() {
           onChangeText={setContent}
           style={[styles.input, styles.contentInput]}
           placeholder="여행을 소개해 주세요"
+          editable={!isHydrating}
           multiline
           textAlignVertical="top"
         />
@@ -292,6 +298,7 @@ export default function FeedCreateScreen() {
           onChangeText={setTags}
           style={styles.input}
           placeholder="#뚜벅이, #가족여행"
+          editable={!isHydrating}
         />
 
         <Text style={styles.label}>썸네일 URL</Text>
@@ -299,6 +306,7 @@ export default function FeedCreateScreen() {
           value={thumbnailUrl}
           onChangeText={setThumbnailUrl}
           style={styles.input}
+          editable={!isHydrating}
           placeholder="비워 두면 일정의 첫 사진을 사용합니다"
           autoCapitalize="none"
         />

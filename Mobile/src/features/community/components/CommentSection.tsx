@@ -159,6 +159,7 @@ export default function CommentSection({
   const commentLock = useSubmitLock();
   const replyLock = useSubmitLock();
   const editLock = useSubmitLock();
+  const deleteLock = useSubmitLock();
 
   const handleSubmit = useCallback(
     async (text: string) => {
@@ -236,17 +237,18 @@ export default function CommentSection({
         {
           text: '삭제',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteComment.mutateAsync(commentId);
-            } catch (error) {
-              showAlert({
-                title: '댓글 삭제 실패',
-                message: getBackendErrorMessage(error),
-                type: 'error',
-              });
-            }
-          },
+          onPress: () =>
+            deleteLock.runExclusive(async () => {
+              try {
+                await deleteComment.mutateAsync(commentId);
+              } catch (error) {
+                showAlert({
+                  title: '댓글 삭제 실패',
+                  message: getBackendErrorMessage(error),
+                  type: 'error',
+                });
+              }
+            }),
         },
       ],
     });

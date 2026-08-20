@@ -40,6 +40,7 @@ import LevelBadge from '../components/LevelBadge';
 import { ReactionType } from '../types';
 import { styles, COLORS } from './PostDetailScreen.styles';
 import { tokens } from '../../../theme/tokens';
+import { useSubmitLock } from '../../../hooks/useSubmitLock';
 
 type DetailRoute = RouteProp<CommunityStackParamList, 'CommunityDetail'>;
 
@@ -63,20 +64,23 @@ export default function PostDetailScreen() {
 
   const isAuthor = !!post && user?.userId === post.userId;
 
-  const handleReact = async (type: ReactionType) => {
+  const reactLock = useSubmitLock();
+  const handleReact = (type: ReactionType) => {
     if (!isLoggedIn) {
       showAlert({ title: '로그인 필요', message: '로그인 후 이용할 수 있어요.' });
       return;
     }
-    try {
-      await react.mutateAsync(type);
-    } catch (error) {
-      showAlert({
-        title: '반응 등록 실패',
-        message: getBackendErrorMessage(error),
-        type: 'error',
-      });
-    }
+    return reactLock.runExclusive(async () => {
+      try {
+        await react.mutateAsync(type);
+      } catch (error) {
+        showAlert({
+          title: '반응 등록 실패',
+          message: getBackendErrorMessage(error),
+          type: 'error',
+        });
+      }
+    });
   };
 
   const handleDelete = () => {
@@ -308,7 +312,7 @@ export default function PostDetailScreen() {
                 onPress={handleDelete}
                 activeOpacity={0.8}
               >
-                <Trash2 size={normalize(12)} color={COLORS.danger} />
+                <Trash2 size={normalize(12)} color={tokens.tones.danger.fg} />
                 <Text
                   style={[
                     styles.authorActionText,
@@ -366,6 +370,7 @@ export default function PostDetailScreen() {
             ]}
             onPress={() => handleReact('like')}
             activeOpacity={0.85}
+            disabled={react.isPending || reactLock.isSubmitting}
           >
             <ThumbsUp
               size={normalize(14)}
@@ -390,6 +395,7 @@ export default function PostDetailScreen() {
             ]}
             onPress={() => handleReact('dislike')}
             activeOpacity={0.85}
+            disabled={react.isPending || reactLock.isSubmitting}
           >
             <ThumbsDown
               size={normalize(14)}

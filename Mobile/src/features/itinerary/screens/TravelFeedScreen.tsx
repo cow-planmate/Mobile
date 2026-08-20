@@ -164,7 +164,7 @@ export default function TravelFeedScreen() {
           authorAvatar:
             resolveAvatarUrl(post.authorImage, post.authorAvatarHash, 100) ?? '',
           authorLevel: post.level,
-          thumbnailUrl: post.image ?? FEED_FALLBACK_IMAGE,
+          thumbnailUrl: post.image || FEED_FALLBACK_IMAGE,
           createdAt: post.createdAt,
           likes: post.likes,
           dislikes: post.dislikes,

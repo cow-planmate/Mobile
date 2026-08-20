@@ -1,9 +1,8 @@
 import { StyleSheet } from 'react-native';
-import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
 import { tokens } from '../../../theme/tokens';
 
-export const COLORS = theme.colors;
+export const COLORS = tokens.colors;
 
 export const styles = StyleSheet.create({
   container: {
@@ -28,7 +27,7 @@ export const styles = StyleSheet.create({
   },
   topBarTitle: {
     fontSize: normalize(15),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.text,
   },
   topBarActions: {
@@ -45,13 +44,13 @@ export const styles = StyleSheet.create({
   },
   stateText: {
     fontSize: normalize(13),
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: tokens.fontFamily.medium,
     color: COLORS.textTertiary,
     textAlign: 'center',
   },
   stateLink: {
     fontSize: normalize(13),
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: tokens.fontFamily.bold,
     color: COLORS.primary,
   },
 
@@ -71,11 +70,11 @@ export const styles = StyleSheet.create({
   statusTag: {
     paddingHorizontal: normalize(8),
     paddingVertical: normalize(3),
-    borderRadius: theme.borderRadius.s,
+    borderRadius: tokens.radius.s,
   },
   statusTagText: {
     fontSize: normalize(10),
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: tokens.fontFamily.bold,
   },
   statusTagAnswered: {
     backgroundColor: '#D1FAE5',
@@ -92,7 +91,7 @@ export const styles = StyleSheet.create({
   title: {
     fontSize: normalize(19),
     lineHeight: normalize(27),
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: tokens.fontFamily.bold,
     color: COLORS.text,
     marginBottom: normalize(10),
   },
@@ -109,12 +108,12 @@ export const styles = StyleSheet.create({
   },
   metaAuthor: {
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.textLabel,
   },
   metaText: {
     fontSize: normalize(11),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textTertiary,
   },
   metaViews: {
@@ -134,19 +133,19 @@ export const styles = StyleSheet.create({
     gap: normalize(4),
     paddingHorizontal: normalize(10),
     paddingVertical: normalize(6),
-    borderRadius: theme.borderRadius.m,
+    borderRadius: tokens.radius.m,
     backgroundColor: COLORS.borderLight,
   },
   authorActionText: {
     fontSize: normalize(11),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.textSecondary,
   },
   authorActionDanger: {
     backgroundColor: '#FEF2F2',
   },
   authorActionDangerText: {
-    color: COLORS.danger,
+    color: tokens.tones.danger.fg,
   },
   authorActionAccent: {
     backgroundColor: '#ECFDF5',
@@ -162,7 +161,7 @@ export const styles = StyleSheet.create({
     marginTop: normalize(12),
     paddingHorizontal: normalize(12),
     paddingVertical: normalize(10),
-    borderRadius: theme.borderRadius.l,
+    borderRadius: tokens.radius.l,
     backgroundColor: COLORS.sub,
   },
   mateCount: {
@@ -172,13 +171,13 @@ export const styles = StyleSheet.create({
   },
   mateCountText: {
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.textLabel,
   },
   mateButton: {
     paddingHorizontal: normalize(14),
     paddingVertical: normalize(7),
-    borderRadius: theme.borderRadius.m,
+    borderRadius: tokens.radius.m,
     backgroundColor: COLORS.primary,
   },
   mateButtonDisabled: {
@@ -186,7 +185,7 @@ export const styles = StyleSheet.create({
   },
   mateButtonText: {
     fontSize: normalize(11),
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: tokens.fontFamily.bold,
     color: COLORS.white,
   },
 
@@ -207,7 +206,7 @@ export const styles = StyleSheet.create({
     gap: normalize(6),
     paddingHorizontal: normalize(18),
     paddingVertical: normalize(9),
-    borderRadius: theme.borderRadius.l,
+    borderRadius: tokens.radius.l,
     borderWidth: 1,
     borderColor: COLORS.border,
     backgroundColor: COLORS.white,
@@ -217,12 +216,12 @@ export const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   reactionButtonActiveDislike: {
-    backgroundColor: tokens.colors.textSecondary,
-    borderColor: tokens.colors.textSecondary,
+    backgroundColor: COLORS.textSecondary,
+    borderColor: COLORS.textSecondary,
   },
   reactionText: {
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.textSecondary,
   },
   reactionTextActive: {

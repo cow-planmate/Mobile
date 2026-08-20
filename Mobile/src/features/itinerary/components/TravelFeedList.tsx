@@ -1,11 +1,12 @@
-import React, { useCallback, useState } from 'react';
-import FastImage from 'react-native-fast-image';
+import React, { useCallback, useEffect, useState } from 'react';
+import FastImage, { ImageStyle } from 'react-native-fast-image';
 import {
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  StyleProp,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import ThumbsUp from 'lucide-react-native/dist/esm/icons/thumbs-up';
@@ -56,6 +57,10 @@ interface TravelFeedListProps {
 const FeedAvatar = ({ uri, name }: { uri: string; name: string }) => {
   const [failed, setFailed] = useState(false);
 
+  useEffect(() => {
+    setFailed(false);
+  }, [uri]);
+
   if (uri && !failed) {
     return (
       <FastImage
@@ -72,6 +77,33 @@ const FeedAvatar = ({ uri, name }: { uri: string; name: string }) => {
       <Text style={styles.avatarFallbackText}>{(name || '?').charAt(0)}</Text>
     </View>
   );
+};
+
+const FeedThumbnail = ({
+  uri,
+  style,
+}: {
+  uri: string;
+  style: StyleProp<ImageStyle>;
+}) => {
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [uri]);
+
+  if (uri && !failed) {
+    return (
+      <FastImage
+        source={{ uri, priority: FastImage.priority.normal }}
+        style={style}
+        resizeMode={FastImage.resizeMode.cover}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  return <View style={style} />;
 };
 
 const FeedStats = ({ item }: { item: TravelFeedItem }) => (
@@ -127,14 +159,7 @@ const FeedListItem = React.memo(function FeedListItem({
         accessibilityLabel={item.title}
       >
         <View style={styles.thumbnailContainer}>
-          <FastImage
-            source={{
-              uri: item.thumbnailUrl,
-              priority: FastImage.priority.normal,
-            }}
-            style={styles.thumbnail}
-            resizeMode={FastImage.resizeMode.cover}
-          />
+          <FeedThumbnail uri={item.thumbnailUrl} style={styles.thumbnail} />
           {item.location ? (
             <View style={styles.locationBadge}>
               <Text style={styles.locationBadgeText} numberOfLines={1}>
@@ -231,14 +256,7 @@ const FeedListItem = React.memo(function FeedListItem({
 
       {item.thumbnailUrl ? (
         <View style={styles.listRightContent}>
-          <FastImage
-            source={{
-              uri: item.thumbnailUrl,
-              priority: FastImage.priority.normal,
-            }}
-            style={styles.listThumbnail}
-            resizeMode={FastImage.resizeMode.cover}
-          />
+          <FeedThumbnail uri={item.thumbnailUrl} style={styles.listThumbnail} />
         </View>
       ) : null}
     </Card>
