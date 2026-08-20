@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
 import { BlockInlineContent, ContentBlock } from '../types';
 import { asBlocks, inlineToText } from '../utils/blocks';
@@ -260,8 +259,8 @@ export default function PostContentView({
 
 const styles = StyleSheet.create({
   block: {
-    color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.regular,
+    color: tokens.colors.text,
+    fontFamily: tokens.fontFamily.regular,
   },
   paragraph: {
     fontSize: normalize(14),
@@ -275,27 +274,27 @@ const styles = StyleSheet.create({
   heading1: {
     fontSize: normalize(20),
     lineHeight: normalize(28),
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: tokens.fontFamily.bold,
     marginTop: normalize(6),
     marginBottom: normalize(8),
   },
   heading2: {
     fontSize: normalize(17),
     lineHeight: normalize(25),
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: tokens.fontFamily.bold,
     marginTop: normalize(6),
     marginBottom: normalize(7),
   },
   heading3: {
     fontSize: normalize(15),
     lineHeight: normalize(23),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     marginTop: normalize(4),
     marginBottom: normalize(6),
   },
 
   bold: {
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: tokens.fontFamily.bold,
   },
   italic: {
     fontStyle: 'italic',
@@ -308,11 +307,11 @@ const styles = StyleSheet.create({
   },
   inlineCode: {
     fontFamily: 'monospace',
-    backgroundColor: theme.colors.borderLight,
+    backgroundColor: tokens.colors.borderLight,
     color: '#B91C1C',
   },
   link: {
-    color: theme.colors.primary,
+    color: tokens.colors.primary,
     textDecorationLine: 'underline',
   },
 
@@ -324,8 +323,8 @@ const styles = StyleSheet.create({
     minWidth: normalize(18),
     fontSize: normalize(14),
     lineHeight: normalize(22),
-    color: theme.colors.textSecondary,
-    fontFamily: theme.typography.fontFamily.regular,
+    color: tokens.colors.textSecondary,
+    fontFamily: tokens.fontFamily.regular,
   },
   listText: {
     flex: 1,
@@ -333,25 +332,25 @@ const styles = StyleSheet.create({
     lineHeight: normalize(22),
   },
   checked: {
-    color: theme.colors.textTertiary,
+    color: tokens.colors.textTertiary,
     textDecorationLine: 'line-through',
   },
 
   quote: {
     borderLeftWidth: normalize(3),
-    borderLeftColor: theme.colors.borderStrong,
+    borderLeftColor: tokens.colors.borderStrong,
     paddingLeft: normalize(10),
     marginBottom: normalize(10),
   },
   quoteText: {
     fontSize: normalize(14),
     lineHeight: normalize(22),
-    color: theme.colors.textSecondary,
+    color: tokens.colors.textSecondary,
   },
 
   codeBlock: {
     backgroundColor: tokens.colors.text,
-    borderRadius: theme.borderRadius.m,
+    borderRadius: tokens.radius.m,
     padding: normalize(12),
     marginBottom: normalize(10),
   },
@@ -368,20 +367,20 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: normalize(200),
-    borderRadius: theme.borderRadius.l,
-    backgroundColor: theme.colors.borderLight,
+    borderRadius: tokens.radius.l,
+    backgroundColor: tokens.colors.borderLight,
   },
   caption: {
     marginTop: normalize(5),
     fontSize: normalize(11),
-    color: theme.colors.textTertiary,
-    fontFamily: theme.typography.fontFamily.regular,
+    color: tokens.colors.textTertiary,
+    fontFamily: tokens.fontFamily.regular,
     textAlign: 'center',
   },
 
   divider: {
     height: 1,
-    backgroundColor: theme.colors.border,
+    backgroundColor: tokens.colors.border,
     marginVertical: normalize(14),
   },
 });

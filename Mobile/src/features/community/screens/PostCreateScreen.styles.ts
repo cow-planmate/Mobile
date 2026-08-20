@@ -1,8 +1,8 @@
 import { StyleSheet } from 'react-native';
-import { theme } from '../../../theme/theme';
+import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 
-export const COLORS = theme.colors;
+export const COLORS = tokens.colors;
 
 export const styles = StyleSheet.create({
   container: {
@@ -27,13 +27,13 @@ export const styles = StyleSheet.create({
   },
   topBarTitle: {
     fontSize: normalize(15),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.text,
   },
   submitButton: {
     paddingHorizontal: normalize(14),
     paddingVertical: normalize(6),
-    borderRadius: theme.borderRadius.m,
+    borderRadius: tokens.radius.m,
     backgroundColor: COLORS.primary,
   },
   submitButtonDisabled: {
@@ -41,7 +41,7 @@ export const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: tokens.fontFamily.bold,
     color: COLORS.white,
   },
 
@@ -52,7 +52,7 @@ export const styles = StyleSheet.create({
 
   fieldLabel: {
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.textLabel,
     marginBottom: normalize(7),
   },
@@ -65,7 +65,7 @@ export const styles = StyleSheet.create({
   boardChip: {
     paddingHorizontal: normalize(13),
     paddingVertical: normalize(7),
-    borderRadius: theme.borderRadius.round,
+    borderRadius: tokens.radius.round,
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -76,7 +76,7 @@ export const styles = StyleSheet.create({
   },
   boardChipText: {
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: tokens.fontFamily.medium,
     color: COLORS.textSecondary,
   },
   boardChipTextActive: {
@@ -86,12 +86,12 @@ export const styles = StyleSheet.create({
   input: {
     paddingHorizontal: normalize(12),
     paddingVertical: normalize(10),
-    borderRadius: theme.borderRadius.l,
+    borderRadius: tokens.radius.l,
     borderWidth: 1,
     borderColor: COLORS.border,
     backgroundColor: COLORS.surface,
     fontSize: normalize(14),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.text,
   },
   contentInput: {
@@ -104,7 +104,7 @@ export const styles = StyleSheet.create({
     marginTop: normalize(6),
     fontSize: normalize(11),
     lineHeight: normalize(16),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textTertiary,
   },
 });
