@@ -20,19 +20,6 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  progressTrack: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: sf(5),
-  },
-  progressSegment: {
-    flex: 1,
-    height: sf(4),
-    borderRadius: sf(2),
-    backgroundColor: COLORS.border,
-  },
-  progressSegmentOn: { backgroundColor: COLORS.primary },
   progressCount: {
     fontSize: sp(TYPO.label.fontSize),
     fontFamily: TYPO.label.fontFamily,
@@ -208,8 +195,8 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: sf(20),
   },
-  resultIconWrapSuccess: { backgroundColor: '#E8F8EC' },
-  resultIconWrapError: { backgroundColor: '#FEECEB' },
+  resultIconWrapSuccess: { backgroundColor: COLORS.successSurface },
+  resultIconWrapError: { backgroundColor: COLORS.errorSurface },
   resultTitle: {
     fontSize: sp(TYPO.headline.fontSize),
     fontFamily: TYPO.headline.fontFamily,

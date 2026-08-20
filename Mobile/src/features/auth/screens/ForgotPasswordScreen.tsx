@@ -9,6 +9,7 @@ import {
 } from './ForgotPasswordScreen.view';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 import { deadlineFromNow, secondsUntil } from '../../../utils/countdown';
+import { useSubmitLock } from '../../../hooks/useSubmitLock';
 
 const EMAIL_REGEX = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$/;
 
@@ -77,17 +78,6 @@ export default function ForgotPasswordScreen() {
   }, []);
 
   useEffect(() => {
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (step > 1) {
-        setStep(1);
-        return true;
-      }
-      return false;
-    });
-    return () => sub.remove();
-  }, [step]);
-
-  useEffect(() => {
     if (!isTimerActive) return;
     if (timeLeft <= 0) {
       setIsTimerActive(false);
@@ -119,6 +109,8 @@ export default function ForgotPasswordScreen() {
 
   const isEmailFormatValid = EMAIL_REGEX.test(email.trim());
 
+  const { runExclusive: runSendEmailExclusive } = useSubmitLock();
+
   const handleSendVerificationEmail = useCallback(async () => {
     const trimmed = email.trim();
     if (!trimmed) {
@@ -130,36 +122,38 @@ export default function ForgotPasswordScreen() {
       return;
     }
 
-    setIsSendingEmail(true);
-    clearError('email');
+    await runSendEmailExclusive(async () => {
+      setIsSendingEmail(true);
+      clearError('email');
 
-    try {
-      await axios.post('/api/auth/email/verification', {
-        email: trimmed,
-        purpose: 'RESET_PASSWORD',
-      });
+      try {
+        await axios.post('/api/auth/email/verification', {
+          email: trimmed,
+          purpose: 'RESET_PASSWORD',
+        });
 
-      setShowVerificationInput(true);
-      setVerificationCode('');
-      setIsCodeExpired(false);
-      codeDeadlineRef.current = deadlineFromNow(CODE_TTL_SECONDS);
-      setTimeLeft(CODE_TTL_SECONDS);
-      setIsTimerActive(true);
-      resendDeadlineRef.current = deadlineFromNow(RESEND_COOLDOWN_SECONDS);
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
-      setFocusSeq(seq => seq + 1);
-    } catch (error) {
-      setFieldError(
-        'email',
-        getDisplayErrorMessage(
-          error,
-          '인증번호를 보내지 못했어요. 이메일 주소를 다시 확인해 주세요.',
-        ),
-      );
-    } finally {
-      setIsSendingEmail(false);
-    }
-  }, [email, setFieldError, clearError]);
+        setShowVerificationInput(true);
+        setVerificationCode('');
+        setIsCodeExpired(false);
+        codeDeadlineRef.current = deadlineFromNow(CODE_TTL_SECONDS);
+        setTimeLeft(CODE_TTL_SECONDS);
+        setIsTimerActive(true);
+        resendDeadlineRef.current = deadlineFromNow(RESEND_COOLDOWN_SECONDS);
+        setResendCooldown(RESEND_COOLDOWN_SECONDS);
+        setFocusSeq(seq => seq + 1);
+      } catch (error) {
+        setFieldError(
+          'email',
+          getDisplayErrorMessage(
+            error,
+            '인증번호를 보내지 못했어요. 이메일 주소를 다시 확인해 주세요.',
+          ),
+        );
+      } finally {
+        setIsSendingEmail(false);
+      }
+    });
+  }, [email, setFieldError, clearError, runSendEmailExclusive]);
 
   const sendTempPassword = useCallback(async (token: string) => {
     setTempPasswordStatus('sending');
@@ -261,6 +255,18 @@ export default function ForgotPasswordScreen() {
     setFocusSeq(seq => seq + 1);
   }, []);
 
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (step > 1) {
+        handleEditEmail();
+        setStep(1);
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [step, handleEditEmail]);
+
   const handleRetryTempPassword = useCallback(() => {
 
     setErrors({});
@@ -270,12 +276,12 @@ export default function ForgotPasswordScreen() {
 
   const handlePrevStep = useCallback(() => {
     if (step > 1) {
+      handleEditEmail();
       setStep(1);
-      setErrors({});
     } else {
       navigation.goBack();
     }
-  }, [step, navigation]);
+  }, [step, navigation, handleEditEmail]);
 
   const handleGoToLogin = useCallback(() => {
     navigation.navigate('Login');
