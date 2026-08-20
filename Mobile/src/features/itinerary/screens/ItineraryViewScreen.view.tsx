@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import {
   View,
@@ -15,12 +15,13 @@ import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import Share2 from 'lucide-react-native/dist/esm/icons/share-2';
 import RouteMapSection from '../components/RouteMapSection';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
-import { ShareModal, AirplaneLoading, LoadingSpinner } from '../../../components/common';
+import { ShareModal, AirplaneLoading } from '../../../components/common';
 import TimelineItem, {
   Place,
 } from '../components/TimelineItem';
 import { Day } from '../../../contexts/ItineraryContext';
 import { SimpleWeatherInfo } from '../../../api/trips';
+import { timeToMinutes, formatDateLocal } from '../../../utils/timeUtils';
 import WeatherHeader from '../components/weather/WeatherHeader';
 import {
   styles,
@@ -30,21 +31,6 @@ import {
   GRID_TOP_OFFSET,
   COLORS,
 } from './ItineraryViewScreen.styles';
-
-const timeToMinutes = (time: string) => {
-  if (!time || typeof time !== 'string' || !time.includes(':')) {
-    return 0;
-  }
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + minutes;
-};
-
-const formatDateLocal = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
 const formatDate = (date: Date) => {
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -238,9 +224,10 @@ export interface ItineraryViewScreenViewProps {
   planId?: string;
   weatherMap: Record<string, SimpleWeatherInfo>;
   tripName: string;
-  isBacking: boolean;
 
   isWeatherLoading: boolean;
+  loadError: boolean;
+  onRetryLoad: () => void;
 }
 
 export default function ItineraryViewScreenView({
@@ -264,7 +251,8 @@ export default function ItineraryViewScreenView({
   planId,
   weatherMap,
   tripName,
-  isBacking,
+  loadError,
+  onRetryLoad,
 }: ItineraryViewScreenViewProps) {
   const selectedDay = days[selectedDayIndex];
   const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
@@ -273,6 +261,19 @@ export default function ItineraryViewScreenView({
   const isDayScrollable = dayScrollContentWidth > dayScrollLayoutWidth;
   const showLeftFade = isDayScrollable && dayScrollX > 5;
   const showRightFade = isDayScrollable && dayScrollX < dayScrollContentWidth - dayScrollLayoutWidth - 5;
+  const mapPlaces = useMemo(
+    () =>
+      selectedDay?.places.map(place => ({
+        id: place.id,
+        name: place.name,
+        address: place.address,
+        latitude: place.latitude,
+        longitude: place.longitude,
+        placeRefId: place.placeRefId,
+        place_url: place.place_url,
+      })) ?? [],
+    [selectedDay],
+  );
   const endHourVal = endHour ?? (gridHours.length > 0 ? gridHours[gridHours.length - 1] : 20);
 
   return (
@@ -399,19 +400,7 @@ export default function ItineraryViewScreenView({
       {isMapVisible && (
         <View style={styles.mapContainer}>
           <View style={styles.mapInner}>
-            <RouteMapSection
-              places={
-                selectedDay?.places.map(place => ({
-                  id: place.id,
-                  name: place.name,
-                  address: place.address,
-                  latitude: place.latitude,
-                  longitude: place.longitude,
-                  placeRefId: place.placeRefId,
-                  place_url: place.place_url,
-                })) || []
-              }
-            />
+            <RouteMapSection places={mapPlaces} />
           </View>
         </View>
       )}
@@ -477,17 +466,24 @@ export default function ItineraryViewScreenView({
       {/* 로딩이 끝나지 않으면 이 모달이 화면 전체를 덮는다 —
           안드로이드 뒤로가기로 빠져나갈 수 있어야 갇히지 않는다 */}
       <Modal
-        visible={days.length === 0 || isBacking}
+        visible={days.length === 0}
         transparent={false}
         animationType="fade"
         onRequestClose={goBack}
       >
-        {days.length === 0 ? (
-          <AirplaneLoading />
-        ) : (
-          <View style={styles.loadingModalContainer}>
-            <LoadingSpinner color={COLORS.primary} />
+        {loadError ? (
+          <View style={styles.loadErrorContainer}>
+            <Text style={styles.loadErrorText}>일정을 불러오지 못했어요.</Text>
+            <TouchableOpacity
+              style={styles.loadErrorRetryButton}
+              onPress={onRetryLoad}
+              accessibilityRole="button"
+            >
+              <Text style={styles.loadErrorRetryText}>다시 시도</Text>
+            </TouchableOpacity>
           </View>
+        ) : (
+          <AirplaneLoading />
         )}
       </Modal>
     </View>

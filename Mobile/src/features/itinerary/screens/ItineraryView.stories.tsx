@@ -59,10 +59,10 @@ const LOADING_DEMO_MS = 1500;
 /** hooks(useState/useRef)가 필요해 스토리마다 래퍼를 둔다 */
 function ViewHarness(props: {
   days?: Day[];
-  isBacking?: boolean;
   initialMapVisible?: boolean;
   /** 로딩 오버레이를 잠깐 보여준 뒤 데이터를 채운다 */
   demoLoading?: boolean;
+  loadError?: boolean;
 }) {
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   // 로딩 오버레이는 전체 화면 모달이라 계속 떠 있으면 스토리 목록을 덮는다.
@@ -114,8 +114,9 @@ function ViewHarness(props: {
       planId="101"
       weatherMap={{}}
       tripName="가을 제주 3일"
-      isBacking={!!props.isBacking}
       isWeatherLoading={false}
+      loadError={!!props.loadError}
+      onRetryLoad={action('다시 시도')}
     />
   );
 }
@@ -144,8 +145,9 @@ const meta = {
     planId: '101',
     weatherMap: {},
     tripName: '가을 제주 3일',
-    isBacking: false,
     isWeatherLoading: false,
+    loadError: false,
+    onRetryLoad: action('다시 시도'),
   },
 } satisfies Meta<typeof ItineraryViewScreenView>;
 
@@ -168,4 +170,10 @@ export const SingleDay: Story = {
 /** 로딩 오버레이 → 일정 표시. 1.5초 뒤 스스로 걷혀 다른 스토리로 이동할 수 있다 */
 export const Loading: Story = {
   render: () => <ViewHarness demoLoading />,
+};
+
+/** 최초 조회 실패 시 재시도 버튼이 있는 에러 상태 */
+export const LoadError: Story = {
+  render: () => <ViewHarness days={[]} loadError />,
+  parameters: { dismissibleFullScreenModal: true },
 };

@@ -5,14 +5,7 @@ import { View, Text, Pressable, TouchableOpacity } from 'react-native';
 
 import { styles, CATEGORY_COLORS } from './TimelineItem.styles';
 import { tokens } from '../../../theme/tokens';
-
-const timeToMinutes = (time: string) => {
-  if (!time || typeof time !== 'string' || !time.includes(':')) {
-    return 0;
-  }
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + minutes;
-};
+import { timeToMinutes } from '../../../utils/timeUtils';
 
 const IS_COMPACT_VIEW_THRESHOLD_MINUTES = 30;
 

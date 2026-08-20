@@ -388,10 +388,29 @@ export const styles = StyleSheet.create({
   dayTabsFadeOverlayRight: {
     right: 0,
   },
-  loadingModalContainer: {
+  loadErrorContainer: {
     flex: 1,
     backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 32,
+    gap: 16,
+  },
+  loadErrorText: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  loadErrorRetryButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+  },
+  loadErrorRetryText: {
+    fontSize: 14,
+    fontFamily: FONTS.bold,
+    color: COLORS.white,
   },
 });

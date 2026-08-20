@@ -12,7 +12,7 @@ import {
 } from '../hooks/useRouteQueries';
 import { fetchRouteTrip, isRouteFallback, RoutePoint } from '../../../api/route';
 import { laneColor } from '../constants/transit';
-import { theme } from '../../../theme/theme';
+import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import {
   buildOptimizedOrder,
@@ -153,7 +153,7 @@ export default function RouteMapSection({
           onPress={handleOpenSheet}
           activeOpacity={0.85}
         >
-          <RouteIcon size={normalize(13)} color={theme.colors.primary} />
+          <RouteIcon size={normalize(13)} color={tokens.colors.primary} />
           <Text style={sectionStyles.segmentButtonText}>구간 정보</Text>
         </TouchableOpacity>
       )}
@@ -165,7 +165,7 @@ export default function RouteMapSection({
           disabled={isOptimizing}
           activeOpacity={0.85}
         >
-          <Wand2 size={normalize(13)} color={theme.colors.primary} />
+          <Wand2 size={normalize(13)} color={tokens.colors.primary} />
           <Text style={sectionStyles.segmentButtonText}>
             {isOptimizing ? '계산 중...' : '순서 최적화'}
           </Text>
@@ -199,10 +199,10 @@ const sectionStyles = StyleSheet.create({
     gap: normalize(5),
     paddingHorizontal: normalize(12),
     paddingVertical: normalize(7),
-    borderRadius: theme.borderRadius.round,
+    borderRadius: tokens.radius.round,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: tokens.colors.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -218,10 +218,10 @@ const sectionStyles = StyleSheet.create({
     gap: normalize(5),
     paddingHorizontal: normalize(12),
     paddingVertical: normalize(7),
-    borderRadius: theme.borderRadius.round,
+    borderRadius: tokens.radius.round,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: tokens.colors.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -230,7 +230,7 @@ const sectionStyles = StyleSheet.create({
   },
   segmentButtonText: {
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.semibold,
-    color: theme.colors.textLabel,
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.textLabel,
   },
 });

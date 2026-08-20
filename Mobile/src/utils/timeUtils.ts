@@ -16,9 +16,9 @@ export const timeToMinutes = (time: string) => {
 };
 
 export const timeToDate = (time: string) => {
-  const [hours, minutes] = time.split(':').map(Number);
+  const totalMinutes = timeToMinutes(time);
   const date = new Date();
-  date.setHours(hours, minutes, 0, 0);
+  date.setHours(Math.floor(totalMinutes / 60), totalMinutes % 60, 0, 0);
   return date;
 };
 

@@ -84,8 +84,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const { connect, disconnect } = useWebSocket();
   const { isOwner: isPlanOwner } = usePlanOwnership(planId);
   const [isMapVisible, setMapVisible] = useState(false);
-  const [isBacking, setIsBacking] = useState(false);
-  const isBackingRef = useRef(false);
 
   const handleGoBack = useCallback(() => {
     navigation.goBack();
@@ -103,10 +101,12 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     routeDestination || '',
   );
   const [isWeatherLoading, setIsWeatherLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchCompletePlan = useCallback(async () => {
     if (!planId) return;
     try {
+      setLoadError(false);
 
       const response = await axios.get<GetCompletePlanResponse>(
         resolveApiUrl(`/api/plan/${planId}/complete`),
@@ -205,14 +205,19 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       }
     } catch (error) {
       console.error('Failed to fetch plan:', error);
-      showAlert({ title: '오류', message: '일정을 불러오는데 실패했습니다.' });
       setIsWeatherLoading(false);
+      setDays(prevDays => {
+        if (prevDays.length === 0) setLoadError(true);
+        return prevDays;
+      });
     }
-  }, [planId, showAlert, queryClient]);
+  }, [planId, queryClient]);
 
   useEffect(() => {
     if (initialDays.length > 0) {
-      setDays(initialDays);
+      setDays(prevDays =>
+        isFetchAtLeastAsComplete(initialDays, prevDays) ? initialDays : prevDays,
+      );
     }
     if (planId) {
       fetchCompletePlan();
@@ -285,32 +290,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       headerBackVisible: false,
     });
   }, [navigation, tripName]);
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
-      if (isBackingRef.current) {
-        return;
-      }
-
-      if (days.length === 0) {
-        return;
-      }
-
-      e.preventDefault();
-      isBackingRef.current = true;
-      setIsBacking(true);
-
-      const timer = setTimeout(() => {
-        setIsBacking(false);
-        navigation.dispatch(e.data.action);
-        isBackingRef.current = false;
-      }, 1200);
-
-      return () => clearTimeout(timer);
-    });
-
-    return unsubscribe;
-  }, [navigation, days.length]);
 
   const selectedDay = days[selectedDayIndex];
 
@@ -395,8 +374,9 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       planId={planId}
       weatherMap={weatherMap}
       tripName={tripName}
-      isBacking={isBacking}
       isWeatherLoading={isWeatherLoading}
+      loadError={loadError}
+      onRetryLoad={fetchCompletePlan}
     />
   );
 }

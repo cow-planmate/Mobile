@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import WeatherIcon from './WeatherIcon';
 import { SimpleWeatherInfo, WeatherDataSource } from '../../../../api/trips';
-import { theme } from '../../../../theme/theme';
+import { tokens } from '../../../../theme/tokens';
 import LinearGradient from 'react-native-linear-gradient';
 
 interface WeatherHeaderProps {
@@ -63,20 +63,20 @@ export default function WeatherHeader({
         <View style={styles.rightSection}>
           <View style={styles.tempBlock}>
             <Text style={styles.tempLabel}>최저</Text>
-            <Text style={[styles.tempValue, { color: theme.colors.primary }]}>
+            <Text style={[styles.tempValue, { color: tokens.colors.primary }]}>
               {Math.round(weather.tempMin)}°C
             </Text>
           </View>
           <View style={styles.tempBlock}>
             <Text style={styles.tempLabel}>최고</Text>
-            <Text style={[styles.tempValue, { color: theme.colors.danger }]}>
+            <Text style={[styles.tempValue, { color: tokens.tones.danger.fg }]}>
               {Math.round(weather.tempMax)}°C
             </Text>
           </View>
           <View style={styles.tempBlock}>
             <Text style={styles.tempLabel}>체감</Text>
-            <Text style={[styles.tempValue, { color: theme.colors.text }]}>
-              {Math.round(weather.feelsLike || weather.tempMax)}°C
+            <Text style={[styles.tempValue, { color: tokens.colors.text }]}>
+              {Math.round(weather.feelsLike ?? weather.tempMax)}°C
             </Text>
           </View>
         </View>
@@ -92,9 +92,9 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: theme.colors.background,
+    backgroundColor: tokens.colors.background,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: tokens.colors.border,
     borderRadius: 12,
     position: 'relative',
     overflow: 'hidden',
@@ -138,17 +138,17 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: tokens.colors.textSecondary,
     marginBottom: 0,
   },
   descriptionText: {
     fontSize: 18,
     fontWeight: '700',
-    color: theme.colors.text,
+    color: tokens.colors.text,
   },
   dataSourceText: {
     fontSize: 11,
-    color: theme.colors.textSecondary,
+    color: tokens.colors.textSecondary,
     marginTop: 1,
   },
   rightSection: {
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   },
   tempLabel: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: tokens.colors.textSecondary,
     marginBottom: 4,
   },
   tempValue: {

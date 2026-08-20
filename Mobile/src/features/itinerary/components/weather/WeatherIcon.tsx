@@ -412,17 +412,19 @@ const WEATHER_MAP: Record<string, React.FC<SvgProps>> = {
   뇌우: Thunderstorms,
 };
 
+// 강수 키워드를 하늘 상태 키워드보다 먼저 검사한다 — "흐리고 비"처럼 둘 다
+// 포함된 설명이 '흐'에 먼저 걸려 흐림 아이콘으로 잘못 표시되는 것을 막는다.
 const KEYWORD_MAP: [string, React.FC<SvgProps>][] = [
+  ['뇌우', Thunderstorms],
+  ['번개', Thunderstorms],
+  ['소나기', Sonagi],
+  ['이슬비', Rainy5],
+  ['눈', Snowy6],
+  ['비', Rainy6],
+  ['안개', Fog],
   ['맑', ClearDay],
   ['흐', CloudyOriginal],
   ['구름', CloudyDay2],
-  ['안개', Fog],
-  ['이슬비', Rainy5],
-  ['소나기', Sonagi],
-  ['뇌우', Thunderstorms],
-  ['번개', Thunderstorms],
-  ['눈', Snowy6],
-  ['비', Rainy6],
 ];
 
 function getIcon(description: string): React.FC<SvgProps> {
