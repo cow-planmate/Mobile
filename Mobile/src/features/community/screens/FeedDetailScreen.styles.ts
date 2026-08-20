@@ -1,9 +1,8 @@
 import { StyleSheet } from 'react-native';
-import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
 import { tokens } from '../../../theme/tokens';
 
-export const COLORS = theme.colors;
+export const COLORS = tokens.colors;
 
 export const styles = StyleSheet.create({
   container: {
@@ -28,7 +27,7 @@ export const styles = StyleSheet.create({
   },
   topBarTitle: {
     fontSize: normalize(15),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.text,
   },
 
@@ -41,13 +40,13 @@ export const styles = StyleSheet.create({
   },
   stateText: {
     fontSize: normalize(13),
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: tokens.fontFamily.medium,
     color: COLORS.textTertiary,
     textAlign: 'center',
   },
   stateLink: {
     fontSize: normalize(13),
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: tokens.fontFamily.bold,
     color: COLORS.primary,
   },
 
@@ -67,7 +66,7 @@ export const styles = StyleSheet.create({
   title: {
     fontSize: normalize(19),
     lineHeight: normalize(27),
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: tokens.fontFamily.bold,
     color: COLORS.text,
     marginBottom: normalize(8),
   },
@@ -83,14 +82,14 @@ export const styles = StyleSheet.create({
     gap: normalize(4),
     paddingHorizontal: normalize(9),
     paddingVertical: normalize(4),
-    borderRadius: theme.borderRadius.round,
+    borderRadius: tokens.radius.round,
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   chipText: {
     fontSize: normalize(11),
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: tokens.fontFamily.medium,
     color: COLORS.textSecondary,
   },
   tagChip: {
@@ -113,12 +112,12 @@ export const styles = StyleSheet.create({
   },
   metaAuthor: {
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.textLabel,
   },
   metaText: {
     fontSize: normalize(11),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textTertiary,
   },
   metaStat: {
@@ -139,7 +138,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: normalize(6),
     paddingVertical: normalize(12),
-    borderRadius: theme.borderRadius.l,
+    borderRadius: tokens.radius.l,
     backgroundColor: COLORS.primary,
   },
   forkButtonDisabled: {
@@ -147,14 +146,14 @@ export const styles = StyleSheet.create({
   },
   forkButtonText: {
     fontSize: normalize(13),
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: tokens.fontFamily.bold,
     color: COLORS.white,
   },
   forkHint: {
     marginTop: normalize(7),
     fontSize: normalize(11),
     lineHeight: normalize(16),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textTertiary,
     textAlign: 'center',
   },
@@ -172,7 +171,7 @@ export const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: normalize(14),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.text,
   },
   dayTabs: {
@@ -183,7 +182,7 @@ export const styles = StyleSheet.create({
   dayTab: {
     paddingHorizontal: normalize(12),
     paddingVertical: normalize(6),
-    borderRadius: theme.borderRadius.round,
+    borderRadius: tokens.radius.round,
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -194,7 +193,7 @@ export const styles = StyleSheet.create({
   },
   dayTabText: {
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: tokens.fontFamily.medium,
     color: COLORS.textSecondary,
   },
   dayTabTextActive: {
@@ -211,7 +210,7 @@ export const styles = StyleSheet.create({
   placeTime: {
     width: normalize(44),
     fontSize: normalize(11),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.primary,
     paddingTop: normalize(2),
   },
@@ -220,32 +219,32 @@ export const styles = StyleSheet.create({
   },
   placeName: {
     fontSize: normalize(13),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.text,
   },
   placeSub: {
     marginTop: normalize(2),
     fontSize: normalize(11),
     lineHeight: normalize(16),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textTertiary,
   },
   placeMemo: {
     marginTop: normalize(4),
     paddingHorizontal: normalize(8),
     paddingVertical: normalize(5),
-    borderRadius: theme.borderRadius.s,
+    borderRadius: tokens.radius.s,
     backgroundColor: COLORS.surface,
     fontSize: normalize(11),
     lineHeight: normalize(16),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textSecondary,
   },
   emptyDay: {
     paddingVertical: normalize(20),
     textAlign: 'center',
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textTertiary,
   },
 
@@ -268,7 +267,7 @@ export const styles = StyleSheet.create({
     gap: normalize(6),
     paddingHorizontal: normalize(18),
     paddingVertical: normalize(9),
-    borderRadius: theme.borderRadius.l,
+    borderRadius: tokens.radius.l,
     borderWidth: 1,
     borderColor: COLORS.border,
     backgroundColor: COLORS.white,
@@ -278,12 +277,12 @@ export const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   reactionButtonActiveDislike: {
-    backgroundColor: tokens.colors.textSecondary,
-    borderColor: tokens.colors.textSecondary,
+    backgroundColor: COLORS.textSecondary,
+    borderColor: COLORS.textSecondary,
   },
   reactionText: {
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.textSecondary,
   },
   reactionTextActive: {

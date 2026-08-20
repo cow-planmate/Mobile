@@ -12,9 +12,11 @@ export const colors = {
   text: '#1A1A1A',
   textSecondary: '#666666',
   textTertiary: '#9CA3AF',
+  textLabel: '#4B5563',
 
   border: '#E5E7EB',
   borderLight: '#F3F4F6',
+  disabled: '#E5E7EB',
 };
 
 export const tones = {

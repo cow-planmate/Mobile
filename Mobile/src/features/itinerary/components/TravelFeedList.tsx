@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import FastImage from 'react-native-fast-image';
 import {
   View,
@@ -53,14 +53,29 @@ interface TravelFeedListProps {
   onLoadMore?: () => void;
 }
 
-const FeedStats = ({
-  item,
-  divided,
-}: {
-  item: TravelFeedItem;
-  divided: boolean;
-}) => (
-  <StatRow divided={divided} style={divided ? undefined : styles.statsTight}>
+const FeedAvatar = ({ uri, name }: { uri: string; name: string }) => {
+  const [failed, setFailed] = useState(false);
+
+  if (uri && !failed) {
+    return (
+      <FastImage
+        source={{ uri, priority: FastImage.priority.low }}
+        style={styles.avatar}
+        resizeMode={FastImage.resizeMode.cover}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <View style={[styles.avatar, styles.avatarFallback]}>
+      <Text style={styles.avatarFallbackText}>{(name || '?').charAt(0)}</Text>
+    </View>
+  );
+};
+
+const FeedStats = ({ item }: { item: TravelFeedItem }) => (
+  <StatRow divided>
     <StatItem
       icon={<ThumbsUp size={13} color={tokens.colors.primary} />}
       value={item.likes}
@@ -131,14 +146,7 @@ const FeedListItem = React.memo(function FeedListItem({
 
         <View style={styles.cardContent}>
           <View style={styles.authorContainer}>
-            <FastImage
-              source={{
-                uri: item.authorAvatar,
-                priority: FastImage.priority.low,
-              }}
-              style={styles.avatar}
-              resizeMode={FastImage.resizeMode.cover}
-            />
+            <FeedAvatar uri={item.authorAvatar} name={item.author} />
             <View style={styles.authorInfo}>
               <View style={styles.authorNameRow}>
                 <Text style={styles.authorName} numberOfLines={1}>
@@ -173,7 +181,7 @@ const FeedListItem = React.memo(function FeedListItem({
             ) : null}
           </View>
 
-          <FeedStats item={item} divided />
+          <FeedStats item={item} />
         </View>
       </Card>
     );
@@ -218,7 +226,7 @@ const FeedListItem = React.memo(function FeedListItem({
           <Text style={styles.listCreatedAt}>{item.createdAt}</Text>
         </View>
 
-        <FeedStats item={item} divided />
+        <FeedStats item={item} />
       </View>
 
       {item.thumbnailUrl ? (
@@ -321,9 +329,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     paddingVertical: normalize(12),
   },
-  statsTight: {
-    marginTop: normalize(8),
-  },
 
   feedCard: {
     marginBottom: normalize(16),
@@ -368,6 +373,16 @@ const styles = StyleSheet.create({
     height: normalize(32),
     borderRadius: normalize(16),
     backgroundColor: tokens.colors.surface,
+  },
+  avatarFallback: {
+    backgroundColor: tokens.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarFallbackText: {
+    fontSize: normalize(tokens.fontSize.s),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
   },
   authorInfo: {
     flex: 1,
