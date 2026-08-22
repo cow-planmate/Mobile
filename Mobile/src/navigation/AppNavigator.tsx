@@ -8,6 +8,7 @@ import ThemeSelector, { ThemeSelectorResult } from '../components/common/ThemeSe
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import AuthStack from './AuthStack';
 import AppStack from './AppStack';
+import ErrorBoundary from '../components/common/ErrorBoundary';
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -58,7 +59,7 @@ export default function AppNavigator() {
   }
 
   return (
-    <>
+    <ErrorBoundary>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
@@ -77,7 +78,7 @@ export default function AppNavigator() {
         onClose={handleThemeClose}
         onComplete={handleThemeComplete}
       />
-    </>
+    </ErrorBoundary>
   );
 }
 
