@@ -12,7 +12,6 @@ import {
   Modal,
   RefreshControl,
   Linking,
-  Alert,
 } from 'react-native';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import Bed from 'lucide-react-native/dist/esm/icons/bed';
@@ -25,6 +24,7 @@ import { Place } from './TimelineItem';
 import KakaoMapView from './KakaoMapView';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { usePlaces } from '../../../contexts/PlacesContext';
+import { useAlert } from '../../../contexts/AlertContext';
 import { PlaceVO } from '../../../api/trips';
 import { GoogleMapsIcon } from '../../../components/common';
 import { tokens } from '../../../theme/tokens';
@@ -252,6 +252,7 @@ export default function PlaceRecommendationList({
     setPetFriendly,
   } = usePlaces();
 
+  const { showAlert } = useAlert();
   const [selectedTab, setSelectedTab] = useState<PlaceTab>('관광지');
   const [customPlaceName, setCustomPlaceName] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -356,7 +357,11 @@ export default function PlaceRecommendationList({
     const lng = item.xLocation ?? item.xlocation;
 
     if (!lat || !lng) {
-      Alert.alert('오류', '위치 정보가 없습니다.');
+      showAlert({
+        title: '지도를 열 수 없음',
+        message: '이 장소의 위치 정보가 없습니다.',
+        type: 'error',
+      });
       return;
     }
 
@@ -368,12 +373,16 @@ export default function PlaceRecommendationList({
         await Linking.openURL(url);
       } else {
 
-        Alert.alert('오류', '구글 지도를 열 수 없습니다.');
+        showAlert({
+          title: '지도를 열 수 없음',
+          message: '이 기기에서 구글 지도를 열 수 없습니다.',
+          type: 'error',
+        });
       }
     } catch (error) {
       console.error('Failed to open Google Maps:', error);
     }
-  }, []);
+  }, [showAlert]);
 
   const renderPlaceItem = useCallback(({ item }: { item: PlaceVO }) => {
     const type = getCategoryType(item.categoryId);

@@ -17,6 +17,7 @@ import Toast from 'react-native-toast-message';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { INITIAL_TAB } from '../../../navigation/types';
+import { useAlert } from '../../../contexts/AlertContext';
 import {
   LoadingSpinner,
   MenuModal,
@@ -384,6 +385,7 @@ export default function ProfileScreenView({
 }: ProfileScreenViewProps) {
   const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
+  const { showAlert } = useAlert();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [isFeedbackModalVisible, setFeedbackModalVisible] = useState(false);
   const [tempNickname, setTempNickname] = useState('');
@@ -541,10 +543,11 @@ export default function ProfileScreenView({
 
   const handleDeletePlan = (planId: string, isShared: boolean) => {
     if (isShared) {
-      Alert.alert(
-        '공유 일정 편집 권한 포기',
-        '이 일정의 편집 권한을 포기하시겠습니까?',
-        [
+      showAlert({
+        title: '공유 일정 편집 권한 포기',
+        message: '이 일정의 편집 권한을 포기하시겠습니까?',
+        type: 'confirm',
+        buttons: [
           { text: '취소', style: 'cancel' },
           {
             text: '확인',
@@ -573,12 +576,13 @@ export default function ProfileScreenView({
             }
           }
         ]
-      );
+      });
     } else {
-      Alert.alert(
-        '일정 삭제',
-        '이 일정을 정말로 삭제하시겠습니까?',
-        [
+      showAlert({
+        title: '일정 삭제',
+        message: '이 일정을 정말로 삭제하시겠습니까? 되돌릴 수 없습니다.',
+        type: 'confirm',
+        buttons: [
           { text: '취소', style: 'cancel' },
           {
             text: '확인',
@@ -606,7 +610,7 @@ export default function ProfileScreenView({
             }
           }
         ]
-      );
+      });
     }
   };
 
@@ -641,10 +645,11 @@ export default function ProfileScreenView({
 
   const handleDeleteSelected = () => {
     if (selectedPlanIds.length === 0) return;
-    Alert.alert(
-      '선택 일정 삭제 및 권한 포기',
-      `선택한 ${selectedPlanIds.length}개의 일정을 삭제 또는 권한 포기하시겠습니까?`,
-      [
+    showAlert({
+      title: '선택 일정 삭제 및 권한 포기',
+      message: `선택한 ${selectedPlanIds.length}개의 일정을 삭제 또는 권한 포기하시겠습니까? 되돌릴 수 없습니다.`,
+      type: 'confirm',
+      buttons: [
         { text: '취소', style: 'cancel' },
         {
           text: '확인',
@@ -715,7 +720,7 @@ export default function ProfileScreenView({
           },
         },
       ],
-    );
+    });
   };
 
   const handleCancelEditMode = () => {
