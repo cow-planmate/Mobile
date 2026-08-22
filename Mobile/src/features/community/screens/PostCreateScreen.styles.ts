@@ -100,6 +100,32 @@ export const styles = StyleSheet.create({
     lineHeight: normalize(21),
   },
 
+  suggestionList: {
+    marginTop: normalize(6),
+    borderRadius: tokens.radius.l,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
+    overflow: 'hidden',
+  },
+  suggestionItem: {
+    paddingHorizontal: normalize(12),
+    paddingVertical: normalize(9),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight,
+  },
+  suggestionName: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.medium,
+    color: COLORS.text,
+  },
+  suggestionAddress: {
+    marginTop: normalize(2),
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.regular,
+    color: COLORS.textTertiary,
+  },
+
   hint: {
     marginTop: normalize(6),
     fontSize: normalize(11),

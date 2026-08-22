@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useQuery } from '@tanstack/react-query';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import { normalize } from '../../../utils/normalize';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';
@@ -20,6 +21,7 @@ import { BOARDS, BoardKey } from '../constants/levels';
 import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
 import { buildPostPayload } from '../utils/postPayload';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
+import { searchPlacesByKeyword } from '../../../api/trips';
 import { styles, COLORS } from './PostCreateScreen.styles';
 import { tokens } from '../../../theme/tokens';
 
@@ -37,6 +39,20 @@ export default function PostCreateScreen() {
   const [content, setContent] = useState('');
   const [maxParticipants, setMaxParticipants] = useState('');
   const [location, setLocation] = useState('');
+  const [locationQuery, setLocationQuery] = useState('');
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLocationQuery(location.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [location]);
+
+  const locationSuggestions = useQuery({
+    queryKey: ['place-search', locationQuery],
+    queryFn: () => searchPlacesByKeyword(locationQuery),
+    enabled: category === 'recommend' && showLocationSuggestions && locationQuery.length > 1,
+    staleTime: 30_000,
+  });
 
   const createPost = useCreatePost();
   const postId = route.params?.postId;
@@ -230,8 +246,31 @@ export default function PostCreateScreen() {
               placeholder="예: 갑천생태호수공원"
               placeholderTextColor={COLORS.textTertiary}
               value={location}
-              onChangeText={setLocation}
+              onChangeText={text => {
+                setLocation(text);
+                setShowLocationSuggestions(true);
+              }}
+              onFocus={() => setShowLocationSuggestions(true)}
             />
+            {showLocationSuggestions && (locationSuggestions.data?.length ?? 0) > 0 && (
+              <View style={styles.suggestionList}>
+                {locationSuggestions.data!.map(place => (
+                  <TouchableOpacity
+                    key={place.id}
+                    style={styles.suggestionItem}
+                    onPress={() => {
+                      setLocation(place.name);
+                      setShowLocationSuggestions(false);
+                    }}
+                  >
+                    <Text style={styles.suggestionName} numberOfLines={1}>{place.name}</Text>
+                    <Text style={styles.suggestionAddress} numberOfLines={1}>
+                      {place.address || place.jibunAddress}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
         )}
 

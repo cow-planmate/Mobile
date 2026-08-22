@@ -196,6 +196,27 @@ export const fetchLodgingPlaces = (destinationId: number, page: number = 1, size
 
 export const fetchRestaurantPlaces = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlaces(destinationId, 'restaurant', page, size);
 
+export interface KeywordPlace {
+  id: string;
+  name: string;
+  address: string;
+  jibunAddress: string;
+  phone: string;
+  category: string;
+  url: string;
+  lat: number;
+  lng: number;
+}
+
+export async function searchPlacesByKeyword(query: string, size: number = 8): Promise<KeywordPlace[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  const response = await axios.get('/api/place/search', {
+    params: { query: trimmed, size },
+  });
+  return response.data?.places || [];
+}
+
 export type WeatherDataSource =
   | 'FORECAST'
   | 'LAST_YEAR_ACTUAL'
