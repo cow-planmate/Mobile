@@ -378,7 +378,8 @@ export default function SignupScreen() {
             message: '회원가입이 완료되었습니다. 로그인 해주세요.',
             type: 'success',
             buttons: [
-              { text: '확인', onPress: () => navigation.navigate('Login') },
+              // 가입이 끝난 폼으로 뒤로가기가 되면 안 되므로 스택에서 치운다.
+              { text: '확인', onPress: () => navigation.replace('Login') },
             ],
           });
         }

@@ -892,7 +892,7 @@ export default function ProfileScreenView({
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      navigation.navigate('MainTabs', { screen: 'FeedTab' });
+      navigation.navigate('MainTabs', { screen: 'ScheduleTab' });
     }
   };
 
