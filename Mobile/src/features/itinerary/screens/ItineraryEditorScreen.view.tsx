@@ -887,12 +887,16 @@ const TimelineComponent = React.memo(
                       <TouchableOpacity
                         onPress={onCancelPreview}
                         style={[styles.previewBannerActionButton, styles.previewBannerCancelButton]}
+                        accessibilityRole="button"
+                        accessibilityLabel={"장소 배치 취소"}
                       >
                         <XIcon color={COLORS.white} size={14} />
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={onConfirmPlacement}
                         style={[styles.previewBannerActionButton, styles.previewBannerConfirmButton]}
+                        accessibilityRole="button"
+                        accessibilityLabel={"장소 배치 확정"}
                       >
                         <CheckIcon color={COLORS.white} size={14} />
                       </TouchableOpacity>
@@ -1000,6 +1004,8 @@ const TimelineTabScreen = React.memo(() => {
           style={styles.floatingHistoryButton}
           onPress={onUndo}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={"실행 취소"}
         >
           <Undo2 color={COLORS.text} size={16} />
         </TouchableOpacity>
@@ -1013,6 +1019,8 @@ const TimelineTabScreen = React.memo(() => {
           onPress={onRedo}
           disabled={!onRedo}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={"다시 실행"}
         >
           <Redo2 color={onRedo ? COLORS.text : COLORS.placeholder} size={16} />
         </TouchableOpacity>
@@ -1234,6 +1242,9 @@ export default function ItineraryEditorScreenView({
           style={styles.topBarBackButton}
           onPress={onGoBack}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="뒤로 가기"
+          hitSlop={8}
         >
           <ChevronLeft size={24} color={COLORS.text} />
         </TouchableOpacity>
@@ -1366,6 +1377,8 @@ export default function ItineraryEditorScreenView({
           onPress={() => setScheduleEditVisible(true)}
           activeOpacity={0.85}
           hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={"일정 기간 편집"}
         >
           <CalendarDaysIcon color={COLORS.textSecondary} size={22} />
         </TouchableOpacity>

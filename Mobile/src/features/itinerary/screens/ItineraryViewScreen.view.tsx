@@ -283,6 +283,9 @@ export default function ItineraryViewScreenView({
           style={styles.topBarBackButton}
           onPress={goBack}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="뒤로 가기"
+          hitSlop={8}
         >
           <ChevronLeft size={24} color={COLORS.text} />
         </TouchableOpacity>

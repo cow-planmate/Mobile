@@ -136,6 +136,9 @@ export default function FeedDetailScreen() {
         style={styles.topBarButton}
         onPress={() => navigation.goBack()}
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel="뒤로 가기"
+        hitSlop={8}
       >
         <ChevronLeft size={normalize(22)} color={COLORS.text} />
       </TouchableOpacity>
@@ -145,6 +148,9 @@ export default function FeedDetailScreen() {
           style={styles.topBarButton}
           onPress={() => navigation.navigate('FeedCreate', { postId: String(post.id) })}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="글 수정"
+          hitSlop={8}
         >
           <Pencil size={normalize(18)} color={COLORS.text} />
         </TouchableOpacity>

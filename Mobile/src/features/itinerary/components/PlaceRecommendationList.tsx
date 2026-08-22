@@ -209,7 +209,13 @@ const PlaceMapModal = React.memo(
             <Text style={plStyles.mapModalTitle} numberOfLines={1}>
               {place.name}
             </Text>
-            <TouchableOpacity onPress={onClose} style={plStyles.mapModalClose}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={plStyles.mapModalClose}
+              accessibilityRole="button"
+              accessibilityLabel="닫기"
+              hitSlop={8}
+            >
               <X size={16} color={tokens.colors.textTertiary} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
@@ -419,6 +425,8 @@ export default function PlaceRecommendationList({
               handleOpenGoogleMaps(item);
             }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="지도에서 보기"
           >
             <GoogleMapsIcon size={20} />
           </TouchableOpacity>

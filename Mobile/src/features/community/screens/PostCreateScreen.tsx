@@ -139,6 +139,9 @@ export default function PostCreateScreen() {
           style={styles.topBarButton}
           onPress={handleBack}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="뒤로 가기"
+          hitSlop={8}
         >
           <ChevronLeft size={normalize(22)} color={COLORS.text} />
         </TouchableOpacity>

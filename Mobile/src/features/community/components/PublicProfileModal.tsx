@@ -58,7 +58,12 @@ export default function PublicProfileModal({
         <Pressable style={styles.card} onPress={e => e.stopPropagation()}>
           <View style={styles.header}>
             <Text style={styles.title}>프로필</Text>
-            <TouchableOpacity onPress={onClose} hitSlop={8}>
+            <TouchableOpacity
+              onPress={onClose}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="닫기"
+            >
               <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>

@@ -274,6 +274,8 @@ export default function ChecklistSheet({
                     disabled={editContent.isPending}
                     hitSlop={6}
                     activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={"수정 저장"}
                   >
                     <Check size={normalize(18)} color={COLORS.primary} />
                   </TouchableOpacity>
@@ -282,6 +284,8 @@ export default function ChecklistSheet({
                     onPress={cancelEditing}
                     hitSlop={6}
                     activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={"수정 취소"}
                   >
                     <X size={normalize(18)} color={COLORS.textTertiary} />
                   </TouchableOpacity>
@@ -322,6 +326,8 @@ export default function ChecklistSheet({
                     }}
                     hitSlop={6}
                     activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${item.content} 수정`}
                   >
                     <Pencil size={normalize(16)} color={COLORS.textTertiary} />
                   </TouchableOpacity>
@@ -417,6 +423,8 @@ export default function ChecklistSheet({
                 onPress={onClose}
                 activeOpacity={0.7}
                 hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={"닫기"}
               >
                 <X size={normalize(18)} color={COLORS.textTertiary} />
               </TouchableOpacity>

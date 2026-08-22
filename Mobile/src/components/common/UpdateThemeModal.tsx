@@ -141,7 +141,14 @@ export default function UpdateThemeModal({
           <Pressable style={styles.modalView} onPress={() => {}}>
             <View style={styles.header}>
               <Text style={styles.title}>선호 테마 변경</Text>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.7}>
+              <TouchableOpacity
+                onPress={onClose}
+                style={styles.closeButton}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="닫기"
+                hitSlop={8}
+              >
                 <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
               </TouchableOpacity>
             </View>

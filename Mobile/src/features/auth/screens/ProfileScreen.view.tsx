@@ -245,6 +245,8 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
             activeOpacity={0.7}
             hitSlop={8}
             style={plan.isShared ? { marginTop: normalize(16) } : null}
+            accessibilityRole="button"
+            accessibilityLabel={`${plan.planName} 메뉴 열기`}
           >
             <MoreVertical size={18} color={tokens.colors.textTertiary} />
           </TouchableOpacity>
@@ -909,6 +911,9 @@ export default function ProfileScreenView({
           style={styles.backButton}
           onPress={handleBackPress}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="뒤로 가기"
+          hitSlop={8}
         >
           <ChevronLeft size={24} color={tokens.colors.text} />
         </TouchableOpacity>
@@ -939,6 +944,8 @@ export default function ProfileScreenView({
                 style={styles.settingsButton}
                 onPress={handleOpenEditModal}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={"프로필 편집"}
               >
                 <Settings size={12} color={tokens.colors.white} />
               </TouchableOpacity>
@@ -1321,6 +1328,8 @@ export default function ProfileScreenView({
                 style={styles.closeModalButton}
                 onPress={() => setEditModalVisible(false)}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={"닫기"}
               >
                 <X size={18} color={tokens.colors.white} />
               </TouchableOpacity>

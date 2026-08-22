@@ -166,7 +166,12 @@ export default function PlaceEditModal({
         <Pressable style={styles.container} onPress={e => e.stopPropagation()}>
           <View style={styles.header}>
             <Text style={styles.title}>장소 수정</Text>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="닫기"
+              hitSlop={8}
+            >
               <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>

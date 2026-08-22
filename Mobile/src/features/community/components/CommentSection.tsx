@@ -77,6 +77,9 @@ const CommentComposer = React.memo(function CommentComposer({
         style={[styles.sendButton, !editable && styles.sendButtonDisabled]}
         onPress={handlePress}
         disabled={!editable || submitting}
+        accessibilityRole="button"
+        accessibilityLabel="댓글 등록"
+        hitSlop={8}
       >
         <Send size={normalize(15)} color={tokens.colors.white} />
       </TouchableOpacity>

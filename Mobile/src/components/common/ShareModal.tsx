@@ -263,7 +263,12 @@ export default function ShareModal({
         <Pressable style={styles.container} onPress={e => e.stopPropagation()}>
           <View style={styles.header}>
             <Text style={styles.title}>일정 공유 및 초대</Text>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="닫기"
+              hitSlop={8}
+            >
               <X size={22} color={tokens.colors.textTertiary} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>

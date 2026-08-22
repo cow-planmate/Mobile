@@ -178,7 +178,12 @@ export default function FeedCreateScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="뒤로 가기"
+        >
           <ChevronLeft size={24} color={tokens.colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>

@@ -436,6 +436,8 @@ export default function RouteSegmentSheet({
               onPress={onClose}
               activeOpacity={0.7}
               hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="닫기"
             >
               <X size={normalize(18)} color={COLORS.textTertiary} />
             </TouchableOpacity>

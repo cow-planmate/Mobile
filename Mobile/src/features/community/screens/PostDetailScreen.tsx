@@ -153,6 +153,9 @@ export default function PostDetailScreen() {
         style={styles.topBarButton}
         onPress={() => navigation.goBack()}
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel="뒤로 가기"
+        hitSlop={8}
       >
         <ChevronLeft size={normalize(22)} color={COLORS.text} />
       </TouchableOpacity>
