@@ -104,7 +104,7 @@ export default function FeedbackModal({ visible, onClose }: FeedbackModalProps) 
               ]}
             >
               <Text style={styles.submitButtonText}>
-                {isSubmitting ? '보내는 중...' : '보내기'}
+                {isSubmitting ? '보내는 중…' : '보내기'}
               </Text>
             </TouchableOpacity>
           </Pressable>

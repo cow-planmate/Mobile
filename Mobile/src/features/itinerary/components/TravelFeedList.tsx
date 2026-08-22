@@ -296,7 +296,7 @@ export default function TravelFeedList({
 
   const renderEmpty = useCallback(() => {
     if (isLoading) {
-      return <EmptyState title="여행기를 불러오는 중..." loading />;
+      return <EmptyState title="여행기를 불러오는 중…" loading />;
     }
     return (
       <EmptyState

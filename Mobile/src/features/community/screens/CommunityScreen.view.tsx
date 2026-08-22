@@ -346,7 +346,7 @@ export default function CommunityScreenView({
     if (isLoading) {
       return (
         <EmptyState
-          title="게시글을 불러오는 중..."
+          title="게시글을 불러오는 중…"
           loading
           style={styles.listStateBox}
         />

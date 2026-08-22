@@ -178,7 +178,7 @@ export default function RouteMapSection({
         >
           <Wand2 size={normalize(13)} color={tokens.colors.primary} />
           <Text style={sectionStyles.segmentButtonText}>
-            {isOptimizing ? '계산 중...' : '순서 최적화'}
+            {isOptimizing ? '계산 중…' : '순서 최적화'}
           </Text>
         </TouchableOpacity>
       )}

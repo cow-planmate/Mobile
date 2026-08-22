@@ -104,7 +104,7 @@ export default function EditAccessGate({
           >
             <Text style={styles.primaryButtonText}>
               {status === 'sending'
-                ? '요청하는 중...'
+                ? '요청하는 중…'
                 : status === 'sent'
                 ? '요청 완료'
                 : '편집 권한 요청하기'}
