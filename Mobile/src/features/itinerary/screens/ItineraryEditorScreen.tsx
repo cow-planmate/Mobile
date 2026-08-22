@@ -169,6 +169,15 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const [isParticipantsVisible, setParticipantsVisible] = useState(false);
   const [isMapPreviewVisible, setMapPreviewVisible] = useState(false);
 
+  // 완료로 화면을 벗어났다가 되돌아오면 저장 확인을 다시 살린다.
+  // 복구하지 않으면 남은 변경분이 다음 이탈 때 조용히 사라진다.
+  useEffect(
+    () => navigation.addListener('focus', () => {
+      isCompletingRef.current = false;
+    }),
+    [navigation],
+  );
+
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
       if (isCompletingRef.current) {
@@ -683,6 +692,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
       if (!newPlanId) {
         console.error('Plan creation response did not include planId:', result);
+        isCompletingRef.current = false;
         showAlert({
           title: '일정을 확인할 수 없습니다',
           message: '일정 생성 응답에 식별자가 없습니다. 내 일정에서 생성 여부를 확인해주세요.',
