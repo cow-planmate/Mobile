@@ -30,8 +30,8 @@ describe('요청 종류별 문구', () => {
 
   it('수락 결과는 요청 종류에 따라 주체가 다르다', () => {
 
-    expect(describeAcceptResult('INVITE')).toBe('일정에 참여했습니다.');
-    expect(describeAcceptResult('REQUEST')).toBe('편집자로 추가했습니다.');
+    expect(describeAcceptResult('INVITE')).toBe('일정에 참여했어요.');
+    expect(describeAcceptResult('REQUEST')).toBe('편집자로 추가했어요.');
   });
 
   it('거절 결과와 실패 제목도 구분한다', () => {

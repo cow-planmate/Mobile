@@ -228,7 +228,7 @@ export default function PostCreateScreen() {
               onChangeText={setMaxParticipants}
               keyboardType="number-pad"
             />
-            <Text style={styles.hint}>비워두면 인원 제한 없이 모집합니다.</Text>
+            <Text style={styles.hint}>비워두면 인원 제한 없이 모집해요.</Text>
           </View>
         )}
 
@@ -281,8 +281,8 @@ export default function PostCreateScreen() {
             accessibilityLabel="내용"
           />
           <Text style={styles.hint}>
-            앱에서는 글자 서식 없이 작성합니다. 줄바꿈은 그대로 유지되며,
-            웹에서도 같은 문단으로 보입니다.
+            앱에서는 글자 서식 없이 작성해요. 줄바꿈은 그대로 유지되고,
+            웹에서도 같은 문단으로 보여요.
           </Text>
         </View>
       </ScrollView>

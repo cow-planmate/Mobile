@@ -148,7 +148,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         set({ user: userData, lastLoginMethod: 'email', lastLoginEmail: email });
       } else {
-        throw new Error(data.message || '서버 응답 형식이 올바르지 않습니다.');
+        throw new Error(data.message || '서버 응답 형식이 올바르지 않아요.');
       }
     } catch (error) {
       throw error;
@@ -170,7 +170,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         response.data;
 
       if (!accessToken || !refreshToken || !userId) {
-        throw new Error('서버 응답 형식이 올바르지 않습니다.');
+        throw new Error('서버 응답 형식이 올바르지 않아요.');
       }
 
       const userData: User = {
@@ -231,7 +231,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           ...(provider ? { lastLoginMethod: provider } : {}),
         });
       } else {
-        throw new Error('서버 응답 형식이 올바르지 않습니다.');
+        throw new Error('서버 응답 형식이 올바르지 않아요.');
       }
     } catch (error) {
       console.error('OAuth Complete error:', error);

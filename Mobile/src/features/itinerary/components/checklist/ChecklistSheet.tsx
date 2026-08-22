@@ -45,8 +45,8 @@ const SCOPE_TABS: { scope: ChecklistScope; label: string }[] = [
 ];
 
 const SCOPE_EMPTY_TEXT: Record<ChecklistScope, string> = {
-  shared: '함께 준비할 것을 적어 두면\n같은 일정을 보는 사람에게도 보입니다.',
-  personal: '나만 보는 준비물 목록입니다.\n첫 항목을 추가해 보세요.',
+  shared: '함께 준비할 것을 적어 두면\n같은 일정을 보는 사람에게도 보여요.',
+  personal: '나만 보는 준비물 목록이에요.\n첫 항목을 추가해 보세요.',
 };
 
 interface ChecklistSheetProps {

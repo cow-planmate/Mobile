@@ -121,7 +121,7 @@ export default function RouteMapSection({
       if (!orderedIds) {
         showAlert({
           title: '순서 최적화 실패',
-          message: '경로를 계산하지 못했습니다. 잠시 후 다시 시도해주세요.',
+          message: '경로를 계산하지 못했어요. 잠시 후 다시 시도해 주세요.',
           type: 'error',
         });
         return;
@@ -130,7 +130,7 @@ export default function RouteMapSection({
       if (isSameOrder(places, orderedIds)) {
         showAlert({
           title: '이미 최적 순서예요',
-          message: '지금 순서가 가장 짧은 동선입니다.',
+          message: '지금 순서가 가장 짧은 동선이에요.',
           type: 'info',
         });
         return;
@@ -142,7 +142,7 @@ export default function RouteMapSection({
       console.warn('순서 최적화 실패:', e);
       showAlert({
         title: '순서 최적화 실패',
-        message: '경로를 계산하지 못했습니다. 잠시 후 다시 시도해주세요.',
+        message: '경로를 계산하지 못했어요. 잠시 후 다시 시도해 주세요.',
         type: 'error',
       });
     } finally {

@@ -91,7 +91,7 @@ export default function ProfileScreen({ route }: any) {
       patchProfile({ name: newNickname });
       Toast.show({
         type: 'success',
-        text1: '닉네임이 변경되었습니다.',
+        text1: '닉네임을 변경했어요.',
         position: 'top',
         visibilityTime: 2500,
       });
@@ -99,7 +99,7 @@ export default function ProfileScreen({ route }: any) {
       Toast.show({
         type: 'error',
 
-        text1: getDisplayErrorMessage(e, '닉네임 변경에 실패했습니다.'),
+        text1: getDisplayErrorMessage(e, '닉네임을 변경하지 못했어요.'),
         position: 'top',
         visibilityTime: 2500,
       });
@@ -115,14 +115,14 @@ export default function ProfileScreen({ route }: any) {
       patchProfile({ birthdate: newBirthdate });
       Toast.show({
         type: 'success',
-        text1: '생년월일이 변경되었습니다.',
+        text1: '생년월일을 변경했어요.',
         position: 'top',
         visibilityTime: 2500,
       });
     } catch (e) {
       Toast.show({
         type: 'error',
-        text1: getDisplayErrorMessage(e, '생년월일 변경에 실패했습니다.'),
+        text1: getDisplayErrorMessage(e, '생년월일을 변경하지 못했어요.'),
         position: 'top',
         visibilityTime: 2500,
       });
@@ -142,14 +142,14 @@ export default function ProfileScreen({ route }: any) {
       patchProfile({ gender: newGender });
       Toast.show({
         type: 'success',
-        text1: '성별이 변경되었습니다.',
+        text1: '성별을 변경했어요.',
         position: 'top',
         visibilityTime: 2500,
       });
     } catch (e) {
       Toast.show({
         type: 'error',
-        text1: getDisplayErrorMessage(e, '성별 변경에 실패했습니다.'),
+        text1: getDisplayErrorMessage(e, '성별을 변경하지 못했어요.'),
         position: 'top',
         visibilityTime: 2500,
       });
@@ -161,7 +161,7 @@ export default function ProfileScreen({ route }: any) {
     await refetchProfile();
     Toast.show({
       type: 'success',
-      text1: '선호 테마가 변경되었습니다.',
+      text1: '선호 테마를 변경했어요.',
       position: 'top',
       visibilityTime: 2500,
     });
@@ -174,7 +174,7 @@ export default function ProfileScreen({ route }: any) {
 
       Toast.show({
         type: 'success',
-        text1: '비밀번호가 성공적으로 변경되었습니다.',
+        text1: '비밀번호를 변경했어요.',
         position: 'top',
         visibilityTime: 2500,
       });
@@ -182,7 +182,7 @@ export default function ProfileScreen({ route }: any) {
     } catch (e) {
       Toast.show({
         type: 'error',
-        text1: getDisplayErrorMessage(e, '비밀번호 변경에 실패했습니다.'),
+        text1: getDisplayErrorMessage(e, '비밀번호를 변경하지 못했어요.'),
         position: 'top',
         visibilityTime: 2500,
       });
@@ -200,8 +200,8 @@ export default function ProfileScreen({ route }: any) {
     showAlert({
       title: '회원 탈퇴',
       message: user.socialLogin
-        ? '정말로 탈퇴하시겠습니까? 작성한 데이터는 삭제됩니다. 다만 같은 소셜 계정으로 다시 로그인하면 계정이 복구됩니다.'
-        : '정말로 탈퇴하시겠습니까? 탈퇴 후에는 모든 데이터가 삭제되며 복구할 수 없습니다.',
+        ? '정말 탈퇴할까요? 작성한 데이터는 삭제돼요. 다만 같은 소셜 계정으로 다시 로그인하면 계정이 복구돼요.'
+        : '정말 탈퇴할까요? 탈퇴하면 모든 데이터가 삭제되고 복구할 수 없어요.',
       type: 'confirm',
       buttons: [
         { text: '취소', style: 'cancel' },
@@ -219,7 +219,7 @@ export default function ProfileScreen({ route }: any) {
 
                 showAlert({
                   title: '탈퇴 완료',
-                  message: '회원 탈퇴가 완료되었습니다.',
+                  message: '회원 탈퇴를 마쳤어요.',
                   type: 'success',
 
                   buttons: [
@@ -236,7 +236,7 @@ export default function ProfileScreen({ route }: any) {
               console.error('Resign Error:', error);
               showAlert({
                 title: '오류',
-                message: '회원 탈퇴 처리 중 오류가 발생했습니다.',
+                message: '회원 탈퇴를 처리하지 못했어요.',
               });
             }
           },
@@ -266,14 +266,14 @@ export default function ProfileScreen({ route }: any) {
         );
         Toast.show({
           type: 'success',
-          text1: '일정 제목이 변경되었습니다.',
+          text1: '일정 제목을 변경했어요.',
           position: 'top',
           visibilityTime: 2500,
         });
       } catch (e) {
         Toast.show({
           type: 'error',
-          text1: '제목 변경에 실패했습니다.',
+          text1: '제목을 변경하지 못했어요.',
           position: 'top',
           visibilityTime: 2500,
         });
@@ -303,7 +303,7 @@ export default function ProfileScreen({ route }: any) {
     } catch {
       Toast.show({
         type: 'error',
-        text1: '이미지 선택에 실패했습니다.',
+        text1: '이미지를 선택하지 못했어요.',
         position: 'top',
       });
       return;
@@ -314,7 +314,7 @@ export default function ProfileScreen({ route }: any) {
     if (result.errorCode) {
       Toast.show({
         type: 'error',
-        text1: result.errorMessage || '이미지 선택에 실패했습니다.',
+        text1: result.errorMessage || '이미지를 선택하지 못했어요.',
         position: 'top',
       });
       return;
@@ -333,7 +333,7 @@ export default function ProfileScreen({ route }: any) {
       patchProfile({ profileImageUrl });
       Toast.show({
         type: 'success',
-        text1: '프로필 사진이 변경되었습니다.',
+        text1: '프로필 사진을 변경했어요.',
         position: 'top',
       });
     } catch (error) {
@@ -342,7 +342,7 @@ export default function ProfileScreen({ route }: any) {
         : undefined;
       Toast.show({
         type: 'error',
-        text1: message || '프로필 사진 변경에 실패했습니다.',
+        text1: message || '프로필 사진을 변경하지 못했어요.',
         position: 'top',
       });
     } finally {
@@ -358,7 +358,7 @@ export default function ProfileScreen({ route }: any) {
       patchProfile({ profileImageUrl: '' });
       Toast.show({
         type: 'success',
-        text1: '프로필 사진이 삭제되었습니다.',
+        text1: '프로필 사진을 삭제했어요.',
         position: 'top',
       });
     } catch (error) {
@@ -367,7 +367,7 @@ export default function ProfileScreen({ route }: any) {
         : undefined;
       Toast.show({
         type: 'error',
-        text1: message || '프로필 사진 삭제에 실패했습니다.',
+        text1: message || '프로필 사진을 삭제하지 못했어요.',
         position: 'top',
       });
     } finally {

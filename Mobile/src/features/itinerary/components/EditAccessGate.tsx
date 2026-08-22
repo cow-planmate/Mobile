@@ -38,7 +38,7 @@ export default function EditAccessGate({
     try {
       await requestEditAccess(planId);
       setStatus('sent');
-      setNotice('요청을 보냈어요. 소유자가 수락하면 편집할 수 있습니다.');
+      setNotice('요청을 보냈어요. 소유자가 수락하면 편집할 수 있어요.');
     } catch (error) {
       const { code, message } = parseBackendError(error);
 
@@ -79,7 +79,7 @@ export default function EditAccessGate({
 
         <Text style={styles.title}>편집 권한이 없어요</Text>
         <Text style={styles.description}>
-          소유자에게 권한을 요청하면 수락된 뒤부터 함께 편집할 수 있습니다.
+          소유자에게 권한을 요청하면 수락된 뒤부터 함께 편집할 수 있어요.
         </Text>
 
         {notice ? (

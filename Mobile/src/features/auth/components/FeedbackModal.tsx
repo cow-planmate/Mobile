@@ -43,7 +43,7 @@ export default function FeedbackModal({ visible, onClose }: FeedbackModalProps) 
       onClose();
       Toast.show({
         type: 'success',
-        text1: '피드백을 보내주셔서 감사합니다.',
+        text1: '피드백을 보내주셔서 고마워요.',
         position: 'top',
       });
     } catch (error) {
@@ -52,7 +52,7 @@ export default function FeedbackModal({ visible, onClose }: FeedbackModalProps) 
         : undefined;
       Toast.show({
         type: 'error',
-        text1: message || '피드백 전송에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+        text1: message || '피드백을 보내지 못했어요. 잠시 후 다시 시도해 주세요.',
         position: 'top',
       });
     } finally {

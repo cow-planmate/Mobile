@@ -11,14 +11,14 @@ describe('errorHandler Utility', () => {
       response: {
         data: {
           code: 'AUTH_003',
-          message: '이메일 또는 비밀번호가 올바르지 않습니다.',
+          message: '이메일 또는 비밀번호가 올바르지 않아요.',
         },
       },
     };
 
     const parsed = parseBackendError(mockAxiosError);
     expect(parsed.code).toBe('AUTH_003');
-    expect(parsed.message).toBe('이메일 또는 비밀번호가 올바르지 않습니다.');
+    expect(parsed.message).toBe('이메일 또는 비밀번호가 올바르지 않아요.');
   });
 
   it('should fallback to BACKEND_ERROR_MESSAGES when message is missing in error data', () => {
@@ -41,7 +41,7 @@ describe('errorHandler Utility', () => {
     const parsed = parseBackendError(mockError);
     expect(parsed.code).toBe('COMMON_005');
 
-    expect(parsed.message).toBe('서버 오류가 발생했습니다.');
+    expect(parsed.message).toBe('서버에 문제가 생겼어요.');
   });
 
   it('본문이 JSON이 아니면 상태 코드로 한국어 메시지를 고른다', () => {
@@ -71,12 +71,12 @@ describe('errorHandler Utility', () => {
     it('should use the server message when the response body exists', () => {
       const mockAxiosError = {
         response: {
-          data: { code: 'AUTH_004', message: '이미 가입된 이메일입니다.' },
+          data: { code: 'AUTH_004', message: '이미 가입된 이메일이에요.' },
         },
       };
 
       expect(getDisplayErrorMessage(mockAxiosError, '대체 문구')).toBe(
-        '이미 가입된 이메일입니다.',
+        '이미 가입된 이메일이에요.',
       );
     });
 
@@ -103,12 +103,12 @@ describe('errorHandler Utility', () => {
       response: {
         data: {
           code: 'COLLAB_002',
-          message: '이미 플랜에 대한 접근 권한이 있는 사용자입니다.',
+          message: '이미 플랜에 대한 접근 권한이 있는 사용자예요.',
         },
       },
     };
 
     const message = getBackendErrorMessage(mockAxiosError);
-    expect(message).toBe('이미 플랜에 대한 접근 권한이 있는 사용자입니다.');
+    expect(message).toBe('이미 플랜에 대한 접근 권한이 있는 사용자예요.');
   });
 });

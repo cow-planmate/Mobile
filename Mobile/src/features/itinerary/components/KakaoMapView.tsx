@@ -256,7 +256,7 @@ export default function KakaoMapView({
         places = places || [];
 
         if (places.length === 0) {
-          document.getElementById('map').innerHTML = '<div class="empty-msg">표시할 장소가 없습니다</div>';
+          document.getElementById('map').innerHTML = '<div class="empty-msg">표시할 장소가 없어요</div>';
           return;
         }
 
@@ -427,7 +427,7 @@ export default function KakaoMapView({
       <View style={[mapStyles.container, style]}>
         <View style={mapStyles.emptyContainer}>
           <MapPin size={32} color="#D1D5DB" strokeWidth={1.5} />
-          <Text style={mapStyles.emptyText}>지도를 불러올 수 없습니다</Text>
+          <Text style={mapStyles.emptyText}>지도를 불러올 수 없어요</Text>
           <Text style={mapStyles.emptyHint}>
             카카오 지도 키가 설정되지 않았어요.
           </Text>
@@ -441,7 +441,7 @@ export default function KakaoMapView({
       <View style={[mapStyles.container, style]}>
         <View style={mapStyles.emptyContainer}>
           <MapPin size={32} color="#D1D5DB" strokeWidth={1.5} />
-          <Text style={mapStyles.emptyText}>표시할 장소가 없습니다</Text>
+          <Text style={mapStyles.emptyText}>표시할 장소가 없어요</Text>
         </View>
       </View>
     );

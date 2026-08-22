@@ -334,7 +334,7 @@ export default function SignupScreen() {
     if (!emailAuthToken) {
       showAlert({
         title: '오류',
-        message: '이메일 인증 정보가 만료되었습니다. 처음부터 다시 진행해주세요.',
+        message: '이메일 인증 정보가 만료됐어요. 처음부터 다시 진행해 주세요.',
       });
       return;
     }
@@ -374,8 +374,8 @@ export default function SignupScreen() {
         } catch (loginError) {
           setNeedsThemeSelection(false);
           showAlert({
-            title: '환영합니다!',
-            message: '회원가입이 완료되었습니다. 로그인 해주세요.',
+            title: '환영해요!',
+            message: '회원가입을 마쳤어요. 로그인해 주세요.',
             type: 'success',
             buttons: [
               // 가입이 끝난 폼으로 뒤로가기가 되면 안 되므로 스택에서 치운다.

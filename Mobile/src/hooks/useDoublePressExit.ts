@@ -29,7 +29,7 @@ export function useDoublePressExit(enabled = true) {
         exitArmedRef.current = true;
         Toast.show({
           type: 'info',
-          text1: '한 번 더 누르면 종료됩니다',
+          text1: '한 번 더 누르면 종료돼요',
           position: 'top',
           visibilityTime: EXIT_CONFIRM_WINDOW_MS,
         });

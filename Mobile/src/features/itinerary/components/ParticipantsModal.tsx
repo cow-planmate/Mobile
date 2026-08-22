@@ -76,7 +76,7 @@ export default function ParticipantsModal({
             {users.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyStateText}>
-                  현재 참여 중인 사람이 없습니다.
+                  현재 참여 중인 사람이 없어요.
                 </Text>
               </View>
             ) : (

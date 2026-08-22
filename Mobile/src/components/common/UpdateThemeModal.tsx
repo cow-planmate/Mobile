@@ -110,7 +110,7 @@ export default function UpdateThemeModal({
       onConfirm();
     } catch (error) {
       console.error('Failed to save themes:', error);
-      showAlert({ title: '오류', message: '선호 테마 저장에 실패했습니다.' });
+      showAlert({ title: '오류', message: '선호 테마를 저장하지 못했어요.' });
     } finally {
       setSaving(false);
     }
@@ -184,7 +184,7 @@ export default function UpdateThemeModal({
                   </ScrollView>
                 ) : (
                   <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>선택된 테마가 없습니다</Text>
+                    <Text style={styles.emptyText}>선택된 테마가 없어요</Text>
                   </View>
                 )}
 

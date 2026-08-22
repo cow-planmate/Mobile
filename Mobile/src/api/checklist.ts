@@ -74,7 +74,7 @@ export function normalizeChecklistContent(content: string): string {
   }
   if (trimmed.length > CHECKLIST_CONTENT_MAX_LENGTH) {
     throw new Error(
-      `내용은 ${CHECKLIST_CONTENT_MAX_LENGTH}자를 넘을 수 없습니다.`,
+      `내용은 ${CHECKLIST_CONTENT_MAX_LENGTH}자를 넘을 수 없어요.`,
     );
   }
 
@@ -143,7 +143,7 @@ export async function reorderChecklistItems(
   itemIds: number[],
 ): Promise<void> {
   if (!itemIds.length) {
-    throw new Error('정렬할 항목이 없습니다.');
+    throw new Error('정렬할 항목이 없어요.');
   }
 
   await axios.patch(resolveApiUrl(`${scopeBasePath(planId, scope)}/order`), {

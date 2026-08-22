@@ -22,7 +22,7 @@ export const checklistKeys = {
     ['checklist', planId, scope] as const,
 };
 
-const CHECKLIST_ERROR_FALLBACK = '체크리스트를 저장하지 못했습니다.';
+const CHECKLIST_ERROR_FALLBACK = '체크리스트를 저장하지 못했어요.';
 
 const CHECKLIST_ACK_TIMEOUT_MS = 5000;
 
@@ -35,7 +35,7 @@ type ChecklistSendResult = 'skipped' | 'acked' | 'timeout';
 
 export class ChecklistAckTimeoutError extends Error {
   constructor() {
-    super('저장 결과를 확인하지 못했어요. 목록을 새로 고칩니다.');
+    super('저장 결과를 확인하지 못했어요. 목록을 새로 고칠게요.');
     this.name = 'ChecklistAckTimeoutError';
   }
 }

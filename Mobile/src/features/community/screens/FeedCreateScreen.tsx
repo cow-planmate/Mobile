@@ -113,7 +113,7 @@ export default function FeedCreateScreen() {
   const { allowLeave } = useUnsavedChangesPrompt({
     hasUnsavedChanges: !!title.trim() || !!content.trim(),
     title: '작성 취소',
-    message: '작성 중인 여행기가 사라집니다. 나갈까요?',
+    message: '작성 중인 여행기가 사라져요. 나갈까요?',
   });
 
   const handleSubmit = () =>
@@ -204,7 +204,7 @@ export default function FeedCreateScreen() {
               {existingPost.data.itinerary.plan?.destinationName ??
                 existingPost.data.location ??
                 existingPost.data.region ?? ''}
-              {' '}· {existingPost.data.itinerary.days.length}일 일정은 그대로 유지됩니다.
+              {' '}· {existingPost.data.itinerary.days.length}일 일정은 그대로 유지돼요.
             </Text>
           </View>
         ) : isProfileLoading ? (
@@ -250,7 +250,7 @@ export default function FeedCreateScreen() {
           <View style={styles.snapshotInfo}>
             <MapPin size={16} color={tokens.colors.primary} />
             <Text style={styles.snapshotText}>
-              {snapshot.destinationName} · {snapshot.itinerary.days.length}일 일정이 공개됩니다.
+              {snapshot.destinationName} · {snapshot.itinerary.days.length}일 일정이 공개돼요.
             </Text>
           </View>
         )}
@@ -277,7 +277,7 @@ export default function FeedCreateScreen() {
                     <Text style={styles.previewMore}>외 {day.items.length - 2}곳</Text>
                   )}
                   {day.items.length === 0 && (
-                    <Text style={styles.previewMore}>등록한 장소가 없습니다.</Text>
+                    <Text style={styles.previewMore}>등록한 장소가 없어요.</Text>
                   )}
                 </View>
               </View>
@@ -328,7 +328,7 @@ export default function FeedCreateScreen() {
           onChangeText={setThumbnailUrl}
           style={styles.input}
           editable={!isHydrating}
-          placeholder="비워 두면 일정의 첫 사진을 사용합니다"
+          placeholder="비워 두면 일정의 첫 사진을 사용해요"
           autoCapitalize="none"
         />
       </ScrollView>

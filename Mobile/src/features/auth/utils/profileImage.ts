@@ -35,18 +35,18 @@ export function buildProfileImageUploadFile(
   asset: PickedImageAsset | undefined,
 ): ProfileImageSelectionResult {
   if (!asset?.uri) {
-    return { error: '이미지 파일을 불러오지 못했습니다.' };
+    return { error: '이미지 파일을 불러오지 못했어요.' };
   }
 
   if (!asset.type || !SUPPORTED_MIME_TYPES.has(asset.type)) {
-    return { error: 'JPG, PNG, GIF, WebP 이미지만 등록할 수 있습니다.' };
+    return { error: 'JPG, PNG, GIF, WebP 이미지만 등록할 수 있어요.' };
   }
 
   if (
     typeof asset.fileSize === 'number' &&
     asset.fileSize > MAX_PROFILE_IMAGE_SIZE_BYTES
   ) {
-    return { error: '프로필 이미지는 5MB 이하만 등록할 수 있습니다.' };
+    return { error: '프로필 이미지는 5MB 이하만 등록할 수 있어요.' };
   }
 
   return {

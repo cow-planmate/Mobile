@@ -231,7 +231,7 @@ export default function CommentSection({
     showAlert({
       title: '댓글 삭제',
       message: hasReplies
-        ? '댓글을 삭제할까요? 답글도 함께 삭제됩니다.'
+        ? '댓글을 삭제할까요? 답글도 함께 삭제돼요.'
         : '댓글을 삭제할까요?',
       type: 'confirm',
       buttons: [

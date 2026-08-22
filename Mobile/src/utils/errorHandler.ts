@@ -22,7 +22,7 @@ export function parseBackendError(error: unknown): ApiErrorResponse {
       const message =
         responseData.message ||
         BACKEND_ERROR_MESSAGES[code] ||
-        '서버 오류가 발생했습니다.';
+        '서버에 문제가 생겼어요.';
 
       return { code, message };
     }
@@ -39,7 +39,7 @@ export function parseBackendError(error: unknown): ApiErrorResponse {
 
   return {
     code: 'COMMON_005',
-    message: '서버 오류가 발생했습니다.',
+    message: '서버에 문제가 생겼어요.',
   };
 }
 

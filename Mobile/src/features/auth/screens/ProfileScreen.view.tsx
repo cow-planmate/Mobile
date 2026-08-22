@@ -561,7 +561,7 @@ export default function ProfileScreenView({
                 void invalidatePlanCaches(queryClient);
                 Toast.show({
                   type: 'success',
-                  text1: '편집 권한 포기가 완료되었습니다.',
+                  text1: '편집 권한을 포기했어요.',
                   position: 'top',
                 });
               } catch (e) {
@@ -569,7 +569,7 @@ export default function ProfileScreenView({
                 console.error('편집 권한 포기 실패:', e);
                 Toast.show({
                   type: 'error',
-                  text1: '편집 권한 포기에 실패했습니다.',
+                  text1: '편집 권한을 포기하지 못했어요.',
                   position: 'top',
                 });
               }
@@ -580,7 +580,7 @@ export default function ProfileScreenView({
     } else {
       showAlert({
         title: '일정 삭제',
-        message: '이 일정을 정말로 삭제하시겠습니까? 되돌릴 수 없습니다.',
+        message: '이 일정을 정말 삭제할까요? 되돌릴 수 없어요.',
         type: 'confirm',
         buttons: [
           { text: '취소', style: 'cancel' },
@@ -596,14 +596,14 @@ export default function ProfileScreenView({
                 void invalidatePlanCaches(queryClient);
                 Toast.show({
                   type: 'success',
-                  text1: '일정이 정상적으로 삭제되었습니다.',
+                  text1: '일정을 삭제했어요.',
                   position: 'top',
                 });
               } catch (e) {
                 console.error('일정 삭제 실패:', e);
                 Toast.show({
                   type: 'error',
-                  text1: '일정 삭제에 실패했습니다.',
+                  text1: '일정을 삭제하지 못했어요.',
                   position: 'top',
                 });
               }
@@ -647,7 +647,7 @@ export default function ProfileScreenView({
     if (selectedPlanIds.length === 0) return;
     showAlert({
       title: '선택 일정 삭제 및 권한 포기',
-      message: `선택한 ${selectedPlanIds.length}개의 일정을 삭제 또는 권한 포기하시겠습니까? 되돌릴 수 없습니다.`,
+      message: `선택한 ${selectedPlanIds.length}개의 일정을 삭제하거나 권한을 포기할까요? 되돌릴 수 없어요.`,
       type: 'confirm',
       buttons: [
         { text: '취소', style: 'cancel' },
@@ -705,8 +705,8 @@ export default function ProfileScreenView({
                 type: processedIds.length > 0 ? 'info' : 'error',
                 text1:
                   processedIds.length > 0
-                    ? `${processedIds.length}개 처리, ${failed}개 실패했습니다.`
-                    : '선택한 일정을 처리하지 못했습니다.',
+                    ? `${processedIds.length}개 처리, ${failed}개는 실패했어요.`
+                    : '선택한 일정을 처리하지 못했어요.',
                 position: 'top',
               });
               return;
@@ -714,7 +714,7 @@ export default function ProfileScreenView({
 
             Toast.show({
               type: 'success',
-              text1: '선택한 일정 처리가 완료되었습니다.',
+              text1: '선택한 일정을 처리했어요.',
               position: 'top',
             });
           },
@@ -766,7 +766,7 @@ export default function ProfileScreenView({
       setIsProfilePublic(!next);
       Toast.show({
         type: 'error',
-        text1: '프로필 공개 설정 변경에 실패했습니다.',
+        text1: '프로필 공개 설정을 변경하지 못했어요.',
         position: 'top',
       });
     }
@@ -833,14 +833,14 @@ export default function ProfileScreenView({
       Toast.show({
         type: available ? 'success' : 'error',
         text1: available
-          ? '사용 가능한 닉네임입니다.'
-          : '이미 사용 중인 닉네임입니다.',
+          ? '사용할 수 있는 닉네임이에요.'
+          : '이미 사용 중인 닉네임이에요.',
         position: 'top',
       });
     } catch (e) {
       Toast.show({
         type: 'error',
-        text1: getDisplayErrorMessage(e, '닉네임을 확인하지 못했습니다.'),
+        text1: getDisplayErrorMessage(e, '닉네임을 확인하지 못했어요.'),
         position: 'top',
       });
     } finally {
@@ -883,7 +883,7 @@ export default function ProfileScreenView({
       if (hasChange) {
         Toast.show({
           type: 'success',
-          text1: '프로필 정보가 저장되었습니다.',
+          text1: '프로필 정보를 저장했어요.',
           position: 'top',
         });
       }
@@ -1183,7 +1183,7 @@ export default function ProfileScreenView({
                   style={styles.dashedPlanIcon}
                 />
                 <Text style={styles.noPlanText}>
-                  진행 중이거나 예정된 여행 일정이 없습니다.
+                  진행 중이거나 예정된 여행 일정이 없어요.
                 </Text>
                 <TouchableOpacity
                   onPress={() =>
@@ -1282,7 +1282,7 @@ export default function ProfileScreenView({
               </View>
               ) : (
                 <Text style={styles.noPastRecordText}>
-                  지난 여행 기록이 없습니다.
+                  지난 여행 기록이 없어요.
                 </Text>
               )}
             </View>

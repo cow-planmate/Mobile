@@ -42,7 +42,7 @@ export default function PlanMapModal({
             <View>
               <Text style={styles.title}>일정 지도</Text>
               <Text style={styles.subtitle}>
-                현재 선택한 일차의 장소를 보여줍니다
+                현재 선택한 일차의 장소를 보여줘요
               </Text>
             </View>
           </View>

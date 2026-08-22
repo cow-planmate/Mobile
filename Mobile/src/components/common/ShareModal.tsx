@@ -89,14 +89,14 @@ export default function ShareModal({
       await updateShareStatus(planId, newValue);
       Toast.show({
         type: 'success',
-        text1: newValue ? '일정 공유가 활성화되었습니다.' : '일정이 비공개로 변경되었습니다.',
+        text1: newValue ? '일정 공유를 켰어요.' : '일정을 비공개로 바꿨어요.',
         position: 'top',
         visibilityTime: 1500,
       });
     } catch (error) {
       console.error('Failed to update share status:', error);
       setIsShared(!newValue);
-      showAlert({ title: '오류', message: '공유 상태 변경에 실패했습니다.' });
+      showAlert({ title: '오류', message: '공유 상태를 변경하지 못했어요.' });
     }
   };
 
@@ -110,7 +110,7 @@ export default function ShareModal({
         Clipboard.setString(shareLink);
         Toast.show({
           type: 'success',
-          text1: '링크가 복사되었습니다.',
+          text1: '링크를 복사했어요.',
           position: 'top',
           visibilityTime: 1500,
         });
@@ -128,7 +128,7 @@ export default function ShareModal({
     if (!shareLink) return;
     try {
       await Share.share({
-        message: `[PlanMate] 완성된 여행 일정 링크입니다!\n${shareLink}`,
+        message: `[PlanMate] 완성된 여행 일정 링크예요!\n${shareLink}`,
       });
     } catch (error) {
       console.error('Share failed:', error);
@@ -181,14 +181,14 @@ export default function ShareModal({
         ]);
         showAlert({
           title: '성공',
-          message: `${receiverNickname}님을 초대했습니다.`,
+          message: `${receiverNickname}님을 초대했어요.`,
         });
         setNickname('');
       } else {
         await inviteEditor(planId, receiverNickname);
         showAlert({
           title: '성공',
-          message: `${receiverNickname}님을 초대했습니다.`,
+          message: `${receiverNickname}님을 초대했어요.`,
         });
         setNickname('');
         fetchEditors();
@@ -200,19 +200,19 @@ export default function ShareModal({
       if (code === ALREADY_MEMBER_CODE) {
         showAlert({
           title: '이미 참여 중',
-          message: '이미 이 일정의 편집 권한이 있는 사용자입니다.',
+          message: '이미 이 일정의 편집 권한이 있는 사용자예요.',
         });
       } else if (code === DUPLICATE_PENDING_CODE) {
         showAlert({
           title: '초대 대기 중',
-          message: '이미 초대를 보낸 사용자입니다. 상대방의 수락을 기다려주세요.',
+          message: '이미 초대를 보낸 사용자예요. 상대방의 수락을 기다려 주세요.',
         });
       } else {
         showAlert({
           title: '오류',
           message: getDisplayErrorMessage(
             error,
-            '사용자를 초대하지 못했습니다. 닉네임을 확인해주세요.',
+            '사용자를 초대하지 못했어요. 닉네임을 확인해 주세요.',
           ),
         });
       }
@@ -243,7 +243,7 @@ export default function ShareModal({
               console.error('Remove editor failed:', error);
               showAlert({
                 title: '오류',
-                message: '편집자 삭제에 실패했습니다.',
+                message: '편집자를 삭제하지 못했어요.',
               });
             }
           },

@@ -22,7 +22,7 @@ export async function forkItinerary(
   const created = await axios.post(resolveApiUrl('/api/plan/full'), body);
   const planId = created.data?.planId;
   if (!planId) {
-    throw new Error('플랜 생성 응답에 planId가 없습니다.');
+    throw new Error('플랜 생성 응답에 planId가 없어요.');
   }
 
   try {

@@ -905,7 +905,7 @@ const TimelineComponent = React.memo(
 
           <Animated.View style={[styles.overflowBanner, bannerAnimStyle]}>
             <Text style={styles.overflowBannerText}>
-              설정된 타임라인 시간을 초과할 수 없습니다
+              설정된 타임라인 시간을 초과할 수 없어요
             </Text>
           </Animated.View>
         </View>

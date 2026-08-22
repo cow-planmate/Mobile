@@ -207,7 +207,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
       showAlert({
         title: '변경사항 저장 안 됨',
-        message: '작성 중인 내용이 저장되지 않았습니다. 정말 나가시겠습니까?',
+        message: '작성 중인 내용이 저장되지 않았어요. 정말 나갈까요?',
         type: 'warning',
         buttons: [
           {
@@ -481,7 +481,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           title: '일정 이름 저장 실패',
           message: getDisplayErrorMessage(
             err,
-            '일정 이름을 저장하지 못했습니다. 완료할 때 다시 시도합니다.',
+            '일정 이름을 저장하지 못했어요. 완료할 때 다시 시도할게요.',
           ),
           type: 'error',
         });
@@ -506,7 +506,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       reorderPlacesInDay(selectedDayIndex, orderedPlaceIds);
       Toast.show({
         type: 'success',
-        text1: '방문 순서를 최적화했습니다.',
+        text1: '방문 순서를 최적화했어요.',
         position: 'top',
         visibilityTime: 2000,
       });
@@ -633,7 +633,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
             title: '일정 이름 저장 실패',
             message: getDisplayErrorMessage(
               err,
-              '일정은 저장했지만 이름은 반영하지 못했습니다.',
+              '일정은 저장했지만 이름은 반영하지 못했어요.',
             ),
             type: 'error',
           });
@@ -718,8 +718,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         console.error('Plan creation response did not include planId:', result);
         isCompletingRef.current = false;
         showAlert({
-          title: '일정을 확인할 수 없습니다',
-          message: '일정 생성 응답에 식별자가 없습니다. 내 일정에서 생성 여부를 확인해주세요.',
+          title: '일정을 확인할 수 없어요',
+          message: '일정 생성 응답에 식별자가 없어요. 내 일정에서 생성됐는지 확인해 주세요.',
         });
         return;
       }
@@ -751,7 +751,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       });
     } catch (error: any) {
       console.error('Failed to create plan:', error);
-      showAlert({ title: '오류', message: '일정 저장에 실패했습니다.' });
+      showAlert({ title: '오류', message: '일정을 저장하지 못했어요.' });
       isCompletingRef.current = false;
     } finally {
       isSavingRef.current = false;

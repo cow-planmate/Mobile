@@ -107,7 +107,7 @@ export default function FeedDetailScreen() {
           title: '가져오기 완료',
           message:
             adjustedBlocks > 0
-              ? `내 일정에 담았어요. 시간이 겹치는 블록 ${adjustedBlocks}개는 뒤로 밀어 정리했습니다.`
+              ? `내 일정에 담았어요. 시간이 겹치는 블록 ${adjustedBlocks}개는 뒤로 밀어 정리했어요.`
               : '내 일정에 담았어요.',
           type: 'success',
           buttons: [
@@ -172,7 +172,7 @@ export default function FeedDetailScreen() {
         {renderTopBar()}
         <View style={styles.stateBox}>
           <Text style={styles.stateText}>
-            여행기를 찾을 수 없어요.{'\n'}삭제되었거나 접근할 수 없는 글입니다.
+            여행기를 찾을 수 없어요.{'\n'}삭제됐거나 접근할 수 없는 글이에요.
           </Text>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.stateLink}>목록으로 돌아가기</Text>
@@ -271,7 +271,7 @@ export default function FeedDetailScreen() {
           </TouchableOpacity>
           <Text style={styles.forkHint}>
             {isForkable
-              ? '시작일만 고르면 이 일정 그대로 내 일정에 담깁니다.'
+              ? '시작일만 고르면 이 일정 그대로 내 일정에 담겨요.'
               : '이 여행기에는 가져갈 수 있는 일정 정보가 없어요.'}
           </Text>
         </View>

@@ -70,7 +70,7 @@ export default function ScheduleEditModal({
 
   const handleAddDay = () => {
     if (days.length >= 14) {
-      showAlert({ title: '알림', message: '일정은 최대 14일까지 추가할 수 있습니다.' });
+      showAlert({ title: '알림', message: '일정은 최대 14일까지 추가할 수 있어요.' });
       return;
     }
 
@@ -99,7 +99,7 @@ export default function ScheduleEditModal({
     if (lastDay.places && lastDay.places.length > 0) {
       showAlert({
         title: '삭제 확인',
-        message: `${lastDay.dayNumber}일차에 등록된 장소가 존재합니다. 정말 삭제하시겠습니까?`,
+        message: `${lastDay.dayNumber}일차에 등록된 장소가 있어요. 정말 삭제할까요?`,
         type: 'confirm',
         buttons: [
           { text: '취소', style: 'cancel' },
@@ -175,7 +175,7 @@ export default function ScheduleEditModal({
     if (invalidIndex !== null) {
       showAlert({
         title: '날짜 설정 오류',
-        message: `${days[invalidIndex].dayNumber}일차 날짜가 이전 일차와 같거나 앞섭니다. 날짜를 순서대로 지정해주세요.`,
+        message: `${days[invalidIndex].dayNumber}일차 날짜가 이전 일차와 같거나 앞서요. 날짜를 순서대로 지정해 주세요.`,
       });
       return;
     }
@@ -187,7 +187,7 @@ export default function ScheduleEditModal({
       if (startMinutes >= endMinutes) {
         showAlert({
           title: '시간 설정 오류',
-          message: `${day.dayNumber}일차의 시작 시간이 종료 시간보다 늦거나 같습니다.`,
+          message: `${day.dayNumber}일차의 시작 시간이 종료 시간보다 늦거나 같아요.`,
         });
         return;
       }
@@ -195,7 +195,7 @@ export default function ScheduleEditModal({
       if (endMinutes - startMinutes < 60) {
         showAlert({
           title: '시간 범위 오류',
-          message: `${day.dayNumber}일차의 일정 운영 시간은 최소 1시간 이상 설정해야 합니다.`,
+          message: `${day.dayNumber}일차의 일정 운영 시간은 최소 1시간 이상이어야 해요.`,
         });
         return;
       }

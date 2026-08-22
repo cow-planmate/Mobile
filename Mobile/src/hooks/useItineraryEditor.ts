@@ -302,7 +302,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
       updatePlaceTimes(selectedDayIndex, placeId, newStartTime, newEndTime);
       Toast.show({
         type: 'success',
-        text1: '일정 시간이 수정되었습니다.',
+        text1: '일정 시간을 수정했어요.',
         position: 'top',
         visibilityTime: 2000,
       });
@@ -315,7 +315,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
       deletePlaceFromDay(selectedDayIndex, placeId);
       Toast.show({
         type: 'success',
-        text1: '일정이 삭제되었습니다.',
+        text1: '일정을 삭제했어요.',
         position: 'top',
         visibilityTime: 2000,
       });
@@ -328,7 +328,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
       addPlaceToDay(selectedDayIndex, place);
       Toast.show({
         type: 'success',
-        text1: '일정이 추가되었습니다.',
+        text1: '일정을 추가했어요.',
         position: 'top',
         visibilityTime: 2000,
       });

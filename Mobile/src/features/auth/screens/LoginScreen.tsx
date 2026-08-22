@@ -147,7 +147,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           } else {
             showAlert({
               title: '오류',
-              message: '소셜 로그인 정보가 올바르지 않습니다.',
+              message: '소셜 로그인 정보가 올바르지 않아요.',
             });
           }
         } else if (status === 'NEED_ADDITIONAL_INFO') {
@@ -163,7 +163,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           } else {
             showAlert({
               title: '오류',
-              message: '가입 세션 정보가 올바르지 않습니다.',
+              message: '가입 세션 정보가 올바르지 않아요.',
             });
           }
         } else {

@@ -234,7 +234,7 @@ export default function CommunityScreenView({
           <View style={styles.hotSectionContainer}>
             <SectionHeader
               title="지금 뜨는 핫글"
-              description="실시간 가장 반응이 뜨거운 게시글입니다"
+              description="실시간 가장 반응이 뜨거운 게시글이에요"
               icon={
                 <View style={styles.hotIconWrap}>
                   <Flame size={15} color={tokens.tones.hot.fg} />
@@ -363,7 +363,7 @@ export default function CommunityScreenView({
     }
     return (
       <EmptyState
-        title={searchQuery ? '검색 결과가 없습니다' : '아직 게시글이 없어요'}
+        title={searchQuery ? '검색 결과가 없어요' : '아직 게시글이 없어요'}
         description={
           searchQuery ? undefined : '첫 글을 작성해 이야기를 시작해 보세요.'
         }

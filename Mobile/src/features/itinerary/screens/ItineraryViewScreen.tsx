@@ -318,7 +318,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
 
     showAlert({
       title: '성공',
-      message: '일정이 저장되었습니다.',
+      message: '일정을 저장했어요.',
       type: 'success',
       buttons: [
         {

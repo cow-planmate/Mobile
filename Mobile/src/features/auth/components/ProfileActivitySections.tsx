@@ -233,7 +233,7 @@ export function ProfileFootprintSection({ plans }: { plans: ProfilePlan[] }) {
       {plans.length === 0 ? (
         <EmptyState
           title="아직 발자취가 없어요"
-          description="완료한 여행을 추가하면 발자취가 쌓입니다."
+          description="완료한 여행을 추가하면 발자취가 쌓여요."
           style={styles.innerEmpty}
         />
       ) : (

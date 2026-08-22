@@ -129,7 +129,7 @@ describe('체크리스트 API', () => {
 
       await expect(
         editChecklistItemContent(PLAN_ID, 'personal', 1, tooLong),
-      ).rejects.toThrow('255자를 넘을 수 없습니다.');
+      ).rejects.toThrow('255자를 넘을 수 없어요.');
       expect(mockedAxios.patch).not.toHaveBeenCalled();
     });
   });
@@ -149,7 +149,7 @@ describe('체크리스트 API', () => {
     it('빈 목록은 요청하지 않는다', async () => {
       await expect(
         reorderChecklistItems(PLAN_ID, 'shared', []),
-      ).rejects.toThrow('정렬할 항목이 없습니다.');
+      ).rejects.toThrow('정렬할 항목이 없어요.');
       expect(mockedAxios.patch).not.toHaveBeenCalled();
     });
   });

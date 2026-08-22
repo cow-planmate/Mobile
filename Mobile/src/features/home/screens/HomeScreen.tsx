@@ -143,7 +143,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       }
     } catch (e) {
       showAlert({
-        title: '수락하지 못했습니다',
+        title: '수락하지 못했어요',
         message: '네트워크 상태를 확인하고 다시 시도해주세요.',
         buttons: [
           { text: '닫기', style: 'cancel' },
@@ -164,7 +164,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       }
     } catch (e) {
       showAlert({
-        title: '거절하지 못했습니다',
+        title: '거절하지 못했어요',
         message: '네트워크 상태를 확인하고 다시 시도해주세요.',
         buttons: [
           { text: '닫기', style: 'cancel' },
@@ -195,7 +195,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const handleNotificationPress = () => {
     if (pendingRequests.length === 0) {
-      showAlert({ title: '알림', message: '새로운 알림이 없습니다.' });
+      showAlert({ title: '알림', message: '새로운 알림이 없어요.' });
       return;
     }
     setNotificationModalVisible(true);
@@ -238,7 +238,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       showAlert({
         title: '알림',
         message:
-          '여행지가 올바르게 선택되지 않았습니다.\n목록에서 다시 선택해주세요.',
+          '여행지가 올바르게 선택되지 않았어요.\n목록에서 다시 선택해 주세요.',
       });
       return;
     }
@@ -281,8 +281,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         if (!newPlanId) {
           console.error('Plan creation response did not include planId:', result);
           showAlert({
-            title: '일정을 확인할 수 없습니다',
-            message: '일정 생성 응답에 식별자가 없습니다. 내 일정에서 생성 여부를 확인해주세요.',
+            title: '일정을 확인할 수 없어요',
+            message: '일정 생성 응답에 식별자가 없어요. 내 일정에서 생성됐는지 확인해 주세요.',
           });
           return;
         }
@@ -301,7 +301,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         console.error('일정 생성 준비 실패:', error);
 
         showAlert({
-          title: '일정을 만들지 못했습니다',
+          title: '일정을 만들지 못했어요',
           message:
             '입력한 내용은 그대로 남아 있어요.\n네트워크 상태를 확인하고 다시 시도해주세요.',
           buttons: [

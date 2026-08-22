@@ -109,7 +109,7 @@ export const buildCreatePlanRequest = (
 ): ConversionResult => {
   const plan = itinerary.plan;
   if (!plan) {
-    throw new Error('일정 정보가 없는 여행기입니다.');
+    throw new Error('일정 정보가 없는 여행기예요.');
   }
 
   const days = itinerary.days ?? [];

@@ -87,7 +87,7 @@ export default function PostDetailScreen() {
     if (!post) return;
     showAlert({
       title: '게시글 삭제',
-      message: '게시글을 삭제할까요? 되돌릴 수 없습니다.',
+      message: '게시글을 삭제할까요? 되돌릴 수 없어요.',
       type: 'confirm',
       buttons: [
         { text: '취소', style: 'cancel' },
@@ -179,7 +179,7 @@ export default function PostDetailScreen() {
         {renderTopBar()}
         <View style={styles.stateBox}>
           <Text style={styles.stateText}>
-            게시글을 찾을 수 없어요.{'\n'}삭제되었거나 접근할 수 없는 글입니다.
+            게시글을 찾을 수 없어요.{'\n'}삭제됐거나 접근할 수 없는 글이에요.
           </Text>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.stateLink}>목록으로 돌아가기</Text>

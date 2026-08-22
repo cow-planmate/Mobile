@@ -61,7 +61,7 @@ describe('Auth Store - Social Login & Complete', () => {
     const store = useAuthStore.getState();
 
     await expect(store.oauthLogin('mock-auth-code', 'google')).rejects.toThrow(
-      '서버 응답 형식이 올바르지 않습니다.',
+      '서버 응답 형식이 올바르지 않아요.',
     );
     expect(useAuthStore.getState().user).toBeNull();
     expect(AsyncStorage.multiSet).not.toHaveBeenCalled();
@@ -169,7 +169,7 @@ describe('Auth Store - Social Login & Complete', () => {
     const mockFailedResponse = {
       data: {
         loginSuccess: false,
-        message: '이메일 또는 비밀번호가 올바르지 않습니다.',
+        message: '이메일 또는 비밀번호가 올바르지 않아요.',
       },
     };
 
@@ -177,7 +177,7 @@ describe('Auth Store - Social Login & Complete', () => {
 
     const store = useAuthStore.getState();
     await expect(store.login('user@example.com', 'wrongpassword')).rejects.toThrow(
-      '이메일 또는 비밀번호가 올바르지 않습니다.'
+      '이메일 또는 비밀번호가 올바르지 않아요.'
     );
   });
 });

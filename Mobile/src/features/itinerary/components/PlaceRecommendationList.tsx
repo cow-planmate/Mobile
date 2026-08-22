@@ -359,7 +359,7 @@ export default function PlaceRecommendationList({
     if (!lat || !lng) {
       showAlert({
         title: '지도를 열 수 없음',
-        message: '이 장소의 위치 정보가 없습니다.',
+        message: '이 장소의 위치 정보가 없어요.',
         type: 'error',
       });
       return;
@@ -375,7 +375,7 @@ export default function PlaceRecommendationList({
 
         showAlert({
           title: '지도를 열 수 없음',
-          message: '이 기기에서 구글 지도를 열 수 없습니다.',
+          message: '이 기기에서 구글 지도를 열 수 없어요.',
           type: 'error',
         });
       }

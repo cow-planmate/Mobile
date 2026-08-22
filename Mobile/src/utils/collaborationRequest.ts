@@ -11,24 +11,24 @@ export function describeCollaborationRequest(
   type: CollaborationRequestType | undefined,
 ): string {
   return type === 'REQUEST'
-    ? '일정의 편집 권한을 요청했습니다.'
-    : '일정에 초대했습니다.';
+    ? '일정의 편집 권한을 요청했어요.'
+    : '일정에 초대했어요.';
 }
 
 export function describeAcceptResult(
   type: CollaborationRequestType | undefined,
 ): string {
   return type === 'REQUEST'
-    ? '편집자로 추가했습니다.'
-    : '일정에 참여했습니다.';
+    ? '편집자로 추가했어요.'
+    : '일정에 참여했어요.';
 }
 
 export function describeRejectResult(
   type: CollaborationRequestType | undefined,
 ): string {
   return type === 'REQUEST'
-    ? '편집 권한 요청을 거절했습니다.'
-    : '초대를 거절했습니다.';
+    ? '편집 권한 요청을 거절했어요.'
+    : '초대를 거절했어요.';
 }
 
 export function collaborationRequestNoun(

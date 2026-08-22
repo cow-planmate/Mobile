@@ -95,7 +95,7 @@ export default function UpdatePasswordModal({
     if (!hasMinLength || !hasCombination) {
       showAlert({
         title: '오류',
-        message: '새 비밀번호는 8자 이상이며 영문·숫자·특수문자를 포함해야 합니다.',
+        message: '새 비밀번호는 8자 이상이고 영문·숫자·특수문자를 포함해야 해요.',
       });
       return;
     }
@@ -107,7 +107,7 @@ export default function UpdatePasswordModal({
       return;
     }
     if (newPassword !== confirmPassword) {
-      showAlert({ title: '오류', message: '새 비밀번호가 일치하지 않습니다.' });
+      showAlert({ title: '오류', message: '새 비밀번호가 일치하지 않아요.' });
       return;
     }
 

@@ -199,7 +199,7 @@ export default function TravelFeedScreen() {
         setNotificationModalVisible(false);
       }
     } catch (e) {
-      showAlert({ title: '오류', message: '수락 처리에 실패했습니다.' });
+      showAlert({ title: '오류', message: '수락하지 못했어요.' });
     }
   };
 
@@ -213,13 +213,13 @@ export default function TravelFeedScreen() {
         setNotificationModalVisible(false);
       }
     } catch (e) {
-      showAlert({ title: '오류', message: '거절 처리에 실패했습니다.' });
+      showAlert({ title: '오류', message: '거절하지 못했어요.' });
     }
   };
 
   const onNotificationPress = () => {
     if (pendingRequests.length === 0) {
-      showAlert({ title: '알림', message: '새로운 알림이 없습니다.' });
+      showAlert({ title: '알림', message: '새로운 알림이 없어요.' });
       return;
     }
     setNotificationModalVisible(true);
@@ -237,7 +237,7 @@ export default function TravelFeedScreen() {
     if (!user) {
       showAlert({
         title: '로그인 필요',
-        message: '여행기를 발행하려면 로그인이 필요합니다.',
+        message: '여행기를 발행하려면 로그인이 필요해요.',
       });
       return;
     }

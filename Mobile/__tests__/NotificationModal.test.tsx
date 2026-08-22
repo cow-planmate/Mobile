@@ -66,7 +66,7 @@ describe('NotificationModal', () => {
     expect(textJoined).toContain('홍길동');
     expect(textJoined).toContain('제주도 여행');
 
-    expect(textJoined).toContain('일정에 초대했습니다.');
+    expect(textJoined).toContain('일정에 초대했어요.');
   });
 
   it('renders edit-access wording for REQUEST type', () => {
@@ -83,8 +83,8 @@ describe('NotificationModal', () => {
       );
     });
     const textJoined = getTestInstanceText(component.root);
-    expect(textJoined).toContain('일정의 편집 권한을 요청했습니다.');
-    expect(textJoined).not.toContain('초대했습니다.');
+    expect(textJoined).toContain('일정의 편집 권한을 요청했어요.');
+    expect(textJoined).not.toContain('초대했어요.');
   });
 
   it('renders empty message when no invitations are present', () => {
@@ -101,7 +101,7 @@ describe('NotificationModal', () => {
       );
     });
     const textJoined = getTestInstanceText(component.root);
-    expect(textJoined).toContain('새로운 알림이 없습니다.');
+    expect(textJoined).toContain('새로운 알림이 없어요.');
   });
 
   it('calls onClose when close button is pressed', () => {

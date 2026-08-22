@@ -70,6 +70,6 @@ describe('buildFeedPlanSnapshot', () => {
         timetables: [],
         placeBlocks: [],
       }),
-    ).toThrow('여행기로 발행할 수 있는 일정 정보가 아닙니다.');
+    ).toThrow('여행기로 발행할 수 있는 일정 정보가 아니에요.');
   });
 });

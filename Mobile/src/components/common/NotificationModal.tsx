@@ -72,7 +72,7 @@ const NotificationModal = ({
 
           {invitations.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>새로운 알림이 없습니다.</Text>
+              <Text style={styles.emptyText}>새로운 알림이 없어요.</Text>
             </View>
           ) : (
             <ScrollView style={styles.listContainer}>

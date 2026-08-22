@@ -17,7 +17,7 @@ interface UnsavedChangesPromptOptions {
 export function useUnsavedChangesPrompt({
   hasUnsavedChanges,
   title = '작성 취소',
-  message = '작성 중인 내용이 사라집니다. 나갈까요?',
+  message = '작성 중인 내용이 사라져요. 나갈까요?',
 }: UnsavedChangesPromptOptions) {
   const navigation = useNavigation<any>();
   const { showAlert } = useAlert();

@@ -58,7 +58,7 @@ export function buildFeedPlanSnapshot(
   const { planFrame, timetables, placeBlocks } = response;
 
   if (!planFrame?.destinationId) {
-    throw new Error('여행기로 발행할 수 있는 일정 정보가 아닙니다.');
+    throw new Error('여행기로 발행할 수 있는 일정 정보가 아니에요.');
   }
 
   const days = [...(timetables ?? [])]
@@ -97,7 +97,7 @@ export function buildFeedPlanSnapshot(
     });
 
   if (days.length === 0) {
-    throw new Error('발행할 일정이 없습니다.');
+    throw new Error('발행할 일정이 없어요.');
   }
 
   return {

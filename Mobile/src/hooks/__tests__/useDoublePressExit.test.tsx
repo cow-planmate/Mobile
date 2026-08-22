@@ -64,7 +64,7 @@ describe('useDoublePressExit', () => {
     expect(pressBack()).toBe(true);
     expect(mockToastShow).toHaveBeenCalledTimes(1);
     expect(mockToastShow.mock.calls[0][0]).toMatchObject({
-      text1: '한 번 더 누르면 종료됩니다',
+      text1: '한 번 더 누르면 종료돼요',
     });
   });
 

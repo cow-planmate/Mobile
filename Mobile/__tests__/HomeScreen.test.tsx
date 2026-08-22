@@ -211,7 +211,7 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
 
     expect(mockNavigate).not.toHaveBeenCalled();
     expect(mockShowAlert).toHaveBeenCalledWith(
-      expect.objectContaining({ title: '일정을 확인할 수 없습니다' }),
+      expect.objectContaining({ title: '일정을 확인할 수 없어요' }),
     );
   });
 

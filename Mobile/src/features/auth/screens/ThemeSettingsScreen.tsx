@@ -86,7 +86,7 @@ export default function ThemeSettingsScreen() {
           <Palette size={32} color={COLORS.primary} />
           <Text style={styles.introTitle}>나만의 취향저격 스타일</Text>
           <Text style={styles.introDesc}>
-            플랜메이트의 인터페이스 색상을 취향에 맞게 바꿔보세요. 언제든지 변경할 수 있습니다.
+            플랜메이트의 인터페이스 색상을 취향에 맞게 바꿔보세요. 언제든지 변경할 수 있어요.
           </Text>
         </View>
 

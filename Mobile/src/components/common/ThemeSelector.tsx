@@ -95,7 +95,7 @@ export default function ThemeSelector({
       console.error('Failed to fetch themes:', error);
       showAlert({
         title: '오류',
-        message: '테마 목록을 불러오는데 실패했습니다.',
+        message: '테마 목록을 불러오지 못했어요.',
       });
     } finally {
       setLoading(false);
@@ -120,7 +120,7 @@ export default function ThemeSelector({
         if (currentSet.size >= MAX_PER_CATEGORY) {
           showAlert({
             title: '알림',
-            message: `최대 ${MAX_PER_CATEGORY}개까지 선택할 수 있습니다.`,
+            message: `최대 ${MAX_PER_CATEGORY}개까지 선택할 수 있어요.`,
           });
           return prev;
         }

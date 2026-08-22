@@ -102,7 +102,7 @@ export default function PlaceEditModal({
     if (startMinutes >= endMinutes) {
       showAlert({
         title: '시간 설정 오류',
-        message: '종료 시간은 시작 시간보다 늦어야 합니다.',
+        message: '종료 시간은 시작 시간보다 늦어야 해요.',
       });
       return;
     }
@@ -119,7 +119,7 @@ export default function PlaceEditModal({
   const handleDelete = () => {
     showAlert({
       title: '장소 삭제',
-      message: `'${place.name || '이 장소'}'를 일정에서 삭제할까요? 메모와 시간도 함께 사라집니다.`,
+      message: `'${place.name || '이 장소'}'를 일정에서 삭제할까요? 메모와 시간도 함께 사라져요.`,
       type: 'confirm',
       buttons: [
         { text: '취소', style: 'cancel' },
