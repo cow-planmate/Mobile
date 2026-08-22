@@ -66,10 +66,8 @@ export function applyChecklistSync(
   currentItems: ChecklistItem[] | undefined,
   event: ChecklistSyncEvent,
 ): ChecklistItem[] | undefined {
-  if (!currentItems) return currentItems;
-
   const action = String(event.action ?? '').toLowerCase();
-  const nextItems = [...currentItems];
+  const nextItems = currentItems ? [...currentItems] : [];
 
   event.planChecklistItemDtos?.forEach(syncItem => {
     const itemId = syncItem.checklistItemId;

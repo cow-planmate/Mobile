@@ -37,4 +37,15 @@ describe('applyChecklistSync', () => {
       }),
     ).toEqual([{ itemId: 2, content: '충전기', isChecked: false, sortOrder: 1 }]);
   });
+
+  it('최초 조회가 끝나기 전에 온 이벤트도 캐시에 반영한다', () => {
+    expect(
+      applyChecklistSync(undefined, {
+        action: 'create',
+        planChecklistItemDtos: [
+          { checklistItemId: 3, content: '여행자보험', isChecked: false, sortOrder: 0, planId: 'plan-id' },
+        ],
+      }),
+    ).toEqual([{ itemId: 3, content: '여행자보험', isChecked: false, sortOrder: 0 }]);
+  });
 });
