@@ -80,13 +80,16 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const handleRequestResult = useCallback(
     (result: CollaborationRequestResult) => {
+      if (result.status === 'ACCEPTED') {
+        void invalidatePlanCaches(queryClient);
+      }
       showAlert({
         title: describeRequestResultTitle(result),
         message: describeRequestResultMessage(result),
         type: result.status === 'ACCEPTED' ? 'success' : 'info',
       });
     },
-    [showAlert],
+    [showAlert, queryClient],
   );
 
   useInvitationSse({
