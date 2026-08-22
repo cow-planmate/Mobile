@@ -245,7 +245,7 @@ export default function FeedDetailScreen() {
             <Text style={styles.metaText}>· {post.createdAt}</Text>
             <View style={styles.metaStat}>
               <Eye size={normalize(12)} color={COLORS.textTertiary} />
-              <Text style={styles.metaText}>{post.views}</Text>
+              <Text style={styles.metaText}>{post.views.toLocaleString()}</Text>
             </View>
             <View style={styles.metaStat}>
               <Copy size={normalize(11)} color={COLORS.textTertiary} />
@@ -361,7 +361,7 @@ export default function FeedDetailScreen() {
                 post.myReaction === 'like' && styles.reactionTextActive,
               ]}
             >
-              좋아요 {post.likes}
+              좋아요 {post.likes.toLocaleString()}
             </Text>
           </TouchableOpacity>
 

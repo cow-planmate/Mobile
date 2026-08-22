@@ -70,9 +70,9 @@ const PostRow = ({ post }: { post: CommunityPostSummary }) => (
     </Text>
     <View style={styles.counts}>
       <Heart size={12} color={tokens.colors.textSecondary} />
-      <Text style={styles.countText}>{post.likes}</Text>
+      <Text style={styles.countText}>{post.likes.toLocaleString()}</Text>
       <MessageCircle size={12} color={tokens.colors.textSecondary} />
-      <Text style={styles.countText}>{post.comments}</Text>
+      <Text style={styles.countText}>{post.comments.toLocaleString()}</Text>
     </View>
   </View>
 );

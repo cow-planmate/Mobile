@@ -352,7 +352,7 @@ export default function CommentSection({
     <View style={styles.container}>
       <View style={styles.header}>
         <MessageCircle size={normalize(16)} color={tokens.colors.primary} />
-        <Text style={styles.headerTitle}>댓글 {commentCount}</Text>
+        <Text style={styles.headerTitle}>댓글 {commentCount.toLocaleString()}</Text>
       </View>
 
       <CommentComposer

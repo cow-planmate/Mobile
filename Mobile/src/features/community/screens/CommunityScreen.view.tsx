@@ -263,7 +263,7 @@ export default function CommunityScreenView({
                       <Badge label="HOT" tone="hot" />
                       <View style={styles.hotViewsWrap}>
                         <Eye size={10} color={tokens.colors.textTertiary} />
-                        <Text style={styles.hotViewsText}>{post.views}</Text>
+                        <Text style={styles.hotViewsText}>{post.views.toLocaleString()}</Text>
                       </View>
                     </View>
 
@@ -285,7 +285,7 @@ export default function CommunityScreenView({
                       </View>
                       <View style={styles.hotLikesWrap}>
                         <ThumbsUp size={10} color={tokens.tones.hot.fg} />
-                        <Text style={styles.hotLikesText}>{post.likes}</Text>
+                        <Text style={styles.hotLikesText}>{post.likes.toLocaleString()}</Text>
                       </View>
                     </View>
                   </View>

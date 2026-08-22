@@ -259,7 +259,7 @@ export default function PostDetailScreen() {
             <Text style={styles.metaText}>· {post.createdAt}</Text>
             <View style={styles.metaViews}>
               <Eye size={normalize(12)} color={COLORS.textTertiary} />
-              <Text style={styles.metaText}>{post.views}</Text>
+              <Text style={styles.metaText}>{post.views.toLocaleString()}</Text>
             </View>
           </View>
 
@@ -384,7 +384,7 @@ export default function PostDetailScreen() {
                 post.myReaction === 'like' && styles.reactionTextActive,
               ]}
             >
-              좋아요 {post.likes}
+              좋아요 {post.likes.toLocaleString()}
             </Text>
           </TouchableOpacity>
 
