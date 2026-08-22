@@ -3,7 +3,11 @@ import { PermissionsAndroid, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { resolveApiUrl } from '../utils/apiUrl';
-import { FCM_STORAGE_KEYS } from '../constants/storageKeys';
+import Toast from 'react-native-toast-message';
+import {
+  FCM_PERMISSION_NOTICE_KEY,
+  FCM_STORAGE_KEYS,
+} from '../constants/storageKeys';
 
 interface UseFcmNotificationsParams {
   enabled: boolean;
@@ -78,6 +82,31 @@ const requestAndroidNotificationPermission = async (): Promise<boolean> => {
   );
 
   return granted === PermissionsAndroid.RESULTS.GRANTED;
+};
+
+/**
+ * 알림 권한을 거부하면 초대 알림이 오지 않는데, 그동안 로그만 남기고
+ * 사용자에게는 아무 안내가 없어 이유를 알 수 없었다.
+ * 켤 때마다 띄우면 성가시므로 기기당 한 번만 알린다.
+ */
+const noticePermissionDeniedOnce = async () => {
+  try {
+    if (await AsyncStorage.getItem(FCM_PERMISSION_NOTICE_KEY)) {
+      return;
+    }
+    await AsyncStorage.setItem(FCM_PERMISSION_NOTICE_KEY, '1');
+  } catch (error) {
+    fcmLog('[FCM] 권한 안내 표시 여부를 저장하지 못했습니다:', error);
+    return;
+  }
+
+  Toast.show({
+    type: 'info',
+    text1: '알림이 꺼져 있어요',
+    text2: '일정 초대 알림을 받으려면 설정에서 알림을 켜 주세요.',
+    position: 'top',
+    visibilityTime: 4000,
+  });
 };
 
 export const isInvitationMessage = (remoteMessage: any): boolean => {
@@ -182,6 +211,7 @@ export function useFcmNotifications({
       const permissionGranted = await requestAndroidNotificationPermission();
       if (!permissionGranted) {
         fcmLog('[FCM] 알림 권한이 거부되었습니다.');
+        await noticePermissionDeniedOnce();
         return;
       }
       if (cancelled) return;
