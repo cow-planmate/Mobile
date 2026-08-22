@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import RouteIcon from 'lucide-react-native/dist/esm/icons/route';
 import Wand2 from 'lucide-react-native/dist/esm/icons/wand-sparkles';
@@ -36,6 +36,14 @@ export default function RouteMapSection({
 }: RouteMapSectionProps) {
   const { showAlert } = useAlert();
   const [isOptimizing, setOptimizing] = useState(false);
+
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const validPlaces = useMemo(() => places.filter(hasMapPosition), [places]);
 
@@ -106,6 +114,8 @@ export default function RouteMapSection({
     setOptimizing(true);
     try {
       const result = await fetchRouteTrip(points);
+      if (!isMountedRef.current) return;
+
       const orderedIds = buildOptimizedOrder(places, result?.visitOrder);
 
       if (!orderedIds) {
@@ -128,6 +138,7 @@ export default function RouteMapSection({
 
       onApplyOptimizedOrder(orderedIds);
     } catch (e) {
+      if (!isMountedRef.current) return;
       console.warn('순서 최적화 실패:', e);
       showAlert({
         title: '순서 최적화 실패',
@@ -135,7 +146,7 @@ export default function RouteMapSection({
         type: 'error',
       });
     } finally {
-      setOptimizing(false);
+      if (isMountedRef.current) setOptimizing(false);
     }
   }, [onApplyOptimizedOrder, places, points, isOptimizing, showAlert]);
 
