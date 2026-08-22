@@ -6,6 +6,12 @@ export type TabParamList = {
   CommunityTab: undefined;
 };
 
+/**
+ * 앱이 시작하는 탭이자 뒤로가기가 수렴하는 탭.
+ * 탭 선언 순서와 어긋나기 쉬워 한 곳에서만 정한다.
+ */
+export const INITIAL_TAB: keyof TabParamList = 'ScheduleTab';
+
 export type FeedStackParamList = {
   FeedMain: undefined;
   FeedCreate:

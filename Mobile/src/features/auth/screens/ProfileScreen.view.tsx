@@ -16,6 +16,7 @@ import {
 import Toast from 'react-native-toast-message';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import { INITIAL_TAB } from '../../../navigation/types';
 import {
   LoadingSpinner,
   MenuModal,
@@ -892,7 +893,7 @@ export default function ProfileScreenView({
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      navigation.navigate('MainTabs', { screen: 'ScheduleTab' });
+      navigation.navigate('MainTabs', { screen: INITIAL_TAB });
     }
   };
 
@@ -1182,7 +1183,7 @@ export default function ProfileScreenView({
                 <TouchableOpacity
                   onPress={() =>
                     navigation.navigate('MainTabs', {
-                      screen: 'ScheduleTab',
+                      screen: INITIAL_TAB,
                       params: { screen: 'Home' },
                     })
                   }

@@ -22,6 +22,7 @@ import {
   ScheduleStackParamList,
   CommunityStackParamList,
   AppStackParamList,
+  INITIAL_TAB,
 } from './types';
 import { Platform } from 'react-native';
 import MessageSquare from 'lucide-react-native/dist/esm/icons/message-square';
@@ -128,7 +129,10 @@ const CommunityTabIcon = ({ color, size }: { color: string; size: number }) => (
 function MainTabs() {
   return (
     <Tab.Navigator
-      initialRouteName="ScheduleTab"
+      initialRouteName={INITIAL_TAB}
+      // 기본값 'firstRoute'는 선언 순서상 첫 탭(피드)으로 되돌린다.
+      // 앱이 시작하는 탭으로 수렴해야 하므로 initialRoute를 쓴다.
+      backBehavior="initialRoute"
       screenOptions={() => ({
         headerShown: false,
         tabBarActiveTintColor: '#1344FF',
