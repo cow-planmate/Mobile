@@ -27,7 +27,7 @@ import TimelineItem, {
 import { AirplaneLoading, ScheduleEditModal, TimePickerModal } from '../../../components/common';
 import PlaceRecommendationList from '../components/PlaceRecommendationList';
 import { Day } from '../../../contexts/ItineraryContext';
-import { SimpleWeatherInfo } from '../../../api/trips';
+import { PLAN_NAME_MAX_LENGTH, SimpleWeatherInfo } from '../../../api/trips';
 import WeatherHeader from '../components/weather/WeatherHeader';
 import {
   styles,
@@ -1262,6 +1262,8 @@ export default function ItineraryEditorScreenView({
                 onSubmitEditing={onSaveTripName}
                 autoFocus
                 numberOfLines={1}
+                maxLength={PLAN_NAME_MAX_LENGTH}
+                returnKeyType="done"
                 style={[
                   styles.toolbarTitleInput,
                   styles.toolbarTitleInputSized,

@@ -24,6 +24,7 @@ import {
   DEFAULT_DAY_END,
 } from '../../../utils/timeUtils';
 import { toLocalTime } from '../../../utils/planSyncPayload';
+import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 import {
   buildScheduleEditSync,
   mergeScheduleEditDays,
@@ -461,6 +462,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     if (!tripName || !planId) return;
     if (tripName === syncedTripNameRef.current) return;
 
+    const lastSyncedName = syncedTripNameRef.current;
     sendMessage('update', 'plan', buildPlanSyncPayload(planId, tripName));
     syncedTripNameRef.current = tripName;
 
@@ -471,7 +473,18 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           { planName: tripName },
         );
       } catch (err) {
+        // 저장에 실패했는데 동기화 표시를 남겨두면 완료 시에도 건너뛰어
+        // 이름이 영영 저장되지 않는다. 되돌려 다시 시도되게 한다.
+        syncedTripNameRef.current = lastSyncedName;
         console.error('Failed to update plan title on edit:', err);
+        showAlert({
+          title: '일정 이름 저장 실패',
+          message: getDisplayErrorMessage(
+            err,
+            '일정 이름을 저장하지 못했습니다. 완료할 때 다시 시도합니다.',
+          ),
+          type: 'error',
+        });
       }
     }
   }, [
@@ -480,6 +493,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     planId,
     sendMessage,
     setIsEditingTripName,
+    showAlert,
     tripName,
   ]);
 
@@ -613,6 +627,16 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       } catch (err: any) {
         if (err.response?.status !== 403) {
           console.error('Failed to update plan title on complete:', err);
+          // 일정 자체는 실시간 동기화로 저장되므로 완료는 막지 않되,
+          // 이름만 반영되지 않은 것을 알린다.
+          showAlert({
+            title: '일정 이름 저장 실패',
+            message: getDisplayErrorMessage(
+              err,
+              '일정은 저장했지만 이름은 반영하지 못했습니다.',
+            ),
+            type: 'error',
+          });
         }
       }
 
