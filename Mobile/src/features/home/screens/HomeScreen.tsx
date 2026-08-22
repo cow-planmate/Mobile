@@ -22,7 +22,7 @@ import {
   usePendingInvitations,
 } from '../../../hooks/usePendingInvitations';
 import { useQueryClient } from '@tanstack/react-query';
-import { formatDateLocal } from '../../../utils/timeUtils';
+import { formatDateLocal, formatPeriod } from '../../../utils/timeUtils';
 import {
   CollaborationRequestResult,
   describeAcceptResult,
@@ -208,13 +208,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     endDate !== null &&
     adults !== null;
 
-  const formatDate = (date: Date) => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}.${m}.${d}`;
-  };
-
   const getPaxText = () => {
     if (adults === null) return '';
     let text = `성인 ${adults}명`;
@@ -226,7 +219,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const getDateText = () => {
     if (!startDate || !endDate) return '';
-    return `${formatDate(startDate)} ~ ${formatDate(endDate)}`;
+    return formatPeriod(startDate, endDate);
   };
 
   const handleCreateItinerary = () => {

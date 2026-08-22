@@ -41,8 +41,7 @@ const dayKey = (day: Day): string => {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 };
 
-const normalizeTimeForComparison = (time?: string): string =>
-  (time || '').substring(0, 5);
+const normalizeTimeForComparison = normalizeTime;
 
 const isSamePlaceForFetch = (current: Place, fetched: Place): boolean =>
   current.id === fetched.id &&
@@ -118,6 +117,7 @@ import {
   minutesToTime,
   resolveConflictsAndSort,
   formatDateLocal,
+  normalizeTime,
   DEFAULT_DAY_END,
 } from '../utils/timeUtils';
 import {
@@ -387,7 +387,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                 dayToUpdate.places = existingPlaces;
               } else {
                 const parseTime = (time: any) => {
-                  if (typeof time === 'string') return time.substring(0, 5);
+                  if (typeof time === 'string') return normalizeTime(time);
                   if (time && typeof time.hour === 'number') {
                     return `${String(time.hour).padStart(2, '0')}:${String(
                       time.minute,
@@ -435,7 +435,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                 );
                 if (placeIndex !== -1) {
                   const parseTime = (time: any) => {
-                    if (typeof time === 'string') return time.substring(0, 5);
+                    if (typeof time === 'string') return normalizeTime(time);
                     if (time && typeof time.hour === 'number') {
                       return `${String(time.hour).padStart(2, '0')}:${String(
                         time.minute,

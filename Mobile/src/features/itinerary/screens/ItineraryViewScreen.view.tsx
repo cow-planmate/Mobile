@@ -21,7 +21,11 @@ import TimelineItem, {
 } from '../components/TimelineItem';
 import { Day } from '../../../contexts/ItineraryContext';
 import { SimpleWeatherInfo } from '../../../api/trips';
-import { timeToMinutes, formatDateLocal } from '../../../utils/timeUtils';
+import {
+  timeToMinutes,
+  formatDateLocal,
+  formatMonthDayDot,
+} from '../../../utils/timeUtils';
 import WeatherHeader from '../components/weather/WeatherHeader';
 import {
   styles,
@@ -32,11 +36,7 @@ import {
   COLORS,
 } from './ItineraryViewScreen.styles';
 
-const formatDate = (date: Date) => {
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  return `${month}.${day}`;
-};
+const formatDate = formatMonthDayDot;
 
 type ToolbarButtonVariant =
   | 'plain'

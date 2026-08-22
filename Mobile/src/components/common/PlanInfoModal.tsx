@@ -3,6 +3,7 @@ import { View, Text, Modal, Pressable, TouchableOpacity } from 'react-native';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import { styles } from './PlanInfoModal.styles';
 import { tokens } from '../../theme/tokens';
+import { formatPeriod } from '../../utils/timeUtils';
 
 type PlanInfoModalProps = {
   visible: boolean;
@@ -25,7 +26,7 @@ export default function PlanInfoModal({
   adultCount,
   childCount,
 }: PlanInfoModalProps) {
-  const dateRangeText = startDate && endDate ? `${startDate} ~ ${endDate}` : '미지정';
+  const dateRangeText = formatPeriod(startDate, endDate) || '미지정';
 
   return (
     <Modal

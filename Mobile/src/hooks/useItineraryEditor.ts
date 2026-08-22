@@ -20,6 +20,8 @@ import {
   minutesToTime,
   parseLocalDate,
   resolveConflictsAndSort,
+  formatMonthDayDot,
+  normalizeTime,
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
 } from '../utils/timeUtils';
@@ -35,11 +37,7 @@ const parseDestinationName = (destination?: string) => {
   return parts.length <= 1 ? normalized : parts.slice(1).join(' ');
 };
 
-const formatDate = (date: Date) => {
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  return `${month}.${day}.`;
-};
+const formatDate = formatMonthDayDot;
 
 export const useItineraryEditor = (route: any, _navigation: any) => {
   const queryClient = useQueryClient();
@@ -141,7 +139,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
             })
             .map((pb: any) => {
               const parseTime = (time: any) => {
-                if (typeof time === 'string') return time.substring(0, 5);
+                if (typeof time === 'string') return normalizeTime(time);
                 if (time && typeof time.hour === 'number') {
                   return `${String(time.hour).padStart(2, '0')}:${String(
                     time.minute,

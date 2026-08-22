@@ -17,6 +17,7 @@ import {
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
   formatDateLocal,
+  normalizeTime,
   parseLocalDate,
   timeToMinutes,
 } from '../../../utils/timeUtils';
@@ -135,7 +136,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
           );
 
           const parseTime = (time: any) => {
-            if (typeof time === 'string') return time.substring(0, 5);
+            if (typeof time === 'string') return normalizeTime(time);
             if (time && typeof time.hour === 'number') {
               return `${String(time.hour).padStart(2, '0')}:${String(
                 time.minute,

@@ -35,6 +35,51 @@ export const parseLocalDate = (value?: string | null): Date => {
   return new Date(year, month - 1, day);
 };
 
+// 아래 셋은 화면 표시 전용이다. 계산·서버 전송에는 하이픈 형식인
+// formatDateLocal을 그대로 쓴다. 표시용 포맷터가 없어 화면마다 제각각
+// 조합하던 것을 여기로 모은다.
+const toDate = (value: Date | string | null | undefined): Date | null => {
+  if (!value) return null;
+  const date = typeof value === 'string' ? parseLocalDate(value) : value;
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+/** `2026.08.22` */
+export const formatDateDot = (value: Date | string | null | undefined): string => {
+  const date = toDate(value);
+  if (!date) return '';
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}.${month}.${day}`;
+};
+
+/** `08.22` — 일차 탭처럼 연도가 필요 없는 자리 */
+export const formatMonthDayDot = (
+  value: Date | string | null | undefined,
+): string => {
+  const date = toDate(value);
+  if (!date) return '';
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${month}.${day}`;
+};
+
+/** `2026.08.22 ~ 2026.08.25` — 같은 날이거나 한쪽만 있으면 날짜 하나만 */
+export const formatPeriod = (
+  start: Date | string | null | undefined,
+  end?: Date | string | null,
+): string => {
+  const startText = formatDateDot(start);
+  const endText = formatDateDot(end);
+  if (!startText) return endText;
+  if (!endText || startText === endText) return startText;
+  return `${startText} ~ ${endText}`;
+};
+
+/** `09:00:00` / `09:00` 어느 쪽이 와도 `09:00` */
+export const normalizeTime = (time?: string | null): string =>
+  (time || '').substring(0, 5);
+
 // toLocaleTimeString은 엔진의 ICU 구현에 따라 'HH:mm'이 아닌 형식을 내줄 수
 // 있고, 그 결과가 timeToMinutes로 들어가면 NaN이 되어 시간이 통째로 깨진다.
 // 화면 표시가 아니라 계산에 쓰이는 값이므로 직접 조합한다.

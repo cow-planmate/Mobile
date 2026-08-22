@@ -64,6 +64,7 @@ import gravatarUrl from '../../../utils/gravatarUrl';
 import { normalize } from '../../../utils/normalize';
 import { allSettledWithConcurrency } from '../../../utils/concurrency';
 import { toPlanDate } from '../utils/profileCalendar';
+import { formatPeriod } from '../../../utils/timeUtils';
 import {
   USER_PROFILE_QUERY_KEY,
   UserProfile,
@@ -112,13 +113,7 @@ const PROFILE_SECTIONS = [
 
 const getFormattedPeriod = (start?: string, end?: string) => {
   if (!start) return '날짜 확인 필요';
-  const cleanedStart = start.replace(/-/g, '.');
-  const cleanedEnd = end ? end.replace(/-/g, '.') : '';
-
-  if (!cleanedEnd || cleanedStart === cleanedEnd) {
-    return cleanedStart;
-  }
-  return `${cleanedStart} - ${cleanedEnd}`;
+  return formatPeriod(start, end);
 };
 
 interface PlanItem {

@@ -20,6 +20,7 @@ import {
   timeToMinutes,
   dateToTime,
   formatDateLocal,
+  normalizeTime,
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
 } from '../../../utils/timeUtils';
@@ -439,9 +440,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   const handlePlaceSave = useCallback(
     (updatedPlace: any) => {
-
-      const normalizeTime = (t: string) =>
-        t && t.length >= 5 ? t.substring(0, 5) : t;
 
       updatePlaceDetails(selectedDayIndex, updatedPlace.id, {
         startTime: normalizeTime(updatedPlace.startTime),

@@ -3,11 +3,10 @@ import type { Day } from '../contexts/ItineraryContext';
 import {
   formatDateLocal,
   parseLocalDate,
+  normalizeTime,
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
 } from './timeUtils';
-
-const normalizeTime = (time?: string): string => (time || '').substring(0, 5);
 
 export interface TimetableBroadcastResult {
   days: Day[];

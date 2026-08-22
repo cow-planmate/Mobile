@@ -16,7 +16,7 @@ import CalendarDays from 'lucide-react-native/dist/esm/icons/calendar-days';
 import Clock from 'lucide-react-native/dist/esm/icons/clock';
 import ChevronDown from 'lucide-react-native/dist/esm/icons/chevron-down';
 import { useAlert } from '../../contexts/AlertContext';
-import { timeToMinutes } from '../../utils/timeUtils';
+import { timeToMinutes, normalizeTime } from '../../utils/timeUtils';
 import { findInvalidDateOrder } from '../../utils/scheduleEditSync';
 
 type DayConfig = {
@@ -210,7 +210,7 @@ export default function ScheduleEditModal({
     return { dateStr: `${m}.${d}`, dayOfWeek: w };
   };
 
-  const formatTime = (time: string) => time.substring(0, 5);
+  const formatTime = normalizeTime;
 
   return (
     <Modal
