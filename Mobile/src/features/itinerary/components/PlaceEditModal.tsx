@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import DatePicker from 'react-native-date-picker';
-import FastImage from 'react-native-fast-image';
+import FallbackImage from '../../../components/common/FallbackImage';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import MapIcon from 'lucide-react-native/dist/esm/icons/map';
 import { openExternalUrl } from '../../../utils/externalLink';
@@ -179,22 +179,17 @@ export default function PlaceEditModal({
           >
 
             <View style={styles.infoSection}>
-              {place.imageUrl ? (
-                <FastImage
-                  source={{
-                    uri: place.imageUrl,
-                    priority: FastImage.priority.normal,
-                  }}
-                  style={styles.photo}
-                  resizeMode={FastImage.resizeMode.cover}
-                />
-              ) : (
-                <View style={[styles.photo, styles.photoPlaceholder]}>
-                  <Text style={styles.photoPlaceholderText}>
-                    {place.name?.charAt(0) || '?'}
-                  </Text>
-                </View>
-              )}
+              <FallbackImage
+                uri={place.imageUrl}
+                style={styles.photo}
+                fallback={
+                  <View style={[styles.photo, styles.photoPlaceholder]}>
+                    <Text style={styles.photoPlaceholderText}>
+                      {place.name?.charAt(0) || '?'}
+                    </Text>
+                  </View>
+                }
+              />
 
               <View style={styles.infoTextGroup}>
                 <Text style={styles.placeName} numberOfLines={2}>

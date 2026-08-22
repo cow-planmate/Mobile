@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   StatusBar,
 } from 'react-native';
-import FastImage from 'react-native-fast-image';
+import FallbackImage from '../../../components/common/FallbackImage';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import CalendarDays from 'lucide-react-native/dist/esm/icons/calendar-days';
@@ -31,7 +31,7 @@ import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { resolveAvatarUrl } from '../utils/avatar';
 import PostContentView from '../components/PostContentView';
 import CommentSection from '../components/CommentSection';
-import UserAvatar from '../components/UserAvatar';
+import UserAvatar from '../../../components/common/UserAvatar';
 import PublicProfileModal from '../components/PublicProfileModal';
 import LevelBadge from '../components/LevelBadge';
 import { ReactionType } from '../types';
@@ -193,10 +193,10 @@ export default function FeedDetailScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {!!heroImage && (
-          <FastImage
+          <FallbackImage
+            uri={heroImage}
             style={styles.hero}
-            source={{ uri: heroImage }}
-            resizeMode={FastImage.resizeMode.cover}
+            fallback={<View style={styles.hero} />}
           />
         )}
 

@@ -219,6 +219,9 @@ export const styles = StyleSheet.create({
     height: normalize(72),
     borderRadius: tokens.radius.m,
   },
+  thumbnailFallback: {
+    backgroundColor: tokens.colors.surface,
+  },
 
   listFooterLoading: {
     paddingVertical: normalize(20),

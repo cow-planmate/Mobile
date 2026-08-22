@@ -26,7 +26,7 @@ import {
 import { CommunityComment } from '../types';
 import { mergeCommentPages } from '../utils/commentPages';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
-import UserAvatar from './UserAvatar';
+import UserAvatar from '../../../components/common/UserAvatar';
 import LevelBadge from './LevelBadge';
 
 interface CommentSectionProps {

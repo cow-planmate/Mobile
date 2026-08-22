@@ -15,7 +15,7 @@ import { theme } from '../../../theme/theme';
 import { normalize } from '../../../utils/normalize';
 import { parseBackendError } from '../../../utils/errorHandler';
 import { fetchPublicProfile } from '../../../api/user';
-import UserAvatar from './UserAvatar';
+import UserAvatar from '../../../components/common/UserAvatar';
 import { tokens } from '../../../theme/tokens';
 
 interface PublicProfileModalProps {

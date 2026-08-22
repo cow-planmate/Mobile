@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import FastImage from 'react-native-fast-image';
+import FallbackImage from '../../../components/common/FallbackImage';
 import {
   View,
   Text,
@@ -142,35 +142,29 @@ const PlaceImage = React.memo(
     iconUrl?: string;
     name: string;
   }) => {
-    const [hasError, setHasError] = useState(false);
-
     const primaryUrl = placeId
       ? resolveApiUrl(`/image/place/${encodeURIComponent(placeId)}`)
-      : '';
-    const fallbackUrl = iconUrl || '';
-    const currentUrl = hasError ? fallbackUrl : primaryUrl;
+      : null;
 
-    if (!currentUrl) {
-      return (
-        <View style={[plStyles.placeImage, plStyles.placeholderImage]}>
-          <Text style={plStyles.placeholderText}>{name?.charAt(0) || '?'}</Text>
-        </View>
-      );
-    }
+    const initials = (
+      <View style={[plStyles.placeImage, plStyles.placeholderImage]}>
+        <Text style={plStyles.placeholderText}>{name?.charAt(0) || '?'}</Text>
+      </View>
+    );
 
+    // 프록시 → 아이콘 → 이니셜 3단계. 중첩해야 아이콘까지 실패했을 때도
+    // 이니셜로 내려간다 — 플래그 하나로는 2단째 실패를 잡지 못했다.
     return (
-      <FastImage
-        source={{
-          uri: currentUrl,
-          priority: FastImage.priority.normal,
-        }}
+      <FallbackImage
+        uri={primaryUrl}
         style={plStyles.placeImage}
-        resizeMode={FastImage.resizeMode.cover}
-        onError={() => {
-          if (!hasError) {
-            setHasError(true);
-          }
-        }}
+        fallback={
+          <FallbackImage
+            uri={iconUrl}
+            style={plStyles.placeImage}
+            fallback={initials}
+          />
+        }
       />
     );
   },

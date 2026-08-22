@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 import FastImage, { ImageStyle } from 'react-native-fast-image';
 import {
   View,
@@ -16,6 +16,7 @@ import Eye from 'lucide-react-native/dist/esm/icons/eye';
 import Copy from 'lucide-react-native/dist/esm/icons/copy';
 import Clock from 'lucide-react-native/dist/esm/icons/clock';
 import { Badge, Card, EmptyState, StatItem, StatRow } from '../../../components/ui';
+import FallbackImage from '../../../components/common/FallbackImage';
 import LevelBadge from '../../community/components/LevelBadge';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
@@ -54,30 +55,18 @@ interface TravelFeedListProps {
   onLoadMore?: () => void;
 }
 
-const FeedAvatar = ({ uri, name }: { uri: string; name: string }) => {
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    setFailed(false);
-  }, [uri]);
-
-  if (uri && !failed) {
-    return (
-      <FastImage
-        source={{ uri, priority: FastImage.priority.low }}
-        style={styles.avatar}
-        resizeMode={FastImage.resizeMode.cover}
-        onError={() => setFailed(true)}
-      />
-    );
-  }
-
-  return (
-    <View style={[styles.avatar, styles.avatarFallback]}>
-      <Text style={styles.avatarFallbackText}>{(name || '?').charAt(0)}</Text>
-    </View>
-  );
-};
+const FeedAvatar = ({ uri, name }: { uri: string; name: string }) => (
+  <FallbackImage
+    uri={uri}
+    style={styles.avatar}
+    priority={FastImage.priority.low}
+    fallback={
+      <View style={[styles.avatar, styles.avatarFallback]}>
+        <Text style={styles.avatarFallbackText}>{(name || '?').charAt(0)}</Text>
+      </View>
+    }
+  />
+);
 
 const FeedThumbnail = ({
   uri,
@@ -85,26 +74,13 @@ const FeedThumbnail = ({
 }: {
   uri: string;
   style: StyleProp<ImageStyle>;
-}) => {
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    setFailed(false);
-  }, [uri]);
-
-  if (uri && !failed) {
-    return (
-      <FastImage
-        source={{ uri, priority: FastImage.priority.normal }}
-        style={style}
-        resizeMode={FastImage.resizeMode.cover}
-        onError={() => setFailed(true)}
-      />
-    );
-  }
-
-  return <View style={style} />;
-};
+}) => (
+  <FallbackImage
+    uri={uri}
+    style={style}
+    fallback={<View style={[style, styles.thumbnailFallback]} />}
+  />
+);
 
 const FeedStats = ({ item }: { item: TravelFeedItem }) => (
   <StatRow divided>
@@ -396,6 +372,9 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  thumbnailFallback: {
+    backgroundColor: tokens.colors.surface,
   },
   avatarFallbackText: {
     fontSize: normalize(tokens.fontSize.s),

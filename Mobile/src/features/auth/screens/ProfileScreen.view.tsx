@@ -57,10 +57,11 @@ import Share2 from 'lucide-react-native/dist/esm/icons/share-2';
 import Trash2Icon from 'lucide-react-native/dist/esm/icons/trash-2';
 import Type from 'lucide-react-native/dist/esm/icons/type';
 import UserMinus from 'lucide-react-native/dist/esm/icons/user-minus';
-import FastImage from 'react-native-fast-image';
 import ChecklistSheet from '../../itinerary/components/checklist/ChecklistSheet';
 import { useChecklist } from '../../itinerary/hooks/useChecklistQueries';
 import gravatarUrl from '../../../utils/gravatarUrl';
+import { resolveAvatarUrl } from '../../community/utils/avatar';
+import FallbackImage from '../../../components/common/FallbackImage';
 import { normalize } from '../../../utils/normalize';
 import { allSettledWithConcurrency } from '../../../utils/concurrency';
 import { toPlanDate } from '../utils/profileCalendar';
@@ -750,8 +751,11 @@ export default function ProfileScreenView({
 
   const profileAge = toKoreanAge(user.birthdate);
 
+  // 커뮤니티 화면과 같은 규칙을 태운다. 백엔드가 사설망 URL을 내려주면
+  // 여기만 그대로 렌더해 공백이 되던 불일치가 있었다.
   const avatarUri =
-    user.profileImageUrl || (user.email ? gravatarUrl(user.email, 200) : '');
+    resolveAvatarUrl(user.profileImageUrl, null, 200) ??
+    (user.email ? gravatarUrl(user.email, 200) : null);
 
   const handleToggleProfilePublic = async (next: boolean) => {
     setIsProfilePublic(next);
@@ -922,17 +926,15 @@ export default function ProfileScreenView({
           <View style={styles.profileHeaderRow}>
 
             <View style={styles.avatarContainer}>
-              {avatarUri ? (
-                <FastImage
-                  source={{ uri: avatarUri, priority: FastImage.priority.normal }}
-                  style={styles.avatarImage}
-                  resizeMode={FastImage.resizeMode.cover}
-                />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <User size={40} color={tokens.colors.textTertiary} />
-                </View>
-              )}
+              <FallbackImage
+                uri={avatarUri}
+                style={styles.avatarImage}
+                fallback={
+                  <View style={styles.avatarPlaceholder}>
+                    <User size={40} color={tokens.colors.textTertiary} />
+                  </View>
+                }
+              />
               <TouchableOpacity
                 style={styles.settingsButton}
                 onPress={handleOpenEditModal}
@@ -1331,17 +1333,15 @@ export default function ProfileScreenView({
                 accessibilityRole="button"
                 accessibilityLabel="프로필 사진 변경"
               >
-                {avatarUri ? (
-                  <FastImage
-                    source={{ uri: avatarUri, priority: FastImage.priority.normal }}
-                    style={styles.avatarEditImage}
-                    resizeMode={FastImage.resizeMode.cover}
-                  />
-                ) : (
-                  <View style={styles.avatarEditPlaceholder}>
-                    <User size={50} color={tokens.colors.textTertiary} />
-                  </View>
-                )}
+                <FallbackImage
+                  uri={avatarUri}
+                  style={styles.avatarEditImage}
+                  fallback={
+                    <View style={styles.avatarEditPlaceholder}>
+                      <User size={50} color={tokens.colors.textTertiary} />
+                    </View>
+                  }
+                />
                 <View style={styles.cameraBadge}>
                   <Camera size={12} color={tokens.colors.white} />
                 </View>

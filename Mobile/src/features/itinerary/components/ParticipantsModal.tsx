@@ -8,11 +8,11 @@ import {
   View,
   TouchableOpacity,
 } from 'react-native';
-import FastImage from 'react-native-fast-image';
 import UsersIcon from 'lucide-react-native/dist/esm/icons/users';
 import XIcon from 'lucide-react-native/dist/esm/icons/x';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
+import FallbackImage from '../../../components/common/FallbackImage';
 
 export interface ParticipantUser {
   uid?: string;
@@ -95,20 +95,15 @@ export default function ParticipantsModal({
                     style={styles.participantRow}
                   >
                     <View style={styles.participantAvatar}>
-                      {user.avatarUrl ? (
-                        <FastImage
-                          source={{
-                            uri: user.avatarUrl,
-                            priority: FastImage.priority.normal,
-                          }}
-                          style={styles.participantAvatarImage}
-                          resizeMode={FastImage.resizeMode.cover}
-                        />
-                      ) : (
-                        <Text style={styles.participantAvatarText}>
-                          {initial}
-                        </Text>
-                      )}
+                      <FallbackImage
+                        uri={user.avatarUrl}
+                        style={styles.participantAvatarImage}
+                        fallback={
+                          <Text style={styles.participantAvatarText}>
+                            {initial}
+                          </Text>
+                        }
+                      />
                     </View>
                     <View style={styles.participantInfo}>
                       <View style={styles.participantNameRow}>

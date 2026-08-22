@@ -16,7 +16,7 @@ import MessageSquare from 'lucide-react-native/dist/esm/icons/message-square';
 import Eye from 'lucide-react-native/dist/esm/icons/eye';
 import PenSquare from 'lucide-react-native/dist/esm/icons/square-pen';
 import Flame from 'lucide-react-native/dist/esm/icons/flame';
-import FastImage from 'react-native-fast-image';
+import FallbackImage from '../../../components/common/FallbackImage';
 import { styles } from './CommunityScreen.styles';
 import { Header, NotificationModal } from '../../../components/common';
 import {
@@ -34,7 +34,7 @@ import { CommunityPostSummary } from '../types';
 import { BoardKey, SortKey, SORT_OPTIONS } from '../constants/levels';
 import LevelBadge from '../components/LevelBadge';
 import PostTypeBadges from '../components/PostTypeBadges';
-import UserAvatar from '../components/UserAvatar';
+import UserAvatar from '../../../components/common/UserAvatar';
 
 export interface CommunityScreenViewProps {
   posts: CommunityPostSummary[];
@@ -132,10 +132,12 @@ const PostListItem = React.memo(function PostListItem({
 
       {item.image ? (
         <View style={styles.postRightSection}>
-          <FastImage
+          <FallbackImage
+            uri={item.image}
             style={styles.thumbnailImage}
-            source={{ uri: item.image }}
-            resizeMode={FastImage.resizeMode.cover}
+            fallback={
+              <View style={[styles.thumbnailImage, styles.thumbnailFallback]} />
+            }
           />
         </View>
       ) : null}
@@ -292,10 +294,17 @@ export default function CommunityScreenView({
 
                   {post.image ? (
                     <View style={styles.hotCardRight}>
-                      <FastImage
+                      <FallbackImage
+                        uri={post.image}
                         style={styles.hotThumbnail}
-                        source={{ uri: post.image }}
-                        resizeMode={FastImage.resizeMode.cover}
+                        fallback={
+                          <View
+                            style={[
+                              styles.hotThumbnail,
+                              styles.thumbnailFallback,
+                            ]}
+                          />
+                        }
                       />
                     </View>
                   ) : null}

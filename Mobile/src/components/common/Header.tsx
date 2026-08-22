@@ -8,7 +8,6 @@ import {
   Pressable,
   Dimensions,
 } from 'react-native';
-import FastImage from 'react-native-fast-image';
 import { useNavigation } from '@react-navigation/native';
 import UserIcon from 'lucide-react-native/dist/esm/icons/user';
 import LogOut from 'lucide-react-native/dist/esm/icons/log-out';
@@ -17,6 +16,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useWebSocket } from '../../contexts/WebSocketContext';
 import { normalize } from '../../utils/normalize';
 import gravatarUrl from '../../utils/gravatarUrl';
+import FallbackImage from './FallbackImage';
 import { tokens } from '../../theme/tokens';
 
 export interface HeaderProps {
@@ -83,16 +83,14 @@ const Header: React.FC<HeaderProps> = ({
           accessibilityLabel={`${nickname || '사용자'}님 메뉴 열기`}
         >
           <View style={styles.userAvatar}>
-            {email ? (
-              <FastImage
-                source={{ uri: gravatarUrl(email, 100), priority: FastImage.priority.normal }}
-                style={styles.avatarImage}
-                resizeMode={FastImage.resizeMode.cover}
-                accessible={false}
-              />
-            ) : (
-              <UserIcon size={14} color={tokens.colors.textTertiary} />
-            )}
+            <FallbackImage
+              uri={email ? gravatarUrl(email, 100) : null}
+              style={styles.avatarImage}
+              accessible={false}
+              fallback={
+                <UserIcon size={14} color={tokens.colors.textTertiary} />
+              }
+            />
           </View>
           <Text style={[styles.userNickname, menuVisible && styles.userNicknameActive]}>
             {nickname || '사용자'}님

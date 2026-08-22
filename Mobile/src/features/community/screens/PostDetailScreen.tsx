@@ -34,7 +34,7 @@ import {
 } from '../hooks/queries';
 import PostContentView from '../components/PostContentView';
 import CommentSection from '../components/CommentSection';
-import UserAvatar from '../components/UserAvatar';
+import UserAvatar from '../../../components/common/UserAvatar';
 import PublicProfileModal from '../components/PublicProfileModal';
 import LevelBadge from '../components/LevelBadge';
 import { ReactionType } from '../types';
