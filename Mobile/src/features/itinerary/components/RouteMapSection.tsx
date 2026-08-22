@@ -175,6 +175,7 @@ export default function RouteMapSection({
           onPress={handleOptimizeOrder}
           disabled={isOptimizing}
           activeOpacity={0.85}
+          accessibilityState={{ disabled: isOptimizing }}
         >
           <Wand2 size={normalize(13)} color={tokens.colors.primary} />
           <Text style={sectionStyles.segmentButtonText}>

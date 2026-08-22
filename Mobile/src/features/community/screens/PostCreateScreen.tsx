@@ -156,6 +156,7 @@ export default function PostCreateScreen() {
           onPress={handleSubmit}
           disabled={!canSubmit}
           activeOpacity={0.85}
+          accessibilityState={{ disabled: !canSubmit }}
         >
           <Text style={styles.submitButtonText}>
             {createPost.isPending || updatePost.isPending
@@ -190,6 +191,7 @@ export default function PostCreateScreen() {
                   }}
                   disabled={isEditMode}
                   activeOpacity={0.85}
+                  accessibilityState={{ disabled: isEditMode }}
                 >
                   <Text
                     style={[

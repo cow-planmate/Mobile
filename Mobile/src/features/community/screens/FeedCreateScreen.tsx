@@ -234,6 +234,7 @@ export default function FeedCreateScreen() {
                   handleSelectPlan(plan.planId);
                 }}
                 disabled={loadingPlanId !== null}
+                accessibilityState={{ disabled: loadingPlanId !== null }}
               >
                 <View>
                   <Text style={styles.planName}>{plan.planName}</Text>
@@ -363,6 +364,7 @@ export default function FeedCreateScreen() {
             updatePost.isPending ||
             isSubmitting
           }
+          accessibilityState={{ disabled: (!isEditMode && !snapshot) ||             (isEditMode &&               (!existingPost.data?.itinerary ||                 existingPost.data.category !== 'feed')) ||             createPost.isPending ||             updatePost.isPending ||             isSubmitting }}
         >
           <Text style={styles.submitText}>
             {createPost.isPending || updatePost.isPending

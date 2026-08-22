@@ -348,6 +348,7 @@ export default function PostDetailScreen() {
                   onPress={handleJoinMate}
                   disabled={!isRecruiting}
                   activeOpacity={0.85}
+                  accessibilityState={{ disabled: !isRecruiting }}
                 >
                   <Text style={styles.mateButtonText}>
                     {isRecruiting ? '참여하기' : '모집 마감'}
@@ -374,6 +375,7 @@ export default function PostDetailScreen() {
             onPress={() => handleReact('like')}
             activeOpacity={0.85}
             disabled={react.isPending || reactLock.isSubmitting}
+            accessibilityState={{ disabled: react.isPending || reactLock.isSubmitting }}
           >
             <ThumbsUp
               size={normalize(14)}
@@ -399,6 +401,7 @@ export default function PostDetailScreen() {
             onPress={() => handleReact('dislike')}
             activeOpacity={0.85}
             disabled={react.isPending || reactLock.isSubmitting}
+            accessibilityState={{ disabled: react.isPending || reactLock.isSubmitting }}
           >
             <ThumbsDown
               size={normalize(14)}

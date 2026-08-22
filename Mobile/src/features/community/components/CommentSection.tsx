@@ -80,6 +80,7 @@ const CommentComposer = React.memo(function CommentComposer({
         accessibilityRole="button"
         accessibilityLabel="댓글 등록"
         hitSlop={8}
+        accessibilityState={{ disabled: !editable || submitting }}
       >
         <Send size={normalize(15)} color={tokens.colors.white} />
       </TouchableOpacity>
@@ -382,6 +383,7 @@ export default function CommentSection({
               style={styles.loadMoreButton}
               onPress={() => void commentsQuery.fetchNextPage()}
               disabled={commentsQuery.isFetchingNextPage}
+              accessibilityState={{ disabled: commentsQuery.isFetchingNextPage }}
             >
               {commentsQuery.isFetchingNextPage ? (
                 <ActivityIndicator color={tokens.colors.primary} />

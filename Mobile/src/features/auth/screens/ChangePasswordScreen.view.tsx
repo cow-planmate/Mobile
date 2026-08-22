@@ -115,6 +115,7 @@ export const ChangePasswordScreenView = ({
           disabled={isSubmitting}
           accessibilityRole="button"
           accessibilityLabel="뒤로 가기"
+          accessibilityState={{ disabled: isSubmitting }}
         >
           <ArrowLeft size={22} color={COLORS.text} />
         </Pressable>

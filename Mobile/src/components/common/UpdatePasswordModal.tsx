@@ -178,6 +178,7 @@ export default function UpdatePasswordModal({
               onPress={handleConfirm}
               disabled={isSubmitting}
               activeOpacity={0.7}
+              accessibilityState={{ disabled: isSubmitting }}
             >
               <Text style={styles.confirmButtonText}>
                 {isSubmitting ? '변경 중…' : '확인'}

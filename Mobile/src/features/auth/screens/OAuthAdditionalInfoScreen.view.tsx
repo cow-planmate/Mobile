@@ -86,6 +86,7 @@ export const OAuthAdditionalInfoScreenView = ({
           disabled={isSubmitting}
           accessibilityRole="button"
           accessibilityLabel="뒤로 가기"
+          accessibilityState={{ disabled: isSubmitting }}
         >
           <ArrowLeft size={22} color={COLORS.text} />
         </Pressable>
@@ -144,6 +145,7 @@ export const OAuthAdditionalInfoScreenView = ({
               disabled={isSubmitting}
               accessibilityRole="button"
               accessibilityLabel="생년월일 선택"
+              accessibilityState={{ disabled: isSubmitting }}
             >
               <Text
                 style={[

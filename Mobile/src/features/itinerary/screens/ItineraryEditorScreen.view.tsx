@@ -184,6 +184,7 @@ const ToolbarIconButton = ({
       active && styles.toolbarIconButtonActive,
       disabled && styles.toolbarIconButtonDisabled,
     ]}
+    accessibilityState={{ disabled: disabled }}
   >
     {children}
     {typeof badgeCount === 'number' && badgeCount > 0 && (
@@ -1021,6 +1022,7 @@ const TimelineTabScreen = React.memo(() => {
           activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel={"다시 실행"}
+          accessibilityState={{ disabled: !onRedo }}
         >
           <Redo2 color={onRedo ? COLORS.text : COLORS.placeholder} size={16} />
         </TouchableOpacity>

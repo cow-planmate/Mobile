@@ -263,6 +263,7 @@ export const LoginScreenView = ({
                 disabled={isLoading}
                 accessibilityRole="button"
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityState={{ disabled: isLoading }}
               >
                 <Text style={styles.linkText}>비밀번호를 잊으셨나요?</Text>
               </Pressable>
@@ -335,6 +336,7 @@ export const LoginScreenView = ({
               disabled={isLoading}
               accessibilityRole="button"
               accessibilityLabel="회원가입"
+              accessibilityState={{ disabled: isLoading }}
             >
               <Text style={[styles.linkText, styles.linkTextStrong]}>
                 회원가입

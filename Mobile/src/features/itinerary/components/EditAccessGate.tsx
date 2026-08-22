@@ -101,6 +101,7 @@ export default function EditAccessGate({
             disabled={status === 'sending' || status === 'sent' || !planId}
             activeOpacity={0.85}
             accessibilityRole="button"
+            accessibilityState={{ disabled: status === 'sending' || status === 'sent' || !planId }}
           >
             <Text style={styles.primaryButtonText}>
               {status === 'sending'

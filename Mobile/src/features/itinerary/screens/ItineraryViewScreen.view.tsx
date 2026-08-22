@@ -77,6 +77,7 @@ const ToolbarIconButton = ({
       active && styles.toolbarIconButtonActive,
       disabled && styles.toolbarIconButtonDisabled,
     ]}
+    accessibilityState={{ disabled: disabled }}
   >
     {children}
     {typeof badgeCount === 'number' && badgeCount > 0 && (

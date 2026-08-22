@@ -254,6 +254,7 @@ export default function ScheduleEditModal({
                 activeOpacity={0.7}
                 accessibilityRole="button"
                 accessibilityLabel={"일수 줄이기"}
+                accessibilityState={{ disabled: days.length <= 1 }}
               >
                 <Minus
                   size={16}

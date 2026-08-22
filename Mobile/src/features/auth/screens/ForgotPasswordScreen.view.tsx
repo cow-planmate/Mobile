@@ -344,6 +344,7 @@ export const ForgotPasswordScreenView = ({
                         style={styles.resendButton}
                         accessibilityRole="button"
                         accessibilityLabel="인증번호 다시 받기"
+                        accessibilityState={{ disabled: resendCooldown > 0 || isSendingEmail }}
                       >
                         <Text
                           style={[

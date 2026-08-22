@@ -320,6 +320,7 @@ export default function ShareModal({
                 style={[styles.inviteButton, loading && styles.disabledButton]}
                 onPress={handleInvite}
                 disabled={loading}
+                accessibilityState={{ disabled: loading }}
               >
                 {loading ? (
                   <ActivityIndicator color="#fff" size="small" />

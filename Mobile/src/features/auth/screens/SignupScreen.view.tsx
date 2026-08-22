@@ -291,6 +291,7 @@ export const SignupScreenView = ({
           disabled={isBusy}
           accessibilityRole="button"
           accessibilityLabel={step > 1 ? '이전 단계' : '뒤로 가기'}
+          accessibilityState={{ disabled: isBusy }}
         >
           <ArrowLeft size={22} color={COLORS.text} />
         </Pressable>
@@ -491,6 +492,7 @@ export const SignupScreenView = ({
                         style={styles.resendButton}
                         accessibilityRole="button"
                         accessibilityLabel="인증번호 다시 받기"
+                        accessibilityState={{ disabled: resendCooldown > 0 || isSendingEmail }}
                       >
                         <Text
                           style={[
@@ -674,6 +676,7 @@ export const SignupScreenView = ({
                     activeOpacity={0.7}
                     accessibilityRole="button"
                     accessibilityLabel="생년월일 선택"
+                    accessibilityState={{ disabled: isSubmitting }}
                   >
                     <Text
                       style={[

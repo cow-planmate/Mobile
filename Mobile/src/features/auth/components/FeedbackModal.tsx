@@ -76,6 +76,7 @@ export default function FeedbackModal({ visible, onClose }: FeedbackModalProps) 
                 disabled={isSubmitting}
                 onPress={onClose}
                 style={styles.closeButton}
+                accessibilityState={{ disabled: isSubmitting }}
               >
                 <X size={20} color={tokens.colors.textSecondary} strokeWidth={1.5} />
               </TouchableOpacity>
@@ -102,6 +103,7 @@ export default function FeedbackModal({ visible, onClose }: FeedbackModalProps) 
                 styles.submitButton,
                 isSubmitting && styles.submitButtonDisabled,
               ]}
+              accessibilityState={{ disabled: isSubmitting }}
             >
               <Text style={styles.submitButtonText}>
                 {isSubmitting ? '보내는 중…' : '보내기'}

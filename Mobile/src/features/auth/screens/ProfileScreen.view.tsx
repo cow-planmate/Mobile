@@ -266,6 +266,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
         onPress={() => onOpenChecklist(plan)}
         disabled={isEditMode}
         activeOpacity={0.7}
+        accessibilityState={{ disabled: isEditMode }}
       >
         <View style={styles.checklistHeader}>
           <View style={styles.checklistHeaderLeft}>
@@ -1141,6 +1142,7 @@ export default function ProfileScreenView({
                 onPress={handleDeleteSelected}
                 disabled={selectedPlanIds.length === 0}
                 activeOpacity={0.8}
+                accessibilityState={{ disabled: selectedPlanIds.length === 0 }}
               >
                 <Trash2 size={12} color="#EF4444" style={styles.iconSpacingSmall} />
                 <Text style={styles.editActionDeleteSelectedText}>선택 삭제 ({selectedPlanIds.length})</Text>
@@ -1341,6 +1343,7 @@ export default function ProfileScreenView({
                 activeOpacity={0.8}
                 accessibilityRole="button"
                 accessibilityLabel="프로필 사진 변경"
+                accessibilityState={{ disabled: isProfileImageUpdating }}
               >
                 <FallbackImage
                   uri={avatarUri}
@@ -1405,6 +1408,7 @@ export default function ProfileScreenView({
                     onPress={handleCheckNickname}
                     disabled={isNicknameUnchanged || isNicknameChecking}
                     activeOpacity={0.8}
+                    accessibilityState={{ disabled: isNicknameUnchanged || isNicknameChecking }}
                   >
                     <Text
                       style={[
@@ -1488,6 +1492,7 @@ export default function ProfileScreenView({
                     }}
                     disabled={user.socialLogin}
                     activeOpacity={0.8}
+                    accessibilityState={{ disabled: user.socialLogin }}
                   >
                     <Text style={styles.actionNavButtonText}>비밀번호 변경</Text>
                     <Settings size={14} color={tokens.colors.textTertiary} />

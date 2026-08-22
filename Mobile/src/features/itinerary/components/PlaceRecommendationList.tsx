@@ -532,6 +532,7 @@ export default function PlaceRecommendationList({
             onPress={handleDirectAdd}
             disabled={!customPlaceName.trim()}
             activeOpacity={0.85}
+            accessibilityState={{ disabled: !customPlaceName.trim() }}
           >
             <Text style={plStyles.searchActionButtonText}>추가</Text>
           </TouchableOpacity>

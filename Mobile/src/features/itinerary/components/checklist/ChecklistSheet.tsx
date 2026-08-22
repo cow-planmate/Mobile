@@ -276,6 +276,7 @@ export default function ChecklistSheet({
                     activeOpacity={0.7}
                     accessibilityRole="button"
                     accessibilityLabel={"수정 저장"}
+                    accessibilityState={{ disabled: editContent.isPending }}
                   >
                     <Check size={normalize(18)} color={COLORS.primary} />
                   </TouchableOpacity>
@@ -297,6 +298,7 @@ export default function ChecklistSheet({
                     onPress={() => handleToggle(item)}
                     disabled={isMutating}
                     activeOpacity={0.7}
+                    accessibilityState={{ disabled: isMutating }}
                   >
                     {item.isChecked ? (
                       <CheckCircle2
@@ -338,6 +340,7 @@ export default function ChecklistSheet({
                     accessibilityLabel={`${item.content} 위로 이동`}
                     hitSlop={6}
                     activeOpacity={0.7}
+                    accessibilityState={{ disabled: isMutating || index === 0 }}
                   >
                     <ChevronUp size={normalize(16)} color={COLORS.textTertiary} />
                   </TouchableOpacity>
@@ -348,6 +351,7 @@ export default function ChecklistSheet({
                     accessibilityLabel={`${item.content} 아래로 이동`}
                     hitSlop={6}
                     activeOpacity={0.7}
+                    accessibilityState={{ disabled: isMutating || index === items.length - 1 }}
                   >
                     <ChevronDown size={normalize(16)} color={COLORS.textTertiary} />
                   </TouchableOpacity>
@@ -358,6 +362,7 @@ export default function ChecklistSheet({
                     accessibilityLabel={`${item.content} 삭제`}
                     hitSlop={6}
                     activeOpacity={0.7}
+                    accessibilityState={{ disabled: isMutating }}
                   >
                     <Trash2 size={normalize(16)} color={COLORS.textTertiary} />
                   </TouchableOpacity>
@@ -411,6 +416,7 @@ export default function ChecklistSheet({
                 accessibilityLabel="체크리스트 새로고침"
                 activeOpacity={0.7}
                 hitSlop={8}
+                accessibilityState={{ disabled: isFetching || isMutating }}
               >
                 {isFetching ? (
                   <ActivityIndicator size="small" color={COLORS.textTertiary} />
@@ -498,6 +504,7 @@ export default function ChecklistSheet({
               onPress={handleAdd}
               disabled={!canSubmitDraft}
               activeOpacity={0.8}
+              accessibilityState={{ disabled: !canSubmitDraft }}
             >
               {createItem.isPending ? (
                 <ActivityIndicator size="small" color={COLORS.white} />

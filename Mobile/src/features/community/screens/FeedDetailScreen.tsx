@@ -269,6 +269,7 @@ export default function FeedDetailScreen() {
             onPress={handleForkPress}
             disabled={!isForkable || fork.isPending}
             activeOpacity={0.85}
+            accessibilityState={{ disabled: !isForkable || fork.isPending }}
           >
             <Copy size={normalize(15)} color={COLORS.white} />
             <Text style={styles.forkButtonText}>

@@ -220,6 +220,7 @@ export default function UpdateThemeModal({
                     onPress={handleSave}
                     disabled={saving}
                     activeOpacity={0.7}
+                    accessibilityState={{ disabled: saving }}
                   >
                     {saving ? (
                       <ActivityIndicator size="small" color="#fff" />
