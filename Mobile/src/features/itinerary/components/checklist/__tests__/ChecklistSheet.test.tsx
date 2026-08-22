@@ -5,6 +5,12 @@ import ChecklistSheet from '../ChecklistSheet';
 
 const mockRefetch = jest.fn(() => Promise.resolve([]));
 const mockReorderMutate = jest.fn();
+const mockDeleteMutate = jest.fn();
+const mockShowAlert = jest.fn();
+
+jest.mock('../../../../../contexts/AlertContext', () => ({
+  useAlert: () => ({ showAlert: mockShowAlert }),
+}));
 
 jest.mock('lucide-react-native', () => {
   const ReactModule = require('react');
@@ -27,7 +33,7 @@ jest.mock('lucide-react-native', () => {
 jest.mock('../../../hooks/useChecklistQueries', () => ({
   getChecklistErrorMessage: () => '순서 변경에 실패했습니다.',
   useCreateChecklistItem: () => ({ isPending: false, mutate: jest.fn() }),
-  useDeleteChecklistItem: () => ({ isPending: false, mutate: jest.fn() }),
+  useDeleteChecklistItem: () => ({ isPending: false, mutate: mockDeleteMutate }),
   useEditChecklistItemContent: () => ({ isPending: false, mutate: jest.fn() }),
   usePlanChecklists: () => ({
     sharedItems: [
@@ -119,5 +125,34 @@ describe('ChecklistSheet', () => {
       text1: '순서 변경에 실패했습니다.',
       position: 'bottom',
     });
+  });
+
+  it('삭제는 확인을 받은 뒤에만 실행한다', () => {
+    let component: renderer.ReactTestRenderer;
+
+    act(() => {
+      component = renderer.create(
+        <ChecklistSheet visible onClose={jest.fn()} planId="plan-id" />,
+      );
+    });
+
+    act(() => {
+      component!.root
+        .findByProps({ accessibilityLabel: '충전기 삭제' })
+        .props.onPress();
+    });
+
+    expect(mockDeleteMutate).not.toHaveBeenCalled();
+    expect(mockShowAlert).toHaveBeenCalledTimes(1);
+
+    const confirm = mockShowAlert.mock.calls[0][0].buttons.find(
+      (b: any) => b.style === 'destructive',
+    );
+    act(() => confirm.onPress());
+
+    expect(mockDeleteMutate).toHaveBeenCalledWith(
+      2,
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
   });
 });

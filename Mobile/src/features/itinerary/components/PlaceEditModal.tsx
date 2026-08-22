@@ -117,8 +117,22 @@ export default function PlaceEditModal({
   };
 
   const handleDelete = () => {
-    onDelete(place.id || place.placeId);
-    onClose();
+    showAlert({
+      title: '장소 삭제',
+      message: `'${place.name || '이 장소'}'를 일정에서 삭제할까요? 메모와 시간도 함께 사라집니다.`,
+      type: 'confirm',
+      buttons: [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: () => {
+            onDelete(place.id || place.placeId);
+            onClose();
+          },
+        },
+      ],
+    });
   };
 
   const handleOpenMap = () => {

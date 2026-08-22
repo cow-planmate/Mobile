@@ -36,6 +36,7 @@ import {
   useToggleChecklistItem,
 } from '../../hooks/useChecklistQueries';
 import { normalize } from '../../../../utils/normalize';
+import { useAlert } from '../../../../contexts/AlertContext';
 import { styles, COLORS } from './ChecklistSheet.styles';
 
 const SCOPE_TABS: { scope: ChecklistScope; label: string }[] = [
@@ -91,6 +92,8 @@ export default function ChecklistSheet({
     toggleItem.isPending ||
     deleteItem.isPending ||
     reorderItems.isPending;
+
+  const { showAlert } = useAlert();
 
   const showError = useCallback((error: unknown) => {
     Toast.show({
@@ -152,14 +155,30 @@ export default function ChecklistSheet({
     );
   }, [cancelEditing, editContent, editingItemId, editingText, showError]);
 
+  // 삭제 버튼이 이동 화살표와 같은 모양으로 붙어 있어 오탭이 나기 쉽고,
+  // 공유 체크리스트는 되돌리기 없이 협업자 화면에서도 즉시 사라진다.
   const handleDelete = useCallback(
-    (itemId: number) => {
-      if (editingItemId === itemId) {
-        cancelEditing();
-      }
-      deleteItem.mutate(itemId, { onError: showError });
+    (itemId: number, content: string) => {
+      showAlert({
+        title: '항목 삭제',
+        message: `'${content}'를 삭제할까요?`,
+        type: 'confirm',
+        buttons: [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '삭제',
+            style: 'destructive',
+            onPress: () => {
+              if (editingItemId === itemId) {
+                cancelEditing();
+              }
+              deleteItem.mutate(itemId, { onError: showError });
+            },
+          },
+        ],
+      });
     },
-    [cancelEditing, deleteItem, editingItemId, showError],
+    [cancelEditing, deleteItem, editingItemId, showAlert, showError],
   );
 
   const handleMove = useCallback(
@@ -328,8 +347,9 @@ export default function ChecklistSheet({
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.itemAction}
-                    onPress={() => handleDelete(item.itemId)}
+                    onPress={() => handleDelete(item.itemId, item.content)}
                     disabled={isMutating}
+                    accessibilityLabel={`${item.content} 삭제`}
                     hitSlop={6}
                     activeOpacity={0.7}
                   >
