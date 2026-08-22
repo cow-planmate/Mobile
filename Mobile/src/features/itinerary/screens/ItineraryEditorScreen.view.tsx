@@ -889,7 +889,8 @@ const TimelineComponent = React.memo(
                         onPress={onCancelPreview}
                         style={[styles.previewBannerActionButton, styles.previewBannerCancelButton]}
                         accessibilityRole="button"
-                        accessibilityLabel={"장소 배치 취소"}
+                        accessibilityLabel="장소 배치 취소"
+                        hitSlop={8}
                       >
                         <XIcon color={COLORS.white} size={14} />
                       </TouchableOpacity>
@@ -897,7 +898,8 @@ const TimelineComponent = React.memo(
                         onPress={onConfirmPlacement}
                         style={[styles.previewBannerActionButton, styles.previewBannerConfirmButton]}
                         accessibilityRole="button"
-                        accessibilityLabel={"장소 배치 확정"}
+                        accessibilityLabel="장소 배치 확정"
+                        hitSlop={8}
                       >
                         <CheckIcon color={COLORS.white} size={14} />
                       </TouchableOpacity>
@@ -1006,7 +1008,8 @@ const TimelineTabScreen = React.memo(() => {
           onPress={onUndo}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel={"실행 취소"}
+          accessibilityLabel="실행 취소"
+          hitSlop={3}
         >
           <Undo2 color={COLORS.text} size={16} />
         </TouchableOpacity>
@@ -1021,8 +1024,9 @@ const TimelineTabScreen = React.memo(() => {
           disabled={!onRedo}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel={"다시 실행"}
+          accessibilityLabel="다시 실행"
           accessibilityState={{ disabled: !onRedo }}
+          hitSlop={3}
         >
           <Redo2 color={onRedo ? COLORS.text : COLORS.placeholder} size={16} />
         </TouchableOpacity>
@@ -1380,7 +1384,7 @@ export default function ItineraryEditorScreenView({
           activeOpacity={0.85}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel={"일정 기간 편집"}
+          accessibilityLabel="일정 기간 편집"
         >
           <CalendarDaysIcon color={COLORS.textSecondary} size={22} />
         </TouchableOpacity>

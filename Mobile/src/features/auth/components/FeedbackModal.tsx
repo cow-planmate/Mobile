@@ -77,6 +77,7 @@ export default function FeedbackModal({ visible, onClose }: FeedbackModalProps) 
                 onPress={onClose}
                 style={styles.closeButton}
                 accessibilityState={{ disabled: isSubmitting }}
+                hitSlop={6}
               >
                 <X size={20} color={tokens.colors.textSecondary} strokeWidth={1.5} />
               </TouchableOpacity>

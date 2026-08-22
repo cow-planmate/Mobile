@@ -225,6 +225,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
               style={styles.cardCheckboxWrap}
               onPress={handleSelectToggle}
               activeOpacity={0.8}
+              hitSlop={16}
             >
               <View style={[
                 styles.cardCheckboxSquare,
@@ -946,7 +947,8 @@ export default function ProfileScreenView({
                 onPress={handleOpenEditModal}
                 activeOpacity={0.8}
                 accessibilityRole="button"
-                accessibilityLabel={"프로필 편집"}
+                accessibilityLabel="프로필 편집"
+                hitSlop={12}
               >
                 <Settings size={12} color={tokens.colors.white} />
               </TouchableOpacity>
@@ -1241,6 +1243,7 @@ export default function ProfileScreenView({
                             style={styles.cardCheckboxWrap} 
                             onPress={onSelectToggle}
                             activeOpacity={0.8}
+                            hitSlop={16}
                           >
                             <View style={[
                               styles.cardCheckboxSquare,
@@ -1331,7 +1334,8 @@ export default function ProfileScreenView({
                 onPress={() => setEditModalVisible(false)}
                 activeOpacity={0.8}
                 accessibilityRole="button"
-                accessibilityLabel={"닫기"}
+                accessibilityLabel="닫기"
+                hitSlop={10}
               >
                 <X size={18} color={tokens.colors.white} />
               </TouchableOpacity>

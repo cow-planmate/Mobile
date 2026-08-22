@@ -253,8 +253,9 @@ export default function ScheduleEditModal({
                 disabled={days.length <= 1}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel={"일수 줄이기"}
+                accessibilityLabel="일수 줄이기"
                 accessibilityState={{ disabled: days.length <= 1 }}
+                hitSlop={8}
               >
                 <Minus
                   size={16}
@@ -268,7 +269,8 @@ export default function ScheduleEditModal({
                 onPress={handleAddDay}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel={"일수 늘리기"}
+                accessibilityLabel="일수 늘리기"
+                hitSlop={8}
               >
                 <Plus size={16} color={COLORS.text} strokeWidth={2} />
               </TouchableOpacity>

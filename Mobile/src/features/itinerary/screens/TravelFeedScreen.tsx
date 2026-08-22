@@ -360,6 +360,7 @@ export default function TravelFeedScreen() {
             activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel="여행지 지도 보기"
+            hitSlop={8}
           >
             <MapIcon size={16} color={tokens.colors.primary} />
           </TouchableOpacity>
@@ -535,6 +536,7 @@ export default function TravelFeedScreen() {
               onPress={() => setMapModalVisible(false)}
               accessibilityRole="button"
               accessibilityLabel="닫기"
+              hitSlop={9}
             >
               <X size={22} color={tokens.colors.text} />
             </TouchableOpacity>
