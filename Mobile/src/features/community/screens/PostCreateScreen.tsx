@@ -21,6 +21,7 @@ import { BOARDS, BoardKey } from '../constants/levels';
 import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
 import { buildPostPayload } from '../utils/postPayload';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
+import { useUnsavedChangesPrompt } from '../../../hooks/useUnsavedChangesPrompt';
 import { searchPlacesByKeyword } from '../../../api/trips';
 import { styles, COLORS } from './PostCreateScreen.styles';
 import { tokens } from '../../../theme/tokens';
@@ -76,6 +77,10 @@ export default function PostCreateScreen() {
 
   const { isSubmitting, runExclusive } = useSubmitLock();
 
+  const { allowLeave } = useUnsavedChangesPrompt({
+    hasUnsavedChanges: !!title.trim() || !!content.trim(),
+  });
+
   const canSubmit =
     title.trim().length > 0 &&
     content.trim().length > 0 &&
@@ -102,10 +107,13 @@ export default function PostCreateScreen() {
           ? await updatePost.mutateAsync(payload)
           : await createPost.mutateAsync(payload);
 
-        if (created?.id != null) {
-          navigation.replace('CommunityDetail', { postId: String(created.id) });
-        } else {
+        allowLeave();
+        // 수정은 상세 화면에서 진입하므로 되돌아가면 된다. replace 하면
+        // 같은 글 상세가 스택에 두 번 쌓여 뒤로가기가 한 번 헛돈다.
+        if (isEditMode || created?.id == null) {
           navigation.goBack();
+        } else {
+          navigation.replace('CommunityDetail', { postId: String(created.id) });
         }
       } catch (error) {
         showAlert({
@@ -116,25 +124,7 @@ export default function PostCreateScreen() {
       }
     });
 
-  const handleBack = () => {
-    if (!title.trim() && !content.trim()) {
-      navigation.goBack();
-      return;
-    }
-    showAlert({
-      title: '작성 취소',
-      message: '작성 중인 내용이 사라집니다. 나갈까요?',
-      type: 'confirm',
-      buttons: [
-        { text: '계속 작성', style: 'cancel' },
-        {
-          text: '나가기',
-          style: 'destructive',
-          onPress: () => navigation.goBack(),
-        },
-      ],
-    });
-  };
+  const handleBack = () => navigation.goBack();
 
   return (
     <KeyboardAvoidingView

@@ -25,6 +25,7 @@ import { FeedStackParamList } from '../../../navigation/types';
 import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
 import { textToBlocks } from '../utils/blocks';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
+import { useUnsavedChangesPrompt } from '../../../hooks/useUnsavedChangesPrompt';
 import { tokens } from '../../../theme/tokens';
 import {
   buildFeedUpdatePayload,
@@ -107,6 +108,12 @@ export default function FeedCreateScreen() {
 
   const { isSubmitting, runExclusive } = useSubmitLock();
 
+  const { allowLeave } = useUnsavedChangesPrompt({
+    hasUnsavedChanges: !!title.trim() || !!content.trim(),
+    title: '작성 취소',
+    message: '작성 중인 여행기가 사라집니다. 나갈까요?',
+  });
+
   const handleSubmit = () =>
     runExclusive(async () => {
       const canEdit =
@@ -146,7 +153,14 @@ export default function FeedCreateScreen() {
               tags: parseFeedTags(tags),
               sourcePlanId: snapshot!.planId,
             });
-        navigation.replace('FeedDetail', { postId: String(created.id) });
+        allowLeave();
+        // 수정은 상세 화면에서 진입하므로 되돌아가면 된다. replace 하면
+        // 같은 여행기 상세가 스택에 두 번 쌓여 뒤로가기가 한 번 헛돈다.
+        if (isEditMode || created?.id == null) {
+          navigation.goBack();
+        } else {
+          navigation.replace('FeedDetail', { postId: String(created.id) });
+        }
       } catch (error) {
         showAlert({
           title: isEditMode ? '여행기 수정 실패' : '여행기 발행 실패',
