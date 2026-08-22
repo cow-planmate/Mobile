@@ -57,6 +57,11 @@ export const getLevelProgress = (postCount: number, commentCount: number) => {
   return { score, currentTier, nextTier, progressPercent };
 };
 
+// 게시글·여행기 작성 화면이 공통으로 쓰는 제목 길이 상한.
+// 커뮤니티는 별도 서비스라 서버 제약을 워크스페이스에서 확인할 수 없어,
+// 두 화면에 흩어져 있던 기존 값(100)을 그대로 한곳에 모아둔다.
+export const POST_TITLE_MAX_LENGTH = 100;
+
 export const BOARDS = [
   { key: 'free', label: '자유게시판' },
   { key: 'qna', label: 'Q&A' },

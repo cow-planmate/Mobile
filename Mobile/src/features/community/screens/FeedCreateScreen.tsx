@@ -26,6 +26,7 @@ import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
 import { textToBlocks } from '../utils/blocks';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { useUnsavedChangesPrompt } from '../../../hooks/useUnsavedChangesPrompt';
+import { POST_TITLE_MAX_LENGTH } from '../constants/levels';
 import { tokens } from '../../../theme/tokens';
 import {
   buildFeedUpdatePayload,
@@ -63,6 +64,7 @@ export default function FeedCreateScreen() {
   const [tags, setTags] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
 
+  const contentRef = useRef<TextInput>(null);
   const hydratedPostId = useRef<string | undefined>(undefined);
   useEffect(() => {
     const post = existingPost.data;
@@ -292,11 +294,15 @@ export default function FeedCreateScreen() {
             isHydrating ? '기존 내용을 불러오는 중…' : '여행기 제목을 입력하세요'
           }
           editable={!isHydrating}
-          maxLength={100}
+          maxLength={POST_TITLE_MAX_LENGTH}
+          returnKeyType="next"
+          onSubmitEditing={() => contentRef.current?.focus()}
+          accessibilityLabel="여행기 제목"
         />
 
         <Text style={styles.label}>설명</Text>
         <TextInput
+          ref={contentRef}
           value={content}
           onChangeText={setContent}
           style={[styles.input, styles.contentInput]}
@@ -304,6 +310,7 @@ export default function FeedCreateScreen() {
           editable={!isHydrating}
           multiline
           textAlignVertical="top"
+          accessibilityLabel="여행기 설명"
         />
 
         <Text style={styles.label}>태그</Text>

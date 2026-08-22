@@ -71,6 +71,7 @@ const CommentComposer = React.memo(function CommentComposer({
         onChangeText={setText}
         editable={editable}
         multiline
+        accessibilityLabel={placeholder}
       />
       <TouchableOpacity
         style={[styles.sendButton, !editable && styles.sendButtonDisabled]}
@@ -104,6 +105,7 @@ const CommentEditor = React.memo(function CommentEditor({
         onChangeText={setText}
         multiline
         autoFocus
+        accessibilityLabel="댓글 수정"
       />
       <View style={styles.commentActions}>
         <TouchableOpacity onPress={() => onSubmit(text)} hitSlop={6}>

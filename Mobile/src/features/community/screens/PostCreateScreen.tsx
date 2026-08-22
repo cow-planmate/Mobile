@@ -17,7 +17,7 @@ import { normalize } from '../../../utils/normalize';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CommunityStackParamList } from '../../../navigation/types';
-import { BOARDS, BoardKey } from '../constants/levels';
+import { BOARDS, BoardKey, POST_TITLE_MAX_LENGTH } from '../constants/levels';
 import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
 import { buildPostPayload } from '../utils/postPayload';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
@@ -61,6 +61,7 @@ export default function PostCreateScreen() {
   const existingPost = usePost(postId);
   const updatePost = useUpdatePost(Number(postId ?? 0));
 
+  const contentRef = useRef<TextInput>(null);
   const hydratedPostId = useRef<string | undefined>(undefined);
   useEffect(() => {
     const post = existingPost.data;
@@ -209,7 +210,10 @@ export default function PostCreateScreen() {
             placeholderTextColor={COLORS.textTertiary}
             value={title}
             onChangeText={setTitle}
-            maxLength={100}
+            maxLength={POST_TITLE_MAX_LENGTH}
+            returnKeyType="next"
+            onSubmitEditing={() => contentRef.current?.focus()}
+            accessibilityLabel="제목"
           />
         </View>
 
@@ -267,12 +271,14 @@ export default function PostCreateScreen() {
         <View>
           <Text style={styles.fieldLabel}>내용</Text>
           <TextInput
+            ref={contentRef}
             style={[styles.input, styles.contentInput]}
             placeholder="내용을 입력하세요"
             placeholderTextColor={COLORS.textTertiary}
             value={content}
             onChangeText={setContent}
             multiline
+            accessibilityLabel="내용"
           />
           <Text style={styles.hint}>
             앱에서는 글자 서식 없이 작성합니다. 줄바꿈은 그대로 유지되며,
