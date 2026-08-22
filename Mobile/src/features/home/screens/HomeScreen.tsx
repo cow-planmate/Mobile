@@ -31,6 +31,7 @@ import {
   describeRequestResultTitle,
 } from '../../../utils/collaborationRequest';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
+import { useDoublePressExit } from '../../../hooks/useDoublePressExit';
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
@@ -48,6 +49,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
     return () => backHandler.remove();
   }, [isCreating]);
+
+  // 시작 탭이라 뒤로가기가 곧 앱 종료다. 생성 중에는 위 차단이 우선한다.
+  useDoublePressExit(!isCreating);
 
   useEffect(() => {
     if (!isCreating) return;
