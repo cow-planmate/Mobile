@@ -77,24 +77,29 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** 여행 탭 — 예정/지난 일정 탭과 일정 관리(선택 삭제) 진입 */
-export const TravelSection: Story = {};
+export const TravelSection: Story = { name: '여행 목록' };
 
 export const NoPlans: Story = {
+  name: '일정 없음',
   args: { user: { ...USER, myPlans: [] } },
 };
 
 export const PrivateProfile: Story = {
+  name: '비공개 프로필',
   args: { user: { ...USER, profilePublic: false } },
 };
 
 export const StatsLoading: Story = {
+  name: '통계 로딩',
   args: { communityStats: undefined, isCommunityStatsLoading: true },
 };
 
 export const Loading: Story = {
+  name: '로딩',
   args: { loading: true },
 };
 
 export const LoadError: Story = {
+  name: '불러오기 실패',
   args: { loadError: true },
 };

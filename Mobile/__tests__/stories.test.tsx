@@ -263,6 +263,8 @@ describe('Storybook 스토리 렌더링', () => {
 
     stories.forEach(([name, story]: [string, any]) => {
       it(`${title} · ${name} 렌더링`, async () => {
+        expect(story.name).toMatch(/[가-힣]/);
+
         let tree: renderer.ReactTestRenderer | undefined;
 
         await act(async () => {

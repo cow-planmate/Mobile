@@ -176,10 +176,12 @@ function StatefulSignupStory(props: StoryProps) {
 }
 
 export const Interactive_Flow: Story = {
+  name: '상호작용 흐름',
   render: () => <StatefulSignupStory autoVerifyEmail />,
 };
 
 export const Step1_Initial: Story = {
+  name: '1단계: 초기',
   render: () => (
     <StatefulSignupStory
       step={1}
@@ -191,6 +193,7 @@ export const Step1_Initial: Story = {
 };
 
 export const Step1_CodeSent: Story = {
+  name: '1단계: 인증번호 발송',
   render: () => (
     <StatefulSignupStory
       step={1}
@@ -203,6 +206,7 @@ export const Step1_CodeSent: Story = {
 };
 
 export const Step1_CodeError: Story = {
+  name: '1단계: 인증번호 오류',
   render: () => (
     <StatefulSignupStory
       step={1}
@@ -222,6 +226,7 @@ export const Step1_CodeError: Story = {
 };
 
 export const Step1_Verified: Story = {
+  name: '1단계: 인증 완료',
   render: () => (
     <StatefulSignupStory
       step={1}
@@ -238,6 +243,7 @@ export const Step1_Verified: Story = {
 };
 
 export const Step2_Typing: Story = {
+  name: '2단계: 입력 중',
   render: () => (
     <StatefulSignupStory
       step={2}
@@ -257,6 +263,7 @@ export const Step2_Typing: Story = {
 };
 
 export const Step2_MismatchError: Story = {
+  name: '2단계: 비밀번호 불일치',
   render: () => (
     <StatefulSignupStory
       step={2}
@@ -280,6 +287,7 @@ export const Step2_MismatchError: Story = {
 };
 
 export const Step2_Valid: Story = {
+  name: '2단계: 유효한 입력',
   render: () => (
     <StatefulSignupStory
       step={2}
@@ -300,6 +308,7 @@ export const Step2_Valid: Story = {
 };
 
 export const Step3_NicknameChecking: Story = {
+  name: '3단계: 닉네임 확인 중',
   render: () => (
     <StatefulSignupStory
       step={3}
@@ -313,6 +322,7 @@ export const Step3_NicknameChecking: Story = {
 };
 
 export const Step3_NicknameTaken: Story = {
+  name: '3단계: 사용 중인 닉네임',
   render: () => (
     <StatefulSignupStory
       step={3}
@@ -329,6 +339,7 @@ export const Step3_NicknameTaken: Story = {
 };
 
 export const Step3_AllValid_Unchecked: Story = {
+  name: '3단계: 약관 미동의',
   render: () => (
     <StatefulSignupStory
       step={3}
@@ -344,6 +355,7 @@ export const Step3_AllValid_Unchecked: Story = {
 };
 
 export const Step3_Completed: Story = {
+  name: '3단계: 가입 완료',
   render: () => (
     <StatefulSignupStory
       step={3}
@@ -376,6 +388,7 @@ function InteractivePrivacyModalStory() {
 }
 
 export const Modal_PrivacySheet: Story = {
+  name: '개인정보 처리방침',
   render: () => <InteractivePrivacyModalStory />,
 };
 

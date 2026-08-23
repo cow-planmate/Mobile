@@ -42,9 +42,10 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Empty: Story = {};
+export const Empty: Story = { name: '빈 입력' };
 
 export const Valid: Story = {
+  name: '유효한 입력',
   args: {
     form: {
       currentPassword: 'oldPass1234!',
@@ -58,6 +59,7 @@ export const Valid: Story = {
 };
 
 export const WithErrors: Story = {
+  name: '입력 오류',
   args: {
     form: {
       currentPassword: 'oldPass1234!',
@@ -73,6 +75,7 @@ export const WithErrors: Story = {
 };
 
 export const Submitting: Story = {
+  name: '변경 중',
   args: { ...Valid.args, isSubmitting: true },
 };
 
@@ -127,5 +130,6 @@ function InteractiveChangePassword() {
 }
 
 export const Interactive: Story = {
+  name: '상호작용',
   render: () => <InteractiveChangePassword />,
 };

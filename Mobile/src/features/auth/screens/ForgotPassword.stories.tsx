@@ -131,14 +131,17 @@ function StatefulForgotPasswordStory(props: StoryProps) {
 }
 
 export const Interactive_Flow: Story = {
+  name: '상호작용 흐름',
   render: () => <StatefulForgotPasswordStory autoProgressToStep2 />,
 };
 
 export const Step1_Initial: Story = {
+  name: '1단계: 초기',
   render: () => <StatefulForgotPasswordStory step={1} />,
 };
 
 export const Step1_CodeSent: Story = {
+  name: '1단계: 인증번호 발송',
   render: () => (
     <StatefulForgotPasswordStory
       step={1}
@@ -151,6 +154,7 @@ export const Step1_CodeSent: Story = {
 };
 
 export const Step1_CodeError: Story = {
+  name: '1단계: 인증번호 오류',
   render: () => (
     <StatefulForgotPasswordStory
       step={1}
@@ -166,6 +170,7 @@ export const Step1_CodeError: Story = {
 };
 
 export const Step1_CodeExpired: Story = {
+  name: '1단계: 인증번호 만료',
   render: () => (
     <StatefulForgotPasswordStory
       step={1}
@@ -181,6 +186,7 @@ export const Step1_CodeExpired: Story = {
 };
 
 export const Step1_Verified: Story = {
+  name: '1단계: 인증 완료',
   render: () => (
     <StatefulForgotPasswordStory
       step={1}
@@ -193,6 +199,7 @@ export const Step1_Verified: Story = {
 };
 
 export const Step2_Sending: Story = {
+  name: '2단계: 임시 비밀번호 발송 중',
   render: () => (
     <StatefulForgotPasswordStory
       step={2}
@@ -204,6 +211,7 @@ export const Step2_Sending: Story = {
 };
 
 export const Step2_SentSuccess: Story = {
+  name: '2단계: 발송 완료',
   render: () => (
     <StatefulForgotPasswordStory
       step={2}
@@ -215,6 +223,7 @@ export const Step2_SentSuccess: Story = {
 };
 
 export const Step2_SendFailed: Story = {
+  name: '2단계: 발송 실패',
   render: () => (
     <StatefulForgotPasswordStory
       step={2}

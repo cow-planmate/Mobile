@@ -100,9 +100,10 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const Default: Story = { name: '기본' };
 
 export const QnA: Story = {
+  name: '질문 게시판',
   args: {
     selectedCategory: 'qna',
     hotPosts: [],
@@ -122,6 +123,7 @@ export const QnA: Story = {
 };
 
 export const MateAndPlace: Story = {
+  name: '동행 및 장소',
   args: {
     selectedCategory: 'mate',
     hotPosts: [],
@@ -142,14 +144,17 @@ export const MateAndPlace: Story = {
 };
 
 export const Loading: Story = {
+  name: '로딩',
   args: { posts: [], hotPosts: [], isLoading: true },
 };
 
 export const EmptyResult: Story = {
+  name: '검색 결과 없음',
   args: { posts: [], hotPosts: [], searchQuery: '없는검색어' },
 };
 
 export const LoadError: Story = {
+  name: '불러오기 실패',
   args: { posts: [], hotPosts: [], isError: true },
 };
 
@@ -197,5 +202,6 @@ function InteractiveCommunity() {
 }
 
 export const Interactive: Story = {
+  name: '상호작용',
   render: () => <InteractiveCommunity />,
 };

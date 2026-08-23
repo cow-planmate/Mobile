@@ -101,14 +101,17 @@ function StatefulLoginStory(props: StoryProps) {
 }
 
 export const Interactive_Flow: Story = {
+  name: '상호작용 흐름',
   render: () => <StatefulLoginStory mockSubmitLoading />,
 };
 
 export const Default_Empty: Story = {
+  name: '빈 입력',
   render: () => <StatefulLoginStory form={{ email: '', password: '' }} />,
 };
 
 export const Filled_Valid: Story = {
+  name: '유효한 입력',
   render: () => (
     <StatefulLoginStory
       form={{ email: 'planmate@example.com', password: 'Password123!' }}
@@ -117,6 +120,7 @@ export const Filled_Valid: Story = {
 };
 
 export const Error_InvalidEmail: Story = {
+  name: '이메일 형식 오류',
   render: () => (
     <StatefulLoginStory
       form={{ email: 'invalid-email-format', password: '' }}
@@ -126,6 +130,7 @@ export const Error_InvalidEmail: Story = {
 };
 
 export const Error_InvalidPassword: Story = {
+  name: '비밀번호 오류',
   render: () => (
     <StatefulLoginStory
       form={{ email: 'planmate@example.com', password: '123' }}
@@ -135,6 +140,7 @@ export const Error_InvalidPassword: Story = {
 };
 
 export const Error_AccountNotFound: Story = {
+  name: '계정 없음',
   render: () => (
     <StatefulLoginStory
       form={{ email: 'wrong@example.com', password: 'wrongpassword' }}
@@ -144,6 +150,7 @@ export const Error_AccountNotFound: Story = {
 };
 
 export const Loading_Submitting: Story = {
+  name: '로그인 중',
   render: () => (
     <StatefulLoginStory
       form={{ email: 'planmate@example.com', password: 'Password123!' }}
@@ -153,6 +160,7 @@ export const Loading_Submitting: Story = {
 };
 
 export const LastLogin_Email: Story = {
+  name: '최근 로그인: 이메일',
   render: () => (
     <StatefulLoginStory
       form={{ email: 'planmate@example.com', password: '' }}
@@ -162,14 +170,17 @@ export const LastLogin_Email: Story = {
 };
 
 export const LastLogin_Google: Story = {
+  name: '최근 로그인: 구글',
   render: () => <StatefulLoginStory lastLoginMethod="google" />,
 };
 
 export const LastLogin_Naver: Story = {
+  name: '최근 로그인: 네이버',
   render: () => <StatefulLoginStory lastLoginMethod="naver" />,
 };
 
 export const Modal_SnsWebView: Story = {
+  name: '소셜 로그인 창',
   parameters: {
     dismissibleFullScreenModal: true,
   },

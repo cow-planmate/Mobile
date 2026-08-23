@@ -218,15 +218,18 @@ type Story = StoryObj<typeof meta>;
 
 /** 타임라인 탭 — 일자 전환, 장소 삭제, 시간 편집, undo/redo */
 export const Timeline: Story = {
+  name: '일정표',
   render: () => <EditorHarness />,
 };
 
 /** 장소추가 탭 — 추천 장소를 고르면 타임라인으로 돌아온다 */
 export const AddPlace: Story = {
+  name: '장소 추가',
   render: () => <EditorHarness initialTab="장소추가" />,
 };
 
 export const EmptyDay: Story = {
+  name: '빈 날짜',
   render: () => (
     <EditorHarness
       initialDays={[{ dayNumber: 1, date: new Date(2026, 8, 12), places: [] }]}
@@ -235,20 +238,24 @@ export const EmptyDay: Story = {
 };
 
 export const SoloPlan: Story = {
+  name: '혼자 여행',
   render: () => <EditorHarness participantsCount={1} />,
 };
 
 /** 일정명 인라인 편집 */
 export const EditingTripName: Story = {
+  name: '여행 이름 편집',
   render: () => <EditorHarness initialEditingTripName />,
 };
 
 /** 타임라인 블록의 시간을 눌러 여는 시간 선택 모달 */
 export const TimePickerOpen: Story = {
+  name: '시간 선택 열림',
   render: () => <EditorHarness initialTimePicker />,
 };
 
 /** 일자 시간표 편집 모달 */
 export const ScheduleEditOpen: Story = {
+  name: '일정 편집 열림',
   render: () => <EditorHarness initialScheduleEdit />,
 };

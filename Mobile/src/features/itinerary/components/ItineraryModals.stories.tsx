@@ -110,6 +110,7 @@ type Story = StoryObj<typeof meta>;
 
 /** 상단바 참여자 버튼 */
 export const Participants: Story = {
+  name: '참여자',
   render: () => (
     <ModalStage
       label="참여자"
@@ -127,6 +128,7 @@ export const Participants: Story = {
 };
 
 export const ParticipantsEmpty: Story = {
+  name: '참여자 없음',
   render: () => (
     <ModalStage
       label="참여자 (없음)"
@@ -139,6 +141,7 @@ export const ParticipantsEmpty: Story = {
 
 /** 상단바 지도 버튼 */
 export const PlanMap: Story = {
+  name: '여행 지도',
   render: () => (
     <ModalStage
       label="일정 지도"
@@ -156,6 +159,7 @@ export const PlanMap: Story = {
 
 /** 상단바 공유 버튼 */
 export const Share: Story = {
+  name: '공유',
   render: () => (
     <ModalStage
       label="공유"
@@ -168,6 +172,7 @@ export const Share: Story = {
 
 /** 상단바 정보 버튼 */
 export const PlanInfo: Story = {
+  name: '여행 정보',
   render: () => (
     <ModalStage
       label="일정 정보"
@@ -189,6 +194,7 @@ export const PlanInfo: Story = {
 
 /** 상단바 체크리스트 버튼 */
 export const Checklist: Story = {
+  name: '체크리스트',
   render: () => (
     <ModalStage
       label="체크리스트"
@@ -201,6 +207,7 @@ export const Checklist: Story = {
 
 /** 일자 헤더의 시간표 편집 */
 export const ScheduleEdit: Story = {
+  name: '일정 편집',
   render: () => (
     <ModalStage
       label="일정 시간표 편집"
@@ -221,6 +228,7 @@ export const ScheduleEdit: Story = {
 
 /** 타임라인 블록의 시작/종료 시간 탭 */
 export const TimePicker: Story = {
+  name: '시간 선택',
   render: () => (
     <ModalStage
       label="시간 선택"
@@ -241,6 +249,7 @@ export const TimePicker: Story = {
 
 /** 타임라인 블록 길게 눌러 여는 장소 편집 */
 export const PlaceEdit: Story = {
+  name: '장소 편집',
   render: () => (
     <ModalStage
       label="장소 편집"
@@ -299,6 +308,7 @@ const styles = StyleSheet.create({
 
 /** 편집 권한이 없는 플랜을 열었을 때 화면 전체를 덮는다 */
 export const EditAccessDenied: Story = {
+  name: '편집 권한 없음',
   render: () => (
     <ModalStage
       label="편집 권한 없음"

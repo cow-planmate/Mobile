@@ -216,4 +216,4 @@ export default meta;
 
 type Story = StoryObj<typeof PrimitivesPreview>;
 
-export const Default: Story = {};
+export const Default: Story = { name: '기본' };

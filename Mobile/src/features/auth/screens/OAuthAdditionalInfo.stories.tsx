@@ -36,10 +36,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const NeedEmail: Story = {};
+export const NeedEmail: Story = { name: '이메일 입력 필요' };
 
 /** 소셜 계정에서 이메일을 이미 받아온 경우 — 생년월일·성별만 입력한다 */
 export const EmailProvided: Story = {
+  name: '이메일 입력됨',
   args: {
     needEmail: false,
     form: { email: 'minyeong@planmate.app', birthdate: '', gender: '' },
@@ -47,6 +48,7 @@ export const EmailProvided: Story = {
 };
 
 export const Completed: Story = {
+  name: '입력 완료',
   args: {
     form: {
       email: 'minyeong@planmate.app',
@@ -58,6 +60,7 @@ export const Completed: Story = {
 };
 
 export const WithErrors: Story = {
+  name: '입력 오류',
   args: {
     form: { email: 'not-an-email', birthdate: '', gender: '' },
     errors: {
@@ -69,6 +72,7 @@ export const WithErrors: Story = {
 };
 
 export const Submitting: Story = {
+  name: '가입 중',
   args: { ...Completed.args, isSubmitting: true },
 };
 
@@ -100,5 +104,6 @@ function InteractiveOAuthInfo() {
 }
 
 export const Interactive: Story = {
+  name: '상호작용',
   render: () => <InteractiveOAuthInfo />,
 };

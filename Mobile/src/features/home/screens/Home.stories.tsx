@@ -46,9 +46,10 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Empty: Story = {};
+export const Empty: Story = { name: '빈 일정' };
 
 export const Filled: Story = {
+  name: '일정 있음',
   args: {
     destination: '제주',
     dateText: '2026.09.12 - 2026.09.14',
@@ -59,6 +60,7 @@ export const Filled: Story = {
 };
 
 export const WithNotifications: Story = {
+  name: '알림 있음',
   args: {
     pendingRequestsCount: 2,
     pendingRequestList: [
@@ -111,5 +113,6 @@ function InteractiveHome() {
 }
 
 export const Interactive: Story = {
+  name: '상호작용',
   render: () => <InteractiveHome />,
 };

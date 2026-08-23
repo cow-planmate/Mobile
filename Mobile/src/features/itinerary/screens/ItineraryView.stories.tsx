@@ -156,24 +156,29 @@ type Story = StoryObj<typeof meta>;
 
 /** 일자 전환·지도 토글·공유·체크리스트를 실제로 눌러보는 상태 */
 export const Timeline: Story = {
+  name: '일정표',
   render: () => <ViewHarness />,
 };
 
 export const WithMap: Story = {
+  name: '지도 포함',
   render: () => <ViewHarness initialMapVisible />,
 };
 
 export const SingleDay: Story = {
+  name: '하루 일정',
   render: () => <ViewHarness days={[DAYS[0]]} />,
 };
 
 /** 로딩 오버레이 → 일정 표시. 1.5초 뒤 스스로 걷혀 다른 스토리로 이동할 수 있다 */
 export const Loading: Story = {
+  name: '로딩',
   render: () => <ViewHarness demoLoading />,
 };
 
 /** 최초 조회 실패 시 재시도 버튼이 있는 에러 상태 */
 export const LoadError: Story = {
+  name: '불러오기 실패',
   render: () => <ViewHarness days={[]} loadError />,
   parameters: { dismissibleFullScreenModal: true },
 };
