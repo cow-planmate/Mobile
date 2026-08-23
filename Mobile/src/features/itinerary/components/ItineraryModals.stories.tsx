@@ -97,7 +97,7 @@ function ModalStage({
 }
 
 const meta = {
-  title: 'Itinerary/일정 편집 모달',
+  title: '04. 일정/03. 일정 편집 모달',
   component: ModalStage,
   args: {
     label: '모달',

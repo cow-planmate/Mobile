@@ -6,7 +6,7 @@ import { HomeScreenView } from './HomeScreen.view';
 const noop = () => {};
 
 const meta = {
-  title: 'Home/일정 생성',
+  title: '03. 홈/01. 일정 생성',
   component: HomeScreenView,
   args: {
     nickname: '민영',

@@ -122,7 +122,7 @@ function ViewHarness(props: {
 }
 
 const meta = {
-  title: 'Itinerary/일정 완성',
+  title: '04. 일정/02. 일정 완성',
   component: ItineraryViewScreenView,
   args: {
     days: DAYS,

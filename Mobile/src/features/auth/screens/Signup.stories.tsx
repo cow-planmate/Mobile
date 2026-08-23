@@ -27,7 +27,7 @@ const filledForm = {
 };
 
 const meta = {
-  title: 'Auth/회원가입',
+  title: '02. 시작 및 인증/03. 회원가입',
   component: SignupScreenView,
   args: {
     step: 1,

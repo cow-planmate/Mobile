@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { LoginScreenView, LoginScreenViewProps, LoginErrors } from './LoginScreen.view';
 
 const meta = {
-  title: 'Auth/로그인',
+  title: '02. 시작 및 인증/02. 로그인',
   component: LoginScreenView,
   args: {
     form: { email: '', password: '' },

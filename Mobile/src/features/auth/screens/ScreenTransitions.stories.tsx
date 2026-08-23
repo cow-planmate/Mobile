@@ -171,7 +171,7 @@ function ScreenTransitionsPreview() {
 }
 
 const meta = {
-  title: 'Auth/화면 전환',
+  title: '02. 시작 및 인증/07. 화면 전환',
   component: ScreenTransitionsPreview,
 } satisfies Meta<typeof ScreenTransitionsPreview>;
 

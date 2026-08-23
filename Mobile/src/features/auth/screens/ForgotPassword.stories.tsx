@@ -9,7 +9,7 @@ import {
 } from './ForgotPasswordScreen.view';
 
 const meta = {
-  title: 'Auth/비밀번호 찾기',
+  title: '02. 시작 및 인증/05. 비밀번호 찾기',
   component: ForgotPasswordScreenView,
   args: {
     step: 1,

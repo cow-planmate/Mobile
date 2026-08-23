@@ -15,7 +15,7 @@ const EMPTY_FORM: OAuthAdditionalInfoForm = {
 };
 
 const meta = {
-  title: 'Auth/소셜 가입 추가정보',
+  title: '02. 시작 및 인증/04. 소셜 가입 추가정보',
   component: OAuthAdditionalInfoScreenView,
   args: {
     needEmail: true,

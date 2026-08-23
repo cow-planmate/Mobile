@@ -58,7 +58,7 @@ function ToastPreview() {
 }
 
 const meta = {
-  title: 'Common/토스트',
+  title: '01. 공통/02. 토스트',
   component: ToastPreview,
 } satisfies Meta<typeof ToastPreview>;
 

@@ -172,7 +172,7 @@ function EditorHarness(props: {
 }
 
 const meta = {
-  title: 'Itinerary/일정 편집',
+  title: '04. 일정/01. 일정 편집',
   component: ItineraryEditorScreenView,
   args: {
     days: INITIAL_DAYS,

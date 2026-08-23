@@ -66,7 +66,7 @@ const HOT_POSTS = [
 ];
 
 const meta = {
-  title: 'Community/게시판',
+  title: '05. 커뮤니티/01. 게시판',
   component: CommunityScreenView,
   args: {
     posts: POSTS,

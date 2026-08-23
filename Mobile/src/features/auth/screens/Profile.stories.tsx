@@ -40,7 +40,7 @@ const USER = {
 };
 
 const meta = {
-  title: 'Auth/마이페이지',
+  title: '06. 마이페이지/01. 프로필',
   component: ProfileScreenView,
   args: {
     loading: false,

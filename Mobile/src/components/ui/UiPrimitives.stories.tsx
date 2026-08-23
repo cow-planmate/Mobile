@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
 });
 
 const meta: Meta<typeof PrimitivesPreview> = {
-  title: 'UI/공용 프리미티브',
+  title: '01. 공통/01. UI 프리미티브',
   component: PrimitivesPreview,
 };
 

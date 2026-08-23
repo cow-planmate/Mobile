@@ -209,19 +209,19 @@ jest.mock('react-native-webview', () => {
 });
 
 const storyModules: Record<string, any> = {
-  'UI/공용 프리미티브': require('../src/components/ui/UiPrimitives.stories'),
-  'Auth/인트로': require('../src/features/auth/screens/Intro.stories'),
-  'Auth/로그인': require('../src/features/auth/screens/Login.stories'),
-  'Auth/회원가입': require('../src/features/auth/screens/Signup.stories'),
-  'Auth/비밀번호 찾기': require('../src/features/auth/screens/ForgotPassword.stories'),
-  'Auth/비밀번호 변경': require('../src/features/auth/screens/ChangePassword.stories'),
-  'Auth/소셜 가입 추가정보': require('../src/features/auth/screens/OAuthAdditionalInfo.stories'),
-  'Auth/마이페이지': require('../src/features/auth/screens/Profile.stories'),
-  'Home/일정 생성': require('../src/features/home/screens/Home.stories'),
-  'Community/게시판': require('../src/features/community/screens/Community.stories'),
-  'Itinerary/일정 완성': require('../src/features/itinerary/screens/ItineraryView.stories'),
-  'Itinerary/일정 편집': require('../src/features/itinerary/screens/ItineraryEditor.stories'),
-  'Itinerary/일정 편집 모달': require('../src/features/itinerary/components/ItineraryModals.stories'),
+  '01. 공통/01. UI 프리미티브': require('../src/components/ui/UiPrimitives.stories'),
+  '02. 시작 및 인증/01. 인트로': require('../src/features/auth/screens/Intro.stories'),
+  '02. 시작 및 인증/02. 로그인': require('../src/features/auth/screens/Login.stories'),
+  '02. 시작 및 인증/03. 회원가입': require('../src/features/auth/screens/Signup.stories'),
+  '02. 시작 및 인증/05. 비밀번호 찾기': require('../src/features/auth/screens/ForgotPassword.stories'),
+  '02. 시작 및 인증/06. 비밀번호 변경': require('../src/features/auth/screens/ChangePassword.stories'),
+  '02. 시작 및 인증/04. 소셜 가입 추가정보': require('../src/features/auth/screens/OAuthAdditionalInfo.stories'),
+  '06. 마이페이지/01. 프로필': require('../src/features/auth/screens/Profile.stories'),
+  '03. 홈/01. 일정 생성': require('../src/features/home/screens/Home.stories'),
+  '05. 커뮤니티/01. 게시판': require('../src/features/community/screens/Community.stories'),
+  '04. 일정/02. 일정 완성': require('../src/features/itinerary/screens/ItineraryView.stories'),
+  '04. 일정/01. 일정 편집': require('../src/features/itinerary/screens/ItineraryEditor.stories'),
+  '04. 일정/03. 일정 편집 모달': require('../src/features/itinerary/components/ItineraryModals.stories'),
 };
 
 /** .rnstorybook/preview.tsx의 데코레이터와 같은 프로바이더 구성 */

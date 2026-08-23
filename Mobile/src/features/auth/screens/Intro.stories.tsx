@@ -3,7 +3,7 @@ import { action } from 'storybook/actions';
 import IntroScreenView from './IntroScreen.view';
 
 const meta = {
-  title: 'Auth/인트로',
+  title: '02. 시작 및 인증/01. 인트로',
   component: IntroScreenView,
   args: {
     onStart: action('onStart'),

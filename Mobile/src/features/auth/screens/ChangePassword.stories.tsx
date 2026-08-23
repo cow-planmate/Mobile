@@ -16,7 +16,7 @@ const EMPTY_FORM: ChangePasswordForm = {
 };
 
 const meta = {
-  title: 'Auth/비밀번호 변경',
+  title: '02. 시작 및 인증/06. 비밀번호 변경',
   component: ChangePasswordScreenView,
   args: {
     form: EMPTY_FORM,
