@@ -9,65 +9,158 @@ export const FONTS = tokens.fontFamily;
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.white,
   },
   scroll: {
     flex: 1,
+    backgroundColor: tokens.colors.white,
   },
   scrollContainer: {
     flexGrow: 1,
   },
 
-  heroSection: {
-    width: '100%',
-    height: normalize(200),
+  heroCarouselSection: {
+    marginTop: normalize(12),
+  },
+  heroCardList: {
+    paddingVertical: normalize(4),
+  },
+  heroCard: {
+    height: normalize(224),
+    borderRadius: tokens.radius.xl,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.border,
+    position: 'relative',
     justifyContent: 'flex-end',
-    paddingHorizontal: normalize(24),
-    paddingBottom: normalize(28),
+    paddingHorizontal: normalize(20),
+    paddingBottom: normalize(20),
+  },
+  heroImageWrapper: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
   },
   heroImage: {
-    ...StyleSheet.absoluteFillObject,
+    width: '120%',
+    height: '100%',
+    position: 'absolute',
+    left: '-10%',
     resizeMode: 'cover',
   },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10, 15, 40, 0.38)',
   },
-  heroTitle: {
+  heroInfo: {
+    zIndex: 2,
+  },
+  regionLabel: {
+    fontSize: normalize(tokens.fontSize.xs),
+    fontFamily: tokens.fontFamily.bold,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: normalize(2),
+    letterSpacing: 0.2,
+  },
+  placeTitle: {
     fontSize: normalize(tokens.fontSize.xl),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.white,
-    lineHeight: normalize(34),
+    lineHeight: normalize(28),
+  },
+  progressBarContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: normalize(12),
+    height: normalize(3),
+  },
+  progressTrack: {
+    width: normalize(50),
+    height: normalize(3),
+    backgroundColor: tokens.colors.border,
+    borderRadius: 2,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  progressThumb: {
+    width: normalize(10),
+    height: '100%',
+    backgroundColor: tokens.colors.primary,
+    borderRadius: 2,
   },
 
   actionContainer: {
-    marginTop: normalize(-20),
+    marginTop: normalize(14),
     paddingHorizontal: normalize(16),
     paddingBottom: normalize(40),
   },
   cardWrapper: {
     backgroundColor: tokens.colors.white,
     borderRadius: tokens.radius.xl,
-    padding: normalize(20),
-    ...tokens.shadows.md,
+    paddingHorizontal: normalize(18),
+    paddingVertical: normalize(16),
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    position: 'relative',
   },
-  inputRow: {
+  timelineTrack: {
+    position: 'absolute',
+    left: normalize(27),
+    top: normalize(28),
+    bottom: normalize(28),
+    width: 2,
+    backgroundColor: tokens.colors.borderLight,
+    zIndex: 1,
+  },
+  timelineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: normalize(10),
+    position: 'relative',
+    zIndex: 2,
+  },
+  timelineRowLast: {
+    paddingBottom: 0,
+  },
+  timelineDot: {
+    width: normalize(20),
+    height: normalize(20),
+    borderRadius: normalize(10),
+    backgroundColor: tokens.colors.white,
+    borderWidth: 2,
+    borderColor: tokens.colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: normalize(12),
+  },
+  timelineDotFilled: {
+    backgroundColor: tokens.colors.primary,
+    borderColor: tokens.colors.primary,
+  },
+  timelineDotText: {
+    fontSize: normalize(10),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.textSecondary,
+  },
+  timelineDotTextFilled: {
+    color: tokens.colors.white,
+  },
+  timelineContent: {
+    flex: 1,
     borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.border,
-    paddingVertical: normalize(12),
-    marginBottom: normalize(12),
+    borderBottomColor: tokens.colors.borderLight,
+    paddingBottom: normalize(8),
   },
-  inputRowLast: {
+  timelineContentLast: {
     borderBottomWidth: 0,
-    marginBottom: 0,
+    paddingBottom: 0,
   },
 
   label: {
     fontSize: normalize(tokens.fontSize.xs),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.textSecondary,
-    marginBottom: normalize(6),
+    marginBottom: normalize(3),
   },
   valueContainer: {
     flexDirection: 'row',
@@ -90,16 +183,17 @@ export const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: tokens.colors.primary,
-    height: normalize(52),
+    height: normalize(54),
     borderRadius: tokens.radius.l,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: normalize(24),
+    marginTop: normalize(14),
   },
   submitButtonText: {
     fontSize: normalize(tokens.fontSize.m),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.white,
+    letterSpacing: -0.3,
   },
   submitButtonDisabled: {
     backgroundColor: tokens.colors.borderLight,

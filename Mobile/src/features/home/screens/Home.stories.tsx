@@ -116,3 +116,14 @@ export const Interactive: Story = {
   name: '상호작용',
   render: () => <InteractiveHome />,
 };
+
+export const Option2Timeline: Story = {
+  name: '시안 B - 타임라인 액센트 (채택안)',
+  args: {
+    destination: '제주',
+    dateText: '2026.09.12 - 2026.09.14',
+    paxText: '성인 2명',
+    isFormValid: true,
+    adults: 2,
+  },
+};

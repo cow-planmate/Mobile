@@ -254,4 +254,26 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
 
     expect(mockMutateAsync).toHaveBeenCalledTimes(1);
   });
+
+  it('renders InputRow with isLast on Pax Count and sets activeOpacity on submit button', async () => {
+    const { TouchableOpacity } = require('react-native');
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <QueryClientProvider client={queryClient}>
+          <HomeScreen navigation={mockNavigation} route={mockRoute} />
+        </QueryClientProvider>,
+      );
+      mountedRenderers.push(renderer!);
+    });
+
+    const touchables = renderer!.root.findAllByType(TouchableOpacity);
+    const submitBtn = touchables.find(t => t.props.accessibilityLabel === '일정생성');
+    expect(submitBtn).toBeDefined();
+    expect(submitBtn!.props.activeOpacity).toBe(0.8);
+
+    const paxRow = touchables.find(t => t.props.accessibilityLabel && t.props.accessibilityLabel.startsWith('인원수'));
+    expect(paxRow).toBeDefined();
+  });
 });
+
