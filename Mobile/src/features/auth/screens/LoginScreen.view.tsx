@@ -8,7 +8,6 @@ import {
   Modal,
   ScrollView,
   Pressable,
-  Platform,
 } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { WebView } from 'react-native-webview';
@@ -369,11 +368,6 @@ export const LoginScreenView = ({
               source={{ uri: snsAuthUrl }}
               onNavigationStateChange={onSnsNavigationStateChange}
               startInLoadingState={true}
-              userAgent={
-                Platform.OS === 'ios'
-                  ? 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
-                  : 'Mozilla/5.0 (Linux; Android 13; SM-S901B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36'
-              }
               renderLoading={() => (
                 <View style={styles.snsLoading}>
                   <ActivityIndicator size="large" color={COLORS.primary} />
