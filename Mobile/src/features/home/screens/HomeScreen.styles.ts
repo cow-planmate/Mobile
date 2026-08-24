@@ -157,10 +157,12 @@ export const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: normalize(tokens.fontSize.xs),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.textSecondary,
-    marginBottom: normalize(3),
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.medium,
+    fontWeight: '500',
+    color: '#64748B',
+    letterSpacing: -0.2,
+    marginBottom: normalize(2),
   },
   valueContainer: {
     flexDirection: 'row',
@@ -168,15 +170,19 @@ export const styles = StyleSheet.create({
   },
   valueText: {
     flex: 1,
-    fontSize: normalize(tokens.fontSize.m),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.text,
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.semibold,
+    fontWeight: '600',
+    color: '#0F172A',
+    letterSpacing: -0.3,
   },
   placeholderText: {
     flex: 1,
-    fontSize: normalize(tokens.fontSize.m),
+    fontSize: normalize(15),
     fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
+    fontWeight: '400',
+    color: '#94A3B8',
+    letterSpacing: -0.3,
   },
   rowIcon: {
     marginLeft: normalize(8),

@@ -129,7 +129,7 @@ const InputRow = ({
             <Text style={styles.placeholderText}>{placeholder}</Text>
           )}
           <View style={styles.rowIcon}>
-            <Icon color={tokens.colors.textSecondary} size={18} />
+            <Icon color="#94A3B8" size={18} />
           </View>
         </View>
       </View>
