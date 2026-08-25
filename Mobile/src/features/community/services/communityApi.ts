@@ -83,9 +83,12 @@ export async function fetchFeedPosts(
   return mapPage(response.data);
 }
 
-export async function fetchFeedRegionCounts(): Promise<RegionCount[]> {
+export async function fetchFeedRegionCounts(
+  signal?: AbortSignal,
+): Promise<RegionCount[]> {
   const response = await axios.get(url('/posts/regions'), {
     params: { category: 'feed' },
+    signal,
   });
   return response.data ?? [];
 }
@@ -104,8 +107,12 @@ export function formatDuration(durationDays?: number): string {
 
 export async function fetchHotPosts(
   category: string,
+  signal?: AbortSignal,
 ): Promise<CommunityPostSummary[]> {
-  const response = await axios.get(url('/posts/hot'), { params: { category } });
+  const response = await axios.get(url('/posts/hot'), {
+    params: { category },
+    signal,
+  });
   return (response.data ?? []).map(mapCreatedAt);
 }
 
@@ -207,8 +214,8 @@ export async function updateAnswered(
   return mapCreatedAt(response.data);
 }
 
-export async function fetchMyStats(): Promise<MyStats> {
-  const response = await axios.get(url('/me/stats'));
+export async function fetchMyStats(signal?: AbortSignal): Promise<MyStats> {
+  const response = await axios.get(url('/me/stats'), { signal });
   return response.data;
 }
 
@@ -225,9 +232,11 @@ export async function fetchMyPosts(
   page = 0,
   size = 20,
   category?: string,
+  signal?: AbortSignal,
 ): Promise<PageData<CommunityPostSummary>> {
   const response = await axios.get(
     url(`/me/posts?${activityParams(page, size, category)}`),
+    { signal },
   );
   return mapPage(response.data);
 }
@@ -236,9 +245,11 @@ export async function fetchLikedPosts(
   page = 0,
   size = 20,
   category?: string,
+  signal?: AbortSignal,
 ): Promise<PageData<CommunityPostSummary>> {
   const response = await axios.get(
     url(`/me/liked?${activityParams(page, size, category)}`),
+    { signal },
   );
   return mapPage(response.data);
 }
@@ -246,7 +257,10 @@ export async function fetchLikedPosts(
 export async function fetchMyComments(
   page = 0,
   size = 20,
+  signal?: AbortSignal,
 ): Promise<PageData<CommunityComment>> {
-  const response = await axios.get(url(`/me/comments?page=${page}&size=${size}`));
+  const response = await axios.get(url(`/me/comments?page=${page}&size=${size}`), {
+    signal,
+  });
   return mapPage(response.data);
 }

@@ -77,14 +77,14 @@ export const useFeedPosts = (filters: FeedFilterParams, size = 12) =>
 export const useFeedRegionCounts = () =>
   useQuery({
     queryKey: ['community', 'feed-regions'],
-    queryFn: fetchFeedRegionCounts,
+    queryFn: ({ signal }) => fetchFeedRegionCounts(signal),
     staleTime: 60_000,
   });
 
 export const useHotPosts = (category: string) =>
   useQuery({
     queryKey: KEYS.hot(category),
-    queryFn: () => fetchHotPosts(category),
+    queryFn: ({ signal }) => fetchHotPosts(category, signal),
     staleTime: 60_000,
   });
 
@@ -112,28 +112,28 @@ export const useComments = (
 export const useMyStats = (enabled = true) =>
   useQuery({
     queryKey: ['community', 'me', 'stats'],
-    queryFn: fetchMyStats,
+    queryFn: ({ signal }) => fetchMyStats(signal),
     enabled,
   });
 
 export const useMyPosts = (category?: string, size = PAGE_SIZE) =>
   useQuery({
     queryKey: ['community', 'me', 'posts', category ?? 'all', size] as const,
-    queryFn: () => fetchMyPosts(0, size, category),
+    queryFn: ({ signal }) => fetchMyPosts(0, size, category, signal),
     staleTime: 30_000,
   });
 
 export const useLikedPosts = (category?: string, size = PAGE_SIZE) =>
   useQuery({
     queryKey: ['community', 'me', 'liked', category ?? 'all', size] as const,
-    queryFn: () => fetchLikedPosts(0, size, category),
+    queryFn: ({ signal }) => fetchLikedPosts(0, size, category, signal),
     staleTime: 30_000,
   });
 
 export const useMyComments = (size = PAGE_SIZE) =>
   useQuery({
     queryKey: ['community', 'me', 'comments', size] as const,
-    queryFn: () => fetchMyComments(0, size),
+    queryFn: ({ signal }) => fetchMyComments(0, size, signal),
     staleTime: 30_000,
   });
 
@@ -151,6 +151,10 @@ const useInvalidate = () => {
     comments: (postId: number | string) =>
       queryClient.invalidateQueries({ queryKey: KEYS.comments(postId) }),
     me: () => queryClient.invalidateQueries({ queryKey: ['community', 'me'] }),
+    feedRegions: () =>
+      queryClient.invalidateQueries({ queryKey: ['community', 'feed-regions'] }),
+    removePost: (postId: number | string) =>
+      queryClient.removeQueries({ queryKey: KEYS.post(postId) }),
   };
 };
 
@@ -161,6 +165,7 @@ export const useCreatePost = () => {
     onSuccess: () => {
       void invalidate.lists();
       void invalidate.me();
+      void invalidate.feedRegions();
     },
   });
 };
@@ -173,6 +178,8 @@ export const useUpdatePost = (postId: number) => {
     onSuccess: () => {
       void invalidate.post(postId);
       void invalidate.lists();
+      void invalidate.me();
+      void invalidate.feedRegions();
     },
   });
 };
@@ -181,9 +188,11 @@ export const useDeletePost = () => {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: (postId: number) => deletePost(postId),
-    onSuccess: () => {
+    onSuccess: (_data, postId) => {
+      invalidate.removePost(postId);
       void invalidate.lists();
       void invalidate.me();
+      void invalidate.feedRegions();
     },
   });
 };
@@ -267,6 +276,7 @@ export const useCreateComment = (postId: number | string) => {
       void invalidate.comments(postId);
       void invalidate.post(postId);
       void invalidate.lists();
+      void invalidate.me();
     },
   });
 };
@@ -283,6 +293,7 @@ export const useUpdateComment = (postId: number | string) => {
     }) => updateComment(commentId, content),
     onSuccess: () => {
       void invalidate.comments(postId);
+      void invalidate.me();
     },
   });
 };
@@ -295,6 +306,7 @@ export const useDeleteComment = (postId: number | string) => {
       void invalidate.comments(postId);
       void invalidate.post(postId);
       void invalidate.lists();
+      void invalidate.me();
     },
   });
 };
