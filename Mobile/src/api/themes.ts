@@ -15,9 +15,10 @@ export interface SavePreferredThemeRequest {
 }
 
 export const getPreferredThemes =
-  async (): Promise<GetPreferredThemeResponse> => {
+  async (signal?: AbortSignal): Promise<GetPreferredThemeResponse> => {
     const response = await axios.get<GetPreferredThemeResponse>(
       '/api/user/preferredTheme',
+      { signal },
     );
     return response.data;
   };

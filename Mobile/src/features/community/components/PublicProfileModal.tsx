@@ -37,7 +37,7 @@ export default function PublicProfileModal({
 }: PublicProfileModalProps) {
   const query = useQuery({
     queryKey: ['publicProfile', userId],
-    queryFn: () => fetchPublicProfile(userId as string),
+    queryFn: ({ signal }) => fetchPublicProfile(userId as string, signal),
     enabled: visible && !!userId,
     retry: false,
     staleTime: 1000 * 60 * 5,

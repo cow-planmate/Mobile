@@ -165,7 +165,7 @@ export function useChecklist(
 ) {
   return useQuery<ChecklistItem[]>({
     queryKey: checklistKeys.scope(planId ?? '', scope),
-    queryFn: () => getChecklist(planId as string, scope),
+    queryFn: ({ signal }) => getChecklist(planId as string, scope, signal),
     enabled: !!planId && enabled,
     refetchOnMount: 'always',
   });

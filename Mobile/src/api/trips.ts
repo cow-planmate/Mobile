@@ -165,6 +165,7 @@ export async function fetchCategoryPlaces(
   category: 'tour' | 'lodging' | 'restaurant',
   page: number = 1,
   size: number = 20,
+  signal?: AbortSignal,
 ): Promise<PlacesResponse> {
   const categoryEnumMap = {
     tour: 'ATTRACTION',
@@ -178,6 +179,7 @@ export async function fetchCategoryPlaces(
       page,
       size,
     },
+    signal,
   });
   const data = response.data;
   const placesVO = (data.places || []).map((p: any) => mapSummaryToVO(p));
@@ -190,11 +192,26 @@ export async function fetchCategoryPlaces(
   };
 }
 
-export const fetchTourPlaces = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlaces(destinationId, 'tour', page, size);
+export const fetchTourPlaces = (
+  destinationId: number,
+  page: number = 1,
+  size: number = 20,
+  signal?: AbortSignal,
+) => fetchCategoryPlaces(destinationId, 'tour', page, size, signal);
 
-export const fetchLodgingPlaces = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlaces(destinationId, 'lodging', page, size);
+export const fetchLodgingPlaces = (
+  destinationId: number,
+  page: number = 1,
+  size: number = 20,
+  signal?: AbortSignal,
+) => fetchCategoryPlaces(destinationId, 'lodging', page, size, signal);
 
-export const fetchRestaurantPlaces = (destinationId: number, page: number = 1, size: number = 20) => fetchCategoryPlaces(destinationId, 'restaurant', page, size);
+export const fetchRestaurantPlaces = (
+  destinationId: number,
+  page: number = 1,
+  size: number = 20,
+  signal?: AbortSignal,
+) => fetchCategoryPlaces(destinationId, 'restaurant', page, size, signal);
 
 export interface KeywordPlace {
   id: string;
@@ -208,11 +225,16 @@ export interface KeywordPlace {
   lng: number;
 }
 
-export async function searchPlacesByKeyword(query: string, size: number = 8): Promise<KeywordPlace[]> {
+export async function searchPlacesByKeyword(
+  query: string,
+  size: number = 8,
+  signal?: AbortSignal,
+): Promise<KeywordPlace[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
   const response = await axios.get('/api/place/search', {
     params: { query: trimmed, size },
+    signal,
   });
   return response.data?.places || [];
 }
@@ -242,17 +264,24 @@ export async function fetchWeather(
   destinationId: number,
   startDate: string,
   endDate: string,
+  signal?: AbortSignal,
 ): Promise<WeatherResponse> {
   const response = await axios.get<WeatherResponse>('/api/weather', {
     params: { destinationId, startDate, endDate },
+    signal,
   });
   return response.data;
 }
 
 export const PLAN_NAME_MAX_LENGTH = 100;
 
-export async function getShareStatus(planId: string): Promise<{ isShared: boolean }> {
-  const response = await axios.get(resolveApiUrl(`/api/plan/${planId}/share`));
+export async function getShareStatus(
+  planId: string,
+  signal?: AbortSignal,
+): Promise<{ isShared: boolean }> {
+  const response = await axios.get(resolveApiUrl(`/api/plan/${planId}/share`), {
+    signal,
+  });
   return { isShared: !!response.data?.isShared };
 }
 
@@ -262,12 +291,14 @@ export async function updateShareStatus(planId: string, isShared: boolean): Prom
 
 export async function getShareUrl(
   planId: string,
+  signal?: AbortSignal,
 ): Promise<{ shareUrl: string; isShared?: boolean }> {
   let isShared = true;
   try {
-    const status = await getShareStatus(planId);
+    const status = await getShareStatus(planId, signal);
     isShared = status.isShared;
   } catch (e) {
+    if (signal?.aborted) throw e;
     if (__DEV__) console.log('Failed to fetch share status:', e);
   }
   return {
@@ -281,9 +312,13 @@ interface EditorDto {
   nickname: string;
 }
 
-export async function getEditors(planId: string): Promise<EditorDto[]> {
+export async function getEditors(
+  planId: string,
+  signal?: AbortSignal,
+): Promise<EditorDto[]> {
   const response = await axios.get<{ editors?: EditorDto[] }>(
     resolveApiUrl(`/api/plan/${planId}/editors`),
+    { signal },
   );
   return (response.data?.editors ?? []).map(editor => ({
     userId: String(editor?.userId ?? ''),
@@ -340,9 +375,12 @@ export interface PendingInvitation {
   type: CollaborationRequestType;
 }
 
-export async function getPendingInvitations(): Promise<PendingInvitation[]> {
+export async function getPendingInvitations(
+  signal?: AbortSignal,
+): Promise<PendingInvitation[]> {
   const response = await axios.get(
     resolveApiUrl('/api/collaboration-requests/pending'),
+    { signal },
   );
   const rawList = response.data?.requests ?? [];
   return rawList.map((item: any) => ({

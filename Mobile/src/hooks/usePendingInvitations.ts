@@ -9,7 +9,7 @@ const PENDING_INVITATIONS_STALE_MS = 60 * 1000;
 export function usePendingInvitations(enabled = true) {
   return useQuery<PendingInvitation[]>({
     queryKey: PENDING_INVITATIONS_QUERY_KEY,
-    queryFn: () => getPendingInvitations(),
+    queryFn: ({ signal }) => getPendingInvitations(signal),
     enabled,
     staleTime: PENDING_INVITATIONS_STALE_MS,
   });

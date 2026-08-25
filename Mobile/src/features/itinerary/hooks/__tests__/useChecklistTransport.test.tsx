@@ -52,7 +52,7 @@ const tick = async ({ fakeTimers = false } = {}) => {
     for (let i = 0; i < 5; i += 1) {
       await Promise.resolve();
       if (fakeTimers) {
-        jest.advanceTimersByTime(1);
+        await jest.advanceTimersByTimeAsync(1);
       } else {
         await new Promise(resolve => setTimeout(resolve, 0));
       }

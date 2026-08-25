@@ -50,7 +50,7 @@ export default function PostCreateScreen() {
 
   const locationSuggestions = useQuery({
     queryKey: ['place-search', locationQuery],
-    queryFn: () => searchPlacesByKeyword(locationQuery),
+    queryFn: ({ signal }) => searchPlacesByKeyword(locationQuery, 8, signal),
     enabled: category === 'recommend' && showLocationSuggestions && locationQuery.length > 1,
     staleTime: 30_000,
   });

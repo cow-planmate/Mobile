@@ -84,10 +84,12 @@ export function normalizeChecklistContent(content: string): string {
 export async function getChecklist(
   planId: string,
   scope: ChecklistScope,
+  signal?: AbortSignal,
 ): Promise<ChecklistItem[]> {
-  const response = await axios.get(
-    resolveApiUrl(scopeBasePath(planId, scope)),
-  );
+  const url = resolveApiUrl(scopeBasePath(planId, scope));
+  const response = signal
+    ? await axios.get(url, { signal })
+    : await axios.get(url);
   return normalizeChecklistItems(response?.data);
 }
 

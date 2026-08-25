@@ -26,8 +26,10 @@ export function selectPlanMembership(profile: unknown): PlanMembership {
   };
 }
 
-async function fetchPlanMembership(): Promise<PlanMembership> {
-  const { data } = await axios.get(resolveApiUrl('/api/user/profile'));
+async function fetchPlanMembership(signal?: AbortSignal): Promise<PlanMembership> {
+  const { data } = await axios.get(resolveApiUrl('/api/user/profile'), {
+    signal,
+  });
   return selectPlanMembership(data);
 }
 
@@ -42,7 +44,7 @@ export function hasPlanRole(
 export function usePlanOwnership(planId?: string | null) {
   const { data, isLoading, isFetching, isError } = useQuery({
     queryKey: OWNED_PLAN_IDS_QUERY_KEY,
-    queryFn: fetchPlanMembership,
+    queryFn: ({ signal }) => fetchPlanMembership(signal),
 
     staleTime: 1000 * 60 * 10,
   });

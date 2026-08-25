@@ -51,10 +51,11 @@ export default function ThemeSelector({
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<number>[]>([]);
 
-  const fetchThemes = useCallback(async () => {
+  const fetchThemes = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
-      const response = await getPreferredThemes();
+      const response = await getPreferredThemes(signal);
+      if (signal?.aborted) return;
       const themes = response.preferredThemes;
 
       const categoryMap = new Map<
@@ -92,21 +93,24 @@ export default function ThemeSelector({
       });
       setSelectedIds(initSets);
     } catch (error) {
+      if (signal?.aborted) return;
       console.error('Failed to fetch themes:', error);
       showAlert({
         title: '오류',
         message: '테마 목록을 불러오지 못했어요.',
       });
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, [initialSelections, showAlert]);
 
   useEffect(() => {
+    const controller = new AbortController();
     if (visible) {
       setCurrentStep(0);
-      fetchThemes();
+      void fetchThemes(controller.signal);
     }
+    return () => controller.abort();
   }, [visible, fetchThemes]);
 
   const handleToggle = (themeId: number) => {
@@ -153,19 +157,16 @@ export default function ThemeSelector({
   };
 
   const handleSkip = () => {
-
-    setSelectedIds(prev => {
-      const updated = prev.map(set => new Set(set));
-      updated[currentStep] = new Set();
-      return updated;
-    });
+    const updated = selectedIds.map(set => new Set(set));
+    updated[currentStep] = new Set();
+    setSelectedIds(updated);
     if (currentStep < categories.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
       const result: ThemeSelectorResult = {};
       categories.forEach((cat, idx) => {
         const themes = themesByCategory[idx].filter(t =>
-          selectedIds[idx].has(t.preferredThemeId),
+          updated[idx].has(t.preferredThemeId),
         );
         result[cat.id] = themes;
       });

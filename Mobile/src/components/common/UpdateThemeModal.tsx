@@ -40,7 +40,7 @@ const CATEGORY_NAMES: Record<number, string> = {
 type UpdateThemeModalProps = {
   visible: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 };
 
 export default function UpdateThemeModal({
@@ -55,7 +55,7 @@ export default function UpdateThemeModal({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const fetchUserThemes = useCallback(async () => {
+  const fetchUserThemes = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
 
@@ -64,9 +64,11 @@ export default function UpdateThemeModal({
       )?.preferredThemes;
       const themes: PreferredThemeVO[] =
         cachedThemes ??
-        (await axios.get(resolveApiUrl('/api/user/profile'))).data
+        (await axios.get(resolveApiUrl('/api/user/profile'), { signal })).data
           .preferredThemes ??
         [];
+
+      if (signal?.aborted) return;
 
       const grouped: ThemeSelectorResult = {};
       themes.forEach(t => {
@@ -79,16 +81,19 @@ export default function UpdateThemeModal({
       });
       setSelectedThemes(grouped);
     } catch (error) {
+      if (signal?.aborted) return;
       console.error('Failed to fetch user themes:', error);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, [queryClient]);
 
   useEffect(() => {
+    const controller = new AbortController();
     if (visible) {
-      fetchUserThemes();
+      void fetchUserThemes(controller.signal);
     }
+    return () => controller.abort();
   }, [visible, fetchUserThemes]);
 
   const handleSelectorComplete = (selections: ThemeSelectorResult) => {
@@ -107,7 +112,7 @@ export default function UpdateThemeModal({
       }
       await changePreferredThemes(themeIdsByCategoryId);
 
-      onConfirm();
+      await onConfirm();
     } catch (error) {
       console.error('Failed to save themes:', error);
       showAlert({ title: '오류', message: '선호 테마를 저장하지 못했어요.' });

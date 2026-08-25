@@ -62,29 +62,36 @@ export default function ShareModal({
   const [shareLink, setShareLink] = useState('');
   const [nickname, setNickname] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isUpdatingShare, setIsUpdatingShare] = useState(false);
   const [isShared, setIsShared] = useState(true);
   const [editors, setEditors] = useState<any[]>([]);
 
-  const fetchShareLink = useCallback(async () => {
+  const fetchShareLink = useCallback(async (signal?: AbortSignal) => {
     if (isMock) {
       setShareLink('https://planmate.cow/share/mock-trip-123');
       setIsShared(true);
       return;
     }
     try {
-      const response = await getShareUrl(planId);
+      const response = await getShareUrl(planId, signal);
+      if (signal?.aborted) return;
       setShareLink(response.shareUrl);
       if (typeof response.isShared === 'boolean') {
         setIsShared(response.isShared);
       }
     } catch (error) {
+      if (signal?.aborted) return;
       console.error('Failed to fetch share link:', error);
     }
   }, [isMock, planId]);
 
   const handleToggleShare = async (newValue: boolean) => {
+    if (isUpdatingShare) return;
+
+    const previousValue = isShared;
     setIsShared(newValue);
     if (isMock) return;
+    setIsUpdatingShare(true);
     try {
       await updateShareStatus(planId, newValue);
       Toast.show({
@@ -95,8 +102,10 @@ export default function ShareModal({
       });
     } catch (error) {
       console.error('Failed to update share status:', error);
-      setIsShared(!newValue);
+      setIsShared(previousValue);
       showAlert({ title: '오류', message: '공유 상태를 변경하지 못했어요.' });
+    } finally {
+      setIsUpdatingShare(false);
     }
   };
 
@@ -135,7 +144,7 @@ export default function ShareModal({
     }
   };
 
-  const fetchEditors = useCallback(async () => {
+  const fetchEditors = useCallback(async (signal?: AbortSignal) => {
     if (isMock) {
       setEditors(prev =>
         prev.length === 0
@@ -148,18 +157,22 @@ export default function ShareModal({
       return;
     }
     try {
-      const response = await getEditors(planId);
+      const response = await getEditors(planId, signal);
+      if (signal?.aborted) return;
       setEditors(Array.isArray(response) ? response : []);
     } catch (error) {
+      if (signal?.aborted) return;
       console.error('Failed to fetch editors:', error);
     }
   }, [isMock, planId]);
 
   useEffect(() => {
+    const controller = new AbortController();
     if (visible && planId) {
-      void fetchShareLink();
-      void fetchEditors();
+      void fetchShareLink(controller.signal);
+      void fetchEditors(controller.signal);
     }
+    return () => controller.abort();
   }, [visible, planId, fetchShareLink, fetchEditors]);
 
   const handleInvite = async () => {
@@ -280,6 +293,8 @@ export default function ShareModal({
                 <Switch
                   value={isShared}
                   onValueChange={handleToggleShare}
+                  disabled={isUpdatingShare}
+                  accessibilityState={{ disabled: isUpdatingShare }}
                   trackColor={{ false: '#D1D5DB', true: COLORS.primary }}
                   thumbColor={tokens.colors.white}
                 />

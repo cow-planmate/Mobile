@@ -62,9 +62,9 @@ const FALLBACK_DESTINATIONS: TravelVO[] = DESTINATIONS_28.map(d => ({
   region: d.region,
 }));
 
-const fetchDestinations = async (): Promise<TravelVO[]> => {
+const fetchDestinations = async (signal?: AbortSignal): Promise<TravelVO[]> => {
   try {
-    const response = await axios.get(resolveApiUrl('/api/destination'));
+    const response = await axios.get(resolveApiUrl('/api/destination'), { signal });
 
     const rawList: DestinationDto[] = response.data.destinations || [];
 
@@ -72,6 +72,7 @@ const fetchDestinations = async (): Promise<TravelVO[]> => {
 
     return serverData.length > 0 ? serverData : FALLBACK_DESTINATIONS;
   } catch (error) {
+    if (axios.isCancel(error)) throw error;
     console.error('Failed to fetch destinations:', error);
     return FALLBACK_DESTINATIONS;
   }
@@ -80,7 +81,7 @@ const fetchDestinations = async (): Promise<TravelVO[]> => {
 const useDestinations = (enabled: boolean) =>
   useQuery({
     queryKey: ['destinations'],
-    queryFn: fetchDestinations,
+    queryFn: ({ signal }) => fetchDestinations(signal),
     enabled,
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60,

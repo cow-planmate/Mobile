@@ -104,14 +104,16 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
   const [isWeatherLoading, setIsWeatherLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
-  const fetchCompletePlan = useCallback(async () => {
+  const fetchCompletePlan = useCallback(async (signal?: AbortSignal) => {
     if (!planId) return;
     try {
       setLoadError(false);
 
       const response = await axios.get<GetCompletePlanResponse>(
         resolveApiUrl(`/api/plan/${planId}/complete`),
+        { signal },
       );
+      if (signal?.aborted) return;
 
       cachePlanComplete(queryClient, String(planId), response.data);
       const { planFrame, placeBlocks, timetables } = response.data;
@@ -205,6 +207,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         );
       }
     } catch (error) {
+      if (signal?.aborted) return;
       console.error('Failed to fetch plan:', error);
       setIsWeatherLoading(false);
       setDays(prevDays => {
@@ -220,11 +223,13 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         isFetchAtLeastAsComplete(initialDays, prevDays) ? initialDays : prevDays,
       );
     }
+    const controller = new AbortController();
     if (planId) {
-      fetchCompletePlan();
+      void fetchCompletePlan(controller.signal);
     } else if (initialDays.length === 0 && !planId) {
       setIsWeatherLoading(false);
     }
+    return () => controller.abort();
   }, [planId, fetchCompletePlan, initialDays]);
 
   useEffect(() => {
@@ -256,11 +261,16 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     const startDate = weatherRangeStart;
     const endDate = weatherRangeEnd;
 
-    let cancelled = false;
+    const controller = new AbortController();
 
-    fetchWeather(weatherDestinationId, startDate, endDate)
+    fetchWeather(
+      weatherDestinationId,
+      startDate,
+      endDate,
+      controller.signal,
+    )
       .then(res => {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const map: Record<string, SimpleWeatherInfo> = {};
         if (res && Array.isArray(res.weather)) {
           res.weather.forEach(w => {
@@ -270,18 +280,18 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
         setWeatherMap(map);
       })
       .catch(error => {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         console.warn('날씨 조회 실패:', error);
         setWeatherMap({});
       })
       .finally(() => {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         setIsWeatherLoading(false);
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [weatherDestinationId, weatherRangeStart, weatherRangeEnd]);
 

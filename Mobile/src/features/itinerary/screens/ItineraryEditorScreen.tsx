@@ -280,11 +280,16 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     const startDate = weatherRangeStart;
     const endDate = weatherRangeEnd;
 
-    let cancelled = false;
+    const controller = new AbortController();
 
-    fetchWeather(Number(weatherDestinationId), startDate, endDate)
+    fetchWeather(
+      Number(weatherDestinationId),
+      startDate,
+      endDate,
+      controller.signal,
+    )
       .then(res => {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const map: Record<string, SimpleWeatherInfo> = {};
         if (res && Array.isArray(res.weather)) {
           res.weather.forEach(w => {
@@ -294,14 +299,14 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         setWeatherMap(map);
       })
       .catch(error => {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         console.warn('날씨 조회 실패:', error);
         setWeatherMap({});
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [weatherDestinationId, weatherRangeStart, weatherRangeEnd]);
 

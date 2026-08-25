@@ -36,12 +36,14 @@ export default function RouteMapSection({
 }: RouteMapSectionProps) {
   const { showAlert } = useAlert();
   const [isOptimizing, setOptimizing] = useState(false);
+  const optimizeControllerRef = useRef<AbortController | null>(null);
 
   const isMountedRef = useRef(true);
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+      optimizeControllerRef.current?.abort();
     };
   }, []);
 
@@ -71,6 +73,9 @@ export default function RouteMapSection({
   } | null>(null);
 
   useEffect(() => {
+    optimizeControllerRef.current?.abort();
+    optimizeControllerRef.current = null;
+    setOptimizing(false);
     setActiveLane(null);
   }, [key]);
 
@@ -111,10 +116,17 @@ export default function RouteMapSection({
     if (!onApplyOptimizedOrder || points.length < 3 || isOptimizing) {
       return;
     }
+    const controller = new AbortController();
+    optimizeControllerRef.current = controller;
     setOptimizing(true);
     try {
-      const result = await fetchRouteTrip(points);
-      if (!isMountedRef.current) return;
+      const result = await fetchRouteTrip(
+        points,
+        'driving',
+        false,
+        controller.signal,
+      );
+      if (!isMountedRef.current || controller.signal.aborted) return;
 
       const orderedIds = buildOptimizedOrder(places, result?.visitOrder);
 
@@ -138,7 +150,7 @@ export default function RouteMapSection({
 
       onApplyOptimizedOrder(orderedIds);
     } catch (e) {
-      if (!isMountedRef.current) return;
+      if (!isMountedRef.current || controller.signal.aborted) return;
       console.warn('순서 최적화 실패:', e);
       showAlert({
         title: '순서 최적화 실패',
@@ -146,7 +158,10 @@ export default function RouteMapSection({
         type: 'error',
       });
     } finally {
-      if (isMountedRef.current) setOptimizing(false);
+      if (optimizeControllerRef.current === controller) {
+        optimizeControllerRef.current = null;
+        if (isMountedRef.current) setOptimizing(false);
+      }
     }
   }, [onApplyOptimizedOrder, places, points, isOptimizing, showAlert]);
 
@@ -175,6 +190,7 @@ export default function RouteMapSection({
           onPress={handleOptimizeOrder}
           disabled={isOptimizing}
           activeOpacity={0.85}
+          accessibilityLabel="경로 순서 최적화"
           accessibilityState={{ disabled: isOptimizing }}
         >
           <Wand2 size={normalize(13)} color={tokens.colors.primary} />

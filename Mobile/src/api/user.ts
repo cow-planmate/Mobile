@@ -45,9 +45,11 @@ export interface PublicUserProfile {
 
 export async function fetchPublicProfile(
   targetUserId: string,
+  signal?: AbortSignal,
 ): Promise<PublicUserProfile> {
   const response = await axios.get<PublicUserProfile>(
     resolveApiUrl(`/api/user/profile/${targetUserId}`),
+    { signal },
   );
   return response.data;
 }

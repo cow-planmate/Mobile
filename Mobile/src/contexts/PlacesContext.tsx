@@ -93,18 +93,35 @@ export function PlacesProvider({children}: PropsWithChildren) {
     lodging: false,
     restaurant: false,
   });
+  const recommendationRequestRef = useRef<{
+    id: number;
+    controller: AbortController | null;
+  }>({ id: 0, controller: null });
+  const loadMoreRequestRef = useRef<Record<'tour' | 'lodging' | 'restaurant', number>>({
+    tour: 0,
+    lodging: 0,
+    restaurant: 0,
+  });
 
   const fetchAllRecommendations = useCallback(
     async (destinationId: number, force: boolean = false) => {
 
       if (
         !force &&
-        (lastFetchedDestRef.current.isFetching ||
-          lastFetchedDestRef.current.destinationId === destinationId)
+        lastFetchedDestRef.current.destinationId === destinationId
       ) {
         return;
       }
 
+      recommendationRequestRef.current.controller?.abort();
+      const controller = new AbortController();
+      const requestId = recommendationRequestRef.current.id + 1;
+      recommendationRequestRef.current = { id: requestId, controller };
+      (Object.keys(loadMoreRequestRef.current) as Array<keyof typeof loadMoreRequestRef.current>)
+        .forEach(field => {
+          loadMoreRequestRef.current[field] += 1;
+          loadingMoreRef.current[field] = false;
+        });
       lastFetchedDestRef.current = { destinationId, isFetching: true };
       setIsLoading(true);
 
@@ -162,10 +179,15 @@ export function PlacesProvider({children}: PropsWithChildren) {
 
       try {
         const [tourData, lodgingData, restaurantData] = await Promise.all([
-          fetchTourPlaces(destinationId),
-          fetchLodgingPlaces(destinationId),
-          fetchRestaurantPlaces(destinationId),
+          fetchTourPlaces(destinationId, 1, 20, controller.signal),
+          fetchLodgingPlaces(destinationId, 1, 20, controller.signal),
+          fetchRestaurantPlaces(destinationId, 1, 20, controller.signal),
         ]);
+
+        if (
+          controller.signal.aborted ||
+          recommendationRequestRef.current.id !== requestId
+        ) return;
 
         setTour(tourData.places || []);
         setTourPage(1);
@@ -179,12 +201,20 @@ export function PlacesProvider({children}: PropsWithChildren) {
         setRestaurantPage(1);
         setRestaurantHasNext(!!restaurantData.hasNext);
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error('추천 장소 조회 실패:', err);
 
-        lastFetchedDestRef.current.destinationId = null;
+        if (recommendationRequestRef.current.id === requestId) {
+          lastFetchedDestRef.current.destinationId = null;
+        }
       } finally {
-        lastFetchedDestRef.current.isFetching = false;
-        setIsLoading(false);
+        if (
+          !controller.signal.aborted &&
+          recommendationRequestRef.current.id === requestId
+        ) {
+          lastFetchedDestRef.current.isFetching = false;
+          setIsLoading(false);
+        }
       }
     },
     [],
@@ -200,6 +230,7 @@ export function PlacesProvider({children}: PropsWithChildren) {
       // 같은 페이지를 두 번 요청한다. 동기적으로 읽히는 ref로 막는다.
       if (loadingMoreRef.current[field]) return;
       loadingMoreRef.current[field] = true;
+      const requestId = ++loadMoreRequestRef.current[field];
 
       setIsLoading(true);
       try {
@@ -207,6 +238,10 @@ export function PlacesProvider({children}: PropsWithChildren) {
           if (!tourHasNext) return;
           const nextPage = tourPage + 1;
           const data = await fetchTourPlaces(destId, nextPage);
+          if (
+            loadMoreRequestRef.current[field] !== requestId ||
+            lastFetchedDestRef.current.destinationId !== destId
+          ) return;
           setTour(prev => mergePlaces(prev, data.places || []));
           setTourPage(nextPage);
           setTourHasNext(!!data.hasNext);
@@ -214,6 +249,10 @@ export function PlacesProvider({children}: PropsWithChildren) {
           if (!lodgingHasNext) return;
           const nextPage = lodgingPage + 1;
           const data = await fetchLodgingPlaces(destId, nextPage);
+          if (
+            loadMoreRequestRef.current[field] !== requestId ||
+            lastFetchedDestRef.current.destinationId !== destId
+          ) return;
           setLodging(prev => mergePlaces(prev, data.places || []));
           setLodgingPage(nextPage);
           setLodgingHasNext(!!data.hasNext);
@@ -221,6 +260,10 @@ export function PlacesProvider({children}: PropsWithChildren) {
           if (!restaurantHasNext) return;
           const nextPage = restaurantPage + 1;
           const data = await fetchRestaurantPlaces(destId, nextPage);
+          if (
+            loadMoreRequestRef.current[field] !== requestId ||
+            lastFetchedDestRef.current.destinationId !== destId
+          ) return;
           setRestaurant(prev => mergePlaces(prev, data.places || []));
           setRestaurantPage(nextPage);
           setRestaurantHasNext(!!data.hasNext);
@@ -228,8 +271,10 @@ export function PlacesProvider({children}: PropsWithChildren) {
       } catch (err) {
         console.error(`Failed to load more ${field}:`, err);
       } finally {
-        loadingMoreRef.current[field] = false;
-        setIsLoading(false);
+        if (loadMoreRequestRef.current[field] === requestId) {
+          loadingMoreRef.current[field] = false;
+          setIsLoading(false);
+        }
       }
     },
     [
@@ -243,6 +288,11 @@ export function PlacesProvider({children}: PropsWithChildren) {
   );
 
   const resetPlaces = useCallback(() => {
+    recommendationRequestRef.current.controller?.abort();
+    recommendationRequestRef.current = {
+      id: recommendationRequestRef.current.id + 1,
+      controller: null,
+    };
     setTour([]);
     setLodging([]);
     setRestaurant([]);
@@ -254,6 +304,12 @@ export function PlacesProvider({children}: PropsWithChildren) {
     setRestaurantHasNext(false);
     lastFetchedDestRef.current = { destinationId: null, isFetching: false };
     loadingMoreRef.current = { tour: false, lodging: false, restaurant: false };
+    loadMoreRequestRef.current = {
+      tour: loadMoreRequestRef.current.tour + 1,
+      lodging: loadMoreRequestRef.current.lodging + 1,
+      restaurant: loadMoreRequestRef.current.restaurant + 1,
+    };
+    setIsLoading(false);
   }, []);
 
   const contextValue = useMemo(() => ({

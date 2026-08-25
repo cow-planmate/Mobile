@@ -99,7 +99,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     setDays(tripDays);
   }, [route.params?.startDate, route.params?.endDate, setDays]);
 
-  const fetchPlanDetails = useCallback(async () => {
+  const fetchPlanDetails = useCallback(async (signal?: AbortSignal) => {
     if (!route.params?.planId) {
       initDaysFromDates();
       return;
@@ -113,7 +113,9 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
 
       const response = await axios.get(
         resolveApiUrl(`/api/plan/${route.params.planId}/complete`),
+        { signal },
       );
+      if (signal?.aborted) return;
       const { planFrame, placeBlocks, timetables } = response.data;
 
       if (planFrame?.planName) {
@@ -223,6 +225,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
         loadedPlanIdRef.current = targetPlanId;
       }
     } catch (error) {
+      if (signal?.aborted || axios.isCancel(error)) return;
       console.error('일정 정보 조회 실패:', error);
       initDaysFromDates();
       loadedPlanIdRef.current = targetPlanId;
@@ -252,7 +255,13 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   useEffect(() => {
     if (isInitialized.current) return;
     isInitialized.current = true;
-    fetchPlanDetails().finally(() => setIsInitialPlanLoading(false));
+    const controller = new AbortController();
+    fetchPlanDetails(controller.signal).finally(() => {
+      if (!controller.signal.aborted) {
+        setIsInitialPlanLoading(false);
+      }
+    });
+    return () => controller.abort();
   }, [fetchPlanDetails]);
 
   const selectedDay = days[selectedDayIndex];
