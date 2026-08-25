@@ -242,14 +242,13 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
     });
 
     // 첫 요청이 아직 끝나지 않은 사이에 같은 프레임에서 한 번 더 누른 상황.
-    const first = viewComponent.props.onCreateItinerary();
-    const second = viewComponent.props.onCreateItinerary();
-
-    expect(mockMutateAsync).toHaveBeenCalledTimes(1);
-
+    let first: Promise<unknown>;
+    let second: Promise<unknown>;
     await ReactTestRenderer.act(async () => {
+      first = viewComponent.props.onCreateItinerary();
+      second = viewComponent.props.onCreateItinerary();
       resolveCreate({ planId: 'new-plan-123' });
-      await Promise.all([first, second]);
+      await Promise.all([first!, second!]);
     });
 
     expect(mockMutateAsync).toHaveBeenCalledTimes(1);

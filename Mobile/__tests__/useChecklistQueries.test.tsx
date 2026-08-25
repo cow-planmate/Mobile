@@ -51,9 +51,14 @@ describe('useChecklist', () => {
     );
 
     const options = mockUseQuery.mock.calls[0][0];
-    options.queryFn();
+    const controller = new AbortController();
+    options.queryFn({ signal: controller.signal });
 
-    expect(mockedGetChecklist).toHaveBeenCalledWith(PLAN_ID, 'shared');
+    expect(mockedGetChecklist).toHaveBeenCalledWith(
+      PLAN_ID,
+      'shared',
+      controller.signal,
+    );
   });
 });
 

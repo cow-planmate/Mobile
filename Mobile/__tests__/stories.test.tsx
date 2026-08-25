@@ -76,6 +76,26 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+// 스토리 렌더 검증에서 실제 백엔드 요청이 열린 핸들로 남지 않게 한다.
+jest.mock('axios', () => {
+  const request = jest.fn().mockResolvedValue({ data: {} });
+  Object.assign(request, {
+    defaults: { headers: { common: {} } },
+    delete: jest.fn().mockResolvedValue({ data: {} }),
+    get: jest.fn().mockResolvedValue({ data: { destinations: [] } }),
+    interceptors: {
+      request: { use: jest.fn() },
+      response: { use: jest.fn() },
+    },
+    isAxiosError: jest.fn(() => false),
+    isCancel: jest.fn(() => false),
+    patch: jest.fn().mockResolvedValue({ data: {} }),
+    post: jest.fn().mockResolvedValue({ data: {} }),
+    put: jest.fn().mockResolvedValue({ data: {} }),
+  });
+  return { __esModule: true, default: request };
+});
+
 // storybook/actions는 ESM만 배포한다 — 테스트에서는 호출만 기록한다
 jest.mock('storybook/actions', () => ({
   action: (name: string) => jest.fn().mockName(name),
