@@ -2,8 +2,10 @@ import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import SignupScreen from '../src/features/auth/screens/SignupScreen';
 import { SignupScreenView } from '../src/features/auth/screens/SignupScreen.view';
+import axios from 'axios';
 
 jest.mock('axios');
+const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
@@ -166,5 +168,111 @@ describe('SignupScreen components & agreement validation', () => {
       checkboxWrapper.props.onPress();
     });
     expect(mockOnChangeAgreement).toHaveBeenCalledWith(true);
+  });
+
+  it('이메일 수정 후 이전 인증번호 확인 응답을 무시한다', async () => {
+    let resolveVerification: (value: unknown) => void = () => undefined;
+    const verificationPromise = new Promise(resolve => {
+      resolveVerification = resolve;
+    });
+    mockedAxios.post
+      .mockResolvedValueOnce({ data: {} })
+      .mockImplementationOnce(() => verificationPromise as never);
+
+    let screen: ReactTestRenderer.ReactTestRenderer;
+    ReactTestRenderer.act(() => {
+      screen = ReactTestRenderer.create(<SignupScreen />);
+    });
+
+    let props = screen!.root.findByType(SignupScreenView).props;
+    ReactTestRenderer.act(() => {
+      props.onChange('email', 'before@example.com');
+    });
+    props = screen!.root.findByType(SignupScreenView).props;
+
+    await ReactTestRenderer.act(async () => {
+      await props.onSendEmail();
+    });
+
+    props = screen!.root.findByType(SignupScreenView).props;
+    ReactTestRenderer.act(() => {
+      props.onChange('verificationCode', '123456');
+    });
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    props = screen!.root.findByType(SignupScreenView).props;
+    ReactTestRenderer.act(() => {
+      props.onEditEmail();
+    });
+
+    await ReactTestRenderer.act(async () => {
+      resolveVerification({ data: { verificationToken: 'old-token' } });
+      await verificationPromise;
+    });
+
+    props = screen!.root.findByType(SignupScreenView).props;
+    expect(props.step).toBe(1);
+    expect(props.isEmailVerified).toBe(false);
+    ReactTestRenderer.act(() => screen!.unmount());
+  });
+
+  it('닉네임을 바꾸면 이전 중복 확인 응답을 무시한다', async () => {
+    let resolveNickname: (value: unknown) => void = () => undefined;
+    const nicknamePromise = new Promise(resolve => {
+      resolveNickname = resolve;
+    });
+    mockedAxios.post.mockImplementation(url => {
+      if (url === '/api/auth/email/verification') {
+        return Promise.resolve({ data: {} });
+      }
+      if (url === '/api/auth/email/verification/confirm') {
+        return Promise.resolve({ data: { verificationToken: 'token' } });
+      }
+      return nicknamePromise as never;
+    });
+
+    let screen: ReactTestRenderer.ReactTestRenderer;
+    ReactTestRenderer.act(() => {
+      screen = ReactTestRenderer.create(<SignupScreen />);
+    });
+
+    let props = screen!.root.findByType(SignupScreenView).props;
+    ReactTestRenderer.act(() => props.onChange('email', 'user@example.com'));
+    props = screen!.root.findByType(SignupScreenView).props;
+    await ReactTestRenderer.act(async () => props.onSendEmail());
+
+    props = screen!.root.findByType(SignupScreenView).props;
+    ReactTestRenderer.act(() =>
+      props.onChange('verificationCode', '123456'),
+    );
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+    ReactTestRenderer.act(() => jest.advanceTimersByTime(700));
+
+    props = screen!.root.findByType(SignupScreenView).props;
+    ReactTestRenderer.act(() => {
+      props.onChange('password', 'password1!');
+      props.onChange('confirmPassword', 'password1!');
+    });
+    props = screen!.root.findByType(SignupScreenView).props;
+    ReactTestRenderer.act(() => props.onNextStep());
+
+    props = screen!.root.findByType(SignupScreenView).props;
+    ReactTestRenderer.act(() => props.onChange('nickname', '테스터'));
+    ReactTestRenderer.act(() => jest.advanceTimersByTime(500));
+    ReactTestRenderer.act(() => props.onChange('nickname', ''));
+
+    await ReactTestRenderer.act(async () => {
+      resolveNickname({ data: { nicknameAvailable: true } });
+      await nicknamePromise;
+    });
+
+    props = screen!.root.findByType(SignupScreenView).props;
+    expect(props.form.nickname).toBe('');
+    expect(props.nicknameStatus).toBe('idle');
+    ReactTestRenderer.act(() => screen!.unmount());
   });
 });

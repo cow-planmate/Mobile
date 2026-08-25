@@ -59,6 +59,7 @@ export default function ForgotPasswordScreen() {
   const codeDeadlineRef = useRef<number | null>(null);
   const resendDeadlineRef = useRef<number | null>(null);
   const tempPasswordSeqRef = useRef(0);
+  const verificationSeqRef = useRef(0);
 
   const setFieldError = useCallback(
     (field: keyof ForgotPasswordErrors, message: string) => {
@@ -184,6 +185,7 @@ export default function ForgotPasswordScreen() {
       return;
     }
 
+    const verificationSeq = ++verificationSeqRef.current;
     setIsVerifying(true);
     clearError('verificationCode');
 
@@ -196,6 +198,8 @@ export default function ForgotPasswordScreen() {
           verificationCode: parseInt(verificationCode, 10),
         },
       );
+
+      if (verificationSeq !== verificationSeqRef.current) return;
 
       const token = response.data.verificationToken;
       if (!token) {
@@ -212,13 +216,16 @@ export default function ForgotPasswordScreen() {
         void sendTempPassword(token);
       }, ADVANCE_DELAY_MS);
     } catch (error) {
+      if (verificationSeq !== verificationSeqRef.current) return;
       setVerificationCode('');
       setFieldError(
         'verificationCode',
         getDisplayErrorMessage(error, '인증번호가 올바르지 않아요.'),
       );
     } finally {
-      setIsVerifying(false);
+      if (verificationSeq === verificationSeqRef.current) {
+        setIsVerifying(false);
+      }
     }
   }, [
     verificationCode,
@@ -245,9 +252,13 @@ export default function ForgotPasswordScreen() {
   ]);
 
   const handleEditEmail = useCallback(() => {
+    verificationSeqRef.current += 1;
+    tempPasswordSeqRef.current += 1;
     if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
     setShowVerificationInput(false);
     setIsEmailVerified(false);
+    setIsVerifying(false);
+    setTempPasswordStatus('idle');
     setIsTimerActive(false);
     setIsCodeExpired(false);
     codeDeadlineRef.current = null;

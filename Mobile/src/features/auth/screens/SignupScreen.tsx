@@ -90,6 +90,7 @@ export default function SignupScreen() {
 
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nicknameSeqRef = useRef(0);
+  const verificationSeqRef = useRef(0);
 
   const setFieldError = useCallback((field: keyof SignupErrors, message: string) => {
     setErrors(prev => ({ ...prev, [field]: message }));
@@ -215,6 +216,7 @@ export default function SignupScreen() {
     const code = form.verificationCode;
     if (code.length !== 6 || isVerifying || isEmailVerified) return;
 
+    const verificationSeq = ++verificationSeqRef.current;
     setIsVerifying(true);
     clearError('verificationCode');
 
@@ -227,6 +229,8 @@ export default function SignupScreen() {
           verificationCode: parseInt(code, 10),
         },
       );
+
+      if (verificationSeq !== verificationSeqRef.current) return;
 
       const token = response.data.verificationToken;
       if (!token) {
@@ -244,13 +248,16 @@ export default function SignupScreen() {
         setFocusSeq(seq => seq + 1);
       }, ADVANCE_DELAY_MS);
     } catch (error) {
+      if (verificationSeq !== verificationSeqRef.current) return;
       setForm(prev => ({ ...prev, verificationCode: '' }));
       setFieldError(
         'verificationCode',
         getDisplayErrorMessage(error, '인증번호가 올바르지 않아요.'),
       );
     } finally {
-      setIsVerifying(false);
+      if (verificationSeq === verificationSeqRef.current) {
+        setIsVerifying(false);
+      }
     }
   }, [
     form.verificationCode,
@@ -276,9 +283,11 @@ export default function SignupScreen() {
   ]);
 
   const handleEditEmail = useCallback(() => {
+    verificationSeqRef.current += 1;
     if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
     setShowVerificationInput(false);
     setIsEmailVerified(false);
+    setIsVerifying(false);
     setEmailAuthToken(null);
     setIsTimerActive(false);
     setIsCodeExpired(false);
@@ -292,6 +301,7 @@ export default function SignupScreen() {
   }, []);
 
   useEffect(() => {
+    const nicknameSeq = ++nicknameSeqRef.current;
     if (step !== 3) return;
     const nickname = form.nickname.trim();
     if (!nickname) {
@@ -307,16 +317,15 @@ export default function SignupScreen() {
     }
 
     setNicknameStatus('checking');
-    const seq = ++nicknameSeqRef.current;
 
     const id = setTimeout(async () => {
       try {
         const available = await verifyNicknameAvailable(nickname);
 
-        if (seq !== nicknameSeqRef.current) return;
+        if (nicknameSeq !== nicknameSeqRef.current) return;
         setNicknameStatus(available ? 'available' : 'taken');
       } catch (error) {
-        if (seq !== nicknameSeqRef.current) return;
+        if (nicknameSeq !== nicknameSeqRef.current) return;
         setNicknameStatus('idle');
         setErrors(prev => ({
           ...prev,

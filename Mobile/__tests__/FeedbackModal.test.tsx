@@ -1,6 +1,6 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
-import { TextInput, TouchableOpacity } from 'react-native';
+import { Modal, TextInput, TouchableOpacity } from 'react-native';
 import Toast from 'react-native-toast-message';
 import FeedbackModal from '../src/features/auth/components/FeedbackModal';
 import { submitFeedback } from '../src/api/feedback';
@@ -114,5 +114,37 @@ describe('FeedbackModal', () => {
     expect(Toast.show).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'error' }),
     );
+  });
+
+  it('제출 중에는 배경 탭과 Android 뒤로가기로 닫히지 않는다', async () => {
+    let resolveRequest: (() => void) | undefined;
+    mockedSubmitFeedback.mockImplementationOnce(
+      () => new Promise<void>(resolve => {
+        resolveRequest = resolve;
+      }),
+    );
+    const onClose = jest.fn();
+    let component: renderer.ReactTestRenderer;
+    await act(async () => {
+      component = renderer.create(<FeedbackModal visible onClose={onClose} />);
+    });
+
+    act(() => {
+      findByLabel(component!, '피드백 내용').props.onChangeText('전송 중 내용');
+    });
+    act(() => {
+      findByLabel(component!, '피드백 제출').props.onPress();
+    });
+    act(() => {
+      component!.root.findByType(Modal).props.onRequestClose();
+      findByLabel(component!, '피드백 모달 닫기 영역').props.onPress();
+    });
+
+    expect(onClose).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveRequest?.();
+    });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

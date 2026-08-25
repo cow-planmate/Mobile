@@ -26,6 +26,10 @@ export default function FeedbackModal({ visible, onClose }: FeedbackModalProps) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
 
+  const handleClose = () => {
+    if (!isSubmittingRef.current) onClose();
+  };
+
   const handleSubmit = async () => {
     if (isSubmittingRef.current) return;
 
@@ -62,19 +66,24 @@ export default function FeedbackModal({ visible, onClose }: FeedbackModalProps) 
   };
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+    <Modal transparent visible={visible} animationType="fade" onRequestClose={handleClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardContainer}
       >
-        <Pressable style={styles.backdrop} onPress={onClose}>
+        <Pressable
+          accessibilityLabel="피드백 모달 닫기 영역"
+          accessibilityRole="button"
+          style={styles.backdrop}
+          onPress={handleClose}
+        >
           <Pressable style={styles.modal} onPress={() => undefined}>
             <View style={styles.header}>
               <Text style={styles.title}>피드백 보내기</Text>
               <TouchableOpacity
                 accessibilityLabel="피드백 입력 닫기"
                 disabled={isSubmitting}
-                onPress={onClose}
+                onPress={handleClose}
                 style={styles.closeButton}
                 accessibilityState={{ disabled: isSubmitting }}
                 hitSlop={6}
