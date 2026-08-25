@@ -30,8 +30,16 @@ const NO_AUTH_PATHS = [
 
 const TOKEN_REFRESH_LEEWAY_MS = 60 * 1000;
 
-const matchesPath = (url: string | undefined, paths: string[]) =>
-  paths.some(path => url?.includes(path));
+const requestPath = (url: string | undefined): string => {
+  const withoutQuery = (url ?? '').split(/[?#]/, 1)[0];
+  const pathname = withoutQuery.replace(/^https?:\/\/[^/]+/i, '');
+  return pathname.replace(/^\/+/, '/').replace(/\/+$/, '');
+};
+
+const matchesPath = (url: string | undefined, paths: string[]) => {
+  const pathname = requestPath(url);
+  return paths.some(path => pathname === path || pathname.startsWith(`${path}/`));
+};
 
 let refreshPromise: Promise<string | null> | null = null;
 
@@ -41,6 +49,7 @@ export const observeAccessToken = (
   token: string,
   receivedAtMs = Date.now(),
 ): void => {
+  clockSkewMs = 0;
   const issuedAtMs = getJwtIssuedAtMs(token);
   if (issuedAtMs !== null && Number.isFinite(issuedAtMs)) {
     clockSkewMs = receivedAtMs - issuedAtMs;
@@ -166,7 +175,12 @@ axios.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
-    if (__DEV__) {
+    const isCanceled =
+      axios.isCancel?.(error) ||
+      error.code === 'ERR_CANCELED' ||
+      error.name === 'CanceledError';
+
+    if (__DEV__ && !isCanceled) {
       const resData = error.response?.data as any;
       const statusCode = error.response?.status || 'FAIL';
       const errCode = resData?.code || 'UNKNOWN';

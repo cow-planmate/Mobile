@@ -245,15 +245,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const forgetLoginMethod = options?.forgetLoginMethod ?? false;
 
     set({ user: null, ...(forgetLoginMethod ? { lastLoginMethod: null, lastLoginEmail: null } : {}) });
-    await AsyncStorage.multiRemove(
-      forgetLoginMethod
-        ? [...LOGOUT_CLEARED_KEYS, ...IDENTITY_CLEARED_KEYS]
-        : LOGOUT_CLEARED_KEYS,
-    );
-
     queryClient.clear();
-
-    await clearWebViewCookies();
+    try {
+      await AsyncStorage.multiRemove(
+        forgetLoginMethod
+          ? [...LOGOUT_CLEARED_KEYS, ...IDENTITY_CLEARED_KEYS]
+          : LOGOUT_CLEARED_KEYS,
+      );
+    } finally {
+      await clearWebViewCookies();
+    }
   },
 
   revokeRefreshToken: async () => {

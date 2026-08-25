@@ -79,4 +79,18 @@ describe('clearSession', () => {
 
     expect(queryClient.getQueryData(['userProfile'])).toBeUndefined();
   });
+
+  it('저장소 삭제가 실패해도 메모리 캐시와 웹뷰 쿠키를 정리한다', async () => {
+    queryClient.setQueryData(['userProfile'], { name: '민영' });
+    (AsyncStorage.multiRemove as jest.Mock).mockRejectedValueOnce(
+      new Error('storage unavailable'),
+    );
+
+    await expect(useAuthStore.getState().clearSession()).rejects.toThrow(
+      'storage unavailable',
+    );
+
+    expect(queryClient.getQueryData(['userProfile'])).toBeUndefined();
+    expect(CookieManager.clearAll).toHaveBeenCalled();
+  });
 });
