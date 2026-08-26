@@ -77,6 +77,14 @@ export default function FeedCreateScreen() {
 
   const contentRef = useRef<TextInput>(null);
   const hydratedPostId = useRef<string | undefined>(undefined);
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   useEffect(() => {
     const post = existingPost.data;
     if (!post || post.category !== 'feed') return;
@@ -127,7 +135,7 @@ export default function FeedCreateScreen() {
         mediaType: 'photo',
         selectionLimit: 1,
       });
-      if (result.didCancel) return;
+      if (!isMountedRef.current || result.didCancel) return;
       if (result.errorCode) {
         throw new Error(result.errorMessage || '이미지를 선택하지 못했어요.');
       }
@@ -139,6 +147,7 @@ export default function FeedCreateScreen() {
       }
       setThumbnailFile(selected.file);
     } catch (error) {
+      if (!isMountedRef.current) return;
       showAlert({
         title: '이미지 선택 실패',
         message: getBackendErrorMessage(error),
@@ -179,7 +188,15 @@ export default function FeedCreateScreen() {
         const resolvedThumbnailUrl = thumbnailFile
           ? await uploadCommunityImage(thumbnailFile)
           : thumbnailUrl.trim() || null;
-        if (thumbnailFile) uploadedThumbnailUrl = resolvedThumbnailUrl;
+        if (thumbnailFile) {
+          uploadedThumbnailUrl = resolvedThumbnailUrl;
+          if (!isMountedRef.current) {
+            if (uploadedThumbnailUrl) {
+              void deleteCommunityImage(uploadedThumbnailUrl).catch(() => undefined);
+            }
+            return;
+          }
+        }
 
         const created = isEditMode
           ? await updatePost.mutateAsync(
@@ -216,6 +233,7 @@ export default function FeedCreateScreen() {
         if (uploadedThumbnailUrl) {
           void deleteCommunityImage(uploadedThumbnailUrl).catch(() => undefined);
         }
+        if (!isMountedRef.current) return;
         showAlert({
           title: isEditMode ? '여행기 수정 실패' : '여행기 발행 실패',
           message: getBackendErrorMessage(error),
