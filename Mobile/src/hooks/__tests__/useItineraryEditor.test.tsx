@@ -32,8 +32,18 @@ jest.mock('react-native-toast-message', () => ({ show: jest.fn() }));
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
-function HookHarness({ planId }: { planId: string }) {
-  useItineraryEditor({ params: { planId } }, {});
+let hookResult: ReturnType<typeof useItineraryEditor>;
+
+function HookHarness({
+  planId,
+  startDate,
+  endDate,
+}: {
+  planId: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  hookResult = useItineraryEditor({ params: { planId, startDate, endDate } }, {});
   return null;
 }
 
@@ -64,5 +74,40 @@ describe('useItineraryEditor plan fetch lifecycle', () => {
     const secondSignal = mockedAxios.get.mock.calls[1][1]?.signal;
     await act(async () => tree!.unmount());
     expect(secondSignal?.aborted).toBe(true);
+  });
+
+  it('같은 플랜의 시작일이 바뀌면 다시 조회하고 초기 로딩을 끝낸다', async () => {
+    mockedAxios.get
+      .mockImplementationOnce(() => new Promise(() => undefined))
+      .mockResolvedValueOnce({
+        data: { planFrame: {}, placeBlocks: [], timetables: [] },
+      } as never);
+
+    let tree: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderer.create(
+        <HookHarness
+          planId="plan-1"
+          startDate="2026-08-27"
+          endDate="2026-08-29"
+        />,
+      );
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      tree!.update(
+        <HookHarness
+          planId="plan-1"
+          startDate="2026-08-28"
+          endDate="2026-08-29"
+        />,
+      );
+      await Promise.resolve();
+    });
+
+    expect(mockedAxios.get).toHaveBeenCalledTimes(2);
+    expect(hookResult.isInitialPlanLoading).toBe(false);
+    await act(async () => tree!.unmount());
   });
 });

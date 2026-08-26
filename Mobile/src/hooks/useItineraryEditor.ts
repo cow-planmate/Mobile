@@ -65,7 +65,6 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     time: string;
   } | null>(null);
 
-  const isInitialized = useRef(false);
   const timelineScrollRef = useRef<ScrollView>(null);
 
   const loadedPlanIdRef = useRef<string | null>(null);
@@ -247,22 +246,27 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
       route.params?.planId != null ? String(route.params.planId) : null;
     if (scopedPlanIdRef.current === nextPlanId) return;
     scopedPlanIdRef.current = nextPlanId;
-    isInitialized.current = false;
     setIsInitialPlanLoading(true);
     resetItinerary();
   }, [route.params?.planId, resetItinerary]);
 
+  const fetchPlanDetailsRef = useRef(fetchPlanDetails);
+  fetchPlanDetailsRef.current = fetchPlanDetails;
+
   useEffect(() => {
-    if (isInitialized.current) return;
-    isInitialized.current = true;
     const controller = new AbortController();
-    fetchPlanDetails(controller.signal).finally(() => {
+    setIsInitialPlanLoading(true);
+    fetchPlanDetailsRef.current(controller.signal).finally(() => {
       if (!controller.signal.aborted) {
         setIsInitialPlanLoading(false);
       }
     });
     return () => controller.abort();
-  }, [fetchPlanDetails]);
+  }, [
+    route.params?.planId,
+    route.params?.startDate,
+    route.params?.endDate,
+  ]);
 
   const selectedDay = days[selectedDayIndex];
 

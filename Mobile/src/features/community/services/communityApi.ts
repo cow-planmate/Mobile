@@ -16,6 +16,7 @@ import {
   ReactionType,
   RegionCount,
 } from '../types';
+import type { FeedImageUploadFile } from '../utils/feedImage';
 
 const url = (path: string) => resolveApiUrl(`/api/community${path}`);
 
@@ -141,6 +142,21 @@ export async function updatePost(
 
 export async function deletePost(postId: number): Promise<void> {
   await axios.delete(url(`/posts/${postId}`));
+}
+
+export async function uploadCommunityImage(
+  file: FeedImageUploadFile,
+): Promise<string> {
+  const form = new FormData();
+  form.append('file', file as unknown as Blob);
+  const response = await axios.post<{ url: string }>(url('/images'), form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data.url;
+}
+
+export async function deleteCommunityImage(imageUrl: string): Promise<void> {
+  await axios.delete(url(`/images?url=${encodeURIComponent(imageUrl)}`));
 }
 
 export async function reactToPost(

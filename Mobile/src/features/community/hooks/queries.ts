@@ -153,8 +153,11 @@ const useInvalidate = () => {
     me: () => queryClient.invalidateQueries({ queryKey: ['community', 'me'] }),
     feedRegions: () =>
       queryClient.invalidateQueries({ queryKey: ['community', 'feed-regions'] }),
-    removePost: (postId: number | string) =>
-      queryClient.removeQueries({ queryKey: KEYS.post(postId) }),
+    deferPostRefetch: (postId: number | string) =>
+      queryClient.invalidateQueries({
+        queryKey: KEYS.post(postId),
+        refetchType: 'none',
+      }),
   };
 };
 
@@ -189,7 +192,7 @@ export const useDeletePost = () => {
   return useMutation({
     mutationFn: (postId: number) => deletePost(postId),
     onSuccess: (_data, postId) => {
-      invalidate.removePost(postId);
+      void invalidate.deferPostRefetch(postId);
       void invalidate.lists();
       void invalidate.me();
       void invalidate.feedRegions();

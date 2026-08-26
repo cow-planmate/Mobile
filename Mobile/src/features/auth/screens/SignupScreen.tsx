@@ -166,51 +166,61 @@ export default function SignupScreen() {
 
   const isEmailFormatValid = EMAIL_REGEX.test(form.email.trim());
 
-  const handleSendEmail = useCallback(async () => {
-    const email = form.email.trim();
-    if (!email) {
-      setFieldError('email', '이메일을 입력해 주세요.');
-      return;
-    }
-    if (!EMAIL_REGEX.test(email)) {
-      setFieldError('email', '이메일 형식을 확인해 주세요.');
-      return;
-    }
+  const { runExclusive: runSendEmailExclusive } = useSubmitLock();
 
-    setIsSendingEmail(true);
-    clearError('email');
+  const handleSendEmail = useCallback(
+    () =>
+      runSendEmailExclusive(async () => {
+        const email = form.email.trim();
+        if (!email) {
+          setFieldError('email', '이메일을 입력해 주세요.');
+          return;
+        }
+        if (!EMAIL_REGEX.test(email)) {
+          setFieldError('email', '이메일 형식을 확인해 주세요.');
+          return;
+        }
 
-    try {
-      await axios.post('/api/auth/email/verification', {
-        email,
-        purpose: 'SIGN_UP',
-      });
+        setIsSendingEmail(true);
+        clearError('email');
 
-      setShowVerificationInput(true);
-      setForm(prev => ({ ...prev, verificationCode: '' }));
-      setIsCodeExpired(false);
-      codeDeadlineRef.current = deadlineFromNow(CODE_TTL_SECONDS);
-      setTimeLeft(CODE_TTL_SECONDS);
-      setIsTimerActive(true);
-      resendDeadlineRef.current = deadlineFromNow(RESEND_COOLDOWN_SECONDS);
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
-      setFocusSeq(seq => seq + 1);
-    } catch (error) {
+        try {
+          await axios.post('/api/auth/email/verification', {
+            email,
+            purpose: 'SIGN_UP',
+          });
 
-      const { code } = parseBackendError(error);
-      setFieldError(
-        'email',
-        code === DUPLICATE_EMAIL_CODE
-          ? '이미 가입된 이메일이에요.'
-          : getDisplayErrorMessage(
-              error,
-              '인증번호를 보내지 못했어요. 잠시 후 다시 시도해 주세요.',
-            ),
-      );
-    } finally {
-      setIsSendingEmail(false);
-    }
-  }, [form.email, setFieldError, clearError]);
+          setShowVerificationInput(true);
+          setForm(prev => ({ ...prev, verificationCode: '' }));
+          setIsCodeExpired(false);
+          codeDeadlineRef.current = deadlineFromNow(CODE_TTL_SECONDS);
+          setTimeLeft(CODE_TTL_SECONDS);
+          setIsTimerActive(true);
+          resendDeadlineRef.current = deadlineFromNow(RESEND_COOLDOWN_SECONDS);
+          setResendCooldown(RESEND_COOLDOWN_SECONDS);
+          setFocusSeq(seq => seq + 1);
+        } catch (error) {
+          const { code } = parseBackendError(error);
+          setFieldError(
+            'email',
+            code === DUPLICATE_EMAIL_CODE
+              ? '이미 가입된 이메일이에요.'
+              : getDisplayErrorMessage(
+                  error,
+                  '인증번호를 보내지 못했어요. 잠시 후 다시 시도해 주세요.',
+                ),
+          );
+        } finally {
+          setIsSendingEmail(false);
+        }
+      }),
+    [
+      form.email,
+      setFieldError,
+      clearError,
+      runSendEmailExclusive,
+    ],
+  );
 
   const handleVerifyCode = useCallback(async () => {
     const code = form.verificationCode;

@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import axios from 'axios';
+import { launchImageLibrary } from 'react-native-image-picker';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import Check from 'lucide-react-native/dist/esm/icons/check';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
@@ -37,6 +38,14 @@ import {
   CompletePlanResponse,
   FeedPlanSnapshot,
 } from '../utils/planToItinerary';
+import {
+  deleteCommunityImage,
+  uploadCommunityImage,
+} from '../services/communityApi';
+import {
+  buildFeedImageUploadFile,
+  FeedImageUploadFile,
+} from '../utils/feedImage';
 
 type FeedCreateRoute = RouteProp<FeedStackParamList, 'FeedCreate'>;
 
@@ -63,6 +72,8 @@ export default function FeedCreateScreen() {
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [thumbnailFile, setThumbnailFile] =
+    useState<FeedImageUploadFile | null>(null);
 
   const contentRef = useRef<TextInput>(null);
   const hydratedPostId = useRef<string | undefined>(undefined);
@@ -110,6 +121,32 @@ export default function FeedCreateScreen() {
 
   const { isSubmitting, runExclusive } = useSubmitLock();
 
+  const handleSelectThumbnail = async () => {
+    try {
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        selectionLimit: 1,
+      });
+      if (result.didCancel) return;
+      if (result.errorCode) {
+        throw new Error(result.errorMessage || '이미지를 선택하지 못했어요.');
+      }
+
+      const selected = buildFeedImageUploadFile(result.assets?.[0]);
+      if ('error' in selected) {
+        showAlert({ title: '이미지 확인', message: selected.error, type: 'error' });
+        return;
+      }
+      setThumbnailFile(selected.file);
+    } catch (error) {
+      showAlert({
+        title: '이미지 선택 실패',
+        message: getBackendErrorMessage(error),
+        type: 'error',
+      });
+    }
+  };
+
   const { allowLeave } = useUnsavedChangesPrompt({
     hasUnsavedChanges: !!title.trim() || !!content.trim(),
     title: '작성 취소',
@@ -137,17 +174,28 @@ export default function FeedCreateScreen() {
       }
 
       const contentText = content.trim() || title.trim();
+      let uploadedThumbnailUrl: string | null = null;
       try {
+        const resolvedThumbnailUrl = thumbnailFile
+          ? await uploadCommunityImage(thumbnailFile)
+          : thumbnailUrl.trim() || null;
+        if (thumbnailFile) uploadedThumbnailUrl = resolvedThumbnailUrl;
+
         const created = isEditMode
           ? await updatePost.mutateAsync(
-              buildFeedUpdatePayload({ title, content, tags, thumbnailUrl }),
+              buildFeedUpdatePayload({
+                title,
+                content,
+                tags,
+                thumbnailUrl: resolvedThumbnailUrl ?? '',
+              }),
             )
           : await createPost.mutateAsync({
               category: 'feed',
               title: title.trim(),
               content: textToBlocks(contentText),
               contentText,
-              thumbnailUrl: thumbnailUrl.trim() || null,
+              thumbnailUrl: resolvedThumbnailUrl,
               region: snapshot!.destinationName,
               location: snapshot!.destinationName,
               durationDays: snapshot!.itinerary.days.length,
@@ -156,6 +204,7 @@ export default function FeedCreateScreen() {
               sourcePlanId: snapshot!.planId,
             });
         allowLeave();
+        setThumbnailFile(null);
         // 수정은 상세 화면에서 진입하므로 되돌아가면 된다. replace 하면
         // 같은 여행기 상세가 스택에 두 번 쌓여 뒤로가기가 한 번 헛돈다.
         if (isEditMode || created?.id == null) {
@@ -164,6 +213,9 @@ export default function FeedCreateScreen() {
           navigation.replace('FeedDetail', { postId: String(created.id) });
         }
       } catch (error) {
+        if (uploadedThumbnailUrl) {
+          void deleteCommunityImage(uploadedThumbnailUrl).catch(() => undefined);
+        }
         showAlert({
           title: isEditMode ? '여행기 수정 실패' : '여행기 발행 실패',
           message: getBackendErrorMessage(error),
@@ -328,13 +380,30 @@ export default function FeedCreateScreen() {
           editable={!isHydrating}
         />
 
-        <Text style={styles.label}>썸네일 URL</Text>
+        <Text style={styles.label}>썸네일</Text>
+        <TouchableOpacity
+          style={styles.imageSelectButton}
+          onPress={handleSelectThumbnail}
+          disabled={isHydrating || isSubmitting}
+          accessibilityRole="button"
+          accessibilityLabel="썸네일 이미지 선택"
+        >
+          <Text style={styles.imageSelectText}>
+            {thumbnailFile ? '사진 다시 선택' : '기기에서 사진 선택'}
+          </Text>
+        </TouchableOpacity>
+        {thumbnailFile && (
+          <Text style={styles.selectedImageName}>{thumbnailFile.name}</Text>
+        )}
         <TextInput
           value={thumbnailUrl}
-          onChangeText={setThumbnailUrl}
+          onChangeText={value => {
+            setThumbnailUrl(value);
+            setThumbnailFile(null);
+          }}
           style={styles.input}
           editable={!isHydrating}
-          placeholder="비워 두면 일정의 첫 사진을 사용해요"
+          placeholder="사진을 선택하거나 이미지 URL을 입력하세요"
           autoCapitalize="none"
         />
       </ScrollView>
@@ -461,6 +530,16 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
   },
   contentInput: { minHeight: 120, paddingTop: 12 },
+  imageSelectButton: {
+    minHeight: 46,
+    borderWidth: 1,
+    borderColor: tokens.colors.primary,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageSelectText: { color: tokens.colors.primary, fontWeight: '600' },
+  selectedImageName: { color: tokens.colors.textSecondary, fontSize: 12 },
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: tokens.colors.border },
   submitButton: {
     minHeight: 52,

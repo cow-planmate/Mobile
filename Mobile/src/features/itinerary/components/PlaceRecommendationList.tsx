@@ -594,6 +594,8 @@ export default function PlaceRecommendationList({
         maxToRenderPerBatch={10}
         windowSize={5}
         removeClippedSubviews={true}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.4}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}

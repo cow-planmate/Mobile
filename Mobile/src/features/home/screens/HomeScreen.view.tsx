@@ -21,7 +21,6 @@ const AnimatedFastImage = Animated.createAnimatedComponent(FastImage);
 import { CalendarModal, Header, Invitation, NotificationModal, PaxModal, SearchLocationModal } from '../../../components/common';
 import { normalize } from '../../../utils/normalize';
 import { styles } from './HomeScreen.styles';
-import { tokens } from '../../../theme/tokens';
 
 const HERO_ITEMS = [
   {
@@ -206,7 +205,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   onCloseNotificationModal,
   onAcceptNotification,
   onRejectNotification,
-  variant = 'option2',
 }: HomeScreenViewProps) => {
   const flatListRef = useRef<FlatList>(null);
   const screenWidth = Dimensions.get('window').width;

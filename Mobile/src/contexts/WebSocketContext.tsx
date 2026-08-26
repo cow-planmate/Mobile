@@ -189,7 +189,9 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
           ? resolveApiUrl(`/ws?token=${encodeURIComponent(latestTokenRef.current)}`)
           : resolveApiUrl('/ws');
         const socket = new SockJS(wsUrl);
-        activeSocket.current = socket;
+        if (generation === connectGenerationRef.current) {
+          activeSocket.current = socket;
+        }
         return socket;
       },
       beforeConnect: async c => {
@@ -211,6 +213,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       onConnect: frame => {
+        if (generation !== connectGenerationRef.current) return;
         isConnectingRef.current = false;
         wsLog('WebSocket Connected:', frame);
         setIsConnected(true);
@@ -219,6 +222,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
         topics.forEach(topic => {
           client.subscribe(topic, (message: IMessage) => {
+            if (generation !== connectGenerationRef.current) return;
             try {
               const body = JSON.parse(message.body);
               wsLog(`[Data Recv] ${topic}:`, body);
@@ -241,6 +245,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         client.subscribe(
           `/topic/plan-presence/${planId}`,
           (message: IMessage) => {
+            if (generation !== connectGenerationRef.current) return;
             try {
               const payload: PresenceMessage = JSON.parse(message.body);
               wsLog('[Presence]:', payload);
@@ -297,15 +302,18 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
           clearTimeout(readyFallbackTimer.current);
         }
         readyFallbackTimer.current = setTimeout(() => {
+          if (generation !== connectGenerationRef.current) return;
           markRoomReady(client, planId);
         }, ROOM_READY_FALLBACK_MS);
       },
       onStompError: frame => {
+        if (generation !== connectGenerationRef.current) return;
         isConnectingRef.current = false;
         console.error('Broker reported error: ' + frame.headers.message);
         console.error('Additional details: ' + frame.body);
       },
       onWebSocketClose: () => {
+        if (generation !== connectGenerationRef.current) return;
         isConnectingRef.current = false;
         wsLog('WebSocket Connection Closed');
         setIsConnected(false);

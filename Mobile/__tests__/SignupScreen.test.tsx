@@ -170,6 +170,39 @@ describe('SignupScreen components & agreement validation', () => {
     expect(mockOnChangeAgreement).toHaveBeenCalledWith(true);
   });
 
+  it('이메일 인증 요청을 같은 렌더에서 연속 실행해도 한 번만 전송한다', async () => {
+    let resolveRequest: (value: unknown) => void = () => undefined;
+    const request = new Promise(resolve => {
+      resolveRequest = resolve;
+    });
+    mockedAxios.post.mockReturnValue(request as never);
+
+    let screen: ReactTestRenderer.ReactTestRenderer;
+    ReactTestRenderer.act(() => {
+      screen = ReactTestRenderer.create(<SignupScreen />);
+    });
+
+    let props = screen!.root.findByType(SignupScreenView).props;
+    ReactTestRenderer.act(() => {
+      props.onChange('email', 'user@example.com');
+    });
+    props = screen!.root.findByType(SignupScreenView).props;
+
+    let first: Promise<unknown>;
+    let second: Promise<unknown>;
+    ReactTestRenderer.act(() => {
+      first = props.onSendEmail();
+      second = props.onSendEmail();
+    });
+
+    expect(mockedAxios.post).toHaveBeenCalledTimes(1);
+    await ReactTestRenderer.act(async () => {
+      resolveRequest({ data: {} });
+      await Promise.all([first!, second!]);
+    });
+    ReactTestRenderer.act(() => screen!.unmount());
+  });
+
   it('이메일 수정 후 이전 인증번호 확인 응답을 무시한다', async () => {
     let resolveVerification: (value: unknown) => void = () => undefined;
     const verificationPromise = new Promise(resolve => {

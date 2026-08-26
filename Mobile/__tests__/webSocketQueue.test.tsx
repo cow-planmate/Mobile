@@ -2,6 +2,7 @@ import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 
 let mockClient: any = null;
+let mockClients: any[] = [];
 
 jest.mock('@stomp/stompjs', () => {
   return {
@@ -44,6 +45,7 @@ jest.mock('@stomp/stompjs', () => {
         },
       };
       mockClient = instance;
+      mockClients.push(instance);
       return instance;
     }),
     ReconnectionTimeMode: { LINEAR: 'linear', EXPONENTIAL: 'exponential' },
@@ -115,6 +117,7 @@ const publishedBodies = () =>
 beforeEach(() => {
   jest.useFakeTimers();
   mockClient = null;
+  mockClients = [];
 });
 
 afterEach(() => {
@@ -372,5 +375,28 @@ describe('disconnect 시 큐 보존 (F-8)', () => {
     );
     expect(bodies).toHaveLength(1);
     expect(bodies[0].timeTablePlaceBlockDtos[0].blockId).toBe(321);
+  });
+
+  it('이전 plan의 지연 close가 새 plan의 준비 상태를 지우지 않는다', async () => {
+    mount();
+    await connectTo(PLAN_A);
+    const oldClient = mockClients[0];
+    act(() => {
+      oldClient.simulateConnect();
+      oldClient.simulatePresence([]);
+    });
+
+    await connectTo(PLAN_B);
+    const newClient = mockClients[1];
+    act(() => {
+      newClient.simulateConnect();
+      newClient.simulatePresence([]);
+      oldClient.simulateSocketClose();
+    });
+    newClient.publish.mockClear();
+
+    send({ blockId: 777 });
+
+    expect(newClient.publish).toHaveBeenCalledTimes(1);
   });
 });

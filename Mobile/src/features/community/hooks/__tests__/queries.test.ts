@@ -58,12 +58,14 @@ describe('community mutation cache invalidation', () => {
     });
   });
 
-  it('게시글 삭제 후 더 이상 유효하지 않은 상세 캐시를 제거한다', () => {
+  it('게시글 삭제 후 활성 상세를 재조회하지 않고 다음 진입만 새로 조회하게 한다', () => {
     useDeletePost();
     mutationOptions().onSuccess(undefined, 7);
 
-    expect(removeQueries).toHaveBeenCalledWith({
+    expect(removeQueries).not.toHaveBeenCalled();
+    expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: ['community', 'post', '7'],
+      refetchType: 'none',
     });
   });
 
