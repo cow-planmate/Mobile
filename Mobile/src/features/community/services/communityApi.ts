@@ -152,7 +152,11 @@ export async function uploadCommunityImage(
   const response = await axios.post<{ url: string }>(url('/images'), form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-  return response.data.url;
+  const imageUrl = response.data?.url;
+  if (typeof imageUrl !== 'string' || !imageUrl.trim()) {
+    throw new Error('이미지 업로드 응답이 올바르지 않아요.');
+  }
+  return imageUrl.trim();
 }
 
 export async function deleteCommunityImage(imageUrl: string): Promise<void> {

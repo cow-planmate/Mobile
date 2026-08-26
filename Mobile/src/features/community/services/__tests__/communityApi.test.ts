@@ -71,6 +71,23 @@ describe('communityApi 이미지', () => {
     );
   });
 
+  it.each([null, '', '   '])(
+    '업로드 응답 URL이 유효하지 않으면 거부한다: %p',
+    async invalidUrl => {
+      mockedAxios.post.mockResolvedValueOnce({
+        data: { url: invalidUrl },
+      } as never);
+
+      await expect(
+        uploadCommunityImage({
+          uri: 'file:///feed.jpg',
+          type: 'image/jpeg',
+          name: 'feed.jpg',
+        }),
+      ).rejects.toThrow('이미지 업로드 응답');
+    },
+  );
+
   it('업로드된 이미지를 URL로 삭제한다', async () => {
     mockedAxios.delete.mockResolvedValueOnce({});
 
