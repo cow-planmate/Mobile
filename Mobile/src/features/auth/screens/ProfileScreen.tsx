@@ -27,6 +27,7 @@ import {
 } from '../../../hooks/useUserProfile';
 import { useMyStats } from '../../community/hooks/queries';
 import { buildProfileImageUploadFile } from '../utils/profileImage';
+import { useSubmitLock } from '../../../hooks/useSubmitLock';
 const EMPTY_PROFILE: UserProfile = {
   name: '',
   email: '',
@@ -51,6 +52,10 @@ export default function ProfileScreen({ route }: any) {
   const [isThemeModalVisible, setThemeModalVisible] = useState(false);
   const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
   const [isProfileImageUpdating, setIsProfileImageUpdating] = useState(false);
+  const {
+    isSubmitting: isProfileVisibilityUpdating,
+    runExclusive: runProfileVisibilityExclusive,
+  } = useSubmitLock();
 
   const patchProfile = useCallback(
     (patch: Partial<UserProfile>) => {
@@ -216,20 +221,14 @@ export default function ProfileScreen({ route }: any) {
 
               if (response.status >= 200 && response.status < 300) {
                 await useAuthStore.getState().revokeRefreshToken();
+                await finishResign();
 
                 showAlert({
                   title: '탈퇴 완료',
                   message: '회원 탈퇴를 마쳤어요.',
                   type: 'success',
 
-                  buttons: [
-                    {
-                      text: '확인',
-                      onPress: () => {
-                        void finishResign();
-                      },
-                    },
-                  ],
+                  buttons: [{ text: '확인' }],
                 });
               }
             } catch (error) {
@@ -285,11 +284,12 @@ export default function ProfileScreen({ route }: any) {
   );
 
   const handleChangeProfileVisibility = useCallback(
-    async (profilePublic: boolean) => {
-      await changeProfileVisibility(profilePublic);
-      patchProfile({ profilePublic });
-    },
-    [patchProfile],
+    (profilePublic: boolean) =>
+      runProfileVisibilityExclusive(async () => {
+        await changeProfileVisibility(profilePublic);
+        patchProfile({ profilePublic });
+      }),
+    [patchProfile, runProfileVisibilityExclusive],
   );
 
   const handleChangeProfileImage = useCallback(async () => {
@@ -386,6 +386,7 @@ export default function ProfileScreen({ route }: any) {
       isCommunityStatsLoading={isCommunityStatsLoading}
       onRenamePlan={handleRenamePlan}
       onChangeProfileVisibility={handleChangeProfileVisibility}
+      isProfileVisibilityUpdating={isProfileVisibilityUpdating}
       onChangeProfileImage={handleChangeProfileImage}
       onDeleteProfileImage={handleDeleteProfileImage}
       isProfileImageUpdating={isProfileImageUpdating}

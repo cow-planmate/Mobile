@@ -17,6 +17,7 @@ import {
   PASSWORD_MAX_LENGTH,
   getPasswordRequirements,
 } from '../../utils/passwordPolicy';
+import { useSubmitLock } from '../../hooks/useSubmitLock';
 
 type UpdatePasswordModalProps = {
   visible: boolean;
@@ -80,11 +81,9 @@ export default function UpdatePasswordModal({
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isSubmitting, runExclusive } = useSubmitLock();
 
-  const handleConfirm = async () => {
-    if (isSubmitting) return;
-
+  const handleConfirm = () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       showAlert({ title: '오류', message: '모든 필드를 입력해주세요.' });
       return;
@@ -111,16 +110,14 @@ export default function UpdatePasswordModal({
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-
-      await onConfirm(currentPassword, newPassword);
-      handleClose();
-    } catch (_error) {
-
-    } finally {
-      setIsSubmitting(false);
-    }
+    return runExclusive(async () => {
+      try {
+        await onConfirm(currentPassword, newPassword);
+        handleClose();
+      } catch (_error) {
+        return;
+      }
+    });
   };
 
   const handleClose = () => {

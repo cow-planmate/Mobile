@@ -9,6 +9,7 @@ import {
 import { changePassword } from '../../../api/auth';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 import { getPasswordRequirements } from '../../../utils/passwordPolicy';
+import { useSubmitLock } from '../../../hooks/useSubmitLock';
 
 export default function ChangePasswordScreen() {
   const navigation = useNavigation();
@@ -23,7 +24,7 @@ export default function ChangePasswordScreen() {
   const [isCurrentVisible, setIsCurrentVisible] = useState(false);
   const [isNewVisible, setIsNewVisible] = useState(false);
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isSubmitting, runExclusive } = useSubmitLock();
 
   const onChange = useCallback(
     (field: keyof ChangePasswordForm, value: string) => {
@@ -77,7 +78,7 @@ export default function ChangePasswordScreen() {
     return next;
   }, [form, passwordRequirements, isPasswordMatch]);
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = useCallback(() => {
     const nextErrors = validate();
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
@@ -85,29 +86,28 @@ export default function ChangePasswordScreen() {
     }
 
     setErrors({});
-    setIsSubmitting(true);
-    try {
-      await changePassword(
-        form.currentPassword,
-        form.newPassword,
-        form.confirmPassword,
-      );
+    return runExclusive(async () => {
+      try {
+        await changePassword(
+          form.currentPassword,
+          form.newPassword,
+          form.confirmPassword,
+        );
 
-      Toast.show({
-        type: 'success',
-        text1: '비밀번호를 변경했어요.',
-        position: 'top',
-        visibilityTime: 2500,
-      });
-      navigation.goBack();
-    } catch (e) {
-      setErrors({
-        form: getDisplayErrorMessage(e, '비밀번호를 변경하지 못했어요.'),
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [validate, form, navigation]);
+        Toast.show({
+          type: 'success',
+          text1: '비밀번호를 변경했어요.',
+          position: 'top',
+          visibilityTime: 2500,
+        });
+        navigation.goBack();
+      } catch (e) {
+        setErrors({
+          form: getDisplayErrorMessage(e, '비밀번호를 변경하지 못했어요.'),
+        });
+      }
+    });
+  }, [validate, form, navigation, runExclusive]);
 
   const handleBack = useCallback(() => navigation.goBack(), [navigation]);
 

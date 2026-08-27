@@ -65,6 +65,7 @@ export default function PostDetailScreen() {
   const isAuthor = !!post && user?.userId === post.userId;
 
   const reactLock = useSubmitLock();
+  const postActionLock = useSubmitLock();
   const handleReact = (type: ReactionType) => {
     if (!isLoggedIn) {
       showAlert({ title: '로그인 필요', message: '로그인 후 이용할 수 있어요.' });
@@ -111,41 +112,42 @@ export default function PostDetailScreen() {
     });
   };
 
-  const handleJoinMate = async () => {
-    try {
-      await joinMate.mutateAsync();
-      showAlert({ title: '참여 완료', message: '메이트로 참여했어요!', type: 'success' });
-    } catch (error) {
-      const message = getBackendErrorMessage(error);
-      if (message.includes('이미 참여')) {
-        showAlert({
-          title: '이미 참여 중',
-          message: '참여를 취소할까요?',
-          type: 'confirm',
-          buttons: [
-            { text: '아니요', style: 'cancel' },
-            {
-              text: '참여 취소',
-              style: 'destructive',
-              onPress: async () => {
-                try {
-                  await leaveMate.mutateAsync();
-                } catch (leaveError) {
-                  showAlert({
-                    title: '참여 취소 실패',
-                    message: getBackendErrorMessage(leaveError),
-                    type: 'error',
-                  });
-                }
+  const handleJoinMate = () =>
+    postActionLock.runExclusive(async () => {
+      try {
+        await joinMate.mutateAsync();
+        showAlert({ title: '참여 완료', message: '메이트로 참여했어요!', type: 'success' });
+      } catch (error) {
+        const message = getBackendErrorMessage(error);
+        if (message.includes('이미 참여')) {
+          showAlert({
+            title: '이미 참여 중',
+            message: '참여를 취소할까요?',
+            type: 'confirm',
+            buttons: [
+              { text: '아니요', style: 'cancel' },
+              {
+                text: '참여 취소',
+                style: 'destructive',
+                onPress: async () => {
+                  try {
+                    await leaveMate.mutateAsync();
+                  } catch (leaveError) {
+                    showAlert({
+                      title: '참여 취소 실패',
+                      message: getBackendErrorMessage(leaveError),
+                      type: 'error',
+                    });
+                  }
+                },
               },
-            },
-          ],
-        });
-        return;
+            ],
+          });
+          return;
+        }
+        showAlert({ title: '참여 실패', message, type: 'error' });
       }
-      showAlert({ title: '참여 실패', message, type: 'error' });
-    }
-  };
+    });
 
   const renderTopBar = () => (
     <View style={styles.topBar}>
@@ -271,7 +273,18 @@ export default function PostDetailScreen() {
               {post.category === 'qna' && (
                 <TouchableOpacity
                   style={[styles.authorActionButton, styles.authorActionAccent]}
-                  onPress={() => updateAnswered.mutate(!post.isAnswered)}
+                  onPress={() =>
+                    postActionLock.runExclusive(() =>
+                      updateAnswered.mutateAsync(!post.isAnswered),
+                    )
+                  }
+                  disabled={
+                    updateAnswered.isPending || postActionLock.isSubmitting
+                  }
+                  accessibilityState={{
+                    disabled:
+                      updateAnswered.isPending || postActionLock.isSubmitting,
+                  }}
                   activeOpacity={0.8}
                 >
                   <CheckCircle2 size={normalize(12)} color="#059669" />
@@ -289,8 +302,17 @@ export default function PostDetailScreen() {
                 <TouchableOpacity
                   style={styles.authorActionButton}
                   onPress={() =>
-                    changeStatus.mutate(isRecruiting ? 'closed' : 'recruiting')
+                    postActionLock.runExclusive(() =>
+                      changeStatus.mutateAsync(
+                        isRecruiting ? 'closed' : 'recruiting',
+                      ),
+                    )
                   }
+                  disabled={changeStatus.isPending || postActionLock.isSubmitting}
+                  accessibilityState={{
+                    disabled:
+                      changeStatus.isPending || postActionLock.isSubmitting,
+                  }}
                   activeOpacity={0.8}
                 >
                   <Text style={styles.authorActionText}>
@@ -343,12 +365,22 @@ export default function PostDetailScreen() {
                 <TouchableOpacity
                   style={[
                     styles.mateButton,
-                    !isRecruiting && styles.mateButtonDisabled,
+                    (!isRecruiting || postActionLock.isSubmitting) &&
+                      styles.mateButtonDisabled,
                   ]}
                   onPress={handleJoinMate}
-                  disabled={!isRecruiting}
+                  disabled={
+                    !isRecruiting ||
+                    joinMate.isPending ||
+                    postActionLock.isSubmitting
+                  }
                   activeOpacity={0.85}
-                  accessibilityState={{ disabled: !isRecruiting }}
+                  accessibilityState={{
+                    disabled:
+                      !isRecruiting ||
+                      joinMate.isPending ||
+                      postActionLock.isSubmitting,
+                  }}
                 >
                   <Text style={styles.mateButtonText}>
                     {isRecruiting ? '참여하기' : '모집 마감'}

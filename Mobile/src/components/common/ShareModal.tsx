@@ -29,6 +29,7 @@ import {
   getDisplayErrorMessage,
   parseBackendError,
 } from '../../utils/errorHandler';
+import { useSubmitLock } from '../../hooks/useSubmitLock';
 
 const ALREADY_MEMBER_CODE = 'COLLAB_002';
 
@@ -61,10 +62,10 @@ export default function ShareModal({
   const { showAlert } = useAlert();
   const [shareLink, setShareLink] = useState('');
   const [nickname, setNickname] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [isUpdatingShare, setIsUpdatingShare] = useState(false);
   const [isShared, setIsShared] = useState(true);
   const [editors, setEditors] = useState<any[]>([]);
+  const shareStatusLock = useSubmitLock();
+  const inviteLock = useSubmitLock();
 
   const fetchShareLink = useCallback(async (signal?: AbortSignal) => {
     if (isMock) {
@@ -85,29 +86,25 @@ export default function ShareModal({
     }
   }, [isMock, planId]);
 
-  const handleToggleShare = async (newValue: boolean) => {
-    if (isUpdatingShare) return;
-
-    const previousValue = isShared;
-    setIsShared(newValue);
-    if (isMock) return;
-    setIsUpdatingShare(true);
-    try {
-      await updateShareStatus(planId, newValue);
-      Toast.show({
-        type: 'success',
-        text1: newValue ? '일정 공유를 켰어요.' : '일정을 비공개로 바꿨어요.',
-        position: 'top',
-        visibilityTime: 1500,
-      });
-    } catch (error) {
-      console.error('Failed to update share status:', error);
-      setIsShared(previousValue);
-      showAlert({ title: '오류', message: '공유 상태를 변경하지 못했어요.' });
-    } finally {
-      setIsUpdatingShare(false);
-    }
-  };
+  const handleToggleShare = (newValue: boolean) =>
+    shareStatusLock.runExclusive(async () => {
+      const previousValue = isShared;
+      setIsShared(newValue);
+      if (isMock) return;
+      try {
+        await updateShareStatus(planId, newValue);
+        Toast.show({
+          type: 'success',
+          text1: newValue ? '일정 공유를 켰어요.' : '일정을 비공개로 바꿨어요.',
+          position: 'top',
+          visibilityTime: 1500,
+        });
+      } catch (error) {
+        console.error('Failed to update share status:', error);
+        setIsShared(previousValue);
+        showAlert({ title: '오류', message: '공유 상태를 변경하지 못했어요.' });
+      }
+    });
 
   const handleCopyLink = () => {
     if (!shareLink) return;
@@ -169,13 +166,15 @@ export default function ShareModal({
   useEffect(() => {
     const controller = new AbortController();
     if (visible && planId) {
+      setShareLink('');
+      setEditors([]);
       void fetchShareLink(controller.signal);
       void fetchEditors(controller.signal);
     }
     return () => controller.abort();
   }, [visible, planId, fetchShareLink, fetchEditors]);
 
-  const handleInvite = async () => {
+  const handleInvite = () => {
     const receiverNickname = nickname.trim();
 
     const lengthError = getNicknameLengthError(receiverNickname);
@@ -184,54 +183,53 @@ export default function ShareModal({
       return;
     }
 
-    setLoading(true);
-    try {
-      if (isMock) {
-        await new Promise(resolve => setTimeout(resolve, 600));
-        setEditors(prev => [
-          ...prev,
-          { userId: String(Date.now()), nickname: receiverNickname },
-        ]);
-        showAlert({
-          title: '성공',
-          message: `${receiverNickname}님을 초대했어요.`,
-        });
-        setNickname('');
-      } else {
-        await inviteEditor(planId, receiverNickname);
-        showAlert({
-          title: '성공',
-          message: `${receiverNickname}님을 초대했어요.`,
-        });
-        setNickname('');
-        fetchEditors();
-      }
-    } catch (error) {
-      console.error('Invite failed:', error);
+    return inviteLock.runExclusive(async () => {
+      try {
+        if (isMock) {
+          await new Promise(resolve => setTimeout(resolve, 600));
+          setEditors(prev => [
+            ...prev,
+            { userId: String(Date.now()), nickname: receiverNickname },
+          ]);
+          showAlert({
+            title: '성공',
+            message: `${receiverNickname}님을 초대했어요.`,
+          });
+          setNickname('');
+        } else {
+          await inviteEditor(planId, receiverNickname);
+          showAlert({
+            title: '성공',
+            message: `${receiverNickname}님을 초대했어요.`,
+          });
+          setNickname('');
+          fetchEditors();
+        }
+      } catch (error) {
+        console.error('Invite failed:', error);
 
-      const { code } = parseBackendError(error);
-      if (code === ALREADY_MEMBER_CODE) {
-        showAlert({
-          title: '이미 참여 중',
-          message: '이미 이 일정의 편집 권한이 있는 사용자예요.',
-        });
-      } else if (code === DUPLICATE_PENDING_CODE) {
-        showAlert({
-          title: '초대 대기 중',
-          message: '이미 초대를 보낸 사용자예요. 상대방의 수락을 기다려 주세요.',
-        });
-      } else {
-        showAlert({
-          title: '오류',
-          message: getDisplayErrorMessage(
-            error,
-            '사용자를 초대하지 못했어요. 닉네임을 확인해 주세요.',
-          ),
-        });
+        const { code } = parseBackendError(error);
+        if (code === ALREADY_MEMBER_CODE) {
+          showAlert({
+            title: '이미 참여 중',
+            message: '이미 이 일정의 편집 권한이 있는 사용자예요.',
+          });
+        } else if (code === DUPLICATE_PENDING_CODE) {
+          showAlert({
+            title: '초대 대기 중',
+            message: '이미 초대를 보낸 사용자예요. 상대방의 수락을 기다려 주세요.',
+          });
+        } else {
+          showAlert({
+            title: '오류',
+            message: getDisplayErrorMessage(
+              error,
+              '사용자를 초대하지 못했어요. 닉네임을 확인해 주세요.',
+            ),
+          });
+        }
       }
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   const handleRemoveEditor = async (userId: number) => {
@@ -293,8 +291,10 @@ export default function ShareModal({
                 <Switch
                   value={isShared}
                   onValueChange={handleToggleShare}
-                  disabled={isUpdatingShare}
-                  accessibilityState={{ disabled: isUpdatingShare }}
+                  disabled={shareStatusLock.isSubmitting}
+                  accessibilityState={{
+                    disabled: shareStatusLock.isSubmitting,
+                  }}
                   trackColor={{ false: '#D1D5DB', true: COLORS.primary }}
                   thumbColor={tokens.colors.white}
                 />
@@ -332,12 +332,15 @@ export default function ShareModal({
                 autoCapitalize="none"
               />
               <TouchableOpacity
-                style={[styles.inviteButton, loading && styles.disabledButton]}
+                style={[
+                  styles.inviteButton,
+                  inviteLock.isSubmitting && styles.disabledButton,
+                ]}
                 onPress={handleInvite}
-                disabled={loading}
-                accessibilityState={{ disabled: loading }}
+                disabled={inviteLock.isSubmitting}
+                accessibilityState={{ disabled: inviteLock.isSubmitting }}
               >
-                {loading ? (
+                {inviteLock.isSubmitting ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
                   <Text style={styles.inviteButtonText}>초대</Text>

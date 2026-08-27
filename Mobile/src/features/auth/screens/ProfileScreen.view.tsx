@@ -95,6 +95,7 @@ import { tokens } from '../../../theme/tokens';
 import FeedbackModal from '../components/FeedbackModal';
 import { verifyNicknameAvailable } from '../../../api/auth';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
+import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import {
   NICKNAME_MAX_LENGTH,
   getNicknameLengthError,
@@ -350,7 +351,10 @@ interface ProfileScreenViewProps {
 
   onRenamePlan: (planId: string, newName: string) => Promise<void>;
 
-  onChangeProfileVisibility: (profilePublic: boolean) => Promise<void>;
+  onChangeProfileVisibility: (
+    profilePublic: boolean,
+  ) => Promise<void | undefined>;
+  isProfileVisibilityUpdating?: boolean;
 
   onChangeProfileImage: () => Promise<void>;
 
@@ -378,6 +382,7 @@ export default function ProfileScreenView({
   handleResign,
   onRenamePlan,
   onChangeProfileVisibility,
+  isProfileVisibilityUpdating = false,
   onChangeProfileImage,
   onDeleteProfileImage,
   isProfileImageUpdating,
@@ -477,6 +482,8 @@ export default function ProfileScreenView({
   }, [user]);
 
   const [isProfilePublic, setIsProfilePublic] = useState(user.profilePublic);
+  const profileVisibilityLock = useSubmitLock();
+  const profileSaveLock = useSubmitLock();
   useEffect(() => {
     setIsProfilePublic(user.profilePublic);
   }, [user.profilePublic]);
@@ -761,19 +768,20 @@ export default function ProfileScreenView({
     resolveAvatarUrl(user.profileImageUrl, null, 200) ??
     (user.email ? gravatarUrl(user.email, 200) : null);
 
-  const handleToggleProfilePublic = async (next: boolean) => {
-    setIsProfilePublic(next);
-    try {
-      await onChangeProfileVisibility(next);
-    } catch (e) {
-      setIsProfilePublic(!next);
-      Toast.show({
-        type: 'error',
-        text1: '프로필 공개 설정을 변경하지 못했어요.',
-        position: 'top',
-      });
-    }
-  };
+  const handleToggleProfilePublic = (next: boolean) =>
+    profileVisibilityLock.runExclusive(async () => {
+      setIsProfilePublic(next);
+      try {
+        await onChangeProfileVisibility(next);
+      } catch (e) {
+        setIsProfilePublic(!next);
+        Toast.show({
+          type: 'error',
+          text1: '프로필 공개 설정을 변경하지 못했어요.',
+          position: 'top',
+        });
+      }
+    });
 
   const handleProfileImagePress = () => {
     if (isProfileImageUpdating) return;
@@ -851,51 +859,52 @@ export default function ProfileScreenView({
     }
   };
 
-  const handleSaveProfile = async () => {
-    try {
-      const nickname = tempNickname.trim();
-      const nicknameError = getNicknameLengthError(nickname);
-      if (nicknameError) {
-        Toast.show({ type: 'error', text1: nicknameError, position: 'top' });
-        return;
-      }
+  const handleSaveProfile = () =>
+    profileSaveLock.runExclusive(async () => {
+      try {
+        const nickname = tempNickname.trim();
+        const nicknameError = getNicknameLengthError(nickname);
+        if (nicknameError) {
+          Toast.show({ type: 'error', text1: nicknameError, position: 'top' });
+          return;
+        }
 
-      if (tempBirthdate && tempBirthdate >= toBirthdateString(new Date())) {
-        Toast.show({
-          type: 'error',
-          text1: '생년월일을 다시 확인해 주세요.',
-          position: 'top',
-        });
-        return;
-      }
+        if (tempBirthdate && tempBirthdate >= toBirthdateString(new Date())) {
+          Toast.show({
+            type: 'error',
+            text1: '생년월일을 다시 확인해 주세요.',
+            position: 'top',
+          });
+          return;
+        }
 
-      let hasChange = false;
-      if (nickname !== user.name) {
-        await handleUpdateNickname(nickname);
-        hasChange = true;
-      }
-      if (tempBirthdate && tempBirthdate !== user.birthdate) {
-        await handleUpdateBirthdate(tempBirthdate);
-        hasChange = true;
-      }
-      if (tempGender !== user.gender) {
-        await handleUpdateGender(tempGender);
-        hasChange = true;
-      }
+        let hasChange = false;
+        if (nickname !== user.name) {
+          await handleUpdateNickname(nickname);
+          hasChange = true;
+        }
+        if (tempBirthdate && tempBirthdate !== user.birthdate) {
+          await handleUpdateBirthdate(tempBirthdate);
+          hasChange = true;
+        }
+        if (tempGender !== user.gender) {
+          await handleUpdateGender(tempGender);
+          hasChange = true;
+        }
 
-      if (hasChange) {
-        Toast.show({
-          type: 'success',
-          text1: '프로필 정보를 저장했어요.',
-          position: 'top',
-        });
-      }
-      setEditModalVisible(false);
-    } catch (err) {
+        if (hasChange) {
+          Toast.show({
+            type: 'success',
+            text1: '프로필 정보를 저장했어요.',
+            position: 'top',
+          });
+        }
+        setEditModalVisible(false);
+      } catch (err) {
 
-      if (__DEV__) console.log('Failed to save profile modifications', err);
-    }
-  };
+        if (__DEV__) console.log('Failed to save profile modifications', err);
+      }
+    });
 
   const handleBackPress = () => {
     if (navigation.canGoBack()) {
@@ -1515,6 +1524,15 @@ export default function ProfileScreenView({
                   <Switch
                     value={isProfilePublic}
                     onValueChange={handleToggleProfilePublic}
+                    disabled={
+                      isProfileVisibilityUpdating ||
+                      profileVisibilityLock.isSubmitting
+                    }
+                    accessibilityState={{
+                      disabled:
+                        isProfileVisibilityUpdating ||
+                        profileVisibilityLock.isSubmitting,
+                    }}
                     trackColor={{ false: tokens.colors.textTertiary, true: COLORS.primary }}
                     thumbColor={tokens.colors.white}
                   />
@@ -1570,6 +1588,8 @@ export default function ProfileScreenView({
               <TouchableOpacity 
                 style={styles.saveButton}
                 onPress={handleSaveProfile}
+                disabled={profileSaveLock.isSubmitting}
+                accessibilityState={{ disabled: profileSaveLock.isSubmitting }}
                 activeOpacity={0.8}
               >
                 <Text style={styles.saveButtonText}>변경사항 저장하기</Text>

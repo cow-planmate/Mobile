@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, TouchableOpacity } from 'react-native';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import Minus from 'lucide-react-native/dist/esm/icons/minus';
@@ -80,6 +80,13 @@ export default function PaxModal({
 }: PaxModalProps) {
   const [adults, setAdults] = useState(initialAdults);
   const [children, setChildren] = useState(initialChildren);
+
+  useEffect(() => {
+    if (visible) {
+      setAdults(initialAdults);
+      setChildren(initialChildren);
+    }
+  }, [visible, initialAdults, initialChildren]);
 
   const handleConfirm = () => {
     onConfirm({ adults, children });

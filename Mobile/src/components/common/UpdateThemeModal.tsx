@@ -24,6 +24,7 @@ import {
   USER_PROFILE_QUERY_KEY,
   UserProfile,
 } from '../../hooks/useUserProfile';
+import { useSubmitLock } from '../../hooks/useSubmitLock';
 
 const CATEGORY_ICONS: Record<number, React.ReactNode> = {
   0: <Map size={16} color={tokens.colors.textSecondary} strokeWidth={1.5} />,
@@ -53,7 +54,7 @@ export default function UpdateThemeModal({
   const [selectedThemes, setSelectedThemes] = useState<ThemeSelectorResult>({});
   const [isSelectorVisible, setSelectorVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const { isSubmitting: saving, runExclusive } = useSubmitLock();
 
   const fetchUserThemes = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -101,25 +102,22 @@ export default function UpdateThemeModal({
     setSelectorVisible(false);
   };
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
+  const handleSave = () =>
+    runExclusive(async () => {
+      try {
+        const themeIdsByCategoryId: Record<number, number[]> = {};
+        for (const catId of [0, 1, 2]) {
+          themeIdsByCategoryId[catId] =
+            selectedThemes[catId]?.map(t => t.preferredThemeId) || [];
+        }
+        await changePreferredThemes(themeIdsByCategoryId);
 
-      const themeIdsByCategoryId: Record<number, number[]> = {};
-      for (const catId of [0, 1, 2]) {
-        themeIdsByCategoryId[catId] =
-          selectedThemes[catId]?.map(t => t.preferredThemeId) || [];
+        await onConfirm();
+      } catch (error) {
+        console.error('Failed to save themes:', error);
+        showAlert({ title: '오류', message: '선호 테마를 저장하지 못했어요.' });
       }
-      await changePreferredThemes(themeIdsByCategoryId);
-
-      await onConfirm();
-    } catch (error) {
-      console.error('Failed to save themes:', error);
-      showAlert({ title: '오류', message: '선호 테마를 저장하지 못했어요.' });
-    } finally {
-      setSaving(false);
-    }
-  };
+    });
 
   const hasSelections = Object.values(selectedThemes).some(
     arr => arr.length > 0,

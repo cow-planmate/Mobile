@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Modal,
   View,
@@ -28,8 +28,8 @@ interface NotificationModalProps {
   visible: boolean;
   onClose: () => void;
   invitations: Invitation[];
-  onAccept: (requestId: number) => void;
-  onReject: (requestId: number) => void;
+  onAccept: (requestId: number) => void | Promise<void>;
+  onReject: (requestId: number) => void | Promise<void>;
 }
 
 const COLORS = theme.colors;
@@ -47,6 +47,30 @@ const NotificationModal = ({
   onAccept,
   onReject,
 }: NotificationModalProps) => {
+  const processingRef = useRef(new Set<number>());
+  const [processingIds, setProcessingIds] = useState<Set<number>>(new Set());
+
+  const runAction = async (
+    requestId: number,
+    action: (id: number) => void | Promise<void>,
+  ) => {
+    if (processingRef.current.has(requestId)) return;
+
+    processingRef.current.add(requestId);
+    setProcessingIds(prev => new Set(prev).add(requestId));
+    try {
+      const result = action(requestId);
+      if (result) await result;
+    } finally {
+      processingRef.current.delete(requestId);
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(requestId);
+        return next;
+      });
+    }
+  };
+
   return (
     <Modal
       visible={visible}
@@ -91,16 +115,24 @@ const NotificationModal = ({
                   <View style={styles.buttonContainer}>
                     <TouchableOpacity
                       style={[styles.button, styles.rejectButton]}
-                      onPress={() => onReject(invite.requestId)}
+                      onPress={() => runAction(invite.requestId, onReject)}
+                      disabled={processingIds.has(invite.requestId)}
                       accessibilityRole="button"
+                      accessibilityState={{
+                        disabled: processingIds.has(invite.requestId),
+                      }}
                       accessibilityLabel={`${invite.senderNickname}님의 요청 거절`}
                     >
                       <Text style={styles.rejectButtonText}>거절</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.button, styles.acceptButton]}
-                      onPress={() => onAccept(invite.requestId)}
+                      onPress={() => runAction(invite.requestId, onAccept)}
+                      disabled={processingIds.has(invite.requestId)}
                       accessibilityRole="button"
+                      accessibilityState={{
+                        disabled: processingIds.has(invite.requestId),
+                      }}
                       accessibilityLabel={`${invite.senderNickname}님의 요청 수락`}
                     >
                       <Text style={styles.acceptButtonText}>수락</Text>

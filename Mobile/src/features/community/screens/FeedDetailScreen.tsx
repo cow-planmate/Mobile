@@ -61,24 +61,26 @@ export default function FeedDetailScreen() {
   const days = useMemo(() => post?.itinerary?.days ?? [], [post]);
   const isForkable = canForkItinerary(post?.itinerary);
   const heroImage = post?.image;
+  const reactionLock = useSubmitLock();
 
-  const handleReact = async (type: ReactionType) => {
-    if (!isLoggedIn) {
-      showAlert({ title: '로그인 필요', message: '로그인 후 이용할 수 있어요.' });
-      return;
-    }
-    try {
-      await react.mutateAsync(type);
-    } catch (error) {
-      showAlert({
-        title: '반응 등록 실패',
-        message: getBackendErrorMessage(error),
-        type: 'error',
-      });
-    }
-  };
+  const handleReact = (type: ReactionType) =>
+    reactionLock.runExclusive(async () => {
+      if (!isLoggedIn) {
+        showAlert({ title: '로그인 필요', message: '로그인 후 이용할 수 있어요.' });
+        return;
+      }
+      try {
+        await react.mutateAsync(type);
+      } catch (error) {
+        showAlert({
+          title: '반응 등록 실패',
+          message: getBackendErrorMessage(error),
+          type: 'error',
+        });
+      }
+    });
 
-  const { runExclusive } = useSubmitLock();
+  const forkLock = useSubmitLock();
 
   const handleForkPress = () => {
     if (!isLoggedIn) {
@@ -92,7 +94,7 @@ export default function FeedDetailScreen() {
   };
 
   const handleForkConfirm = ({ startDate }: { startDate: Date }) =>
-    runExclusive(async () => {
+    forkLock.runExclusive(async () => {
       setDateModalVisible(false);
       if (!post?.itinerary) return;
 
@@ -355,6 +357,10 @@ export default function FeedDetailScreen() {
             ]}
             onPress={() => handleReact('like')}
             activeOpacity={0.85}
+            disabled={react.isPending || reactionLock.isSubmitting}
+            accessibilityState={{
+              disabled: react.isPending || reactionLock.isSubmitting,
+            }}
           >
             <ThumbsUp
               size={normalize(14)}
@@ -380,6 +386,10 @@ export default function FeedDetailScreen() {
             ]}
             onPress={() => handleReact('dislike')}
             activeOpacity={0.85}
+            disabled={react.isPending || reactionLock.isSubmitting}
+            accessibilityState={{
+              disabled: react.isPending || reactionLock.isSubmitting,
+            }}
           >
             <ThumbsDown
               size={normalize(14)}
