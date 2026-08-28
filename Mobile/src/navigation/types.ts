@@ -60,7 +60,6 @@ export type ScheduleStackParamList = {
     endDate?: string;
   };
   Profile: undefined;
-  ThemeSettings: undefined;
   ChangePassword: undefined;
 };
 
@@ -82,7 +81,6 @@ export type CommunityStackParamList = {
 
 export type ProfileStackParamList = {
   ProfileMain: undefined;
-  ThemeSettings: undefined;
   ChangePassword: undefined;
 };
 

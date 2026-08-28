@@ -6,7 +6,6 @@ import ItineraryEditorScreen from '../features/itinerary/screens/ItineraryEditor
 import ItineraryViewScreen from '../features/itinerary/screens/ItineraryViewScreen';
 import TravelFeedScreen from '../features/itinerary/screens/TravelFeedScreen';
 import ProfileScreen from '../features/auth/screens/ProfileScreen';
-import ThemeSettingsScreen from '../features/auth/screens/ThemeSettingsScreen';
 import ChangePasswordScreen from '../features/auth/screens/ChangePasswordScreen';
 import {
   CommunityScreen,
@@ -187,7 +186,6 @@ export default function AppStack() {
     >
       <Stack.Screen name="MainTabs" component={MainTabs} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
-      <Stack.Screen name="ThemeSettings" component={ThemeSettingsScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
       <Stack.Screen
         name="ItineraryEditor"
