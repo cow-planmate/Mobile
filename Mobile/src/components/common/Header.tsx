@@ -18,6 +18,7 @@ import { normalize } from '../../utils/normalize';
 import gravatarUrl from '../../utils/gravatarUrl';
 import FallbackImage from './FallbackImage';
 import { tokens } from '../../theme/tokens';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface HeaderProps {
   nickname?: string;
@@ -34,6 +35,7 @@ const Header: React.FC<HeaderProps> = ({
   onNotificationPress,
   onNavigateProfile,
 }) => {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const logout = useAuthStore((state) => state.logout);
   const { disconnect } = useWebSocket();
@@ -71,7 +73,7 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <View style={styles.topBar}>
+    <View style={[styles.topBar, { paddingTop: normalize(4) + insets.top }]}>
       <Text style={styles.logo}>planMate</Text>
       <View style={styles.topIcons}>
         <TouchableOpacity
