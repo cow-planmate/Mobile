@@ -26,7 +26,6 @@ function App() {
   }, [initializeAuth]);
 
   React.useEffect(() => {
-
     const handleAppStateChange = (status: AppStateStatus) => {
       focusManager.setFocused(status === 'active');
     };
@@ -38,7 +37,6 @@ function App() {
   }, []);
 
   if (SHOW_STORYBOOK) {
-
     const StorybookUIRoot = require('./.rnstorybook').default;
     return <StorybookUIRoot />;
   }

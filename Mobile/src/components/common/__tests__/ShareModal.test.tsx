@@ -198,4 +198,78 @@ describe('ShareModal', () => {
     act(() => tree!.unmount());
     expect(mockUpdateShareStatus).toHaveBeenCalledTimes(1);
   });
+
+  it('이전 일정의 초대 후속 조회가 새 일정 편집자를 덮지 않는다', async () => {
+    let resolveInvite: (() => void) | undefined;
+    mockInviteEditor.mockImplementationOnce(
+      () =>
+        new Promise<void>(resolve => {
+          resolveInvite = resolve;
+        }),
+    );
+    mockGetShareUrl.mockImplementation(planId =>
+      Promise.resolve({
+        shareUrl: `https://example.com/${planId}`,
+        isShared: true,
+      }),
+    );
+    let firstPlanEditorFetches = 0;
+    mockGetEditors.mockImplementation(planId => {
+      if (planId === 'plan-2') {
+        return Promise.resolve([
+          { userId: 'user-2', nickname: '새 일정 편집자' },
+        ]);
+      }
+      firstPlanEditorFetches += 1;
+      return Promise.resolve(
+        firstPlanEditorFetches === 1
+          ? []
+          : [{ userId: 'user-1', nickname: '이전 일정 편집자' }],
+      );
+    });
+
+    let tree: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderer.create(
+        <ShareModal visible onClose={jest.fn()} planId="plan-1" isOwner />,
+      );
+      await Promise.resolve();
+    });
+    act(() => {
+      tree!.root
+        .findByProps({ placeholder: '친구 닉네임 입력' })
+        .props.onChangeText('친구');
+    });
+    const inviteButton = tree!.root
+      .findAllByType(require('react-native').TouchableOpacity)
+      .find(node => node.findAllByProps({ children: '초대' }).length > 0)!;
+    let inviteRequest: Promise<unknown>;
+    act(() => {
+      inviteRequest = inviteButton.props.onPress();
+    });
+
+    await act(async () => {
+      tree!.update(
+        <ShareModal visible onClose={jest.fn()} planId="plan-2" isOwner />,
+      );
+      await Promise.resolve();
+    });
+    expect(
+      tree!.root.findAllByProps({ children: '새 일정 편집자' }).length,
+    ).toBeGreaterThan(0);
+
+    await act(async () => {
+      resolveInvite?.();
+      await inviteRequest!;
+      await Promise.resolve();
+    });
+
+    expect(
+      tree!.root.findAllByProps({ children: '이전 일정 편집자' }),
+    ).toHaveLength(0);
+    expect(
+      tree!.root.findAllByProps({ children: '새 일정 편집자' }).length,
+    ).toBeGreaterThan(0);
+    act(() => tree!.unmount());
+  });
 });

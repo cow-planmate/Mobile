@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import {
   Modal,
   View,
@@ -66,6 +66,8 @@ export default function ShareModal({
   const [editors, setEditors] = useState<any[]>([]);
   const shareStatusLock = useSubmitLock();
   const inviteLock = useSubmitLock();
+  const currentPlanIdRef = useRef(planId);
+  currentPlanIdRef.current = planId;
 
   const fetchShareLink = useCallback(async (signal?: AbortSignal) => {
     if (isMock) {
@@ -88,11 +90,13 @@ export default function ShareModal({
 
   const handleToggleShare = (newValue: boolean) =>
     shareStatusLock.runExclusive(async () => {
+      const targetPlanId = planId;
       const previousValue = isShared;
       setIsShared(newValue);
       if (isMock) return;
       try {
-        await updateShareStatus(planId, newValue);
+        await updateShareStatus(targetPlanId, newValue);
+        if (currentPlanIdRef.current !== targetPlanId) return;
         Toast.show({
           type: 'success',
           text1: newValue ? '일정 공유를 켰어요.' : '일정을 비공개로 바꿨어요.',
@@ -100,6 +104,7 @@ export default function ShareModal({
           visibilityTime: 1500,
         });
       } catch (error) {
+        if (currentPlanIdRef.current !== targetPlanId) return;
         console.error('Failed to update share status:', error);
         setIsShared(previousValue);
         showAlert({ title: '오류', message: '공유 상태를 변경하지 못했어요.' });
@@ -183,10 +188,12 @@ export default function ShareModal({
       return;
     }
 
+    const targetPlanId = planId;
     return inviteLock.runExclusive(async () => {
       try {
         if (isMock) {
           await new Promise(resolve => setTimeout(resolve, 600));
+          if (currentPlanIdRef.current !== targetPlanId) return;
           setEditors(prev => [
             ...prev,
             { userId: String(Date.now()), nickname: receiverNickname },
@@ -197,7 +204,8 @@ export default function ShareModal({
           });
           setNickname('');
         } else {
-          await inviteEditor(planId, receiverNickname);
+          await inviteEditor(targetPlanId, receiverNickname);
+          if (currentPlanIdRef.current !== targetPlanId) return;
           showAlert({
             title: '성공',
             message: `${receiverNickname}님을 초대했어요.`,
@@ -206,6 +214,7 @@ export default function ShareModal({
           fetchEditors();
         }
       } catch (error) {
+        if (currentPlanIdRef.current !== targetPlanId) return;
         console.error('Invite failed:', error);
 
         const { code } = parseBackendError(error);
