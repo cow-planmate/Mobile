@@ -28,30 +28,35 @@ const HERO_ITEMS = [
     image: require('../../../assets/images/home/seoul-gyeongbokgung.jpg'),
     region: '서울',
     place: '경복궁',
+    roman: 'Gyeongbokgung',
   },
   {
     id: '2',
     image: require('../../../assets/images/home/busan-haeundae.jpg'),
     region: '부산',
     place: '해운대',
+    roman: 'Haeundae',
   },
   {
     id: '3',
     image: require('../../../assets/images/home/jeju-seongsan-ilchulbong.jpg'),
     region: '제주',
     place: '성산일출봉',
+    roman: 'Seongsan Ilchulbong',
   },
   {
     id: '4',
     image: require('../../../assets/images/home/gyeongju-cheomseongdae.jpg'),
     region: '경주',
     place: '첨성대',
+    roman: 'Cheomseongdae',
   },
   {
     id: '5',
     image: require('../../../assets/images/home/jeonju-hanok-village.jpg'),
     region: '전주',
     place: '한옥마을',
+    roman: 'Hanok Village',
   },
 ];
 
@@ -208,8 +213,8 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
 }: HomeScreenViewProps) => {
   const flatListRef = useRef<FlatList>(null);
   const screenWidth = Dimensions.get('window').width;
-  const cardWidth = normalize(296);
-  const cardGap = normalize(12);
+  const cardWidth = screenWidth - normalize(16) * 2;
+  const cardGap = normalize(6);
   const step = cardWidth + cardGap;
   const sidePadding = (screenWidth - cardWidth) / 2;
   const scrollX = useRef(new Animated.Value(INITIAL_INDEX * step)).current;
@@ -341,13 +346,13 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
                     />
                   </View>
                   <LinearGradient
-                    colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.1)', 'rgba(0, 0, 0, 0.72)']}
-                    locations={[0, 0.45, 1]}
+                    colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.4)']}
+                    locations={[0.62, 1]}
                     style={styles.heroOverlay}
                   />
                   <View style={styles.heroInfo}>
-                    <Text style={styles.regionLabel}>{item.region}</Text>
                     <Text style={styles.placeTitle}>{item.place}</Text>
+                    <Text style={styles.placeRoman}>{item.roman}</Text>
                   </View>
                 </Animated.View>
               );
