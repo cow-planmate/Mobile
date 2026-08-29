@@ -37,6 +37,40 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(15),
     paddingBottom: normalize(11),
   },
+  heroEmpty: {
+    marginHorizontal: normalize(16),
+    aspectRatio: 16 / 9,
+    borderRadius: normalize(10),
+    backgroundColor: '#F5F6F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: normalize(24),
+  },
+  heroEmptyTitle: {
+    fontSize: normalize(13.5),
+    fontFamily: tokens.fontFamily.semibold,
+    color: '#4E5561',
+    textAlign: 'center',
+  },
+  heroEmptyDesc: {
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.regular,
+    color: '#9AA0AC',
+    textAlign: 'center',
+    lineHeight: normalize(18),
+    marginTop: normalize(5),
+  },
+  relationLabel: {
+    marginTop: normalize(9),
+    paddingHorizontal: normalize(16),
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: '#6E7481',
+  },
+  relationRegion: {
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.text,
+  },
   heroImageWrapper: {
     ...StyleSheet.absoluteFillObject,
     overflow: 'hidden',
@@ -77,7 +111,6 @@ export const styles = StyleSheet.create({
     height: normalize(3),
   },
   progressTrack: {
-    width: normalize(50),
     height: normalize(3),
     backgroundColor: tokens.colors.border,
     borderRadius: 2,
@@ -85,7 +118,6 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressThumb: {
-    width: normalize(10),
     height: '100%',
     backgroundColor: tokens.colors.primary,
     borderRadius: 2,

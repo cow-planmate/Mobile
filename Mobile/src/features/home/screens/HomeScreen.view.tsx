@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import CalendarIcon from 'lucide-react-native/dist/esm/icons/calendar';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import UserIcon from 'lucide-react-native/dist/esm/icons/user';
@@ -11,8 +11,6 @@ import {
   Dimensions,
   Animated,
   FlatList,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
@@ -21,54 +19,8 @@ const AnimatedFastImage = Animated.createAnimatedComponent(FastImage);
 import { CalendarModal, Header, Invitation, NotificationModal, PaxModal, SearchLocationModal } from '../../../components/common';
 import { normalize } from '../../../utils/normalize';
 import { styles } from './HomeScreen.styles';
+import { getRegionSpots } from '../constants/regionSpots';
 
-const HERO_ITEMS = [
-  {
-    id: '1',
-    image: require('../../../assets/images/home/seoul-gyeongbokgung.jpg'),
-    region: '서울',
-    place: '경복궁',
-    roman: 'Gyeongbokgung',
-  },
-  {
-    id: '2',
-    image: require('../../../assets/images/home/busan-haeundae.jpg'),
-    region: '부산',
-    place: '해운대',
-    roman: 'Haeundae',
-  },
-  {
-    id: '3',
-    image: require('../../../assets/images/home/jeju-seongsan-ilchulbong.jpg'),
-    region: '제주',
-    place: '성산일출봉',
-    roman: 'Seongsan Ilchulbong',
-  },
-  {
-    id: '4',
-    image: require('../../../assets/images/home/gyeongju-cheomseongdae.jpg'),
-    region: '경주',
-    place: '첨성대',
-    roman: 'Cheomseongdae',
-  },
-  {
-    id: '5',
-    image: require('../../../assets/images/home/jeonju-hanok-village.jpg'),
-    region: '전주',
-    place: '한옥마을',
-    roman: 'Hanok Village',
-  },
-];
-
-const LOOP_SETS = 20;
-const INFINITE_HERO_ITEMS = Array.from({ length: LOOP_SETS }).flatMap((_, setIndex) =>
-  HERO_ITEMS.map(item => ({
-    ...item,
-    uniqueId: `${item.id}-${setIndex}`,
-  }))
-);
-const INITIAL_LOOP_SET = Math.floor(LOOP_SETS / 2);
-const INITIAL_INDEX = INITIAL_LOOP_SET * HERO_ITEMS.length;
 
 type InputRowProps = {
   stepNumber: number;
@@ -217,34 +169,30 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   const cardGap = normalize(6);
   const step = cardWidth + cardGap;
   const sidePadding = (screenWidth - cardWidth) / 2;
-  const scrollX = useRef(new Animated.Value(INITIAL_INDEX * step)).current;
+  const scrollX = useRef(new Animated.Value(0)).current;
 
-  const thumbTranslateX = scrollX.interpolate({
-    inputRange: INFINITE_HERO_ITEMS.map((_, i) => i * step),
-    outputRange: INFINITE_HERO_ITEMS.map(
-      (_, i) => ((i % HERO_ITEMS.length) / (HERO_ITEMS.length - 1)) * normalize(40)
-    ),
-    extrapolate: 'clamp',
-  });
+  const spots = useMemo(() => getRegionSpots(destination), [destination]);
+  const spotCount = spots.length;
 
-  const handleMomentumScrollEnd = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const offsetX = e.nativeEvent.contentOffset.x;
-      const currentIndex = Math.round(offsetX / step);
-      const minThreshold = HERO_ITEMS.length * 2;
-      const maxThreshold = HERO_ITEMS.length * (LOOP_SETS - 2);
+  // 진행바는 사진 개수에 맞춰 썸 너비와 이동 거리가 달라진다.
+  const trackWidth = normalize(50);
+  const thumbWidth = spotCount > 1 ? trackWidth / spotCount : trackWidth;
+  const thumbRange = trackWidth - thumbWidth;
 
-      if (currentIndex < minThreshold || currentIndex > maxThreshold) {
-        const itemIndex = currentIndex % HERO_ITEMS.length;
-        const resetIndex = INITIAL_INDEX + itemIndex;
-        flatListRef.current?.scrollToOffset({
-          offset: resetIndex * step,
-          animated: false,
-        });
-      }
-    },
-    [step]
-  );
+  const thumbTranslateX = useMemo(() => {
+    if (spotCount < 2) return new Animated.Value(0);
+    return scrollX.interpolate({
+      inputRange: spots.map((_, i) => i * step),
+      outputRange: spots.map((_, i) => (i / (spotCount - 1)) * thumbRange),
+      extrapolate: 'clamp',
+    });
+  }, [scrollX, spots, spotCount, step, thumbRange]);
+
+  // 여행지가 바뀌면 캐러셀을 첫 장으로 되돌린다.
+  useEffect(() => {
+    scrollX.setValue(0);
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [destination, scrollX]);
 
   return (
     <View style={styles.container}>
@@ -269,105 +217,128 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
       >
 
         <View style={styles.heroCarouselSection}>
-          <Animated.FlatList
-            ref={flatListRef}
-            data={INFINITE_HERO_ITEMS}
-            keyExtractor={item => item.uniqueId}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={step}
-            decelerationRate="fast"
-            contentContainerStyle={{ paddingHorizontal: sidePadding }}
-            initialScrollIndex={INITIAL_INDEX}
-            getItemLayout={(_, index) => ({
-              length: step,
-              offset: step * index,
-              index,
-            })}
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-              { useNativeDriver: true }
-            )}
-            onMomentumScrollEnd={handleMomentumScrollEnd}
-            scrollEventThrottle={16}
-            renderItem={({ item, index }) => {
-              const inputRange = [
-                (index - 1) * step,
-                index * step,
-                (index + 1) * step,
-              ];
+          {spotCount === 0 ? (
+            <View style={styles.heroEmpty}>
+              <Text style={styles.heroEmptyTitle}>
+                {destination ? `${destination}의 명소 사진을 준비하고 있어요` : '여행지를 고르면'}
+              </Text>
+              {!destination && (
+                <Text style={styles.heroEmptyDesc}>
+                  그 지역의 대표 명소를 사진으로 보여드려요
+                </Text>
+              )}
+            </View>
+          ) : (
+            <>
+              <Animated.FlatList
+                ref={flatListRef}
+                data={spots}
+                keyExtractor={item => item.place}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                snapToInterval={step}
+                decelerationRate="fast"
+                contentContainerStyle={{ paddingHorizontal: sidePadding }}
+                getItemLayout={(_, index) => ({
+                  length: step,
+                  offset: step * index,
+                  index,
+                })}
+                onScroll={Animated.event(
+                  [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                  { useNativeDriver: true }
+                )}
+                scrollEventThrottle={16}
+                renderItem={({ item, index }) => {
+                  const inputRange = [
+                    (index - 1) * step,
+                    index * step,
+                    (index + 1) * step,
+                  ];
 
-              const scale = scrollX.interpolate({
-                inputRange,
-                outputRange: [0.96, 1, 0.96],
-                extrapolate: 'clamp',
-              });
+                  const scale = scrollX.interpolate({
+                    inputRange,
+                    outputRange: [0.96, 1, 0.96],
+                    extrapolate: 'clamp',
+                  });
 
-              const cardTranslateX = scrollX.interpolate({
-                inputRange,
-                outputRange: [normalize(6), 0, -normalize(6)],
-                extrapolate: 'clamp',
-              });
+                  const cardTranslateX = scrollX.interpolate({
+                    inputRange,
+                    outputRange: [normalize(6), 0, -normalize(6)],
+                    extrapolate: 'clamp',
+                  });
 
-              const opacity = scrollX.interpolate({
-                inputRange,
-                outputRange: [0.55, 1, 0.55],
-                extrapolate: 'clamp',
-              });
+                  const opacity = scrollX.interpolate({
+                    inputRange,
+                    outputRange: [0.55, 1, 0.55],
+                    extrapolate: 'clamp',
+                  });
 
-              const imageTranslateX = scrollX.interpolate({
-                inputRange,
-                outputRange: [normalize(12), 0, -normalize(12)],
-                extrapolate: 'clamp',
-              });
+                  const imageTranslateX = scrollX.interpolate({
+                    inputRange,
+                    outputRange: [normalize(12), 0, -normalize(12)],
+                    extrapolate: 'clamp',
+                  });
 
-              return (
-                <Animated.View
-                  style={[
-                    styles.heroCard,
-                    {
-                      width: cardWidth,
-                      marginRight:
-                        index === INFINITE_HERO_ITEMS.length - 1 ? 0 : cardGap,
-                      transform: [{ translateX: cardTranslateX }, { scale }],
-                      opacity,
-                    },
-                  ]}
-                >
-                  <View style={styles.heroImageWrapper}>
-                    <AnimatedFastImage
-                      source={item.image}
+                  return (
+                    <Animated.View
                       style={[
-                        styles.heroImage,
-                        { transform: [{ translateX: imageTranslateX }] },
+                        styles.heroCard,
+                        {
+                          width: cardWidth,
+                          marginRight: index === spotCount - 1 ? 0 : cardGap,
+                          transform: [{ translateX: cardTranslateX }, { scale }],
+                          opacity,
+                        },
                       ]}
-                      resizeMode={FastImage.resizeMode.cover}
-                      accessible={false}
+                    >
+                      <View style={styles.heroImageWrapper}>
+                        <AnimatedFastImage
+                          source={item.image}
+                          style={[
+                            styles.heroImage,
+                            { transform: [{ translateX: imageTranslateX }] },
+                          ]}
+                          resizeMode={FastImage.resizeMode.cover}
+                          accessible={false}
+                        />
+                      </View>
+                      <LinearGradient
+                        colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.4)']}
+                        locations={[0.62, 1]}
+                        style={styles.heroOverlay}
+                      />
+                      <View style={styles.heroInfo}>
+                        <Text style={styles.placeTitle}>{item.place}</Text>
+                        <Text style={styles.placeRoman}>{item.roman}</Text>
+                      </View>
+                    </Animated.View>
+                  );
+                }}
+              />
+
+              <Text style={styles.relationLabel}>
+                <Text style={styles.relationRegion}>{destination}</Text>
+                {`의 대표 명소 ${spotCount}곳`}
+              </Text>
+
+              {spotCount > 1 && (
+                <View style={styles.progressBarContainer}>
+                  <View style={[styles.progressTrack, { width: trackWidth }]}>
+                    <Animated.View
+                      style={[
+                        styles.progressThumb,
+                        {
+                          width: thumbWidth,
+                          transform: [{ translateX: thumbTranslateX }],
+                        },
+                      ]}
                     />
                   </View>
-                  <LinearGradient
-                    colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.4)']}
-                    locations={[0.62, 1]}
-                    style={styles.heroOverlay}
-                  />
-                  <View style={styles.heroInfo}>
-                    <Text style={styles.placeTitle}>{item.place}</Text>
-                    <Text style={styles.placeRoman}>{item.roman}</Text>
-                  </View>
-                </Animated.View>
-              );
-            }}
-          />
-          <View style={styles.progressBarContainer}>
-            <View style={styles.progressTrack}>
-              <Animated.View
-                style={[
-                  styles.progressThumb,
-                  { transform: [{ translateX: thumbTranslateX }] },
-                ]}
-              />
-            </View>
-          </View>
+                </View>
+              )}
+            </>
+          )}
         </View>
 
         <View style={styles.actionContainer}>
