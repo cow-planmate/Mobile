@@ -464,6 +464,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         initialStartDate={startDate ?? undefined}
         initialEndDate={endDate ?? undefined}
         onDone={onDoneCalendar}
+        applyOn="select"
       />
       <PaxModal
         visible={isPaxModalVisible}

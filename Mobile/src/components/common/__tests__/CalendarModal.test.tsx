@@ -15,11 +15,20 @@ const press = (tree: renderer.ReactTestRenderer, label: string) =>
     tree.root.findByProps({ accessibilityLabel: label }).props.onPress();
   });
 
-const mount = (onConfirm: jest.Mock, onClose = jest.fn()) => {
+const mount = (
+  onConfirm: jest.Mock,
+  onClose = jest.fn(),
+  applyOn: 'select' | 'done' = 'select',
+) => {
   let tree!: renderer.ReactTestRenderer;
   act(() => {
     tree = renderer.create(
-      <CalendarModal visible onClose={onClose} onConfirm={onConfirm} />,
+      <CalendarModal
+        visible
+        onClose={onClose}
+        onConfirm={onConfirm}
+        applyOn={applyOn}
+      />,
     );
   });
   return tree;
@@ -82,6 +91,48 @@ describe('CalendarModal', () => {
     ).toBeGreaterThan(0);
 
     act(() => tree.unmount());
+  });
+
+  describe("applyOn='done' (기본값)", () => {
+    it('끝 날짜를 골라도 완료를 누르기 전에는 반영하지 않는다', () => {
+      const onConfirm = jest.fn();
+      let tree!: renderer.ReactTestRenderer;
+      act(() => {
+        tree = renderer.create(
+          <CalendarModal
+            visible
+            onClose={jest.fn()}
+            onConfirm={onConfirm}
+          />,
+        );
+      });
+
+      press(tree, dayLabel(2026, 8, 12));
+      press(tree, dayLabel(2026, 8, 14));
+      expect(onConfirm).not.toHaveBeenCalled();
+
+      press(tree, '선택 완료');
+      expect(onConfirm).toHaveBeenCalledTimes(1);
+      const { startDate, endDate } = onConfirm.mock.calls[0][0];
+      expect(startDate.getDate()).toBe(12);
+      expect(endDate.getDate()).toBe(14);
+
+      act(() => tree.unmount());
+    });
+
+    it('배경을 눌러 닫으면 아무것도 반영하지 않는다', () => {
+      const onConfirm = jest.fn();
+      const onClose = jest.fn();
+      const tree = mount(onConfirm, onClose, 'done');
+
+      press(tree, dayLabel(2026, 8, 12));
+      press(tree, '닫기');
+
+      expect(onConfirm).not.toHaveBeenCalled();
+      expect(onClose).toHaveBeenCalled();
+
+      act(() => tree.unmount());
+    });
   });
 
   it('지난 날짜는 누를 수 없다', () => {

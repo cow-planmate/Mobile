@@ -13,6 +13,14 @@ type CalendarModalProps = {
   initialStartDate?: Date;
   initialEndDate?: Date;
   onDone?: () => void;
+  /**
+   * 고른 즉시 반영할지, 완료를 눌렀을 때만 반영할지.
+   *
+   * 일정 생성처럼 입력 칸을 채우기만 하는 곳은 'select'가 맞다. 다만 확정이
+   * 곧 되돌리기 어려운 동작인 곳(피드 일정 가져오기)에서 즉시 반영하면
+   * 사용자가 날짜만 고르다가 일정을 복사해 버린다. 그래서 기본은 'done'이다.
+   */
+  applyOn?: 'select' | 'done';
 };
 
 interface CalendarDay {
@@ -38,6 +46,7 @@ export default function CalendarModal({
   initialStartDate,
   initialEndDate,
   onDone,
+  applyOn = 'done',
 }: CalendarModalProps) {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
@@ -150,21 +159,26 @@ export default function CalendarModal({
       }
 
       setEndDate(targetDate);
-      onConfirm({ startDate, endDate: targetDate });
+      if (applyOn === 'select') {
+        onConfirm({ startDate, endDate: targetDate });
+      }
     },
-    [startDate, endDate, onConfirm],
+    [startDate, endDate, onConfirm, applyOn],
   );
 
-  // 완료를 눌러도 BottomSheet이 이어서 onClose를 부르므로, 확정은 닫을 때
-  // 한 번만 한다. 완료는 다음 단계로 넘기는 일만 맡는다.
+  // 완료를 눌러도 BottomSheet이 이어서 onClose를 부르므로 확정은 한 쪽에서만 한다.
   const handleDone = () => {
-    // 날짜를 하나도 고르지 않았으면 다음 단계로 넘기지 않는다.
-    if (startDate) onDone?.();
+    // 날짜를 하나도 고르지 않았으면 아무 일도 하지 않는다.
+    if (!startDate) return;
+    if (applyOn === 'done') {
+      onConfirm({ startDate, endDate: endDate ?? startDate });
+    }
+    onDone?.();
   };
 
-  // 시작일만 고른 채로 닫으면 당일치기로 확정한다.
+  // 즉시 반영일 때만, 시작일만 고른 채로 닫으면 당일치기로 확정한다.
   const handleClose = () => {
-    if (startDate && !endDate) {
+    if (applyOn === 'select' && startDate && !endDate) {
       onConfirm({ startDate, endDate: startDate });
     }
     onClose();
