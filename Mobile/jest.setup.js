@@ -67,3 +67,4 @@ jest.mock('@react-native-cookies/cookies', () => ({
   clearByName: jest.fn(() => Promise.resolve(true)),
   flush: jest.fn(() => Promise.resolve()),
 }));
+

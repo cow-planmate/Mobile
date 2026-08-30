@@ -37,28 +37,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(() => Promise.resolve()),
 }));
 
-jest.mock('react-native-reanimated', () => {
-  const React = require('react');
-  const View = ({ children, style }: any) => React.createElement('View', { style }, children);
-  return {
-    __esModule: true,
-    default: {
-      View,
-    },
-    useSharedValue: (val: any) => ({ value: val }),
-    useAnimatedStyle: (fn: any) => fn(),
-    withRepeat: (val: any) => val,
-    withTiming: (val: any) => val,
-    withSpring: (val: any) => val,
-    cancelAnimation: () => {},
-    runOnJS: (fn: any) => fn,
-    interpolate: (value: number, inputRange: number[], outputRange: number[]) => value,
-    Extrapolation: {
-      CLAMP: 'clamp',
-    },
-  };
-});
-
 jest.mock('react-native-date-picker', () => {
   const React = require('react');
   const { View } = require('react-native');
@@ -126,6 +104,17 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
+// 세 입력이 모두 비어서 시작하므로 생성 전에 기간과 인원까지 채워야 한다.
+const fillPeriodAndPax = async (viewComponent: any) => {
+  await ReactTestRenderer.act(async () => {
+    viewComponent.props.onConfirmCalendar({
+      startDate: new Date(2026, 8, 12),
+      endDate: new Date(2026, 8, 14),
+    });
+    viewComponent.props.onConfirmPax({ adults: 2, children: 0 });
+  });
+};
+
 describe('HomeScreen - Pre-save Itinerary Flow', () => {
   let queryClient: QueryClient;
   const mountedRenderers: ReactTestRenderer.ReactTestRenderer[] = [];
@@ -170,6 +159,8 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
       viewComponent.props.onSelectLocation('제주도', 3);
     });
 
+    await fillPeriodAndPax(viewComponent);
+
     await ReactTestRenderer.act(async () => {
       await viewComponent.props.onCreateItinerary();
     });
@@ -205,6 +196,8 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
     await ReactTestRenderer.act(async () => {
       viewComponent.props.onSelectLocation('Seoul', 3);
     });
+
+    await fillPeriodAndPax(viewComponent);
     await ReactTestRenderer.act(async () => {
       await viewComponent.props.onCreateItinerary();
     });
@@ -241,6 +234,8 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
       viewComponent.props.onSelectLocation('제주도', 3);
     });
 
+    await fillPeriodAndPax(viewComponent);
+
     // 첫 요청이 아직 끝나지 않은 사이에 같은 프레임에서 한 번 더 누른 상황.
     let first: Promise<unknown>;
     let second: Promise<unknown>;
@@ -252,6 +247,69 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
     });
 
     expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('세 입력 모두 비어서 시작한다', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <QueryClientProvider client={queryClient}>
+          <HomeScreen navigation={mockNavigation} route={mockRoute} />
+        </QueryClientProvider>,
+      );
+      mountedRenderers.push(renderer!);
+    });
+
+    const viewComponent = renderer!.root.findByType(
+      require('../src/features/home/screens/HomeScreen.view').HomeScreenView,
+    );
+
+    expect(viewComponent.props.destination).toBe('');
+    expect(viewComponent.props.dateText).toBe('');
+    expect(viewComponent.props.paxText).toBe('');
+    expect(viewComponent.props.startDate).toBeNull();
+    expect(viewComponent.props.adults).toBeNull();
+    expect(viewComponent.props.isFormValid).toBe(false);
+  });
+
+  it('완료를 누르면 여행지에서 기간으로, 기간에서 인원으로 넘어간다', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <QueryClientProvider client={queryClient}>
+          <HomeScreen navigation={mockNavigation} route={mockRoute} />
+        </QueryClientProvider>,
+      );
+      mountedRenderers.push(renderer!);
+    });
+
+    const view = () =>
+      renderer!.root.findByType(
+        require('../src/features/home/screens/HomeScreen.view').HomeScreenView,
+      );
+
+    await ReactTestRenderer.act(async () => {
+      view().props.onSelectLocation('제주도', 3);
+      view().props.onCloseSearchModal();
+      view().props.onDoneSearchModal();
+    });
+
+    // 시트가 닫히는 동안은 아직 열리지 않는다.
+    expect(view().props.isCalendarVisible).toBe(false);
+
+    await ReactTestRenderer.act(async () => {
+      jest.advanceTimersByTime(300);
+    });
+    expect(view().props.isCalendarVisible).toBe(true);
+
+    await ReactTestRenderer.act(async () => {
+      view().props.onCloseCalendar();
+      view().props.onDoneCalendar();
+      jest.advanceTimersByTime(300);
+    });
+    expect(view().props.isPaxModalVisible).toBe(true);
   });
 
   it('renders InputRow with isLast on Pax Count and sets activeOpacity on submit button', async () => {

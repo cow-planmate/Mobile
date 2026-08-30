@@ -11,28 +11,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(() => Promise.resolve()),
 }));
 
-jest.mock('react-native-reanimated', () => {
-  const React = require('react');
-  const View = ({ children, style }: any) => React.createElement('View', { style }, children);
-  return {
-    __esModule: true,
-    default: {
-      View,
-    },
-    useSharedValue: (val: any) => ({ value: val }),
-    useAnimatedStyle: (fn: any) => fn(),
-    withRepeat: (val: any) => val,
-    withTiming: (val: any) => val,
-    withSpring: (val: any) => val,
-    cancelAnimation: () => {},
-    runOnJS: (fn: any) => fn,
-    interpolate: (value: number, inputRange: number[], outputRange: number[]) => value,
-    Extrapolation: {
-      CLAMP: 'clamp',
-    },
-  };
-});
-
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
   const { View } = require('react-native');

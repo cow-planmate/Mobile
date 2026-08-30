@@ -13,7 +13,6 @@ export const COLORS = {
   border: tokens.colors.border,
   danger: '#EF4444',
   weekendBlue: '#2563EB',
-  overlay: 'rgba(12, 15, 20, 0.28)',
 };
 
 export const FONTS = {
@@ -24,50 +23,6 @@ export const FONTS = {
 };
 
 export const styles = StyleSheet.create({
-  // 여행지 시트와 동일한 틀을 쓴다.
-  sheetRoot: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: COLORS.overlay,
-  },
-  sheet: {
-    backgroundColor: COLORS.white,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    maxHeight: '82%',
-    paddingBottom: normalize(10),
-  },
-  grabber: {
-    width: normalize(36),
-    height: normalize(4),
-    borderRadius: normalize(2),
-    backgroundColor: COLORS.border,
-    alignSelf: 'center',
-    marginTop: normalize(9),
-  },
-  sheetHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    paddingHorizontal: normalize(16),
-    paddingTop: normalize(10),
-    paddingBottom: normalize(8),
-  },
-  sheetTitle: {
-    fontSize: normalize(14.5),
-    fontFamily: FONTS.bold,
-    color: COLORS.text,
-    letterSpacing: -0.3,
-  },
-  sheetDone: {
-    fontSize: normalize(13),
-    fontFamily: FONTS.semibold,
-    color: COLORS.primary,
-  },
-
   // 고른 범위와 30일 경고가 들어가는 자리. 헤더는 세 시트가 동일해야 하므로 밖으로 뺐다.
   rangeLabel: {
     paddingHorizontal: normalize(16),
@@ -140,8 +95,9 @@ export const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    top: '15%',
-    bottom: '15%',
+    top: '50%',
+    height: normalize(32),
+    marginTop: -normalize(16),
     backgroundColor: COLORS.primaryLight,
   },
   rangeBgStart: {

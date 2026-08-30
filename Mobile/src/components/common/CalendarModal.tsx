@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Modal, View, Text, TouchableOpacity, Pressable, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+
+import BottomSheet from './BottomSheet';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import { styles, COLORS } from './CalendarModal.styles';
@@ -10,6 +12,7 @@ type CalendarModalProps = {
   onConfirm: (dates: { startDate: Date; endDate: Date }) => void;
   initialStartDate?: Date;
   initialEndDate?: Date;
+  onDone?: () => void;
 };
 
 interface CalendarDay {
@@ -34,6 +37,7 @@ export default function CalendarModal({
   onConfirm,
   initialStartDate,
   initialEndDate,
+  onDone,
 }: CalendarModalProps) {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
@@ -151,8 +155,15 @@ export default function CalendarModal({
     [startDate, endDate, onConfirm],
   );
 
-  // 시작일만 고른 채로 닫으면 당일치기로 확정한다.
+  // 완료를 눌러도 BottomSheet이 이어서 onClose를 부르므로, 확정은 닫을 때
+  // 한 번만 한다. 완료는 다음 단계로 넘기는 일만 맡는다.
   const handleDone = () => {
+    // 날짜를 하나도 고르지 않았으면 다음 단계로 넘기지 않는다.
+    if (startDate) onDone?.();
+  };
+
+  // 시작일만 고른 채로 닫으면 당일치기로 확정한다.
+  const handleClose = () => {
     if (startDate && !endDate) {
       onConfirm({ startDate, endDate: startDate });
     }
@@ -190,43 +201,23 @@ export default function CalendarModal({
   };
 
   return (
-    <Modal
+    <BottomSheet
       visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={handleDone}
+      title="여행 기간 선택"
+      onClose={handleClose}
+      onDone={handleDone}
     >
-      <View style={styles.sheetRoot}>
-        <Pressable
-          style={styles.backdrop}
-          onPress={handleDone}
-          accessibilityRole="button"
-          accessibilityLabel="닫기"
-        />
-        <View style={styles.sheet}>
-          <View style={styles.grabber} />
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>여행 기간 선택</Text>
-            <TouchableOpacity
-              onPress={handleDone}
-              hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
-              accessibilityRole="button"
-              accessibilityLabel="선택 완료"
-            >
-              <Text style={styles.sheetDone}>완료</Text>
-            </TouchableOpacity>
-          </View>
-          <Text
-            style={[
-              styles.rangeLabel,
-              notice == null && !startDate && styles.rangeLabelEmpty,
-              notice != null && styles.rangeLabelNotice,
-            ]}
-          >
-            {notice ?? formatSelectedRange()}
-          </Text>
+      <Text
+        style={[
+          styles.rangeLabel,
+          notice == null && !startDate && styles.rangeLabelEmpty,
+          notice != null && styles.rangeLabelNotice,
+        ]}
+      >
+        {notice ?? formatSelectedRange()}
+      </Text>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false}>
           <View style={styles.calendarContainer}>
 
             <View style={styles.monthNavRow}>
@@ -346,9 +337,7 @@ export default function CalendarModal({
               })}
             </View>
           </View>
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
+      </ScrollView>
+    </BottomSheet>
   );
 }

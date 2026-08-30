@@ -77,29 +77,6 @@ const Header: React.FC<HeaderProps> = ({
       <Text style={styles.logo}>planMate</Text>
       <View style={styles.topIcons}>
         <TouchableOpacity
-          ref={profileRef}
-          style={[styles.profileBadge, menuVisible && styles.profileBadgeActive]}
-          onPress={handleProfilePress}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityRole="button"
-          accessibilityLabel={`${nickname || '사용자'}님 메뉴 열기`}
-        >
-          <View style={styles.userAvatar}>
-            <FallbackImage
-              uri={email ? gravatarUrl(email, 100) : null}
-              style={styles.avatarImage}
-              accessible={false}
-              fallback={
-                <UserIcon size={14} color={tokens.colors.textTertiary} />
-              }
-            />
-          </View>
-          <Text style={[styles.userNickname, menuVisible && styles.userNicknameActive]}>
-            {nickname || '사용자'}님
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
           onPress={onNotificationPress}
           style={styles.bellButton}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -108,12 +85,32 @@ const Header: React.FC<HeaderProps> = ({
             pendingRequestsCount > 0 ? `알림 ${pendingRequestsCount}건` : '알림'
           }
         >
-          <Bell size={25} color="#000" />
+          <Bell size={normalize(22)} color={tokens.colors.text} strokeWidth={1.6} />
           {pendingRequestsCount > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{pendingRequestsCount}</Text>
             </View>
           )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          ref={profileRef}
+          style={styles.profileButton}
+          onPress={handleProfilePress}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel={`${nickname || '사용자'}님 메뉴 열기`}
+        >
+          <View style={[styles.userAvatar, menuVisible && styles.userAvatarActive]}>
+            <FallbackImage
+              uri={email ? gravatarUrl(email, 100) : null}
+              style={styles.avatarImage}
+              accessible={false}
+              fallback={
+                <UserIcon size={normalize(14)} color={tokens.colors.textTertiary} />
+              }
+            />
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -176,54 +173,42 @@ const styles = StyleSheet.create({
   topIcons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: normalize(16),
+    gap: normalize(6),
   },
-  profileBadge: {
-    flexDirection: 'row',
+  profileButton: {
+    minHeight: normalize(44),
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: normalize(10),
-    paddingVertical: normalize(4),
-    borderRadius: normalize(20),
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  profileBadgeActive: {
-    backgroundColor: tokens.colors.primaryTint,
-    borderColor: '#E0E7FF',
+    paddingLeft: normalize(4),
   },
   userAvatar: {
-    width: normalize(24),
-    height: normalize(24),
-    borderRadius: normalize(12),
+    width: normalize(28),
+    height: normalize(28),
+    borderRadius: normalize(14),
     backgroundColor: tokens.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  userAvatarActive: {
+    borderColor: tokens.colors.primary,
   },
   avatarImage: {
     width: '100%',
     height: '100%',
   },
-  userNickname: {
-    fontSize: normalize(12),
-    fontFamily: 'Pretendard-Bold',
-    fontWeight: 'bold',
-    color: '#374151',
-    marginLeft: normalize(6),
-  },
-  userNicknameActive: {
-    color: '#1E3A8A',
-  },
   bellButton: {
-    minWidth: normalize(48),
-    minHeight: normalize(48),
+    minWidth: normalize(44),
+    minHeight: normalize(44),
     justifyContent: 'center',
     alignItems: 'center',
   },
   badge: {
     position: 'absolute',
-    top: 6,
-    right: 6,
+    top: normalize(6),
+    right: normalize(4),
 
     backgroundColor: '#D92D20',
     borderRadius: 10,

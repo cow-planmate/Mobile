@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import CalendarIcon from 'lucide-react-native/dist/esm/icons/calendar';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import UserIcon from 'lucide-react-native/dist/esm/icons/user';
@@ -11,6 +11,7 @@ import {
   Dimensions,
   Animated,
   FlatList,
+  AccessibilityInfo,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
@@ -20,6 +21,10 @@ import { CalendarModal, Header, Invitation, NotificationModal, PaxModal, SearchL
 import { normalize } from '../../../utils/normalize';
 import { styles } from './HomeScreen.styles';
 import { getRegionSpots } from '../constants/regionSpots';
+
+// 명소 순환 주기와, 손이 닿은 뒤 다시 돌기까지 기다리는 시간.
+const HERO_ROTATE_MS = 4000;
+const HERO_RESUME_DELAY_MS = 6000;
 
 
 type InputRowProps = {
@@ -117,9 +122,11 @@ export interface HomeScreenViewProps {
   onNavigateProfile: () => void;
   onOpenSearchModal: () => void;
   onCloseSearchModal: () => void;
+  onDoneSearchModal?: () => void;
   onSelectLocation: (location: string, id?: number) => void;
   onOpenCalendar: () => void;
   onCloseCalendar: () => void;
+  onDoneCalendar?: () => void;
   onConfirmCalendar: (dates: { startDate: Date; endDate: Date }) => void;
   onOpenPaxModal: () => void;
   onClosePaxModal: () => void;
@@ -148,9 +155,11 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   onNavigateProfile,
   onOpenSearchModal,
   onCloseSearchModal,
+  onDoneSearchModal,
   onSelectLocation,
   onOpenCalendar,
   onCloseCalendar,
+  onDoneCalendar,
   onConfirmCalendar,
   onOpenPaxModal,
   onClosePaxModal,
@@ -164,6 +173,9 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   onRejectNotification,
 }: HomeScreenViewProps) => {
   const flatListRef = useRef<FlatList>(null);
+  const heroIndexRef = useRef(0);
+  const heroPausedUntilRef = useRef(0);
+  const [reduceMotion, setReduceMotion] = useState(false);
   const screenWidth = Dimensions.get('window').width;
   const cardWidth = screenWidth - normalize(16) * 2;
   const cardGap = normalize(6);
@@ -191,8 +203,46 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   // 여행지가 바뀌면 캐러셀을 첫 장으로 되돌린다.
   useEffect(() => {
     scrollX.setValue(0);
+    heroIndexRef.current = 0;
     flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
   }, [destination, scrollX]);
+
+  // 손이 닿은 뒤에는 잠시 멈춘다. 사용자가 보고 있는 사진을 뺏지 않기 위해서다.
+  const pauseHeroRotation = useCallback(() => {
+    heroPausedUntilRef.current = Date.now() + HERO_RESUME_DELAY_MS;
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    AccessibilityInfo.isReduceMotionEnabled().then(enabled => {
+      if (!cancelled) setReduceMotion(enabled);
+    });
+    const sub = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      setReduceMotion,
+    );
+    return () => {
+      cancelled = true;
+      sub.remove();
+    };
+  }, []);
+
+  // 사진이 두 장 이상일 때만 일정 간격으로 다음 명소를 보여준다.
+  useEffect(() => {
+    if (spotCount < 2 || reduceMotion) return;
+
+    const timer = setInterval(() => {
+      if (Date.now() < heroPausedUntilRef.current) return;
+      const next = (heroIndexRef.current + 1) % spotCount;
+      heroIndexRef.current = next;
+      flatListRef.current?.scrollToOffset({
+        offset: next * step,
+        animated: true,
+      });
+    }, HERO_ROTATE_MS);
+
+    return () => clearInterval(timer);
+  }, [spotCount, step, reduceMotion]);
 
   return (
     <View style={styles.container}>
@@ -244,6 +294,13 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
                   { useNativeDriver: true }
                 )}
                 scrollEventThrottle={16}
+                onScrollBeginDrag={pauseHeroRotation}
+                onScrollEndDrag={pauseHeroRotation}
+                onMomentumScrollEnd={event => {
+                  heroIndexRef.current = Math.round(
+                    event.nativeEvent.contentOffset.x / step,
+                  );
+                }}
                 renderItem={({ item, index }) => {
                   const inputRange = [
                     (index - 1) * step,
@@ -398,6 +455,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         onClose={onCloseSearchModal}
         currentValue={destination}
         onSelect={onSelectLocation}
+        onDone={onDoneSearchModal}
       />
       <CalendarModal
         visible={isCalendarVisible}
@@ -405,6 +463,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         onConfirm={onConfirmCalendar}
         initialStartDate={startDate ?? undefined}
         initialEndDate={endDate ?? undefined}
+        onDone={onDoneCalendar}
       />
       <PaxModal
         visible={isPaxModalVisible}

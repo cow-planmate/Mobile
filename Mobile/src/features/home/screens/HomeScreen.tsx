@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppState, AppStateStatus, Modal, BackHandler } from 'react-native';
 import { AppStackParamList } from '../../../navigation/types';
@@ -34,6 +34,9 @@ import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { useDoublePressExit } from '../../../hooks/useDoublePressExit';
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
+// 시트가 닫히고 다음 시트가 올라오기까지의 간격.
+const SHEET_HANDOFF_MS = 220;
+
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const user = useAuthStore((state) => state.user);
   const { showAlert } = useAlert();
@@ -61,17 +64,26 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     return unsubscribe;
   }, [navigation, isCreating]);
 
-  const [startDate, setStartDate] = useState<Date | null>(new Date());
-  const [endDate, setEndDate] = useState<Date | null>(new Date());
+  // 세 입력 모두 비어서 시작한다. 채우지 않은 값을 채운 것처럼 보이면 안 된다.
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [isCalendarVisible, setCalendarVisible] = useState(false);
-  const [adults, setAdults] = useState<number | null>(1);
-  const [children, setChildren] = useState<number | null>(0);
+  const [adults, setAdults] = useState<number | null>(null);
+  const [children, setChildren] = useState<number | null>(null);
   const [isPaxModalVisible, setPaxModalVisible] = useState(false);
 
   const [destination, setDestination] = useState('');
   const [travelId, setTravelId] = useState<number>(0);
 
   const [isSearchModalVisible, setSearchModalVisible] = useState(false);
+  const sheetHandOffRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (sheetHandOffRef.current) clearTimeout(sheetHandOffRef.current);
+    },
+    [],
+  );
   const { data: pendingRequests = [] } = usePendingInvitations(!!user);
   const pendingInvitations = usePendingInvitationActions();
   const [isNotificationModalVisible, setNotificationModalVisible] =
@@ -191,6 +203,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         },
       ],
     });
+  };
+
+  // 한 시트가 닫히는 도중에 다음 시트를 띄우면 iOS에서 표시가 어긋난다.
+  // 완료를 누르면 한 박자 두고 다음 단계를 연다.
+  const handOff = (open: () => void) => {
+    if (sheetHandOffRef.current) clearTimeout(sheetHandOffRef.current);
+    sheetHandOffRef.current = setTimeout(open, SHEET_HANDOFF_MS);
   };
 
   const handleNotificationPress = () => {
@@ -341,9 +360,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         onNavigateProfile={() => navigation.navigate('Profile')}
         onOpenSearchModal={openSearchModal}
         onCloseSearchModal={() => setSearchModalVisible(false)}
+        onDoneSearchModal={() => handOff(() => setCalendarVisible(true))}
         onSelectLocation={onSelectLocation}
         onOpenCalendar={() => setCalendarVisible(true)}
         onCloseCalendar={() => setCalendarVisible(false)}
+        onDoneCalendar={() => handOff(() => setPaxModalVisible(true))}
         onConfirmCalendar={({ startDate: newStartDate, endDate: newEndDate }) => {
           setStartDate(newStartDate);
           setEndDate(newEndDate);

@@ -3,14 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import {
   View,
   Text,
-  Modal,
   TouchableOpacity,
-  Pressable,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import axios from 'axios';
 
+import BottomSheet from './BottomSheet';
 import { styles, COLORS } from './SearchLocationModal.styles';
 import { DESTINATIONS_28 } from '../../constants/regions';
 import { isRegionMatch } from '../../utils/regionMatcher';
@@ -35,6 +34,7 @@ type Props = {
   onClose: () => void;
   onSelect: (location: string, id?: number) => void;
   currentValue?: string;
+  onDone?: () => void;
 };
 
 const toTravelVO = (item: any): TravelVO => {
@@ -87,6 +87,7 @@ export default function SearchLocationModal({
   onClose,
   onSelect,
   currentValue,
+  onDone,
 }: Props) {
   const [selectedDestination, setSelectedDestination] = useState<TravelVO | null>(null);
 
@@ -113,76 +114,57 @@ export default function SearchLocationModal({
     onSelect(item.travelName, item.travelId);
   };
 
-  const title = '여행지 선택';
-
-  const renderDestinationContent = () =>
-    isLoading ? (
-      <View style={styles.inlineLoaderContainer}>
-        <ActivityIndicator size="small" color={COLORS.primary} />
-        <Text style={styles.loaderText}>불러오는 중...</Text>
-      </View>
-    ) : (
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.gridScroll}
-      >
-        <View style={styles.grid}>
-          {destinations.map(item => {
-            const isSelected = selectedDestination?.travelId === item.travelId;
-            return (
-              <TouchableOpacity
-                key={item.travelId > 0 ? item.travelId : item.travelName}
-                style={styles.gridCell}
-                onPress={() => handleDestinationSelect(item)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isSelected }}
-              >
-                <View style={[styles.cell, isSelected && styles.cellSelected]}>
-                  <Text
-                    style={[styles.cellText, isSelected && styles.cellTextSelected]}
-                    numberOfLines={1}
-                  >
-                    {item.travelName}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </ScrollView>
-    );
+  // 아무것도 고르지 않고 닫으면 다음 단계로 넘기지 않는다.
+  const handleDone = () => {
+    if (selectedDestination) onDone?.();
+  };
 
   return (
-    <Modal
+    <BottomSheet
       visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
+      title="여행지 선택"
+      onClose={onClose}
+      onDone={handleDone}
     >
-      <View style={styles.sheetRoot}>
-        <Pressable
-          style={styles.backdrop}
-          onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel="닫기"
-        />
-        <View style={styles.sheet}>
-          <View style={styles.grabber} />
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>{title}</Text>
-            <TouchableOpacity
-              onPress={onClose}
-              hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
-              accessibilityRole="button"
-              accessibilityLabel="선택 완료"
-            >
-              <Text style={styles.sheetDone}>완료</Text>
-            </TouchableOpacity>
-          </View>
-          {renderDestinationContent()}
+      {isLoading ? (
+        <View style={styles.inlineLoaderContainer}>
+          <ActivityIndicator size="small" color={COLORS.primary} />
+          <Text style={styles.loaderText}>불러오는 중...</Text>
         </View>
-      </View>
-    </Modal>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.gridScroll}
+        >
+          <View style={styles.grid}>
+            {destinations.map(item => {
+              const isSelected = selectedDestination?.travelId === item.travelId;
+              return (
+                <TouchableOpacity
+                  key={item.travelId > 0 ? item.travelId : item.travelName}
+                  style={styles.gridCell}
+                  onPress={() => handleDestinationSelect(item)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                >
+                  <View style={[styles.cell, isSelected && styles.cellSelected]}>
+                    <Text
+                      style={[
+                        styles.cellText,
+                        isSelected && styles.cellTextSelected,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {item.travelName}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </ScrollView>
+      )}
+    </BottomSheet>
   );
 }

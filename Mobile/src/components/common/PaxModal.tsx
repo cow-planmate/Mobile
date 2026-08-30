@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 
+import BottomSheet from './BottomSheet';
 import { styles } from './PaxModal.styles';
 
 type PaxModalProps = {
@@ -9,6 +10,7 @@ type PaxModalProps = {
   onConfirm: (pax: { adults: number; children: number }) => void;
   initialAdults: number;
   initialChildren: number;
+  onDone?: () => void;
 };
 
 const PaxCounter = ({
@@ -77,6 +79,7 @@ export default function PaxModal({
   onConfirm,
   initialAdults,
   initialChildren,
+  onDone,
 }: PaxModalProps) {
   const [adults, setAdults] = useState(initialAdults);
   const [children, setChildren] = useState(initialChildren);
@@ -94,54 +97,39 @@ export default function PaxModal({
     onConfirm({ adults: nextAdults, children: nextChildren });
   };
 
+  // 화면에 보이는 값을 그대로 확정하며 닫는다. 아무것도 건드리지 않고 닫아도
+  // 기본값 성인 1명이 비어 있는 채로 남지 않는다.
+  const handleClose = () => {
+    onConfirm({ adults, children });
+    onClose();
+  };
+
   return (
-    <Modal
+    <BottomSheet
       visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
+      title="인원 선택"
+      onClose={handleClose}
+      onDone={onDone}
     >
-      <View style={styles.sheetRoot}>
-        <Pressable
-          style={styles.backdrop}
-          onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel="닫기"
+      <View style={styles.counterSection}>
+        <PaxCounter
+          label="성인"
+          subtitle="만 18세 이상"
+          count={adults}
+          onIncrease={() => applyPax(adults + 1, children)}
+          onDecrease={() => applyPax(Math.max(1, adults - 1), children)}
+          minValue={1}
         />
-        <View style={styles.sheet}>
-          <View style={styles.grabber} />
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>인원 선택</Text>
-            <TouchableOpacity
-              onPress={onClose}
-              hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
-              accessibilityRole="button"
-              accessibilityLabel="선택 완료"
-            >
-              <Text style={styles.sheetDone}>완료</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.counterSection}>
-            <PaxCounter
-              label="성인"
-              subtitle="만 18세 이상"
-              count={adults}
-              onIncrease={() => applyPax(adults + 1, children)}
-              onDecrease={() => applyPax(Math.max(1, adults - 1), children)}
-              minValue={1}
-            />
-            <View style={styles.divider} />
-            <PaxCounter
-              label="어린이"
-              subtitle="만 17세 이하"
-              count={children}
-              onIncrease={() => applyPax(adults, children + 1)}
-              onDecrease={() => applyPax(adults, Math.max(0, children - 1))}
-              minValue={0}
-            />
-          </View>
-        </View>
+        <View style={styles.divider} />
+        <PaxCounter
+          label="어린이"
+          subtitle="만 17세 이하"
+          count={children}
+          onIncrease={() => applyPax(adults, children + 1)}
+          onDecrease={() => applyPax(adults, Math.max(0, children - 1))}
+          minValue={0}
+        />
       </View>
-    </Modal>
+    </BottomSheet>
   );
 }
