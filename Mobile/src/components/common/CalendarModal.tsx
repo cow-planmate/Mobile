@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Modal, View, Text, TouchableOpacity, Pressable } from 'react-native';
-import X from 'lucide-react-native/dist/esm/icons/x';
+import { Modal, View, Text, TouchableOpacity, Pressable, ScrollView } from 'react-native';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import { styles, COLORS } from './CalendarModal.styles';
@@ -147,16 +146,17 @@ export default function CalendarModal({
       }
 
       setEndDate(targetDate);
+      onConfirm({ startDate, endDate: targetDate });
     },
-    [startDate, endDate],
+    [startDate, endDate, onConfirm],
   );
 
-  const handleConfirm = () => {
-    if (!startDate) {
-      setNotice('여행 날짜를 먼저 선택해주세요');
-      return;
+  // 시작일만 고른 채로 닫으면 당일치기로 확정한다.
+  const handleDone = () => {
+    if (startDate && !endDate) {
+      onConfirm({ startDate, endDate: startDate });
     }
-    onConfirm({ startDate, endDate: endDate ?? startDate });
+    onClose();
   };
 
   const formatSelectedRange = () => {
@@ -192,37 +192,41 @@ export default function CalendarModal({
   return (
     <Modal
       visible={visible}
-      animationType="fade"
+      animationType="slide"
       transparent={true}
-      onRequestClose={onClose}
+      onRequestClose={handleDone}
     >
-      <Pressable style={styles.centeredView} onPress={onClose}>
-
-        <Pressable style={styles.modalView} onPress={() => {}}>
-          <View style={styles.header}>
-            <View style={styles.headerTextArea}>
-              <Text style={styles.headerTitle}>여행 기간 선택</Text>
-              <Text
-                style={[
-                  styles.headerSubtitle,
-                  notice != null && styles.headerSubtitleNotice,
-                ]}
-              >
-                {notice ?? formatSelectedRange()}
-              </Text>
-            </View>
+      <View style={styles.sheetRoot}>
+        <Pressable
+          style={styles.backdrop}
+          onPress={handleDone}
+          accessibilityRole="button"
+          accessibilityLabel="닫기"
+        />
+        <View style={styles.sheet}>
+          <View style={styles.grabber} />
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>여행 기간 선택</Text>
             <TouchableOpacity
-              style={styles.closeButtonContainer}
-              onPress={onClose}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={handleDone}
+              hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
               accessibilityRole="button"
-              accessibilityLabel="닫기"
+              accessibilityLabel="선택 완료"
             >
-              <X size={20} color={COLORS.placeholder} strokeWidth={1.5} />
+              <Text style={styles.sheetDone}>완료</Text>
             </TouchableOpacity>
           </View>
+          <Text
+            style={[
+              styles.rangeLabel,
+              notice == null && !startDate && styles.rangeLabelEmpty,
+              notice != null && styles.rangeLabelNotice,
+            ]}
+          >
+            {notice ?? formatSelectedRange()}
+          </Text>
 
+          <ScrollView showsVerticalScrollIndicator={false}>
           <View style={styles.calendarContainer}>
 
             <View style={styles.monthNavRow}>
@@ -342,23 +346,9 @@ export default function CalendarModal({
               })}
             </View>
           </View>
-
-          <View style={styles.confirmFooter}>
-            <TouchableOpacity
-              style={[
-                styles.confirmButton,
-                !startDate && styles.confirmButtonMuted,
-              ]}
-              onPress={handleConfirm}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="확인"
-            >
-              <Text style={styles.confirmButtonText}>확인</Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Pressable>
+          </ScrollView>
+        </View>
+      </View>
     </Modal>
   );
 }

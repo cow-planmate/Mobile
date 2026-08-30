@@ -6,7 +6,6 @@ export const COLORS = {
   primary: tokens.colors.primary,
   primaryLight: tokens.colors.sub, 
   white: tokens.colors.white,
-  surface: tokens.colors.borderLight,
   text: tokens.colors.text,
   subtext: tokens.colors.textSecondary,
   subtextMuted: tokens.colors.textSecondary,
@@ -14,6 +13,7 @@ export const COLORS = {
   border: tokens.colors.border,
   danger: '#EF4444',
   weekendBlue: '#2563EB',
+  overlay: 'rgba(12, 15, 20, 0.28)',
 };
 
 export const FONTS = {
@@ -24,90 +24,86 @@ export const FONTS = {
 };
 
 export const styles = StyleSheet.create({
-  centeredView: {
+  // 여행지 시트와 동일한 틀을 쓴다.
+  sheetRoot: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
   },
-  modalView: {
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: COLORS.overlay,
+  },
+  sheet: {
     backgroundColor: COLORS.white,
-    borderRadius: normalize(20),
-    paddingHorizontal: normalize(16),
-    paddingTop: normalize(24),
-    paddingBottom: normalize(20),
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    width: '92%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    maxHeight: '82%',
+    paddingBottom: normalize(10),
   },
-  header: {
+  grabber: {
+    width: normalize(36),
+    height: normalize(4),
+    borderRadius: normalize(2),
+    backgroundColor: COLORS.border,
+    alignSelf: 'center',
+    marginTop: normalize(9),
+  },
+  sheetHeader: {
     flexDirection: 'row',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    width: '100%',
-    marginBottom: normalize(20),
-    paddingHorizontal: normalize(8),
+    paddingHorizontal: normalize(16),
+    paddingTop: normalize(10),
+    paddingBottom: normalize(8),
   },
-  headerTitle: {
-    fontSize: normalize(20),
+  sheetTitle: {
+    fontSize: normalize(14.5),
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: COLORS.text,
     letterSpacing: -0.3,
-    marginBottom: normalize(4),
   },
-  headerTextArea: {
-    flex: 1,
-    marginRight: normalize(8),
-  },
-  headerSubtitle: {
-    fontSize: normalize(14),
-    fontFamily: FONTS.medium,
-    fontWeight: '600',
+  sheetDone: {
+    fontSize: normalize(13),
+    fontFamily: FONTS.semibold,
     color: COLORS.primary,
   },
-  headerSubtitleNotice: {
-    color: COLORS.danger,
+
+  // 고른 범위와 30일 경고가 들어가는 자리. 헤더는 세 시트가 동일해야 하므로 밖으로 뺐다.
+  rangeLabel: {
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(6),
+    fontSize: normalize(12.5),
+    fontFamily: FONTS.medium,
+    color: COLORS.primary,
   },
-  closeButtonContainer: {
-    width: normalize(36),
-    height: normalize(36),
-    borderRadius: normalize(18),
-    backgroundColor: COLORS.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
+  rangeLabelEmpty: {
+    color: COLORS.placeholder,
+  },
+  rangeLabelNotice: {
+    color: COLORS.danger,
   },
 
   calendarContainer: {
     width: '100%',
-    paddingHorizontal: normalize(4),
+    paddingHorizontal: normalize(16),
   },
   monthNavRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    marginBottom: normalize(16),
-    paddingHorizontal: normalize(8),
+    marginBottom: normalize(10),
   },
   monthNavButton: {
     width: normalize(32),
     height: normalize(32),
-    borderRadius: normalize(16),
-    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
   monthLabel: {
-    fontSize: normalize(17),
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
+    fontSize: normalize(15),
+    fontFamily: FONTS.semibold,
+    fontWeight: '600',
     color: COLORS.text,
   },
   weekDaysRow: {
@@ -198,25 +194,4 @@ export const styles = StyleSheet.create({
     color: COLORS.placeholder,
   },
 
-  confirmFooter: {
-    width: '100%',
-    marginTop: normalize(16),
-  },
-  confirmButton: {
-    width: '100%',
-    height: normalize(52),
-    borderRadius: normalize(12),
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-  },
-  confirmButtonMuted: {
-    opacity: 0.55,
-  },
-  confirmButtonText: {
-    fontSize: normalize(15),
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-    color: COLORS.white,
-  },
 });

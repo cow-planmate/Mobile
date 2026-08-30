@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity } from 'react-native';
-import X from 'lucide-react-native/dist/esm/icons/x';
-import Minus from 'lucide-react-native/dist/esm/icons/minus';
-import Plus from 'lucide-react-native/dist/esm/icons/plus';
+import { Modal, View, Text, TouchableOpacity, Pressable } from 'react-native';
 
-import { styles, COLORS } from './PaxModal.styles';
+import { styles } from './PaxModal.styles';
 
 type PaxModalProps = {
   visible: boolean;
@@ -48,11 +45,14 @@ const PaxCounter = ({
         accessibilityLabel={`${label} 줄이기`}
         accessibilityState={{ disabled: count <= minValue }}
       >
-        <Minus
-          size={16}
-          color={count <= minValue ? COLORS.placeholder : COLORS.primary}
-          strokeWidth={2}
-        />
+        <Text
+          style={[
+            styles.counterGlyph,
+            count <= minValue && styles.counterGlyphDisabled,
+          ]}
+        >
+          −
+        </Text>
       </TouchableOpacity>
       <Text style={styles.counterValue} accessibilityLabel={`${count}명`}>
         {count}
@@ -65,7 +65,7 @@ const PaxCounter = ({
         accessibilityRole="button"
         accessibilityLabel={`${label} 늘리기`}
       >
-        <Plus size={16} color={COLORS.primary} strokeWidth={2} />
+        <Text style={styles.counterGlyph}>+</Text>
       </TouchableOpacity>
     </View>
   </View>
@@ -88,38 +88,46 @@ export default function PaxModal({
     }
   }, [visible, initialAdults, initialChildren]);
 
-  const handleConfirm = () => {
-    onConfirm({ adults, children });
+  const applyPax = (nextAdults: number, nextChildren: number) => {
+    setAdults(nextAdults);
+    setChildren(nextChildren);
+    onConfirm({ adults: nextAdults, children: nextChildren });
   };
 
   return (
     <Modal
       visible={visible}
-      animationType="fade"
+      animationType="slide"
       transparent={true}
       onRequestClose={onClose}
     >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>인원 선택</Text>
+      <View style={styles.sheetRoot}>
+        <Pressable
+          style={styles.backdrop}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="닫기"
+        />
+        <View style={styles.sheet}>
+          <View style={styles.grabber} />
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>인원 선택</Text>
             <TouchableOpacity
-              style={styles.closeButtonContainer}
               onPress={onClose}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
               accessibilityRole="button"
-              accessibilityLabel="닫기"
+              accessibilityLabel="선택 완료"
             >
-              <X size={20} color={COLORS.placeholder} strokeWidth={1.5} />
+              <Text style={styles.sheetDone}>완료</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.counterSection}>
             <PaxCounter
               label="성인"
+              subtitle="만 18세 이상"
               count={adults}
-              onIncrease={() => setAdults(adults + 1)}
-              onDecrease={() => setAdults(Math.max(1, adults - 1))}
+              onIncrease={() => applyPax(adults + 1, children)}
+              onDecrease={() => applyPax(Math.max(1, adults - 1), children)}
               minValue={1}
             />
             <View style={styles.divider} />
@@ -127,20 +135,11 @@ export default function PaxModal({
               label="어린이"
               subtitle="만 17세 이하"
               count={children}
-              onIncrease={() => setChildren(children + 1)}
-              onDecrease={() => setChildren(Math.max(0, children - 1))}
+              onIncrease={() => applyPax(adults, children + 1)}
+              onDecrease={() => applyPax(adults, Math.max(0, children - 1))}
               minValue={0}
             />
           </View>
-          <TouchableOpacity
-            style={styles.confirmButton}
-            onPress={handleConfirm}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="확인"
-          >
-            <Text style={styles.confirmButtonText}>확인</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </Modal>

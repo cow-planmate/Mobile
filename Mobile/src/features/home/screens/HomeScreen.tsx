@@ -347,14 +347,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         onConfirmCalendar={({ startDate: newStartDate, endDate: newEndDate }) => {
           setStartDate(newStartDate);
           setEndDate(newEndDate);
-          setCalendarVisible(false);
         }}
         onOpenPaxModal={() => setPaxModalVisible(true)}
         onClosePaxModal={() => setPaxModalVisible(false)}
         onConfirmPax={({ adults: newAdults, children: newChildren }) => {
           setAdults(newAdults);
           setChildren(newChildren);
-          setPaxModalVisible(false);
         }}
         onCreateItinerary={handleCreateItinerary}
         isCreating={isCreating}
