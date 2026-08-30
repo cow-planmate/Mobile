@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  Dimensions,
   Modal,
   Pressable,
   ScrollView,
@@ -9,16 +10,18 @@ import {
   View,
 } from 'react-native';
 import Animated, {
-  FadeIn,
-  FadeOut,
-  FadeInDown,
-  SlideInDown,
-  SlideOutDown,
   Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import { COLORS, RADIUS, TYPO } from '../authTokens';
 import { sf, sp } from '../../../utils/normalize';
+
+const ENTER_MS = 280;
+const EXIT_MS = 220;
 
 type PrivacyVariant = 'policy' | 'consent';
 
@@ -114,27 +117,49 @@ export default function PrivacyPolicyModal({
   variant,
 }: PrivacyPolicyModalProps) {
   const content = CONTENT[variant];
+  const [mounted, setMounted] = useState(visible);
 
-  const backdropEntering = (FadeIn ?? FadeInDown).duration(250);
-  const backdropExiting = FadeOut.duration(200);
-  const sheetEntering = (SlideInDown ?? FadeInDown)
-    .duration(280)
-    .easing(Easing.out(Easing.cubic));
-  const sheetExiting = (SlideOutDown ?? FadeOut).duration(220);
+  const progress = useSharedValue(0);
+  // 높이를 재기 전에는 화면 높이로 두어 첫 프레임이 화면 밖에서 시작하도록 한다.
+  const sheetHeight = useSharedValue(Dimensions.get('window').height);
+
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
+      progress.value = withTiming(1, {
+        duration: ENTER_MS,
+        easing: Easing.out(Easing.cubic),
+      });
+      return;
+    }
+    progress.value = withTiming(
+      0,
+      { duration: EXIT_MS, easing: Easing.in(Easing.cubic) },
+      finished => {
+        if (finished) runOnJS(setMounted)(false);
+      },
+    );
+  }, [visible, progress]);
+
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+  }));
+
+  // 레이아웃 애니메이션은 Modal 안에서 종료 후에도 시트를 상태바 높이만큼
+  // 위에 남겨 아래가 비친다. transform은 레이아웃을 건드리지 않아 안전하다.
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: (1 - progress.value) * sheetHeight.value }],
+  }));
 
   return (
     <Modal
-      visible={visible}
+      visible={mounted}
       transparent
       animationType="none"
       onRequestClose={onClose}
     >
       <View style={styles.overlay} accessibilityViewIsModal>
-        <Animated.View
-          entering={backdropEntering}
-          exiting={backdropExiting}
-          style={styles.backdrop}
-        >
+        <Animated.View style={[styles.backdrop, backdropStyle]}>
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={onClose}
@@ -144,9 +169,10 @@ export default function PrivacyPolicyModal({
         </Animated.View>
 
         <Animated.View
-          entering={sheetEntering}
-          exiting={sheetExiting}
-          style={styles.modal}
+          onLayout={event => {
+            sheetHeight.value = event.nativeEvent.layout.height;
+          }}
+          style={[styles.modal, sheetStyle]}
         >
           <View style={styles.handleBar} />
 

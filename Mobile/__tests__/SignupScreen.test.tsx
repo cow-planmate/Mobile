@@ -48,36 +48,6 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 44, left: 0, right: 0, bottom: 34 }),
 }));
 
-jest.mock('react-native-reanimated', () => {
-  const React = require('react');
-  const View = ({ children, ...rest }: any) =>
-    React.createElement('View', rest, children);
-
-  const animation: any = new Proxy(
-    {},
-    { get: () => () => animation },
-  );
-  return {
-    __esModule: true,
-    default: {
-      View,
-
-      createAnimatedComponent: (Component: any) => Component,
-    },
-    useSharedValue: (value: any) => ({ value }),
-    useAnimatedStyle: (fn: any) => fn(),
-    withTiming: (value: any) => value,
-    withSpring: (value: any) => value,
-    interpolateColor: (_v: any, _in: any, output: any[]) => output[0],
-    Easing: { out: () => () => 0, quad: () => 0, cubic: () => 0 },
-    FadeInUp: animation,
-    FadeInDown: animation,
-    FadeOut: animation,
-    FadeInRight: animation,
-    FadeInLeft: animation,
-  };
-});
-
 describe('SignupScreen components & agreement validation', () => {
   beforeAll(() => {
     jest.useFakeTimers();
