@@ -239,11 +239,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
                 snapToInterval={step}
                 decelerationRate="fast"
                 contentContainerStyle={{ paddingHorizontal: sidePadding }}
-                getItemLayout={(_, index) => ({
-                  length: step,
-                  offset: step * index,
-                  index,
-                })}
                 onScroll={Animated.event(
                   [{ nativeEvent: { contentOffset: { x: scrollX } } }],
                   { useNativeDriver: true }
