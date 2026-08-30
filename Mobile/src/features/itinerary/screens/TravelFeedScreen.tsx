@@ -18,6 +18,8 @@ import Search from 'lucide-react-native/dist/esm/icons/search';
 import LayoutGrid from 'lucide-react-native/dist/esm/icons/layout-grid';
 import List from 'lucide-react-native/dist/esm/icons/list';
 import SlidersHorizontal from 'lucide-react-native/dist/esm/icons/sliders-horizontal';
+import ArrowDownWideNarrow from 'lucide-react-native/dist/esm/icons/arrow-down-wide-narrow';
+import ArrowUpNarrowWide from 'lucide-react-native/dist/esm/icons/arrow-up-narrow-wide';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import MapIcon from 'lucide-react-native/dist/esm/icons/map';
@@ -39,7 +41,10 @@ import {
   useFeedPosts,
   useFeedRegionCounts,
 } from '../../community/hooks/queries';
-import { formatDuration } from '../../community/services/communityApi';
+import {
+  formatDuration,
+  orderLabelsFor,
+} from '../../community/services/communityApi';
 import { resolveAvatarUrl } from '../../community/utils/avatar';
 import { buildFeedRegionOptions } from '../../community/utils/feedRegions';
 import { getRegionCoords } from '../../community/utils/regionCoords';
@@ -64,12 +69,40 @@ const SORT_PARAMS: Record<string, string> = {
   최신순: 'latest',
   인기순: 'views',
   좋아요순: 'likes',
+  가져가기순: 'forks',
 };
+
 
 const ALL = '전체';
 const TAGS = ['#뚜벅이최적화', '#극한의J', '#여유로운P', '#동선낭비없는'];
 const DURATIONS = [ALL, '1일', '2-3일', '4일 이상'];
-const SORT_OPTIONS = ['최신순', '인기순', '좋아요순'];
+const SORT_OPTIONS = ['최신순', '인기순', '좋아요순', '가져가기순'];
+
+/** 상세 필터의 선택 버튼. 웹 패널과 같은 라운드 8 사각형이다. */
+const FilterOption = ({
+  label,
+  selected,
+  onPress,
+  icon,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  icon?: React.ReactNode;
+}) => (
+  <TouchableOpacity
+    style={[styles.option, selected && styles.optionSelected]}
+    onPress={onPress}
+    activeOpacity={0.8}
+    accessibilityRole="button"
+    accessibilityState={{ selected }}
+  >
+    {icon}
+    <Text style={[styles.optionText, selected && styles.optionTextSelected]}>
+      {label}
+    </Text>
+  </TouchableOpacity>
+);
 
 export default function TravelFeedScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -81,6 +114,7 @@ export default function TravelFeedScreen() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [sortBy, setSortBy] = useState('최신순');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [filterRegion, setFilterRegion] = useState(ALL);
   const [filterDuration, setFilterDuration] = useState(ALL);
 
@@ -92,6 +126,7 @@ export default function TravelFeedScreen() {
   const pendingInvitations = usePendingInvitationActions();
 
   const [tempSortBy, setTempSortBy] = useState('최신순');
+  const [tempSortOrder, setTempSortOrder] = useState<'asc' | 'desc'>('desc');
   const [tempDuration, setTempDuration] = useState(ALL);
   const [tempTag, setTempTag] = useState<string | null>(null);
 
@@ -110,10 +145,14 @@ export default function TravelFeedScreen() {
   );
 
   const isFilterApplied =
-    filterDuration !== ALL || sortBy !== '최신순' || !!selectedTag;
+    filterDuration !== ALL ||
+    sortBy !== '최신순' ||
+    sortOrder !== 'desc' ||
+    !!selectedTag;
   const activeFilterCount =
     (filterDuration !== ALL ? 1 : 0) +
     (sortBy !== '최신순' ? 1 : 0) +
+    (sortOrder !== 'desc' ? 1 : 0) +
     (selectedTag ? 1 : 0);
 
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -146,9 +185,17 @@ export default function TravelFeedScreen() {
       maxDays: duration?.maxDays,
       tag: selectedTag ?? undefined,
       sort: SORT_PARAMS[sortBy] ?? 'latest',
+      order: sortOrder,
       q: debouncedQuery || undefined,
     };
-  }, [filterRegion, filterDuration, selectedTag, sortBy, debouncedQuery]);
+  }, [
+    filterRegion,
+    filterDuration,
+    selectedTag,
+    sortBy,
+    sortOrder,
+    debouncedQuery,
+  ]);
 
   const feedQuery = useFeedPosts(feedFilters);
 
@@ -248,6 +295,7 @@ export default function TravelFeedScreen() {
 
   const openFilterModal = () => {
     setTempSortBy(sortBy);
+    setTempSortOrder(sortOrder);
     setTempDuration(filterDuration);
     setTempTag(selectedTag);
     setFilterModalVisible(true);
@@ -255,6 +303,7 @@ export default function TravelFeedScreen() {
 
   const applyFilters = () => {
     setSortBy(tempSortBy);
+    setSortOrder(tempSortOrder);
     setFilterDuration(tempDuration);
     setSelectedTag(tempTag);
     setFilterModalVisible(false);
@@ -262,6 +311,7 @@ export default function TravelFeedScreen() {
 
   const resetFilters = () => {
     setTempSortBy('최신순');
+    setTempSortOrder('desc');
     setTempDuration(ALL);
     setTempTag(null);
   };
@@ -431,11 +481,14 @@ export default function TravelFeedScreen() {
             <View style={styles.bottomSheetHeader}>
               <Text style={styles.bottomSheetTitle}>상세 필터</Text>
               <TouchableOpacity
-                onPress={() => setFilterModalVisible(false)}
+                style={styles.resetLink}
+                onPress={resetFilters}
+                hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
                 accessibilityRole="button"
-                accessibilityLabel="닫기"
+                accessibilityLabel="필터 초기화"
               >
-                <X size={20} color={tokens.colors.textSecondary} />
+                <X size={normalize(14)} color={tokens.colors.textSecondary} />
+                <Text style={styles.resetLinkText}>초기화</Text>
               </TouchableOpacity>
             </View>
 
@@ -445,12 +498,11 @@ export default function TravelFeedScreen() {
             >
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionLabel}>여행 기간</Text>
-                <View style={styles.chipsContainer}>
+                <View style={styles.optionsRow}>
                   {DURATIONS.map(duration => (
-                    <Chip
+                    <FilterOption
                       key={duration}
                       label={duration}
-                      variant="soft"
                       selected={tempDuration === duration}
                       onPress={() => setTempDuration(duration)}
                     />
@@ -460,18 +512,16 @@ export default function TravelFeedScreen() {
 
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionLabel}>여행 스타일</Text>
-                <View style={styles.chipsContainer}>
-                  <Chip
+                <View style={styles.optionsRow}>
+                  <FilterOption
                     label={ALL}
-                    variant="soft"
                     selected={tempTag === null}
                     onPress={() => setTempTag(null)}
                   />
                   {TAGS.map(tag => (
-                    <Chip
+                    <FilterOption
                       key={tag}
                       label={tag}
-                      variant="soft"
                       selected={tempTag === tag}
                       onPress={() => setTempTag(tag)}
                     />
@@ -481,29 +531,48 @@ export default function TravelFeedScreen() {
 
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionLabel}>정렬 기준</Text>
-                <View style={styles.chipsContainer}>
+                <View style={styles.optionsRow}>
                   {SORT_OPTIONS.map(option => (
-                    <Chip
+                    <FilterOption
                       key={option}
                       label={option}
-                      variant="soft"
                       selected={tempSortBy === option}
                       onPress={() => setTempSortBy(option)}
                     />
                   ))}
                 </View>
+
+                <View style={styles.orderRow}>
+                  {(['desc', 'asc'] as const).map(order => {
+                    const labels = orderLabelsFor(tempSortBy);
+                    const selected = tempSortOrder === order;
+                    const Icon =
+                      order === 'desc' ? ArrowDownWideNarrow : ArrowUpNarrowWide;
+                    return (
+                      <FilterOption
+                        key={order}
+                        label={labels[order]}
+                        selected={selected}
+                        onPress={() => setTempSortOrder(order)}
+                        icon={
+                          <Icon
+                            size={normalize(14)}
+                            color={
+                              selected
+                                ? tokens.colors.white
+                                : tokens.colors.textSecondary
+                            }
+                            strokeWidth={1.8}
+                          />
+                        }
+                      />
+                    );
+                  })}
+                </View>
               </View>
             </ScrollView>
 
             <View style={styles.bottomSheetFooter}>
-              <TouchableOpacity
-                style={styles.resetButton}
-                onPress={resetFilters}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-              >
-                <Text style={styles.resetButtonText}>초기화</Text>
-              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.applyButton}
                 onPress={applyFilters}
@@ -717,33 +786,54 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
     marginBottom: normalize(12),
   },
-  chipsContainer: {
+  optionsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: normalize(8),
+  },
+  orderRow: {
+    flexDirection: 'row',
+    gap: normalize(8),
+    marginTop: normalize(10),
+  },
+  option: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(6),
+    paddingHorizontal: normalize(12),
+    paddingVertical: normalize(7),
+    borderRadius: normalize(8),
+    backgroundColor: tokens.colors.surface,
+  },
+  optionSelected: {
+    backgroundColor: tokens.colors.primary,
+  },
+  optionText: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textSecondary,
+  },
+  optionTextSelected: {
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.white,
+  },
+  resetLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(4),
+  },
+  resetLinkText: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textSecondary,
   },
   bottomSheetFooter: {
     flexDirection: 'row',
     gap: normalize(12),
     paddingBottom: Platform.OS === 'ios' ? normalize(12) : 0,
   },
-  resetButton: {
-    flex: 1,
-    height: normalize(48),
-    borderRadius: tokens.radius.l,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: tokens.colors.white,
-  },
-  resetButtonText: {
-    fontSize: normalize(tokens.fontSize.s),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.textSecondary,
-  },
   applyButton: {
-    flex: 2,
+    flex: 1,
     height: normalize(48),
     borderRadius: tokens.radius.l,
     justifyContent: 'center',

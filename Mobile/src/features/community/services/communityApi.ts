@@ -101,6 +101,21 @@ export async function forkPost(
   return response.data;
 }
 
+/**
+ * 정렬 방향 라벨.
+ *
+ * 기준마다 방향의 뜻이 달라 라벨을 따로 준다. 최신순의 오름차순은 "오래된순"이지
+ * "낮은순"이 아니다. 웹의 DetailFilterPanel과 같은 규칙이다.
+ */
+const ORDER_LABELS: Record<string, { desc: string; asc: string }> = {
+  최신순: { desc: '최신순', asc: '오래된순' },
+};
+const DEFAULT_ORDER_LABELS = { desc: '높은순', asc: '낮은순' };
+
+export function orderLabelsFor(sortBy: string): { desc: string; asc: string } {
+  return ORDER_LABELS[sortBy] ?? DEFAULT_ORDER_LABELS;
+}
+
 export function formatDuration(durationDays?: number): string {
   if (!durationDays || durationDays < 1) return '';
   return durationDays === 1 ? '1일' : `${durationDays - 1}박 ${durationDays}일`;
