@@ -6,18 +6,13 @@ import {
   Modal,
   TouchableOpacity,
   Pressable,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import axios from 'axios';
-import X from 'lucide-react-native/dist/esm/icons/x';
-import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
-import Map from 'lucide-react-native/dist/esm/icons/map';
 
 import { styles, COLORS } from './SearchLocationModal.styles';
-import { DESTINATIONS_28, REGION_GROUPS } from '../../constants/regions';
+import { DESTINATIONS_28 } from '../../constants/regions';
 import { isRegionMatch } from '../../utils/regionMatcher';
 import { resolveApiUrl } from '../../utils/apiUrl';
 
@@ -93,7 +88,6 @@ export default function SearchLocationModal({
   onSelect,
   currentValue,
 }: Props) {
-  const [selectedGroup, setSelectedGroup] = useState<string>('전체');
   const [selectedDestination, setSelectedDestination] = useState<TravelVO | null>(null);
 
   const { data, isLoading } = useDestinations(visible);
@@ -101,7 +95,6 @@ export default function SearchLocationModal({
 
   useEffect(() => {
     if (visible) {
-      setSelectedGroup('전체');
       setSelectedDestination(null);
     }
   }, [visible]);
@@ -114,176 +107,82 @@ export default function SearchLocationModal({
     }
   }, [visible, currentValue, data]);
 
+  // 탭이 곧 선택이다. 시트는 열린 채로 두어 위쪽 명소 사진이 바뀌는 것을 바로 보여준다.
   const handleDestinationSelect = (item: TravelVO) => {
     setSelectedDestination(item);
+    onSelect(item.travelName, item.travelId);
   };
-
-  const handleConfirmDestination = () => {
-    if (!selectedDestination) return;
-
-    if (__DEV__) {
-      console.log(
-        `Selection: ${selectedDestination.travelName}, Mapped ID: ${selectedDestination.travelId}`,
-      );
-    }
-
-    onSelect(selectedDestination.travelName, selectedDestination.travelId);
-    onClose();
-  };
-
-  const filteredDestinations = selectedGroup === '전체'
-    ? destinations
-    : destinations.filter(d => d.region === selectedGroup);
 
   const title = '여행지 선택';
-  const subtitle = '여행할 지역을 선택해주세요 (28개 도시)';
 
-  const isConfirmDisabled = !selectedDestination;
-
-  const renderDestinationContent = () => (
-    <View style={styles.destinationWrapper}>
+  const renderDestinationContent = () =>
+    isLoading ? (
+      <View style={styles.inlineLoaderContainer}>
+        <ActivityIndicator size="small" color={COLORS.primary} />
+        <Text style={styles.loaderText}>불러오는 중...</Text>
+      </View>
+    ) : (
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.destinationScrollContainer}
-        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.gridScroll}
       >
-        {isLoading ? (
-          <View style={styles.inlineLoaderContainer}>
-            <ActivityIndicator size="small" color={COLORS.primary} />
-            <Text style={styles.loaderText}>불러오는 중...</Text>
-          </View>
-        ) : (
-          <>
-
-            <View style={styles.chipSectionContainer}>
-              <View style={styles.sectionHeader}>
-                <Map size={16} color={COLORS.primary} strokeWidth={1.5} />
-                <Text style={styles.sectionTitle}>권역 필터</Text>
-              </View>
-              <View style={styles.chipContainer}>
-                {REGION_GROUPS.map(group => {
-                  const isSelected = selectedGroup === group;
-                  return (
-                    <TouchableOpacity
-                      key={group}
-                      style={[styles.chip, isSelected && styles.chipSelected]}
-                      onPress={() => setSelectedGroup(group)}
-                      activeOpacity={0.7}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: isSelected }}
-                    >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          isSelected && styles.chipTextSelected,
-                        ]}
-                      >
-                        {group}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-
-            <View style={styles.chipSectionContainer}>
-              <View style={styles.sectionHeader}>
-                <MapPin size={16} color={COLORS.primary} strokeWidth={1.5} />
-                <Text style={styles.sectionTitle}>
-                  여행지 목록 ({filteredDestinations.length}개)
-                </Text>
-              </View>
-              <View style={styles.chipContainer}>
-                {filteredDestinations.map(item => {
-                  const isSelected = selectedDestination?.travelId === item.travelId;
-                  return (
-                    <TouchableOpacity
-                      key={item.travelId > 0 ? item.travelId : item.travelName}
-                      style={[styles.chip, isSelected && styles.chipSelected]}
-                      onPress={() => handleDestinationSelect(item)}
-                      activeOpacity={0.7}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: isSelected }}
-                    >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          isSelected && styles.chipTextSelected,
-                        ]}
-                      >
-                        {item.travelName}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          </>
-        )}
+        <View style={styles.grid}>
+          {destinations.map(item => {
+            const isSelected = selectedDestination?.travelId === item.travelId;
+            return (
+              <TouchableOpacity
+                key={item.travelId > 0 ? item.travelId : item.travelName}
+                style={styles.gridCell}
+                onPress={() => handleDestinationSelect(item)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+              >
+                <View style={[styles.cell, isSelected && styles.cellSelected]}>
+                  <Text
+                    style={[styles.cellText, isSelected && styles.cellTextSelected]}
+                    numberOfLines={1}
+                  >
+                    {item.travelName}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </ScrollView>
-
-      <View style={styles.confirmFooter}>
-        <Pressable
-          style={[
-            styles.confirmButton,
-            isConfirmDisabled && styles.confirmButtonDisabled,
-          ]}
-          onPress={handleConfirmDestination}
-          disabled={isConfirmDisabled}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: isConfirmDisabled }}
-        >
-          <Text
-            style={[
-              styles.confirmButtonText,
-              isConfirmDisabled && styles.confirmButtonTextDisabled,
-            ]}
-          >
-            {selectedDestination
-              ? `${selectedDestination.travelName} 선택`
-              : '여행지를 선택해주세요'}
-          </Text>
-        </Pressable>
-      </View>
-    </View>
-  );
+    );
 
   return (
     <Modal
       visible={visible}
       transparent={true}
-      animationType="fade"
+      animationType="slide"
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
-      >
-        <Pressable style={styles.backdrop} onPress={onClose} />
-        <View style={styles.modalView}>
-
-          <View style={styles.header}>
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.headerTitle}>{title}</Text>
-              <Text style={styles.headerSubtitle}>{subtitle}</Text>
-            </View>
+      <View style={styles.sheetRoot}>
+        <Pressable
+          style={styles.backdrop}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="닫기"
+        />
+        <View style={styles.sheet}>
+          <View style={styles.grabber} />
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>{title}</Text>
             <TouchableOpacity
               onPress={onClose}
-              style={styles.closeButton}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
               accessibilityRole="button"
-              accessibilityLabel="닫기"
+              accessibilityLabel="선택 완료"
             >
-              <X size={20} color={COLORS.subtext} strokeWidth={1.5} />
+              <Text style={styles.sheetDone}>완료</Text>
             </TouchableOpacity>
           </View>
-
-          <View style={styles.contentContainer}>
-            {renderDestinationContent()}
-          </View>
+          {renderDestinationContent()}
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

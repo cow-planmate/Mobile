@@ -1,8 +1,6 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { normalize } from '../../utils/normalize';
 import { tokens } from '../../theme/tokens';
-
-const { height } = Dimensions.get('window');
 
 export const COLORS = {
   primary: tokens.colors.primary,
@@ -11,14 +9,10 @@ export const COLORS = {
   subtext: tokens.colors.textSecondary,
   placeholder: tokens.colors.textTertiary,
   border: tokens.colors.border,
-  lightGray: tokens.colors.surface,
-  darkGray: '#505050',
   white: tokens.colors.white,
-  overlay: 'rgba(0,0,0,0.4)',
-  lightBlue: '#E0E7FF',
-  iconBg: '#F5F7FF',
-  surface: tokens.colors.borderLight,
-  disabled: '#D1D5DB',
+  overlay: 'rgba(12, 15, 20, 0.28)',
+  cell: '#F6F7F9',
+  disabled: '#C3C8D0',
 };
 
 export const FONTS = {
@@ -29,294 +23,92 @@ export const FONTS = {
 };
 
 export const styles = StyleSheet.create({
-
-  container: {
+  sheetRoot: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  modalView: {
-    width: '90%',
-    height: height * 0.82,
-    backgroundColor: COLORS.white,
-    borderRadius: normalize(20),
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 20,
+    backgroundColor: COLORS.overlay,
   },
 
-  header: {
+  // 28곳이 스크롤 없이 들어가므로 시트는 내용 높이만큼만 차지한다.
+  sheet: {
+    backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    maxHeight: '82%',
+    paddingBottom: normalize(10),
+  },
+  grabber: {
+    width: normalize(36),
+    height: normalize(4),
+    borderRadius: normalize(2),
+    backgroundColor: COLORS.border,
+    alignSelf: 'center',
+    marginTop: normalize(9),
+  },
+  sheetHeader: {
     flexDirection: 'row',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: normalize(24),
-    paddingTop: normalize(16),
-    paddingBottom: normalize(16),
-    backgroundColor: COLORS.white,
+    paddingHorizontal: normalize(16),
+    paddingTop: normalize(10),
+    paddingBottom: normalize(8),
   },
-  headerTextContainer: {
-    flex: 1,
-    marginRight: normalize(12),
-  },
-  headerTitle: {
-    fontSize: normalize(22),
+  sheetTitle: {
+    fontSize: normalize(14.5),
     fontFamily: FONTS.bold,
     color: COLORS.text,
     letterSpacing: -0.3,
-    marginBottom: normalize(4),
   },
-  headerSubtitle: {
-    fontSize: normalize(14),
-    color: COLORS.subtext,
-    fontFamily: FONTS.regular,
-  },
-  closeButton: {
-    width: normalize(36),
-    height: normalize(36),
-    borderRadius: normalize(18),
-    backgroundColor: COLORS.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
+  sheetDone: {
+    fontSize: normalize(13),
+    fontFamily: FONTS.semibold,
+    color: COLORS.primary,
   },
 
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: normalize(14),
-    marginHorizontal: normalize(24),
-    paddingHorizontal: normalize(4),
-    height: normalize(52),
-    marginBottom: normalize(12),
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
+  gridScroll: {
+    paddingHorizontal: normalize(13),
+    paddingBottom: normalize(4),
   },
-  searchIconContainer: {
-    width: normalize(40),
-    height: normalize(40),
-    borderRadius: normalize(12),
-    backgroundColor: COLORS.lightBlue,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: normalize(10),
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: normalize(15),
-    fontFamily: FONTS.regular,
-    color: COLORS.text,
-    height: '100%',
-  },
-  clearButton: {
-    width: normalize(30),
-    height: normalize(30),
-    borderRadius: normalize(15),
-    backgroundColor: COLORS.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: normalize(4),
-  },
-
-  contentContainer: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-  },
-
-  sectionContainer: {
-    marginBottom: normalize(24),
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: normalize(12),
-    gap: normalize(6),
-  },
-  sectionTitle: {
-    fontSize: normalize(15),
-    fontFamily: FONTS.bold,
-    color: COLORS.text,
-  },
-
-  tagContainer: {
+  grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: normalize(8),
   },
-  tagWrapper: {
-    flexDirection: 'row',
+  // 셀 안쪽 여백으로 간격을 만들어 4열이 정확히 맞아떨어지게 한다.
+  gridCell: {
+    width: '25%',
+    padding: normalize(3),
+  },
+  cell: {
+    backgroundColor: COLORS.cell,
+    paddingVertical: normalize(9),
+    paddingHorizontal: normalize(4),
     alignItems: 'center',
-    backgroundColor: COLORS.iconBg,
-    borderRadius: normalize(20),
-    borderWidth: 1,
-    borderColor: COLORS.lightBlue,
+    justifyContent: 'center',
   },
-  tagButton: {
-    paddingLeft: normalize(14),
-    paddingRight: normalize(8),
-    paddingVertical: normalize(10),
+  cellSelected: {
+    backgroundColor: COLORS.primary,
   },
-  tagRemoveButton: {
-    paddingRight: normalize(12),
-    paddingLeft: normalize(4),
-    paddingVertical: normalize(10),
-  },
-  tagText: {
-    fontSize: normalize(13),
-    color: COLORS.primary,
+  cellText: {
+    fontSize: normalize(12.5),
     fontFamily: FONTS.medium,
-  },
-
-  emptyStateContainer: {
-    flex: 1,
-    paddingHorizontal: normalize(24),
-    paddingTop: normalize(4),
-  },
-  resultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: normalize(14),
-    paddingHorizontal: normalize(14),
-    marginBottom: normalize(8),
-    backgroundColor: COLORS.surface,
-    borderRadius: normalize(14),
-  },
-  resultIconContainer: {
-    width: normalize(40),
-    height: normalize(40),
-    borderRadius: normalize(12),
-    backgroundColor: COLORS.lightBlue,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: normalize(12),
-  },
-  resultInfo: {
-    flex: 1,
-    flexDirection: 'column',
-  },
-  resultName: {
-    fontSize: normalize(15),
-    fontFamily: FONTS.semibold,
-    color: COLORS.text,
-    marginBottom: normalize(2),
-  },
-  resultAddress: {
-    fontSize: normalize(12),
     color: COLORS.subtext,
-    fontFamily: FONTS.regular,
   },
-
-  emptyResultContainer: {
-    alignItems: 'center',
-    paddingTop: normalize(48),
-    paddingBottom: normalize(20),
-  },
-  emptyIconCircle: {
-    width: normalize(64),
-    height: normalize(64),
-    borderRadius: normalize(32),
-    backgroundColor: COLORS.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: normalize(16),
-  },
-  emptyResultTitle: {
-    fontSize: normalize(16),
+  cellTextSelected: {
     fontFamily: FONTS.semibold,
-    color: COLORS.text,
-    marginBottom: normalize(6),
-  },
-  emptyResultSubtitle: {
-    fontSize: normalize(13),
-    fontFamily: FONTS.regular,
-    color: COLORS.subtext,
+    color: COLORS.white,
   },
 
   inlineLoaderContainer: {
-    flexDirection: 'row',
+    paddingVertical: normalize(40),
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: normalize(24),
     gap: normalize(8),
   },
   loaderText: {
-    fontSize: normalize(14),
-    color: COLORS.subtext,
+    fontSize: normalize(12.5),
     fontFamily: FONTS.regular,
-  },
-
-  destinationWrapper: {
-    flex: 1,
-  },
-  destinationScrollContainer: {
-    paddingHorizontal: normalize(24),
-    paddingTop: normalize(4),
-    paddingBottom: normalize(20),
-  },
-  chipSectionContainer: {
-    marginBottom: normalize(20),
-  },
-  chipContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: normalize(8),
-  },
-
-  chip: {
-    paddingHorizontal: normalize(12),
-    paddingVertical: normalize(12),
-    borderRadius: normalize(14),
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  chipSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  chipText: {
-    fontSize: normalize(11),
-    fontFamily: FONTS.medium,
-    color: COLORS.text,
-  },
-  chipTextSelected: {
-    color: COLORS.white,
-    fontFamily: FONTS.semibold,
-  },
-
-  confirmFooter: {
-    paddingHorizontal: normalize(24),
-    paddingVertical: normalize(16),
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    backgroundColor: COLORS.white,
-  },
-  confirmButton: {
-    width: '100%',
-    height: normalize(52),
-    borderRadius: normalize(14),
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-  },
-  confirmButtonDisabled: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  confirmButtonText: {
-    fontSize: normalize(15),
-    fontFamily: FONTS.bold,
-    color: COLORS.white,
-  },
-
-  confirmButtonTextDisabled: {
-    color: COLORS.subtext,
+    color: COLORS.placeholder,
   },
 });
