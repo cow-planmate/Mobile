@@ -87,6 +87,8 @@ const mockItem = {
   tags: ['#뚜벅이최적화'],
   location: '제주',
   duration: '3박4일',
+  routePlaces: ['공항', '성산일출봉', '섭지코지', '광치기해변', '숙소'],
+  placeCount: 7,
 };
 
 describe('TravelFeedList Component', () => {
@@ -127,6 +129,28 @@ describe('TravelFeedList Component', () => {
     const tree = JSON.stringify(component.toJSON());
     expect(tree).toContain(mockItem.title);
     expect(tree).toContain(mockItem.author);
+    // 코스 미리보기는 네 곳까지 보여주고 나머지는 접는다.
+    expect(tree).toContain('DAY 1');
+    expect(tree).toContain('성산일출봉');
+    expect(tree).toContain('외 3곳');
+    expect(tree).not.toContain('숙소');
+  });
+
+  it('코스 정보가 없으면 코스 줄을 그리지 않는다', async () => {
+    let component: any;
+
+    await act(async () => {
+      component = renderer.create(
+        <TravelFeedList
+          items={[{ ...mockItem, routePlaces: [], placeCount: 0 }]}
+          viewMode="list"
+        />,
+      );
+    });
+
+    const tree = JSON.stringify(component.toJSON());
+    expect(tree).toContain(mockItem.title);
+    expect(tree).not.toContain('DAY 1');
   });
 
   it('renders a populated grid card with an author avatar fallback', async () => {

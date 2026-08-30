@@ -6,18 +6,13 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  Pressable,
   StyleProp,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import ThumbsUp from 'lucide-react-native/dist/esm/icons/thumbs-up';
-import ThumbsDown from 'lucide-react-native/dist/esm/icons/thumbs-down';
-import MessageSquare from 'lucide-react-native/dist/esm/icons/message-square';
-import Eye from 'lucide-react-native/dist/esm/icons/eye';
 import Copy from 'lucide-react-native/dist/esm/icons/copy';
-import Clock from 'lucide-react-native/dist/esm/icons/clock';
-import { Badge, Card, EmptyState, StatItem, StatRow } from '../../../components/ui';
+import { EmptyState } from '../../../components/ui';
 import FallbackImage from '../../../components/common/FallbackImage';
-import LevelBadge from '../../community/components/LevelBadge';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 
@@ -38,6 +33,10 @@ export interface TravelFeedItem {
   tags: string[];
   location: string;
   duration: string;
+  /** 첫날 코스. 목록 API가 placesByDay로 내려주는 값이다. */
+  routePlaces: string[];
+  /** 전체 장소 수. 첫날에서 잘린 나머지를 "외 N곳"으로 쓴다. */
+  placeCount: number;
 }
 
 interface TravelFeedListProps {
@@ -54,6 +53,9 @@ interface TravelFeedListProps {
   onRefresh?: () => void;
   onLoadMore?: () => void;
 }
+
+// 화면이 좁아 네 곳까지만 들어간다. 나머지는 "외 N곳"으로 접는다.
+const ROUTE_PREVIEW_MAX = 4;
 
 const FeedAvatar = ({ uri, name }: { uri: string; name: string }) => (
   <FallbackImage
@@ -82,35 +84,71 @@ const FeedThumbnail = ({
   />
 );
 
-const FeedStats = ({ item }: { item: TravelFeedItem }) => (
-  <StatRow divided>
-    <StatItem
-      icon={<ThumbsUp size={13} color={tokens.colors.primary} />}
-      value={item.likes}
-      label="좋아요"
-      active
-    />
-    <StatItem
-      icon={<ThumbsDown size={13} color={tokens.colors.textSecondary} />}
-      value={item.dislikes}
-      label="싫어요"
-    />
-    <StatItem
-      icon={<MessageSquare size={13} color={tokens.colors.textSecondary} />}
-      value={item.comments}
-      label="댓글"
-    />
-    <StatItem
-      icon={<Eye size={13} color={tokens.colors.textSecondary} />}
-      value={item.views}
-      label="조회"
-    />
-    <StatItem
-      icon={<Copy size={13} color={tokens.colors.textSecondary} />}
-      value={item.forks}
-      label="가져가기"
-    />
-  </StatRow>
+/** 지역과 기간. 제목 위에 작게 올린다. */
+const FeedKicker = ({ item }: { item: TravelFeedItem }) => {
+  const text = [item.location, item.duration].filter(Boolean).join(' · ');
+  if (!text) return null;
+  return (
+    <Text style={styles.kicker} numberOfLines={1}>
+      {text}
+    </Text>
+  );
+};
+
+/**
+ * 첫날 코스 한 줄.
+ *
+ * 지도 앱도 블로그도 못 보여주는 정보라 목록에서 앞세울 값이다.
+ * 상세를 따로 부르지 않아도 목록 응답에 이미 들어 있다.
+ */
+const FeedRoute = ({ item }: { item: TravelFeedItem }) => {
+  if (item.routePlaces.length === 0) return null;
+
+  const shown = item.routePlaces.slice(0, ROUTE_PREVIEW_MAX);
+  const rest = Math.max(0, item.placeCount - shown.length);
+
+  return (
+    <Text style={styles.route} numberOfLines={2}>
+      <Text style={styles.routeDay}>DAY 1 </Text>
+      {shown.map((place, index) => (
+        <Text key={`${place}-${index}`}>
+          {index > 0 ? <Text style={styles.routeArrow}> → </Text> : null}
+          {place}
+        </Text>
+      ))}
+      {rest > 0 ? (
+        <Text>
+          <Text style={styles.routeArrow}> → </Text>
+          <Text style={styles.routeRest}>{`외 ${rest}곳`}</Text>
+        </Text>
+      ) : null}
+    </Text>
+  );
+};
+
+/** 작성자와 반응은 글자로만 두고, 가져간 수만 오른쪽에 세운다. */
+const FeedByline = ({ item }: { item: TravelFeedItem }) => (
+  <View style={styles.byline}>
+    <View style={styles.bylineWho}>
+      <FeedAvatar uri={item.authorAvatar} name={item.author} />
+      <Text style={styles.bylineText} numberOfLines={1}>
+        <Text style={styles.bylineAuthor}>{item.author}</Text>
+        {` · 추천 ${item.likes} · 댓글 ${item.comments}`}
+      </Text>
+    </View>
+    <View style={styles.fork}>
+      <Copy
+        size={normalize(13)}
+        color={
+          item.forks > 0 ? tokens.colors.primary : tokens.colors.textTertiary
+        }
+        strokeWidth={1.8}
+      />
+      <Text style={[styles.forkText, item.forks === 0 && styles.forkTextZero]}>
+        {`가져감 ${item.forks}`}
+      </Text>
+    </View>
+  </View>
 );
 
 const FeedListItem = React.memo(function FeedListItem({
@@ -126,116 +164,58 @@ const FeedListItem = React.memo(function FeedListItem({
     if (onPress) onPress(item);
   }, [onPress, item]);
 
+  // 격자 모드는 사진 위에 아무것도 얹지 않고 글자를 아래에 쌓는다.
   if (isGrid) {
     return (
-      <Card
-        padding="none"
-        style={styles.feedCard}
+      <Pressable
+        style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
         onPress={handlePress}
+        accessibilityRole="button"
         accessibilityLabel={item.title}
       >
-        <View style={styles.thumbnailContainer}>
-          <FeedThumbnail uri={item.thumbnailUrl} style={styles.thumbnail} />
-          {item.location ? (
-            <View style={styles.locationBadge}>
-              <Text style={styles.locationBadgeText} numberOfLines={1}>
-                {item.location}
-              </Text>
-            </View>
-          ) : null}
-        </View>
-
-        <View style={styles.cardContent}>
-          <View style={styles.authorContainer}>
-            <FeedAvatar uri={item.authorAvatar} name={item.author} />
-            <View style={styles.authorInfo}>
-              <View style={styles.authorNameRow}>
-                <Text style={styles.authorName} numberOfLines={1}>
-                  {item.author}
-                </Text>
-                <LevelBadge level={item.authorLevel} />
-              </View>
-              <Text style={styles.createdAtText}>{item.createdAt}</Text>
-            </View>
-          </View>
-
-          <Text style={styles.title} numberOfLines={2}>
+        <FeedThumbnail uri={item.thumbnailUrl} style={styles.hero} />
+        <View style={styles.gridBody}>
+          <FeedKicker item={item} />
+          <Text style={styles.gridTitle} numberOfLines={2}>
             {item.title}
           </Text>
-
           {item.description ? (
             <Text style={styles.description} numberOfLines={2}>
               {item.description}
             </Text>
           ) : null}
-
-          <View style={styles.tagDurationContainer}>
-            {item.tags.slice(0, 2).map(tag => (
-              <Badge key={tag} label={tag} tone="primary" />
-            ))}
-            {item.duration ? (
-              <Badge
-                label={item.duration}
-                tone="neutral"
-                icon={<Clock size={9} color={tokens.tones.neutral.fg} />}
-              />
-            ) : null}
-          </View>
-
-          <FeedStats item={item} />
+          <FeedRoute item={item} />
+          <FeedByline item={item} />
         </View>
-      </Card>
+      </Pressable>
     );
   }
 
+  // 목록 모드는 사진과 제목을 나란히 두고 코스만 전체 폭으로 내린다.
   return (
-    <Card
-      variant="outlined"
-      style={styles.listCard}
+    <Pressable
+      style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
       onPress={handlePress}
+      accessibilityRole="button"
       accessibilityLabel={item.title}
     >
-      <View style={styles.listLeftContent}>
-        <View style={styles.listBadgeRow}>
-          {item.location ? (
-            <Badge label={item.location} tone="primary" />
-          ) : null}
-          {item.duration ? (
-            <Badge
-              label={item.duration}
-              tone="neutral"
-              icon={<Clock size={9} color={tokens.tones.neutral.fg} />}
-            />
+      <View style={styles.listRow}>
+        <FeedThumbnail uri={item.thumbnailUrl} style={styles.listThumbnail} />
+        <View style={styles.listColumn}>
+          <FeedKicker item={item} />
+          <Text style={styles.listTitle} numberOfLines={2}>
+            {item.title}
+          </Text>
+          {item.description ? (
+            <Text style={styles.description} numberOfLines={2}>
+              {item.description}
+            </Text>
           ) : null}
         </View>
-
-        <Text style={styles.listTitle} numberOfLines={2}>
-          {item.title}
-        </Text>
-
-        {item.description ? (
-          <Text style={styles.listDescription} numberOfLines={1}>
-            {item.description}
-          </Text>
-        ) : null}
-
-        <View style={styles.listMetaRow}>
-          <Text style={styles.listAuthorName} numberOfLines={1}>
-            {item.author}
-          </Text>
-          <LevelBadge level={item.authorLevel} />
-          <Text style={styles.listCreatedAt}>{item.createdAt}</Text>
-        </View>
-
-        <FeedStats item={item} />
       </View>
-
-      {item.thumbnailUrl ? (
-        <View style={styles.listRightContent}>
-          <FeedThumbnail uri={item.thumbnailUrl} style={styles.listThumbnail} />
-        </View>
-      ) : null}
-    </Card>
+      <FeedRoute item={item} />
+      <FeedByline item={item} />
+    </Pressable>
   );
 });
 
@@ -317,167 +297,156 @@ export default function TravelFeedList({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.white,
   },
   listContent: {
-    paddingHorizontal: normalize(16),
-    paddingVertical: normalize(12),
+    paddingBottom: normalize(12),
   },
 
-  feedCard: {
-    marginBottom: normalize(16),
+  // 카드 테두리 대신 전체 폭 구분선 하나로 나눈다.
+  item: {
+    paddingHorizontal: normalize(16),
+    paddingTop: normalize(16),
+    paddingBottom: normalize(15),
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.borderLight,
+    backgroundColor: tokens.colors.white,
   },
-  thumbnailContainer: {
-    position: 'relative',
+  itemPressed: {
+    backgroundColor: tokens.colors.surface,
+  },
+
+  listRow: {
+    flexDirection: 'row',
+    gap: normalize(12),
+  },
+  listColumn: {
+    flex: 1,
+    minWidth: 0,
+  },
+  // 여행 사진은 대부분 가로다. 정사각으로 자르면 풍경이 잘린다.
+  listThumbnail: {
+    width: normalize(92),
+    height: normalize(69),
+    borderRadius: normalize(8),
+    backgroundColor: tokens.colors.surface,
+  },
+  listTitle: {
+    fontSize: normalize(15.5),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+    lineHeight: normalize(21),
+    letterSpacing: -0.3,
+  },
+
+  hero: {
     width: '100%',
     aspectRatio: 16 / 9,
-  },
-  thumbnail: {
-    width: '100%',
-    height: '100%',
+    borderRadius: normalize(10),
     backgroundColor: tokens.colors.surface,
   },
-  locationBadge: {
-    position: 'absolute',
-    top: normalize(12),
-    right: normalize(12),
-    maxWidth: '55%',
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
-    paddingHorizontal: normalize(10),
-    paddingVertical: normalize(4),
-    borderRadius: tokens.radius.round,
-    ...tokens.shadows.sm,
+  gridBody: {
+    marginTop: normalize(11),
   },
-  locationBadgeText: {
-    fontSize: normalize(tokens.fontSize.xs),
+  gridTitle: {
+    fontSize: normalize(17),
     fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.primary,
+    color: tokens.colors.text,
+    lineHeight: normalize(23),
+    letterSpacing: -0.3,
   },
-  cardContent: {
-    padding: normalize(16),
+
+  kicker: {
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textTertiary,
+    marginBottom: normalize(3),
   },
-  authorContainer: {
+  description: {
+    fontSize: normalize(12.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textSecondary,
+    lineHeight: normalize(19),
+    marginTop: normalize(4),
+  },
+
+  route: {
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textLabel,
+    lineHeight: normalize(18),
+    marginTop: normalize(8),
+  },
+  routeDay: {
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+  },
+  routeArrow: {
+    color: tokens.colors.borderStrong,
+  },
+  routeRest: {
+    color: tokens.colors.textTertiary,
+  },
+
+  byline: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: normalize(12),
+    justifyContent: 'space-between',
     gap: normalize(8),
+    marginTop: normalize(11),
+  },
+  bylineWho: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(6),
+    minWidth: 0,
+  },
+  bylineText: {
+    flex: 1,
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textTertiary,
+  },
+  bylineAuthor: {
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.textSecondary,
   },
   avatar: {
-    width: normalize(32),
-    height: normalize(32),
-    borderRadius: normalize(16),
-    backgroundColor: tokens.colors.surface,
+    width: normalize(18),
+    height: normalize(18),
+    borderRadius: normalize(9),
+    backgroundColor: tokens.colors.border,
   },
   avatarFallback: {
-    backgroundColor: tokens.colors.primary,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarFallbackText: {
+    fontSize: normalize(9),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.textSecondary,
   },
   thumbnailFallback: {
     backgroundColor: tokens.colors.surface,
   },
-  avatarFallbackText: {
-    fontSize: normalize(tokens.fontSize.s),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.white,
-  },
-  authorInfo: {
-    flex: 1,
-  },
-  authorNameRow: {
+
+  fork: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: normalize(5),
+    gap: normalize(4),
   },
-  authorName: {
-    flexShrink: 1,
-    fontSize: normalize(tokens.fontSize.s),
+  forkText: {
+    fontSize: normalize(11.5),
     fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.text,
+    color: tokens.colors.primary,
   },
-  createdAtText: {
-    marginTop: normalize(2),
-    fontSize: normalize(tokens.fontSize.xs),
-    fontFamily: tokens.fontFamily.regular,
+  forkTextZero: {
     color: tokens.colors.textTertiary,
-  },
-  title: {
-    fontSize: normalize(tokens.fontSize.m),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.text,
-    lineHeight: normalize(22),
-    marginBottom: normalize(6),
-  },
-  description: {
-    fontSize: normalize(tokens.fontSize.s),
-    fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textSecondary,
-    lineHeight: normalize(19),
-    marginBottom: normalize(10),
-  },
-  tagDurationContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: normalize(5),
   },
 
   footerLoading: {
-    paddingVertical: normalize(16),
-    justifyContent: 'center',
+    paddingVertical: normalize(20),
     alignItems: 'center',
-  },
-
-  listCard: {
-    flexDirection: 'row',
-    marginBottom: normalize(10),
-  },
-  listLeftContent: {
-    flex: 1,
-  },
-  listBadgeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: normalize(4),
-    marginBottom: normalize(6),
-  },
-  listTitle: {
-    fontSize: normalize(tokens.fontSize.s),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.text,
-    marginBottom: normalize(4),
-  },
-  listDescription: {
-    fontSize: normalize(tokens.fontSize.xs),
-    fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textSecondary,
-    marginBottom: normalize(8),
-  },
-  listMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(5),
-  },
-  listAuthorName: {
-    flexShrink: 1,
-    fontSize: normalize(tokens.fontSize.xs),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.textSecondary,
-  },
-  listCreatedAt: {
-    fontSize: normalize(tokens.fontSize.xs),
-    fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
-  },
-  listRightContent: {
-    marginLeft: normalize(12),
-    justifyContent: 'center',
-  },
-  listThumbnail: {
-    width: normalize(72),
-    height: normalize(72),
-    borderRadius: tokens.radius.m,
-    backgroundColor: tokens.colors.surface,
   },
 });

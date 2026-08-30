@@ -45,6 +45,10 @@ export interface CommunityPostSummary {
 
   durationDays?: number;
   forks?: number;
+
+  // 목록 응답이 코스 미리보기를 함께 내려준다. 상세를 다시 부르지 않아도 된다.
+  placeCount?: number;
+  placesByDay?: { day: number; count: number; places: string[] }[];
   tags?: string[];
   description?: string;
   actedAt?: string;

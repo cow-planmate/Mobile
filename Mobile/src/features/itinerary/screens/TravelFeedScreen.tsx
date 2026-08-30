@@ -172,8 +172,10 @@ export default function TravelFeedScreen() {
           views: post.views,
           forks: post.forks ?? 0,
           tags: post.tags ?? [],
-          location: post.location ?? post.region ?? '',
+          location: post.region ?? post.location ?? '',
           duration: formatDuration(post.durationDays),
+          routePlaces: post.placesByDay?.[0]?.places ?? [],
+          placeCount: post.placeCount ?? 0,
         })),
     [feedQuery.data],
   );
