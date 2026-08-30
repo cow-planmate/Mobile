@@ -45,7 +45,11 @@ const api = {
   useDerivedValue: fn => ({ value: fn() }),
   useAnimatedScrollHandler: () => () => {},
   useAnimatedRef: () => ({ current: null }),
-  withTiming: identity,
+  // 콜백을 받는 형태를 쓰므로 테스트에서도 완료로 처리한다.
+  withTiming: (value, _config, callback) => {
+    if (typeof callback === 'function') callback(true);
+    return value;
+  },
   withSpring: identity,
   withDelay: (_delay, value) => value,
   withSequence: (...values) => values[values.length - 1],
