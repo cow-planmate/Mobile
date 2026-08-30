@@ -17,6 +17,7 @@ import Loader from 'lucide-react-native/dist/esm/icons/loader';
 import { styles } from './ForgotPasswordScreen.styles';
 import { COLORS } from '../authTokens';
 import { sf } from '../../../utils/normalize';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
@@ -97,6 +98,7 @@ export const ForgotPasswordScreenView = ({
   setFocusedField,
   formatTime,
 }: ForgotPasswordScreenViewProps) => {
+  const insets = useSafeAreaInsets();
   const emailRef = useRef<TextInput>(null);
   const codeRef = useRef<TextInput>(null);
 
@@ -138,7 +140,7 @@ export const ForgotPasswordScreenView = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         <Pressable
           style={styles.headerBackButton}
           onPress={onPrevStep}
@@ -420,7 +422,7 @@ export const ForgotPasswordScreenView = ({
 
       {step === 2 && (
         <View
-          style={[styles.footer, { paddingBottom: sf(16) }]}
+          style={[styles.footer, { paddingBottom: sf(16) + insets.bottom }]}
         >
           {tempPasswordStatus === 'sent' && (
             <AuthSubmitButton

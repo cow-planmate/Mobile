@@ -10,7 +10,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: sf(12),
-    height: sf(56),
+    minHeight: sf(56),
     paddingLeft: sf(4),
     paddingRight: sf(20),
   },

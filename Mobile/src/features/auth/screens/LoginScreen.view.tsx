@@ -19,6 +19,7 @@ import Svg, { Path, Rect } from 'react-native-svg';
 import { styles } from './LoginScreen.styles';
 import { COLORS } from '../authTokens';
 import { sf } from '../../../utils/normalize';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { revealStep } from '../motion';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
@@ -116,6 +117,7 @@ export const LoginScreenView = ({
   onSnsClose,
   onSnsNavigationStateChange,
 }: LoginScreenViewProps) => {
+  const insets = useSafeAreaInsets();
   const [isPasswordVisible, setPasswordVisible] = useState(false);
 
   const emailRef = useRef<TextInput>(null);
@@ -166,7 +168,10 @@ export const LoginScreenView = ({
     <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: sf(32) + insets.top, paddingBottom: sf(24) + insets.bottom },
+        ]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}

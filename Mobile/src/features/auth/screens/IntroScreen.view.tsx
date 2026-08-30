@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, Image } from 'react-native';
+import { sf } from '../../../utils/normalize';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated';
 import { styles } from './IntroScreen.styles';
 import AuthSubmitButton from '../components/AuthSubmitButton';
@@ -11,8 +13,9 @@ interface IntroScreenViewProps {
 }
 
 const IntroScreenView = ({ onStart, onLogin }: IntroScreenViewProps) => {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.content}>
         <Animated.View style={styles.logoContainer} entering={revealStep(0)}>
           <Image
@@ -35,7 +38,7 @@ const IntroScreenView = ({ onStart, onLogin }: IntroScreenViewProps) => {
       </View>
 
       <Animated.View
-        style={styles.footer}
+        style={[styles.footer, { paddingBottom: sf(24) + insets.bottom }]}
         entering={revealStep(3)}
       >
         <AuthSubmitButton label="시작하기" onPress={onStart} />

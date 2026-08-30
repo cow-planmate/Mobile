@@ -7,6 +7,7 @@ import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import { styles } from './OAuthAdditionalInfoScreen.styles';
 import { COLORS } from '../authTokens';
 import { sf } from '../../../utils/normalize';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PressableScale from '../components/PressableScale';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
@@ -73,13 +74,14 @@ export const OAuthAdditionalInfoScreenView = ({
   setFocusedField,
   setBirthdatePickerOpen,
 }: OAuthAdditionalInfoScreenViewProps) => {
+  const insets = useSafeAreaInsets();
   const fieldState = (invalid: boolean, isFocused: boolean): FieldState =>
     invalid ? 'error' : isFocused ? 'focus' : 'default';
 
   return (
     <View style={styles.container}>
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         <Pressable
           style={styles.headerBackButton}
           onPress={onBack}
@@ -213,7 +215,7 @@ export const OAuthAdditionalInfoScreenView = ({
         {!!errors.form && <InlineError message={errors.form} />}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: sf(16) }]}>
+      <View style={[styles.footer, { paddingBottom: sf(16) + insets.bottom }]}>
         <AuthSubmitButton
           label="완료"
           onPress={onComplete}

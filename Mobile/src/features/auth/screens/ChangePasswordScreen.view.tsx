@@ -10,6 +10,7 @@ import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import { styles } from './ChangePasswordScreen.styles';
 import { COLORS } from '../authTokens';
 import { sf } from '../../../utils/normalize';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PASSWORD_MAX_LENGTH } from '../../../utils/passwordPolicy';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
@@ -99,6 +100,7 @@ export const ChangePasswordScreenView = ({
   setIsNewVisible,
   setIsConfirmVisible,
 }: ChangePasswordScreenViewProps) => {
+  const insets = useSafeAreaInsets();
   const newPasswordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
 
@@ -108,7 +110,7 @@ export const ChangePasswordScreenView = ({
   return (
     <View style={styles.container}>
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         <Pressable
           style={styles.headerBackButton}
           onPress={onBack}
@@ -312,7 +314,7 @@ export const ChangePasswordScreenView = ({
         {!!errors.form && <InlineError message={errors.form} />}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: sf(16) }]}>
+      <View style={[styles.footer, { paddingBottom: sf(16) + insets.bottom }]}>
         <AuthSubmitButton
           label="비밀번호 변경"
           onPress={onSubmit}
