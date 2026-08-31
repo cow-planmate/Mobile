@@ -7,8 +7,7 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
-import { Client, IMessage, ReconnectionTimeMode } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
+import { createProtoSyncClient, ProtoSyncClient } from './protoSyncClient';
 import FastImage from 'react-native-fast-image';
 
 import gravatarUrl from '../utils/gravatarUrl';
@@ -16,17 +15,8 @@ import { resolveApiUrl } from '../utils/apiUrl';
 import { ensureFreshAccessToken } from '../api/axiosConfig';
 import { createPlanChecklistSyncMessage } from '../api/checklist';
 
-declare var global: any;
-
-const TextEncoding = require('text-encoding');
-Object.assign(global as any, {
-  TextEncoder: TextEncoding.TextEncoder,
-  TextDecoder: TextEncoding.TextDecoder,
-});
-
 const ROOM_READY_FALLBACK_MS = 2000;
 
-const DISCONNECT_TIMEOUT_MS = 300;
 
 // 연결이 오래 끊겨 있어도 큐가 무한정 자라지 않도록 상한을 둔다.
 const MAX_QUEUED_MESSAGES = 500;
@@ -47,13 +37,6 @@ interface UserPresence {
     email?: string;
     nickname?: string;
   };
-}
-
-interface PresenceMessage {
-  action: 'create' | 'delete';
-  uid: string;
-  userNickname: string;
-  users: UserPresence[];
 }
 
 interface WebSocketContextType {
@@ -85,8 +68,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<UserPresence[]>([]);
-  const stompClient = useRef<Client | null>(null);
-  const activeSocket = useRef<any>(null);
+  const stompClient = useRef<ProtoSyncClient | null>(null);
   const currentPlanId = useRef<string | null>(null);
   const isConnectingRef = useRef<boolean>(false);
   const messageListeners = useRef<Set<(msg: any) => void>>(new Set());
@@ -111,7 +93,37 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   // 귀속시키기 위해 마지막으로 접속한 방을 따로 남긴다.
   const lastPlanIdRef = useRef<string | null>(null);
 
-  const markRoomReady = useCallback((client: Client, planId: string) => {
+  /** 서버가 준 접속자 목록을 화면이 쓰는 모양으로 맞추고 아바타를 미리 받아 둔다. */
+  const normalizePresenceUsers = useCallback((users: any[]) => {
+    return users.map(u => {
+      const rawUid = u.uid || u.userId || u.id || '';
+      const uidStr = String(rawUid).toLowerCase();
+      const nicknameStr =
+        u.userNickname || u.userInfo?.nickname || u.nickname || '참여자';
+      const email = u.userInfo?.email || u.email;
+      const url = email ? gravatarUrl(email) : undefined;
+
+      if (url && !prefetchedAvatarsRef.current.has(url)) {
+        if (prefetchedAvatarsRef.current.size >= MAX_PREFETCHED_AVATARS) {
+          const oldest = prefetchedAvatarsRef.current.values().next().value;
+          if (oldest !== undefined) {
+            prefetchedAvatarsRef.current.delete(oldest);
+          }
+        }
+        prefetchedAvatarsRef.current.add(url);
+        FastImage.preload([{ uri: url }]);
+      }
+      return {
+        ...u,
+        uid: uidStr,
+        userNickname: nicknameStr,
+        avatarUrl: url,
+        userInfo: { nickname: nicknameStr, email },
+      };
+    });
+  }, []);
+
+  const markRoomReady = useCallback((client: ProtoSyncClient, planId: string) => {
     if (readyFallbackTimer.current) {
       clearTimeout(readyFallbackTimer.current);
       readyFallbackTimer.current = null;
@@ -180,124 +192,19 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
-    const latestTokenRef = { current: token };
+    const client = createProtoSyncClient({
+      baseUrl: resolveApiUrl(''),
+      token: token ?? '',
+      roomId: String(planId),
+      onLog: wsLog,
 
-    const client = new Client({
-
-      webSocketFactory: () => {
-        const wsUrl = latestTokenRef.current
-          ? resolveApiUrl(`/ws?token=${encodeURIComponent(latestTokenRef.current)}`)
-          : resolveApiUrl('/ws');
-        const socket = new SockJS(wsUrl);
-        if (generation === connectGenerationRef.current) {
-          activeSocket.current = socket;
-        }
-        return socket;
-      },
-      beforeConnect: async c => {
-        latestTokenRef.current = await ensureFreshAccessToken();
-        c.connectHeaders = latestTokenRef.current
-          ? { Authorization: `Bearer ${latestTokenRef.current}` }
-          : {};
-      },
-      connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
-      debug: __DEV__
-        ? str => {
-            console.log('[WS Debug]', str);
-          }
-        : () => {},
-
-      reconnectDelay: 3000,
-      reconnectTimeMode: ReconnectionTimeMode.EXPONENTIAL,
-      maxReconnectDelay: 30000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
-      onConnect: frame => {
+      onConnect: () => {
         if (generation !== connectGenerationRef.current) return;
         isConnectingRef.current = false;
-        wsLog('WebSocket Connected:', frame);
+        wsLog('[proto] 방 입장 완료:', planId);
         setIsConnected(true);
 
-        const topics = [`/topic/${planId}`];
-
-        topics.forEach(topic => {
-          client.subscribe(topic, (message: IMessage) => {
-            if (generation !== connectGenerationRef.current) return;
-            try {
-              const body = JSON.parse(message.body);
-              wsLog(`[Data Recv] ${topic}:`, body);
-
-              const entity = body.entity;
-              const action = body.action;
-
-              notifyListeners({
-                type: action,
-                target: entity,
-                data: body,
-                eventId: body.eventId,
-              });
-            } catch (e) {
-              console.error('Failed to parse message:', e);
-            }
-          });
-        });
-
-        client.subscribe(
-          `/topic/plan-presence/${planId}`,
-          (message: IMessage) => {
-            if (generation !== connectGenerationRef.current) return;
-            try {
-              const payload: PresenceMessage = JSON.parse(message.body);
-              wsLog('[Presence]:', payload);
-
-              if (payload.users) {
-
-                const normalized = payload.users.map(u => {
-                  const rawUid = u.uid || (u as any).userId || (u as any).id || '';
-                  const uidStr = String(rawUid).toLowerCase();
-                  const nicknameStr =
-                    u.userNickname ||
-                    u.userInfo?.nickname ||
-                    (u as any).nickname ||
-                    '참여자';
-                  const email = u.userInfo?.email || (u as any).email;
-                  const url = email ? gravatarUrl(email) : undefined;
-
-                  if (url && !prefetchedAvatarsRef.current.has(url)) {
-                    if (
-                      prefetchedAvatarsRef.current.size >= MAX_PREFETCHED_AVATARS
-                    ) {
-                      const oldest = prefetchedAvatarsRef.current
-                        .values()
-                        .next().value;
-                      if (oldest !== undefined) {
-                        prefetchedAvatarsRef.current.delete(oldest);
-                      }
-                    }
-                    prefetchedAvatarsRef.current.add(url);
-                    FastImage.preload([{ uri: url }]);
-                  }
-                  return {
-                    ...u,
-                    uid: uidStr,
-                    userNickname: nicknameStr,
-                    avatarUrl: url,
-                    userInfo: {
-                      nickname: nicknameStr,
-                      email: email,
-                    },
-                  };
-                });
-                setOnlineUsers(normalized);
-              }
-
-              markRoomReady(client, planId);
-            } catch (e) {
-              console.error('Failed to parse presence message:', e);
-            }
-          },
-        );
-
+        // presence가 늦게 오거나 혼자 있는 방이면 안 올 수도 있다. 큐를 붙잡아 두지 않는다.
         if (readyFallbackTimer.current) {
           clearTimeout(readyFallbackTimer.current);
         }
@@ -306,13 +213,28 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
           markRoomReady(client, planId);
         }, ROOM_READY_FALLBACK_MS);
       },
-      onStompError: frame => {
+
+      onSync: (body: any) => {
         if (generation !== connectGenerationRef.current) return;
-        isConnectingRef.current = false;
-        console.error('Broker reported error: ' + frame.headers.message);
-        console.error('Additional details: ' + frame.body);
+        wsLog('[Data Recv]', body);
+        notifyListeners({
+          type: body.action,
+          target: body.entity,
+          data: body,
+          eventId: body.eventId,
+        });
       },
-      onWebSocketClose: () => {
+
+      onPresence: (payload: any) => {
+        if (generation !== connectGenerationRef.current) return;
+        wsLog('[Presence]:', payload);
+        if (payload?.users) {
+          setOnlineUsers(normalizePresenceUsers(payload.users));
+        }
+        markRoomReady(client, planId);
+      },
+
+      onDisconnect: () => {
         if (generation !== connectGenerationRef.current) return;
         isConnectingRef.current = false;
         wsLog('WebSocket Connection Closed');
@@ -326,7 +248,6 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       },
     });
 
-    client.activate();
     stompClient.current = client;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -341,39 +262,13 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       readyFallbackTimer.current = null;
     }
 
+    // proto 클라이언트는 자기 소켓을 직접 닫는다. 예전 SockJS처럼 밖에서 붙잡을 것이 없다.
     const client = stompClient.current;
-    const socket = activeSocket.current;
     stompClient.current = null;
-    activeSocket.current = null;
-
-    if (client) {
-
-      const hardClose = setTimeout(() => {
-        try {
-          socket?.close();
-        } catch (e) {
-          console.warn('[WS] Failed to close active socket:', e);
-        }
-      }, DISCONNECT_TIMEOUT_MS);
-
-      Promise.resolve(client.deactivate())
-        .catch(e => {
-          console.warn('[WS] Graceful deactivate failed:', e);
-        })
-        .finally(() => {
-          clearTimeout(hardClose);
-          try {
-            socket?.close();
-          } catch (e) {
-            console.warn('[WS] Failed to close active socket:', e);
-          }
-        });
-    } else if (socket) {
-      try {
-        socket.close();
-      } catch (e) {
-        console.warn('[WS] Failed to close active socket:', e);
-      }
+    try {
+      client?.deactivate();
+    } catch (e) {
+      console.warn('[WS] 소켓 종료 실패:', e);
     }
 
     setIsConnected(false);
@@ -383,7 +278,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const sendMessageInternal = (
-    client: Client,
+    client: ProtoSyncClient,
     planId: string | number,
     action: string,
     targetName: string,

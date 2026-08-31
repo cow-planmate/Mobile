@@ -4,57 +4,43 @@ import renderer, { act } from 'react-test-renderer';
 let mockClient: any = null;
 let mockClients: any[] = [];
 
-jest.mock('@stomp/stompjs', () => {
-  return {
-    Client: jest.fn().mockImplementation((config: any) => {
-      const subscriptions = new Map();
-      const instance = {
-        config,
-        active: false,
-        connected: false,
-        publish: jest.fn(),
-        subscribe: jest.fn((destination: string, cb: any) => {
-          subscriptions.set(destination, cb);
-          return { unsubscribe: jest.fn() };
-        }),
-        deactivate: jest.fn(() => {
-          instance.active = false;
-          instance.connected = false;
-        }),
-        activate: jest.fn(() => {
-          instance.active = true;
-        }),
+// 전송 계층이 SockJS+STOMP에서 protobuf 소켓으로 바뀌었다. 큐 동작을 검증하는 데
+// 필요한 표면(publish/deactivate)과 서버 이벤트 흉내만 갖춘 가짜를 쓴다.
+jest.mock('../src/contexts/protoSyncClient', () => ({
+  createProtoSyncClient: jest.fn().mockImplementation((options: any) => {
+    const instance: any = {
+      options,
+      active: true,
+      connected: false,
+      publish: jest.fn(),
+      deactivate: jest.fn(() => {
+        instance.active = false;
+        instance.connected = false;
+      }),
 
-        simulateConnect() {
-          instance.connected = true;
-          config.onConnect({ headers: {} });
-        },
+      simulateConnect() {
+        instance.connected = true;
+        options.onConnect();
+      },
 
-        simulateSocketClose() {
-          instance.connected = false;
-          config.onWebSocketClose();
-        },
+      simulateSocketClose() {
+        instance.connected = false;
+        options.onDisconnect();
+      },
 
-        simulatePresence(users: any[] = []) {
-          const cb = subscriptions.get(
-            [...subscriptions.keys()].find(k =>
-              k.startsWith('/topic/plan-presence/'),
-            )!,
-          );
-          cb!({ body: JSON.stringify({ action: 'create', users }) });
-        },
-      };
-      mockClient = instance;
-      mockClients.push(instance);
-      return instance;
-    }),
-    ReconnectionTimeMode: { LINEAR: 'linear', EXPONENTIAL: 'exponential' },
-  };
-});
+      simulatePresence(users: any[] = []) {
+        options.onPresence({ users });
+      },
 
-jest.mock('sockjs-client', () =>
-  jest.fn().mockImplementation(() => ({ close: jest.fn() })),
-);
+      simulateSync(body: any) {
+        options.onSync(body);
+      },
+    };
+    mockClient = instance;
+    mockClients.push(instance);
+    return instance;
+  }),
+}));
 
 jest.mock('text-encoding', () => ({
   TextEncoder: function () {},

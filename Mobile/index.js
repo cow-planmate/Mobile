@@ -1,4 +1,5 @@
 
+import './src/utils/textEncodingPolyfill';
 import './src/utils/fontScalingGuard';
 
 import { AppRegistry } from 'react-native';
