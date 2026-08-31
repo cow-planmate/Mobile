@@ -20,7 +20,7 @@ export const styles = StyleSheet.create({
   },
 
   listHeaderContainer: {
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.white,
   },
 
   searchBarRow: {
@@ -37,9 +37,9 @@ export const styles = StyleSheet.create({
     backgroundColor: tokens.colors.white,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    borderRadius: tokens.radius.l,
-    paddingHorizontal: normalize(14),
-    height: normalize(42),
+    borderRadius: normalize(8),
+    paddingHorizontal: normalize(11),
+    height: normalize(38),
   },
   searchIcon: {
     marginRight: normalize(8),
@@ -51,22 +51,14 @@ export const styles = StyleSheet.create({
     color: tokens.colors.text,
     padding: 0,
   },
+  // 탭바 가운데가 이미 만들기 버튼이다. 여기까지 파란 덩어리를 둘 이유가 없다.
   writeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: tokens.colors.primary,
-    borderRadius: tokens.radius.l,
-    paddingHorizontal: normalize(14),
-    height: normalize(42),
-  },
-  writeIcon: {
-    marginRight: normalize(4),
+    paddingHorizontal: normalize(2),
   },
   writeButtonText: {
-    fontSize: normalize(tokens.fontSize.s),
+    fontSize: normalize(13),
     fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.white,
+    color: tokens.colors.primary,
   },
 
   hotSectionContainer: {
@@ -165,22 +157,74 @@ export const styles = StyleSheet.create({
     borderRadius: tokens.radius.m,
   },
 
+  // 정렬도 게시판 탭과 같은 밑줄 형태로 맞춘다. 알약을 섞지 않는다.
   sortRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(6),
+    alignItems: 'flex-end',
+    gap: normalize(18),
     paddingHorizontal: normalize(16),
-    paddingTop: normalize(18),
-    paddingBottom: normalize(2),
+    paddingTop: normalize(11),
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.borderLight,
+    backgroundColor: tokens.colors.white,
+  },
+  sortTab: {
+    paddingBottom: normalize(9),
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+    marginBottom: -1,
+  },
+  sortTabOn: {
+    borderBottomColor: tokens.colors.text,
+  },
+  sortTabText: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textTertiary,
+  },
+  sortTabTextOn: {
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
   },
 
   postList: {
     paddingBottom: normalize(32),
   },
-  postCard: {
+  // 카드 테두리 대신 전체 폭 구분선 하나로 나눈다. 피드 목록과 같은 틀이다.
+  postRow: {
     flexDirection: 'row',
-    marginHorizontal: normalize(16),
-    marginTop: normalize(10),
+    gap: normalize(12),
+    paddingHorizontal: normalize(16),
+    paddingVertical: normalize(15),
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.borderLight,
+    backgroundColor: tokens.colors.white,
+  },
+  postRowPressed: {
+    backgroundColor: tokens.colors.surface,
+  },
+  postFootRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: normalize(10),
+    marginTop: normalize(6),
+  },
+  postMeta: {
+    flex: 1,
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textTertiary,
+  },
+  postCounts: {
+    flex: 0,
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textTertiary,
+  },
+  postCountsOn: {
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.primary,
   },
   postLeftSection: {
     flex: 1,

@@ -16,7 +16,7 @@ import {
   usePendingInvitations,
 } from '../../../hooks/usePendingInvitations';
 import { BOARDS, BoardKey, SortKey } from '../constants/board';
-import { useHotPosts, usePosts } from '../hooks/queries';
+import { usePosts } from '../hooks/queries';
 import CommunityScreenView from './CommunityScreen.view';
 
 const SEARCH_DEBOUNCE_MS = 350;
@@ -45,7 +45,6 @@ export default function CommunityScreen() {
   }, [searchQuery]);
 
   const postsQuery = usePosts(category, sort, debouncedQuery);
-  const hotQuery = useHotPosts(category);
 
   // 게시판을 바꾸면 정렬·검색어를 초기 상태로 되돌린다 (웹 CommunityPage와 동일)
   const handleSelectCategory = useCallback((next: BoardKey) => {
@@ -59,8 +58,6 @@ export default function CommunityScreen() {
     () => postsQuery.data?.pages.flatMap(page => page.items) ?? [],
     [postsQuery.data],
   );
-
-  const hotPosts = debouncedQuery ? [] : hotQuery.data ?? [];
 
   const fetchPendingRequests = pendingInvitations.invalidate;
 
@@ -134,13 +131,11 @@ export default function CommunityScreen() {
 
   const handleRefresh = useCallback(() => {
     void postsQuery.refetch();
-    void hotQuery.refetch();
-  }, [postsQuery, hotQuery]);
+  }, [postsQuery]);
 
   return (
     <CommunityScreenView
       posts={posts}
-      hotPosts={hotPosts}
       boards={BOARDS}
       selectedCategory={category}
       onSelectCategory={handleSelectCategory}

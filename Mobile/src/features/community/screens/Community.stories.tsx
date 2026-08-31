@@ -48,29 +48,11 @@ const POSTS = [
   }),
 ];
 
-const HOT_POSTS = [
-  post(11, {
-    title: '숙소값 아끼는 법 총정리',
-    author: '배수아',
-    level: 4,
-    likes: 210,
-    views: 9800,
-  }),
-  post(12, {
-    title: '렌터카 없이 제주 일주하기',
-    author: '정하람',
-    level: 2,
-    likes: 154,
-    views: 6100,
-  }),
-];
-
 const meta = {
   title: '05. 커뮤니티/01. 게시판',
   component: CommunityScreenView,
   args: {
     posts: POSTS,
-    hotPosts: HOT_POSTS,
     boards: BOARDS,
     selectedCategory: 'free' as BoardKey,
     onSelectCategory: action('게시판 전환'),
@@ -106,7 +88,6 @@ export const QnA: Story = {
   name: '질문 게시판',
   args: {
     selectedCategory: 'qna',
-    hotPosts: [],
     posts: [
       post(21, {
         category: 'qna',
@@ -126,7 +107,6 @@ export const MateAndPlace: Story = {
   name: '동행 및 장소',
   args: {
     selectedCategory: 'mate',
-    hotPosts: [],
     posts: [
       post(31, {
         category: 'mate',
@@ -145,17 +125,17 @@ export const MateAndPlace: Story = {
 
 export const Loading: Story = {
   name: '로딩',
-  args: { posts: [], hotPosts: [], isLoading: true },
+  args: { posts: [], isLoading: true },
 };
 
 export const EmptyResult: Story = {
   name: '검색 결과 없음',
-  args: { posts: [], hotPosts: [], searchQuery: '없는검색어' },
+  args: { posts: [], searchQuery: '없는검색어' },
 };
 
 export const LoadError: Story = {
   name: '불러오기 실패',
-  args: { posts: [], hotPosts: [], isError: true },
+  args: { posts: [], isError: true },
 };
 
 /** 게시판·정렬·검색을 실제로 눌러보는 상태 (필터링은 로컬 목데이터로 흉내) */
@@ -179,7 +159,6 @@ function InteractiveCommunity() {
     <CommunityScreenView
       {...meta.args}
       posts={visible}
-      hotPosts={query ? [] : HOT_POSTS}
       selectedCategory={category}
       onSelectCategory={next => {
         action('게시판 전환')(next);

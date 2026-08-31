@@ -4,40 +4,27 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
+  Pressable,
   FlatList,
   StatusBar,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import Search from 'lucide-react-native/dist/esm/icons/search';
-import ThumbsUp from 'lucide-react-native/dist/esm/icons/thumbs-up';
-import MessageSquare from 'lucide-react-native/dist/esm/icons/message-square';
-import Eye from 'lucide-react-native/dist/esm/icons/eye';
-import PenSquare from 'lucide-react-native/dist/esm/icons/square-pen';
-import Flame from 'lucide-react-native/dist/esm/icons/flame';
 import FallbackImage from '../../../components/common/FallbackImage';
 import { styles } from './CommunityScreen.styles';
 import { Header, NotificationModal } from '../../../components/common';
 import {
-  Badge,
-  Card,
-  Chip,
   EmptyState,
-  SectionHeader,
-  StatItem,
-  StatRow,
   UnderlineTabs,
 } from '../../../components/ui';
 import { tokens } from '../../../theme/tokens';
 import { CommunityPostSummary } from '../types';
 import { BoardKey, SortKey, SORT_OPTIONS } from '../constants/board';
 import PostTypeBadges from '../components/PostTypeBadges';
-import UserAvatar from '../../../components/common/UserAvatar';
 
 export interface CommunityScreenViewProps {
   posts: CommunityPostSummary[];
-  hotPosts: CommunityPostSummary[];
   boards: readonly { key: BoardKey; label: string }[];
   selectedCategory: BoardKey;
   onSelectCategory: (category: BoardKey) => void;
@@ -79,11 +66,15 @@ const PostListItem = React.memo(function PostListItem({
     [onPress, item.id],
   );
 
+  const meta = [item.author, item.createdAt, `조회 ${item.views.toLocaleString()}`]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
-    <Card
-      variant="outlined"
-      style={styles.postCard}
+    <Pressable
+      style={({ pressed }) => [styles.postRow, pressed && styles.postRowPressed]}
       onPress={handlePress}
+      accessibilityRole="button"
       accessibilityLabel={item.title}
     >
       <View style={styles.postLeftSection}>
@@ -93,39 +84,17 @@ const PostListItem = React.memo(function PostListItem({
           {item.title}
         </Text>
 
-        <View style={styles.postMetaRow}>
-          <UserAvatar
-            name={item.author}
-            imageUrl={item.authorImage}
-            avatarHash={item.authorAvatarHash}
-            size={18}
-          />
-          <Text style={styles.authorName} numberOfLines={1}>
-            {item.author}
+        <View style={styles.postFootRow}>
+          <Text style={styles.postMeta} numberOfLines={1}>
+            {meta}
           </Text>
-          <Text style={styles.postTime}>{item.createdAt}</Text>
+          <Text style={styles.postCounts}>
+            <Text style={item.likes > 0 ? styles.postCountsOn : undefined}>
+              {`추천 ${item.likes}`}
+            </Text>
+            {` · 댓글 ${item.comments}`}
+          </Text>
         </View>
-
-        <StatRow style={styles.postStatsRow}>
-          <StatItem
-            icon={<ThumbsUp size={12} color={tokens.colors.primary} />}
-            value={item.likes}
-            label="추천"
-            active
-          />
-          <StatItem
-            icon={
-              <MessageSquare size={12} color={tokens.colors.textSecondary} />
-            }
-            value={item.comments}
-            label="댓글"
-          />
-          <StatItem
-            icon={<Eye size={12} color={tokens.colors.textSecondary} />}
-            value={item.views}
-            label="조회"
-          />
-        </StatRow>
       </View>
 
       {item.image ? (
@@ -139,13 +108,12 @@ const PostListItem = React.memo(function PostListItem({
           />
         </View>
       ) : null}
-    </Card>
+    </Pressable>
   );
 });
 
 export default function CommunityScreenView({
   posts,
-  hotPosts,
   boards,
   selectedCategory,
   onSelectCategory,
@@ -217,111 +185,35 @@ export default function CommunityScreenView({
           <TouchableOpacity
             style={styles.writeButton}
             onPress={onWritePost}
-            activeOpacity={0.85}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             accessibilityRole="button"
             accessibilityLabel="글쓰기"
           >
-            <PenSquare
-              size={14}
-              color={tokens.colors.white}
-              style={styles.writeIcon}
-            />
             <Text style={styles.writeButtonText}>글쓰기</Text>
           </TouchableOpacity>
         </View>
 
-        {hotPosts.length > 0 && (
-          <View style={styles.hotSectionContainer}>
-            <SectionHeader
-              title="지금 뜨는 핫글"
-              description="실시간 가장 반응이 뜨거운 게시글이에요"
-              icon={
-                <View style={styles.hotIconWrap}>
-                  <Flame size={15} color={tokens.tones.hot.fg} />
-                </View>
-              }
-              style={styles.hotHeaderRow}
-            />
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.hotListScroll}
-            >
-              {hotPosts.map((post, idx) => (
-                <Card
-                  key={post.id}
-                  variant="outlined"
-                  padding="s"
-                  style={styles.hotPostCard}
-                  onPress={() => onPostPress(String(post.id))}
-                  accessibilityLabel={post.title}
-                >
-                  <View style={styles.hotCardLeft}>
-                    <View style={styles.hotRankRow}>
-                      <Text style={styles.hotRankNum}>{idx + 1}</Text>
-                      <Badge label="HOT" tone="hot" />
-                      <View style={styles.hotViewsWrap}>
-                        <Eye size={10} color={tokens.colors.textTertiary} />
-                        <Text style={styles.hotViewsText}>{post.views.toLocaleString()}</Text>
-                      </View>
-                    </View>
-
-                    <Text style={styles.hotCardTitle} numberOfLines={2}>
-                      {post.title}
-                    </Text>
-
-                    <View style={styles.hotCardFooter}>
-                      <View style={styles.hotCardAuthorRow}>
-                        <UserAvatar
-                          name={post.author}
-                          imageUrl={post.authorImage}
-                          avatarHash={post.authorAvatarHash}
-                          size={18}
-                        />
-                        <Text style={styles.hotAuthorText} numberOfLines={1}>
-                          {post.author}
-                        </Text>
-                      </View>
-                      <View style={styles.hotLikesWrap}>
-                        <ThumbsUp size={10} color={tokens.tones.hot.fg} />
-                        <Text style={styles.hotLikesText}>{post.likes.toLocaleString()}</Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  {post.image ? (
-                    <View style={styles.hotCardRight}>
-                      <FallbackImage
-                        uri={post.image}
-                        style={styles.hotThumbnail}
-                        fallback={
-                          <View
-                            style={[
-                              styles.hotThumbnail,
-                              styles.thumbnailFallback,
-                            ]}
-                          />
-                        }
-                      />
-                    </View>
-                  ) : null}
-                </Card>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
         <View style={styles.sortRow}>
-          {SORT_OPTIONS.map(option => (
-            <Chip
-              key={option.key}
-              label={option.label}
-              size="s"
-              selected={selectedSort === option.key}
-              onPress={() => onSelectSort(option.key)}
-            />
-          ))}
+          {SORT_OPTIONS.map(option => {
+            const selected = selectedSort === option.key;
+            return (
+              <TouchableOpacity
+                key={option.key}
+                style={[styles.sortTab, selected && styles.sortTabOn]}
+                onPress={() => onSelectSort(option.key)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+              >
+                <Text
+                  style={[styles.sortTabText, selected && styles.sortTabTextOn]}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
     ),
@@ -331,12 +223,10 @@ export default function CommunityScreenView({
       selectedLabel,
       selectedSort,
       searchQuery,
-      hotPosts,
       onSelectCategory,
       onSelectSort,
       onSearchChange,
       onWritePost,
-      onPostPress,
     ],
   );
 
