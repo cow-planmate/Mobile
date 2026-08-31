@@ -17,7 +17,7 @@ import { normalize } from '../../../utils/normalize';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CommunityStackParamList } from '../../../navigation/types';
-import { BOARDS, BoardKey, POST_TITLE_MAX_LENGTH } from '../constants/levels';
+import { BOARDS, BoardKey, POST_TITLE_MAX_LENGTH } from '../constants/board';
 import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
 import { buildPostPayload } from '../utils/postPayload';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';

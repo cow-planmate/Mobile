@@ -33,7 +33,6 @@ import PostContentView from '../components/PostContentView';
 import CommentSection from '../components/CommentSection';
 import UserAvatar from '../../../components/common/UserAvatar';
 import PublicProfileModal from '../components/PublicProfileModal';
-import LevelBadge from '../components/LevelBadge';
 import { ReactionType } from '../types';
 import { styles, COLORS } from './FeedDetailScreen.styles';
 import { tokens } from '../../../theme/tokens';
@@ -249,7 +248,6 @@ export default function FeedDetailScreen() {
               />
               <Text style={styles.metaAuthor}>{post.author}</Text>
             </TouchableOpacity>
-            <LevelBadge level={post.level} />
             <Text style={styles.metaText}>· {post.createdAt}</Text>
             <View style={styles.metaStat}>
               <Eye size={normalize(12)} color={COLORS.textTertiary} />

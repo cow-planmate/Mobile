@@ -27,7 +27,6 @@ import { CommunityComment } from '../types';
 import { mergeCommentPages } from '../utils/commentPages';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import UserAvatar from '../../../components/common/UserAvatar';
-import LevelBadge from './LevelBadge';
 
 interface CommentSectionProps {
   postId: number;
@@ -287,7 +286,6 @@ export default function CommentSection({
           <View style={styles.commentBody}>
             <View style={styles.commentMeta}>
               <Text style={styles.commentAuthor}>{comment.author}</Text>
-              <LevelBadge level={comment.level} />
               <Text style={styles.commentTime}>{comment.createdAt}</Text>
             </View>
 

@@ -262,7 +262,7 @@ export default function TravelFeedList({
         description={
           isFiltered
             ? '필터를 조정하면 더 많은 여행기를 볼 수 있어요.'
-            : '첫 여행기를 발행해 보세요.'
+            : '첫 여행기를 써 보세요.'
         }
       />
     );

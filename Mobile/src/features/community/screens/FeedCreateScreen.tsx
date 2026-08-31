@@ -27,7 +27,7 @@ import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
 import { textToBlocks } from '../utils/blocks';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { useUnsavedChangesPrompt } from '../../../hooks/useUnsavedChangesPrompt';
-import { POST_TITLE_MAX_LENGTH } from '../constants/levels';
+import { POST_TITLE_MAX_LENGTH } from '../constants/board';
 import { tokens } from '../../../theme/tokens';
 import {
   buildFeedUpdatePayload,

@@ -285,7 +285,7 @@ export default function TravelFeedScreen() {
     if (!user) {
       showAlert({
         title: '로그인 필요',
-        message: '여행기를 발행하려면 로그인이 필요해요.',
+        message: '여행기를 쓰려면 로그인이 필요해요.',
       });
       return;
     }
@@ -491,10 +491,10 @@ export default function TravelFeedScreen() {
           onPress={handleCreateFeed}
           activeOpacity={0.85}
           accessibilityRole="button"
-          accessibilityLabel="여행기 발행"
+          accessibilityLabel="여행기 쓰기"
         >
           <Plus size={20} color={tokens.colors.white} />
-          <Text style={styles.createButtonText}>여행기 발행</Text>
+          <Text style={styles.createButtonText}>여행기 쓰기</Text>
         </TouchableOpacity>
       </View>
 

@@ -31,8 +31,7 @@ import {
 } from '../../../components/ui';
 import { tokens } from '../../../theme/tokens';
 import { CommunityPostSummary } from '../types';
-import { BoardKey, SortKey, SORT_OPTIONS } from '../constants/levels';
-import LevelBadge from '../components/LevelBadge';
+import { BoardKey, SortKey, SORT_OPTIONS } from '../constants/board';
 import PostTypeBadges from '../components/PostTypeBadges';
 import UserAvatar from '../../../components/common/UserAvatar';
 
@@ -104,7 +103,6 @@ const PostListItem = React.memo(function PostListItem({
           <Text style={styles.authorName} numberOfLines={1}>
             {item.author}
           </Text>
-          <LevelBadge level={item.level} />
           <Text style={styles.postTime}>{item.createdAt}</Text>
         </View>
 

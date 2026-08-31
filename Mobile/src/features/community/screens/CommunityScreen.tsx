@@ -15,7 +15,7 @@ import {
   usePendingInvitationActions,
   usePendingInvitations,
 } from '../../../hooks/usePendingInvitations';
-import { BOARDS, BoardKey, SortKey } from '../constants/levels';
+import { BOARDS, BoardKey, SortKey } from '../constants/board';
 import { useHotPosts, usePosts } from '../hooks/queries';
 import CommunityScreenView from './CommunityScreen.view';
 

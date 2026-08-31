@@ -38,8 +38,6 @@ import { invalidatePlanCaches } from '../../../hooks/planCache';
 
 import User from 'lucide-react-native/dist/esm/icons/user';
 import Settings from 'lucide-react-native/dist/esm/icons/settings';
-import Award from 'lucide-react-native/dist/esm/icons/award';
-import Lock from 'lucide-react-native/dist/esm/icons/lock';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import Camera from 'lucide-react-native/dist/esm/icons/camera';
 import AlertTriangle from 'lucide-react-native/dist/esm/icons/triangle-alert';
@@ -79,11 +77,6 @@ import {
   parseBirthdate,
 } from '../../../utils/birthdate';
 import { MyStats } from '../../community/types';
-import {
-  getLevelProgress,
-  levelBadgeColor,
-  levelName,
-} from '../../community/constants/levels';
 import {
   ProfileCalendarSection,
   ProfileCommunitySection,
@@ -809,17 +802,9 @@ export default function ProfileScreenView({
   const themeNames = preferredThemes.map((t: any) => t.preferredThemeName || t);
   const defaultThemes = ['해수욕장', '호텔', '한식', '고기집', '이자카야'];
   const displayThemes = themeNames.length > 0 ? themeNames : defaultThemes;
-  const activityProgress = getLevelProgress(
-    communityStats?.postCount ?? 0,
-    communityStats?.commentCount ?? 0,
-  );
-  const currentLevel = communityStats?.level ?? activityProgress.currentTier.level;
-  const badgeColor = levelBadgeColor(currentLevel);
-  const activityValue = communityStats
-    ? activityProgress.nextTier
-      ? `${activityProgress.score} / ${activityProgress.nextTier.min} 활동`
-      : `${activityProgress.score} 활동 · 최고 레벨`
-    : '활동 통계를 불러오는 중';
+  // 레벨을 없앴으므로 가중 점수 대신 글과 댓글 수를 그대로 센다.
+  const communityActivityCount =
+    (communityStats?.postCount ?? 0) + (communityStats?.commentCount ?? 0);
 
   const handleOpenEditModal = () => {
     setTempNickname(user.name);
@@ -966,12 +951,6 @@ export default function ProfileScreenView({
             <View style={styles.profileTextInfo}>
               <View style={styles.nicknameRow}>
                 <Text style={styles.nicknameText}>{user.name || '사용자'}</Text>
-                <View style={[styles.levelBadge, { backgroundColor: badgeColor.bg }]}>
-                  <Award size={10} color={badgeColor.text} />
-                  <Text style={[styles.levelBadgeText, { color: badgeColor.text }]}>
-                    Lv.{currentLevel} · {levelName(currentLevel)}
-                  </Text>
-                </View>
               </View>
 
               <View style={styles.emailRow}>
@@ -983,24 +962,6 @@ export default function ProfileScreenView({
                   </Text>
                 </View>
               </View>
-            </View>
-          </View>
-
-          <View style={styles.experienceSection}>
-            <View style={styles.experienceLabelRow}>
-              <Text style={styles.experienceTitle}>현재 활동 점수</Text>
-              <Text style={styles.experienceValue}>{activityValue}</Text>
-            </View>
-            <View style={styles.progressBarTrack}>
-              <View
-                style={[
-                  styles.progressBarFill,
-                  {
-                    width: `${communityStats ? activityProgress.progressPercent : 0}%`,
-                    backgroundColor: badgeColor.text,
-                  },
-                ]}
-              />
             </View>
           </View>
 
@@ -1029,7 +990,7 @@ export default function ProfileScreenView({
             </View>
             <View style={styles.statBlock}>
               <Text style={styles.statNumber}>
-                {isCommunityStatsLoading ? '-' : activityProgress.score}
+                {isCommunityStatsLoading ? '-' : communityActivityCount}
               </Text>
               <Text style={styles.statLabel}>커뮤니티 활동</Text>
             </View>
@@ -1045,48 +1006,6 @@ export default function ProfileScreenView({
           />
         </View>
 
-        {profileSection === 'community' && (
-        <View style={[styles.achievementCard, styles.achievementCardDisabled]} pointerEvents="none">
-          <View style={styles.achievementHeader}>
-            <View style={styles.achievementTitleRow}>
-              <Award size={18} color={tokens.colors.textTertiary} />
-              <Text style={[styles.achievementTitle, { color: tokens.colors.textTertiary }]}>내 업적 (준비중)</Text>
-            </View>
-            <View style={[styles.achievementProgressBadge, { backgroundColor: tokens.colors.border }]}>
-              <Text style={[styles.achievementProgressText, { color: tokens.colors.textTertiary }]}>0 / 5 달성</Text>
-            </View>
-          </View>
-
-          <View style={styles.badgeList}>
-
-            <View style={[styles.achievementBadge, { backgroundColor: tokens.colors.borderLight }]}>
-              <Lock size={11} color={tokens.colors.textTertiary} />
-              <Text style={[styles.badgeText, { color: tokens.colors.textTertiary }]}>첫 걸음</Text>
-            </View>
-
-            <View style={[styles.achievementBadge, { backgroundColor: tokens.colors.borderLight }]}>
-              <Lock size={11} color={tokens.colors.textTertiary} />
-              <Text style={[styles.badgeText, { color: tokens.colors.textTertiary }]}>계획의 달인</Text>
-            </View>
-
-            <View style={[styles.achievementBadge, { backgroundColor: tokens.colors.borderLight }]}>
-              <Lock size={11} color={tokens.colors.textTertiary} />
-              <Text style={[styles.badgeText, { color: tokens.colors.textTertiary }]}>열혈 리뷰어</Text>
-            </View>
-
-            <View style={[styles.achievementBadge, { backgroundColor: tokens.colors.borderLight }]}>
-              <Lock size={11} color={tokens.colors.textTertiary} />
-              <Text style={[styles.badgeText, { color: tokens.colors.textTertiary }]}>베스트 파트너</Text>
-            </View>
-
-            <View style={[styles.achievementBadge, { backgroundColor: tokens.colors.borderLight }]}>
-              <Lock size={11} color={tokens.colors.textTertiary} />
-              <Text style={[styles.badgeText, { color: tokens.colors.textTertiary }]}>전국 제패</Text>
-            </View>
-          </View>
-        </View>
-
-        )}
 
         {profileSection === 'community' && <ProfileCommunitySection />}
 

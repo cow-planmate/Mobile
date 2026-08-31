@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { action } from 'storybook/actions';
 import CommunityScreenView from './CommunityScreen.view';
-import { BOARDS, BoardKey, SortKey } from '../constants/levels';
+import { BOARDS, BoardKey, SortKey } from '../constants/board';
 import { CommunityPostSummary } from '../types';
 
 const noop = () => {};
