@@ -65,7 +65,8 @@ describe('CalendarModal', () => {
     const tree = mount(onConfirm, onClose);
 
     press(tree, dayLabel(2026, 8, 12));
-    press(tree, '선택 완료');
+    // 생성 흐름에서는 다음 팝업으로 이어지므로 버튼이 "다음"이다.
+    press(tree, '다음 단계로');
 
     expect(onConfirm).toHaveBeenCalledTimes(1);
     const { startDate, endDate } = onConfirm.mock.calls[0][0];
@@ -133,6 +134,23 @@ describe('CalendarModal', () => {
 
       act(() => tree.unmount());
     });
+  });
+
+  it('생성 흐름이면 다음, 가져오기면 완료로 문구가 갈린다', () => {
+    const inFlow = mount(jest.fn(), jest.fn(), 'select');
+    expect(
+      inFlow.root.findAllByProps({ accessibilityLabel: '다음 단계로' }).length,
+    ).toBeGreaterThan(0);
+    expect(
+      inFlow.root.findAllByProps({ accessibilityLabel: '선택 완료' }),
+    ).toHaveLength(0);
+    act(() => inFlow.unmount());
+
+    const standalone = mount(jest.fn(), jest.fn(), 'done');
+    expect(
+      standalone.root.findAllByProps({ accessibilityLabel: '선택 완료' }).length,
+    ).toBeGreaterThan(0);
+    act(() => standalone.unmount());
   });
 
   it('지난 날짜는 누를 수 없다', () => {

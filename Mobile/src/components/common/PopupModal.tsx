@@ -15,6 +15,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import ArrowRight from 'lucide-react-native/dist/esm/icons/arrow-right';
+
 import { normalize } from '../../utils/normalize';
 import { tokens } from '../../theme/tokens';
 
@@ -25,6 +27,13 @@ type Props = {
   onClose: () => void;
   /** 완료를 눌렀을 때만 불린다. 다음 단계로 넘기는 자리다. */
   onDone?: () => void;
+  /**
+   * 버튼이 하는 일.
+   *
+   * 'next'는 다음 팝업을 여는 자리라 "다음 →", 'last'는 여기서 끝나므로 "완료"다.
+   * 같은 말이 서로 다른 일을 하지 않도록 문구를 나눈다.
+   */
+  doneAction?: 'next' | 'last';
   children: React.ReactNode;
 };
 
@@ -44,6 +53,7 @@ export default function PopupModal({
   title,
   onClose,
   onDone,
+  doneAction = 'last',
   children,
 }: Props) {
   const [mounted, setMounted] = useState(visible);
@@ -77,6 +87,8 @@ export default function PopupModal({
     transform: [{ scale: 0.96 + progress.value * 0.04 }],
   }));
 
+  const isNext = doneAction === 'next';
+
   const handleDone = () => {
     onDone?.();
     onClose();
@@ -104,16 +116,30 @@ export default function PopupModal({
         <Animated.View style={[styles.card, cardStyle]}>
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
+          </View>
+
+          {children}
+
+          <View style={styles.footer}>
             <TouchableOpacity
+              style={styles.doneButton}
               onPress={handleDone}
-              hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
+              activeOpacity={0.85}
               accessibilityRole="button"
-              accessibilityLabel="선택 완료"
+              accessibilityLabel={isNext ? '다음 단계로' : '선택 완료'}
             >
-              <Text style={styles.done}>완료</Text>
+              <Text style={styles.doneButtonText}>
+                {isNext ? '다음' : '완료'}
+              </Text>
+              {isNext ? (
+                <ArrowRight
+                  size={normalize(15)}
+                  color={tokens.colors.white}
+                  strokeWidth={2.2}
+                />
+              ) : null}
             </TouchableOpacity>
           </View>
-          {children}
         </Animated.View>
       </View>
     </Modal>
@@ -145,22 +171,36 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
     paddingHorizontal: normalize(16),
     paddingTop: normalize(16),
     paddingBottom: normalize(10),
   },
+  // 고른 뒤 눈과 손이 머무는 아래쪽에 둔다. 헤더 구석의 글자보다 겨냥하기 쉽다.
+  footer: {
+    paddingHorizontal: normalize(16),
+    paddingTop: normalize(12),
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.borderLight,
+    marginTop: normalize(8),
+  },
+  doneButton: {
+    height: normalize(48),
+    borderRadius: normalize(12),
+    backgroundColor: tokens.colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: normalize(6),
+  },
+  doneButtonText: {
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
+  },
   title: {
     fontSize: normalize(14.5),
-    fontFamily: 'Pretendard-Bold',
+    fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.text,
     letterSpacing: -0.3,
-  },
-  done: {
-    fontSize: normalize(13),
-    fontFamily: 'Pretendard-SemiBold',
-    color: tokens.colors.primary,
   },
 });

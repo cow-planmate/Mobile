@@ -125,6 +125,7 @@ export default function SearchLocationModal({
       title="여행지 선택"
       onClose={onClose}
       onDone={handleDone}
+      doneAction="next"
     >
       {isLoading ? (
         <View style={styles.inlineLoaderContainer}>
