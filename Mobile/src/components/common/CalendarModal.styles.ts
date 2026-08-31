@@ -23,7 +23,7 @@ export const FONTS = {
 };
 
 export const styles = StyleSheet.create({
-  // 고른 범위와 30일 경고가 들어가는 자리. 헤더는 세 시트가 동일해야 하므로 밖으로 뺐다.
+  // 고른 범위와 30일 경고가 들어가는 자리. 헤더는 세 팝업이 동일해야 하므로 밖으로 뺐다.
   rangeLabel: {
     paddingHorizontal: normalize(16),
     paddingBottom: normalize(6),

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 
-import BottomSheet from './BottomSheet';
+import PopupModal from './PopupModal';
 import { styles } from './PaxModal.styles';
 
 type PaxModalProps = {
@@ -105,7 +105,7 @@ export default function PaxModal({
   };
 
   return (
-    <BottomSheet
+    <PopupModal
       visible={visible}
       title="인원 선택"
       onClose={handleClose}
@@ -130,6 +130,6 @@ export default function PaxModal({
           minValue={0}
         />
       </View>
-    </BottomSheet>
+    </PopupModal>
   );
 }

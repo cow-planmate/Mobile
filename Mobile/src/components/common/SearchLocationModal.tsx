@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import axios from 'axios';
 
-import BottomSheet from './BottomSheet';
+import PopupModal from './PopupModal';
 import { styles, COLORS } from './SearchLocationModal.styles';
 import { DESTINATIONS_28 } from '../../constants/regions';
 import { isRegionMatch } from '../../utils/regionMatcher';
@@ -108,7 +108,7 @@ export default function SearchLocationModal({
     }
   }, [visible, currentValue, data]);
 
-  // 탭이 곧 선택이다. 시트는 열린 채로 두어 위쪽 명소 사진이 바뀌는 것을 바로 보여준다.
+  // 탭이 곧 선택이다. 팝업은 열린 채로 두어 뒤쪽 명소 사진이 바뀌는 것을 바로 보여준다.
   const handleDestinationSelect = (item: TravelVO) => {
     setSelectedDestination(item);
     onSelect(item.travelName, item.travelId);
@@ -120,7 +120,7 @@ export default function SearchLocationModal({
   };
 
   return (
-    <BottomSheet
+    <PopupModal
       visible={visible}
       title="여행지 선택"
       onClose={onClose}
@@ -165,6 +165,6 @@ export default function SearchLocationModal({
           </View>
         </ScrollView>
       )}
-    </BottomSheet>
+    </PopupModal>
   );
 }

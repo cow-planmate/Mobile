@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 
-import BottomSheet from './BottomSheet';
+import PopupModal from './PopupModal';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import { styles, COLORS } from './CalendarModal.styles';
@@ -166,7 +166,7 @@ export default function CalendarModal({
     [startDate, endDate, onConfirm, applyOn],
   );
 
-  // 완료를 눌러도 BottomSheet이 이어서 onClose를 부르므로 확정은 한 쪽에서만 한다.
+  // 완료를 눌러도 PopupModal이 이어서 onClose를 부르므로 확정은 한 쪽에서만 한다.
   const handleDone = () => {
     // 날짜를 하나도 고르지 않았으면 아무 일도 하지 않는다.
     if (!startDate) return;
@@ -215,7 +215,7 @@ export default function CalendarModal({
   };
 
   return (
-    <BottomSheet
+    <PopupModal
       visible={visible}
       title="여행 기간 선택"
       onClose={handleClose}
@@ -352,6 +352,6 @@ export default function CalendarModal({
             </View>
           </View>
       </ScrollView>
-    </BottomSheet>
+    </PopupModal>
   );
 }
