@@ -153,6 +153,20 @@ describe('CalendarModal', () => {
     act(() => standalone.unmount());
   });
 
+  it('닫기 버튼으로도 닫을 수 있다', () => {
+    const onConfirm = jest.fn();
+    const onClose = jest.fn();
+    const tree = mount(onConfirm, onClose, 'done');
+
+    press(tree, '닫기');
+
+    expect(onClose).toHaveBeenCalled();
+    // 가져오기 모드에서는 닫기만으로 일정이 복사되면 안 된다.
+    expect(onConfirm).not.toHaveBeenCalled();
+
+    act(() => tree.unmount());
+  });
+
   it('지난 날짜는 누를 수 없다', () => {
     const onConfirm = jest.fn();
     const tree = mount(onConfirm);

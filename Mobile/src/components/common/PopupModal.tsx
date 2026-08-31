@@ -16,6 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import ArrowRight from 'lucide-react-native/dist/esm/icons/arrow-right';
+import X from 'lucide-react-native/dist/esm/icons/x';
 
 import { normalize } from '../../utils/normalize';
 import { tokens } from '../../theme/tokens';
@@ -108,14 +109,26 @@ export default function PopupModal({
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="닫기"
+            accessible={false}
+            importantForAccessibility="no"
           />
         </Animated.View>
 
         <Animated.View style={[styles.card, cardStyle]}>
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
+            <TouchableOpacity
+              onPress={onClose}
+              hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+              accessibilityRole="button"
+              accessibilityLabel="닫기"
+            >
+              <X
+                size={normalize(18)}
+                color={tokens.colors.textTertiary}
+                strokeWidth={1.8}
+              />
+            </TouchableOpacity>
           </View>
 
           {children}
@@ -171,8 +184,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: normalize(16),
-    paddingTop: normalize(16),
+    paddingTop: normalize(15),
     paddingBottom: normalize(10),
   },
   // 고른 뒤 눈과 손이 머무는 아래쪽에 둔다. 헤더 구석의 글자보다 겨냥하기 쉽다.
