@@ -27,7 +27,6 @@ import Plus from 'lucide-react-native/dist/esm/icons/plus';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { Header, NotificationModal } from '../../../components/common';
-import { Chip } from '../../../components/ui';
 import TravelFeedList, { TravelFeedItem } from '../components/TravelFeedList';
 import KakaoMapView, { MapPlace } from '../components/KakaoMapView';
 import { acceptInvitation, rejectInvitation } from '../../../api/trips';
@@ -364,44 +363,33 @@ export default function TravelFeedScreen() {
             />
           </View>
           <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel={
-              viewMode === 'list' ? '카드 보기로 전환' : '목록 보기로 전환'
-            }
-          >
-            {viewMode === 'list' ? (
-              <LayoutGrid size={20} color={tokens.colors.textSecondary} />
-            ) : (
-              <List size={20} color={tokens.colors.textSecondary} />
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.iconButton, isFilterApplied && styles.iconButtonActive]}
+            style={[styles.filterButton, isFilterApplied && styles.filterButtonActive]}
             onPress={openFilterModal}
             activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel={
               activeFilterCount > 0
-                ? `필터 ${activeFilterCount}개 적용됨`
-                : '필터'
+                ? `상세 필터 ${activeFilterCount}개 적용됨`
+                : '상세 필터'
             }
           >
             <SlidersHorizontal
-              size={20}
+              size={normalize(15)}
               color={
-                isFilterApplied
-                  ? tokens.colors.primary
-                  : tokens.colors.textSecondary
+                isFilterApplied ? tokens.colors.white : tokens.colors.text
               }
+              strokeWidth={1.8}
             />
-            {activeFilterCount > 0 && (
-              <View style={styles.filterCountBadge}>
-                <Text style={styles.filterCountText}>{activeFilterCount}</Text>
-              </View>
-            )}
+            <Text
+              style={[
+                styles.filterButtonText,
+                isFilterApplied && styles.filterButtonTextActive,
+              ]}
+            >
+              {activeFilterCount > 0
+                ? `상세 필터 ${activeFilterCount}`
+                : '상세 필터'}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -414,27 +402,71 @@ export default function TravelFeedScreen() {
             accessibilityLabel="여행지 지도 보기"
             hitSlop={8}
           >
-            <MapIcon size={16} color={tokens.colors.primary} />
+            <MapIcon
+              size={normalize(17)}
+              color={tokens.colors.textTertiary}
+              strokeWidth={1.8}
+            />
           </TouchableOpacity>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.regionBarContent}
           >
-            {regions.map(region => (
-              <Chip
-                key={region}
-                label={region}
-                size="s"
-                count={
-                  region === ALL ? undefined : regionCountByName.get(region)
-                }
-                selected={filterRegion === region}
-                onPress={() => setFilterRegion(region)}
-              />
-            ))}
+            {regions.map(region => {
+              const selected = filterRegion === region;
+              const count =
+                region === ALL ? undefined : regionCountByName.get(region);
+              return (
+                <TouchableOpacity
+                  key={region}
+                  style={[styles.regionTab, selected && styles.regionTabOn]}
+                  onPress={() => setFilterRegion(region)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                >
+                  <Text
+                    style={[
+                      styles.regionTabText,
+                      selected && styles.regionTabTextOn,
+                    ]}
+                  >
+                    {region}
+                    {count !== undefined ? (
+                      <Text style={styles.regionTabCount}>{` ${count}`}</Text>
+                    ) : null}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
+          <TouchableOpacity
+            style={styles.viewToggle}
+            onPress={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={
+              viewMode === 'list' ? '카드 보기로 전환' : '목록 보기로 전환'
+            }
+            hitSlop={8}
+          >
+            {viewMode === 'list' ? (
+              <LayoutGrid
+                size={normalize(17)}
+                color={tokens.colors.textTertiary}
+                strokeWidth={1.8}
+              />
+            ) : (
+              <List
+                size={normalize(17)}
+                color={tokens.colors.primary}
+                strokeWidth={1.8}
+              />
+            )}
+          </TouchableOpacity>
         </View>
+
 
         <View style={styles.content}>
           <TravelFeedList
@@ -674,8 +706,61 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.white,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    borderRadius: tokens.radius.l,
-    paddingHorizontal: normalize(12),
+    borderRadius: normalize(8),
+    paddingHorizontal: normalize(11),
+  },
+
+  // 아이콘만 있는 상자 대신 웹처럼 글자를 붙인 버튼으로 둔다.
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(5),
+    height: normalize(40),
+    paddingHorizontal: normalize(11),
+    borderRadius: normalize(8),
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.white,
+  },
+  filterButtonActive: {
+    backgroundColor: tokens.colors.primary,
+    borderColor: tokens.colors.primary,
+  },
+  filterButtonText: {
+    fontSize: normalize(12.5),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+  },
+  filterButtonTextActive: {
+    color: tokens.colors.white,
+  },
+
+  // 지역은 알약 대신 밑줄 탭이다. 밑줄 2px이 아래 구분선 1px을 덮도록 겹친다.
+  regionTab: {
+    paddingBottom: normalize(9),
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+    marginBottom: -1,
+  },
+  regionTabOn: {
+    borderBottomColor: tokens.colors.text,
+  },
+  regionTabText: {
+    fontSize: normalize(12.5),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textTertiary,
+  },
+  regionTabTextOn: {
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+  },
+  regionTabCount: {
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.borderStrong,
+  },
+  viewToggle: {
+    paddingBottom: normalize(9),
+    paddingLeft: normalize(10),
   },
   searchIcon: {
     marginRight: normalize(8),
@@ -688,59 +773,21 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
     padding: 0,
   },
-  iconButton: {
-    width: normalize(40),
-    height: normalize(40),
-    borderRadius: tokens.radius.l,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconButtonActive: {
-    borderColor: tokens.colors.primary,
-    backgroundColor: tokens.colors.primaryTint,
-  },
-  filterCountBadge: {
-    position: 'absolute',
-    top: normalize(-5),
-    right: normalize(-5),
-    minWidth: normalize(17),
-    height: normalize(17),
-    paddingHorizontal: normalize(4),
-    borderRadius: tokens.radius.round,
-    backgroundColor: tokens.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterCountText: {
-    fontSize: normalize(tokens.fontSize.xxs),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.white,
-  },
   regionBarContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     backgroundColor: tokens.colors.white,
-    paddingLeft: normalize(16),
-    paddingBottom: normalize(10),
+    paddingHorizontal: normalize(16),
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.border,
-    gap: normalize(8),
+    gap: normalize(12),
   },
   mapButton: {
-    width: normalize(32),
-    height: normalize(32),
-    borderRadius: tokens.radius.round,
-    backgroundColor: tokens.colors.primaryTint,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingBottom: normalize(9),
   },
   regionBarContent: {
-    paddingRight: normalize(16),
-    gap: normalize(6),
-    alignItems: 'center',
+    gap: normalize(14),
+    alignItems: 'flex-end',
   },
 
   modalOverlay: {
