@@ -63,8 +63,8 @@ export default function FeedCreateScreen() {
   const createPost = useCreatePost();
   const postId = route.params?.postId;
   const isEditMode = !!postId;
-  const existingPost = usePost(postId);
-  const updatePost = useUpdatePost(Number(postId ?? 0));
+  const existingPost = usePost(postId, true);
+  const updatePost = useUpdatePost(Number(postId ?? 0), true);
 
   const [snapshot, setSnapshot] = useState<FeedPlanSnapshot | null>(null);
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
