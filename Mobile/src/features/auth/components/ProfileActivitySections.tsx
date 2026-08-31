@@ -25,7 +25,7 @@ import {
   useMyComments,
   useMyPosts,
 } from '../../community/hooks/queries';
-import { CommunityPostSummary } from '../../community/types';
+import { CommunityComment, CommunityPostSummary } from '../../community/types';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import {
@@ -47,6 +47,11 @@ const CATEGORY_LABEL: Record<string, string> = {
   recommend: '추천',
   feed: '여행기',
 };
+
+const TRAVEL_LOG_TABS = [
+  { key: 'logs', label: '여행기' },
+  { key: 'comments', label: '댓글' },
+];
 
 const ACTIVITY_TABS = [
   { key: 'posts', label: '작성글' },
@@ -74,6 +79,18 @@ const PostRow = ({ post }: { post: CommunityPostSummary }) => (
       <MessageCircle size={12} color={tokens.colors.textSecondary} />
       <Text style={styles.countText}>{post.comments.toLocaleString()}</Text>
     </View>
+  </View>
+);
+
+const CommentRow = ({ comment }: { comment: CommunityComment }) => (
+  <View style={styles.activityRow}>
+    <Text style={styles.rowTitle} numberOfLines={1}>
+      {comment.postTitle ?? '게시글'}
+    </Text>
+    <Text style={styles.commentText} numberOfLines={2}>
+      {comment.content}
+    </Text>
+    <Text style={styles.date}>{comment.createdAt}</Text>
   </View>
 );
 
@@ -257,32 +274,83 @@ export function ProfileFootprintSection({ plans }: { plans: ProfilePlan[] }) {
   );
 }
 
+// 여행기 댓글은 커뮤니티 댓글과 별개 도메인이라 커뮤니티 활동이 아니라 이 섹션에서 다룬다.
 export function ProfileTravelLogSection() {
+  const [tab, setTab] = useState<'logs' | 'comments'>('logs');
   const { data, isLoading, isError } = useMyPosts('feed', 6);
+  const {
+    data: commentData,
+    isLoading: isCommentLoading,
+    isError: isCommentError,
+  } = useMyComments(6, true);
   const travelLogs = data?.items ?? [];
+  const comments = commentData?.items ?? [];
 
-  return (
-    <Card style={styles.card} variant="flat">
-      <SectionHeader
-        title="나의 여행기"
-        icon={<FileText size={18} color={tokens.colors.primary} />}
-      />
-      {isLoading ? (
-        <ActivityIndicator color={tokens.colors.primary} />
-      ) : isError ? (
+  const renderBody = () => {
+    if (tab === 'comments') {
+      if (isCommentLoading) {
+        return <ActivityIndicator color={tokens.colors.primary} />;
+      }
+      if (isCommentError) {
+        return (
+          <EmptyState
+            title="여행기 댓글을 불러오지 못했어요"
+            style={styles.innerEmpty}
+          />
+        );
+      }
+      if (comments.length === 0) {
+        return (
+          <EmptyState
+            title="여행기에 남긴 댓글이 없어요"
+            description="마음에 든 여행기에 한마디 남겨보세요."
+            style={styles.innerEmpty}
+          />
+        );
+      }
+      return comments.map(comment => (
+        <CommentRow key={comment.id} comment={comment} />
+      ));
+    }
+
+    if (isLoading) {
+      return <ActivityIndicator color={tokens.colors.primary} />;
+    }
+    if (isError) {
+      return (
         <EmptyState
           title="여행기를 불러오지 못했어요"
           style={styles.innerEmpty}
         />
-      ) : travelLogs.length === 0 ? (
+      );
+    }
+    if (travelLogs.length === 0) {
+      return (
         <EmptyState
           title="작성한 여행기가 없어요"
           description="다녀온 여행을 여행기로 남겨보세요."
           style={styles.innerEmpty}
         />
-      ) : (
-        travelLogs.map(post => <PostRow key={post.id} post={post} />)
-      )}
+      );
+    }
+    return travelLogs.map(post => <PostRow key={post.id} post={post} />);
+  };
+
+  return (
+    <Card style={styles.card} variant="flat" padding="none">
+      <View style={styles.cardInnerHeader}>
+        <SectionHeader
+          title="나의 여행기"
+          icon={<FileText size={18} color={tokens.colors.primary} />}
+        />
+      </View>
+      <UnderlineTabs
+        items={TRAVEL_LOG_TABS}
+        selectedKey={tab}
+        onSelect={key => setTab(key as 'logs' | 'comments')}
+        scrollable={false}
+      />
+      <View style={styles.cardInnerBody}>{renderBody()}</View>
     </Card>
   );
 }
@@ -339,15 +407,7 @@ export function ProfileCommunitySection() {
         );
       }
       return comments.map(comment => (
-        <View key={comment.id} style={styles.activityRow}>
-          <Text style={styles.rowTitle} numberOfLines={1}>
-            {comment.postTitle ?? '게시글'}
-          </Text>
-          <Text style={styles.commentText} numberOfLines={2}>
-            {comment.content}
-          </Text>
-          <Text style={styles.date}>{comment.createdAt}</Text>
-        </View>
+        <CommentRow key={comment.id} comment={comment} />
       ));
     }
 

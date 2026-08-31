@@ -53,8 +53,8 @@ export default function FeedDetailScreen() {
   const [selectedDay, setSelectedDay] = useState(0);
   const [isDateModalVisible, setDateModalVisible] = useState(false);
 
-  const { data: post, isLoading, isError } = usePost(postId);
-  const react = useReactToPost(postId ?? '');
+  const { data: post, isLoading, isError } = usePost(postId, true);
+  const react = useReactToPost(postId ?? '', true);
   const fork = useForkItinerary(postId ?? '');
   const isAuthor = !!post && user?.userId === post.userId;
 
@@ -410,7 +410,7 @@ export default function FeedDetailScreen() {
           </TouchableOpacity>
         </View>
 
-        <CommentSection postId={post.id} commentCount={post.comments} />
+        <CommentSection postId={post.id} commentCount={post.comments} feed />
 
       <PublicProfileModal
         visible={isAuthorProfileVisible}

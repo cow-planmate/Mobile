@@ -19,6 +19,7 @@ import {
 import type { FeedImageUploadFile } from '../utils/feedImage';
 
 const url = (path: string) => resolveApiUrl(`/api/community${path}`);
+const feedUrl = (path: string) => resolveApiUrl(`/api/feed${path}`);
 
 const mapCreatedAt = <T extends { createdAt?: string }>(
   item: T,
@@ -67,7 +68,6 @@ export async function fetchFeedPosts(
   signal?: AbortSignal,
 ): Promise<PageData<CommunityPostSummary>> {
   const params: Record<string, string> = {
-    category: 'feed',
     page: String(page),
     size: String(size),
     sort: filters.sort ?? 'latest',
@@ -80,24 +80,21 @@ export async function fetchFeedPosts(
   if (filters.tag) params.tag = filters.tag;
   if (filters.q && filters.q.trim()) params.q = filters.q.trim();
 
-  const response = await axios.get(url('/posts'), { params, signal });
+  const response = await axios.get(feedUrl('/posts'), { params, signal });
   return mapPage(response.data);
 }
 
 export async function fetchFeedRegionCounts(
   signal?: AbortSignal,
 ): Promise<RegionCount[]> {
-  const response = await axios.get(url('/posts/regions'), {
-    params: { category: 'feed' },
-    signal,
-  });
+  const response = await axios.get(feedUrl('/posts/regions'), { signal });
   return response.data ?? [];
 }
 
 export async function forkPost(
   postId: number | string,
 ): Promise<ForkResult> {
-  const response = await axios.post(url(`/posts/${postId}/fork`));
+  const response = await axios.post(feedUrl(`/posts/${postId}/fork`));
   return response.data;
 }
 
@@ -125,38 +122,40 @@ export async function fetchHotPosts(
   category: string,
   signal?: AbortSignal,
 ): Promise<CommunityPostSummary[]> {
-  const response = await axios.get(url('/posts/hot'), {
-    params: { category },
-    signal,
-  });
+  const isFeed = category.toLowerCase() === 'feed';
+  const response = isFeed
+    ? await axios.get(feedUrl('/posts/hot'), { signal })
+    : await axios.get(url('/posts/hot'), { params: { category }, signal });
   return (response.data ?? []).map(mapCreatedAt);
 }
 
 export async function fetchPost(
   postId: number | string,
   signal?: AbortSignal,
+  feed = false,
 ): Promise<CommunityPostDetail> {
-  const response = await axios.get(url(`/posts/${postId}`), { signal });
+  const response = await axios.get((feed ? feedUrl : url)(`/posts/${postId}`), { signal });
   return mapCreatedAt(response.data);
 }
 
 export async function createPost(
   payload: CreatePostPayload,
 ): Promise<CommunityPostDetail> {
-  const response = await axios.post(url('/posts'), payload);
+  const response = await axios.post(payload.category.toLowerCase() === 'feed' ? feedUrl('/posts') : url('/posts'), payload);
   return mapCreatedAt(response.data);
 }
 
 export async function updatePost(
   postId: number,
   payload: Partial<CreatePostPayload>,
+  feed = false,
 ): Promise<CommunityPostDetail> {
-  const response = await axios.patch(url(`/posts/${postId}`), payload);
+  const response = await axios.patch((feed ? feedUrl : url)(`/posts/${postId}`), payload);
   return mapCreatedAt(response.data);
 }
 
-export async function deletePost(postId: number): Promise<void> {
-  await axios.delete(url(`/posts/${postId}`));
+export async function deletePost(postId: number, feed = false): Promise<void> {
+  await axios.delete((feed ? feedUrl : url)(`/posts/${postId}`));
 }
 
 export async function uploadCommunityImage(
@@ -181,8 +180,9 @@ export async function deleteCommunityImage(imageUrl: string): Promise<void> {
 export async function reactToPost(
   postId: number,
   type: ReactionType,
+  feed = false,
 ): Promise<ReactionResult> {
-  const response = await axios.put(url(`/posts/${postId}/reaction`), { type });
+  const response = await axios.put((feed ? feedUrl : url)(`/posts/${postId}/reaction`), { type });
   return response.data;
 }
 
@@ -191,8 +191,9 @@ export async function fetchComments(
   page = 0,
   size = 50,
   signal?: AbortSignal,
+  feed = false,
 ): Promise<PageData<CommunityComment>> {
-  const response = await axios.get(url(`/posts/${postId}/comments`), {
+  const response = await axios.get((feed ? feedUrl : url)(`/posts/${postId}/comments`), {
     params: { page: String(page), size: String(size) },
     signal,
   });
@@ -203,22 +204,24 @@ export async function createComment(
   postId: number,
   content: string,
   parentId?: number,
+  feed = false,
 ): Promise<CommunityComment> {
   const body = parentId != null ? { content, parentId } : { content };
-  const response = await axios.post(url(`/posts/${postId}/comments`), body);
+  const response = await axios.post((feed ? feedUrl : url)(`/posts/${postId}/comments`), body);
   return mapCreatedAt(response.data);
 }
 
 export async function updateComment(
   commentId: number,
   content: string,
+  feed = false,
 ): Promise<CommunityComment> {
-  const response = await axios.patch(url(`/comments/${commentId}`), { content });
+  const response = await axios.patch((feed ? feedUrl : url)(`/comments/${commentId}`), { content });
   return mapCreatedAt(response.data);
 }
 
-export async function deleteComment(commentId: number): Promise<void> {
-  await axios.delete(url(`/comments/${commentId}`));
+export async function deleteComment(commentId: number, feed = false): Promise<void> {
+  await axios.delete((feed ? feedUrl : url)(`/comments/${commentId}`));
 }
 
 export async function joinMate(postId: number): Promise<MateParticipation> {
@@ -270,7 +273,9 @@ export async function fetchMyPosts(
   signal?: AbortSignal,
 ): Promise<PageData<CommunityPostSummary>> {
   const response = await axios.get(
-    url(`/me/posts?${activityParams(page, size, category)}`),
+    (category?.toLowerCase() === 'feed' ? feedUrl : url)(
+      `/me/posts?${activityParams(page, size, category?.toLowerCase() === 'feed' ? undefined : category)}`,
+    ),
     { signal },
   );
   return mapPage(response.data);
@@ -283,19 +288,22 @@ export async function fetchLikedPosts(
   signal?: AbortSignal,
 ): Promise<PageData<CommunityPostSummary>> {
   const response = await axios.get(
-    url(`/me/liked?${activityParams(page, size, category)}`),
+    (category?.toLowerCase() === 'feed' ? feedUrl : url)(
+      `/me/liked?${activityParams(page, size, category?.toLowerCase() === 'feed' ? undefined : category)}`,
+    ),
     { signal },
   );
   return mapPage(response.data);
 }
 
+/** 내가 쓴 댓글. 여행기 댓글은 feed=true 로 따로 조회한다 (별개 도메인) */
 export async function fetchMyComments(
   page = 0,
   size = 20,
   signal?: AbortSignal,
+  feed = false,
 ): Promise<PageData<CommunityComment>> {
-  const response = await axios.get(url(`/me/comments?page=${page}&size=${size}`), {
-    signal,
-  });
+  const path = (feed ? feedUrl : url)(`/me/comments?page=${page}&size=${size}`);
+  const response = await axios.get(path, { signal });
   return mapPage(response.data);
 }

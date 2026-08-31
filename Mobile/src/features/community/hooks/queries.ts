@@ -46,10 +46,12 @@ const KEYS = {
   posts: (category: string, sort: string, q: string) =>
     ['community', 'posts', category, sort, q] as const,
   hot: (category: string) => ['community', 'hot', category] as const,
-  post: (postId: number | string) =>
-    ['community', 'post', String(postId)] as const,
-  comments: (postId: number | string) =>
-    ['community', 'comments', String(postId)] as const,
+  // 피드와 커뮤니티는 ID 시퀀스가 분리돼 있어 같은 번호가 양쪽에 존재할 수 있다.
+  // 캐시 키도 네임스페이스로 갈라 두어야 서로 덮어쓰지 않는다.
+  post: (postId: number | string, feed = false) =>
+    [feed ? 'feed' : 'community', 'post', String(postId)] as const,
+  comments: (postId: number | string, feed = false) =>
+    [feed ? 'feed' : 'community', 'comments', String(postId)] as const,
 };
 
 export const usePosts = (category: string, sort = 'latest', q = '') =>
@@ -88,21 +90,22 @@ export const useHotPosts = (category: string) =>
     staleTime: 60_000,
   });
 
-export const usePost = (postId: number | string | undefined) =>
+export const usePost = (postId: number | string | undefined, feed = false) =>
   useQuery({
-    queryKey: KEYS.post(postId ?? ''),
-    queryFn: ({ signal }) => fetchPost(postId as number | string, signal),
+    queryKey: KEYS.post(postId ?? '', feed),
+    queryFn: ({ signal }) => fetchPost(postId as number | string, signal, feed),
     enabled: postId !== undefined && postId !== null && postId !== '',
   });
 
 export const useComments = (
   postId: number | string | undefined,
   size = 20,
+  feed = false,
 ) =>
   useInfiniteQuery({
-    queryKey: KEYS.comments(postId ?? ''),
+    queryKey: KEYS.comments(postId ?? '', feed),
     queryFn: ({ pageParam, signal }) =>
-      fetchComments(postId as number | string, pageParam as number, size, signal),
+      fetchComments(postId as number | string, pageParam as number, size, signal, feed),
     initialPageParam: 0,
     getNextPageParam: lastPage =>
       lastPage.page + 1 < lastPage.totalPages ? lastPage.page + 1 : undefined,
@@ -130,10 +133,10 @@ export const useLikedPosts = (category?: string, size = PAGE_SIZE) =>
     staleTime: 30_000,
   });
 
-export const useMyComments = (size = PAGE_SIZE) =>
+export const useMyComments = (size = PAGE_SIZE, feed = false) =>
   useQuery({
-    queryKey: ['community', 'me', 'comments', size] as const,
-    queryFn: ({ signal }) => fetchMyComments(0, size, signal),
+    queryKey: [feed ? 'feed' : 'community', 'me', 'comments', size] as const,
+    queryFn: ({ signal }) => fetchMyComments(0, size, signal, feed),
     staleTime: 30_000,
   });
 
@@ -146,16 +149,16 @@ const useInvalidate = () => {
         .then(() =>
           queryClient.invalidateQueries({ queryKey: ['community', 'hot'] }),
         ),
-    post: (postId: number | string) =>
-      queryClient.invalidateQueries({ queryKey: KEYS.post(postId) }),
-    comments: (postId: number | string) =>
-      queryClient.invalidateQueries({ queryKey: KEYS.comments(postId) }),
+    post: (postId: number | string, feed = false) =>
+      queryClient.invalidateQueries({ queryKey: KEYS.post(postId, feed) }),
+    comments: (postId: number | string, feed = false) =>
+      queryClient.invalidateQueries({ queryKey: KEYS.comments(postId, feed) }),
     me: () => queryClient.invalidateQueries({ queryKey: ['community', 'me'] }),
     feedRegions: () =>
       queryClient.invalidateQueries({ queryKey: ['community', 'feed-regions'] }),
-    deferPostRefetch: (postId: number | string) =>
+    deferPostRefetch: (postId: number | string, feed = false) =>
       queryClient.invalidateQueries({
-        queryKey: KEYS.post(postId),
+        queryKey: KEYS.post(postId, feed),
         refetchType: 'none',
       }),
   };
@@ -173,11 +176,11 @@ export const useCreatePost = () => {
   });
 };
 
-export const useUpdatePost = (postId: number) => {
+export const useUpdatePost = (postId: number, feed = false) => {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: (payload: Partial<CreatePostPayload>) =>
-      updatePost(postId, payload),
+      updatePost(postId, payload, feed),
     onSuccess: () => {
       void invalidate.post(postId);
       void invalidate.lists();
@@ -187,12 +190,12 @@ export const useUpdatePost = (postId: number) => {
   });
 };
 
-export const useDeletePost = () => {
+export const useDeletePost = (feed = false) => {
   const invalidate = useInvalidate();
   return useMutation({
-    mutationFn: (postId: number) => deletePost(postId),
+    mutationFn: (postId: number) => deletePost(postId, feed),
     onSuccess: (_data, postId) => {
-      void invalidate.deferPostRefetch(postId);
+      void invalidate.deferPostRefetch(postId, feed);
       void invalidate.lists();
       void invalidate.me();
       void invalidate.feedRegions();
@@ -204,12 +207,18 @@ const patchPostSummaryInCaches = (
   queryClient: ReturnType<typeof useQueryClient>,
   postId: number | string,
   patch: Partial<CommunityPostSummary>,
+  feed = false,
 ) => {
   const idStr = String(postId);
   const patchItem = (item: CommunityPostSummary) =>
     String(item.id) === idStr ? { ...item, ...patch } : item;
 
-  queryClient.setQueriesData({ queryKey: ['community', 'posts'] }, (data: any) => {
+  // 피드 목록만, 혹은 커뮤니티 목록만 건드린다 — ID 가 겹쳐도 남의 글을 고치지 않는다.
+  const listKey = feed
+    ? (['community', 'posts', 'feed'] as const)
+    : (['community', 'posts'] as const);
+
+  queryClient.setQueriesData({ queryKey: listKey }, (data: any) => {
     if (!data?.pages) return data;
     return {
       ...data,
@@ -234,14 +243,14 @@ const patchPostSummaryInCaches = (
   });
 };
 
-export const useReactToPost = (postId: number | string) => {
+export const useReactToPost = (postId: number | string, feed = false) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (type: ReactionType) => reactToPost(Number(postId), type),
+    mutationFn: (type: ReactionType) => reactToPost(Number(postId), type, feed),
     onSuccess: (result: ReactionResult) => {
       queryClient.setQueryData(
-        KEYS.post(postId),
+        KEYS.post(postId, feed),
         (prev: (CommunityPostSummary & { myReaction?: ReactionType | null }) | undefined) =>
           prev
             ? {
@@ -255,7 +264,7 @@ export const useReactToPost = (postId: number | string) => {
       patchPostSummaryInCaches(queryClient, postId, {
         likes: result.likes,
         dislikes: result.dislikes,
-      });
+      }, feed);
       // 좋아요를 취소하면 '좋아요한 글' 목록에서 빠져야 하므로 개수만
       // 갱신하지 않고 목록 자체를 다시 받는다.
       void queryClient.invalidateQueries({
@@ -265,7 +274,7 @@ export const useReactToPost = (postId: number | string) => {
   });
 };
 
-export const useCreateComment = (postId: number | string) => {
+export const useCreateComment = (postId: number | string, feed = false) => {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: ({
@@ -274,17 +283,17 @@ export const useCreateComment = (postId: number | string) => {
     }: {
       content: string;
       parentId?: number;
-    }) => createComment(Number(postId), content, parentId),
+    }) => createComment(Number(postId), content, parentId, feed),
     onSuccess: () => {
-      void invalidate.comments(postId);
-      void invalidate.post(postId);
+      void invalidate.comments(postId, feed);
+      void invalidate.post(postId, feed);
       void invalidate.lists();
       void invalidate.me();
     },
   });
 };
 
-export const useUpdateComment = (postId: number | string) => {
+export const useUpdateComment = (postId: number | string, feed = false) => {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: ({
@@ -293,21 +302,21 @@ export const useUpdateComment = (postId: number | string) => {
     }: {
       commentId: number;
       content: string;
-    }) => updateComment(commentId, content),
+    }) => updateComment(commentId, content, feed),
     onSuccess: () => {
-      void invalidate.comments(postId);
+      void invalidate.comments(postId, feed);
       void invalidate.me();
     },
   });
 };
 
-export const useDeleteComment = (postId: number | string) => {
+export const useDeleteComment = (postId: number | string, feed = false) => {
   const invalidate = useInvalidate();
   return useMutation({
-    mutationFn: (commentId: number) => deleteComment(commentId),
+    mutationFn: (commentId: number) => deleteComment(commentId, feed),
     onSuccess: () => {
-      void invalidate.comments(postId);
-      void invalidate.post(postId);
+      void invalidate.comments(postId, feed);
+      void invalidate.post(postId, feed);
       void invalidate.lists();
       void invalidate.me();
     },

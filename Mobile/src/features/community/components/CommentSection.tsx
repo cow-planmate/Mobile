@@ -32,6 +32,8 @@ import LevelBadge from './LevelBadge';
 interface CommentSectionProps {
   postId: number;
   commentCount: number;
+  /** 피드 게시글이면 /api/feed 계약을 탄다 (커뮤니티와 ID 체계가 다르다) */
+  feed?: boolean;
 }
 
 interface CommentComposerProps {
@@ -126,6 +128,7 @@ const CommentEditor = React.memo(function CommentEditor({
 export default function CommentSection({
   postId,
   commentCount,
+  feed = false,
 }: CommentSectionProps) {
   const { showAlert } = useAlert();
   const user = useAuthStore(state => state.user);
@@ -134,10 +137,10 @@ export default function CommentSection({
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  const commentsQuery = useComments(postId);
-  const createComment = useCreateComment(postId);
-  const updateComment = useUpdateComment(postId);
-  const deleteComment = useDeleteComment(postId);
+  const commentsQuery = useComments(postId, 20, feed);
+  const createComment = useCreateComment(postId, feed);
+  const updateComment = useUpdateComment(postId, feed);
+  const deleteComment = useDeleteComment(postId, feed);
 
   const { topLevel, repliesByParent } = useMemo(() => {
     const items = mergeCommentPages(commentsQuery.data?.pages);
