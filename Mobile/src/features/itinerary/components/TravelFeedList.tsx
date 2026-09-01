@@ -191,7 +191,8 @@ const FeedListItem = React.memo(function FeedListItem({
     );
   }
 
-  // 목록 모드는 사진과 제목을 나란히 두고 코스만 전체 폭으로 내린다.
+  // 사진을 오른쪽 끝에 두면 키커·제목·설명·코스·바이라인의 왼쪽 끝이 하나로
+  // 모인다. 사진을 왼쪽에 두면 코스 줄만 사진 아래에서 시작해 어긋나 보였다.
   return (
     <Pressable
       style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
@@ -200,7 +201,6 @@ const FeedListItem = React.memo(function FeedListItem({
       accessibilityLabel={item.title}
     >
       <View style={styles.listRow}>
-        <FeedThumbnail uri={item.thumbnailUrl} style={styles.listThumbnail} />
         <View style={styles.listColumn}>
           <FeedKicker item={item} />
           <Text style={styles.listTitle} numberOfLines={2}>
@@ -212,6 +212,7 @@ const FeedListItem = React.memo(function FeedListItem({
             </Text>
           ) : null}
         </View>
+        <FeedThumbnail uri={item.thumbnailUrl} style={styles.listThumbnail} />
       </View>
       <FeedRoute item={item} />
       <FeedByline item={item} />

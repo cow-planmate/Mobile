@@ -665,6 +665,8 @@ const TimelineComponent = React.memo(
       setPreviewEndTime?: (time: string | null) => void;
       onConfirmPlacement?: () => void;
       onCancelPreview?: () => void;
+      /** 눈금판 자체의 화면 좌표를 재기 위한 ref. 여백·스크롤을 추측하지 않는다 */
+      gridRef?: React.RefObject<View | null>;
       /** 끌어놓는 중이면 확인·취소 버튼 없이 점선만 그린다 */
       isDragging?: boolean;
       /** 비켜설 빈자리조차 없을 때 */
@@ -686,6 +688,7 @@ const TimelineComponent = React.memo(
         setPreviewEndTime,
         onConfirmPlacement,
         onCancelPreview,
+        gridRef,
         isDragging = false,
         dropBlocked = false,
       },
@@ -769,7 +772,11 @@ const TimelineComponent = React.memo(
                 setPreviewEndTime(endTimeStr);
               }}
             >
-              <View style={styles.timelineWrapper} pointerEvents="box-none">
+              <View
+                ref={gridRef}
+                style={styles.timelineWrapper}
+                pointerEvents="box-none"
+              >
                 <TimeGridBackground hours={gridHours} endHour={endHour} />
                 {selectedDay?.places.map(place => (
                   <DraggableTimelineItem
@@ -884,6 +891,7 @@ export const EditorStateContext = createContext<{
   onCancelPreview: any;
   isDragging: boolean;
   dropBlocked: boolean;
+  gridRef: React.RefObject<View | null>;
 } | null>(null);
 
 /** 손잡이 줄 높이 — 잡는 막대와 갈래 줄. 접혀도 이만큼은 남는다. */
@@ -949,6 +957,7 @@ const TimelineTabScreen = React.memo(() => {
     onCancelPreview,
     isDragging,
     dropBlocked,
+    gridRef,
   } = state;
 
   const localDateStr = selectedDay ? formatDateLocal(selectedDay.date) : '';
@@ -986,6 +995,7 @@ const TimelineTabScreen = React.memo(() => {
         onCancelPreview={onCancelPreview}
         isDragging={isDragging}
         dropBlocked={dropBlocked}
+        gridRef={gridRef}
       />
 
       <View style={styles.floatingHistoryContainer}>
@@ -1080,6 +1090,12 @@ export interface ItineraryEditorScreenViewProps {
   setPreviewEndTime?: (time: string | null) => void;
   onConfirmPlacement?: () => void;
   onCancelPlacement?: () => void;
+  /** 끌어놓기로 시간까지 정해진 장소를 바로 담는다 */
+  onPlaceAt?: (
+    place: Omit<Place, 'startTime' | 'endTime'>,
+    startTime: string,
+    endTime: string,
+  ) => void;
   onCancelPreview?: () => void;
 }
 
@@ -1128,6 +1144,7 @@ export default function ItineraryEditorScreenView({
   setPreviewEndTime,
   onConfirmPlacement,
   onCancelPlacement,
+  onPlaceAt,
   onCancelPreview,
 }: ItineraryEditorScreenViewProps) {
   const screenInsets = useScreenInsets(true);  const [inputWidth, setInputWidth] = useState(120);
@@ -1159,6 +1176,7 @@ export default function ItineraryEditorScreenView({
     'startTime' | 'endTime'
   > | null>(null);
   const [dropBlocked, setDropBlocked] = useState(false);
+  const gridViewRef = useRef<View>(null);
 
   const editorStateContextValue = useMemo(() => {
     return {
@@ -1184,6 +1202,7 @@ export default function ItineraryEditorScreenView({
       onCancelPreview,
       isDragging: !!draggingPlace,
       dropBlocked,
+      gridRef: gridViewRef,
     };
   }, [
     timelineScrollRef,
@@ -1227,7 +1246,7 @@ export default function ItineraryEditorScreenView({
   const restoreTo = useRef(0);
   const bodyTop = useRef(0);
   const timelineTop = useRef(0);
-  const timelineScrollY = useRef(0);
+  const gridTopRef = useRef(0);
   const bodyViewRef = useRef<View>(null);
   const timelineViewRef = useRef<View>(null);
 
@@ -1270,6 +1289,7 @@ export default function ItineraryEditorScreenView({
       Gesture.Exclusive(
         Gesture.Pan()
           .runOnJS(true)
+          .hitSlop({ top: 12, bottom: 12 })
           .onBegin(() => {
             sheetStartRef.current = sheetHeightRef.current;
           })
@@ -1281,6 +1301,7 @@ export default function ItineraryEditorScreenView({
           ),
         Gesture.Tap()
           .runOnJS(true)
+          .hitSlop({ top: 12, bottom: 12 })
           .onEnd(() => {
             const points = snapPoints();
             setSheetHeight(sheetHeightRef.current <= 1 ? points[1] : 0);
@@ -1307,29 +1328,27 @@ export default function ItineraryEditorScreenView({
   );
   const dayEndMinutes = timeToMinutes(selectedDay?.endTime || DEFAULT_DAY_END);
   const gridOffsetMinutes = Math.floor(dayStartMinutes / 60) * 60;
-  const localDateStr = selectedDay ? formatDateLocal(selectedDay.date) : '';
-  const timelinePadding = selectedDay && weatherMap[localDateStr] ? 62 : 0;
 
-  /** 손가락의 화면 좌표를 시간표의 15분 눈금으로 옮긴다. 밖이면 null. */
+  /**
+   * 손가락의 화면 좌표를 시간표의 15분 눈금으로 옮긴다. 시간표 밖이면 null.
+   *
+   * 눈금판의 화면 좌표를 직접 재서 쓴다. 날씨 카드 여백이나 스크롤 값을
+   * 더하고 빼며 맞추면 한 칸씩 어긋나기 쉽다.
+   */
   const minutesAt = useCallback(
     (absoluteY: number) => {
-      const top = timelineTop.current;
-      if (!top || absoluteY < top) return null;
-      const y =
-        absoluteY -
-        top +
-        timelineScrollY.current -
-        timelinePadding -
-        GRID_TOP_OFFSET;
-      const minutes = y / MINUTE_HEIGHT + gridOffsetMinutes;
-      const snapped = Math.floor(minutes / 15) * 15;
+      const gridTop = gridTopRef.current;
+      const areaTop = timelineTop.current;
+      if (!gridTop || (areaTop && absoluteY < areaTop)) return null;
+
+      const minutes =
+        (absoluteY - gridTop - GRID_TOP_OFFSET) / MINUTE_HEIGHT +
+        gridOffsetMinutes;
+      const snapped = Math.round(minutes / 15) * 15;
       if (snapped + 60 < dayStartMinutes) return null;
-      return Math.max(
-        dayStartMinutes,
-        Math.min(snapped, dayEndMinutes - 60),
-      );
+      return Math.max(dayStartMinutes, Math.min(snapped, dayEndMinutes - 60));
     },
-    [dayStartMinutes, dayEndMinutes, gridOffsetMinutes, timelinePadding],
+    [dayStartMinutes, dayEndMinutes, gridOffsetMinutes],
   );
 
   /**
@@ -1390,6 +1409,9 @@ export default function ItineraryEditorScreenView({
       timelineViewRef.current?.measureInWindow((_x, y) => {
         timelineTop.current = y;
       });
+      gridViewRef.current?.measureInWindow((_x, y) => {
+        gridTopRef.current = y;
+      });
       dragY.value = absoluteY - bodyTop.current;
       ghostScale.value = 0.86;
       ghostScale.value = withSpring(1, { damping: 13, stiffness: 220 });
@@ -1420,15 +1442,16 @@ export default function ItineraryEditorScreenView({
       if (minutes === null || !place) {
         onCancelPlacement?.();
       } else {
-        handleAddPlace({
-          ...(place as Place),
-          startTime: minutesToTime(minutes),
-          endTime: minutesToTime(minutes + 60),
-        } as any);
+        // handleAddPlace는 pendingPlace만 세우는 자리라 여기서는 쓰지 않는다.
+        onPlaceAt?.(
+          place,
+          minutesToTime(minutes),
+          minutesToTime(minutes + 60),
+        );
       }
       restoreSheet();
     },
-    [previewAt, handleAddPlace, onCancelPlacement, restoreSheet],
+    [previewAt, onPlaceAt, onCancelPlacement, restoreSheet],
   );
 
   const handleCancelPickUp = useCallback(() => {
@@ -1677,14 +1700,15 @@ export default function ItineraryEditorScreenView({
           <Animated.View style={[styles.placeSheet, sheetAnimStyle]}>
             <GestureDetector gesture={sheetGesture}>
               <View
-                style={styles.sheetHandle}
+                style={styles.sheetGrabArea}
                 accessibilityRole="adjustable"
                 accessibilityLabel="추천 장소 크기 조절"
               >
                 <View style={styles.sheetGrabber} />
-                <SheetCategoryRow selected={placeTab} onSelect={setPlaceTab} />
               </View>
             </GestureDetector>
+
+            <SheetCategoryRow selected={placeTab} onSelect={setPlaceTab} />
 
             <View style={styles.sheetBody}>
               <Text style={styles.sheetHint}>

@@ -759,7 +759,11 @@ export const styles = StyleSheet.create({
     borderTopColor: COLORS.border,
     overflow: 'hidden',
   },
-  sheetHandle: {
+  // 잡는 자리는 막대만. 갈래 줄까지 여기 넣으면 갈래를 누를 때 시트가 여닫힌다.
+  sheetGrabArea: {
+    height: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: COLORS.white,
   },
   sheetGrabber: {
@@ -767,15 +771,14 @@ export const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     backgroundColor: COLORS.border,
-    alignSelf: 'center',
-    marginTop: 8,
-    marginBottom: 6,
   },
   sheetCats: {
+    height: 40,
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
     paddingHorizontal: 14,
-    paddingBottom: 9,
+    backgroundColor: COLORS.white,
   },
   sheetCat: {
     borderWidth: 1,

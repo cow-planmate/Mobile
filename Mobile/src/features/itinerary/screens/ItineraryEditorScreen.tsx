@@ -104,6 +104,27 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setPreviewEndTime(null);
   }, []);
 
+  /**
+   * 끌어놓기로 자리를 정해 바로 담는다.
+   *
+   * handleAddPlace 자리에는 pendingPlace만 세우는 override가 들어가 있어서,
+   * 끌어놓기가 그 함수를 부르면 아무것도 담기지 않는다. 시간이 이미 정해진
+   * 경우를 위한 길을 따로 낸다.
+   */
+  const handlePlacePlaceAt = useCallback(
+    (
+      place: Omit<Place, 'startTime' | 'endTime'>,
+      startTime: string,
+      endTime: string,
+    ) => {
+      handleAddPlace({ ...place, startTime, endTime } as any);
+      setPendingPlace(null);
+      setPreviewStartTime(null);
+      setPreviewEndTime(null);
+    },
+    [handleAddPlace],
+  );
+
   const handleConfirmPlacement = useCallback(() => {
     if (pendingPlace && previewStartTime && previewEndTime) {
       handleAddPlace({
@@ -780,6 +801,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         handleUpdatePlaceTimes={handleUpdatePlaceTimes}
         handleDeletePlace={handleDeletePlace}
         handleAddPlace={handleAddPlaceOverride}
+        onPlaceAt={handlePlacePlaceAt}
         pendingPlace={pendingPlace}
         previewStartTime={previewStartTime}
         previewEndTime={previewEndTime}
