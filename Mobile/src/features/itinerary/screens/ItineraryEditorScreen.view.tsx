@@ -1379,9 +1379,12 @@ export default function ItineraryEditorScreenView({
     ],
   );
 
+  const draggingRef = useRef<Omit<Place, 'startTime' | 'endTime'> | null>(null);
+
   const handlePickUpPlace = useCallback(
     (place: Omit<Place, 'startTime' | 'endTime'>, absoluteY: number) => {
       restoreTo.current = sheetHeightRef.current;
+      draggingRef.current = place;
       setDraggingPlace(place);
       handleAddPlace(place);
       timelineViewRef.current?.measureInWindow((_x, y) => {
@@ -1404,6 +1407,7 @@ export default function ItineraryEditorScreenView({
   );
 
   const restoreSheet = useCallback(() => {
+    draggingRef.current = null;
     setDraggingPlace(null);
     setDropBlocked(false);
     setSheetHeight(restoreTo.current || Math.round(sheetMaxRef.current / 3));
@@ -1412,24 +1416,65 @@ export default function ItineraryEditorScreenView({
   const handleDropPlace = useCallback(
     (absoluteY: number) => {
       const minutes = previewAt(absoluteY);
-      if (minutes === null) {
+      const place = draggingRef.current;
+      if (minutes === null || !place) {
         onCancelPlacement?.();
       } else {
         handleAddPlace({
-          ...(draggingPlace as Place),
+          ...(place as Place),
           startTime: minutesToTime(minutes),
           endTime: minutesToTime(minutes + 60),
         } as any);
       }
       restoreSheet();
     },
-    [previewAt, draggingPlace, handleAddPlace, onCancelPlacement, restoreSheet],
+    [previewAt, handleAddPlace, onCancelPlacement, restoreSheet],
   );
 
   const handleCancelPickUp = useCallback(() => {
     onCancelPlacement?.();
     restoreSheet();
   }, [onCancelPlacement, restoreSheet]);
+
+  // 끄는 도중 목록이 새 함수를 받으면 행이 다시 그려진다. 최신 함수는 ref로 두고
+  // 목록에는 바뀌지 않는 껍데기만 넘긴다.
+  const dragCallbacks = useRef({
+    pickUp: handlePickUpPlace,
+    drag: handleDragPlace,
+    drop: handleDropPlace,
+    cancel: handleCancelPickUp,
+    press: onOpenDetail,
+  });
+  dragCallbacks.current = {
+    pickUp: handlePickUpPlace,
+    drag: handleDragPlace,
+    drop: handleDropPlace,
+    cancel: handleCancelPickUp,
+    press: onOpenDetail,
+  };
+
+  const onPickUpStable = useCallback(
+    (place: Omit<Place, 'startTime' | 'endTime'>, y: number) =>
+      dragCallbacks.current.pickUp(place, y),
+    [],
+  );
+  const onDragStable = useCallback(
+    (y: number) => dragCallbacks.current.drag(y),
+    [],
+  );
+  const onDropStable = useCallback(
+    (y: number) => dragCallbacks.current.drop(y),
+    [],
+  );
+  const onCancelStable = useCallback(
+    () => dragCallbacks.current.cancel(),
+    [],
+  );
+  const onPressPlaceStable = useCallback(
+    (place: Omit<Place, 'startTime' | 'endTime'>) =>
+      dragCallbacks.current.press(place as Place),
+    [],
+  );
 
 
   if (!selectedDay) {
@@ -1652,11 +1697,11 @@ export default function ItineraryEditorScreenView({
                 hideTabs
                 selectedTab={placeTab}
                 onSelectTab={setPlaceTab}
-                onPressPlace={onOpenDetail as any}
-                onPickUpPlace={handlePickUpPlace}
-                onDragPlace={handleDragPlace}
-                onDropPlace={handleDropPlace}
-                onCancelPickUp={handleCancelPickUp}
+                onPressPlace={onPressPlaceStable}
+                onPickUpPlace={onPickUpStable}
+                onDragPlace={onDragStable}
+                onDropPlace={onDropStable}
+                onCancelPickUp={onCancelStable}
               />
             </View>
           </Animated.View>

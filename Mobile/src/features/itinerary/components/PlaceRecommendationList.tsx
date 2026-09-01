@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle,
@@ -275,6 +281,12 @@ const PickUpPlaceRow = React.memo(function PickUpPlaceRow({
     transform: [{ scale: pressScale.value }],
   }));
 
+  // 끄는 도중 제스처 객체가 새로 만들어지면 RNGH가 진행 중인 제스처를 취소한다.
+  // 집는 순간 부모가 상태를 바꾸며 콜백 신원이 바뀌므로, 최신 값은 ref로만 읽고
+  // 제스처는 한 번 만든 것을 끝까지 쓴다.
+  const latest = useRef({ place, onPress, onPickUp, onDrag, onDrop, onCancel });
+  latest.current = { place, onPress, onPickUp, onDrag, onDrop, onCancel };
+
   const gesture = useMemo(() => {
     // runOnJS(true)로 두면 핸들러가 JS 스레드에서 돌아 worklet 제약을 받지 않는다.
     const pan = Gesture.Pan()
@@ -287,22 +299,22 @@ const PickUpPlaceRow = React.memo(function PickUpPlaceRow({
         pressScale.value = withTiming(1, { duration: 120 });
         hapticTick();
         setHeld(true);
-        onPickUp(place, e.absoluteY);
+        latest.current.onPickUp(latest.current.place, e.absoluteY);
       })
-      .onUpdate(e => onDrag?.(e.absoluteY))
-      .onEnd(e => onDrop?.(e.absoluteY))
+      .onUpdate(e => latest.current.onDrag?.(e.absoluteY))
+      .onEnd(e => latest.current.onDrop?.(e.absoluteY))
       .onFinalize((_e, success) => {
         pressScale.value = withTiming(1, { duration: 120 });
         setHeld(false);
-        if (!success) onCancel?.();
+        if (!success) latest.current.onCancel?.();
       });
 
     const tap = Gesture.Tap()
       .runOnJS(true)
-      .onEnd(() => onPress?.(place));
+      .onEnd(() => latest.current.onPress?.(latest.current.place));
 
     return Gesture.Exclusive(pan, tap);
-  }, [place, onPress, onPickUp, onDrag, onDrop, onCancel, pressScale]);
+  }, [pressScale]);
 
   return (
     <GestureDetector gesture={gesture}>
