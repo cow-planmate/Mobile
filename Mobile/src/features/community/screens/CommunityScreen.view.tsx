@@ -137,8 +137,7 @@ export default function CommunityScreenView({
   onNavigateProfile,
   onAcceptInvitation,
   onRejectInvitation,
-}: CommunityScreenViewProps) {
-  const selectedLabel =
+}: CommunityScreenViewProps) {  const selectedLabel =
     boards.find(board => board.key === selectedCategory)?.label ?? '';
 
   const tabItems = useMemo(

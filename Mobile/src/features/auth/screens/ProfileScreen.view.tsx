@@ -92,6 +92,7 @@ import FeedbackModal from '../components/FeedbackModal';
 import { verifyNicknameAvailable } from '../../../api/auth';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
+import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import {
   NICKNAME_MAX_LENGTH,
   getNicknameLengthError,
@@ -451,6 +452,7 @@ export default function ProfileScreenView({
   scrollToItinerary,
 }: ProfileScreenViewProps) {
   const navigation = useNavigation<any>();
+  const screenInsets = useScreenInsets(true);
   const queryClient = useQueryClient();
   const { showAlert } = useAlert();
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -972,7 +974,7 @@ export default function ProfileScreenView({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, screenInsets]}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
         <TouchableOpacity

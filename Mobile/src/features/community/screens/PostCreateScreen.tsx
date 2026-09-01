@@ -25,6 +25,7 @@ import { useUnsavedChangesPrompt } from '../../../hooks/useUnsavedChangesPrompt'
 import { searchPlacesByKeyword } from '../../../api/trips';
 import { styles, COLORS } from './PostCreateScreen.styles';
 import { tokens } from '../../../theme/tokens';
+import { useScreenInsets } from '../../../hooks/useScreenInsets';
 
 type CreateRoute = RouteProp<CommunityStackParamList, 'CommunityCreate'>;
 
@@ -48,6 +49,7 @@ export default function PostCreateScreen() {
     return () => clearTimeout(timer);
   }, [location]);
 
+  const screenInsets = useScreenInsets(false);
   const locationSuggestions = useQuery({
     queryKey: ['place-search', locationQuery],
     queryFn: ({ signal }) => searchPlacesByKeyword(locationQuery, 8, signal),
@@ -129,7 +131,7 @@ export default function PostCreateScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, screenInsets]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />

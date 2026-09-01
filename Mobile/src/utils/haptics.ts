@@ -8,5 +8,10 @@ import { Platform, Vibration } from 'react-native';
  * react-native-haptic-feedback을 넣고 이 함수 하나만 바꾸면 된다.
  */
 export const hapticTick = () => {
-  if (Platform.OS === 'android') Vibration.vibrate(12);
+  if (Platform.OS !== 'android') return;
+  // VIBRATE 권한이 없는 빌드에서 던지는 예외가 화면을 덮지 않게 한다.
+  // 진동은 있으면 좋은 신호이지 없으면 동작이 막히는 것이 아니다.
+  try {
+    Vibration.vibrate(12);
+  } catch {}
 };

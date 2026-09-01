@@ -38,6 +38,7 @@ import { findDropSlot } from '../utils/dropSlot';
 import { Day } from '../../../contexts/ItineraryContext';
 import { PLAN_NAME_MAX_LENGTH, SimpleWeatherInfo } from '../../../api/trips';
 import WeatherHeader from '../components/weather/WeatherHeader';
+import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import {
   styles,
   COLORS,
@@ -1129,7 +1130,7 @@ export default function ItineraryEditorScreenView({
   onCancelPlacement,
   onCancelPreview,
 }: ItineraryEditorScreenViewProps) {
-  const [inputWidth, setInputWidth] = useState(120);
+  const screenInsets = useScreenInsets(true);  const [inputWidth, setInputWidth] = useState(120);
   const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
   const [dayScrollLayoutWidth, setDayScrollLayoutWidth] = useState(0);
   const [dayScrollX, setDayScrollX] = useState(0);
@@ -1436,7 +1437,7 @@ export default function ItineraryEditorScreenView({
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, screenInsets]}>
       <View style={styles.topBarHeader}>
         <TouchableOpacity
           style={styles.topBarBackButton}

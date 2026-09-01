@@ -29,6 +29,7 @@ import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { useUnsavedChangesPrompt } from '../../../hooks/useUnsavedChangesPrompt';
 import { POST_TITLE_MAX_LENGTH } from '../constants/board';
 import { tokens } from '../../../theme/tokens';
+import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import {
   buildFeedUpdatePayload,
   parseFeedTags,
@@ -60,6 +61,7 @@ export default function FeedCreateScreen() {
     isError: isProfileError,
     refetch: refetchProfile,
   } = useUserProfile();
+  const screenInsets = useScreenInsets(false);
   const createPost = useCreatePost();
   const postId = route.params?.postId;
   const isEditMode = !!postId;
@@ -244,7 +246,7 @@ export default function FeedCreateScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, screenInsets]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.header}>

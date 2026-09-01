@@ -7,6 +7,10 @@ import { ItineraryProvider } from './src/contexts/ItineraryContext';
 import { WebSocketProvider } from './src/contexts/WebSocketContext';
 import { PlacesProvider } from './src/contexts/PlacesContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import {
+  SafeAreaProvider,
+  initialWindowMetrics,
+} from 'react-native-safe-area-context';
 import { QueryClientProvider, focusManager } from '@tanstack/react-query';
 import { queryClient } from './src/api/queryClient';
 
@@ -43,11 +47,17 @@ function App() {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="#FFFFFF"
-        translucent={false}
-      />
+      {/*
+        targetSdk 36부터 안드로이드가 edge-to-edge를 강제해 backgroundColor와
+        translucent는 무시된다. 화면이 상태바 아래로 깔리므로 여백은 각
+        화면이 useScreenInsets로 직접 얹는다.
+      */}
+      <StatusBar barStyle="dark-content" />
+      {/*
+        initialMetrics를 주지 않으면 네이티브가 값을 알려줄 때까지 아무것도
+        그리지 않아 첫 화면이 빈 채로 남는다.
+      */}
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <QueryClientProvider client={queryClient}>
         <AlertProvider>
           <PlacesProvider>
@@ -62,6 +72,7 @@ function App() {
           </PlacesProvider>
         </AlertProvider>
       </QueryClientProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

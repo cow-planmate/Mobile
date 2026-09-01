@@ -27,6 +27,7 @@ import {
   formatMonthDayDot,
 } from '../../../utils/timeUtils';
 import WeatherHeader from '../components/weather/WeatherHeader';
+import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import {
   styles,
   HOUR_HEIGHT,
@@ -262,6 +263,7 @@ export default function ItineraryViewScreenView({
   const isDayScrollable = dayScrollContentWidth > dayScrollLayoutWidth;
   const showLeftFade = isDayScrollable && dayScrollX > 5;
   const showRightFade = isDayScrollable && dayScrollX < dayScrollContentWidth - dayScrollLayoutWidth - 5;
+  const screenInsets = useScreenInsets(true);
   const mapPlaces = useMemo(
     () =>
       selectedDay?.places.map(place => ({
@@ -278,7 +280,7 @@ export default function ItineraryViewScreenView({
   const endHourVal = endHour ?? (gridHours.length > 0 ? gridHours[gridHours.length - 1] : 20);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, screenInsets]}>
       <View style={styles.topBarHeader}>
         <TouchableOpacity
           style={styles.topBarBackButton}

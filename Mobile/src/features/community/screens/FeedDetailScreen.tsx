@@ -36,6 +36,7 @@ import PublicProfileModal from '../components/PublicProfileModal';
 import { ReactionType } from '../types';
 import { styles, COLORS } from './FeedDetailScreen.styles';
 import { tokens } from '../../../theme/tokens';
+import { useScreenInsets } from '../../../hooks/useScreenInsets';
 
 type FeedDetailRoute = RouteProp<FeedStackParamList, 'FeedDetail'>;
 
@@ -45,6 +46,7 @@ export default function FeedDetailScreen() {
   const { showAlert } = useAlert();
 
   const postId = route.params?.postId;
+  const screenInsets = useScreenInsets(false);
   const user = useAuthStore(state => state.user);
   const isLoggedIn = !!user;
 
@@ -163,7 +165,7 @@ export default function FeedDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, screenInsets]}>
         {renderTopBar()}
         <View style={styles.stateBox}>
           <ActivityIndicator color={COLORS.primary} />
@@ -175,7 +177,7 @@ export default function FeedDetailScreen() {
 
   if (isError || !post) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, screenInsets]}>
         {renderTopBar()}
         <View style={styles.stateBox}>
           <Text style={styles.stateText}>
@@ -194,7 +196,7 @@ export default function FeedDetailScreen() {
   const regionLabel = post.location ?? post.region;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, screenInsets]}>
       <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
       {renderTopBar()}
 

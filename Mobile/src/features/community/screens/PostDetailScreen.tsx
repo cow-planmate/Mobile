@@ -40,6 +40,7 @@ import { ReactionType } from '../types';
 import { styles, COLORS } from './PostDetailScreen.styles';
 import { tokens } from '../../../theme/tokens';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
+import { useScreenInsets } from '../../../hooks/useScreenInsets';
 
 type DetailRoute = RouteProp<CommunityStackParamList, 'CommunityDetail'>;
 
@@ -50,6 +51,7 @@ export default function PostDetailScreen() {
   const [isAuthorProfileVisible, setAuthorProfileVisible] = useState(false);
 
   const postId = route.params?.postId;
+  const screenInsets = useScreenInsets(false);
   const user = useAuthStore(state => state.user);
   const isLoggedIn = !!user;
 
@@ -167,7 +169,7 @@ export default function PostDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, screenInsets]}>
         {renderTopBar()}
         <View style={styles.stateBox}>
           <ActivityIndicator color={COLORS.primary} />
@@ -179,7 +181,7 @@ export default function PostDetailScreen() {
 
   if (isError || !post) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, screenInsets]}>
         {renderTopBar()}
         <View style={styles.stateBox}>
           <Text style={styles.stateText}>
@@ -196,7 +198,7 @@ export default function PostDetailScreen() {
   const isRecruiting = post.status === 'recruiting';
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, screenInsets]}>
       <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
       {renderTopBar()}
 
