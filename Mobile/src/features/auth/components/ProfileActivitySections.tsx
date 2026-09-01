@@ -6,12 +6,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import CalendarDays from 'lucide-react-native/dist/esm/icons/calendar-days';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
-import FileText from 'lucide-react-native/dist/esm/icons/file-text';
 import Heart from 'lucide-react-native/dist/esm/icons/heart';
-import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import MessageCircle from 'lucide-react-native/dist/esm/icons/message-circle';
 import {
   Card,
@@ -118,7 +115,6 @@ export function ProfileCalendarSection({ plans }: { plans: ProfilePlan[] }) {
     <Card style={styles.card} variant="flat">
       <SectionHeader
         title="여행 캘린더"
-        icon={<CalendarDays size={18} color={tokens.colors.primary} />}
       />
 
       <View style={styles.monthNav}>
@@ -245,7 +241,6 @@ export function ProfileFootprintSection({ plans }: { plans: ProfilePlan[] }) {
       <SectionHeader
         title="여행 발자취"
         count={plans.length > 0 ? plans.length : undefined}
-        icon={<MapPin size={18} color={tokens.colors.primary} />}
       />
       {plans.length === 0 ? (
         <EmptyState
@@ -341,7 +336,6 @@ export function ProfileTravelLogSection() {
       <View style={styles.cardInnerHeader}>
         <SectionHeader
           title="나의 여행기"
-          icon={<FileText size={18} color={tokens.colors.primary} />}
         />
       </View>
       <UnderlineTabs
@@ -349,6 +343,8 @@ export function ProfileTravelLogSection() {
         selectedKey={tab}
         onSelect={key => setTab(key as 'logs' | 'comments')}
         scrollable={false}
+        align="start"
+        style={styles.subTabs}
       />
       <View style={styles.cardInnerBody}>{renderBody()}</View>
     </Card>
@@ -442,7 +438,6 @@ export function ProfileCommunitySection() {
       <View style={styles.cardInnerHeader}>
         <SectionHeader
           title="커뮤니티 활동"
-          icon={<MessageCircle size={18} color={tokens.colors.primary} />}
         />
       </View>
       <UnderlineTabs
@@ -450,6 +445,8 @@ export function ProfileCommunitySection() {
         selectedKey={activityTab}
         onSelect={key => setActivityTab(key as ActivityTab)}
         scrollable={false}
+        align="start"
+        style={styles.subTabs}
       />
       <View style={styles.cardInnerBody}>{renderBody()}</View>
     </Card>
@@ -459,6 +456,10 @@ export function ProfileCommunitySection() {
 const styles = StyleSheet.create({
   card: {
     marginTop: normalize(12),
+  },
+  // 탭 하나가 가로 12를 이미 쓰므로 4만 더해 본문 여백 16에 맞춘다.
+  subTabs: {
+    paddingHorizontal: normalize(4),
   },
   cardInnerHeader: {
     padding: normalize(16),

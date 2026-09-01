@@ -62,70 +62,15 @@ export const styles = StyleSheet.create({
   },
   scrollContainer: {
     paddingBottom: normalize(40),
+    backgroundColor: COLORS.white,
   },
 
-  profileCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: normalize(16),
-    padding: normalize(20),
-    marginHorizontal: normalize(16),
-    marginTop: normalize(16),
-  },
-  profileHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: normalize(20),
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginRight: normalize(16),
-  },
   avatarImage: {
     width: normalize(76),
     height: normalize(76),
     borderRadius: normalize(38),
     borderWidth: 2,
     borderColor: COLORS.primary,
-  },
-  avatarPlaceholder: {
-    width: normalize(76),
-    height: normalize(76),
-    borderRadius: normalize(38),
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.borderLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  settingsButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: COLORS.primary,
-    width: normalize(24),
-    height: normalize(24),
-    borderRadius: normalize(12),
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: COLORS.white,
-  },
-  profileTextInfo: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  nicknameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    marginBottom: normalize(4),
-    gap: normalize(6),
-  },
-  nicknameText: {
-    fontSize: normalize(22),
-    fontFamily: FONTS.bold,
-    fontWeight: '800',
-    color: COLORS.text,
   },
   levelBadge: {
     flexDirection: 'row',
@@ -140,31 +85,6 @@ export const styles = StyleSheet.create({
     fontSize: normalize(10),
     color: COLORS.white,
     fontWeight: 'bold',
-  },
-  emailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-  emailText: {
-    fontSize: normalize(12),
-    color: COLORS.textSecondary,
-  },
-  emailDivider: {
-    fontSize: normalize(12),
-    color: COLORS.placeholder,
-    marginHorizontal: normalize(6),
-  },
-  genderAgeBadge: {
-    backgroundColor: COLORS.borderLight,
-    paddingHorizontal: normalize(6),
-    paddingVertical: normalize(2),
-    borderRadius: normalize(4),
-  },
-  genderAgeBadgeText: {
-    fontSize: normalize(10),
-    color: COLORS.textSecondary,
-    fontWeight: '500',
   },
   experienceSection: {
     marginBottom: normalize(16),
@@ -196,38 +116,8 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderRadius: normalize(3),
   },
-  tagSection: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: normalize(6),
-    marginBottom: normalize(20),
-  },
-  interestTag: {
-    backgroundColor: COLORS.borderLight,
-    paddingHorizontal: normalize(8),
-    paddingVertical: normalize(4),
-    borderRadius: normalize(6),
-  },
-  interestTagText: {
-    fontSize: normalize(11),
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
-  statsSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-    paddingTop: normalize(16),
-  },
   statBlock: {
     alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: normalize(20),
-    color: COLORS.primary,
-    fontWeight: 'bold',
-    marginBottom: normalize(2),
   },
   statLabel: {
     fontSize: normalize(11),
@@ -576,54 +466,6 @@ export const styles = StyleSheet.create({
     width: '100%',
   },
 
-  itineraryDetailCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: normalize(16),
-    padding: normalize(20),
-    marginHorizontal: normalize(16),
-    marginTop: normalize(16),
-  },
-  itineraryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: normalize(16),
-  },
-  itineraryTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(6),
-  },
-  itineraryTitle: {
-    fontSize: normalize(16),
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  itineraryManageButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: normalize(8),
-    paddingHorizontal: normalize(10),
-    paddingVertical: normalize(5),
-    backgroundColor: COLORS.white,
-  },
-  itineraryManageText: {
-    fontSize: normalize(11),
-    color: COLORS.textSecondary,
-    fontWeight: 'bold',
-  },
-  dashedPlanBox: {
-    borderWidth: 1,
-    borderColor: COLORS.placeholder,
-    borderStyle: 'dashed',
-    borderRadius: normalize(12),
-    paddingVertical: normalize(32),
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: normalize(16),
-  },
   noPlanText: {
     fontSize: normalize(12),
     color: COLORS.textSecondary,
@@ -635,18 +477,6 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.primary,
   },
-  pastRecordBox: {
-    backgroundColor: COLORS.surface,
-    borderRadius: normalize(12),
-    padding: normalize(16),
-    marginTop: normalize(16),
-  },
-  pastRecordTitle: {
-    fontSize: normalize(13),
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: normalize(16),
-  },
   noPastRecordText: {
     fontSize: normalize(12),
     color: COLORS.placeholder,
@@ -654,92 +484,10 @@ export const styles = StyleSheet.create({
     paddingVertical: normalize(16),
   },
 
-  itineraryCardWrapper: {
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: normalize(12),
-    width: '100%',
-    padding: normalize(16),
-    marginBottom: normalize(12),
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: normalize(8),
-  },
   badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: normalize(6),
-  },
-  ddayBadge: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: normalize(6),
-    paddingVertical: normalize(2),
-    borderRadius: normalize(4),
-  },
-  ddayText: {
-    fontSize: normalize(10),
-    fontWeight: 'bold',
-    color: COLORS.white,
-  },
-  statusText: {
-    fontSize: normalize(11),
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
-  cardTitleText: {
-    fontSize: normalize(18),
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: normalize(4),
-  },
-  dateInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: normalize(16),
-  },
-  datePeriodText: {
-    fontSize: normalize(12),
-    color: COLORS.textSecondary,
-  },
-  checklistContainer: {
-    backgroundColor: COLORS.surface,
-    borderRadius: normalize(12),
-    padding: normalize(12),
-  },
-  checklistHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: normalize(8),
-  },
-  checklistTitle: {
-    fontSize: normalize(10),
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-    letterSpacing: 0.5,
-  },
-  checklistProgressText: {
-    fontSize: normalize(10),
-    color: COLORS.textSecondary,
-    fontWeight: '600',
-  },
-  taskItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: normalize(6),
-  },
-  taskText: {
-    fontSize: normalize(13),
-    color: '#374151',
-    flex: 1,
-  },
-  taskTextCompleted: {
-    color: COLORS.placeholder,
-    textDecorationLine: 'line-through',
   },
   addTaskButton: {
     borderWidth: 1,
@@ -767,63 +515,6 @@ export const styles = StyleSheet.create({
     fontSize: normalize(13),
     fontWeight: 'bold',
     color: COLORS.textSecondary,
-  },
-
-  pastPlansContainer: {
-    gap: normalize(10),
-  },
-  pastPlanItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: normalize(12),
-    padding: normalize(14),
-    width: '100%',
-  },
-  pastPlanLeft: {
-    flex: 1,
-  },
-  pastPlanTitleText: {
-    fontSize: normalize(15),
-    fontWeight: 'bold',
-    color: '#374151',
-    marginBottom: normalize(4),
-  },
-  pastPlanDateText: {
-    fontSize: normalize(12),
-    color: COLORS.placeholder,
-  },
-  pastPlanBadge: {
-    backgroundColor: COLORS.borderLight,
-    paddingHorizontal: normalize(8),
-    paddingVertical: normalize(4),
-    borderRadius: normalize(6),
-  },
-  pastPlanBadgeText: {
-    fontSize: normalize(10),
-    color: COLORS.textSecondary,
-    fontWeight: 'bold',
-  },
-  sharedBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    backgroundColor: '#F97316',
-    borderTopRightRadius: normalize(15),
-    borderBottomLeftRadius: normalize(16),
-    paddingHorizontal: normalize(12),
-    paddingVertical: normalize(6),
-    flexDirection: 'row',
-    alignItems: 'center',
-    zIndex: 2,
-  },
-  sharedBadgeText: {
-    fontSize: normalize(10),
-    fontWeight: 'bold',
-    color: COLORS.white,
   },
 
   editModeHeaderActions: {
@@ -928,47 +619,26 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
   },
 
+  // 탭은 상자가 아니라 밑줄이 맡는다. 피드·커뮤니티와 같은 규칙이다.
   sectionTabsWrap: {
-    marginTop: normalize(16),
-    marginHorizontal: normalize(16),
-    borderRadius: tokens.radius.l,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
   },
-  tripTabs: {
-    marginBottom: normalize(14),
-    marginHorizontal: normalize(-4),
+  editButton: {
+    paddingVertical: normalize(2),
+  },
+  // 탭 하나가 가로 12를 이미 쓰므로 4만 더해 본문과 같은 16에 맞춘다.
+  tabsInset: {
+    paddingHorizontal: normalize(4),
     borderBottomColor: COLORS.borderLight,
   },
-  dashedPlanIcon: {
-    marginBottom: normalize(8),
+  tripTabs: {
+    marginTop: normalize(11),
+    paddingHorizontal: normalize(4),
+    borderBottomColor: COLORS.borderLight,
   },
 
   headerSpacer: {
     width: 28,
-  },
-  cardInfoStatic: {
-    pointerEvents: 'none',
-  },
-  ddayBadgeShared: {
-    backgroundColor: '#F97316',
-  },
-  dateIconSpacing: {
-    marginRight: 4,
-  },
-  checklistHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  checklistIconSpacing: {
-    marginRight: 6,
-  },
-  taskIconSpacing: {
-    marginRight: 8,
-  },
-  sharedBadgeIconSpacing: {
-    marginRight: 2,
   },
   achievementCardDisabled: {
     opacity: 0.6,
@@ -979,32 +649,238 @@ export const styles = StyleSheet.create({
   iconSpacingSmall: {
     marginRight: 4,
   },
-  pastPlanItemSelectedBorder: {
-    borderWidth: 2,
-  },
-  pastPlanRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  pastPlanTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  pastPlanBadgeShared: {
-    backgroundColor: COLORS.borderLight,
-    borderColor: COLORS.border,
-    borderWidth: 1,
-  },
-  pastPlanMenuButton: {
-    padding: 4,
-  },
   flex1: {
     flex: 1,
   },
   flex1MarginRight12: {
     flex: 1,
     marginRight: 12,
+  },
+
+  // ── 마이페이지 재설계: S2 틀 ──
+  // 카드와 그림자를 걷어내고 흰 바탕 위에 1px 선과 8px 띠로만 나눈다.
+  profileHeader: {
+    backgroundColor: COLORS.white,
+    paddingHorizontal: normalize(16),
+    paddingTop: normalize(18),
+    paddingBottom: normalize(15),
+  },
+  profileTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(14),
+  },
+  profileAvatar: {
+    width: normalize(56),
+    height: normalize(56),
+    borderRadius: normalize(28),
+    backgroundColor: COLORS.borderLight,
+  },
+  profileAvatarFallback: {
+    width: normalize(56),
+    height: normalize(56),
+    borderRadius: normalize(28),
+    backgroundColor: COLORS.borderLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileNameBlock: {
+    flex: 1,
+    minWidth: 0,
+  },
+  profileName: {
+    fontSize: normalize(21),
+    fontFamily: FONTS.bold,
+    color: COLORS.text,
+    letterSpacing: -0.6,
+  },
+  profileMeta: {
+    fontSize: normalize(11.5),
+    color: COLORS.placeholder,
+    marginTop: normalize(3),
+  },
+  profileEditText: {
+    fontSize: normalize(12.5),
+    fontFamily: FONTS.bold,
+    color: COLORS.primary,
+  },
+  profileVisibility: {
+    marginTop: normalize(11),
+    fontSize: normalize(11.5),
+    color: COLORS.placeholder,
+  },
+  profileVisibilityStrong: {
+    color: COLORS.text,
+    fontFamily: FONTS.bold,
+  },
+  profileStatRow: {
+    flexDirection: 'row',
+    marginTop: normalize(13),
+    gap: normalize(22),
+  },
+  profileStat: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  profileStatNumber: {
+    fontSize: normalize(17),
+    fontFamily: FONTS.bold,
+    color: COLORS.text,
+    marginRight: normalize(5),
+    letterSpacing: -0.3,
+  },
+  profileStatLabel: {
+    fontSize: normalize(11.5),
+    color: COLORS.placeholder,
+  },
+  tasteRow: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderLight,
+    paddingHorizontal: normalize(16),
+    paddingVertical: normalize(12),
+    backgroundColor: COLORS.white,
+  },
+  tasteHeading: {
+    fontSize: normalize(11),
+    fontFamily: FONTS.bold,
+    color: COLORS.placeholder,
+    marginBottom: normalize(5),
+  },
+  tasteText: {
+    fontSize: normalize(12),
+    color: COLORS.text,
+    lineHeight: normalize(20),
+  },
+  tasteLabel: {
+    fontSize: normalize(11),
+    fontFamily: FONTS.bold,
+    color: COLORS.placeholder,
+  },
+  tasteDivider: {
+    color: COLORS.border,
+  },
+  sectionBand: {
+    height: normalize(8),
+    backgroundColor: COLORS.surface,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  sectionBlock: {
+    backgroundColor: COLORS.white,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: normalize(12),
+    paddingHorizontal: normalize(16),
+    paddingTop: normalize(17),
+  },
+  sectionHeaderTitle: {
+    fontSize: normalize(16.5),
+    fontFamily: FONTS.bold,
+    color: COLORS.text,
+    letterSpacing: -0.4,
+  },
+  sectionHeaderAction: {
+    fontSize: normalize(12.5),
+    fontFamily: FONTS.bold,
+    color: COLORS.primary,
+  },
+
+  // ── 마이페이지 재설계: 일정 행(R3) ──
+  planRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: normalize(14),
+    paddingHorizontal: normalize(16),
+    paddingVertical: normalize(14),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight,
+  },
+  planRowSelected: {
+    backgroundColor: COLORS.borderLight,
+  },
+  planRail: {
+    width: normalize(46),
+    alignItems: 'center',
+    paddingTop: normalize(1),
+  },
+  planRailValue: {
+    fontSize: normalize(17),
+    fontFamily: FONTS.bold,
+    color: COLORS.primary,
+    letterSpacing: -0.4,
+  },
+  planRailValuePast: {
+    color: COLORS.placeholder,
+  },
+  planRailCaption: {
+    fontSize: normalize(10),
+    color: COLORS.placeholder,
+    marginTop: normalize(1),
+  },
+  planBody: {
+    flex: 1,
+    minWidth: 0,
+    borderLeftWidth: 1,
+    borderLeftColor: COLORS.borderLight,
+    paddingLeft: normalize(14),
+  },
+  planTitle: {
+    fontSize: normalize(16),
+    fontFamily: FONTS.bold,
+    color: COLORS.text,
+    letterSpacing: -0.3,
+  },
+  planMeta: {
+    fontSize: normalize(11.5),
+    color: COLORS.placeholder,
+    marginTop: normalize(4),
+  },
+  planMetaStrong: {
+    color: COLORS.textSecondary,
+    fontFamily: FONTS.bold,
+  },
+  // 준비물은 막대 하나로만 말한다(C1). 항목을 펼치면 일정보다 준비물이 커진다.
+  planChecklist: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(8),
+    marginTop: normalize(7),
+    paddingVertical: normalize(4),
+  },
+  planChecklistLabel: {
+    fontSize: normalize(10.5),
+    color: COLORS.placeholder,
+  },
+  planChecklistTrack: {
+    flex: 1,
+    height: normalize(3),
+    borderRadius: normalize(2),
+    backgroundColor: COLORS.borderLight,
+    overflow: 'hidden',
+  },
+  planChecklistFill: {
+    height: '100%',
+    backgroundColor: COLORS.primary,
+  },
+  // 파랑은 이 화면에서 '누를 수 있다'는 뜻이다. 편집·일정 관리와 같은 신호다.
+  planChecklistCount: {
+    fontSize: normalize(11),
+    fontFamily: FONTS.bold,
+    color: COLORS.primary,
+  },
+  planRowMenu: {
+    paddingTop: normalize(2),
+    paddingLeft: normalize(2),
+  },
+  planEmpty: {
+    paddingHorizontal: normalize(16),
+    paddingVertical: normalize(30),
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight,
   },
 });

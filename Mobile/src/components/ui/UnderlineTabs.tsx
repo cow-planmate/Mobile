@@ -23,6 +23,13 @@ export interface UnderlineTabsProps {
   selectedKey: string;
   onSelect: (key: string) => void;
   scrollable?: boolean;
+  /**
+   * 고정 탭의 가로 배치.
+   *
+   * 'fill'은 폭을 똑같이 나눠 가진다(기본). 'start'는 글자 폭만 차지하고 왼쪽에
+   * 붙는다 — 탭 이름의 길이 차이가 그대로 보여야 할 때 쓴다.
+   */
+  align?: 'fill' | 'start';
   style?: StyleProp<ViewStyle>;
 }
 
@@ -31,6 +38,7 @@ export default function UnderlineTabs({
   selectedKey,
   onSelect,
   scrollable = true,
+  align = 'fill',
   style,
 }: UnderlineTabsProps) {
   const tabs = items.map(item => {
@@ -40,7 +48,7 @@ export default function UnderlineTabs({
         key={item.key}
         style={[
           styles.tab,
-          !scrollable && styles.tabFlexible,
+          !scrollable && align === 'fill' && styles.tabFlexible,
           isActive && styles.tabActive,
         ]}
         onPress={() => onSelect(item.key)}

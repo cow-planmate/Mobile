@@ -51,6 +51,7 @@ const meta = {
       userId: 'u1',
       postCount: 8,
       commentCount: 21,
+      receivedLikes: 34,
       level: 3,
     },
     isCommunityStatsLoading: false,

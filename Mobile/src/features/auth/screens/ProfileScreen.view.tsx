@@ -41,15 +41,12 @@ import Settings from 'lucide-react-native/dist/esm/icons/settings';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import Camera from 'lucide-react-native/dist/esm/icons/camera';
 import AlertTriangle from 'lucide-react-native/dist/esm/icons/triangle-alert';
-import Calendar from 'lucide-react-native/dist/esm/icons/calendar';
 import Trash2 from 'lucide-react-native/dist/esm/icons/trash-2';
-import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
-import Circle from 'lucide-react-native/dist/esm/icons/circle';
 import Check from 'lucide-react-native/dist/esm/icons/check';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
+import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import ChevronDown from 'lucide-react-native/dist/esm/icons/chevron-down';
 import MoreVertical from 'lucide-react-native/dist/esm/icons/ellipsis-vertical';
-import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
 import PenLine from 'lucide-react-native/dist/esm/icons/pen-line';
 import Share2 from 'lucide-react-native/dist/esm/icons/share-2';
 import Trash2Icon from 'lucide-react-native/dist/esm/icons/trash-2';
@@ -63,6 +60,12 @@ import FallbackImage from '../../../components/common/FallbackImage';
 import { normalize } from '../../../utils/normalize';
 import { allSettledWithConcurrency } from '../../../utils/concurrency';
 import { toPlanDate } from '../utils/profileCalendar';
+import {
+  getPastRail,
+  getTripDuration,
+  getUpcomingRail,
+} from '../utils/planRow';
+import { groupPreferredThemes } from '../utils/profileTaste';
 import { formatPeriod } from '../../../utils/timeUtils';
 import {
   USER_PROFILE_QUERY_KEY,
@@ -97,13 +100,13 @@ import { styles, COLORS } from './ProfileScreen.styles';
 
 const LEAVE_EDITOR_CONCURRENCY = 4;
 
-type ProfileSection = 'travel' | 'community' | 'calendar';
+type ProfileSection = 'travel' | 'journey' | 'stories';
 type TripTab = 'upcoming' | 'past';
 
 const PROFILE_SECTIONS = [
   { key: 'travel', label: '여행' },
-  { key: 'community', label: '커뮤니티' },
-  { key: 'calendar', label: '캘린더' },
+  { key: 'journey', label: '기록' },
+  { key: 'stories', label: '이야기' },
 ];
 
 const getFormattedPeriod = (start?: string, end?: string) => {
@@ -137,6 +140,12 @@ export const SHARED_PLAN_MENU_OPTIONS = [
   },
 ];
 
+/**
+ * 예정된 일정 한 줄.
+ *
+ * 왼쪽 46px 레일에 D-day를 세우고 세로선 오른쪽에 내용을 둔다. 준비물은
+ * 막대 하나로만 말한다 — 항목을 펼치면 이 화면의 주인공인 일정보다 커진다.
+ */
 const ItineraryCardItem = React.memo(function ItineraryCardItem({
   plan,
   onOpenMenu,
@@ -154,22 +163,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
   onSelectToggle: (planId: string) => void;
   onOpenChecklist: (plan: PlanItem) => void;
 }) {
-
-  const getDDay = (startDateStr?: string) => {
-    const start = toPlanDate(startDateStr);
-    if (!start) return 'D-Day';
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const diffTime = start.getTime() - today.getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'D-Day';
-    if (diffDays > 0) return `D-${diffDays}`;
-    return `D+${Math.abs(diffDays)}`;
-  };
-
-  const dDay = getDDay(plan.startDate);
+  const rail = getUpcomingRail(plan.startDate);
   const formattedPeriod = getFormattedPeriod(plan.startDate, plan.endDate);
 
   const { data: sharedChecklist } = useChecklist(plan.planId, 'shared', false);
@@ -184,8 +178,10 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
   ];
   const hasChecklistCache = !!sharedChecklist || !!personalChecklist;
   const completedCount = checklistItems.filter(item => item.isChecked).length;
-
-  const themeColor = plan.isShared ? '#F97316' : tokens.colors.primary;
+  const progressPercent =
+    checklistItems.length > 0
+      ? Math.round((completedCount / checklistItems.length) * 100)
+      : 0;
 
   const handleSelectToggle = () => onSelectToggle(plan.planId);
 
@@ -203,121 +199,200 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
   return (
     <Pressable
       onPress={handleCardPress}
-      style={({ pressed }) => [
-        styles.itineraryCardWrapper,
-        { overflow: 'hidden' },
-        isSelected 
-          ? { borderColor: themeColor, borderWidth: 2 } 
-          : (pressed ? { borderColor: themeColor, borderWidth: 2, backgroundColor: tokens.colors.borderLight } : null)
-      ]}
+      style={[styles.planRow, isSelected && styles.planRowSelected]}
+      accessibilityRole="button"
+      accessibilityLabel={plan.planName}
     >
-
-      <View style={styles.cardHeaderRow}>
-        <View style={styles.badgeRow}>
-          {isEditMode && (
-            <TouchableOpacity 
-              style={styles.cardCheckboxWrap}
-              onPress={handleSelectToggle}
-              activeOpacity={0.8}
-              hitSlop={16}
-            >
-              <View style={[
-                styles.cardCheckboxSquare,
-                isSelected && { backgroundColor: themeColor, borderColor: themeColor }
-              ]}>
-                {isSelected && <Check size={10} color={tokens.colors.white} />}
-              </View>
-            </TouchableOpacity>
-          )}
-          <View style={[styles.ddayBadge, plan.isShared && styles.ddayBadgeShared]}>
-            <Text style={styles.ddayText}>{dDay}</Text>
-          </View>
-          <Text style={styles.statusText}>예정됨</Text>
-        </View>
-        {!isEditMode && (
-          <TouchableOpacity
-            onPress={() => onOpenMenu(plan)}
-            activeOpacity={0.7}
-            hitSlop={8}
-            style={plan.isShared ? { marginTop: normalize(16) } : null}
-            accessibilityRole="button"
-            accessibilityLabel={`${plan.planName} 메뉴 열기`}
+      {isEditMode && (
+        <TouchableOpacity
+          style={styles.cardCheckboxWrap}
+          onPress={handleSelectToggle}
+          activeOpacity={0.8}
+          hitSlop={16}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: isSelected }}
+          accessibilityLabel={`${plan.planName} 선택`}
+        >
+          <View
+            style={[
+              styles.cardCheckboxSquare,
+              isSelected && {
+                backgroundColor: tokens.colors.primary,
+                borderColor: tokens.colors.primary,
+              },
+            ]}
           >
-            <MoreVertical size={18} color={tokens.colors.textTertiary} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <View style={styles.cardInfoStatic}>
-        <Text style={styles.cardTitleText} numberOfLines={1}>{plan.planName}</Text>
-        <View style={styles.dateInfoRow}>
-          <Calendar size={12} color={tokens.colors.textTertiary} style={styles.dateIconSpacing} />
-          <Text style={styles.datePeriodText}>{formattedPeriod}</Text>
-        </View>
-      </View>
-
-      <TouchableOpacity
-        style={styles.checklistContainer}
-        onPress={() => onOpenChecklist(plan)}
-        disabled={isEditMode}
-        activeOpacity={0.7}
-        accessibilityState={{ disabled: isEditMode }}
-      >
-        <View style={styles.checklistHeader}>
-          <View style={styles.checklistHeaderLeft}>
-            <ListChecks size={12} color={tokens.colors.textSecondary} style={styles.checklistIconSpacing} />
-            <Text style={styles.checklistTitle}>준비물</Text>
+            {isSelected && <Check size={10} color={tokens.colors.white} />}
           </View>
-          <Text style={styles.checklistProgressText}>
+        </TouchableOpacity>
+      )}
+
+      <View style={styles.planRail}>
+        <Text style={styles.planRailValue}>{rail.value}</Text>
+        <Text style={styles.planRailCaption}>{rail.caption}</Text>
+      </View>
+
+      <View style={styles.planBody}>
+        <Text style={styles.planTitle} numberOfLines={1}>
+          {plan.planName}
+        </Text>
+        <Text style={styles.planMeta} numberOfLines={1}>
+          {formattedPeriod}
+          {' · '}
+          <Text style={styles.planMetaStrong}>
+            {plan.isShared ? '공유된 일정' : '나의 일정'}
+          </Text>
+        </Text>
+
+        <Pressable
+          style={styles.planChecklist}
+          onPress={() => onOpenChecklist(plan)}
+          disabled={isEditMode}
+          hitSlop={{ top: 6, bottom: 10, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isEditMode }}
+          accessibilityLabel={
+            hasChecklistCache
+              ? `준비물 ${checklistItems.length}개 중 ${completedCount}개 완료, 눌러서 열기`
+              : '준비물 확인하기'
+          }
+        >
+          <Text style={styles.planChecklistLabel}>준비물</Text>
+          <View style={styles.planChecklistTrack}>
+            <View
+              style={[
+                styles.planChecklistFill,
+                { width: `${progressPercent}%` },
+              ]}
+            />
+          </View>
+          <Text style={styles.planChecklistCount}>
             {hasChecklistCache
               ? `${completedCount}/${checklistItems.length}`
               : '확인하기'}
           </Text>
-        </View>
+          <ChevronRight
+            size={normalize(13)}
+            color={tokens.colors.primary}
+            strokeWidth={2.4}
+          />
+        </Pressable>
+      </View>
 
-        {hasChecklistCache && checklistItems.length > 0 ? (
-          checklistItems.slice(0, 3).map(item => (
-            <View key={item.itemId} style={styles.taskItemRow}>
-              {item.isChecked ? (
-                <CheckCircle2
-                  size={16}
-                  color={tokens.colors.primary}
-                  style={styles.taskIconSpacing}
-                />
-              ) : (
-                <Circle size={16} color={tokens.colors.textTertiary} style={styles.taskIconSpacing} />
-              )}
-              <Text
-                style={[
-                  styles.taskText,
-                  item.isChecked && styles.taskTextCompleted,
-                ]}
-                numberOfLines={1}
-              >
-                {item.content}
-              </Text>
-            </View>
-          ))
-        ) : (
-          <View style={styles.taskItemRow}>
-            <Circle size={16} color={tokens.colors.textTertiary} style={styles.taskIconSpacing} />
-            <Text
-              style={[styles.taskText, { color: tokens.colors.textTertiary }]}
-              numberOfLines={1}
-            >
-              {hasChecklistCache
-                ? '준비물을 추가해 보세요'
-                : '눌러서 준비물을 확인하세요'}
-            </Text>
+      {!isEditMode && (
+        <TouchableOpacity
+          onPress={() => onOpenMenu(plan)}
+          activeOpacity={0.7}
+          hitSlop={8}
+          style={styles.planRowMenu}
+          accessibilityRole="button"
+          accessibilityLabel={`${plan.planName} 메뉴 열기`}
+        >
+          <MoreVertical size={18} color={tokens.colors.textTertiary} />
+        </TouchableOpacity>
+      )}
+    </Pressable>
+  );
+});
+
+/**
+ * 지난 일정 한 줄.
+ *
+ * 같은 레일 자리에 D-day 대신 출발 날짜를 세운다. 끝난 여행에서 "며칠 지났나"는
+ * 쓸모가 없고 "언제 갔나"가 궁금하다. 준비물도 다 차 있어 보여줄 이유가 없다.
+ */
+const PastPlanRow = React.memo(function PastPlanRow({
+  plan,
+  onOpenMenu,
+  navigation,
+  isEditMode,
+  isSelected,
+  onSelectToggle,
+}: {
+  plan: PlanItem;
+  onOpenMenu: (plan: PlanItem) => void;
+  navigation: any;
+  isEditMode: boolean;
+  isSelected: boolean;
+  onSelectToggle: (planId: string) => void;
+}) {
+  const rail = getPastRail(plan.startDate);
+  const duration = getTripDuration(plan.startDate, plan.endDate);
+
+  const handleSelectToggle = () => onSelectToggle(plan.planId);
+
+  const handlePress = () => {
+    if (isEditMode) {
+      handleSelectToggle();
+    } else {
+      navigation.navigate('ItineraryView', {
+        planId: plan.planId,
+        tripName: plan.planName,
+      });
+    }
+  };
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      style={[styles.planRow, isSelected && styles.planRowSelected]}
+      accessibilityRole="button"
+      accessibilityLabel={plan.planName}
+    >
+      {isEditMode && (
+        <TouchableOpacity
+          style={styles.cardCheckboxWrap}
+          onPress={handleSelectToggle}
+          activeOpacity={0.8}
+          hitSlop={16}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: isSelected }}
+          accessibilityLabel={`${plan.planName} 선택`}
+        >
+          <View
+            style={[
+              styles.cardCheckboxSquare,
+              isSelected && {
+                backgroundColor: tokens.colors.textSecondary,
+                borderColor: tokens.colors.textSecondary,
+              },
+            ]}
+          >
+            {isSelected && <Check size={10} color={tokens.colors.white} />}
           </View>
-        )}
-      </TouchableOpacity>
+        </TouchableOpacity>
+      )}
 
-      {plan.isShared && (
-        <View style={styles.sharedBadge}>
-          <User size={10} color={tokens.colors.white} style={styles.sharedBadgeIconSpacing} />
-          <Text style={styles.sharedBadgeText}>SHARED</Text>
-        </View>
+      <View style={styles.planRail}>
+        <Text style={[styles.planRailValue, styles.planRailValuePast]}>
+          {rail.value}
+        </Text>
+        <Text style={styles.planRailCaption}>{rail.caption}</Text>
+      </View>
+
+      <View style={styles.planBody}>
+        <Text style={styles.planTitle} numberOfLines={1}>
+          {plan.planName}
+        </Text>
+        <Text style={styles.planMeta} numberOfLines={1}>
+          {duration ? `${duration} · ` : ''}
+          <Text style={styles.planMetaStrong}>
+            {plan.isShared ? '공유된 일정' : '나의 일정'}
+          </Text>
+        </Text>
+      </View>
+
+      {!isEditMode && (
+        <TouchableOpacity
+          onPress={() => onOpenMenu(plan)}
+          activeOpacity={0.7}
+          hitSlop={8}
+          style={styles.planRowMenu}
+          accessibilityRole="button"
+          accessibilityLabel={`${plan.planName} 메뉴 열기`}
+        >
+          <MoreVertical size={18} color={tokens.colors.textTertiary} />
+        </TouchableOpacity>
       )}
     </Pressable>
   );
@@ -802,9 +877,12 @@ export default function ProfileScreenView({
   const themeNames = preferredThemes.map((t: any) => t.preferredThemeName || t);
   const defaultThemes = ['해수욕장', '호텔', '한식', '고기집', '이자카야'];
   const displayThemes = themeNames.length > 0 ? themeNames : defaultThemes;
-  // 레벨을 없앴으므로 가중 점수 대신 글과 댓글 수를 그대로 센다.
-  const communityActivityCount =
-    (communityStats?.postCount ?? 0) + (communityStats?.commentCount ?? 0);
+  const tasteGroups = groupPreferredThemes(
+    preferredThemes.length > 0 ? preferredThemes : displayThemes,
+  );
+  // 웹 ProfileHeader와 같은 값을 같은 자리에 둔다. 앱 사용량(글·댓글 수)이 아니라
+  // 내 글이 받은 반응이 세 번째 통계다.
+  const receivedLikes = communityStats?.receivedLikes ?? 0;
 
   const handleOpenEditModal = () => {
     setTempNickname(user.name);
@@ -923,79 +1001,92 @@ export default function ProfileScreenView({
         showsVerticalScrollIndicator={false}
       >
 
-        <View style={styles.profileCard}>
-          <View style={styles.profileHeaderRow}>
-
-            <View style={styles.avatarContainer}>
-              <FallbackImage
-                uri={avatarUri}
-                style={styles.avatarImage}
-                fallback={
-                  <View style={styles.avatarPlaceholder}>
-                    <User size={40} color={tokens.colors.textTertiary} />
-                  </View>
-                }
-              />
-              <TouchableOpacity
-                style={styles.settingsButton}
-                onPress={handleOpenEditModal}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="프로필 편집"
-                hitSlop={12}
-              >
-                <Settings size={12} color={tokens.colors.white} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.profileTextInfo}>
-              <View style={styles.nicknameRow}>
-                <Text style={styles.nicknameText}>{user.name || '사용자'}</Text>
-              </View>
-
-              <View style={styles.emailRow}>
-                <Text style={styles.emailText} numberOfLines={1}>{user.email || '이메일 없음'}</Text>
-                <Text style={styles.emailDivider}>|</Text>
-                <View style={styles.genderAgeBadge}>
-                  <Text style={styles.genderAgeBadgeText}>
-                    {user.gender || '미설정'} • {profileAge === null ? '미설정' : `만 ${profileAge}세`}
-                  </Text>
+        <View style={styles.profileHeader}>
+          <View style={styles.profileTopRow}>
+            <FallbackImage
+              uri={avatarUri}
+              style={styles.profileAvatar}
+              fallback={
+                <View style={styles.profileAvatarFallback}>
+                  <User size={26} color={tokens.colors.textTertiary} />
                 </View>
-              </View>
+              }
+            />
+
+            <View style={styles.profileNameBlock}>
+              <Text style={styles.profileName} numberOfLines={1}>
+                {user.name || '사용자'}
+              </Text>
+              <Text style={styles.profileMeta} numberOfLines={1}>
+                {[
+                  user.email || '이메일 없음',
+                  user.gender || '성별 미설정',
+                  profileAge === null ? '나이 미설정' : `만 ${profileAge}세`,
+                ].join(' · ')}
+              </Text>
             </View>
+
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={handleOpenEditModal}
+              activeOpacity={0.7}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="프로필 편집"
+            >
+              <Text style={styles.profileEditText}>편집</Text>
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.tagSection}>
-            {displayThemes.map((theme: string, idx: number) => (
-              <View key={idx} style={styles.interestTag}>
-                <Text style={styles.interestTagText}>
-                  {theme.startsWith('#') ? theme : `#${theme}`}
-                </Text>
-              </View>
-            ))}
-          </View>
+          <Text style={styles.profileVisibility}>
+            <Text style={styles.profileVisibilityStrong}>
+              {isProfilePublic ? '공개 프로필' : '비공개 프로필'}
+            </Text>
+            {isProfilePublic
+              ? ' · 다른 사람이 내 여행기를 볼 수 있어요'
+              : ' · 나만 볼 수 있어요'}
+          </Text>
 
-          <View style={styles.statsSection}>
-            <View style={styles.statBlock}>
-              <Text style={styles.statNumber}>
+          <View style={styles.profileStatRow}>
+            <View style={styles.profileStat}>
+              <Text style={styles.profileStatNumber}>
                 {plans.filter((p: any) => !p.isShared).length}
               </Text>
-              <Text style={styles.statLabel}>나의 일정</Text>
+              <Text style={styles.profileStatLabel}>나의 일정</Text>
             </View>
-            <View style={styles.statBlock}>
-              <Text style={styles.statNumber}>
+            <View style={styles.profileStat}>
+              <Text style={styles.profileStatNumber}>
                 {plans.filter((p: any) => p.isShared).length}
               </Text>
-              <Text style={styles.statLabel}>초대된 일정</Text>
+              <Text style={styles.profileStatLabel}>초대된 일정</Text>
             </View>
-            <View style={styles.statBlock}>
-              <Text style={styles.statNumber}>
-                {isCommunityStatsLoading ? '-' : communityActivityCount}
+            <View style={styles.profileStat}>
+              <Text style={styles.profileStatNumber}>
+                {isCommunityStatsLoading ? '-' : receivedLikes}
               </Text>
-              <Text style={styles.statLabel}>커뮤니티 활동</Text>
+              <Text style={styles.profileStatLabel}>받은 좋아요</Text>
             </View>
           </View>
         </View>
+
+        {tasteGroups.length > 0 && (
+          <View style={styles.tasteRow}>
+            <Text style={styles.tasteHeading}>여행 취향</Text>
+            <Text style={styles.tasteText}>
+              {tasteGroups.map((group, index) => (
+                <Text key={group.label}>
+                  {index > 0 && (
+                    <Text style={styles.tasteDivider}>{'   |   '}</Text>
+                  )}
+                  <Text style={styles.tasteLabel}>{`${group.label} `}</Text>
+                  {group.names.join('·')}
+                </Text>
+              ))}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.sectionBand} />
 
         <View style={styles.sectionTabsWrap}>
           <UnderlineTabs
@@ -1003,38 +1094,45 @@ export default function ProfileScreenView({
             selectedKey={profileSection}
             onSelect={key => setProfileSection(key as ProfileSection)}
             scrollable={false}
+            align="start"
+            style={styles.tabsInset}
           />
         </View>
 
 
-        {profileSection === 'community' && <ProfileCommunitySection />}
-
-        {profileSection === 'calendar' && (
+        {profileSection === 'journey' && (
           <>
             <ProfileCalendarSection plans={plans} />
+            <View style={styles.sectionBand} />
             <ProfileFootprintSection plans={plans} />
+          </>
+        )}
+
+        {profileSection === 'stories' && (
+          <>
+            <ProfileTravelLogSection />
+            <View style={styles.sectionBand} />
+            <ProfileCommunitySection />
           </>
         )}
 
         {profileSection === 'travel' && (
         <View
-          style={styles.itineraryDetailCard}
+          style={styles.sectionBlock}
           onLayout={e => setItineraryY(e.nativeEvent.layout.y)}
         >
 
-          <View style={styles.itineraryHeader}>
-            <View style={styles.itineraryTitleRow}>
-              <Calendar size={18} color={tokens.colors.primary} />
-              <Text style={styles.itineraryTitle}>여행 상세 일정</Text>
-            </View>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionHeaderTitle}>여행 상세 일정</Text>
             {!isEditMode ? (
-              <TouchableOpacity 
-                style={styles.itineraryManageButton}
+              <TouchableOpacity
                 onPress={() => setIsEditMode(true)}
-                activeOpacity={0.8}
+                activeOpacity={0.7}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="일정 관리"
               >
-                <Settings size={12} color={tokens.colors.textSecondary} style={styles.iconSpacingSmall} />
-                <Text style={styles.itineraryManageText}>일정 관리</Text>
+                <Text style={styles.sectionHeaderAction}>일정 관리</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity 
@@ -1092,6 +1190,7 @@ export default function ProfileScreenView({
             selectedKey={tripTab}
             onSelect={key => setTripTab(key as TripTab)}
             scrollable={false}
+            align="start"
             style={styles.tripTabs}
           />
 
@@ -1112,12 +1211,7 @@ export default function ProfileScreenView({
                 ))}
               </View>
             ) : (
-              <View style={styles.dashedPlanBox}>
-                <Calendar
-                  size={36}
-                  color={tokens.colors.textTertiary}
-                  style={styles.dashedPlanIcon}
-                />
+              <View style={styles.planEmpty}>
                 <Text style={styles.noPlanText}>
                   진행 중이거나 예정된 여행 일정이 없어요.
                 </Text>
@@ -1136,98 +1230,31 @@ export default function ProfileScreenView({
               </View>
             )
           ) : (
-            <View style={styles.pastRecordBox}>
+            <View style={styles.sectionBlock}>
               {pastPlans.length > 0 ? (
-              <View style={styles.pastPlansContainer}>
-                {pastPlans.map((plan: any) => {
-                  const isSelected = selectedPlanIds.includes(plan.planId);
-                  const isPastShared = !!plan.isShared;
-                  const pastThemeColor = tokens.colors.textSecondary; 
-                  const onSelectToggle = () => handleSelectToggle(plan.planId);
-
-                  return (
-                    <TouchableOpacity 
-                      key={plan.planId} 
-                      style={[
-                        styles.pastPlanItem,
-                        isSelected && styles.pastPlanItemSelectedBorder,
-                        isSelected && { borderColor: pastThemeColor },
-                      ]}
-                      onPress={() => {
-                        if (isEditMode) {
-                          onSelectToggle();
-                        } else {
-                          navigation.navigate('ItineraryView', {
-                            planId: plan.planId,
-                            tripName: plan.planName,
-                          });
-                        }
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.pastPlanRow}>
-                        {isEditMode && (
-                          <TouchableOpacity 
-                            style={styles.cardCheckboxWrap} 
-                            onPress={onSelectToggle}
-                            activeOpacity={0.8}
-                            hitSlop={16}
-                          >
-                            <View style={[
-                              styles.cardCheckboxSquare,
-                              isSelected && { backgroundColor: pastThemeColor, borderColor: pastThemeColor }
-                            ]}>
-                              {isSelected && <Check size={10} color={tokens.colors.white} />}
-                            </View>
-                          </TouchableOpacity>
-                        )}
-
-                        <View style={styles.pastPlanLeft}>
-                          <View style={styles.pastPlanTitleRow}>
-                            <Text style={styles.pastPlanTitleText}>{plan.planName}</Text>
-                            {isPastShared && (
-                              <View style={[styles.pastPlanBadge, styles.pastPlanBadgeShared]}>
-                                <Text style={[styles.pastPlanBadgeText, { color: tokens.colors.textSecondary }]}>SHARED</Text>
-                              </View>
-                            )}
-                          </View>
-                          <Text style={styles.pastPlanDateText}>
-                            {getFormattedPeriod(plan.startDate, plan.endDate)}
-                          </Text>
-                        </View>
-                      </View>
-
-                      {!isEditMode ? (
-                        <TouchableOpacity
-                          onPress={() =>
-                            handleOpenPlanMenu({ ...plan, isShared: isPastShared })
-                          }
-                          activeOpacity={0.7}
-                          hitSlop={8}
-                          style={styles.pastPlanMenuButton}
-                        >
-                          <MoreVertical size={16} color={tokens.colors.textTertiary} />
-                        </TouchableOpacity>
-                      ) : (
-                        <View style={styles.pastPlanBadge}>
-                          <Text style={styles.pastPlanBadgeText}>여행 완료</Text>
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+                pastPlans.map((plan: any) => (
+                  <PastPlanRow
+                    key={plan.planId}
+                    plan={plan}
+                    onOpenMenu={handleOpenPlanMenu}
+                    navigation={navigation}
+                    isEditMode={isEditMode}
+                    isSelected={selectedPlanIds.includes(plan.planId)}
+                    onSelectToggle={handleSelectToggle}
+                  />
+                ))
               ) : (
-                <Text style={styles.noPastRecordText}>
-                  지난 여행 기록이 없어요.
-                </Text>
+                <View style={styles.planEmpty}>
+                  <Text style={styles.noPastRecordText}>
+                    지난 여행 기록이 없어요.
+                  </Text>
+                </View>
               )}
             </View>
           )}
         </View>
         )}
 
-        {profileSection === 'travel' && <ProfileTravelLogSection />}
       </ScrollView>
 
       <DatePicker

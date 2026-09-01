@@ -163,6 +163,8 @@ export interface MyStats {
   userId: string;
   postCount: number;
   commentCount: number;
+  /** 내가 쓴 글이 받은 좋아요 총합 */
+  receivedLikes: number;
   level: number;
 }
 

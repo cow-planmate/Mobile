@@ -111,7 +111,7 @@ describe('ProfileScreenView profile save', () => {
 
     const editButton = tree!.root
       .findAllByType(TouchableOpacity)
-      .find(node => node.props.style === styles.settingsButton)!;
+      .find(node => node.props.style === styles.editButton)!;
     act(() => editButton.props.onPress());
     const nicknameInput = tree!.root
       .findAllByType(TextInput)
