@@ -654,6 +654,23 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
     zIndex: 200,
   },
+  // 끌어놓는 동안은 손을 떼는 것이 확인이라 버튼이 필요 없다.
+  previewBannerDragging: {
+    justifyContent: 'flex-start',
+  },
+  // 비켜설 빈자리조차 없을 때. 붉은 점선으로 놓이지 않음을 알린다.
+  previewBannerBlocked: {
+    top: 12,
+    height: 34,
+    borderColor: COLORS.danger,
+    backgroundColor: 'rgba(220, 38, 38, 0.07)',
+    justifyContent: 'center',
+  },
+  previewBannerBlockedText: {
+    fontSize: 12,
+    fontFamily: FONTS.bold,
+    color: COLORS.danger,
+  },
   previewBannerInfo: {
     flex: 1,
     marginRight: 8,

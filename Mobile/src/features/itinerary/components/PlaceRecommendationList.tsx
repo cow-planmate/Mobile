@@ -1,5 +1,11 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { hapticTick } from '../../../utils/haptics';
 import FallbackImage from '../../../components/common/FallbackImage';
 import {
   View,
@@ -262,19 +268,31 @@ const PickUpPlaceRow = React.memo(function PickUpPlaceRow({
   onCancel?: () => void;
 }) {
   const [held, setHeld] = useState(false);
+  // 누르는 0.35초 동안 아무 일도 없으면 고장 난 것처럼 느껴진다.
+  // 링이나 아이콘 대신 행이 서서히 눌리는 것으로 시간이 흐르는 걸 보여준다.
+  const pressScale = useSharedValue(1);
+  const pressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pressScale.value }],
+  }));
 
   const gesture = useMemo(() => {
     // runOnJS(true)로 두면 핸들러가 JS 스레드에서 돌아 worklet 제약을 받지 않는다.
     const pan = Gesture.Pan()
       .runOnJS(true)
       .activateAfterLongPress(PLACE_PICK_UP_MS)
+      .onBegin(() => {
+        pressScale.value = withTiming(0.965, { duration: PLACE_PICK_UP_MS });
+      })
       .onStart(e => {
+        pressScale.value = withTiming(1, { duration: 120 });
+        hapticTick();
         setHeld(true);
         onPickUp(place, e.absoluteY);
       })
       .onUpdate(e => onDrag?.(e.absoluteY))
       .onEnd(e => onDrop?.(e.absoluteY))
       .onFinalize((_e, success) => {
+        pressScale.value = withTiming(1, { duration: 120 });
         setHeld(false);
         if (!success) onCancel?.();
       });
@@ -284,13 +302,15 @@ const PickUpPlaceRow = React.memo(function PickUpPlaceRow({
       .onEnd(() => onPress?.(place));
 
     return Gesture.Exclusive(pan, tap);
-  }, [place, onPress, onPickUp, onDrag, onDrop, onCancel]);
+  }, [place, onPress, onPickUp, onDrag, onDrop, onCancel, pressScale]);
 
   return (
     <GestureDetector gesture={gesture}>
-      <View style={[plStyles.placeCard, held && plStyles.placeCardHeld]}>
+      <Animated.View
+        style={[plStyles.placeCard, pressStyle, held && plStyles.placeCardHeld]}
+      >
         {children}
-      </View>
+      </Animated.View>
     </GestureDetector>
   );
 });

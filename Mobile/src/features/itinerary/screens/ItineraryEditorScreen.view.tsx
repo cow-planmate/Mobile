@@ -34,6 +34,7 @@ import PlaceRecommendationList, {
   PLACE_TABS,
   type PlaceTab,
 } from '../components/PlaceRecommendationList';
+import { findDropSlot } from '../utils/dropSlot';
 import { Day } from '../../../contexts/ItineraryContext';
 import { PLAN_NAME_MAX_LENGTH, SimpleWeatherInfo } from '../../../api/trips';
 import WeatherHeader from '../components/weather/WeatherHeader';
@@ -663,6 +664,10 @@ const TimelineComponent = React.memo(
       setPreviewEndTime?: (time: string | null) => void;
       onConfirmPlacement?: () => void;
       onCancelPreview?: () => void;
+      /** 끌어놓는 중이면 확인·취소 버튼 없이 점선만 그린다 */
+      isDragging?: boolean;
+      /** 비켜설 빈자리조차 없을 때 */
+      dropBlocked?: boolean;
     }
   >(
     (
@@ -680,6 +685,8 @@ const TimelineComponent = React.memo(
         setPreviewEndTime,
         onConfirmPlacement,
         onCancelPreview,
+        isDragging = false,
+        dropBlocked = false,
       },
       ref,
     ) => {
@@ -779,10 +786,19 @@ const TimelineComponent = React.memo(
                   />
                 ))}
 
+                {pendingPlace && isDragging && dropBlocked && (
+                  <View style={[styles.previewBanner, styles.previewBannerBlocked]}>
+                    <Text style={styles.previewBannerBlockedText}>
+                      놓을 자리가 없어요
+                    </Text>
+                  </View>
+                )}
+
                 {pendingPlace && previewStartTime && previewEndTime && (
                   <View
                     style={[
                       styles.previewBanner,
+                      isDragging && styles.previewBannerDragging,
                       {
                         top:
                           (timeToMinutes(previewStartTime) - offsetMinutes) *
@@ -805,6 +821,7 @@ const TimelineComponent = React.memo(
                         {previewStartTime} - {previewEndTime} ({pendingPlace.type})
                       </Text>
                     </View>
+                    {isDragging ? null : (
                     <View style={styles.previewBannerActions}>
                       <TouchableOpacity
                         onPress={onCancelPreview}
@@ -825,6 +842,7 @@ const TimelineComponent = React.memo(
                         <CheckIcon color={COLORS.white} size={14} />
                       </TouchableOpacity>
                     </View>
+                    )}
                   </View>
                 )}
               </View>
@@ -863,6 +881,8 @@ export const EditorStateContext = createContext<{
   setPreviewEndTime: any;
   onConfirmPlacement: any;
   onCancelPreview: any;
+  isDragging: boolean;
+  dropBlocked: boolean;
 } | null>(null);
 
 /** 손잡이 줄 높이 — 잡는 막대와 갈래 줄. 접혀도 이만큼은 남는다. */
@@ -926,6 +946,8 @@ const TimelineTabScreen = React.memo(() => {
     setPreviewEndTime,
     onConfirmPlacement,
     onCancelPreview,
+    isDragging,
+    dropBlocked,
   } = state;
 
   const localDateStr = selectedDay ? formatDateLocal(selectedDay.date) : '';
@@ -961,6 +983,8 @@ const TimelineTabScreen = React.memo(() => {
         setPreviewEndTime={setPreviewEndTime}
         onConfirmPlacement={onConfirmPlacement}
         onCancelPreview={onCancelPreview}
+        isDragging={isDragging}
+        dropBlocked={dropBlocked}
       />
 
       <View style={styles.floatingHistoryContainer}>
@@ -1128,6 +1152,13 @@ export default function ItineraryEditorScreenView({
     };
   }, [isEditingTripName, onSaveTripName]);
 
+  // 컨텍스트가 타임라인에 내려줘야 해서 메모보다 먼저 세운다.
+  const [draggingPlace, setDraggingPlace] = useState<Omit<
+    Place,
+    'startTime' | 'endTime'
+  > | null>(null);
+  const [dropBlocked, setDropBlocked] = useState(false);
+
   const editorStateContextValue = useMemo(() => {
     return {
       timelineScrollRef,
@@ -1150,6 +1181,8 @@ export default function ItineraryEditorScreenView({
       setPreviewEndTime,
       onConfirmPlacement,
       onCancelPreview,
+      isDragging: !!draggingPlace,
+      dropBlocked,
     };
   }, [
     timelineScrollRef,
@@ -1172,6 +1205,8 @@ export default function ItineraryEditorScreenView({
     setPreviewEndTime,
     onConfirmPlacement,
     onCancelPreview,
+    draggingPlace,
+    dropBlocked,
   ]);
 
   // ── 장소 시트 ──
@@ -1180,10 +1215,6 @@ export default function ItineraryEditorScreenView({
   // 높이는 공유값과 ref 두 곳에 둔다. 공유값에 쓴 값을 JS에서 바로 되읽으면
   // 아직 반영되지 않은 옛 값이 나와, 계산에 쓰는 쪽은 ref만 본다.
   const [placeTab, setPlaceTab] = useState<PlaceTab>('관광지');
-  const [draggingPlace, setDraggingPlace] = useState<Omit<
-    Place,
-    'startTime' | 'endTime'
-  > | null>(null);
 
   const sheetBody = useSharedValue(0);
   const dragY = useSharedValue(0);
@@ -1261,8 +1292,12 @@ export default function ItineraryEditorScreenView({
     height: SHEET_HANDLE_HEIGHT + sheetBody.value,
   }));
 
+  const ghostScale = useSharedValue(0.86);
   const ghostAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: dragY.value - 22 }],
+    transform: [
+      { translateY: dragY.value - 22 },
+      { scale: ghostScale.value },
+    ],
   }));
 
   // ── 꾹 눌러 집고, 끌고, 놓기 ──
@@ -1296,19 +1331,51 @@ export default function ItineraryEditorScreenView({
     [dayStartMinutes, dayEndMinutes, gridOffsetMinutes, timelinePadding],
   );
 
+  /**
+   * 손끝이 가리키는 자리를 점선으로 보여준다.
+   *
+   * 겹치면 조용히 옮기지 않고, 끄는 동안 이미 빈자리로 비켜선 점선을 보여준다 —
+   * 손을 떼기 전에 결과가 보여야 놀라지 않는다.
+   */
   const previewAt = useCallback(
     (absoluteY: number) => {
-      const minutes = minutesAt(absoluteY);
-      if (minutes === null) {
+      const wanted = minutesAt(absoluteY);
+      if (wanted === null) {
         setPreviewStartTime?.(null);
         setPreviewEndTime?.(null);
+        setDropBlocked(false);
         return null;
       }
-      setPreviewStartTime?.(minutesToTime(minutes));
-      setPreviewEndTime?.(minutesToTime(minutes + 60));
-      return minutes;
+
+      const busy = (selectedDay?.places ?? []).map((p: Place) => ({
+        start: timeToMinutes(p.startTime),
+        end: timeToMinutes(p.endTime),
+      }));
+      const slot = findDropSlot(wanted, 60, busy, {
+        min: dayStartMinutes,
+        max: dayEndMinutes,
+      });
+
+      if (!slot) {
+        setPreviewStartTime?.(null);
+        setPreviewEndTime?.(null);
+        setDropBlocked(true);
+        return null;
+      }
+
+      setDropBlocked(false);
+      setPreviewStartTime?.(minutesToTime(slot.start));
+      setPreviewEndTime?.(minutesToTime(slot.start + 60));
+      return slot.start;
     },
-    [minutesAt, setPreviewStartTime, setPreviewEndTime],
+    [
+      minutesAt,
+      selectedDay,
+      dayStartMinutes,
+      dayEndMinutes,
+      setPreviewStartTime,
+      setPreviewEndTime,
+    ],
   );
 
   const handlePickUpPlace = useCallback(
@@ -1320,9 +1387,11 @@ export default function ItineraryEditorScreenView({
         timelineTop.current = y;
       });
       dragY.value = absoluteY - bodyTop.current;
+      ghostScale.value = 0.86;
+      ghostScale.value = withSpring(1, { damping: 13, stiffness: 220 });
       setSheetHeight(0);
     },
-    [dragY, handleAddPlace, setSheetHeight],
+    [dragY, ghostScale, handleAddPlace, setSheetHeight],
   );
 
   const handleDragPlace = useCallback(
@@ -1335,6 +1404,7 @@ export default function ItineraryEditorScreenView({
 
   const restoreSheet = useCallback(() => {
     setDraggingPlace(null);
+    setDropBlocked(false);
     setSheetHeight(restoreTo.current || Math.round(sheetMaxRef.current / 3));
   }, [setSheetHeight]);
 
