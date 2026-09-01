@@ -1,3 +1,4 @@
+import { formatPeriod } from '../../../utils/timeUtils';
 import { toPlanDate } from './profileCalendar';
 
 /**
@@ -60,4 +61,19 @@ export const getTripDuration = (
     Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
   );
   return nights === 0 ? '당일치기' : `${nights}박 ${nights + 1}일`;
+};
+
+/**
+ * 2026.09.05 ~ 2026.09.07
+ *
+ * 프로필 응답의 날짜는 점 표기라 formatPeriod에 그대로 넣으면 parseLocalDate가
+ * 읽지 못하고 빈 문자열이 된다. 점을 읽을 줄 아는 toPlanDate로 먼저 세운다.
+ */
+export const getPlanPeriodText = (
+  startDate?: string,
+  endDate?: string,
+): string => {
+  const start = toPlanDate(startDate);
+  if (!start) return '';
+  return formatPeriod(start, toPlanDate(endDate) ?? null);
 };

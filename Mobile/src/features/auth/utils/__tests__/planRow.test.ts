@@ -1,5 +1,6 @@
 import {
   getPastRail,
+  getPlanPeriodText,
   getTripDuration,
   getUpcomingRail,
 } from '../planRow';
@@ -76,5 +77,31 @@ describe('getTripDuration', () => {
 
   it('시작 날짜가 없으면 아무 말도 하지 않는다', () => {
     expect(getTripDuration(undefined, '2026-09-03')).toBeUndefined();
+  });
+});
+
+describe('getPlanPeriodText', () => {
+  it('프로필 응답의 점 표기 날짜를 읽는다', () => {
+    expect(getPlanPeriodText('2026.09.05', '2026.09.07')).toBe(
+      '2026.09.05 ~ 2026.09.07',
+    );
+  });
+
+  it('하이픈 표기도 그대로 읽는다', () => {
+    expect(getPlanPeriodText('2026-09-05', '2026-09-07')).toBe(
+      '2026.09.05 ~ 2026.09.07',
+    );
+  });
+
+  it('같은 날이면 하나만 보여준다', () => {
+    expect(getPlanPeriodText('2026.09.05', '2026.09.05')).toBe('2026.09.05');
+  });
+
+  it('끝 날짜가 없으면 시작 날짜만 보여준다', () => {
+    expect(getPlanPeriodText('2026.09.05')).toBe('2026.09.05');
+  });
+
+  it('시작 날짜가 없으면 빈 문자열이라 앞에 점이 남지 않는다', () => {
+    expect(getPlanPeriodText(undefined, '2026.09.07')).toBe('');
   });
 });

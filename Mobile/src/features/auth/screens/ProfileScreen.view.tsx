@@ -62,11 +62,11 @@ import { allSettledWithConcurrency } from '../../../utils/concurrency';
 import { toPlanDate } from '../utils/profileCalendar';
 import {
   getPastRail,
+  getPlanPeriodText,
   getTripDuration,
   getUpcomingRail,
 } from '../utils/planRow';
 import { groupPreferredThemes } from '../utils/profileTaste';
-import { formatPeriod } from '../../../utils/timeUtils';
 import {
   USER_PROFILE_QUERY_KEY,
   UserProfile,
@@ -108,11 +108,6 @@ const PROFILE_SECTIONS = [
   { key: 'journey', label: '기록' },
   { key: 'stories', label: '이야기' },
 ];
-
-const getFormattedPeriod = (start?: string, end?: string) => {
-  if (!start) return '날짜 확인 필요';
-  return formatPeriod(start, end);
-};
 
 interface PlanItem {
   planId: string;
@@ -164,7 +159,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
   onOpenChecklist: (plan: PlanItem) => void;
 }) {
   const rail = getUpcomingRail(plan.startDate);
-  const formattedPeriod = getFormattedPeriod(plan.startDate, plan.endDate);
+  const period = getPlanPeriodText(plan.startDate, plan.endDate);
 
   const { data: sharedChecklist } = useChecklist(plan.planId, 'shared', false);
   const { data: personalChecklist } = useChecklist(
@@ -237,8 +232,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
           {plan.planName}
         </Text>
         <Text style={styles.planMeta} numberOfLines={1}>
-          {formattedPeriod}
-          {' · '}
+          {period ? `${period} · ` : ''}
           <Text style={styles.planMetaStrong}>
             {plan.isShared ? '공유된 일정' : '나의 일정'}
           </Text>
