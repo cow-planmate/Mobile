@@ -725,4 +725,94 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
+
+  // ── 시간표 + 장소 한 화면 ──
+  // 탭으로 갈라두면 장소를 고르는 동안 시간표가 안 보인다. 아래로 붙여 함께 둔다.
+  editorBody: {
+    flex: 1,
+    minHeight: 0,
+  },
+  editorTimeline: {
+    flex: 1,
+    minHeight: 0,
+  },
+  placeSheet: {
+    backgroundColor: COLORS.white,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    overflow: 'hidden',
+  },
+  sheetHandle: {
+    backgroundColor: COLORS.white,
+  },
+  sheetGrabber: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.border,
+    alignSelf: 'center',
+    marginTop: 8,
+    marginBottom: 6,
+  },
+  sheetCats: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingBottom: 9,
+  },
+  sheetCat: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+  },
+  sheetCatOn: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  sheetCatText: {
+    fontSize: 11.5,
+    fontFamily: FONTS.semibold,
+    color: COLORS.textSecondary,
+  },
+  sheetCatTextOn: {
+    color: COLORS.white,
+    fontFamily: FONTS.bold,
+  },
+  sheetHint: {
+    paddingHorizontal: 14,
+    paddingBottom: 8,
+    fontSize: 11,
+    color: COLORS.placeholder,
+  },
+  sheetHintStrong: {
+    color: COLORS.textSecondary,
+    fontFamily: FONTS.bold,
+  },
+  sheetBody: {
+    flex: 1,
+    minHeight: 0,
+  },
+
+  // 집어 든 장소가 손끝을 따라다니는 조각.
+  dragGhost: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    maxWidth: 220,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.primaryTint,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    elevation: 6,
+    zIndex: 20,
+  },
+  dragGhostText: {
+    fontSize: 12.5,
+    fontFamily: FONTS.bold,
+    color: COLORS.text,
+  },
 });

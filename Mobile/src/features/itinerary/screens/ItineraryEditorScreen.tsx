@@ -83,7 +83,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     isInitialPlanLoading,
   } = useItineraryEditor(route, navigation);
 
-  const [activeTab, setActiveTab] = useState<'타임라인' | '장소추가'>('타임라인');
   const [isSaving, setIsSaving] = useState(false);
   const isSavingRef = useRef(false);
   const [pendingPlace, setPendingPlace] = useState<any>(null);
@@ -103,7 +102,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setPendingPlace(place);
     setPreviewStartTime(null);
     setPreviewEndTime(null);
-    setActiveTab('타임라인');
   }, []);
 
   const handleConfirmPlacement = useCallback(() => {
@@ -810,8 +808,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         weatherMap={weatherMap}
         onOpenPlanInfo={() => setPlanInfoVisible(true)}
         onGoBack={handleGoBack}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
       />
       <ParticipantsModal
         visible={isParticipantsVisible}

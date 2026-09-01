@@ -52,7 +52,6 @@ const formatDate = (date: Date) =>
 /** 일자 전환·이름 편집·장소 삭제가 실제로 반영되도록 상태를 스토리에서 들고 있는다 */
 function EditorHarness(props: {
   initialDays?: Day[];
-  initialTab?: '타임라인' | '장소추가';
   participantsCount?: number;
   initialTimePicker?: boolean;
   initialScheduleEdit?: boolean;
@@ -69,9 +68,6 @@ function EditorHarness(props: {
   );
   const [isScheduleEditVisible, setScheduleEditVisible] = useState(
     !!props.initialScheduleEdit,
-  );
-  const [activeTab, setActiveTab] = useState<'타임라인' | '장소추가'>(
-    props.initialTab ?? '타임라인',
   );
   const [editingTime, setEditingTime] = useState<{
     placeId: string;
@@ -136,7 +132,6 @@ function EditorHarness(props: {
             { ...added, startTime: '15:00', endTime: '16:00' },
           ],
         }));
-        setActiveTab('타임라인');
       }}
       selectedDay={selectedDay}
       isScheduleEditVisible={isScheduleEditVisible}
@@ -162,11 +157,6 @@ function EditorHarness(props: {
       weatherMap={{}}
       onOpenPlanInfo={action('일정 정보 열기')}
       onGoBack={action('뒤로가기')}
-      activeTab={activeTab}
-      setActiveTab={tab => {
-        action('탭 전환')(tab);
-        setActiveTab(tab);
-      }}
     />
   );
 }
@@ -222,10 +212,10 @@ export const Timeline: Story = {
   render: () => <EditorHarness />,
 };
 
-/** 장소추가 탭 — 추천 장소를 고르면 타임라인으로 돌아온다 */
+/** 장소 시트 — 시간표 아래에서 바로 고르고, 꾹 눌러 시간표에 놓는다 */
 export const AddPlace: Story = {
   name: '장소 추가',
-  render: () => <EditorHarness initialTab="장소추가" />,
+  render: () => <EditorHarness />,
 };
 
 export const EmptyDay: Story = {

@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import FallbackImage from '../../../components/common/FallbackImage';
 import {
   View,
@@ -226,17 +227,109 @@ const PlaceMapModal = React.memo(
   },
 );
 
+export type { PlaceTab };
+
+/** 갈래 순서. 시트 손잡이가 같은 줄을 그리므로 한 곳에서 내보낸다. */
+export const PLACE_TABS: PlaceTab[] = ['관광지', '숙소', '식당', '직접 추가', '검색'];
+
+/** 꾹 누른 것으로 치는 시간. 스크롤을 시작하려던 손가락을 뺏지 않을 만큼은 길어야 한다. */
+export const PLACE_PICK_UP_MS = 350;
+
+/**
+ * 꾹 눌러 집는 장소 한 줄.
+ *
+ * 짧게 누르면 상세, 0.35초 누르면 집힌다. 집힌 뒤로는 손가락의 화면 좌표를
+ * 그대로 넘겨, 어디에 놓을지는 시간표를 아는 쪽에서 계산한다.
+ */
+const PickUpPlaceRow = React.memo(function PickUpPlaceRow({
+  place,
+  children,
+  onPress,
+  onPickUp,
+  onDrag,
+  onDrop,
+  onCancel,
+}: {
+  place: Omit<Place, 'startTime' | 'endTime'>;
+  children: React.ReactNode;
+  onPress?: (place: Omit<Place, 'startTime' | 'endTime'>) => void;
+  onPickUp: (
+    place: Omit<Place, 'startTime' | 'endTime'>,
+    absoluteY: number,
+  ) => void;
+  onDrag?: (absoluteY: number) => void;
+  onDrop?: (absoluteY: number) => void;
+  onCancel?: () => void;
+}) {
+  const [held, setHeld] = useState(false);
+
+  const gesture = useMemo(() => {
+    // runOnJS(true)로 두면 핸들러가 JS 스레드에서 돌아 worklet 제약을 받지 않는다.
+    const pan = Gesture.Pan()
+      .runOnJS(true)
+      .activateAfterLongPress(PLACE_PICK_UP_MS)
+      .onStart(e => {
+        setHeld(true);
+        onPickUp(place, e.absoluteY);
+      })
+      .onUpdate(e => onDrag?.(e.absoluteY))
+      .onEnd(e => onDrop?.(e.absoluteY))
+      .onFinalize((_e, success) => {
+        setHeld(false);
+        if (!success) onCancel?.();
+      });
+
+    const tap = Gesture.Tap()
+      .runOnJS(true)
+      .onEnd(() => onPress?.(place));
+
+    return Gesture.Exclusive(pan, tap);
+  }, [place, onPress, onPickUp, onDrag, onDrop, onCancel]);
+
+  return (
+    <GestureDetector gesture={gesture}>
+      <View style={[plStyles.placeCard, held && plStyles.placeCardHeld]}>
+        {children}
+      </View>
+    </GestureDetector>
+  );
+});
+
 interface PlaceRecommendationListProps {
   destination?: string;
 
   travelId: number | null;
   onAddPlace: (place: Omit<Place, 'startTime' | 'endTime'>) => void;
+
+  /** 갈래 탭을 바깥(시트 손잡이)에서 그릴 때 쓴다. 주면 목록은 탭을 그리지 않는다. */
+  selectedTab?: PlaceTab;
+  onSelectTab?: (tab: PlaceTab) => void;
+  hideTabs?: boolean;
+
+  /** 짧게 누르기 — 상세 보기 */
+  onPressPlace?: (place: Omit<Place, 'startTime' | 'endTime'>) => void;
+  /** 꾹 눌러 집기 — 이후 onDragPlace/onDropPlace가 화면 좌표로 이어진다 */
+  onPickUpPlace?: (
+    place: Omit<Place, 'startTime' | 'endTime'>,
+    absoluteY: number,
+  ) => void;
+  onDragPlace?: (absoluteY: number) => void;
+  onDropPlace?: (absoluteY: number) => void;
+  onCancelPickUp?: () => void;
 }
 
 export default function PlaceRecommendationList({
   destination,
   travelId,
   onAddPlace,
+  selectedTab: controlledTab,
+  onSelectTab,
+  hideTabs = false,
+  onPressPlace,
+  onPickUpPlace,
+  onDragPlace,
+  onDropPlace,
+  onCancelPickUp,
 }: PlaceRecommendationListProps) {
   const {
     tour,
@@ -253,7 +346,13 @@ export default function PlaceRecommendationList({
   } = usePlaces();
 
   const { showAlert } = useAlert();
-  const [selectedTab, setSelectedTab] = useState<PlaceTab>('관광지');
+  const [innerTab, setInnerTab] = useState<PlaceTab>('관광지');
+  // 시트 손잡이가 탭을 그릴 때는 바깥이 값을 쥔다. 아니면 예전처럼 스스로 쥔다.
+  const selectedTab = controlledTab ?? innerTab;
+  const setSelectedTab = useCallback(
+    (tab: PlaceTab) => (onSelectTab ? onSelectTab(tab) : setInnerTab(tab)),
+    [onSelectTab],
+  );
   const [customPlaceName, setCustomPlaceName] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -384,16 +483,9 @@ export default function PlaceRecommendationList({
     }
   }, [showAlert]);
 
-  const renderPlaceItem = useCallback(({ item }: { item: PlaceVO }) => {
-    const type = getCategoryType(item.categoryId);
-
-    return (
-      <TouchableOpacity
-        style={plStyles.placeCard}
-        activeOpacity={0.7}
-        onPress={() => onAddPlace(placeVOToPlace(item, type))}
-      >
-
+  const renderPlaceBody = useCallback(
+    (item: PlaceVO) => (
+      <>
         <PlaceImage
           placeId={item.placeId}
           iconUrl={item.iconUrl}
@@ -431,9 +523,51 @@ export default function PlaceRecommendationList({
             <GoogleMapsIcon size={20} />
           </TouchableOpacity>
         </View>
-      </TouchableOpacity>
-    );
-  }, [onAddPlace, handleOpenGoogleMaps]);
+      </>
+    ),
+    [handleOpenGoogleMaps],
+  );
+
+  const renderPlaceItem = useCallback(
+    ({ item }: { item: PlaceVO }) => {
+      const place = placeVOToPlace(item, getCategoryType(item.categoryId));
+
+      // 꾹 누르기를 쓰지 않는 자리에서는 예전처럼 누르면 바로 담긴다.
+      if (!onPickUpPlace) {
+        return (
+          <TouchableOpacity
+            style={plStyles.placeCard}
+            activeOpacity={0.7}
+            onPress={() => onAddPlace(place)}
+          >
+            {renderPlaceBody(item)}
+          </TouchableOpacity>
+        );
+      }
+
+      return (
+        <PickUpPlaceRow
+          place={place}
+          onPress={onPressPlace}
+          onPickUp={onPickUpPlace}
+          onDrag={onDragPlace}
+          onDrop={onDropPlace}
+          onCancel={onCancelPickUp}
+        >
+          {renderPlaceBody(item)}
+        </PickUpPlaceRow>
+      );
+    },
+    [
+      onAddPlace,
+      onPressPlace,
+      onPickUpPlace,
+      onDragPlace,
+      onDropPlace,
+      onCancelPickUp,
+      renderPlaceBody,
+    ],
+  );
 
   const renderFooter = useCallback(() => {
     if (isLoading) {
@@ -546,8 +680,9 @@ export default function PlaceRecommendationList({
   return (
     <View style={plStyles.container}>
 
+      {hideTabs ? null : (
       <View style={plStyles.tabContainer}>
-        {(['관광지', '숙소', '식당', '직접 추가', '검색'] as PlaceTab[]).map(
+        {PLACE_TABS.map(
           tab => {
             const isSelected = selectedTab === tab;
             const tabColor = TAB_COLORS[tab];
@@ -578,6 +713,7 @@ export default function PlaceRecommendationList({
           },
         )}
       </View>
+      )}
 
       <FlatList
         data={tabData}
@@ -732,6 +868,10 @@ const plStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.border,
     backgroundColor: tokens.colors.white,
+  },
+  // 집힌 동안은 원래 자리를 흐리게 둔다. 손끝을 따라다니는 쪽이 진짜다.
+  placeCardHeld: {
+    opacity: 0.35,
   },
   placeImage: {
     width: 48,

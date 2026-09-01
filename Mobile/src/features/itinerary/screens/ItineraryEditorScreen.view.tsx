@@ -1,4 +1,11 @@
-import React, { useCallback, createContext, useContext, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  createContext,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import {
   View,
@@ -9,8 +16,6 @@ import {
   Keyboard,
   Pressable,
 } from 'react-native';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { TabActions } from '@react-navigation/native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -25,7 +30,10 @@ import TimelineItem, {
   Place,
 } from '../components/TimelineItem';
 import { AirplaneLoading, ScheduleEditModal, TimePickerModal } from '../../../components/common';
-import PlaceRecommendationList from '../components/PlaceRecommendationList';
+import PlaceRecommendationList, {
+  PLACE_TABS,
+  type PlaceTab,
+} from '../components/PlaceRecommendationList';
 import { Day } from '../../../contexts/ItineraryContext';
 import { PLAN_NAME_MAX_LENGTH, SimpleWeatherInfo } from '../../../api/trips';
 import WeatherHeader from '../components/weather/WeatherHeader';
@@ -50,100 +58,13 @@ import MapOutlineIcon from 'lucide-react-native/dist/esm/icons/map';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
 import CalendarDaysIcon from 'lucide-react-native/dist/esm/icons/calendar-days';
-import CalendarIcon from 'lucide-react-native/dist/esm/icons/calendar';
 import CheckIcon from 'lucide-react-native/dist/esm/icons/check';
 import InfoIcon from 'lucide-react-native/dist/esm/icons/info';
-import MapPinIcon from 'lucide-react-native/dist/esm/icons/map-pin';
 import Redo2 from 'lucide-react-native/dist/esm/icons/redo-2';
 import Undo2 from 'lucide-react-native/dist/esm/icons/undo-2';
 import UserPlusIcon from 'lucide-react-native/dist/esm/icons/user-plus';
 import UsersIcon from 'lucide-react-native/dist/esm/icons/users';
 import XIcon from 'lucide-react-native/dist/esm/icons/x';
-
-const Tab = createMaterialTopTabNavigator();
-const TabNavigatorAny = Tab.Navigator as any;
-const TabScreenAny = Tab.Screen as any;
-
-const TimelineTabIcon = ({ color }: { color: string }) => (
-  <CalendarIcon color={color} size={24} />
-);
-
-const PlaceTabIcon = ({ color }: { color: string }) => (
-  <MapPinIcon color={color} size={24} />
-);
-
-const BottomMenuBar = ({
-  state,
-  navigation,
-  descriptors,
-  activeTab,
-  setActiveTab,
-}: {
-  state: any;
-  navigation: any;
-  descriptors: any;
-  activeTab?: string;
-  setActiveTab?: (tab: '타임라인' | '장소추가') => void;
-}) => {
-  React.useEffect(() => {
-    if (activeTab) {
-      const currentRouteName = state.routes[state.index].name;
-      if (currentRouteName !== activeTab) {
-        navigation.navigate(activeTab);
-      }
-    }
-  }, [activeTab, navigation, state.index, state.routes]);
-
-  return (
-    <View style={styles.bottomTabBar}>
-      <View style={styles.bottomTabContent}>
-        {state.routes.map((route: any, index: number) => {
-          const descriptor = descriptors[route.key];
-          const options = descriptor.options;
-          const focused = state.index === index;
-          const color = focused ? COLORS.primary : COLORS.placeholder;
-          const label = options.title ?? route.name;
-          const icon = options.tabBarIcon?.({ focused, color }) ?? null;
-
-          const handlePress = () => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
-
-            if (!focused && !event.defaultPrevented) {
-              navigation.dispatch(TabActions.jumpTo(route.name));
-              if (route.name === '타임라인' || route.name === '장소추가') {
-                setActiveTab?.(route.name);
-              }
-            }
-          };
-
-          return (
-            <TouchableOpacity
-              key={route.key}
-              onPress={handlePress}
-              activeOpacity={0.8}
-              style={styles.bottomTabItem}
-            >
-              <View style={styles.bottomTabIcon}>{icon}</View>
-              <Text
-                style={[
-                  styles.bottomTabLabel,
-                  focused && styles.bottomTabLabelActive,
-                ]}
-                numberOfLines={1}
-              >
-                {label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </View>
-  );
-};
 
 type ToolbarButtonVariant =
   | 'plain'
@@ -944,6 +865,47 @@ export const EditorStateContext = createContext<{
   onCancelPreview: any;
 } | null>(null);
 
+/** 손잡이 줄 높이 — 잡는 막대와 갈래 줄. 접혀도 이만큼은 남는다. */
+const SHEET_HANDLE_HEIGHT = 62;
+/** 시트가 아무리 커도 시간표에 이만큼은 남긴다. */
+const MIN_TIMELINE_HEIGHT = 96;
+/** 붙는 자리 — 접힘 / 1·3 / 2·3 / 거의 전체 */
+const SHEET_SNAPS = [0, 1 / 3, 2 / 3, 0.88];
+
+const nearestSnap = (value: number, points: number[]) =>
+  points.reduce((a, b) => (Math.abs(b - value) < Math.abs(a - value) ? b : a));
+
+/** 시트 손잡이의 갈래 줄. 접힌 채로도 눌러 그 목록을 열 수 있어야 한다. */
+const SheetCategoryRow = React.memo(function SheetCategoryRow({
+  selected,
+  onSelect,
+}: {
+  selected: PlaceTab;
+  onSelect: (tab: PlaceTab) => void;
+}) {
+  return (
+    <View style={styles.sheetCats}>
+      {PLACE_TABS.map(tab => {
+        const isOn = tab === selected;
+        return (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.sheetCat, isOn && styles.sheetCatOn]}
+            onPress={() => onSelect(tab)}
+            activeOpacity={0.8}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isOn }}
+          >
+            <Text style={[styles.sheetCatText, isOn && styles.sheetCatTextOn]}>
+              {tab}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+});
+
 const TimelineTabScreen = React.memo(() => {
   const state = useContext(EditorStateContext);
   if (!state) return null;
@@ -1035,20 +997,6 @@ const TimelineTabScreen = React.memo(() => {
   );
 });
 
-const AddPlaceTabScreen = React.memo(() => {
-  const state = useContext(EditorStateContext);
-  if (!state) return null;
-  const { handleAddPlace, destination, travelId } = state;
-
-  return (
-    <PlaceRecommendationList
-      onAddPlace={handleAddPlace}
-      destination={destination}
-      travelId={travelId}
-    />
-  );
-});
-
 export interface ItineraryEditorScreenViewProps {
   days: Day[];
   selectedDayIndex: number;
@@ -1100,8 +1048,6 @@ export interface ItineraryEditorScreenViewProps {
   weatherMap: Record<string, SimpleWeatherInfo>;
   onOpenPlanInfo: () => void;
   onGoBack?: () => void;
-  activeTab?: '타임라인' | '장소추가';
-  setActiveTab?: (tab: '타임라인' | '장소추가') => void;
   pendingPlace?: Omit<Place, 'startTime' | 'endTime'> | null;
   previewStartTime?: string | null;
   previewEndTime?: string | null;
@@ -1158,8 +1104,6 @@ export default function ItineraryEditorScreenView({
   onConfirmPlacement,
   onCancelPlacement,
   onCancelPreview,
-  activeTab,
-  setActiveTab,
 }: ItineraryEditorScreenViewProps) {
   const [inputWidth, setInputWidth] = useState(120);
   const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
@@ -1230,12 +1174,192 @@ export default function ItineraryEditorScreenView({
     onCancelPreview,
   ]);
 
-  const renderTabBar = useCallback(
-    (props: any) => (
-      <BottomMenuBar {...props} activeTab={activeTab} setActiveTab={setActiveTab} />
-    ),
-    [activeTab, setActiveTab],
+  // ── 장소 시트 ──
+  // 손잡이를 끌면 높이가 손끝을 따라오고, 놓으면 가까운 자리에 붙는다.
+  //
+  // 높이는 공유값과 ref 두 곳에 둔다. 공유값에 쓴 값을 JS에서 바로 되읽으면
+  // 아직 반영되지 않은 옛 값이 나와, 계산에 쓰는 쪽은 ref만 본다.
+  const [placeTab, setPlaceTab] = useState<PlaceTab>('관광지');
+  const [draggingPlace, setDraggingPlace] = useState<Omit<
+    Place,
+    'startTime' | 'endTime'
+  > | null>(null);
+
+  const sheetBody = useSharedValue(0);
+  const dragY = useSharedValue(0);
+
+  const sheetHeightRef = useRef(0);
+  const sheetMaxRef = useRef(0);
+  const sheetStartRef = useRef(0);
+  const sheetInited = useRef(false);
+  const restoreTo = useRef(0);
+  const bodyTop = useRef(0);
+  const timelineTop = useRef(0);
+  const timelineScrollY = useRef(0);
+  const bodyViewRef = useRef<View>(null);
+  const timelineViewRef = useRef<View>(null);
+
+  const setSheetHeight = useCallback(
+    (height: number, animate = true) => {
+      const next = Math.max(0, Math.min(sheetMaxRef.current, height));
+      sheetHeightRef.current = next;
+      sheetBody.value = animate
+        ? withTiming(next, { duration: 220 })
+        : next;
+    },
+    [sheetBody],
   );
+
+  const snapPoints = useCallback(
+    () => SHEET_SNAPS.map(ratio => Math.round(sheetMaxRef.current * ratio)),
+    [],
+  );
+
+  const onBodyLayout = useCallback(
+    (event: any) => {
+      const { height } = event.nativeEvent.layout;
+      sheetMaxRef.current = Math.max(
+        0,
+        height - SHEET_HANDLE_HEIGHT - MIN_TIMELINE_HEIGHT,
+      );
+      if (!sheetInited.current && sheetMaxRef.current > 0) {
+        sheetInited.current = true;
+        setSheetHeight(Math.round(sheetMaxRef.current / 3));
+      }
+      bodyViewRef.current?.measureInWindow((_x, y) => {
+        bodyTop.current = y;
+      });
+    },
+    [setSheetHeight],
+  );
+
+  const sheetGesture = useMemo(
+    () =>
+      Gesture.Exclusive(
+        Gesture.Pan()
+          .runOnJS(true)
+          .onBegin(() => {
+            sheetStartRef.current = sheetHeightRef.current;
+          })
+          .onUpdate(e =>
+            setSheetHeight(sheetStartRef.current - e.translationY, false),
+          )
+          .onEnd(() =>
+            setSheetHeight(nearestSnap(sheetHeightRef.current, snapPoints())),
+          ),
+        Gesture.Tap()
+          .runOnJS(true)
+          .onEnd(() => {
+            const points = snapPoints();
+            setSheetHeight(sheetHeightRef.current <= 1 ? points[1] : 0);
+          }),
+      ),
+    [setSheetHeight, snapPoints],
+  );
+
+  const sheetAnimStyle = useAnimatedStyle(() => ({
+    height: SHEET_HANDLE_HEIGHT + sheetBody.value,
+  }));
+
+  const ghostAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: dragY.value - 22 }],
+  }));
+
+  // ── 꾹 눌러 집고, 끌고, 놓기 ──
+  const dayStartMinutes = timeToMinutes(
+    selectedDay?.startTime || DEFAULT_DAY_START,
+  );
+  const dayEndMinutes = timeToMinutes(selectedDay?.endTime || DEFAULT_DAY_END);
+  const gridOffsetMinutes = Math.floor(dayStartMinutes / 60) * 60;
+  const localDateStr = selectedDay ? formatDateLocal(selectedDay.date) : '';
+  const timelinePadding = selectedDay && weatherMap[localDateStr] ? 62 : 0;
+
+  /** 손가락의 화면 좌표를 시간표의 15분 눈금으로 옮긴다. 밖이면 null. */
+  const minutesAt = useCallback(
+    (absoluteY: number) => {
+      const top = timelineTop.current;
+      if (!top || absoluteY < top) return null;
+      const y =
+        absoluteY -
+        top +
+        timelineScrollY.current -
+        timelinePadding -
+        GRID_TOP_OFFSET;
+      const minutes = y / MINUTE_HEIGHT + gridOffsetMinutes;
+      const snapped = Math.floor(minutes / 15) * 15;
+      if (snapped + 60 < dayStartMinutes) return null;
+      return Math.max(
+        dayStartMinutes,
+        Math.min(snapped, dayEndMinutes - 60),
+      );
+    },
+    [dayStartMinutes, dayEndMinutes, gridOffsetMinutes, timelinePadding],
+  );
+
+  const previewAt = useCallback(
+    (absoluteY: number) => {
+      const minutes = minutesAt(absoluteY);
+      if (minutes === null) {
+        setPreviewStartTime?.(null);
+        setPreviewEndTime?.(null);
+        return null;
+      }
+      setPreviewStartTime?.(minutesToTime(minutes));
+      setPreviewEndTime?.(minutesToTime(minutes + 60));
+      return minutes;
+    },
+    [minutesAt, setPreviewStartTime, setPreviewEndTime],
+  );
+
+  const handlePickUpPlace = useCallback(
+    (place: Omit<Place, 'startTime' | 'endTime'>, absoluteY: number) => {
+      restoreTo.current = sheetHeightRef.current;
+      setDraggingPlace(place);
+      handleAddPlace(place);
+      timelineViewRef.current?.measureInWindow((_x, y) => {
+        timelineTop.current = y;
+      });
+      dragY.value = absoluteY - bodyTop.current;
+      setSheetHeight(0);
+    },
+    [dragY, handleAddPlace, setSheetHeight],
+  );
+
+  const handleDragPlace = useCallback(
+    (absoluteY: number) => {
+      dragY.value = absoluteY - bodyTop.current;
+      previewAt(absoluteY);
+    },
+    [dragY, previewAt],
+  );
+
+  const restoreSheet = useCallback(() => {
+    setDraggingPlace(null);
+    setSheetHeight(restoreTo.current || Math.round(sheetMaxRef.current / 3));
+  }, [setSheetHeight]);
+
+  const handleDropPlace = useCallback(
+    (absoluteY: number) => {
+      const minutes = previewAt(absoluteY);
+      if (minutes === null) {
+        onCancelPlacement?.();
+      } else {
+        handleAddPlace({
+          ...(draggingPlace as Place),
+          startTime: minutesToTime(minutes),
+          endTime: minutesToTime(minutes + 60),
+        } as any);
+      }
+      restoreSheet();
+    },
+    [previewAt, draggingPlace, handleAddPlace, onCancelPlacement, restoreSheet],
+  );
+
+  const handleCancelPickUp = useCallback(() => {
+    onCancelPlacement?.();
+    restoreSheet();
+  }, [onCancelPlacement, restoreSheet]);
+
 
   if (!selectedDay) {
     return <AirplaneLoading />;
@@ -1425,35 +1549,58 @@ export default function ItineraryEditorScreenView({
       )}
 
       <EditorStateContext.Provider value={editorStateContextValue}>
-        <TabNavigatorAny
-          tabBar={renderTabBar}
-          sceneStyle={styles.tabScene}
-          initialRouteName={activeTab}
-          screenOptions={{
-            swipeEnabled: false,
-            tabBarActiveTintColor: COLORS.primary,
-            tabBarInactiveTintColor: COLORS.placeholder,
-          }}
-        >
-          <TabScreenAny
-            name="타임라인"
-            options={{
-              title: '시간표',
-              tabBarIcon: TimelineTabIcon,
-            }}
+        <View style={styles.editorBody} ref={bodyViewRef} onLayout={onBodyLayout}>
+          <View
+            style={styles.editorTimeline}
+            ref={timelineViewRef}
+            testID="editor-timeline"
           >
-            {() => <TimelineTabScreen />}
-          </TabScreenAny>
-          <TabScreenAny
-            name="장소추가"
-            options={{
-              title: '추천 장소',
-              tabBarIcon: PlaceTabIcon,
-            }}
-          >
-            {() => <AddPlaceTabScreen />}
-          </TabScreenAny>
-        </TabNavigatorAny>
+            <TimelineTabScreen />
+          </View>
+
+          <Animated.View style={[styles.placeSheet, sheetAnimStyle]}>
+            <GestureDetector gesture={sheetGesture}>
+              <View
+                style={styles.sheetHandle}
+                accessibilityRole="adjustable"
+                accessibilityLabel="추천 장소 크기 조절"
+              >
+                <View style={styles.sheetGrabber} />
+                <SheetCategoryRow selected={placeTab} onSelect={setPlaceTab} />
+              </View>
+            </GestureDetector>
+
+            <View style={styles.sheetBody}>
+              <Text style={styles.sheetHint}>
+                <Text style={styles.sheetHintStrong}>꾹 눌러</Text> 시간표에 놓기
+              </Text>
+              <PlaceRecommendationList
+                onAddPlace={handleAddPlace}
+                destination={destination}
+                travelId={travelId ?? null}
+                hideTabs
+                selectedTab={placeTab}
+                onSelectTab={setPlaceTab}
+                onPressPlace={onOpenDetail as any}
+                onPickUpPlace={handlePickUpPlace}
+                onDragPlace={handleDragPlace}
+                onDropPlace={handleDropPlace}
+                onCancelPickUp={handleCancelPickUp}
+              />
+            </View>
+          </Animated.View>
+
+          {draggingPlace && (
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.dragGhost, ghostAnimStyle]}
+            >
+              <Text style={styles.dragGhostText} numberOfLines={1}>
+                {draggingPlace.name}
+              </Text>
+            </Animated.View>
+          )}
+        </View>
       </EditorStateContext.Provider>
 
       {editingTime && (

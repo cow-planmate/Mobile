@@ -33,28 +33,6 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 
-jest.mock('react-native-gesture-handler', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  return {
-    GestureHandlerRootView: ({ children }: any) => <View>{children}</View>,
-    GestureDetector: ({ children }: any) => <View>{children}</View>,
-    Gesture: {
-      Pan: () => ({
-        minDistance: () => ({
-          onBegin: () => ({
-            onUpdate: () => ({
-              onEnd: () => ({
-                onFinalize: () => {},
-              }),
-            }),
-          }),
-        }),
-      }),
-    },
-  };
-});
-
 jest.mock('react-native-reanimated', () => {
   const React = require('react');
   const View = ({ children, style }: any) => React.createElement('View', { style }, children);
@@ -128,7 +106,13 @@ jest.mock('../src/components/common', () => {
 jest.mock('../src/features/itinerary/components/PlaceRecommendationList', () => {
   const React = require('react');
   const { View } = require('react-native');
-  return () => React.createElement(View, { testID: 'mock-place-recommendation-list' });
+  const Mock = () =>
+    React.createElement(View, { testID: 'mock-place-recommendation-list' });
+  Mock.__esModule = true;
+  Mock.default = Mock;
+  Mock.PLACE_TABS = ['관광지', '숙소', '식당', '직접 추가', '검색'];
+  Mock.PLACE_PICK_UP_MS = 350;
+  return Mock;
 });
 
 jest.mock('../src/features/itinerary/components/weather/WeatherHeader', () => {
@@ -388,7 +372,7 @@ describe('ItineraryEditorScreenView Component', () => {
     expect(rendererInstance).toBeDefined();
 
     const timelineScreenDay1 = rendererInstance!.root.findByProps({
-      testID: 'mock-tab-screen-타임라인',
+      testID: 'editor-timeline',
     });
     expect(timelineScreenDay1.findByProps({ testID: 'timeline-item-1' })).toBeTruthy();
     expect(() => timelineScreenDay1.findByProps({ testID: 'timeline-item-2' })).toThrow();
@@ -399,7 +383,7 @@ describe('ItineraryEditorScreenView Component', () => {
     });
 
     const timelineScreenDay2 = rendererInstance!.root.findByProps({
-      testID: 'mock-tab-screen-타임라인',
+      testID: 'editor-timeline',
     });
     expect(timelineScreenDay2.findByProps({ testID: 'timeline-item-2' })).toBeTruthy();
     expect(() => timelineScreenDay2.findByProps({ testID: 'timeline-item-1' })).toThrow();
@@ -410,7 +394,7 @@ describe('ItineraryEditorScreenView Component', () => {
     });
 
     const timelineScreenDay1Again = rendererInstance!.root.findByProps({
-      testID: 'mock-tab-screen-타임라인',
+      testID: 'editor-timeline',
     });
     expect(timelineScreenDay1Again.findByProps({ testID: 'timeline-item-1' })).toBeTruthy();
     expect(() => timelineScreenDay1Again.findByProps({ testID: 'timeline-item-2' })).toThrow();
@@ -476,7 +460,7 @@ describe('ItineraryEditorScreenView Component', () => {
     expect(rendererInstance).toBeDefined();
 
     const timelineScreen = rendererInstance!.root.findByProps({
-      testID: 'mock-tab-screen-타임라인',
+      testID: 'editor-timeline',
     });
 
     const undoButton = timelineScreen?.findByProps({ testID: 'btn-undo' });
