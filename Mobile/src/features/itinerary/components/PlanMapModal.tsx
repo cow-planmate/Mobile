@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import MapIcon from 'lucide-react-native/dist/esm/icons/map';
 import XIcon from 'lucide-react-native/dist/esm/icons/x';
 import RouteMapSection from './RouteMapSection';
 import { MapPlace } from './KakaoMapView';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
+import { useScreenInsets } from '../../../hooks/useScreenInsets';
 
 export interface PlanMapModalProps {
   visible: boolean;
@@ -26,6 +26,10 @@ export default function PlanMapModal({
   places,
   onApplyOptimizedOrder,
 }: PlanMapModalProps) {
+  // 안드로이드가 edge-to-edge를 강제해 상단바를 직접 그리는 화면은
+  // 이 여백을 얹지 않으면 제목이 상태바 아래로 깔린다.
+  const screenInsets = useScreenInsets();
+
   return (
     <Modal
       visible={visible}
@@ -33,26 +37,21 @@ export default function PlanMapModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, screenInsets]}>
         <View style={styles.header}>
-          <View style={styles.headerTitleRow}>
-            <View style={styles.headerIcon}>
-              <MapIcon color={tokens.colors.primary} size={18} />
-            </View>
-            <View>
-              <Text style={styles.title}>일정 지도</Text>
-              <Text style={styles.subtitle}>
-                현재 선택한 일차의 장소를 보여줘요
-              </Text>
-            </View>
+          <View style={styles.headerText}>
+            <Text style={styles.title}>일정 지도</Text>
+            <Text style={styles.subtitle}>
+              지금 보고 있는 일차의 장소
+            </Text>
           </View>
           <TouchableOpacity
             onPress={onClose}
             accessibilityRole="button"
             accessibilityLabel="닫기"
-            hitSlop={8}
+            hitSlop={12}
           >
-            <XIcon color={tokens.colors.textTertiary} size={20} />
+            <XIcon color={tokens.colors.textTertiary} size={normalize(20)} />
           </TouchableOpacity>
         </View>
 
@@ -77,34 +76,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: normalize(16),
-    paddingTop: normalize(16),
+    paddingTop: normalize(14),
     paddingBottom: normalize(12),
     borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.border,
+    borderBottomColor: tokens.colors.borderLight,
   },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(10),
-  },
-  headerIcon: {
-    width: normalize(36),
-    height: normalize(36),
-    borderRadius: tokens.radius.round,
-    backgroundColor: tokens.colors.sub,
-    alignItems: 'center',
-    justifyContent: 'center',
+  headerText: {
+    flex: 1,
+    minWidth: 0,
   },
   title: {
     fontSize: normalize(tokens.fontSize.ml),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.text,
+    letterSpacing: -0.3,
   },
   subtitle: {
-    marginTop: normalize(2),
+    marginTop: normalize(3),
     fontSize: normalize(tokens.fontSize.xs),
-    fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textSecondary,
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textTertiary,
   },
   body: {
     flex: 1,

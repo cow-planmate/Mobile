@@ -1,20 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Modal,
   View,
   Text,
   TouchableOpacity,
   ScrollView,
-  Pressable,
+  StyleSheet,
 } from 'react-native';
-import { styles, COLORS } from './ScheduleEditModal.styles';
 import DatePicker from 'react-native-date-picker';
-import X from 'lucide-react-native/dist/esm/icons/x';
 import Plus from 'lucide-react-native/dist/esm/icons/plus';
 import Minus from 'lucide-react-native/dist/esm/icons/minus';
-import CalendarDays from 'lucide-react-native/dist/esm/icons/calendar-days';
-import Clock from 'lucide-react-native/dist/esm/icons/clock';
-import ChevronDown from 'lucide-react-native/dist/esm/icons/chevron-down';
+import PopupModal from './PopupModal';
+import { normalize } from '../../utils/normalize';
+import { tokens } from '../../theme/tokens';
 import { useAlert } from '../../contexts/AlertContext';
 import { timeToMinutes, normalizeTime } from '../../utils/timeUtils';
 import { findInvalidDateOrder } from '../../utils/scheduleEditSync';
@@ -203,185 +200,247 @@ export default function ScheduleEditModal({
     onConfirm(days);
   };
 
-  const formatCompactDate = (date: Date) => {
-    const m = date.getMonth() + 1;
-    const d = date.getDate();
-    const w = WEEKDAYS[date.getDay()];
-    return { dateStr: `${m}.${d}`, dayOfWeek: w };
-  };
-
-  const formatTime = normalizeTime;
+  const formatCompactDate = (date: Date) =>
+    `${date.getMonth() + 1}월 ${date.getDate()}일 (${WEEKDAYS[date.getDay()]})`;
 
   return (
-    <Modal
+    <PopupModal
       visible={visible}
-      animationType="fade"
-      transparent={true}
-      onRequestClose={onClose}
+      title="일정 변경"
+      onClose={onClose}
+      footer={
+        <TouchableOpacity
+          style={styles.confirmButton}
+          onPress={handleFinalConfirm}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="변경 확인"
+        >
+          <Text style={styles.confirmText}>확인</Text>
+        </TouchableOpacity>
+      }
     >
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.modal} onPress={() => {}}>
-
-          <View style={styles.header}>
-            <View style={styles.headerTextArea}>
-              <Text style={styles.title}>일정 변경</Text>
-              <Text style={styles.subtitle}>
-                날짜와 시간을 조정할 수 있어요
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={onClose}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="닫기"
-              hitSlop={8}
-            >
-              <X size={18} color={COLORS.subtext} strokeWidth={1.5} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.counterSection}>
-            <Text style={styles.counterLabel}>여행 일수</Text>
-            <View style={styles.counterControls}>
-              <TouchableOpacity
-                style={[
-                  styles.counterBtn,
-                  days.length <= 1 && styles.counterBtnDisabled,
-                ]}
-                onPress={handleRemoveDay}
-                disabled={days.length <= 1}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="일수 줄이기"
-                accessibilityState={{ disabled: days.length <= 1 }}
-                hitSlop={8}
-              >
-                <Minus
-                  size={16}
-                  color={days.length <= 1 ? COLORS.disabled : COLORS.text}
-                  strokeWidth={2}
-                />
-              </TouchableOpacity>
-              <Text style={styles.counterValue}>{days.length}일</Text>
-              <TouchableOpacity
-                style={styles.counterBtn}
-                onPress={handleAddDay}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="일수 늘리기"
-                hitSlop={8}
-              >
-                <Plus size={16} color={COLORS.text} strokeWidth={2} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          <ScrollView
-            style={styles.scrollArea}
-            showsVerticalScrollIndicator={false}
+      <View style={styles.counterRow}>
+        <Text style={styles.counterLabel}>여행 일수</Text>
+        <View style={styles.counterControls}>
+          <TouchableOpacity
+            style={[
+              styles.counterButton,
+              days.length <= 1 && styles.counterButtonOff,
+            ]}
+            onPress={handleRemoveDay}
+            disabled={days.length <= 1}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="일수 줄이기"
+            accessibilityState={{ disabled: days.length <= 1 }}
+            hitSlop={8}
           >
-            {days.map((day, index) => {
-              const { dateStr, dayOfWeek } = formatCompactDate(day.date);
-              return (
-                <View key={index} style={styles.dayCard}>
+            <Minus
+              size={normalize(15)}
+              color={
+                days.length <= 1
+                  ? tokens.colors.textTertiary
+                  : tokens.colors.text
+              }
+              strokeWidth={2}
+            />
+          </TouchableOpacity>
+          <Text style={styles.counterValue}>{days.length}일</Text>
+          <TouchableOpacity
+            style={styles.counterButton}
+            onPress={handleAddDay}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="일수 늘리기"
+            hitSlop={8}
+          >
+            <Plus
+              size={normalize(15)}
+              color={tokens.colors.text}
+              strokeWidth={2}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-                  <View style={styles.dayCardTop}>
-                    <View style={styles.dayBadge}>
-                      <Text style={styles.dayBadgeText}>
-                        {day.dayNumber}일차
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      style={styles.dateChip}
-                      onPress={() => openDatePicker(index)}
-                      activeOpacity={0.7}
-                    >
-                      <CalendarDays
-                        size={14}
-                        color={COLORS.primary}
-                        strokeWidth={1.5}
-                      />
-                      <Text style={styles.dateChipText}>{dateStr}</Text>
-                      <Text style={styles.dayOfWeek}>({dayOfWeek})</Text>
-                      <ChevronDown
-                        size={12}
-                        color={COLORS.subtext}
-                        strokeWidth={1.5}
-                      />
-                    </TouchableOpacity>
-                  </View>
+      <ScrollView
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+      >
+        {days.map((day, index) => (
+          <View key={index} style={styles.dayRow}>
+            <Text style={styles.dayLabel}>{day.dayNumber}일차</Text>
 
-                  <View style={styles.timeRow}>
-                    <TouchableOpacity
-                      style={styles.timeChip}
-                      onPress={() => openTimePicker(index, 'start')}
-                      activeOpacity={0.7}
-                    >
-                      <Clock
-                        size={13}
-                        color={COLORS.primary}
-                        strokeWidth={1.5}
-                      />
-                      <Text style={styles.timeChipText}>
-                        {formatTime(day.startTime)}
-                      </Text>
-                    </TouchableOpacity>
-                    <Text style={styles.timeDash}>~</Text>
-                    <TouchableOpacity
-                      style={styles.timeChip}
-                      onPress={() => openTimePicker(index, 'end')}
-                      activeOpacity={0.7}
-                    >
-                      <Clock
-                        size={13}
-                        color={COLORS.subtext}
-                        strokeWidth={1.5}
-                      />
-                      <Text style={styles.timeChipText}>
-                        {formatTime(day.endTime)}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              );
-            })}
-          </ScrollView>
+            <View style={styles.dayBody}>
+              <TouchableOpacity
+                onPress={() => openDatePicker(index)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`${day.dayNumber}일차 날짜 ${formatCompactDate(day.date)}`}
+              >
+                <Text style={styles.dateText}>
+                  {formatCompactDate(day.date)}
+                </Text>
+              </TouchableOpacity>
 
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={styles.confirmBtn}
-              onPress={handleFinalConfirm}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.confirmBtnText}>확인</Text>
-            </TouchableOpacity>
+              <View style={styles.timeRow}>
+                <TouchableOpacity
+                  style={styles.timeButton}
+                  onPress={() => openTimePicker(index, 'start')}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${day.dayNumber}일차 시작 시간`}
+                >
+                  <Text style={styles.timeText}>
+                    {normalizeTime(day.startTime)}
+                  </Text>
+                </TouchableOpacity>
+                <Text style={styles.timeDash}>~</Text>
+                <TouchableOpacity
+                  style={styles.timeButton}
+                  onPress={() => openTimePicker(index, 'end')}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${day.dayNumber}일차 종료 시간`}
+                >
+                  <Text style={styles.timeText}>
+                    {normalizeTime(day.endTime)}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
+        ))}
 
-          <DatePicker
-            modal
-            open={datePickerOpen}
-            date={pickerDate}
-            mode="date"
-            onConfirm={handleConfirm}
-            onCancel={() => setDatePickerOpen(false)}
-            locale="ko"
-          />
+        <DatePicker
+          modal
+          open={datePickerOpen}
+          date={pickerDate}
+          mode="date"
+          onConfirm={handleConfirm}
+          onCancel={() => setDatePickerOpen(false)}
+          locale="ko"
+        />
 
-          <DatePicker
-            modal
-            open={timePickerOpen}
-            date={pickerDate}
-            mode="time"
-            onConfirm={handleConfirm}
-            onCancel={() => setTimePickerOpen(false)}
-            locale="ko"
-            is24hourSource="locale"
-          />
-        </Pressable>
-      </Pressable>
-    </Modal>
+        <DatePicker
+          modal
+          open={timePickerOpen}
+          date={pickerDate}
+          mode="time"
+          onConfirm={handleConfirm}
+          onCancel={() => setTimePickerOpen(false)}
+          locale="ko"
+          is24hourSource="locale"
+        />
+      </ScrollView>
+    </PopupModal>
   );
 }
+
+const styles = StyleSheet.create({
+  counterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(12),
+  },
+  counterLabel: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textSecondary,
+  },
+  counterControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(12),
+  },
+  counterButton: {
+    width: normalize(30),
+    height: normalize(30),
+    borderRadius: normalize(8),
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  counterButtonOff: {
+    borderColor: tokens.colors.borderLight,
+  },
+  counterValue: {
+    minWidth: normalize(38),
+    textAlign: 'center',
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+  },
+
+  list: {
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(4),
+  },
+  dayRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: normalize(12),
+    paddingVertical: normalize(12),
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.borderLight,
+  },
+  dayLabel: {
+    width: normalize(46),
+    paddingTop: normalize(1),
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+  },
+  dayBody: {
+    flex: 1,
+    minWidth: 0,
+    gap: normalize(7),
+  },
+  // 날짜는 누를 수 있다는 것을 색으로만 알린다. 테두리까지 두르면
+  // 아래 시간 칸과 같은 무게로 보여 위계가 사라진다.
+  dateText: {
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.primary,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(8),
+  },
+  timeButton: {
+    flex: 1,
+    height: normalize(38),
+    borderRadius: normalize(8),
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timeText: {
+    fontSize: normalize(13.5),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.text,
+  },
+  timeDash: {
+    fontSize: normalize(12),
+    color: tokens.colors.textTertiary,
+  },
+
+  confirmButton: {
+    height: normalize(48),
+    borderRadius: normalize(12),
+    backgroundColor: tokens.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmText: {
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
+  },
+});
