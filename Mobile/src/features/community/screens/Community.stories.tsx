@@ -103,7 +103,7 @@ export const QnA: Story = {
   },
 };
 
-export const MateAndPlace: Story = {
+export const PlaceRecommend: Story = {
   name: '장소 추천',
   args: {
     selectedCategory: 'recommend',
