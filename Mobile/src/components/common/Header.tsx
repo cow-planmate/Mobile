@@ -9,6 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { INITIAL_TAB } from '../../navigation/types';
 import UserIcon from 'lucide-react-native/dist/esm/icons/user';
 import LogOut from 'lucide-react-native/dist/esm/icons/log-out';
 import Bell from 'lucide-react-native/dist/esm/icons/bell';
@@ -72,9 +73,23 @@ const Header: React.FC<HeaderProps> = ({
     }, 150);
   };
 
+  // 로고는 앱의 첫 화면으로 돌아가는 자리다. 입력하던 값을 지우지는 않는다 —
+  // 잘못 눌렀을 때 고르던 여행지와 날짜가 사라지면 손해가 크다.
+  const handleLogoPress = () => {
+    navigation.navigate('MainTabs', { screen: INITIAL_TAB });
+  };
+
   return (
     <View style={[styles.topBar, { paddingTop: normalize(4) + insets.top }]}>
-      <Text style={styles.logo}>planMate</Text>
+      <TouchableOpacity
+        onPress={handleLogoPress}
+        activeOpacity={0.7}
+        hitSlop={{ top: 10, bottom: 10, left: 8, right: 16 }}
+        accessibilityRole="button"
+        accessibilityLabel="일정 생성으로 이동"
+      >
+        <Text style={styles.logo}>planMate</Text>
+      </TouchableOpacity>
       <View style={styles.topIcons}>
         <TouchableOpacity
           onPress={onNotificationPress}

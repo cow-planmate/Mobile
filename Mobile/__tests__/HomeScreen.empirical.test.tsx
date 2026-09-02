@@ -96,7 +96,7 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
       });
 
       const touchables = renderer.root.findAllByType(TouchableOpacity);
-      const submitBtn = touchables.find((t) => t.props.accessibilityLabel === '일정생성');
+      const submitBtn = touchables.find((t) => t.props.accessibilityLabel === '일정 생성');
 
       expect(submitBtn).toBeDefined();
       expect(submitBtn!.props.disabled).toBe(true);
@@ -127,7 +127,7 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
       });
 
       const touchables = renderer.root.findAllByType(TouchableOpacity);
-      const submitBtn = touchables.find((t) => t.props.accessibilityLabel === '일정생성');
+      const submitBtn = touchables.find((t) => t.props.accessibilityLabel === '일정 생성');
 
       expect(submitBtn).toBeDefined();
       expect(submitBtn!.props.disabled).toBe(false);
@@ -164,7 +164,7 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
       });
 
       const touchables = renderer.root.findAllByType(TouchableOpacity);
-      const submitBtn = touchables.find((t) => t.props.accessibilityLabel === '일정생성');
+      const submitBtn = touchables.find((t) => t.props.accessibilityLabel === '일정 생성');
 
       expect(submitBtn).toBeDefined();
       expect(submitBtn!.props.disabled).toBe(true);
@@ -295,7 +295,7 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
 
       // In timeline design, cardWrapper is rendered and submitButton is rendered outside cardWrapper
       const touchables = renderer.root.findAllByType(TouchableOpacity);
-      const submitBtn = touchables.find((t) => t.props.accessibilityLabel === '일정생성');
+      const submitBtn = touchables.find((t) => t.props.accessibilityLabel === '일정 생성');
       expect(submitBtn).toBeDefined();
       expect(submitBtn!.props.style).toEqual(
         expect.arrayContaining([

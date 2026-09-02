@@ -104,9 +104,9 @@ export const QnA: Story = {
 };
 
 export const MateAndPlace: Story = {
-  name: '동행 및 장소',
+  name: '장소 추천',
   args: {
-    selectedCategory: 'mate',
+    selectedCategory: 'recommend',
     posts: [
       post(31, {
         category: 'mate',

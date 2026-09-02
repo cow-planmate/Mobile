@@ -88,7 +88,6 @@ describe('ProfileScreenView profile save', () => {
             socialLogin: false,
             myPlans: [],
           }}
-          isCommunityStatsLoading={false}
           isThemeModalVisible={false}
           setThemeModalVisible={jest.fn()}
           isPasswordModalVisible={false}

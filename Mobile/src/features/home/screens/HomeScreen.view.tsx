@@ -435,7 +435,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
             disabled={!isFormValid || isCreating}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel="일정생성"
+            accessibilityLabel="일정 생성"
             accessibilityState={{ disabled: !isFormValid || isCreating }}
           >
             <Text
@@ -444,7 +444,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
                 (!isFormValid || isCreating) && styles.submitButtonTextDisabled,
               ]}
             >
-              {isCreating ? '일정 만드는 중…' : '일정생성'}
+              {isCreating ? '일정 만드는 중…' : '일정 생성'}
             </Text>
           </TouchableOpacity>
         </View>

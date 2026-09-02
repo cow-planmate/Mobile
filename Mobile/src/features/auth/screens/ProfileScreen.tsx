@@ -25,7 +25,6 @@ import {
   UserProfile,
   USER_PROFILE_QUERY_KEY,
 } from '../../../hooks/useUserProfile';
-import { useMyStats } from '../../community/hooks/queries';
 import { buildProfileImageUploadFile } from '../utils/profileImage';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
 const EMPTY_PROFILE: UserProfile = {
@@ -45,7 +44,6 @@ export default function ProfileScreen({ route }: any) {
   const { disconnect } = useWebSocket();
   const queryClient = useQueryClient();
   const { data, isLoading, isError, refetch } = useUserProfile();
-  const { data: communityStats, isLoading: isCommunityStatsLoading } = useMyStats();
   const user = data ?? EMPTY_PROFILE;
   const authUser = useAuthStore(state => state.user);
 
@@ -382,8 +380,6 @@ export default function ProfileScreen({ route }: any) {
       loadError={isError}
       onRetryLoad={refetch}
       user={user}
-      communityStats={communityStats}
-      isCommunityStatsLoading={isCommunityStatsLoading}
       onRenamePlan={handleRenamePlan}
       onChangeProfileVisibility={handleChangeProfileVisibility}
       isProfileVisibilityUpdating={isProfileVisibilityUpdating}

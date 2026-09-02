@@ -11,7 +11,8 @@ export function buildPostPayload({
   category: Exclude<CommunityCategory, 'feed'>;
   title: string;
   content: string;
-  maxParticipants: string;
+  /** 메이트 찾기를 없앤 뒤로는 만들 때 넘어오지 않는다. 옛 글 수정에서만 쓰인다. */
+  maxParticipants?: string;
   location: string;
 }): CreatePostPayload {
   const payload: CreatePostPayload = {
@@ -22,9 +23,10 @@ export function buildPostPayload({
   };
 
   if (category === 'mate') {
-    const parsed = Number(maxParticipants.trim());
+    const raw = maxParticipants ?? '';
+    const parsed = Number(raw.trim());
     payload.maxParticipants =
-      maxParticipants.trim() && Number.isFinite(parsed) && parsed > 0
+      raw.trim() && Number.isFinite(parsed) && parsed > 0
         ? Math.floor(parsed)
         : null;
   }

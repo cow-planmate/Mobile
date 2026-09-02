@@ -79,7 +79,6 @@ import {
   toBirthdateString,
   parseBirthdate,
 } from '../../../utils/birthdate';
-import { MyStats } from '../../community/types';
 import {
   ProfileCalendarSection,
   ProfileCommunitySection,
@@ -399,8 +398,6 @@ interface ProfileScreenViewProps {
   loadError?: boolean;
   onRetryLoad?: () => void;
   user: any;
-  communityStats?: MyStats;
-  isCommunityStatsLoading: boolean;
   isThemeModalVisible: boolean;
   setThemeModalVisible: (visible: boolean) => void;
   isPasswordModalVisible: boolean;
@@ -431,8 +428,6 @@ export default function ProfileScreenView({
   loadError,
   onRetryLoad,
   user,
-  communityStats,
-  isCommunityStatsLoading,
   isThemeModalVisible,
   setThemeModalVisible,
   isPasswordModalVisible,
@@ -876,10 +871,6 @@ export default function ProfileScreenView({
   const tasteGroups = groupPreferredThemes(
     preferredThemes.length > 0 ? preferredThemes : displayThemes,
   );
-  // 웹 ProfileHeader와 같은 값을 같은 자리에 둔다. 앱 사용량(글·댓글 수)이 아니라
-  // 내 글이 받은 반응이 세 번째 통계다.
-  const receivedLikes = communityStats?.receivedLikes ?? 0;
-
   const handleOpenEditModal = () => {
     setTempNickname(user.name);
     setTempBirthdate(user.birthdate || '');
@@ -1042,27 +1033,6 @@ export default function ProfileScreenView({
               ? ' · 다른 사람이 내 여행기를 볼 수 있어요'
               : ' · 나만 볼 수 있어요'}
           </Text>
-
-          <View style={styles.profileStatRow}>
-            <View style={styles.profileStat}>
-              <Text style={styles.profileStatNumber}>
-                {plans.filter((p: any) => !p.isShared).length}
-              </Text>
-              <Text style={styles.profileStatLabel}>나의 일정</Text>
-            </View>
-            <View style={styles.profileStat}>
-              <Text style={styles.profileStatNumber}>
-                {plans.filter((p: any) => p.isShared).length}
-              </Text>
-              <Text style={styles.profileStatLabel}>초대된 일정</Text>
-            </View>
-            <View style={styles.profileStat}>
-              <Text style={styles.profileStatNumber}>
-                {isCommunityStatsLoading ? '-' : receivedLikes}
-              </Text>
-              <Text style={styles.profileStatLabel}>받은 좋아요</Text>
-            </View>
-          </View>
         </View>
 
         {tasteGroups.length > 0 && (

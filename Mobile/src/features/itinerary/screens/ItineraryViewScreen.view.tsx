@@ -292,7 +292,7 @@ export default function ItineraryViewScreenView({
         >
           <ChevronLeft size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.topBarHeaderTitle}>일정완성</Text>
+        <Text style={styles.topBarHeaderTitle}>완성된 일정</Text>
         <View style={styles.topBarSpacer} />
       </View>
 

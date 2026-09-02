@@ -34,12 +34,16 @@ export default function PostCreateScreen() {
   const route = useRoute<CreateRoute>();
   const { showAlert } = useAlert();
 
+  // 없앤 갈래(메이트 찾기)로 들어오면 자유게시판으로 되돌린다.
+  // 옛 글을 수정할 때만 생기는 경우다.
+  const requested = route.params?.category;
   const [category, setCategory] = useState<BoardKey>(
-    route.params?.category ?? 'free',
+    BOARDS.some(board => board.key === requested)
+      ? (requested as BoardKey)
+      : 'free',
   );
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [maxParticipants, setMaxParticipants] = useState('');
   const [location, setLocation] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
@@ -74,7 +78,6 @@ export default function PostCreateScreen() {
     setCategory(post.category as BoardKey);
     setTitle(post.title);
     setContent(post.contentText);
-    setMaxParticipants(post.maxParticipants ? String(post.maxParticipants) : '');
     setLocation(post.location ?? '');
   }, [existingPost.data, postId]);
 
@@ -101,7 +104,6 @@ export default function PostCreateScreen() {
         category,
         title,
         content,
-        maxParticipants,
         location,
       });
 
@@ -223,21 +225,6 @@ export default function PostCreateScreen() {
             accessibilityLabel="제목"
           />
         </View>
-
-        {category === 'mate' && (
-          <View>
-            <Text style={styles.fieldLabel}>모집 인원 (선택)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="예: 4"
-              placeholderTextColor={COLORS.textTertiary}
-              value={maxParticipants}
-              onChangeText={setMaxParticipants}
-              keyboardType="number-pad"
-            />
-            <Text style={styles.hint}>비워두면 인원 제한 없이 모집해요.</Text>
-          </View>
-        )}
 
         {category === 'recommend' && (
           <View>

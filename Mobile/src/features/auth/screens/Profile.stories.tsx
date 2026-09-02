@@ -47,14 +47,6 @@ const meta = {
     loadError: false,
     onRetryLoad: action('다시 불러오기'),
     user: USER,
-    communityStats: {
-      userId: 'u1',
-      postCount: 8,
-      commentCount: 21,
-      receivedLikes: 34,
-      level: 3,
-    },
-    isCommunityStatsLoading: false,
     isThemeModalVisible: false,
     setThemeModalVisible: noop,
     isPasswordModalVisible: false,
@@ -92,7 +84,7 @@ export const PrivateProfile: Story = {
 
 export const StatsLoading: Story = {
   name: '통계 로딩',
-  args: { communityStats: undefined, isCommunityStatsLoading: true },
+  args: {},
 };
 
 export const Loading: Story = {

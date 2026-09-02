@@ -200,7 +200,7 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
         });
 
         const touchables = renderer.root.findAllByType(TouchableOpacity);
-        const submitBtn = touchables.find(t => t.props.accessibilityLabel === '일정생성');
+        const submitBtn = touchables.find(t => t.props.accessibilityLabel === '일정 생성');
 
         expect(submitBtn).toBeDefined();
         expect(submitBtn!.props.accessibilityRole).toBe('button');
@@ -225,7 +225,7 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
         });
 
         const touchables = renderer.root.findAllByType(TouchableOpacity);
-        const submitBtn = touchables.find(t => t.props.accessibilityLabel === '일정생성');
+        const submitBtn = touchables.find(t => t.props.accessibilityLabel === '일정 생성');
 
         expect(submitBtn).toBeDefined();
         expect(submitBtn!.props.disabled).toBe(true);
@@ -243,7 +243,7 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
         });
 
         const touchables = renderer.root.findAllByType(TouchableOpacity);
-        const submitBtn = touchables.find(t => t.props.accessibilityLabel === '일정생성');
+        const submitBtn = touchables.find(t => t.props.accessibilityLabel === '일정 생성');
 
         expect(submitBtn).toBeDefined();
         expect(submitBtn!.props.disabled).toBe(true);

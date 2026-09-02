@@ -325,7 +325,7 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
     });
 
     const touchables = renderer!.root.findAllByType(TouchableOpacity);
-    const submitBtn = touchables.find(t => t.props.accessibilityLabel === '일정생성');
+    const submitBtn = touchables.find(t => t.props.accessibilityLabel === '일정 생성');
     expect(submitBtn).toBeDefined();
     expect(submitBtn!.props.activeOpacity).toBe(0.8);
 
