@@ -154,41 +154,6 @@ export const styles = StyleSheet.create({
     color: '#059669',
   },
 
-  mateBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: normalize(12),
-    paddingHorizontal: normalize(12),
-    paddingVertical: normalize(10),
-    borderRadius: tokens.radius.l,
-    backgroundColor: COLORS.sub,
-  },
-  mateCount: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(5),
-  },
-  mateCountText: {
-    fontSize: normalize(12),
-    fontFamily: tokens.fontFamily.semibold,
-    color: COLORS.textLabel,
-  },
-  mateButton: {
-    paddingHorizontal: normalize(14),
-    paddingVertical: normalize(7),
-    borderRadius: tokens.radius.m,
-    backgroundColor: COLORS.primary,
-  },
-  mateButtonDisabled: {
-    backgroundColor: COLORS.disabled,
-  },
-  mateButtonText: {
-    fontSize: normalize(11),
-    fontFamily: tokens.fontFamily.bold,
-    color: COLORS.white,
-  },
-
   body: {
     paddingHorizontal: normalize(16),
     paddingVertical: normalize(18),

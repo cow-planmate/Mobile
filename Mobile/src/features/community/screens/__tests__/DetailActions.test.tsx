@@ -9,9 +9,6 @@ import { styles as postStyles } from '../PostDetailScreen.styles';
 const mockShowAlert = jest.fn();
 const mockUsePost = jest.fn();
 const mockReactRequest = jest.fn();
-const mockJoinRequest = jest.fn();
-const mockLeaveRequest = jest.fn();
-const mockChangeStatusRequest = jest.fn();
 const mockUpdateAnsweredRequest = jest.fn();
 
 const mutation = (request = jest.fn()) => ({
@@ -38,9 +35,6 @@ jest.mock('../../hooks/queries', () => ({
   usePost: (...args: unknown[]) => mockUsePost(...args),
   useReactToPost: () => mutation(mockReactRequest),
   useForkItinerary: () => mutation(),
-  useJoinMate: () => mutation(mockJoinRequest),
-  useLeaveMate: () => mutation(mockLeaveRequest),
-  useChangeMateStatus: () => mutation(mockChangeStatusRequest),
   useUpdateAnswered: () => mutation(mockUpdateAnsweredRequest),
   useDeletePost: () => mutation(),
 }));
@@ -124,53 +118,7 @@ describe('community detail action locks', () => {
     expect(mockReactRequest).toHaveBeenCalledTimes(1);
   });
 
-  it('sends only one mate join request for same-render presses', async () => {
-    let resolveRequest: (() => void) | undefined;
-    mockJoinRequest.mockImplementationOnce(
-      () =>
-        new Promise<void>(resolve => {
-          resolveRequest = resolve;
-        }),
-    );
-    mockUsePost.mockReturnValue({
-      data: {
-        ...basePost,
-        category: 'mate',
-        status: 'recruiting',
-        participants: 1,
-        maxParticipants: 4,
-      },
-      isLoading: false,
-      isError: false,
-    });
-
-    let tree: renderer.ReactTestRenderer;
-    act(() => {
-      tree = renderer.create(<PostDetailScreen />);
-    });
-    const button = findButtonByStyle(tree!, postStyles.mateButton);
-
-    let first: Promise<unknown>;
-    let second: Promise<unknown>;
-    act(() => {
-      first = button.props.onPress();
-      second = button.props.onPress();
-    });
-
-    await act(async () => {
-      resolveRequest?.();
-      await Promise.all([first!, second!]);
-    });
-    act(() => tree!.unmount());
-    expect(mockJoinRequest).toHaveBeenCalledTimes(1);
-  });
-
   it.each([
-    [
-      'mate status',
-      { category: 'mate', status: 'recruiting' },
-      mockChangeStatusRequest,
-    ],
     [
       'Q&A answer status',
       { category: 'qna', isAnswered: false },

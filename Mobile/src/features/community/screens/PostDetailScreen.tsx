@@ -12,22 +12,17 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import Eye from 'lucide-react-native/dist/esm/icons/eye';
-import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import ThumbsDown from 'lucide-react-native/dist/esm/icons/thumbs-down';
 import ThumbsUp from 'lucide-react-native/dist/esm/icons/thumbs-up';
 import Trash2 from 'lucide-react-native/dist/esm/icons/trash-2';
-import Users from 'lucide-react-native/dist/esm/icons/users';
 import { normalize } from '../../../utils/normalize';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CommunityStackParamList } from '../../../navigation/types';
 import {
-  useChangeMateStatus,
   useDeletePost,
-  useJoinMate,
-  useLeaveMate,
   usePost,
   useReactToPost,
   useUpdateAnswered,
@@ -57,9 +52,6 @@ export default function PostDetailScreen() {
 
   const { data: post, isLoading, isError } = usePost(postId);
   const react = useReactToPost(postId ?? '');
-  const joinMate = useJoinMate(postId ?? '');
-  const leaveMate = useLeaveMate(postId ?? '');
-  const changeStatus = useChangeMateStatus(postId ?? '');
   const updateAnswered = useUpdateAnswered(postId ?? '');
   const deletePost = useDeletePost();
 
@@ -113,43 +105,6 @@ export default function PostDetailScreen() {
     });
   };
 
-  const handleJoinMate = () =>
-    postActionLock.runExclusive(async () => {
-      try {
-        await joinMate.mutateAsync();
-        showAlert({ title: '참여 완료', message: '메이트로 참여했어요!', type: 'success' });
-      } catch (error) {
-        const message = getBackendErrorMessage(error);
-        if (message.includes('이미 참여')) {
-          showAlert({
-            title: '이미 참여 중',
-            message: '참여를 취소할까요?',
-            type: 'confirm',
-            buttons: [
-              { text: '아니요', style: 'cancel' },
-              {
-                text: '참여 취소',
-                style: 'destructive',
-                onPress: async () => {
-                  try {
-                    await leaveMate.mutateAsync();
-                  } catch (leaveError) {
-                    showAlert({
-                      title: '참여 취소 실패',
-                      message: getBackendErrorMessage(leaveError),
-                      type: 'error',
-                    });
-                  }
-                },
-              },
-            ],
-          });
-          return;
-        }
-        showAlert({ title: '참여 실패', message, type: 'error' });
-      }
-    });
-
   const renderTopBar = () => (
     <View style={styles.topBar}>
       <TouchableOpacity
@@ -195,7 +150,6 @@ export default function PostDetailScreen() {
     );
   }
 
-  const isRecruiting = post.status === 'recruiting';
 
   return (
     <View style={[styles.container, screenInsets]}>
@@ -204,10 +158,9 @@ export default function PostDetailScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          {(post.category === 'qna' || post.category === 'mate') && (
+          {post.category === 'qna' && (
             <View style={styles.statusRow}>
-              {post.category === 'qna' && (
-                <View
+              <View
                   style={[
                     styles.statusTag,
                     post.isAnswered ? styles.statusTagAnswered : styles.statusTagPending,
@@ -221,25 +174,7 @@ export default function PostDetailScreen() {
                   >
                     {post.isAnswered ? '답변완료' : '답변대기'}
                   </Text>
-                </View>
-              )}
-              {post.category === 'mate' && (
-                <View
-                  style={[
-                    styles.statusTag,
-                    { backgroundColor: isRecruiting ? COLORS.sub : COLORS.borderLight },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.statusTagText,
-                      { color: isRecruiting ? COLORS.primary : COLORS.textSecondary },
-                    ]}
-                  >
-                    {isRecruiting ? '모집중' : '모집마감'}
-                  </Text>
-                </View>
-              )}
+              </View>
             </View>
           )}
 
@@ -298,28 +233,6 @@ export default function PostDetailScreen() {
                   </Text>
                 </TouchableOpacity>
               )}
-              {post.category === 'mate' && (
-                <TouchableOpacity
-                  style={styles.authorActionButton}
-                  onPress={() =>
-                    postActionLock.runExclusive(() =>
-                      changeStatus.mutateAsync(
-                        isRecruiting ? 'closed' : 'recruiting',
-                      ),
-                    )
-                  }
-                  disabled={changeStatus.isPending || postActionLock.isSubmitting}
-                  accessibilityState={{
-                    disabled:
-                      changeStatus.isPending || postActionLock.isSubmitting,
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.authorActionText}>
-                    {isRecruiting ? '모집 마감하기' : '다시 모집하기'}
-                  </Text>
-                </TouchableOpacity>
-              )}
               <TouchableOpacity
                 style={styles.authorActionButton}
                 onPress={() =>
@@ -350,45 +263,6 @@ export default function PostDetailScreen() {
             </View>
           )}
 
-          {post.category === 'mate' && (
-            <View style={styles.mateBar}>
-              <View style={styles.mateCount}>
-                <Users size={normalize(14)} color={COLORS.primary} />
-                <Text style={styles.mateCountText}>
-                  {post.participants ?? 0}
-                  {post.maxParticipants
-                    ? ` / ${post.maxParticipants}명`
-                    : '명 (제한 없음)'}
-                </Text>
-              </View>
-              {isLoggedIn && !isAuthor && (
-                <TouchableOpacity
-                  style={[
-                    styles.mateButton,
-                    (!isRecruiting || postActionLock.isSubmitting) &&
-                      styles.mateButtonDisabled,
-                  ]}
-                  onPress={handleJoinMate}
-                  disabled={
-                    !isRecruiting ||
-                    joinMate.isPending ||
-                    postActionLock.isSubmitting
-                  }
-                  activeOpacity={0.85}
-                  accessibilityState={{
-                    disabled:
-                      !isRecruiting ||
-                      joinMate.isPending ||
-                      postActionLock.isSubmitting,
-                  }}
-                >
-                  <Text style={styles.mateButtonText}>
-                    {isRecruiting ? '참여하기' : '모집 마감'}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
         </View>
 
         <View style={styles.body}>
@@ -453,13 +327,6 @@ export default function PostDetailScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-
-        {post.category === 'mate' && !!post.region && (
-          <View style={styles.regionRow}>
-            <MapPin size={normalize(13)} color={COLORS.textTertiary} />
-            <Text style={styles.metaText}>희망 지역: {post.region}</Text>
-          </View>
-        )}
 
         <CommentSection postId={post.id} commentCount={post.comments} />
 

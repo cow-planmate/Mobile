@@ -109,15 +109,14 @@ export const MateAndPlace: Story = {
     selectedCategory: 'recommend',
     posts: [
       post(31, {
-        category: 'mate',
-        title: '10월 경주 벚꽃길 동행 구해요',
-        participants: 2,
-        maxParticipants: 4,
+        category: 'recommend',
+        title: '경주 벚꽃길 걷기 좋은 구간',
+        location: '보문호수',
       }),
       post(32, {
-        category: 'mate',
-        title: '통영 1박 모집 마감',
-        status: 'closed',
+        category: 'recommend',
+        title: '통영 케이블카 타는 시간대',
+        location: '미륵산',
       }),
     ],
   },

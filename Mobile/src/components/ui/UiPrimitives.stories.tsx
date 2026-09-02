@@ -22,7 +22,6 @@ const SORTS = ['최신순', '추천순', '조회순'];
 const BOARDS = [
   { key: 'free', label: '자유게시판' },
   { key: 'qna', label: 'Q&A' },
-  { key: 'mate', label: '메이트 찾기' },
   { key: 'recommend', label: '장소 추천' },
 ];
 
@@ -91,7 +90,6 @@ function PrimitivesPreview() {
           <Badge label="HOT" tone="hot" />
           <Badge label="답변완료" tone="success" />
           <Badge label="답변대기" tone="neutral" />
-          <Badge label="모집중 2/4" tone="mate" />
           <Badge
             label="성산일출봉"
             tone="place"

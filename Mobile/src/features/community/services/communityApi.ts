@@ -8,8 +8,6 @@ import {
   CreatePostPayload,
   FeedFilterParams,
   ForkResult,
-  MateParticipation,
-  MateStatus,
   MyStats,
   PageData,
   ReactionResult,
@@ -222,24 +220,6 @@ export async function updateComment(
 
 export async function deleteComment(commentId: number, feed = false): Promise<void> {
   await axios.delete((feed ? feedUrl : url)(`/comments/${commentId}`));
-}
-
-export async function joinMate(postId: number): Promise<MateParticipation> {
-  const response = await axios.post(url(`/posts/${postId}/participants`));
-  return response.data;
-}
-
-export async function leaveMate(postId: number): Promise<MateParticipation> {
-  const response = await axios.delete(url(`/posts/${postId}/participants`));
-  return response.data;
-}
-
-export async function changeMateStatus(
-  postId: number,
-  status: MateStatus,
-): Promise<MateParticipation> {
-  const response = await axios.patch(url(`/posts/${postId}/status`), { status });
-  return response.data;
 }
 
 export async function updateAnswered(

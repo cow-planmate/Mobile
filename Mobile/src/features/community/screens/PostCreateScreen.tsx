@@ -34,8 +34,7 @@ export default function PostCreateScreen() {
   const route = useRoute<CreateRoute>();
   const { showAlert } = useAlert();
 
-  // 없앤 갈래(메이트 찾기)로 들어오면 자유게시판으로 되돌린다.
-  // 옛 글을 수정할 때만 생기는 경우다.
+  // 없어진 갈래로 들어오면 자유게시판으로 되돌린다.
   const requested = route.params?.category;
   const [category, setCategory] = useState<BoardKey>(
     BOARDS.some(board => board.key === requested)

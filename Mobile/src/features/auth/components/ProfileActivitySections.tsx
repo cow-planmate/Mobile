@@ -40,7 +40,6 @@ const MONTH_LABELS = [
 const CATEGORY_LABEL: Record<string, string> = {
   free: '자유',
   qna: 'Q&A',
-  mate: '메이트',
   recommend: '추천',
   feed: '여행기',
 };

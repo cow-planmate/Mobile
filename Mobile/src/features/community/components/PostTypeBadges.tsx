@@ -2,7 +2,6 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import Star from 'lucide-react-native/dist/esm/icons/star';
-import Users from 'lucide-react-native/dist/esm/icons/users';
 import { Badge } from '../../../components/ui';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
@@ -22,27 +21,6 @@ export default function PostTypeBadges({ post, category }: PostTypeBadgesProps) 
         key="answered"
         label={post.isAnswered ? '답변완료' : '답변대기'}
         tone={post.isAnswered ? 'success' : 'neutral'}
-      />,
-    );
-  }
-
-  if (category === 'mate') {
-    const closed = post.status === 'closed';
-    badges.push(
-      <Badge
-        key="mate"
-        label={
-          closed
-            ? '모집완료'
-            : `${post.participants ?? 0}/${post.maxParticipants ?? 0}`
-        }
-        tone={closed ? 'neutral' : 'mate'}
-        icon={
-          <Users
-            size={9}
-            color={closed ? tokens.tones.neutral.fg : tokens.tones.mate.fg}
-          />
-        }
       />,
     );
   }

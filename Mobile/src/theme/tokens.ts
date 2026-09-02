@@ -29,7 +29,6 @@ export const tones = {
   danger: { bg: '#FEF2F2', fg: '#DC2626' },
   place: { bg: '#ECFDF5', fg: '#047857' },
   rating: { bg: '#FEFCE8', fg: '#A16207' },
-  mate: { bg: '#F5F3FF', fg: '#7C3AED' },
 };
 
 // 안드로이드는 shadowColor/Offset/Opacity/Radius를 렌더링하지 않고 elevation만 읽는다.

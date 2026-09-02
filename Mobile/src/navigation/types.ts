@@ -73,7 +73,7 @@ export type CommunityStackParamList = {
   CommunityCreate:
     | {
 
-        category?: 'free' | 'qna' | 'mate' | 'recommend';
+        category?: 'free' | 'qna' | 'recommend';
         postId?: string;
       }
     | undefined;

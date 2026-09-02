@@ -5,7 +5,6 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import {
-  changeMateStatus,
   createComment,
   createPost,
   deleteComment,
@@ -20,8 +19,6 @@ import {
   fetchMyStats,
   fetchPost,
   fetchPosts,
-  joinMate,
-  leaveMate,
   reactToPost,
   updateAnswered,
   updateComment,
@@ -34,7 +31,6 @@ import {
   CreatePostPayload,
   FeedFilterParams,
   Itinerary,
-  MateStatus,
   PageData,
   ReactionResult,
   ReactionType,
@@ -319,39 +315,6 @@ export const useDeleteComment = (postId: number | string, feed = false) => {
       void invalidate.post(postId, feed);
       void invalidate.lists();
       void invalidate.me();
-    },
-  });
-};
-
-export const useJoinMate = (postId: number | string) => {
-  const invalidate = useInvalidate();
-  return useMutation({
-    mutationFn: () => joinMate(Number(postId)),
-    onSuccess: () => {
-      void invalidate.post(postId);
-      void invalidate.lists();
-    },
-  });
-};
-
-export const useLeaveMate = (postId: number | string) => {
-  const invalidate = useInvalidate();
-  return useMutation({
-    mutationFn: () => leaveMate(Number(postId)),
-    onSuccess: () => {
-      void invalidate.post(postId);
-      void invalidate.lists();
-    },
-  });
-};
-
-export const useChangeMateStatus = (postId: number | string) => {
-  const invalidate = useInvalidate();
-  return useMutation({
-    mutationFn: (status: MateStatus) => changeMateStatus(Number(postId), status),
-    onSuccess: () => {
-      void invalidate.post(postId);
-      void invalidate.lists();
     },
   });
 };

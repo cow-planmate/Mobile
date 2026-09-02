@@ -1,32 +1,38 @@
 import { buildPostPayload } from '../postPayload';
 
 describe('buildPostPayload', () => {
-  it('메이트 모집 인원을 정수로 전송한다', () => {
+  it('제목과 내용의 앞뒤 공백을 털어낸다', () => {
     expect(
       buildPostPayload({
-        category: 'mate',
-        title: ' 거제 트레킹 ',
-        content: ' 함께 가요 ',
-        maxParticipants: '4.9',
+        category: 'free',
+        title: '  거제 트레킹  ',
+        content: '  함께 가요  ',
         location: '',
       }),
     ).toMatchObject({
-      category: 'mate',
+      category: 'free',
       title: '거제 트레킹',
       contentText: '함께 가요',
-      maxParticipants: 4,
     });
   });
 
-  it('빈 모집 인원은 null로 전송해 수정 값을 지울 수 있다', () => {
+  it('장소 추천에서만 장소를 함께 보낸다', () => {
     expect(
       buildPostPayload({
-        category: 'mate',
+        category: 'recommend',
         title: '제목',
         content: '내용',
-        maxParticipants: '',
-        location: '',
-      }).maxParticipants,
-    ).toBeNull();
+        location: '  갑천생태호수공원  ',
+      }).location,
+    ).toBe('갑천생태호수공원');
+
+    expect(
+      buildPostPayload({
+        category: 'free',
+        title: '제목',
+        content: '내용',
+        location: '갑천생태호수공원',
+      }).location,
+    ).toBeUndefined();
   });
 });

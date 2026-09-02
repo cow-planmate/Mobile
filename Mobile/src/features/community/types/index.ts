@@ -1,9 +1,7 @@
 
-export type CommunityCategory = 'free' | 'qna' | 'mate' | 'recommend' | 'feed';
+export type CommunityCategory = 'free' | 'qna' | 'recommend' | 'feed';
 
 export type ReactionType = 'like' | 'dislike';
-
-export type MateStatus = 'recruiting' | 'closed';
 
 export interface PageData<T> {
   items: T[];
@@ -35,9 +33,6 @@ export interface CommunityPostSummary {
   createdAtIso: string;
   image?: string;
   isAnswered?: boolean;
-  participants?: number;
-  maxParticipants?: number;
-  status?: MateStatus;
   region?: string;
   location?: string;
   rating?: string;
@@ -153,12 +148,6 @@ export interface ReactionResult {
   myReaction?: ReactionType | null;
 }
 
-export interface MateParticipation {
-  participants: number;
-  maxParticipants?: number;
-  status?: MateStatus;
-}
-
 export interface MyStats {
   userId: string;
   postCount: number;
@@ -181,7 +170,6 @@ export interface CreatePostPayload {
   lat?: number;
   lng?: number;
   region?: string;
-  maxParticipants?: number | null;
   durationDays?: number;
   itinerary?: Itinerary | null;
   tags?: string[];
