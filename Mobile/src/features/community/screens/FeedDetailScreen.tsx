@@ -7,14 +7,12 @@ import {
   ActivityIndicator,
   StatusBar,
 } from 'react-native';
-import FallbackImage from '../../../components/common/FallbackImage';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import CalendarDays from 'lucide-react-native/dist/esm/icons/calendar-days';
+import ChevronDown from 'lucide-react-native/dist/esm/icons/chevron-down';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
+import ChevronUp from 'lucide-react-native/dist/esm/icons/chevron-up';
 import Copy from 'lucide-react-native/dist/esm/icons/copy';
-import Eye from 'lucide-react-native/dist/esm/icons/eye';
-import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import ThumbsDown from 'lucide-react-native/dist/esm/icons/thumbs-down';
 import ThumbsUp from 'lucide-react-native/dist/esm/icons/thumbs-up';
@@ -34,11 +32,18 @@ import CommentSection from '../components/CommentSection';
 import UserAvatar from '../../../components/common/UserAvatar';
 import PublicProfileModal from '../components/PublicProfileModal';
 import { ReactionType } from '../types';
+import { ScheduleTimeline } from '../../itinerary/components/PlanScheduleList';
+import {
+  ALL_DAYS,
+  countPlaces,
+  itineraryEntries,
+} from '../utils/itineraryEntries';
 import { styles, COLORS } from './FeedDetailScreen.styles';
 import { tokens } from '../../../theme/tokens';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
 
 type FeedDetailRoute = RouteProp<FeedStackParamList, 'FeedDetail'>;
+
 
 export default function FeedDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -52,6 +57,7 @@ export default function FeedDetailScreen() {
 
   const [isAuthorProfileVisible, setAuthorProfileVisible] = useState(false);
   const [selectedDay, setSelectedDay] = useState(0);
+  const [isScheduleOpen, setScheduleOpen] = useState(true);
   const [isDateModalVisible, setDateModalVisible] = useState(false);
 
   const { data: post, isLoading, isError } = usePost(postId, true);
@@ -60,8 +66,12 @@ export default function FeedDetailScreen() {
   const isAuthor = !!post && user?.userId === post.userId;
 
   const days = useMemo(() => post?.itinerary?.days ?? [], [post]);
+  const totalPlaces = useMemo(() => countPlaces(days), [days]);
+  const entries = useMemo(
+    () => itineraryEntries(days, selectedDay),
+    [days, selectedDay],
+  );
   const isForkable = canForkItinerary(post?.itinerary);
-  const heroImage = post?.image;
   const reactionLock = useSubmitLock();
 
   const handleReact = (type: ReactionType) =>
@@ -191,7 +201,6 @@ export default function FeedDetailScreen() {
     );
   }
 
-  const currentDay = days[selectedDay];
   const durationLabel = formatDuration(post.durationDays);
   const regionLabel = post.location ?? post.region;
 
@@ -201,42 +210,12 @@ export default function FeedDetailScreen() {
       {renderTopBar()}
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {!!heroImage && (
-          <FallbackImage
-            uri={heroImage}
-            style={styles.hero}
-            fallback={<View style={styles.hero} />}
-          />
-        )}
-
+        {/* 큰 사진을 머리에 얹으면 제목과 여행 정보가 첫 화면 밖으로 밀린다.
+            사진은 목록과 아래 장소 줄에서 이미 보이므로 여기서는 글로만 열다. */}
         <View style={styles.header}>
           <Text style={styles.title}>{post.title}</Text>
 
-          <View style={styles.chipRow}>
-            {!!regionLabel && (
-              <View style={styles.chip}>
-                <MapPin size={normalize(11)} color={COLORS.textSecondary} />
-                <Text style={styles.chipText}>{regionLabel}</Text>
-              </View>
-            )}
-            {!!durationLabel && (
-              <View style={styles.chip}>
-                <CalendarDays
-                  size={normalize(11)}
-                  color={COLORS.textSecondary}
-                />
-                <Text style={styles.chipText}>{durationLabel}</Text>
-              </View>
-            )}
-            {(post.tags ?? []).map(tag => (
-              <View key={tag} style={[styles.chip, styles.tagChip]}>
-                <Text style={[styles.chipText, styles.tagChipText]}>{tag}</Text>
-              </View>
-            ))}
-          </View>
-
           <View style={styles.metaRow}>
-
             <TouchableOpacity
               style={styles.authorTouchable}
               onPress={() => setAuthorProfileVisible(true)}
@@ -246,20 +225,34 @@ export default function FeedDetailScreen() {
               <UserAvatar
                 name={post.author}
                 imageUrl={resolveAvatarUrl(post.authorImage, post.authorAvatarHash)}
-                size={normalize(24)}
+                size={normalize(22)}
               />
               <Text style={styles.metaAuthor}>{post.author}</Text>
             </TouchableOpacity>
-            <Text style={styles.metaText}>· {post.createdAt}</Text>
-            <View style={styles.metaStat}>
-              <Eye size={normalize(12)} color={COLORS.textTertiary} />
-              <Text style={styles.metaText}>{post.views.toLocaleString()}</Text>
-            </View>
-            <View style={styles.metaStat}>
-              <Copy size={normalize(11)} color={COLORS.textTertiary} />
-              <Text style={styles.metaText}>{post.forks ?? 0}</Text>
-            </View>
+            {!!regionLabel && (
+              <>
+                <Text style={styles.metaDivider}>·</Text>
+                <Text style={styles.metaRegion}>{regionLabel}</Text>
+              </>
+            )}
+            {!!durationLabel && (
+              <>
+                <Text style={styles.metaDivider}>·</Text>
+                <Text style={styles.metaDuration}>{durationLabel}</Text>
+              </>
+            )}
           </View>
+
+          <Text style={styles.metaText}>
+            {post.createdAt} · 조회 {post.views.toLocaleString()} · 가져감{' '}
+            {post.forks ?? 0}
+          </Text>
+
+          {(post.tags ?? []).length > 0 && (
+            <Text style={styles.tagLine}>
+              {(post.tags ?? []).map(tag => `#${tag}`).join('  ')}
+            </Text>
+          )}
         </View>
 
         <View style={styles.forkBar}>
@@ -285,69 +278,92 @@ export default function FeedDetailScreen() {
           </Text>
         </View>
 
-        {days.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionTitleRow}>
-              <CalendarDays size={normalize(15)} color={COLORS.primary} />
-              <Text style={styles.sectionTitle}>일정 ({days.length}일)</Text>
-            </View>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.dayTabs}
-            >
-              {days.map((day, index) => {
-                const isActive = selectedDay === index;
-                return (
-                  <TouchableOpacity
-                    key={day.day ?? index}
-                    style={[styles.dayTab, isActive && styles.dayTabActive]}
-                    onPress={() => setSelectedDay(index)}
-                    activeOpacity={0.85}
-                  >
-                    <Text
-                      style={[
-                        styles.dayTabText,
-                        isActive && styles.dayTabTextActive,
-                      ]}
-                    >
-                      {day.day ?? index + 1}일차
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
-            {(currentDay?.items ?? []).length === 0 ? (
-              <Text style={styles.emptyDay}>이 날에는 등록된 장소가 없어요</Text>
-            ) : (
-              (currentDay?.items ?? []).map((item, index) => (
-                <View key={`${item.place}-${index}`} style={styles.place}>
-                  <Text style={styles.placeTime}>{item.time}</Text>
-                  <View style={styles.placeBody}>
-                    <Text style={styles.placeName}>{item.place}</Text>
-                    {!!(item.placeAddress ?? item.description) && (
-                      <Text style={styles.placeSub}>
-                        {item.placeAddress ?? item.description}
-                      </Text>
-                    )}
-                    {!!item.memo && (
-                      <Text style={styles.placeMemo}>{item.memo}</Text>
-                    )}
-                  </View>
-                </View>
-              ))
-            )}
-          </View>
-        )}
-
         <View style={styles.body}>
           <PostContentView
             content={post.content}
             contentText={post.contentText}
           />
         </View>
+
+        {days.length > 0 && (
+          <View style={styles.section}>
+            <TouchableOpacity
+              style={styles.sectionHeader}
+              onPress={() => setScheduleOpen(!isScheduleOpen)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: isScheduleOpen }}
+            >
+              <View style={styles.sectionTitleGroup}>
+                <Text style={styles.sectionTitle}>상세 일정</Text>
+                <Text style={styles.sectionSubtitle}>
+                  {days.length}일 · 총 {totalPlaces}곳
+                </Text>
+              </View>
+              {isScheduleOpen ? (
+                <ChevronUp size={normalize(18)} color={COLORS.textSecondary} />
+              ) : (
+                <ChevronDown size={normalize(18)} color={COLORS.textSecondary} />
+              )}
+            </TouchableOpacity>
+
+            {isScheduleOpen && (
+              <>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.dayTabs}
+                >
+                  {/* 며칠짜리인지, 흐름이 어떤지는 하루씩 봐서는 안 잡힌다. */}
+                  {days.length > 1 && (
+                    <TouchableOpacity
+                      style={[
+                        styles.dayTab,
+                        selectedDay === ALL_DAYS && styles.dayTabActive,
+                      ]}
+                      onPress={() => setSelectedDay(ALL_DAYS)}
+                      activeOpacity={0.85}
+                    >
+                      <Text
+                        style={[
+                          styles.dayTabText,
+                          selectedDay === ALL_DAYS && styles.dayTabTextActive,
+                        ]}
+                      >
+                        전체
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  {days.map((day, index) => {
+                    const isActive = selectedDay === index;
+                    return (
+                      <TouchableOpacity
+                        key={day.day ?? index}
+                        style={[styles.dayTab, isActive && styles.dayTabActive]}
+                        onPress={() => setSelectedDay(index)}
+                        activeOpacity={0.85}
+                      >
+                        <Text
+                          style={[
+                            styles.dayTabText,
+                            isActive && styles.dayTabTextActive,
+                          ]}
+                        >
+                          {day.day ?? index + 1}일차
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+
+                <ScheduleTimeline
+                  entries={entries}
+                  emptyText="이 날에는 등록된 장소가 없어요"
+                />
+              </>
+            )}
+          </View>
+        )}
 
         <View style={styles.reactionRow}>
           <TouchableOpacity

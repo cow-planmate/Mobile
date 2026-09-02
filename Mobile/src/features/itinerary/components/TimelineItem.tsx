@@ -40,7 +40,9 @@ type TimelineItemProps = {
 };
 
 /** 카드와 완성 화면이 같은 기준으로 갈래를 정하도록 한곳에 둔다. */
-export const resolveCategoryId = (item: Pick<Place, 'categoryId' | 'category' | 'type'>): number => {
+export const resolveCategoryId = (
+  item: Partial<Pick<Place, 'categoryId' | 'category' | 'type'>>,
+): number => {
   if (
     typeof item.categoryId === 'number' &&
     [0, 1, 2, 3, 4].includes(item.categoryId)

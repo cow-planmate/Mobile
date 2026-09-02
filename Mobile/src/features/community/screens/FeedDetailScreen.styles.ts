@@ -50,11 +50,6 @@ export const styles = StyleSheet.create({
     color: COLORS.primary,
   },
 
-  hero: {
-    width: '100%',
-    height: normalize(190),
-    backgroundColor: COLORS.borderLight,
-  },
 
   header: {
     paddingHorizontal: normalize(16),
@@ -70,39 +65,32 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: normalize(8),
   },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: normalize(6),
-    marginBottom: normalize(10),
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(4),
-    paddingHorizontal: normalize(9),
-    paddingVertical: normalize(4),
-    borderRadius: tokens.radius.round,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  chipText: {
-    fontSize: normalize(11),
-    fontFamily: tokens.fontFamily.medium,
-    color: COLORS.textSecondary,
-  },
-  tagChip: {
-    backgroundColor: COLORS.sub,
-    borderColor: COLORS.sub,
-  },
-  tagChipText: {
-    color: COLORS.primary,
-  },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: normalize(6),
+    marginBottom: normalize(6),
+  },
+  metaDivider: {
+    fontSize: normalize(11),
+    color: COLORS.border,
+  },
+  metaRegion: {
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.semibold,
+    color: COLORS.primary,
+  },
+  metaDuration: {
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.semibold,
+    color: COLORS.textSecondary,
+  },
+  tagLine: {
+    marginTop: normalize(8),
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.medium,
+    color: COLORS.textTertiary,
   },
 
   authorTouchable: {
@@ -160,18 +148,30 @@ export const styles = StyleSheet.create({
 
   section: {
     paddingHorizontal: normalize(16),
-    paddingTop: normalize(16),
+    paddingTop: normalize(4),
     paddingBottom: normalize(8),
+    borderTopWidth: normalize(6),
+    borderTopColor: COLORS.surface,
   },
-  sectionTitleRow: {
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: normalize(6),
-    marginBottom: normalize(10),
+    justifyContent: 'space-between',
+    paddingVertical: normalize(14),
+  },
+  sectionTitleGroup: {
+    flex: 1,
+    minWidth: 0,
+  },
+  sectionSubtitle: {
+    marginTop: normalize(3),
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.medium,
+    color: COLORS.textTertiary,
   },
   sectionTitle: {
-    fontSize: normalize(14),
-    fontFamily: tokens.fontFamily.semibold,
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.bold,
     color: COLORS.text,
   },
   dayTabs: {
@@ -200,59 +200,11 @@ export const styles = StyleSheet.create({
     color: COLORS.white,
   },
 
-  place: {
-    flexDirection: 'row',
-    gap: normalize(10),
-    paddingVertical: normalize(9),
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-  },
-  placeTime: {
-    width: normalize(44),
-    fontSize: normalize(11),
-    fontFamily: tokens.fontFamily.semibold,
-    color: COLORS.primary,
-    paddingTop: normalize(2),
-  },
-  placeBody: {
-    flex: 1,
-  },
-  placeName: {
-    fontSize: normalize(13),
-    fontFamily: tokens.fontFamily.semibold,
-    color: COLORS.text,
-  },
-  placeSub: {
-    marginTop: normalize(2),
-    fontSize: normalize(11),
-    lineHeight: normalize(16),
-    fontFamily: tokens.fontFamily.regular,
-    color: COLORS.textTertiary,
-  },
-  placeMemo: {
-    marginTop: normalize(4),
-    paddingHorizontal: normalize(8),
-    paddingVertical: normalize(5),
-    borderRadius: tokens.radius.s,
-    backgroundColor: COLORS.surface,
-    fontSize: normalize(11),
-    lineHeight: normalize(16),
-    fontFamily: tokens.fontFamily.regular,
-    color: COLORS.textSecondary,
-  },
-  emptyDay: {
-    paddingVertical: normalize(20),
-    textAlign: 'center',
-    fontSize: normalize(12),
-    fontFamily: tokens.fontFamily.regular,
-    color: COLORS.textTertiary,
-  },
 
   body: {
     paddingHorizontal: normalize(16),
-    paddingVertical: normalize(16),
-    borderTopWidth: normalize(6),
-    borderTopColor: COLORS.surface,
+    paddingTop: normalize(16),
+    paddingBottom: normalize(20),
   },
 
   reactionRow: {

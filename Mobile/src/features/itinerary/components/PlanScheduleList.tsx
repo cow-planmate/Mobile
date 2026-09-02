@@ -20,23 +20,53 @@ export const formatFullDate = (date?: Date | null): string => {
   })`;
 };
 
+/** 시각 목록 한 줄이 필요로 하는 값. 완성 화면과 여행기가 같은 모양을 쓰도록 추린다. */
+export type ScheduleEntry = {
+  key: string;
+  startTime: string;
+  endTime?: string;
+  categoryId: number;
+  categoryName: string;
+  name: string;
+  subtitle?: string;
+  memo?: string;
+  photoUrl?: string;
+  /** 여러 날을 한 번에 볼 때 며칠차인지 짚어 주는 짧은 꼬리표. */
+  badge?: string;
+};
+
+export const placeToEntry = (place: Place): ScheduleEntry => {
+  const categoryId = resolveCategoryId(place);
+  return {
+    key: place.id,
+    startTime: place.startTime,
+    endTime: place.endTime,
+    categoryId,
+    categoryName: CATEGORY_NAMES[categoryId] || place.type || '기타',
+    name: place.name,
+    subtitle: place.address,
+    memo: place.memo ?? undefined,
+    photoUrl: place.imageUrl,
+  };
+};
+
 const ScheduleRow = React.memo(
   ({
-    place,
+    entry,
     isFirst,
     isLast,
     onPress,
   }: {
-    place: Place;
+    entry: ScheduleEntry;
     isFirst: boolean;
     isLast: boolean;
     onPress?: () => void;
   }) => {
-    const categoryId = resolveCategoryId(place);
-    const color = CATEGORY_COLORS[categoryId as keyof typeof CATEGORY_COLORS];
-    const categoryName = CATEGORY_NAMES[categoryId] || place.type || '기타';
-    const memo = place.memo?.trim();
-    const photo = toSecureImageUrl(place.imageUrl);
+    const color =
+      CATEGORY_COLORS[entry.categoryId as keyof typeof CATEGORY_COLORS] ??
+      CATEGORY_COLORS[4];
+    const memo = entry.memo?.trim();
+    const photo = toSecureImageUrl(entry.photoUrl);
 
     return (
       <TouchableOpacity
@@ -45,11 +75,14 @@ const ScheduleRow = React.memo(
         activeOpacity={onPress ? 0.7 : 1}
         disabled={!onPress}
         accessibilityRole={onPress ? 'button' : undefined}
-        accessibilityLabel={`${place.startTime} ${place.name}`}
+        accessibilityLabel={`${entry.startTime} ${entry.name}`}
       >
         <View style={styles.timeColumn}>
-          <Text style={styles.startTime}>{place.startTime}</Text>
-          <Text style={styles.endTime}>~{place.endTime}</Text>
+          <Text style={styles.startTime}>{entry.startTime}</Text>
+          {!!entry.endTime && (
+            <Text style={styles.endTime}>~{entry.endTime}</Text>
+          )}
+          {!!entry.badge && <Text style={styles.badge}>{entry.badge}</Text>}
         </View>
 
         {/* 시각을 잇는 줄. 첫 곳만 갈래 색으로 짚어 시작을 보이게 한다. */}
@@ -66,14 +99,14 @@ const ScheduleRow = React.memo(
 
         <View style={styles.body}>
           <Text style={[styles.category, { color: color.textSub }]}>
-            {categoryName}
+            {entry.categoryName}
           </Text>
           <Text style={styles.name} numberOfLines={2}>
-            {place.name}
+            {entry.name}
           </Text>
-          {!!place.address && (
+          {!!entry.subtitle && (
             <Text style={styles.address} numberOfLines={2}>
-              {place.address}
+              {entry.subtitle}
             </Text>
           )}
           {!!memo && (
@@ -123,20 +156,45 @@ export default function PlanScheduleList({
         </Text>
       </View>
 
-      {places.length === 0 ? (
-        <Text style={styles.empty}>이 날에는 아직 일정이 없어요</Text>
-      ) : (
-        places.map((place, index) => (
-          <ScheduleRow
-            key={place.id}
-            place={place}
-            isFirst={index === 0}
-            isLast={index === places.length - 1}
-            onPress={onPressPlace ? () => onPressPlace(place) : undefined}
-          />
-        ))
-      )}
+      <ScheduleTimeline
+        entries={places.map(placeToEntry)}
+        emptyText="이 날에는 아직 일정이 없어요"
+        onPressEntry={
+          onPressPlace
+            ? (_entry, index) => onPressPlace(places[index])
+            : undefined
+        }
+      />
     </View>
+  );
+}
+
+/** 시각·이음줄·장소로 이어지는 목록. 헤더 없이 줄만 그린다. */
+export function ScheduleTimeline({
+  entries,
+  emptyText,
+  onPressEntry,
+}: {
+  entries: ScheduleEntry[];
+  emptyText?: string;
+  onPressEntry?: (entry: ScheduleEntry, index: number) => void;
+}) {
+  if (entries.length === 0) {
+    return emptyText ? <Text style={styles.empty}>{emptyText}</Text> : null;
+  }
+
+  return (
+    <>
+      {entries.map((entry, index) => (
+        <ScheduleRow
+          key={entry.key}
+          entry={entry}
+          isFirst={index === 0}
+          isLast={index === entries.length - 1}
+          onPress={onPressEntry ? () => onPressEntry(entry, index) : undefined}
+        />
+      ))}
+    </>
   );
 }
 
@@ -195,6 +253,12 @@ const styles = StyleSheet.create({
     marginTop: 1,
     fontSize: 11,
     fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textTertiary,
+  },
+  badge: {
+    marginTop: 3,
+    fontSize: 10,
+    fontFamily: tokens.fontFamily.semibold,
     color: tokens.colors.textTertiary,
   },
 
