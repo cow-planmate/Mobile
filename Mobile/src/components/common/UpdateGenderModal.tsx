@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, Pressable, TouchableOpacity } from 'react-native';
-import { styles } from './UpdateGenderModal.styles';
-import X from 'lucide-react-native/dist/esm/icons/x';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import PopupModal from './PopupModal';
+import { normalize } from '../../utils/normalize';
 import { tokens } from '../../theme/tokens';
 
 type UpdateGenderModalProps = {
@@ -10,6 +10,8 @@ type UpdateGenderModalProps = {
   onClose: () => void;
   onConfirm: (value: string) => void;
 };
+
+const OPTIONS = ['남자', '여자'];
 
 export default function UpdateGenderModal({
   visible,
@@ -25,83 +27,65 @@ export default function UpdateGenderModal({
     }
   }, [visible, initialValue]);
 
-  const handleConfirm = () => {
-    onConfirm(gender);
-    onClose();
-  };
-
   return (
-    <Modal
+    <PopupModal
       visible={visible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={onClose}
+      title="성별 변경"
+      onClose={onClose}
+      onDone={() => onConfirm(gender)}
+      doneLabel="확인"
     >
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.modalView} onPress={() => {}}>
-          <View style={styles.header}>
-            <Text style={styles.title}>성별 변경</Text>
+      <View style={styles.row}>
+        {OPTIONS.map(option => {
+          const selected = gender === option;
+          return (
             <TouchableOpacity
-              onPress={onClose}
-              style={styles.closeButton}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="닫기"
-              hitSlop={8}
+              key={option}
+              style={[styles.option, selected && styles.optionOn]}
+              onPress={() => setGender(option)}
+              activeOpacity={0.8}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+              accessibilityLabel={option}
             >
-              <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
+              <Text style={[styles.optionText, selected && styles.optionTextOn]}>
+                {option}
+              </Text>
             </TouchableOpacity>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>성별 선택</Text>
-            <View style={styles.genderContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.genderButton,
-                  gender === '남자' && styles.genderButtonSelected,
-                ]}
-                onPress={() => setGender('남자')}
-              >
-                <Text
-                  style={[
-                    styles.genderButtonText,
-                    gender === '남자' && styles.genderButtonTextSelected,
-                  ]}
-                >
-                  남자
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.genderButton,
-                  gender === '여자' && styles.genderButtonSelected,
-                ]}
-                onPress={() => setGender('여자')}
-              >
-                <Text
-                  style={[
-                    styles.genderButtonText,
-                    gender === '여자' && styles.genderButtonTextSelected,
-                  ]}
-                >
-                  여자
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.confirmFooter}>
-            <TouchableOpacity
-              style={styles.confirmButton}
-              onPress={handleConfirm}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.confirmButtonText}>확인</Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+          );
+        })}
+      </View>
+    </PopupModal>
   );
 }
+
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    gap: normalize(10),
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(4),
+  },
+  option: {
+    flex: 1,
+    height: normalize(48),
+    borderRadius: normalize(8),
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  optionOn: {
+    backgroundColor: tokens.colors.primary,
+    borderColor: tokens.colors.primary,
+  },
+  optionText: {
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.textSecondary,
+  },
+  optionTextOn: {
+    color: tokens.colors.white,
+    fontFamily: tokens.fontFamily.bold,
+  },
+});

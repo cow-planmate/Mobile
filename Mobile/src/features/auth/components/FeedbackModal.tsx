@@ -1,9 +1,6 @@
 import React, { useRef, useState } from 'react';
 import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -11,9 +8,9 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
-import X from 'lucide-react-native/dist/esm/icons/x';
 import { submitFeedback, FEEDBACK_EMPTY_MESSAGE } from '../../../api/feedback';
-import { styles } from './FeedbackModal.styles';
+import PopupModal from '../../../components/common/PopupModal';
+import { normalize } from '../../../utils/normalize';
 import { tokens } from '../../../theme/tokens';
 
 type FeedbackModalProps = {
@@ -66,62 +63,85 @@ export default function FeedbackModal({ visible, onClose }: FeedbackModalProps) 
   };
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={handleClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboardContainer}
-      >
-        <Pressable
-          accessibilityLabel="피드백 모달 닫기 영역"
+    <PopupModal
+      visible={visible}
+      title="피드백 보내기"
+      onClose={handleClose}
+      footer={
+        <TouchableOpacity
+          accessibilityLabel="피드백 제출"
           accessibilityRole="button"
-          style={styles.backdrop}
-          onPress={handleClose}
+          disabled={isSubmitting}
+          onPress={handleSubmit}
+          style={[styles.submit, isSubmitting && styles.submitOff]}
+          activeOpacity={0.85}
+          accessibilityState={{ disabled: isSubmitting }}
         >
-          <Pressable style={styles.modal} onPress={() => undefined}>
-            <View style={styles.header}>
-              <Text style={styles.title}>피드백 보내기</Text>
-              <TouchableOpacity
-                accessibilityLabel="피드백 입력 닫기"
-                disabled={isSubmitting}
-                onPress={handleClose}
-                style={styles.closeButton}
-                accessibilityState={{ disabled: isSubmitting }}
-                hitSlop={6}
-              >
-                <X size={20} color={tokens.colors.textSecondary} strokeWidth={1.5} />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.description}>
-              서비스 이용 중 불편했던 점이나 개선 의견을 알려주세요.
-            </Text>
-            <TextInput
-              accessibilityLabel="피드백 내용"
-              autoFocus
-              editable={!isSubmitting}
-              multiline
-              onChangeText={setContent}
-              placeholder="피드백을 입력해 주세요."
-              placeholderTextColor={tokens.colors.textTertiary}
-              style={styles.input}
-              value={content}
-            />
-            <TouchableOpacity
-              accessibilityLabel="피드백 제출"
-              disabled={isSubmitting}
-              onPress={handleSubmit}
-              style={[
-                styles.submitButton,
-                isSubmitting && styles.submitButtonDisabled,
-              ]}
-              accessibilityState={{ disabled: isSubmitting }}
-            >
-              <Text style={styles.submitButtonText}>
-                {isSubmitting ? '보내는 중…' : '보내기'}
-              </Text>
-            </TouchableOpacity>
-          </Pressable>
-        </Pressable>
-      </KeyboardAvoidingView>
-    </Modal>
+          <Text style={styles.submitText}>
+            {isSubmitting ? '보내는 중…' : '보내기'}
+          </Text>
+        </TouchableOpacity>
+      }
+    >
+      <View style={styles.body}>
+        <Text style={styles.description}>
+          쓰면서 불편했던 점이나 고츠면 좋겠다 싶은 것을 적어 주세요.
+        </Text>
+        <TextInput
+          accessibilityLabel="피드백 내용"
+          autoFocus
+          editable={!isSubmitting}
+          multiline
+          onChangeText={setContent}
+          placeholder="어떤 점이 불편했나요?"
+          placeholderTextColor={tokens.colors.textTertiary}
+          style={styles.input}
+          value={content}
+        />
+      </View>
+    </PopupModal>
   );
 }
+
+const styles = StyleSheet.create({
+  body: {
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(4),
+  },
+  description: {
+    marginBottom: normalize(10),
+    fontSize: normalize(13),
+    lineHeight: normalize(19),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textSecondary,
+  },
+  input: {
+    minHeight: normalize(120),
+    borderRadius: normalize(8),
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    paddingHorizontal: normalize(12),
+    paddingTop: normalize(10),
+    paddingBottom: normalize(10),
+    fontSize: normalize(13.5),
+    lineHeight: normalize(20),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.text,
+    textAlignVertical: 'top',
+  },
+  submit: {
+    height: normalize(48),
+    borderRadius: normalize(12),
+    backgroundColor: tokens.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  submitOff: {
+    opacity: 0.5,
+  },
+  submitText: {
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
+  },
+});

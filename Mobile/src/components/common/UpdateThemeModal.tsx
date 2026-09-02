@@ -2,20 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  Modal,
-  Pressable,
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import axios from 'axios';
-import Map from 'lucide-react-native/dist/esm/icons/map';
-import Bed from 'lucide-react-native/dist/esm/icons/bed';
-import UtensilsCrossed from 'lucide-react-native/dist/esm/icons/utensils-crossed';
-import X from 'lucide-react-native/dist/esm/icons/x';
 import { PreferredThemeVO, changePreferredThemes } from '../../api/themes';
 import ThemeSelector, { ThemeSelectorResult, CATEGORY_MAP } from './ThemeSelector';
-import { styles, COLORS } from './UpdateThemeModal.styles';
+import PopupModal from './PopupModal';
+import { normalize } from '../../utils/normalize';
 import { useAlert } from '../../contexts/AlertContext';
 import { resolveApiUrl } from '../../utils/apiUrl';
 import { useQueryClient } from '@tanstack/react-query';
@@ -25,12 +21,6 @@ import {
   UserProfile,
 } from '../../hooks/useUserProfile';
 import { useSubmitLock } from '../../hooks/useSubmitLock';
-
-const CATEGORY_ICONS: Record<number, React.ReactNode> = {
-  0: <Map size={16} color={tokens.colors.textSecondary} strokeWidth={1.5} />,
-  1: <Bed size={16} color={tokens.colors.textSecondary} strokeWidth={1.5} />,
-  2: <UtensilsCrossed size={16} color={tokens.colors.textSecondary} strokeWidth={1.5} />,
-};
 
 const CATEGORY_NAMES: Record<number, string> = {
   0: '관광지',
@@ -119,14 +109,9 @@ export default function UpdateThemeModal({
       }
     });
 
-  const hasSelections = Object.values(selectedThemes).some(
-    arr => arr.length > 0,
-  );
-
   const groupedForDisplay = [0, 1, 2]
     .map(catId => ({
       catId,
-      icon: CATEGORY_ICONS[catId],
       name: CATEGORY_NAMES[catId],
       themes: selectedThemes[catId] || [],
     }))
@@ -134,109 +119,67 @@ export default function UpdateThemeModal({
 
   return (
     <>
-      <Modal
+      <PopupModal
         visible={visible && !isSelectorVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={onClose}
-      >
-        <Pressable style={styles.backdrop} onPress={onClose}>
-          <Pressable style={styles.modalView} onPress={() => {}}>
-            <View style={styles.header}>
-              <Text style={styles.title}>선호 테마 변경</Text>
-              <TouchableOpacity
-                onPress={onClose}
-                style={styles.closeButton}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="닫기"
-                hitSlop={8}
-              >
-                <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
-              </TouchableOpacity>
-            </View>
-
-            {loading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-              </View>
+        title="선호 테마 변경"
+        onClose={onClose}
+        footer={
+          <TouchableOpacity
+            style={styles.confirmButton}
+            onPress={handleSave}
+            disabled={saving}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="선호 테마 저장"
+            accessibilityState={{ disabled: saving }}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color={tokens.colors.white} />
             ) : (
-              <>
-                {hasSelections ? (
-                  <ScrollView
-                    style={styles.summaryScroll}
-                    showsVerticalScrollIndicator={false}
-                  >
-                    <View style={styles.summaryContainer}>
-                      {groupedForDisplay.map(group => (
-                        <View key={group.catId} style={styles.categoryGroup}>
-                          <View style={styles.categoryHeader}>
-                            {group.icon}
-                            <Text style={styles.categoryName}>
-                              {group.name}
-                            </Text>
-                          </View>
-                          <View style={styles.themeChips}>
-                            {group.themes.map(theme => (
-                              <View
-                                key={theme.preferredThemeId}
-                                style={styles.themeChip}
-                              >
-                                <Text style={styles.themeChipText}>
-                                  {theme.preferredThemeName}
-                                </Text>
-                              </View>
-                            ))}
-                          </View>
-                        </View>
-                      ))}
-                    </View>
-                  </ScrollView>
-                ) : (
-                  <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>선택된 테마가 없어요</Text>
-                  </View>
-                )}
-
-                <TouchableOpacity
-                  style={[
-                    styles.selectButton,
-                    hasSelections && styles.selectButtonActive,
-                  ]}
-                  onPress={() => setSelectorVisible(true)}
-                >
-                  <Text
-                    style={[
-                      styles.selectButtonText,
-                      hasSelections && styles.selectButtonTextActive,
-                    ]}
-                  >
-                    {hasSelections
-                      ? '선호테마 재선택하기'
-                      : '선호테마 선택하기'}
-                  </Text>
-                </TouchableOpacity>
-
-                <View style={styles.confirmFooter}>
-                  <TouchableOpacity
-                    style={styles.confirmButton}
-                    onPress={handleSave}
-                    disabled={saving}
-                    activeOpacity={0.7}
-                    accessibilityState={{ disabled: saving }}
-                  >
-                    {saving ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Text style={styles.confirmButtonText}>완료</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </>
+              <Text style={styles.confirmText}>완료</Text>
             )}
-          </Pressable>
-        </Pressable>
-      </Modal>
+          </TouchableOpacity>
+        }
+      >
+        {loading ? (
+          <View style={styles.loading}>
+            <ActivityIndicator color={tokens.colors.primary} />
+          </View>
+        ) : (
+          <ScrollView
+            contentContainerStyle={styles.body}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* 마이페이지의 여행 취향 줄과 같은 표기를 쓴다.
+                같은 값을 한 곳은 알약으로, 한 곳은 글로 적으면 따로 보인다. */}
+            {groupedForDisplay.length > 0 ? (
+              groupedForDisplay.map(group => (
+                <View key={group.catId} style={styles.row}>
+                  <Text style={styles.category}>{group.name}</Text>
+                  <Text style={styles.themes}>
+                    {group.themes
+                      .map(theme => theme.preferredThemeName)
+                      .join(', ')}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.empty}>아직 고른 테마가 없어요</Text>
+            )}
+
+            <TouchableOpacity
+              style={styles.selectButton}
+              onPress={() => setSelectorVisible(true)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+            >
+              <Text style={styles.selectButtonText}>
+                {groupedForDisplay.length > 0 ? '다시 고르기' : '테마 고르기'}
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        )}
+      </PopupModal>
 
       <ThemeSelector
         visible={isSelectorVisible}
@@ -247,3 +190,68 @@ export default function UpdateThemeModal({
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  body: {
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(4),
+  },
+  loading: {
+    paddingVertical: normalize(48),
+    alignItems: 'center',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: normalize(12),
+    paddingVertical: normalize(11),
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.borderLight,
+  },
+  category: {
+    width: normalize(50),
+    fontSize: normalize(12.5),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textTertiary,
+  },
+  themes: {
+    flex: 1,
+    fontSize: normalize(13.5),
+    lineHeight: normalize(20),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.text,
+  },
+  empty: {
+    paddingVertical: normalize(36),
+    textAlign: 'center',
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textTertiary,
+  },
+  selectButton: {
+    marginTop: normalize(14),
+    height: normalize(44),
+    borderRadius: normalize(8),
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectButtonText: {
+    fontSize: normalize(13.5),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.text,
+  },
+  confirmButton: {
+    height: normalize(48),
+    borderRadius: normalize(12),
+    backgroundColor: tokens.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmText: {
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
+  },
+});

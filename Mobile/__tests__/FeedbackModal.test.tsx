@@ -137,7 +137,7 @@ describe('FeedbackModal', () => {
     });
     act(() => {
       component!.root.findByType(Modal).props.onRequestClose();
-      findByLabel(component!, '피드백 모달 닫기 영역').props.onPress();
+      component!.root.findByProps({ testID: 'popup-backdrop' }).props.onPress();
     });
 
     expect(onClose).not.toHaveBeenCalled();

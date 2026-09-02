@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  Modal,
-  Pressable,
-  TouchableOpacity,
-  TextInput,
-} from 'react-native';
-import { styles } from './UpdateValueModal.styles';
-import X from 'lucide-react-native/dist/esm/icons/x';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
+import PopupModal from './PopupModal';
+import { normalize } from '../../utils/normalize';
 import { tokens } from '../../theme/tokens';
 
 type UpdateValueModalProps = {
@@ -41,57 +34,49 @@ export default function UpdateValueModal({
     }
   }, [visible, initialValue]);
 
-  const handleConfirm = () => {
-    onConfirm(value);
-    onClose();
-  };
-
   return (
-    <Modal
+    <PopupModal
       visible={visible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={onClose}
+      title={title}
+      onClose={onClose}
+      onDone={() => onConfirm(value)}
+      doneLabel="확인"
     >
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.modalView} onPress={() => {}}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
-            <TouchableOpacity
-              onPress={onClose}
-              style={styles.closeButton}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="닫기"
-              hitSlop={8}
-            >
-              <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{label}</Text>
-            <TextInput
-              style={styles.input}
-              value={value}
-              onChangeText={setValue}
-              keyboardType={keyboardType}
-              maxLength={maxLength}
-              autoFocus={true}
-            />
-          </View>
-
-          <View style={styles.confirmFooter}>
-            <TouchableOpacity
-              style={styles.confirmButton}
-              onPress={handleConfirm}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.confirmButtonText}>확인</Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+      <View style={styles.group}>
+        <Text style={styles.label}>{label}</Text>
+        <TextInput
+          style={styles.input}
+          value={value}
+          onChangeText={setValue}
+          keyboardType={keyboardType}
+          maxLength={maxLength}
+          autoFocus
+          placeholderTextColor={tokens.colors.textTertiary}
+        />
+      </View>
+    </PopupModal>
   );
 }
+
+const styles = StyleSheet.create({
+  group: {
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(4),
+  },
+  label: {
+    marginBottom: normalize(6),
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textTertiary,
+  },
+  input: {
+    height: normalize(46),
+    borderRadius: normalize(8),
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    paddingHorizontal: normalize(12),
+    fontSize: normalize(14.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.text,
+  },
+});

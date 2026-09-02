@@ -118,6 +118,7 @@ export default function PopupModal({
       <View style={styles.root} accessibilityViewIsModal>
         <Animated.View style={[styles.backdrop, backdropStyle]}>
           <Pressable
+            testID="popup-backdrop"
             style={StyleSheet.absoluteFill}
             onPress={onClose}
             accessible={false}
