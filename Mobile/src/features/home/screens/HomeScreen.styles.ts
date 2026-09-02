@@ -88,6 +88,13 @@ export const styles = StyleSheet.create({
   heroInfo: {
     zIndex: 2,
   },
+  // 여러 지역을 섞어 보여줄 때만 나오는 지역 이름.
+  placeRegion: {
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.medium,
+    color: 'rgba(255, 255, 255, 0.78)',
+    marginBottom: normalize(3),
+  },
   placeTitle: {
     fontSize: normalize(22),
     fontFamily: tokens.fontFamily.semibold,

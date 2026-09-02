@@ -10,6 +10,7 @@ import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 import { cachePlanComplete } from '../../../hooks/planCompleteCache';
 import { resolveApiUrl } from '../../../utils/apiUrl';
+import { toSecureImageUrl } from '../../../utils/imageUrl';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../../navigation/types';
 import { Place } from '../components/TimelineItem';
@@ -182,7 +183,9 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
               endTime: parseTime(pb.endTime ?? pb.blockEndTime),
               latitude: pb.latitude ?? pb.yLocation ?? pb.ylocation ?? 0,
               longitude: pb.longitude ?? pb.xLocation ?? pb.xlocation ?? 0,
-              imageUrl: pb.photoUrl || pb.placeLink || pb.placeThumbnailUrl || '',
+              imageUrl: toSecureImageUrl(
+                pb.photoUrl || pb.placeLink || pb.placeThumbnailUrl,
+              ),
               memo: pb.memo || '',
               place_url: pb.placeLink || '',
               contentTypeId: pb.placeContentTypeId || '',

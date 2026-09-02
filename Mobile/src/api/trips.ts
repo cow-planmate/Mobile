@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { WEB_URL } from '@env';
 import { resolveApiUrl } from '../utils/apiUrl';
+import { toSecureImageUrl } from '../utils/imageUrl';
 import {
   CollaborationRequestType,
   normalizeCollaborationRequestType,
@@ -153,7 +154,7 @@ function mapSummaryToVO(summary: any): PlaceVO {
     rating: 0,
     xLocation: summary.longitude ?? 0,
     yLocation: summary.latitude ?? 0,
-    photoUrl: summary.thumbnailUrl || '',
+    photoUrl: toSecureImageUrl(summary.thumbnailUrl),
     iconUrl: '',
     contentTypeId: summary.contentTypeId || '',
     copyrightDivCd: summary.copyrightDivCd || '',

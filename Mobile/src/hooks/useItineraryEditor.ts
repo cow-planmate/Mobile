@@ -9,6 +9,7 @@ import { ScrollView } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { resolveApiUrl } from '../utils/apiUrl';
+import { toSecureImageUrl } from '../utils/imageUrl';
 import {
   useItinerary,
   Day,
@@ -195,7 +196,9 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
                 address: pb.placeAddress || '',
                 latitude: pb.latitude ?? pb.yLocation ?? pb.ylocation ?? 0,
                 longitude: pb.longitude ?? pb.xLocation ?? pb.xlocation ?? 0,
-                imageUrl: pb.photoUrl || pb.placeThumbnailUrl || pb.placeLink || '',
+                imageUrl: toSecureImageUrl(
+                  pb.photoUrl || pb.placeThumbnailUrl || pb.placeLink,
+                ),
                 categoryId: normalizedCategoryId,
                 contentTypeId: pb.placeContentTypeId || '',
                 copyrightDivCd: pb.placeCopyrightDivCd || '',

@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { hapticTick } from '../../../utils/haptics';
 import FallbackImage from '../../../components/common/FallbackImage';
+import { toSecureImageUrl } from '../../../utils/imageUrl';
 import {
   View,
   Text,
@@ -35,7 +36,6 @@ import Umbrella from 'lucide-react-native/dist/esm/icons/umbrella';
 import Utensils from 'lucide-react-native/dist/esm/icons/utensils';
 import { Place } from './TimelineItem';
 import KakaoMapView from './KakaoMapView';
-import { resolveApiUrl } from '../../../utils/apiUrl';
 import { usePlaces } from '../../../contexts/PlacesContext';
 import { useAlert } from '../../../contexts/AlertContext';
 import { PlaceVO } from '../../../api/trips';
@@ -137,7 +137,7 @@ function placeVOToPlace(
     type,
     address: p.formatted_address,
     rating: p.rating,
-    imageUrl: p.photoUrl || p.iconUrl || '',
+    imageUrl: toSecureImageUrl(p.photoUrl || p.iconUrl),
     latitude: p.yLocation ?? p.ylocation ?? 0,
     longitude: p.xLocation ?? p.xlocation ?? 0,
     contentTypeId: p.contentTypeId || '',
@@ -147,33 +147,29 @@ function placeVOToPlace(
 
 const PlaceImage = React.memo(
   ({
-    placeId,
+    photoUrl,
     iconUrl,
     name,
   }: {
-    placeId: string;
+    photoUrl?: string;
     iconUrl?: string;
     name: string;
   }) => {
-    const primaryUrl = placeId
-      ? resolveApiUrl(`/image/place/${encodeURIComponent(placeId)}`)
-      : null;
-
     const initials = (
       <View style={[plStyles.placeImage, plStyles.placeholderImage]}>
         <Text style={plStyles.placeholderText}>{name?.charAt(0) || '?'}</Text>
       </View>
     );
 
-    // 프록시 → 아이콘 → 이니셜 3단계. 중첩해야 아이콘까지 실패했을 때도
+    // 사진 → 아이콘 → 이니셜 3단계. 중첩해야 아이콘까지 실패했을 때도
     // 이니셜로 내려간다 — 플래그 하나로는 2단째 실패를 잡지 못했다.
     return (
       <FallbackImage
-        uri={primaryUrl}
+        uri={toSecureImageUrl(photoUrl)}
         style={plStyles.placeImage}
         fallback={
           <FallbackImage
-            uri={iconUrl}
+            uri={toSecureImageUrl(iconUrl)}
             style={plStyles.placeImage}
             fallback={initials}
           />
@@ -548,7 +544,7 @@ export default function PlaceRecommendationList({
     (item: PlaceVO) => (
       <>
         <PlaceImage
-          placeId={item.placeId}
+          photoUrl={item.photoUrl}
           iconUrl={item.iconUrl}
           name={item.name}
         />

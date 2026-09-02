@@ -4,6 +4,8 @@ export type RegionSpot = {
   place: string;
   roman: string;
   image: ImageSourcePropType;
+  /** 여러 지역을 섞어 보여줄 때만 채운다. 한 지역만 볼 때는 군더더기라 비운다. */
+  region?: string;
 };
 
 /**
@@ -398,4 +400,24 @@ export const getRegionSpots = (destination: string): RegionSpot[] => {
   const spots = REGION_SPOTS[destination];
   if (!spots) return [];
   return spots.slice(0, MAX_REGION_SPOTS);
+};
+
+const pickRandom = <T,>(list: readonly T[]): T =>
+  list[Math.floor(Math.random() * list.length)];
+
+/**
+ * 여행지를 고르기 전에 보여줄 명소.
+ *
+ * 지역이 겹치면 같은 동네 사진만 이어져 어디를 갈지 고르는 데 도움이 안 된다.
+ * 그래서 지역을 먼저 섞어 뽑고, 각 지역에서 한 장씩만 가져온다.
+ */
+export const getShowcaseSpots = (count = MAX_REGION_SPOTS): RegionSpot[] => {
+  const regions = Object.keys(REGION_SPOTS);
+  for (let i = regions.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [regions[i], regions[j]] = [regions[j], regions[i]];
+  }
+  return regions
+    .slice(0, count)
+    .map(region => ({ ...pickRandom(REGION_SPOTS[region]), region }));
 };

@@ -12,6 +12,7 @@ import { Place } from '../features/itinerary/components/TimelineItem';
 export type { Place };
 import { useWebSocket } from './WebSocketContext';
 import { normalizeCategoryId } from '../utils/placeCategory';
+import { toSecureImageUrl } from '../utils/imageUrl';
 
 export interface Day {
   timetableId?: number;
@@ -415,7 +416,9 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                     address: respVO.placeAddress || '',
                     latitude: respVO.latitude ?? respVO.yLocation ?? respVO.ylocation ?? 0,
                     longitude: respVO.longitude ?? respVO.xLocation ?? respVO.xlocation ?? 0,
-                    imageUrl: respVO.photoUrl || respVO.placeThumbnailUrl || respVO.placeLink || '',
+                    imageUrl: toSecureImageUrl(
+                      respVO.photoUrl || respVO.placeThumbnailUrl || respVO.placeLink,
+                    ),
                     categoryId: normalizeCategoryId(rawCategoryId),
                     contentTypeId: respVO.placeContentTypeId || '',
                     copyrightDivCd: respVO.placeCopyrightDivCd || '',

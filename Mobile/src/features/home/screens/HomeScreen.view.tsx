@@ -20,10 +20,10 @@ const AnimatedFastImage = Animated.createAnimatedComponent(FastImage);
 import { CalendarModal, Header, Invitation, NotificationModal, PaxModal, SearchLocationModal } from '../../../components/common';
 import { normalize } from '../../../utils/normalize';
 import { styles } from './HomeScreen.styles';
-import { getRegionSpots } from '../constants/regionSpots';
+import { getRegionSpots, getShowcaseSpots } from '../constants/regionSpots';
 
 // 명소 순환 주기와, 손이 닿은 뒤 다시 돌기까지 기다리는 시간.
-const HERO_ROTATE_MS = 4000;
+const HERO_ROTATE_MS = 7000;
 const HERO_RESUME_DELAY_MS = 6000;
 
 
@@ -183,7 +183,12 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   const sidePadding = (screenWidth - cardWidth) / 2;
   const scrollX = useRef(new Animated.Value(0)).current;
 
-  const spots = useMemo(() => getRegionSpots(destination), [destination]);
+  // 여행지를 고르기 전에는 전국에서 골라 섞어 보여준다. 빈 화면보다
+  // 사진이 먼저 보여야 어디로 갈지 떠올릴 수 있다.
+  const spots = useMemo(
+    () => (destination ? getRegionSpots(destination) : getShowcaseSpots()),
+    [destination],
+  );
   const spotCount = spots.length;
 
   // 진행바는 사진 개수에 맞춰 썸 너비와 이동 거리가 달라진다.
@@ -283,7 +288,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               <Animated.FlatList
                 ref={flatListRef}
                 data={spots}
-                keyExtractor={item => item.place}
+                keyExtractor={item => `${item.region ?? ''}-${item.place}`}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 snapToInterval={step}
@@ -361,6 +366,9 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
                         style={styles.heroOverlay}
                       />
                       <View style={styles.heroInfo}>
+                        {!!item.region && (
+                          <Text style={styles.placeRegion}>{item.region}</Text>
+                        )}
                         <Text style={styles.placeTitle}>{item.place}</Text>
                         <Text style={styles.placeRoman}>{item.roman}</Text>
                       </View>
@@ -370,8 +378,14 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               />
 
               <Text style={styles.relationLabel}>
-                <Text style={styles.relationRegion}>{destination}</Text>
-                {`의 대표 명소 ${spotCount}곳`}
+                {destination ? (
+                  <>
+                    <Text style={styles.relationRegion}>{destination}</Text>
+                    {`의 대표 명소 ${spotCount}곳`}
+                  </>
+                ) : (
+                  `전국의 명소 ${spotCount}곳`
+                )}
               </Text>
 
               {spotCount > 1 && (
