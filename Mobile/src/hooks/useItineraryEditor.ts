@@ -194,6 +194,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
                 startTime: parseTime(pb.startTime ?? pb.blockStartTime),
                 endTime: parseTime(pb.endTime ?? pb.blockEndTime),
                 address: pb.placeAddress || '',
+                memo: pb.memo || '',
                 latitude: pb.latitude ?? pb.yLocation ?? pb.ylocation ?? 0,
                 longitude: pb.longitude ?? pb.xLocation ?? pb.xlocation ?? 0,
                 imageUrl: toSecureImageUrl(

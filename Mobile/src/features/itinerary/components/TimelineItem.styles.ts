@@ -92,6 +92,13 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     color: '#4d7c0f', 
   },
+  memoText: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    lineHeight: 17,
+    marginTop: 4,
+    opacity: 0.85,
+  },
   actionContainer: {
     flexDirection: 'row',
     alignItems: 'center',

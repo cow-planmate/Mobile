@@ -414,6 +414,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                     ),
                     endTime: parseTime(respVO.endTime ?? respVO.blockEndTime),
                     address: respVO.placeAddress || '',
+                    memo: respVO.memo || '',
                     latitude: respVO.latitude ?? respVO.yLocation ?? respVO.ylocation ?? 0,
                     longitude: respVO.longitude ?? respVO.xLocation ?? respVO.xlocation ?? 0,
                     imageUrl: toSecureImageUrl(

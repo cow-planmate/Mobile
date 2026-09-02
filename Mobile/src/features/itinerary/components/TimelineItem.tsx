@@ -111,6 +111,16 @@ const TimelineItem = React.memo(function TimelineItem({
               {categoryName} | {item.startTime} - {item.endTime}
             </Text>
           </View>
+
+          {/* 짧은 일정은 카드가 낮아 메모까지 넣으면 잘린다. */}
+          {!isCompact && !!item.memo?.trim() && (
+            <Text
+              style={[styles.memoText, { color: textColorSub }]}
+              numberOfLines={2}
+            >
+              {item.memo.trim()}
+            </Text>
+          )}
         </View>
 
         {!isReadOnly && (
