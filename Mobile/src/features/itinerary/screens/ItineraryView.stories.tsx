@@ -52,8 +52,6 @@ const DAYS: Day[] = [
   },
 ];
 
-const GRID_HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
-
 const LOADING_DEMO_MS = 1500;
 
 /** hooks(useState/useRef)가 필요해 스토리마다 래퍼를 둔다 */
@@ -105,9 +103,6 @@ function ViewHarness(props: {
       }}
       isPlanOwner
       scrollRef={scrollRef}
-      gridHours={GRID_HOURS}
-      offsetMinutes={8 * 60}
-      endHour={20}
       handleConfirm={action('완료')}
       goBack={action('뒤로가기')}
       handleEdit={action('편집으로 이동')}
@@ -136,9 +131,6 @@ const meta = {
     setChecklistVisible: noop,
     isPlanOwner: true,
     scrollRef: { current: null },
-    gridHours: GRID_HOURS,
-    offsetMinutes: 8 * 60,
-    endHour: 20,
     handleConfirm: action('완료'),
     goBack: action('뒤로가기'),
     handleEdit: action('편집으로 이동'),

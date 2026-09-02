@@ -16,26 +16,15 @@ import Share2 from 'lucide-react-native/dist/esm/icons/share-2';
 import RouteMapSection from '../components/RouteMapSection';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
 import { ShareModal, AirplaneLoading } from '../../../components/common';
-import TimelineItem, {
-  Place,
-} from '../components/TimelineItem';
+import PlanScheduleList, {
+  formatFullDate,
+} from '../components/PlanScheduleList';
 import { Day } from '../../../contexts/ItineraryContext';
 import { SimpleWeatherInfo } from '../../../api/trips';
-import {
-  timeToMinutes,
-  formatDateLocal,
-  formatMonthDayDot,
-} from '../../../utils/timeUtils';
+import { formatDateLocal, formatMonthDayDot } from '../../../utils/timeUtils';
 import WeatherHeader from '../components/weather/WeatherHeader';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
-import {
-  styles,
-  HOUR_HEIGHT,
-  MINUTE_HEIGHT,
-  MIN_ITEM_HEIGHT,
-  GRID_TOP_OFFSET,
-  COLORS,
-} from './ItineraryViewScreen.styles';
+import { styles, COLORS } from './ItineraryViewScreen.styles';
 
 const formatDate = formatMonthDayDot;
 
@@ -91,119 +80,6 @@ const ToolbarIconButton = ({
   </TouchableOpacity>
 );
 
-const TimeGridBackground = React.memo(
-  ({ hours, endHour }: { hours: number[]; endHour: number }) => {
-    const hourStr = (h: number) => h.toString().padStart(2, '0');
-
-  return (
-    <View style={styles.gridContainer}>
-      {hours.map(hour => {
-        const isLastHour = hour === endHour;
-        return (
-          <View
-            key={hour}
-            style={[styles.hourBlock, isLastHour ? styles.hourHeightZero : styles.hourHeightFull]}
-          >
-            <View
-              style={[
-                styles.hourLabelContainer,
-                isLastHour ? styles.hourHeightZero : styles.hourHeightFull,
-              ]}
-            >
-              <Text style={[styles.timeLabelText, styles.timeLabelTop]}>
-                {`${hourStr(hour)}:00`}
-              </Text>
-              {!isLastHour && (
-                <>
-                  <Text
-                    style={[
-                      styles.timeLabelText,
-                      styles.minuteLabel,
-                      { top: HOUR_HEIGHT / 4 },
-                    ]}
-                  >
-                    {`${hourStr(hour)}:15`}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.timeLabelText,
-                      styles.minuteLabel,
-                      { top: HOUR_HEIGHT / 2 },
-                    ]}
-                  >
-                    {`${hourStr(hour)}:30`}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.timeLabelText,
-                      styles.minuteLabel,
-                      { top: (HOUR_HEIGHT * 3) / 4 },
-                    ]}
-                  >
-                    {`${hourStr(hour)}:45`}
-                  </Text>
-                </>
-              )}
-            </View>
-
-            <View
-              style={[
-                styles.hourContent,
-                isLastHour ? styles.hourHeightZero : styles.hourHeightFull,
-              ]}
-            >
-              <View
-                style={[
-                  styles.quarterBlock,
-                  styles.firstQuarterBlock,
-                  isLastHour && styles.lastHourBorder,
-                ]}
-              />
-              {!isLastHour && (
-                <>
-                  <View style={styles.quarterBlock} />
-                  <View style={styles.quarterBlock} />
-                  <View style={styles.quarterBlock} />
-                </>
-              )}
-            </View>
-          </View>
-        );
-      })}
-    </View>
-  );
-});
-
-const StaticTimelineItem = React.memo(
-  ({ place, offsetMinutes }: { place: Place; offsetMinutes: number }) => {
-    const startMinutes = timeToMinutes(place.startTime);
-    const endMinutes = timeToMinutes(place.endTime);
-    const durationMinutes = endMinutes - startMinutes;
-
-    const top =
-      (startMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
-    const height = durationMinutes * MINUTE_HEIGHT;
-
-    const itemStyle = {
-      position: 'absolute' as const,
-      top: top,
-      height: Math.max(height, MIN_ITEM_HEIGHT),
-      left: 60,
-      right: 15,
-    };
-
-    return (
-      <View style={itemStyle}>
-        <TimelineItem
-          item={place}
-          isReadOnly={true}
-          style={styles.flex1}
-        />
-      </View>
-    );
-  },
-);
-
 export interface ItineraryViewScreenViewProps {
   days: Day[];
   selectedDayIndex: number;
@@ -217,9 +93,6 @@ export interface ItineraryViewScreenViewProps {
 
   isPlanOwner: boolean;
   scrollRef: React.RefObject<ScrollView | null>;
-  gridHours: number[];
-  offsetMinutes: number;
-  endHour?: number;
   handleConfirm: () => void;
   goBack: () => void;
   handleEdit: () => void;
@@ -244,9 +117,6 @@ export default function ItineraryViewScreenView({
   setChecklistVisible,
   isPlanOwner,
   scrollRef,
-  gridHours,
-  offsetMinutes,
-  endHour,
   handleConfirm,
   goBack,
   handleEdit,
@@ -277,8 +147,6 @@ export default function ItineraryViewScreenView({
       })) ?? [],
     [selectedDay],
   );
-  const endHourVal = endHour ?? (gridHours.length > 0 ? gridHours[gridHours.length - 1] : 20);
-
   return (
     <View style={[styles.container, screenInsets]}>
       <View style={styles.topBarHeader}>
@@ -439,16 +307,10 @@ export default function ItineraryViewScreenView({
                     : undefined,
                 ]}
               >
-                <View style={styles.timelineWrapper}>
-                  <TimeGridBackground hours={gridHours} endHour={endHourVal} />
-                  {selectedDay.places.map(place => (
-                    <StaticTimelineItem
-                      key={place.id}
-                      place={place}
-                      offsetMinutes={offsetMinutes}
-                    />
-                  ))}
-                </View>
+                <PlanScheduleList
+                  places={selectedDay.places}
+                  dateLabel={formatFullDate(selectedDay.date)}
+                />
               </ScrollView>
             </View>
           </View>

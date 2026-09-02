@@ -39,7 +39,26 @@ type TimelineItemProps = {
   isReadOnly?: boolean;
 };
 
-const CATEGORY_NAMES: { [key: number]: string } = {
+/** 카드와 완성 화면이 같은 기준으로 갈래를 정하도록 한곳에 둔다. */
+export const resolveCategoryId = (item: Pick<Place, 'categoryId' | 'category' | 'type'>): number => {
+  if (
+    typeof item.categoryId === 'number' &&
+    [0, 1, 2, 3, 4].includes(item.categoryId)
+  ) {
+    return item.categoryId;
+  }
+  const catStr = String(item.category || '');
+  const typeStr = String(item.type || '');
+
+  if (typeStr === '관광지' || catStr === 'ATTRACTION') return 0;
+  if (typeStr === '숙소' || catStr === 'ACCOMMODATION') return 1;
+  if (typeStr === '식당' || catStr === 'RESTAURANT') return 2;
+  if (typeStr === '직접 추가' || catStr === 'FREE') return 3;
+  if (typeStr === '검색' || catStr === 'SEARCH') return 4;
+  return 4;
+};
+
+export const CATEGORY_NAMES: { [key: number]: string } = {
   0: '관광지',
   1: '숙소',
   2: '식당',
@@ -59,22 +78,7 @@ const TimelineItem = React.memo(function TimelineItem({
     timeToMinutes(item.endTime) - timeToMinutes(item.startTime);
   const isCompact = durationMinutes < IS_COMPACT_VIEW_THRESHOLD_MINUTES;
 
-  const resolveCatId = () => {
-    if (typeof item.categoryId === 'number' && [0, 1, 2, 3, 4].includes(item.categoryId)) {
-      return item.categoryId;
-    }
-    const catStr = String(item.category || '');
-    const typeStr = String(item.type || '');
-
-    if (typeStr === '관광지' || catStr === 'ATTRACTION') return 0;
-    if (typeStr === '숙소' || catStr === 'ACCOMMODATION') return 1;
-    if (typeStr === '식당' || catStr === 'RESTAURANT') return 2;
-    if (typeStr === '직접 추가' || catStr === 'FREE') return 3;
-    if (typeStr === '검색' || catStr === 'SEARCH') return 4;
-    return 4;
-  };
-
-  const categoryId = resolveCatId();
+  const categoryId = resolveCategoryId(item);
   const categoryColor =
     CATEGORY_COLORS[categoryId as keyof typeof CATEGORY_COLORS] ||
     CATEGORY_COLORS[4];

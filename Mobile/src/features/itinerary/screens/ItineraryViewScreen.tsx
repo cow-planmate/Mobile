@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useRef,
-  useCallback,
-} from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ScrollView } from 'react-native';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
@@ -20,7 +14,6 @@ import {
   formatDateLocal,
   normalizeTime,
   parseLocalDate,
-  timeToMinutes,
 } from '../../../utils/timeUtils';
 import {
   Day,
@@ -305,28 +298,11 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     });
   }, [navigation, tripName]);
 
-  const selectedDay = days[selectedDayIndex];
-
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({ y: 0, animated: false });
     }
   }, [selectedDayIndex]);
-
-  const { gridHours, offsetMinutes, endHour } = useMemo(() => {
-    const startTimeStr = selectedDay?.startTime || DEFAULT_DAY_START;
-    const endTimeStr = selectedDay?.endTime || DEFAULT_DAY_END;
-    const minHour = Math.floor(timeToMinutes(startTimeStr) / 60);
-    const endMin = timeToMinutes(endTimeStr);
-    const maxHour = Math.ceil(endMin / 60);
-
-    const hours = Array.from(
-      { length: maxHour - minHour + 1 },
-      (_, i) => i + minHour,
-    );
-    const offset = minHour * 60;
-    return { gridHours: hours, offsetMinutes: offset, endHour: maxHour };
-  }, [selectedDay]);
 
   const handleConfirm = async () => {
 
@@ -367,9 +343,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       setChecklistVisible={setChecklistVisible}
       isPlanOwner={isPlanOwner}
       scrollRef={scrollRef}
-      gridHours={gridHours}
-      offsetMinutes={offsetMinutes}
-      endHour={endHour}
       handleConfirm={handleConfirm}
       goBack={handleGoBack}
       handleEdit={() =>

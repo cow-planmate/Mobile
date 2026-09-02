@@ -18,11 +18,6 @@ export const COLORS = {
 
 export const FONTS = tokens.fontFamily;
 
-export const HOUR_HEIGHT = 180;
-export const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
-export const MIN_ITEM_HEIGHT = 45;
-export const GRID_TOP_OFFSET = 40;
-
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -262,11 +257,11 @@ export const styles = StyleSheet.create({
   timelineStage: {
     flex: 1,
     position: 'relative',
-    backgroundColor: COLORS.surface, 
+    backgroundColor: COLORS.white,
   },
   timelineSceneBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.white,
     zIndex: 0,
   },
   timelineWeatherOverlay: {
@@ -283,49 +278,6 @@ export const styles = StyleSheet.create({
   },
   timelineWeatherPadding: {
     paddingTop: 62,
-  },
-  timelineWrapper: {
-    position: 'relative',
-    paddingVertical: 20,
-  },
-  gridContainer: {
-    paddingVertical: 20,
-  },
-  hourBlock: {
-    flexDirection: 'row',
-  },
-  hourLabelContainer: {
-    width: 60,
-    height: HOUR_HEIGHT,
-    position: 'relative',
-    alignItems: 'center',
-  },
-  timeLabelText: {
-    position: 'absolute',
-    marginTop: -8,
-    color: COLORS.placeholder,
-    fontSize: 12,
-    fontFamily: FONTS.medium,
-    width: '100%',
-    textAlign: 'center',
-  },
-  minuteLabel: {},
-  hourContent: {
-    flex: 1,
-    marginLeft: 0,
-    height: HOUR_HEIGHT,
-    flexDirection: 'column',
-    position: 'absolute',
-    left: 60,
-    right: 15,
-  },
-  quarterBlock: {
-    height: HOUR_HEIGHT / 4,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border, 
-  },
-  firstQuarterBlock: {
-    borderTopColor: COLORS.placeholder, 
   },
   footer: {
     flexDirection: 'row',
@@ -360,20 +312,8 @@ export const styles = StyleSheet.create({
     color: COLORS.white,
     fontFamily: FONTS.bold,
   },
-  timeLabelTop: {
-    top: 0,
-  },
   flex1: {
     flex: 1,
-  },
-  hourHeightFull: {
-    height: HOUR_HEIGHT,
-  },
-  hourHeightZero: {
-    height: 0,
-  },
-  lastHourBorder: {
-    borderTopWidth: 1,
   },
   dayTabsFadeOverlay: {
     position: 'absolute',
