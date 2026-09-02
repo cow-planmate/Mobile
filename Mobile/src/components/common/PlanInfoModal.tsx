@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, Modal, Pressable, TouchableOpacity } from 'react-native';
-import X from 'lucide-react-native/dist/esm/icons/x';
-import { styles } from './PlanInfoModal.styles';
+import { View, Text, StyleSheet } from 'react-native';
+import PopupModal from './PopupModal';
+import { normalize } from '../../utils/normalize';
 import { tokens } from '../../theme/tokens';
 import { formatPeriod } from '../../utils/timeUtils';
 
@@ -16,6 +16,15 @@ type PlanInfoModalProps = {
   childCount: number;
 };
 
+const Row = ({ label, value }: { label: string; value: string }) => (
+  <View style={styles.row}>
+    <Text style={styles.label}>{label}</Text>
+    <Text style={styles.value} numberOfLines={2}>
+      {value}
+    </Text>
+  </View>
+);
+
 export default function PlanInfoModal({
   visible,
   onClose,
@@ -26,69 +35,51 @@ export default function PlanInfoModal({
   adultCount,
   childCount,
 }: PlanInfoModalProps) {
-  const dateRangeText = formatPeriod(startDate, endDate) || '미지정';
+  const period = formatPeriod(startDate, endDate) || '미지정';
+  const pax =
+    `성인 ${adultCount}명` + (childCount > 0 ? `, 어린이 ${childCount}명` : '');
 
   return (
-    <Modal
+    <PopupModal
       visible={visible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={onClose}
+      title="일정 정보"
+      onClose={onClose}
+      doneLabel="확인"
     >
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.modalView} onPress={() => {}}>
-          <View style={styles.header}>
-            <Text style={styles.title}>일정 상세 정보</Text>
-            <TouchableOpacity
-              onPress={onClose}
-              style={styles.closeButton}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="닫기"
-              hitSlop={8}
-            >
-              <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.infoContainer}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>일정 이름</Text>
-              <Text style={styles.infoValue} numberOfLines={1}>{planName}</Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>여행지</Text>
-              <View style={styles.destinationBadge}>
-                <Text style={styles.destinationText}>{destination}</Text>
-              </View>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>여행 기간</Text>
-              <Text style={styles.infoValue}>{dateRangeText}</Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>여행 인원</Text>
-              <Text style={styles.infoValue}>
-                성인 {adultCount}명{childCount > 0 ? `, 어린이 ${childCount}명` : ''}
-              </Text>
-            </View>
-
-          </View>
-
-          <View style={styles.confirmFooter}>
-            <TouchableOpacity
-              style={styles.confirmButton}
-              onPress={onClose}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.confirmButtonText}>확인</Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+      <View style={styles.list}>
+        <Row label="이름" value={planName} />
+        <Row label="여행지" value={destination} />
+        <Row label="기간" value={period} />
+        <Row label="인원" value={pax} />
+      </View>
+    </PopupModal>
   );
 }
+
+const styles = StyleSheet.create({
+  list: {
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(4),
+  },
+  // 이름표를 왼쪽에 고정 폭으로 두면 값이 한 줄로 가지런히 선다.
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: normalize(11),
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.borderLight,
+  },
+  label: {
+    width: normalize(64),
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textTertiary,
+  },
+  value: {
+    flex: 1,
+    fontSize: normalize(13.5),
+    lineHeight: normalize(20),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.text,
+  },
+});

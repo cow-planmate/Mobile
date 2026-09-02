@@ -1,40 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Modal,
   View,
   Text,
   TouchableOpacity,
   TextInput,
   StyleSheet,
-  Pressable,
   ScrollView,
 } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import FallbackImage from '../../../components/common/FallbackImage';
-import X from 'lucide-react-native/dist/esm/icons/x';
-import MapIcon from 'lucide-react-native/dist/esm/icons/map';
+import PopupModal from '../../../components/common/PopupModal';
 import { openExternalUrl } from '../../../utils/externalLink';
 import { dateToTime, timeToDate, timeToMinutes } from '../../../utils/timeUtils';
-import { theme } from '../../../theme/theme';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CATEGORY_COLORS } from './TimelineItem.styles';
+import { CATEGORY_NAMES, resolveCategoryId } from './TimelineItem';
+import { toSecureImageUrl } from '../../../utils/imageUrl';
+import { normalize } from '../../../utils/normalize';
 import { tokens } from '../../../theme/tokens';
-
-const CATEGORY_NAMES: { [key: number]: string } = {
-  0: '관광지',
-  1: '숙소',
-  2: '식당',
-  3: '직접 추가',
-  4: '검색',
-};
-
-const COLORS = theme.colors;
-const FONTS = {
-  regular: 'Pretendard-Regular',
-  medium: 'Pretendard-Medium',
-  semibold: 'Pretendard-SemiBold',
-  bold: 'Pretendard-Bold',
-};
 
 interface PlaceEditModalProps {
   visible: boolean;
@@ -148,360 +131,271 @@ export default function PlaceEditModal({
 
   if (!place) return null;
 
-  const categoryId = place.categoryId ?? 4;
-  const categoryColor =
-    CATEGORY_COLORS[categoryId as keyof typeof CATEGORY_COLORS] ||
+  const categoryId = resolveCategoryId(place);
+  const color =
+    CATEGORY_COLORS[categoryId as keyof typeof CATEGORY_COLORS] ??
     CATEGORY_COLORS[4];
   const categoryName = CATEGORY_NAMES[categoryId] || place.type || '기타';
   const canOpenMap = !!place.place_url || !!(place.latitude && place.longitude);
 
   return (
-    <Modal
+    <PopupModal
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
+      title="장소 수정"
+      onClose={onClose}
+      footer={
+        <View style={styles.footer}>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={handleDelete}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="장소 삭제"
+          >
+            <Text style={styles.deleteText}>삭제</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSave}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="저장"
+          >
+            <Text style={styles.saveText}>저장</Text>
+          </TouchableOpacity>
+        </View>
+      }
     >
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.container} onPress={e => e.stopPropagation()}>
-          <View style={styles.header}>
-            <Text style={styles.title}>장소 수정</Text>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        <View style={styles.head}>
+          <FallbackImage
+            uri={toSecureImageUrl(place.imageUrl)}
+            style={styles.photo}
+            fallback={<View style={[styles.photo, styles.photoEmpty]} />}
+          />
+          <View style={styles.headText}>
+            <Text style={[styles.category, { color: color.textSub }]}>
+              {categoryName}
+            </Text>
+            <Text style={styles.placeName} numberOfLines={2}>
+              {place.name}
+            </Text>
+            {!!place.address && (
+              <Text style={styles.address} numberOfLines={2}>
+                {place.address}
+              </Text>
+            )}
+          </View>
+        </View>
+
+        {canOpenMap && (
+          <TouchableOpacity
+            style={styles.mapRow}
+            onPress={handleOpenMap}
+            activeOpacity={0.7}
+            accessibilityRole="link"
+            accessibilityLabel="지도에서 보기"
+          >
+            <Text style={styles.mapText}>지도에서 보기</Text>
+          </TouchableOpacity>
+        )}
+
+        <View style={styles.timeRow}>
+          <View style={styles.timeCell}>
+            <Text style={styles.label}>시작</Text>
             <TouchableOpacity
-              onPress={onClose}
+              onPress={() => setOpenStartPicker(true)}
+              style={styles.timeButton}
+              activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel="닫기"
-              hitSlop={8}
+              accessibilityLabel={`시작 시간 ${dateToTime(startTime)}`}
             >
-              <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
+              <Text style={styles.timeText}>{dateToTime(startTime)}</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            style={styles.contentScroll}
-            contentContainerStyle={styles.content}
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-          >
+          <View style={styles.timeCell}>
+            <Text style={styles.label}>종료</Text>
+            <TouchableOpacity
+              onPress={() => setOpenEndPicker(true)}
+              style={styles.timeButton}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={`종료 시간 ${dateToTime(endTime)}`}
+            >
+              <Text style={styles.timeText}>{dateToTime(endTime)}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-            <View style={styles.infoSection}>
-              <FallbackImage
-                uri={place.imageUrl}
-                style={styles.photo}
-                fallback={
-                  <View style={[styles.photo, styles.photoPlaceholder]}>
-                    <Text style={styles.photoPlaceholderText}>
-                      {place.name?.charAt(0) || '?'}
-                    </Text>
-                  </View>
-                }
-              />
-
-              <View style={styles.infoTextGroup}>
-                <Text style={styles.placeName} numberOfLines={2}>
-                  {place.name}
-                </Text>
-
-                <View style={styles.badgeRow}>
-                  <View
-                    style={[
-                      styles.categoryBadge,
-                      {
-                        backgroundColor: categoryColor.bg,
-                        borderColor: categoryColor.border,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.categoryBadgeText,
-                        { color: categoryColor.border },
-                      ]}
-                    >
-                      {categoryName}
-                    </Text>
-                  </View>
-                  {!!place.rating && place.rating > 0 && (
-                    <Text style={styles.ratingText}>⭐ {place.rating}</Text>
-                  )}
-                </View>
-
-                {!!place.address && (
-                  <Text style={styles.addressText} numberOfLines={2}>
-                    {place.address}
-                  </Text>
-                )}
-              </View>
-            </View>
-
-            {canOpenMap && (
-              <TouchableOpacity
-                style={styles.mapButton}
-                onPress={handleOpenMap}
-                activeOpacity={0.8}
-              >
-                <MapIcon size={15} color={tokens.colors.text} strokeWidth={1.5} />
-                <Text style={styles.mapButtonText}>지도에서 보기</Text>
-              </TouchableOpacity>
-            )}
-
-            <View style={styles.row}>
-              <View style={styles.timeContainer}>
-                <Text style={styles.label}>시작 시간</Text>
-                <TouchableOpacity
-                  onPress={() => setOpenStartPicker(true)}
-                  style={styles.timeButton}
-                >
-                  <Text style={styles.timeText}>
-                    {dateToTime(startTime)}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.timeContainer}>
-                <Text style={styles.label}>종료 시간</Text>
-                <TouchableOpacity
-                  onPress={() => setOpenEndPicker(true)}
-                  style={styles.timeButton}
-                >
-                  <Text style={styles.timeText}>
-                    {dateToTime(endTime)}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>메모</Text>
-              <TextInput
-                style={styles.input}
-                value={memo}
-                onChangeText={setMemo}
-                placeholder="메모를 입력하세요"
-                multiline
-              />
-            </View>
-
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={[styles.button, styles.deleteButton]}
-                onPress={handleDelete}
-              >
-                <Text style={[styles.buttonText, styles.deleteText]}>삭제</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.saveButton]}
-                onPress={handleSave}
-              >
-                <Text style={styles.buttonText}>저장</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-
-          <DatePicker
-            modal
-            open={openStartPicker}
-            date={startTime}
-            mode="time"
-            onConfirm={date => {
-              setOpenStartPicker(false);
-              setStartTime(date);
-            }}
-            onCancel={() => {
-              setOpenStartPicker(false);
-            }}
+        <View>
+          <Text style={styles.label}>메모</Text>
+          <TextInput
+            style={styles.input}
+            value={memo}
+            onChangeText={setMemo}
+            placeholder="메모를 입력하세요"
+            placeholderTextColor={tokens.colors.textTertiary}
+            multiline
           />
-          <DatePicker
-            modal
-            open={openEndPicker}
-            date={endTime}
-            mode="time"
-            onConfirm={date => {
-              setOpenEndPicker(false);
-              setEndTime(date);
-            }}
-            onCancel={() => {
-              setOpenEndPicker(false);
-            }}
-          />
-        </Pressable>
-      </Pressable>
-    </Modal>
+        </View>
+
+        <DatePicker
+          modal
+          open={openStartPicker}
+          date={startTime}
+          mode="time"
+          onConfirm={date => {
+            setOpenStartPicker(false);
+            setStartTime(date);
+          }}
+          onCancel={() => setOpenStartPicker(false)}
+        />
+        <DatePicker
+          modal
+          open={openEndPicker}
+          date={endTime}
+          mode="time"
+          onConfirm={date => {
+            setOpenEndPicker(false);
+            setEndTime(date);
+          }}
+          onCancel={() => setOpenEndPicker(false)}
+        />
+      </ScrollView>
+    </PopupModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  container: {
-    width: '85%',
-    maxHeight: '85%',
-    backgroundColor: tokens.colors.white,
-    borderRadius: 16,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  contentScroll: {
-    flexGrow: 0,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 18,
-    fontFamily: FONTS.bold,
-    color: tokens.colors.text,
-  },
   content: {
-    gap: 16,
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(6),
+    gap: normalize(18),
   },
-  infoSection: {
+
+  head: {
     flexDirection: 'row',
-    gap: 12,
+    gap: normalize(12),
   },
   photo: {
-    width: 72,
-    height: 72,
-    borderRadius: 10,
+    width: normalize(64),
+    height: normalize(64),
+    borderRadius: normalize(4),
+  },
+  photoEmpty: {
     backgroundColor: tokens.colors.borderLight,
   },
-  photoPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  photoPlaceholderText: {
-    fontSize: 24,
-    fontFamily: FONTS.bold,
-    color: tokens.colors.textTertiary,
-  },
-  infoTextGroup: {
+  headText: {
     flex: 1,
+    minWidth: 0,
     justifyContent: 'center',
+  },
+  category: {
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.semibold,
+    marginBottom: normalize(2),
   },
   placeName: {
-    fontSize: 16,
-    fontFamily: FONTS.semibold,
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.semibold,
     color: tokens.colors.text,
-    marginBottom: 6,
+    letterSpacing: -0.2,
   },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
-  },
-  categoryBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  categoryBadgeText: {
-    fontSize: 11,
-    fontFamily: FONTS.semibold,
-  },
-  ratingText: {
-    fontSize: 12,
-    fontFamily: FONTS.medium,
+  address: {
+    marginTop: normalize(3),
+    fontSize: normalize(12),
+    lineHeight: normalize(17),
+    fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.textSecondary,
   },
-  addressText: {
-    fontSize: 12,
-    fontFamily: FONTS.regular,
-    color: tokens.colors.textSecondary,
-    lineHeight: 16,
+
+  // 바깥으로 나가는 자리는 줄 하나로만 표시한다. 채운 단추는 저장과 겨룬다.
+  mapRow: {
+    paddingVertical: normalize(11),
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: tokens.colors.borderLight,
   },
-  mapButton: {
+  mapText: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.primary,
+  },
+
+  timeRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: tokens.colors.borderLight,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
+    gap: normalize(10),
   },
-  mapButtonText: {
-    fontSize: 13,
-    fontFamily: FONTS.medium,
-    color: tokens.colors.text,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  timeContainer: {
+  timeCell: {
     flex: 1,
   },
   label: {
-    fontSize: 12,
-    color: tokens.colors.textSecondary,
-    marginBottom: 4,
-    fontFamily: FONTS.regular,
+    marginBottom: normalize(6),
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textTertiary,
   },
   timeButton: {
-    backgroundColor: tokens.colors.borderLight,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
+    height: normalize(44),
+    borderRadius: normalize(8),
     borderWidth: 1,
     borderColor: tokens.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   timeText: {
-    fontSize: 14,
-    fontFamily: FONTS.medium,
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.semibold,
     color: tokens.colors.text,
   },
-  inputContainer: {
-    marginTop: 8,
-  },
   input: {
-    backgroundColor: tokens.colors.borderLight,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 14,
-    fontFamily: FONTS.regular,
-    minHeight: 80,
-    textAlignVertical: 'top',
+    minHeight: normalize(84),
+    borderRadius: normalize(8),
     borderWidth: 1,
     borderColor: tokens.colors.border,
+    paddingHorizontal: normalize(12),
+    paddingTop: normalize(10),
+    paddingBottom: normalize(10),
+    fontSize: normalize(13.5),
+    lineHeight: normalize(20),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.text,
+    textAlignVertical: 'top',
   },
-  buttonRow: {
+
+  footer: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 16,
-  },
-  button: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 8,
     alignItems: 'center',
+    gap: normalize(10),
   },
+  // 지우기는 되돌릴 수 없어 겨냥하기 쉬운 채운 단추로 두지 않는다.
   deleteButton: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-  },
-  saveButton: {
-    backgroundColor: COLORS.primary,
-  },
-  buttonText: {
-    fontSize: 14,
-    fontFamily: FONTS.semibold,
-    color: tokens.colors.white,
+    height: normalize(48),
+    paddingHorizontal: normalize(16),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   deleteText: {
-    color: '#EF4444',
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.tones.danger.fg,
+  },
+  saveButton: {
+    flex: 1,
+    height: normalize(48),
+    borderRadius: normalize(12),
+    backgroundColor: tokens.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveText: {
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
   },
 });

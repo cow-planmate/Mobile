@@ -35,6 +35,15 @@ type Props = {
    * 같은 말이 서로 다른 일을 하지 않도록 문구를 나눈다.
    */
   doneAction?: 'next' | 'last';
+  /** 기본 단추 문구를 바꾸고 싶을 때만. */
+  doneLabel?: string;
+  /**
+   * 밑줄을 통째로 갈아끼운다.
+   *
+   * 고르기만 하는 팝업은 단추 하나면 되지만, 지우기와 저장처럼 둘을
+   * 나란히 놓아야 하는 곳도 있다. 그런 곳은 이 자리를 직접 채운다.
+   */
+  footer?: React.ReactNode;
   children: React.ReactNode;
 };
 
@@ -55,6 +64,8 @@ export default function PopupModal({
   onClose,
   onDone,
   doneAction = 'last',
+  doneLabel,
+  footer,
   children,
 }: Props) {
   const [mounted, setMounted] = useState(visible);
@@ -131,27 +142,31 @@ export default function PopupModal({
             </TouchableOpacity>
           </View>
 
-          {children}
+          <View style={styles.body}>{children}</View>
 
           <View style={styles.footer}>
-            <TouchableOpacity
-              style={styles.doneButton}
-              onPress={handleDone}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel={isNext ? '다음 단계로' : '선택 완료'}
-            >
-              <Text style={styles.doneButtonText}>
-                {isNext ? '다음' : '완료'}
-              </Text>
-              {isNext ? (
-                <ArrowRight
-                  size={normalize(15)}
-                  color={tokens.colors.white}
-                  strokeWidth={2.2}
-                />
-              ) : null}
-            </TouchableOpacity>
+            {footer !== undefined ? (
+              footer
+            ) : (
+              <TouchableOpacity
+                style={styles.doneButton}
+                onPress={handleDone}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={isNext ? '다음 단계로' : '선택 완료'}
+              >
+                <Text style={styles.doneButtonText}>
+                  {doneLabel ?? (isNext ? '다음' : '완료')}
+                </Text>
+                {isNext ? (
+                  <ArrowRight
+                    size={normalize(15)}
+                    color={tokens.colors.white}
+                    strokeWidth={2.2}
+                  />
+                ) : null}
+              </TouchableOpacity>
+            )}
           </View>
         </Animated.View>
       </View>
@@ -190,6 +205,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     paddingTop: normalize(15),
     paddingBottom: normalize(10),
+  },
+  // 내용이 길면 여기가 줄어들면서 안쪽 스크롤을 내준다.
+  // 밑줄과 머릿줄은 줄어들지 않아 항상 보인다.
+  body: {
+    flexShrink: 1,
   },
   // 고른 뒤 눈과 손이 머무는 아래쪽에 둔다. 헤더 구석의 글자보다 겨냥하기 쉽다.
   footer: {
