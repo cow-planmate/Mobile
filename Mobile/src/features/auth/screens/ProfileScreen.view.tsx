@@ -1,20 +1,18 @@
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  Modal,
   Pressable,
   TextInput,
   Alert,
-  Animated,
   Switch,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import LinearGradient from 'react-native-linear-gradient';
+import PopupModal from '../../../components/common/PopupModal';
 import { useNavigation } from '@react-navigation/native';
 import { INITIAL_TAB } from '../../../navigation/types';
 import { useAlert } from '../../../contexts/AlertContext';
@@ -37,15 +35,10 @@ import {
 import { invalidatePlanCaches } from '../../../hooks/planCache';
 
 import User from 'lucide-react-native/dist/esm/icons/user';
-import Settings from 'lucide-react-native/dist/esm/icons/settings';
-import X from 'lucide-react-native/dist/esm/icons/x';
-import Camera from 'lucide-react-native/dist/esm/icons/camera';
-import AlertTriangle from 'lucide-react-native/dist/esm/icons/triangle-alert';
 import Trash2 from 'lucide-react-native/dist/esm/icons/trash-2';
 import Check from 'lucide-react-native/dist/esm/icons/check';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
-import ChevronDown from 'lucide-react-native/dist/esm/icons/chevron-down';
 import MoreVertical from 'lucide-react-native/dist/esm/icons/ellipsis-vertical';
 import PenLine from 'lucide-react-native/dist/esm/icons/pen-line';
 import Share2 from 'lucide-react-native/dist/esm/icons/share-2';
@@ -484,47 +477,6 @@ export default function ProfileScreenView({
   // 여행 일정은 예정/지난을 탭으로 나눈다 (웹 TripSection과 동일)
   const [tripTab, setTripTab] = useState<TripTab>('upcoming');
 
-  const [showBottomFade, setShowBottomFade] = useState(false);
-  const contentHeightRef = useRef(0);
-  const layoutHeightRef = useRef(0);
-
-  const bounceAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (!(editModalVisible && showBottomFade)) {
-      bounceAnim.setValue(0);
-      return;
-    }
-
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(bounceAnim, {
-          toValue: 6,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(bounceAnim, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [editModalVisible, showBottomFade, bounceAnim]);
-
-  const checkScrollState = (contentHeight: number, layoutHeight: number, offsetY: number) => {
-    const isScrollable = contentHeight > layoutHeight + 5;
-    const isCloseToBottom = layoutHeight + offsetY >= contentHeight - 25;
-    setShowBottomFade(isScrollable && !isCloseToBottom);
-  };
-
-  const handleScroll = (event: any) => {
-    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    checkScrollState(contentSize.height, layoutMeasurement.height, contentOffset.y);
-  };
-
   React.useEffect(() => {
     if (scrollToItinerary && itineraryY > 0) {
       const timer = setTimeout(() => {
@@ -876,8 +828,6 @@ export default function ProfileScreenView({
     setTempBirthdate(user.birthdate || '');
     setTempGender(user.gender);
     setEditModalVisible(true);
-
-    setShowBottomFade(false);
   };
 
   const handleCheckNickname = async () => {
@@ -1240,276 +1190,238 @@ export default function ProfileScreenView({
         onCancel={() => setBirthdatePickerOpen(false)}
       />
 
-      <Modal
+      <PopupModal
         visible={editModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setEditModalVisible(false)}
+        title="프로필 수정"
+        onClose={() => setEditModalVisible(false)}
+        footer={
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSaveProfile}
+            disabled={profileSaveLock.isSubmitting}
+            accessibilityRole="button"
+            accessibilityLabel="변경사항 저장"
+            accessibilityState={{ disabled: profileSaveLock.isSubmitting }}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.saveButtonText}>저장</Text>
+          </TouchableOpacity>
+        }
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.editDialogCard}>
-
-            <View style={styles.editDialogHeader}>
-              <TouchableOpacity 
-                style={styles.closeModalButton}
-                onPress={() => setEditModalVisible(false)}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="닫기"
-                hitSlop={10}
-              >
-                <X size={18} color={tokens.colors.white} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.avatarEditContainer}
-                onPress={handleProfileImagePress}
-                disabled={isProfileImageUpdating}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="프로필 사진 변경"
-                accessibilityState={{ disabled: isProfileImageUpdating }}
-              >
-                <FallbackImage
-                  uri={avatarUri}
-                  style={styles.avatarEditImage}
-                  fallback={
-                    <View style={styles.avatarEditPlaceholder}>
-                      <User size={50} color={tokens.colors.textTertiary} />
-                    </View>
-                  }
-                />
-                <View style={styles.cameraBadge}>
-                  <Camera size={12} color={tokens.colors.white} />
+        <ScrollView
+          contentContainerStyle={styles.editBody}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* 사진은 배지 위에 올리지 않는다. 바꾸는 자리를 카메라 표시 대신
+              글로 적으면 뭐가 누러지는지 바로 읽힌다. */}
+          <View style={styles.avatarBlock}>
+            <FallbackImage
+              uri={avatarUri}
+              style={styles.avatarEditImage}
+              fallback={
+                <View style={styles.avatarEditPlaceholder}>
+                  <User size={36} color={tokens.colors.textTertiary} />
                 </View>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView 
-              style={styles.scrollArea}
-              contentContainerStyle={styles.editDialogBody} 
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              scrollEventThrottle={16}
-              onScroll={handleScroll}
-              onContentSizeChange={(width, height) => {
-                contentHeightRef.current = height;
-                checkScrollState(contentHeightRef.current, layoutHeightRef.current, 0);
-              }}
-              onLayout={(event) => {
-                layoutHeightRef.current = event.nativeEvent.layout.height;
-                checkScrollState(contentHeightRef.current, layoutHeightRef.current, 0);
-              }}
+              }
+            />
+            <TouchableOpacity
+              onPress={handleProfileImagePress}
+              disabled={isProfileImageUpdating}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="프로필 사진 변경"
+              accessibilityState={{ disabled: isProfileImageUpdating }}
+              hitSlop={8}
             >
-              <Text style={styles.editDialogTitle}>프로필 수정</Text>
-              <Text style={styles.editDialogSubtitle}>나를 표현하는 정보를 변경해보세요</Text>
+              <Text style={styles.avatarChangeText}>
+                {isProfileImageUpdating ? '올리는 중…' : '사진 바꾸기'}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>이메일 계정</Text>
-                <TextInput
-                  style={[styles.textInput, styles.textInputDisabled]}
-                  value={user.email}
-                  editable={false}
-                  placeholderTextColor={tokens.colors.textTertiary}
-                />
-              </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>이메일</Text>
+            <TextInput
+              style={[styles.textInput, styles.textInputDisabled]}
+              value={user.email}
+              editable={false}
+              placeholderTextColor={tokens.colors.textTertiary}
+            />
+          </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>닉네임</Text>
-                <View style={styles.rowInputWrap}>
-                  <TextInput
-                    style={[styles.textInput, styles.flex1]}
-                    value={tempNickname}
-                    onChangeText={setTempNickname}
-                    placeholder="닉네임을 입력하세요"
-                    placeholderTextColor={tokens.colors.textTertiary}
-                    maxLength={NICKNAME_MAX_LENGTH}
-                  />
-                  <TouchableOpacity
-                    style={[
-                      styles.checkButton,
-                      (isNicknameUnchanged || isNicknameChecking) && styles.disabledOpacity,
-                    ]}
-                    onPress={handleCheckNickname}
-                    disabled={isNicknameUnchanged || isNicknameChecking}
-                    activeOpacity={0.8}
-                    accessibilityState={{ disabled: isNicknameUnchanged || isNicknameChecking }}
-                  >
-                    <Text
-                      style={[
-                        styles.checkButtonText,
-                        (isNicknameUnchanged || isNicknameChecking) && {
-                          color: tokens.colors.textTertiary,
-                        },
-                      ]}
-                    >
-                      {isNicknameChecking ? '확인 중…' : '중복 확인'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.twoColumnRow}>
-
-                <View style={[styles.inputGroup, styles.flex1MarginRight12]}>
-                  <Text style={styles.inputLabel}>생년월일</Text>
-                  <TouchableOpacity
-
-                    style={[styles.textInput, styles.pickerField]}
-                    onPress={() => setBirthdatePickerOpen(true)}
-                    activeOpacity={0.8}
-                  >
-                    <Text
-                      style={[
-                        styles.pickerFieldText,
-                        !tempBirthdate && styles.pickerFieldPlaceholder,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {tempBirthdate ? formatBirthdate(tempBirthdate) : '선택'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View style={[styles.inputGroup, styles.flex1]}>
-                  <Text style={styles.inputLabel}>성별</Text>
-                  <View style={styles.genderSelectTrack}>
-                    <TouchableOpacity 
-                      style={[styles.genderOptionButton, tempGender === '남자' && styles.genderOptionActive]}
-                      onPress={() => setTempGender('남자')}
-                      activeOpacity={0.9}
-                    >
-                      <Text style={[styles.genderOptionText, tempGender === '남자' && styles.genderOptionActiveText]}>남자</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.genderOptionButton, tempGender === '여자' && styles.genderOptionActive]}
-                      onPress={() => setTempGender('여자')}
-                      activeOpacity={0.9}
-                    >
-                      <Text style={[styles.genderOptionText, tempGender === '여자' && styles.genderOptionActiveText]}>여자</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.twoColumnRow}>
-
-                <View style={[styles.inputGroup, styles.flex1MarginRight12]}>
-                  <Text style={styles.inputLabel}>여행 취향</Text>
-                  <TouchableOpacity 
-                    style={styles.actionNavButton}
-                    onPress={() => setThemeModalVisible(true)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.actionNavButtonText}>테마 변경</Text>
-                    <Settings size={14} color={tokens.colors.textTertiary} />
-                  </TouchableOpacity>
-                </View>
-
-                <View style={[styles.inputGroup, styles.flex1]}>
-                  <Text style={styles.inputLabel}>보안 설정</Text>
-                  <TouchableOpacity 
-                    style={[styles.actionNavButton, user.socialLogin && styles.actionNavButtonDisabled]}
-                    onPress={() => {
-                      if (!user.socialLogin) {
-                        setPasswordModalVisible(true);
-                      }
-                    }}
-                    disabled={user.socialLogin}
-                    activeOpacity={0.8}
-                    accessibilityState={{ disabled: user.socialLogin }}
-                  >
-                    <Text style={styles.actionNavButtonText}>비밀번호 변경</Text>
-                    <Settings size={14} color={tokens.colors.textTertiary} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>프로필 공개</Text>
-                <View style={styles.visibilityRow}>
-                  <Text style={styles.visibilityDescription}>
-                    {isProfilePublic
-                      ? '다른 사용자가 내 프로필을 볼 수 있어요.'
-                      : '나만 내 프로필을 볼 수 있어요.'}
-                  </Text>
-                  <Switch
-                    value={isProfilePublic}
-                    onValueChange={handleToggleProfilePublic}
-                    disabled={
-                      isProfileVisibilityUpdating ||
-                      profileVisibilityLock.isSubmitting
-                    }
-                    accessibilityState={{
-                      disabled:
-                        isProfileVisibilityUpdating ||
-                        profileVisibilityLock.isSubmitting,
-                    }}
-                    trackColor={{ false: tokens.colors.textTertiary, true: COLORS.primary }}
-                    thumbColor={tokens.colors.white}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>피드백</Text>
-                <TouchableOpacity
-                  style={styles.actionNavButton}
-                  onPress={() => setFeedbackModalVisible(true)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.actionNavButtonText}>피드백 보내기</Text>
-                  <Settings size={14} color={tokens.colors.textTertiary} />
-                </TouchableOpacity>
-              </View>
-
-              <TouchableOpacity 
-                style={styles.resignLinkButton}
-                onPress={() => {
-                  setEditModalVisible(false);
-                  setTimeout(() => {
-                    handleResign();
-                  }, 200);
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>닉네임</Text>
+            <View style={styles.rowInputWrap}>
+              <TextInput
+                style={[styles.textInput, styles.flex1]}
+                value={tempNickname}
+                onChangeText={setTempNickname}
+                placeholder="닉네임을 입력하세요"
+                placeholderTextColor={tokens.colors.textTertiary}
+                maxLength={NICKNAME_MAX_LENGTH}
+              />
+              <TouchableOpacity
+                style={styles.checkButton}
+                onPress={handleCheckNickname}
+                disabled={isNicknameUnchanged || isNicknameChecking}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityState={{
+                  disabled: isNicknameUnchanged || isNicknameChecking,
                 }}
-                activeOpacity={0.8}
               >
-                <AlertTriangle size={14} color="#EF4444" style={styles.iconSpacingSmall} />
-                <Text style={styles.resignLinkText}>계정 탈퇴하기</Text>
-              </TouchableOpacity>
-            </ScrollView>
-
-            {showBottomFade && (
-              <View style={styles.fadeOverlayContainer} pointerEvents="none">
-                <LinearGradient
-                  colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.95)', tokens.colors.white]}
-                  style={styles.fadeOverlay}
-                />
-                <Animated.View 
+                <Text
                   style={[
-                    styles.scrollHintContainer,
-                    { transform: [{ translateY: bounceAnim }] }
+                    styles.checkButtonText,
+                    (isNicknameUnchanged || isNicknameChecking) &&
+                      styles.checkButtonTextOff,
                   ]}
                 >
-                  <ChevronDown size={14} color={tokens.colors.primary} />
-                  <Text style={styles.scrollHintText}>더 보려면 스크롤</Text>
-                </Animated.View>
-              </View>
-            )}
-
-            <View style={styles.fixedBottomArea}>
-              <TouchableOpacity 
-                style={styles.saveButton}
-                onPress={handleSaveProfile}
-                disabled={profileSaveLock.isSubmitting}
-                accessibilityState={{ disabled: profileSaveLock.isSubmitting }}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.saveButtonText}>변경사항 저장하기</Text>
+                  {isNicknameChecking ? '확인 중…' : '중복 확인'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
+
+          <View style={styles.twoColumnRow}>
+            <View style={[styles.inputGroup, styles.flex1MarginRight12]}>
+              <Text style={styles.inputLabel}>생년월일</Text>
+              <TouchableOpacity
+                style={[styles.textInput, styles.pickerField]}
+                onPress={() => setBirthdatePickerOpen(true)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+              >
+                <Text
+                  style={[
+                    styles.pickerFieldText,
+                    !tempBirthdate && styles.pickerFieldPlaceholder,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {tempBirthdate ? formatBirthdate(tempBirthdate) : '선택'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.inputGroup, styles.flex1]}>
+              <Text style={styles.inputLabel}>성별</Text>
+              <View style={styles.genderSelectTrack}>
+                {['남자', '여자'].map(option => (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.genderOptionButton,
+                      tempGender === option && styles.genderOptionActive,
+                    ]}
+                    onPress={() => setTempGender(option)}
+                    activeOpacity={0.8}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: tempGender === option }}
+                  >
+                    <Text
+                      style={[
+                        styles.genderOptionText,
+                        tempGender === option && styles.genderOptionActiveText,
+                      ]}
+                    >
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          {/* 여는 줄은 단추처럼 여럿 개 늘어놓는 대신 목록으로 묶는다. */}
+          <View style={styles.linkList}>
+            <TouchableOpacity
+              style={styles.linkRow}
+              onPress={() => setThemeModalVisible(true)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+            >
+              <Text style={styles.linkLabel}>여행 취향</Text>
+              <Text style={styles.linkValue}>테마 변경</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.linkRow}
+              onPress={() => {
+                if (!user.socialLogin) setPasswordModalVisible(true);
+              }}
+              disabled={user.socialLogin}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: user.socialLogin }}
+            >
+              <Text style={styles.linkLabel}>비밀번호</Text>
+              <Text
+                style={[
+                  styles.linkValue,
+                  user.socialLogin && styles.linkValueOff,
+                ]}
+              >
+                {user.socialLogin ? '소셜 로그인' : '변경하기'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.linkRow}
+              onPress={() => setFeedbackModalVisible(true)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+            >
+              <Text style={styles.linkLabel}>피드백</Text>
+              <Text style={styles.linkValue}>보내기</Text>
+            </TouchableOpacity>
+
+            <View style={styles.linkRow}>
+              <View style={styles.visibilityText}>
+                <Text style={styles.linkLabel}>프로필 공개</Text>
+                <Text style={styles.visibilityDescription}>
+                  {isProfilePublic
+                    ? '다른 사람이 내 프로필을 볼 수 있어요'
+                    : '나만 내 프로필을 볼 수 있어요'}
+                </Text>
+              </View>
+              <Switch
+                value={isProfilePublic}
+                onValueChange={handleToggleProfilePublic}
+                disabled={
+                  isProfileVisibilityUpdating ||
+                  profileVisibilityLock.isSubmitting
+                }
+                accessibilityState={{
+                  disabled:
+                    isProfileVisibilityUpdating ||
+                    profileVisibilityLock.isSubmitting,
+                }}
+                trackColor={{
+                  false: tokens.colors.border,
+                  true: COLORS.primary,
+                }}
+                thumbColor={tokens.colors.white}
+              />
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.resignLinkButton}
+            onPress={() => {
+              setEditModalVisible(false);
+              setTimeout(() => {
+                handleResign();
+              }, 200);
+            }}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+          >
+            <Text style={styles.resignLinkText}>계정 탈퇴하기</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </PopupModal>
 
       <UpdateThemeModal
         visible={isThemeModalVisible}

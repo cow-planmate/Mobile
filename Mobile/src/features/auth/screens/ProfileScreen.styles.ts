@@ -1,8 +1,6 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { normalize } from '../../../utils/normalize';
 import { tokens } from '../../../theme/tokens';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const COLORS = {
   primary: tokens.colors.primary,
@@ -179,42 +177,6 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  editDialogCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: normalize(24),
-    width: SCREEN_WIDTH * 0.9,
-    height: normalize(500),
-    overflow: 'hidden',
-    alignSelf: 'center',
-    ...tokens.shadows.md,
-  },
-  editDialogHeader: {
-    height: normalize(110),
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    position: 'relative',
-    paddingTop: normalize(16),
-    width: '100%',
-    zIndex: 10,
-    elevation: 5,
-  },
-  closeModalButton: {
-    position: 'absolute',
-    top: normalize(16),
-    right: normalize(16),
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    width: normalize(28),
-    height: normalize(28),
-    borderRadius: normalize(14),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarEditContainer: {
-    position: 'absolute',
-    bottom: normalize(-40),
-    alignSelf: 'center',
-    zIndex: 11,
-  },
   avatarEditImage: {
     width: normalize(90),
     height: normalize(90),
@@ -232,42 +194,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cameraBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: COLORS.primary,
-    width: normalize(26),
-    height: normalize(26),
-    borderRadius: normalize(13),
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: COLORS.white,
-  },
-  editDialogBody: {
-    paddingHorizontal: normalize(24),
-    paddingTop: normalize(52),
-    paddingBottom: normalize(60),
-    zIndex: 1,
-  },
-  scrollArea: {
-    flex: 1,
-    zIndex: 1,
-  },
-  editDialogTitle: {
-    fontSize: normalize(20),
-    fontWeight: 'bold',
-    color: COLORS.text,
-    textAlign: 'center',
-    marginBottom: normalize(4),
-  },
-  editDialogSubtitle: {
-    fontSize: normalize(12),
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginBottom: normalize(24),
-  },
   inputGroup: {
     marginBottom: normalize(16),
   },
@@ -277,21 +203,15 @@ export const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginBottom: normalize(8),
   },
+  // 다른 팝업의 입력칸과 같은 모양. 채운 회색 대신 실선 테두리로 둘렀다.
   textInput: {
-    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: normalize(12),
-    paddingHorizontal: normalize(16),
-    height: normalize(44),
+    borderRadius: normalize(8),
+    paddingHorizontal: normalize(12),
+    height: normalize(46),
     fontSize: normalize(14),
     color: COLORS.text,
-  },
-  visibilityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: normalize(12),
   },
   visibilityDescription: {
     flex: 1,
@@ -310,21 +230,22 @@ export const styles = StyleSheet.create({
     color: COLORS.placeholder,
   },
   textInputDisabled: {
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: COLORS.surface,
     color: COLORS.placeholder,
-    borderColor: COLORS.border,
+    borderColor: COLORS.borderLight,
   },
   rowInputWrap: {
     flexDirection: 'row',
     gap: normalize(10),
   },
   checkButton: {
-    backgroundColor: COLORS.borderLight,
-    borderRadius: normalize(12),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: normalize(8),
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: normalize(16),
-    height: normalize(44),
+    paddingHorizontal: normalize(14),
+    height: normalize(46),
   },
   checkButtonText: {
     fontSize: normalize(13),
@@ -337,25 +258,21 @@ export const styles = StyleSheet.create({
   },
   genderSelectTrack: {
     flexDirection: 'row',
-    backgroundColor: COLORS.borderLight,
-    borderRadius: normalize(12),
-    height: normalize(44),
-    padding: normalize(2),
+    gap: normalize(8),
+    height: normalize(46),
     width: '100%',
   },
   genderOptionButton: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: normalize(10),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: normalize(8),
   },
   genderOptionActive: {
     backgroundColor: COLORS.primary,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    borderColor: COLORS.primary,
   },
   genderOptionText: {
     fontSize: normalize(13),
@@ -365,27 +282,6 @@ export const styles = StyleSheet.create({
   genderOptionActiveText: {
     color: COLORS.white,
     fontWeight: 'bold',
-  },
-  actionNavButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: normalize(12),
-    paddingHorizontal: normalize(16),
-    height: normalize(44),
-  },
-  actionNavButtonDisabled: {
-    backgroundColor: COLORS.borderLight,
-    borderColor: COLORS.border,
-    opacity: 0.6,
-  },
-  actionNavButtonText: {
-    fontSize: normalize(13),
-    color: COLORS.textSecondary,
-    fontWeight: '500',
   },
   saveButton: {
     backgroundColor: COLORS.primary,
@@ -413,57 +309,10 @@ export const styles = StyleSheet.create({
     color: COLORS.error,
     fontWeight: '600',
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fadeOverlay: {
-    width: '100%',
-    height: normalize(45),
-  },
-  fadeOverlayContainer: {
-    position: 'absolute',
-    bottom: normalize(80),
-    left: 0,
-    right: 0,
-    height: normalize(45),
-    zIndex: 2,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  scrollHintContainer: {
-    position: 'absolute',
-    bottom: normalize(2),
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: normalize(4),
-    backgroundColor: 'rgba(19, 68, 255, 0.08)',
-    paddingHorizontal: normalize(10),
-    paddingVertical: normalize(3),
-    borderRadius: normalize(10),
-  },
-  scrollHintText: {
-    fontSize: normalize(10),
-    fontWeight: 'bold',
-    color: COLORS.primary,
-  },
   keyboardAvoidingWrapper: {
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  fixedBottomArea: {
-    paddingHorizontal: normalize(24),
-    paddingBottom: normalize(20),
-    paddingTop: normalize(12),
-    backgroundColor: COLORS.white,
-    zIndex: 3,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-    width: '100%',
   },
 
   noPlanText: {
@@ -642,12 +491,6 @@ export const styles = StyleSheet.create({
   },
   achievementCardDisabled: {
     opacity: 0.6,
-  },
-  disabledOpacity: {
-    opacity: 0.5,
-  },
-  iconSpacingSmall: {
-    marginRight: 4,
   },
   flex1: {
     flex: 1,
@@ -882,5 +725,59 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: COLORS.borderLight,
+  },
+  // ---- 프로필 수정 팝업 ----
+  editBody: {
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(4),
+  },
+  avatarBlock: {
+    alignItems: 'center',
+    gap: normalize(8),
+    paddingBottom: normalize(18),
+  },
+  avatarChangeText: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.primary,
+  },
+  checkButtonTextOff: {
+    color: tokens.colors.textTertiary,
+  },
+  // 여는 줄들을 한 묶음으로 세워 단추가 여럿 개 떠 있는 모양을 없앨다.
+  linkList: {
+    marginTop: normalize(4),
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: normalize(12),
+    paddingVertical: normalize(13),
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.borderLight,
+  },
+  linkLabel: {
+    fontSize: normalize(13.5),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.text,
+  },
+  linkValue: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.primary,
+  },
+  linkValueOff: {
+    color: tokens.colors.textTertiary,
+  },
+  visibilityText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  disabledOpacity: {
+    opacity: 0.5,
+  },
+  iconSpacingSmall: {
+    marginRight: normalize(4),
   },
 });
