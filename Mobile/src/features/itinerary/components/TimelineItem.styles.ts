@@ -95,13 +95,18 @@ export const styles = StyleSheet.create({
   actionContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
   },
+  // 누르는 자리를 넓히되 좌우로는 넘기지 않는다. 서로 겹치면 어느 쪽이
+  // 눌렸는지 알 수 없어, 지우려다 시간 수정이 열린다.
   actionButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 44,
+    height: 36,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  actionButtonCompact: {
+    height: 26,
   },
 });

@@ -1251,7 +1251,6 @@ export default function ItineraryEditorScreenView({
   const sheetBody = useSharedValue(0);
   /** 접을 때 내려가는 거리. 높이가 아니라 위치만 옮겨야 손가락이 안 끊긴다. */
   const sheetShift = useSharedValue(0);
-  const dragY = useSharedValue(0);
 
   const sheetHeightRef = useRef(0);
   const sheetMaxRef = useRef(0);
@@ -1330,14 +1329,6 @@ export default function ItineraryEditorScreenView({
   const sheetAnimStyle = useAnimatedStyle(() => ({
     height: SHEET_HANDLE_HEIGHT + sheetBody.value,
     transform: [{ translateY: sheetShift.value }],
-  }));
-
-  const ghostScale = useSharedValue(0.86);
-  const ghostAnimStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: dragY.value - 22 },
-      { scale: ghostScale.value },
-    ],
   }));
 
   // ── 꾹 눌러 집고, 끌고, 놓기 ──
@@ -1424,7 +1415,7 @@ export default function ItineraryEditorScreenView({
   const draggingRef = useRef<Omit<Place, 'startTime' | 'endTime'> | null>(null);
 
   const handlePickUpPlace = useCallback(
-    (place: Omit<Place, 'startTime' | 'endTime'>, absoluteY: number) => {
+    (place: Omit<Place, 'startTime' | 'endTime'>, _absoluteY: number) => {
       draggingRef.current = place;
       setDraggingPlace(place);
       handleAddPlace(place);
@@ -1434,22 +1425,18 @@ export default function ItineraryEditorScreenView({
       gridViewRef.current?.measureInWindow((_x, y) => {
         gridTopRef.current = y;
       });
-      dragY.value = absoluteY - bodyTop.current;
-      ghostScale.value = 0.86;
-      ghostScale.value = withSpring(1, { damping: 13, stiffness: 220 });
       // 높이를 줄이면 목록이 짜부라지며 집고 있던 손가락이 끊긴다.
       // 자리는 그대로 두고 아래로 밀어 내려 손잡이 줄만 남긴다.
       sheetShift.value = withTiming(sheetHeightRef.current, { duration: 220 });
     },
-    [dragY, ghostScale, handleAddPlace, sheetShift],
+    [handleAddPlace, sheetShift],
   );
 
   const handleDragPlace = useCallback(
     (absoluteY: number) => {
-      dragY.value = absoluteY - bodyTop.current;
       previewAt(absoluteY);
     },
-    [dragY, previewAt],
+    [previewAt],
   );
 
   const restoreSheet = useCallback(() => {
@@ -1697,7 +1684,9 @@ export default function ItineraryEditorScreenView({
         )}
       </View>
 
-      {pendingPlace && (
+      {/* 끄는 동안에는 띄우지 않는다. '클릭해 주세요'가 맞지도 않고,
+          띠가 끼어들며 시간표가 밀려 놓이는 자리가 어긋난다. */}
+      {pendingPlace && !draggingPlace && (
         <View style={styles.pendingPlaceBanner}>
           <Text style={styles.pendingPlaceBannerText}>
             '{pendingPlace.name}'을 배치할 타임라인의 빈 영역을 클릭해 주세요.
@@ -1753,17 +1742,6 @@ export default function ItineraryEditorScreenView({
               />
             </View>
           </Animated.View>
-
-          {draggingPlace && (
-            <Animated.View
-              pointerEvents="none"
-              style={[styles.dragGhost, ghostAnimStyle]}
-            >
-              <Text style={styles.dragGhostText} numberOfLines={1}>
-                {draggingPlace.name}
-              </Text>
-            </Animated.View>
-          )}
         </View>
       </EditorStateContext.Provider>
 

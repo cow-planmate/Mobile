@@ -820,25 +820,4 @@ export const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0,
   },
-
-  // 집어 든 장소가 손끝을 따라다니는 조각.
-  dragGhost: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    maxWidth: 220,
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.primaryTint,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    elevation: 6,
-    zIndex: 20,
-  },
-  dragGhostText: {
-    fontSize: 12.5,
-    fontFamily: FONTS.bold,
-    color: COLORS.text,
-  },
 });

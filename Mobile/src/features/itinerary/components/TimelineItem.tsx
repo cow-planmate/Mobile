@@ -116,22 +116,28 @@ const TimelineItem = React.memo(function TimelineItem({
         {!isReadOnly && (
           <View style={styles.actionContainer}>
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[
+                styles.actionButton,
+                isCompact && styles.actionButtonCompact,
+              ]}
               onPress={() => onEditTime?.('startTime')}
               accessibilityRole="button"
               accessibilityLabel="시간 수정"
-              hitSlop={10}
+              hitSlop={{ top: 8, bottom: 8 }}
             >
-              <Pencil size={14} color={textColorMain} />
+              <Pencil size={16} color={textColorMain} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[
+                styles.actionButton,
+                isCompact && styles.actionButtonCompact,
+              ]}
               onPress={onDelete}
               accessibilityRole="button"
               accessibilityLabel="장소 삭제"
-              hitSlop={10}
+              hitSlop={{ top: 8, bottom: 8, right: 8 }}
             >
-              <XIcon size={16} color={textColorMain} />
+              <XIcon size={18} color={textColorMain} />
             </TouchableOpacity>
           </View>
         )}
