@@ -301,8 +301,12 @@ const PickUpPlaceRow = React.memo(function PickUpPlaceRow({
         setHeld(true);
         latest.current.onPickUp(latest.current.place, e.absoluteY);
       })
-      .onUpdate(e => latest.current.onDrag?.(e.absoluteY))
-      .onEnd(e => latest.current.onDrop?.(e.absoluteY))
+      .onUpdate(e => {
+        latest.current.onDrag?.(e.absoluteY);
+      })
+      .onEnd(e => {
+        latest.current.onDrop?.(e.absoluteY);
+      })
       .onFinalize((_e, success) => {
         pressScale.value = withTiming(1, { duration: 120 });
         setHeld(false);
@@ -515,6 +519,31 @@ export default function PlaceRecommendationList({
     }
   }, [showAlert]);
 
+  // 집힌 뒤 손가락을 움직이면 목록의 스크롤이 제스처를 가로채 끌기가 끝나버린다.
+  // 집는 순간에는 아직 움직이기 전이라, 그때 스크롤을 잠그면 뺏기지 않는다.
+  const [isDraggingPlace, setIsDraggingPlace] = useState(false);
+
+  const beginDrag = useCallback(
+    (place: Omit<Place, 'startTime' | 'endTime'>, absoluteY: number) => {
+      setIsDraggingPlace(true);
+      onPickUpPlace?.(place, absoluteY);
+    },
+    [onPickUpPlace],
+  );
+
+  const endDrag = useCallback(
+    (absoluteY: number) => {
+      setIsDraggingPlace(false);
+      onDropPlace?.(absoluteY);
+    },
+    [onDropPlace],
+  );
+
+  const abortDrag = useCallback(() => {
+    setIsDraggingPlace(false);
+    onCancelPickUp?.();
+  }, [onCancelPickUp]);
+
   const renderPlaceBody = useCallback(
     (item: PlaceVO) => (
       <>
@@ -581,10 +610,10 @@ export default function PlaceRecommendationList({
         <PickUpPlaceRow
           place={place}
           onPress={onPressPlace}
-          onPickUp={onPickUpPlace}
+          onPickUp={beginDrag}
           onDrag={onDragPlace}
-          onDrop={onDropPlace}
-          onCancel={onCancelPickUp}
+          onDrop={endDrag}
+          onCancel={abortDrag}
         >
           {renderPlaceBody(item)}
         </PickUpPlaceRow>
@@ -595,8 +624,9 @@ export default function PlaceRecommendationList({
       onPressPlace,
       onPickUpPlace,
       onDragPlace,
-      onDropPlace,
-      onCancelPickUp,
+      beginDrag,
+      endDrag,
+      abortDrag,
       renderPlaceBody,
     ],
   );
@@ -756,6 +786,7 @@ export default function PlaceRecommendationList({
         ListHeaderComponent={renderHeader()}
         ListFooterComponent={renderFooter()}
         contentContainerStyle={plStyles.listContent}
+        scrollEnabled={!isDraggingPlace}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         initialNumToRender={10}

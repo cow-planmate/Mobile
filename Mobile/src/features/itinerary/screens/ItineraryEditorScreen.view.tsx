@@ -658,6 +658,8 @@ const TimelineComponent = React.memo(
       ) => void;
       onPressPlace?: (place: Place) => void;
       topPadding?: number;
+      /** 시트에 가려지는 만큼. 마지막 시간대도 시트 위로 올려 볼 수 있게. */
+      bottomPadding?: number;
       pendingPlace?: Omit<Place, 'startTime' | 'endTime'> | null;
       previewStartTime?: string | null;
       previewEndTime?: string | null;
@@ -681,6 +683,7 @@ const TimelineComponent = React.memo(
         onUpdatePlaceTimes,
         onPressPlace,
         topPadding = 0,
+        bottomPadding = 0,
         pendingPlace,
         previewStartTime,
         previewEndTime,
@@ -750,7 +753,7 @@ const TimelineComponent = React.memo(
             ref={ref}
             contentContainerStyle={[
               styles.timelineContentContainer,
-              { paddingTop: topPadding },
+              { paddingTop: topPadding, paddingBottom: bottomPadding },
             ]}
           >
             <Pressable
@@ -892,6 +895,7 @@ export const EditorStateContext = createContext<{
   isDragging: boolean;
   dropBlocked: boolean;
   gridRef: React.RefObject<View | null>;
+  sheetInset: number;
 } | null>(null);
 
 /** 손잡이 줄 높이 — 잡는 막대와 갈래 줄. 접혀도 이만큼은 남는다. */
@@ -958,6 +962,7 @@ const TimelineTabScreen = React.memo(() => {
     isDragging,
     dropBlocked,
     gridRef,
+    sheetInset,
   } = state;
 
   const localDateStr = selectedDay ? formatDateLocal(selectedDay.date) : '';
@@ -986,6 +991,7 @@ const TimelineTabScreen = React.memo(() => {
         onUpdatePlaceTimes={handleUpdatePlaceTimes}
         onPressPlace={onOpenDetail}
         topPadding={selectedDay && currentWeather ? 62 : 0}
+        bottomPadding={sheetInset}
         pendingPlace={pendingPlace}
         previewStartTime={previewStartTime}
         previewEndTime={previewEndTime}
@@ -998,7 +1004,9 @@ const TimelineTabScreen = React.memo(() => {
         gridRef={gridRef}
       />
 
-      <View style={styles.floatingHistoryContainer}>
+      <View
+        style={[styles.floatingHistoryContainer, { bottom: sheetInset + 16 }]}
+      >
         <TouchableOpacity
           testID="btn-undo"
           style={styles.floatingHistoryButton}
@@ -1177,6 +1185,8 @@ export default function ItineraryEditorScreenView({
   > | null>(null);
   const [dropBlocked, setDropBlocked] = useState(false);
   const gridViewRef = useRef<View>(null);
+  /** 시간표 아래 여백에 쓰는, 손을 뗀 뒤의 시트 높이. */
+  const [sheetRest, setSheetRest] = useState(0);
 
   const editorStateContextValue = useMemo(() => {
     return {
@@ -1203,6 +1213,7 @@ export default function ItineraryEditorScreenView({
       isDragging: !!draggingPlace,
       dropBlocked,
       gridRef: gridViewRef,
+      sheetInset: SHEET_HANDLE_HEIGHT + sheetRest,
     };
   }, [
     timelineScrollRef,
@@ -1227,6 +1238,7 @@ export default function ItineraryEditorScreenView({
     onCancelPreview,
     draggingPlace,
     dropBlocked,
+    sheetRest,
   ]);
 
   // ── 장소 시트 ──
@@ -1237,14 +1249,16 @@ export default function ItineraryEditorScreenView({
   const [placeTab, setPlaceTab] = useState<PlaceTab>('관광지');
 
   const sheetBody = useSharedValue(0);
+  /** 접을 때 내려가는 거리. 높이가 아니라 위치만 옮겨야 손가락이 안 끊긴다. */
+  const sheetShift = useSharedValue(0);
   const dragY = useSharedValue(0);
 
   const sheetHeightRef = useRef(0);
   const sheetMaxRef = useRef(0);
   const sheetStartRef = useRef(0);
   const sheetInited = useRef(false);
-  const restoreTo = useRef(0);
   const bodyTop = useRef(0);
+  const bodyHeight = useRef(0);
   const timelineTop = useRef(0);
   const gridTopRef = useRef(0);
   const bodyViewRef = useRef<View>(null);
@@ -1257,6 +1271,8 @@ export default function ItineraryEditorScreenView({
       sheetBody.value = animate
         ? withTiming(next, { duration: 220 })
         : next;
+      // 끄는 동안에는 시간표를 다시 짜지 않는다. 손을 뗀 자리에서만 맞춘다.
+      if (animate) setSheetRest(next);
     },
     [sheetBody],
   );
@@ -1269,6 +1285,7 @@ export default function ItineraryEditorScreenView({
   const onBodyLayout = useCallback(
     (event: any) => {
       const { height } = event.nativeEvent.layout;
+      bodyHeight.current = height;
       sheetMaxRef.current = Math.max(
         0,
         height - SHEET_HANDLE_HEIGHT - MIN_TIMELINE_HEIGHT,
@@ -1312,6 +1329,7 @@ export default function ItineraryEditorScreenView({
 
   const sheetAnimStyle = useAnimatedStyle(() => ({
     height: SHEET_HANDLE_HEIGHT + sheetBody.value,
+    transform: [{ translateY: sheetShift.value }],
   }));
 
   const ghostScale = useSharedValue(0.86);
@@ -1339,7 +1357,12 @@ export default function ItineraryEditorScreenView({
     (absoluteY: number) => {
       const gridTop = gridTopRef.current;
       const areaTop = timelineTop.current;
-      if (!gridTop || (areaTop && absoluteY < areaTop)) return null;
+      // 시트가 접힌 뒤의 시간표 바닥. 손잡이 줄 위까지가 놓을 수 있는 자리다.
+      const areaBottom =
+        bodyTop.current + bodyHeight.current - SHEET_HANDLE_HEIGHT;
+      if (!gridTop) return null;
+      if (areaTop && absoluteY < areaTop) return null;
+      if (bodyHeight.current && absoluteY > areaBottom) return null;
 
       const minutes =
         (absoluteY - gridTop - GRID_TOP_OFFSET) / MINUTE_HEIGHT +
@@ -1402,7 +1425,6 @@ export default function ItineraryEditorScreenView({
 
   const handlePickUpPlace = useCallback(
     (place: Omit<Place, 'startTime' | 'endTime'>, absoluteY: number) => {
-      restoreTo.current = sheetHeightRef.current;
       draggingRef.current = place;
       setDraggingPlace(place);
       handleAddPlace(place);
@@ -1415,9 +1437,11 @@ export default function ItineraryEditorScreenView({
       dragY.value = absoluteY - bodyTop.current;
       ghostScale.value = 0.86;
       ghostScale.value = withSpring(1, { damping: 13, stiffness: 220 });
-      setSheetHeight(0);
+      // 높이를 줄이면 목록이 짜부라지며 집고 있던 손가락이 끊긴다.
+      // 자리는 그대로 두고 아래로 밀어 내려 손잡이 줄만 남긴다.
+      sheetShift.value = withTiming(sheetHeightRef.current, { duration: 220 });
     },
-    [dragY, ghostScale, handleAddPlace, setSheetHeight],
+    [dragY, ghostScale, handleAddPlace, sheetShift],
   );
 
   const handleDragPlace = useCallback(
@@ -1432,8 +1456,8 @@ export default function ItineraryEditorScreenView({
     draggingRef.current = null;
     setDraggingPlace(null);
     setDropBlocked(false);
-    setSheetHeight(restoreTo.current || Math.round(sheetMaxRef.current / 3));
-  }, [setSheetHeight]);
+    sheetShift.value = withTiming(0, { duration: 220 });
+  }, [sheetShift]);
 
   const handleDropPlace = useCallback(
     (absoluteY: number) => {

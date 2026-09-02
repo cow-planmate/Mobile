@@ -753,7 +753,13 @@ export const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0,
   },
+  // 시간표 위에 겹쳐 놓는다. 자리를 차지하면 시트를 접을 때 시간표가
+  // 다시 짜이고, 그 틈에 집고 있던 손가락이 끊긴다.
   placeSheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: COLORS.white,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
