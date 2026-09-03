@@ -7,10 +7,19 @@ export const COLORS = tokens.colors;
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.surface,
+  },
+  // 흰 덩어리는 화면 폭을 그대로 쓴다 — 모서리도 좌우 테두리도 두지 않는다.
+  block: {
     backgroundColor: COLORS.white,
+  },
+  // 회색이 보이는 유일한 자리. 덩어리 사이를 벌려 글이 위에 붙지 않게 한다.
+  band: {
+    height: normalize(10),
   },
 
   topBar: {
+    backgroundColor: COLORS.white,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -150,8 +159,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     paddingTop: normalize(4),
     paddingBottom: normalize(8),
-    borderTopWidth: normalize(6),
-    borderTopColor: COLORS.surface,
   },
   sectionHeader: {
     flexDirection: 'row',

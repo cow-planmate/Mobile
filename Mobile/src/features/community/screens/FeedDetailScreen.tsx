@@ -210,6 +210,9 @@ export default function FeedDetailScreen() {
       {renderTopBar()}
 
       <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.band} />
+
+        <View style={styles.block}>
         {/* 큰 사진을 머리에 얹으면 제목과 여행 정보가 첫 화면 밖으로 밀린다.
             사진은 목록과 아래 장소 줄에서 이미 보이므로 여기서는 글로만 열다. */}
         <View style={styles.header}>
@@ -284,9 +287,12 @@ export default function FeedDetailScreen() {
             contentText={post.contentText}
           />
         </View>
+        </View>
 
         {days.length > 0 && (
-          <View style={styles.section}>
+          <>
+          <View style={styles.band} />
+          <View style={[styles.block, styles.section]}>
             <TouchableOpacity
               style={styles.sectionHeader}
               onPress={() => setScheduleOpen(!isScheduleOpen)}
@@ -368,8 +374,12 @@ export default function FeedDetailScreen() {
               </>
             )}
           </View>
+          </>
         )}
 
+        <View style={styles.band} />
+
+        <View style={styles.block}>
         <View style={styles.reactionRow}>
           <TouchableOpacity
             style={[
@@ -432,6 +442,8 @@ export default function FeedDetailScreen() {
         </View>
 
         <CommentSection postId={post.id} commentCount={post.comments} feed />
+        </View>
+      </ScrollView>
 
       <PublicProfileModal
         visible={isAuthorProfileVisible}
@@ -439,7 +451,6 @@ export default function FeedDetailScreen() {
         userId={post.userId ?? null}
         fallbackName={post.author}
       />
-      </ScrollView>
 
       <CalendarModal
         visible={isDateModalVisible}

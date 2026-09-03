@@ -157,6 +157,9 @@ export default function PostDetailScreen() {
       {renderTopBar()}
 
       <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.band} />
+
+        <View style={styles.block}>
         <View style={styles.header}>
           {post.category === 'qna' && (
             <View style={styles.statusRow}>
@@ -331,7 +334,14 @@ export default function PostDetailScreen() {
           </TouchableOpacity>
         </View>
 
-        <CommentSection postId={post.id} commentCount={post.comments} />
+        </View>
+
+        <View style={styles.band} />
+
+        <View style={styles.block}>
+          <CommentSection postId={post.id} commentCount={post.comments} />
+        </View>
+      </ScrollView>
 
       <PublicProfileModal
         visible={isAuthorProfileVisible}
@@ -339,7 +349,6 @@ export default function PostDetailScreen() {
         userId={post.userId ?? null}
         fallbackName={post.author}
       />
-      </ScrollView>
     </View>
   );
 }

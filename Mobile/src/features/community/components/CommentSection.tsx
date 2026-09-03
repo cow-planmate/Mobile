@@ -400,9 +400,8 @@ export default function CommentSection({
 }
 
 const styles = StyleSheet.create({
+  // 위쪽을 가르는 회색은 화면이 띠로 깔아 준다 — 여기서 또 그리면 두 겹이 된다.
   container: {
-    borderTopWidth: normalize(6),
-    borderTopColor: tokens.colors.surface,
     paddingHorizontal: normalize(16),
     paddingTop: normalize(16),
     paddingBottom: normalize(24),
