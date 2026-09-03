@@ -182,7 +182,12 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
       ? options.buttons
       : [{ text: '확인', style: 'default' }];
 
-  const alertType = options?.type ?? inferType(options?.title);
+  // 지우기 단추가 달린 물음은 아직 아무 일도 잘못되지 않았으므로 오류(빨강)가
+  // 아니라 주의(주황)다. 제목의 낱말이 아니라 실제로 달린 단추로 판별한다.
+  const hasDestructive = buttons.some(b => b.style === 'destructive');
+  const alertType = hasDestructive
+    ? 'warning'
+    : options?.type ?? inferType(options?.title);
   const { Icon, color } = ICON_MAP[alertType];
 
   return (
@@ -201,36 +206,40 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
           <Animated.View style={[s.backdrop, backdropStyle]} />
           <Animated.View style={[s.card, cardStyle]}>
 
-            <View style={[s.iconWrap, { backgroundColor: color + '14' }]}>
-              <Icon size={28} color={color} strokeWidth={2} />
+            {/* 표식은 글 칸 바깥 여백에 매단다. 감싸지 않으므로 제목이 길어져도
+                제목과 본문이 하나의 왼쪽 선을 유지한다. */}
+            <View style={s.head}>
+              <View style={s.gutter}>
+                <Icon size={18} color={color} strokeWidth={1.9} />
+              </View>
+              <View style={s.headText}>
+                <Text style={s.title}>{options?.title}</Text>
+                {options?.message ? (
+                  <Text style={s.message}>{options.message}</Text>
+                ) : null}
+              </View>
             </View>
 
-            <Text style={s.title}>{options?.title}</Text>
-
-            {options?.message ? (
-              <Text style={s.message}>{options.message}</Text>
-            ) : null}
-
-            <View
-              style={[s.buttonRow, buttons.length === 1 && s.buttonRowSingle]}
-            >
+            <View style={s.buttonRow}>
               {buttons.map((btn, i) => {
                 const isDestructive = btn.style === 'destructive';
                 const isCancel = btn.style === 'cancel';
-                const isPrimary =
-                  !isDestructive &&
-                  !isCancel &&
-                  (buttons.length === 1 || i === buttons.length - 1);
+                // 되돌릴 수 없는 쪽이 더 쉬워 보이면 안 된다. 지우기가 달린
+                // 물음에서는 물러나는 쪽이 채운 단추를 갖고, 지우기는 빨간
+                // 실선으로만 둘러 약하게 둔다. 지우기가 없는 곳에서는 평소대로
+                // 밀고 나가는 쪽이 채운 단추다.
+                const isFilled = hasDestructive ? isCancel : !isCancel;
 
                 return (
                   <Pressable
                     key={i}
+                    testID={`alert-button-${i}`}
                     style={({ pressed }) => [
                       s.button,
-                      isPrimary && s.buttonPrimary,
+                      isFilled && s.buttonFilled,
                       isDestructive && s.buttonDestructive,
-                      isCancel && s.buttonCancel,
-                      buttons.length > 1 && { flex: 1 },
+                      !isFilled && !isDestructive && s.buttonQuiet,
+                      !isDestructive && { flex: 1 },
                       pressed && { opacity: 0.75 },
                     ]}
                     onPress={() => handlePress(btn)}
@@ -238,9 +247,8 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
                     <Text
                       style={[
                         s.buttonText,
-                        isPrimary && s.buttonTextPrimary,
+                        isFilled && s.buttonTextFilled,
                         isDestructive && s.buttonTextDestructive,
-                        isCancel && s.buttonTextCancel,
                       ]}
                     >
                       {btn.text}
@@ -265,7 +273,7 @@ function inferType(title?: string): AlertType {
 }
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const CARD_W = Math.min(SCREEN_W - 56, 320);
+const CARD_W = Math.min(SCREEN_W - 48, 336);
 
 const s = StyleSheet.create({
   overlay: {
@@ -280,80 +288,74 @@ const s = StyleSheet.create({
   card: {
     width: CARD_W,
     backgroundColor: '#FFF',
-    borderRadius: 20, 
-    paddingTop: 32,
-    paddingBottom: 24,
-    paddingHorizontal: 24,
-    alignItems: 'center',
+    borderRadius: 18,
+    paddingTop: 22,
+    paddingBottom: 18,
+    paddingLeft: 18,
+    paddingRight: 22,
     borderWidth: 1,
-    borderColor: '#F3F4F6', 
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.06, 
-    shadowRadius: 20,
-    elevation: 8,
+    borderColor: '#E5E7EB',
   },
-  iconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
+  head: {
+    flexDirection: 'row',
+  },
+  gutter: {
+    width: 20,
+    paddingTop: 3,
+  },
+  headText: {
+    flex: 1,
+    minWidth: 0,
+    marginLeft: 10,
   },
   title: {
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: 'Pretendard-Bold',
     color: '#111827',
-    textAlign: 'center',
-    marginBottom: 8,
     lineHeight: 24,
+    letterSpacing: -0.3,
   },
   message: {
+    marginTop: 7,
     fontSize: 14,
     fontFamily: 'Pretendard-Regular',
     color: '#6B7280',
-    textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 4,
   },
   buttonRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 24,
+    gap: 8,
+    marginTop: 22,
     width: '100%',
   },
-  buttonRowSingle: {
-    justifyContent: 'center',
-  },
   button: {
-    height: 46, 
-    borderRadius: 12, 
+    height: 46,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
-  buttonPrimary: {
+  buttonFilled: {
     backgroundColor: '#1344FF',
   },
-  buttonDestructive: {
-    backgroundColor: '#FF3B30',
+  buttonQuiet: {
+    borderColor: '#E5E7EB',
   },
-  buttonCancel: {
-    backgroundColor: '#F3F4F6',
+  // 채우지 않고 테두리만 둘러 취소보다 약하되, 어디까지가 단추인지는 분명하게.
+  buttonDestructive: {
+    borderColor: '#FF3B30',
   },
   buttonText: {
     fontSize: 15,
     fontFamily: 'Pretendard-SemiBold',
     color: '#111827',
   },
-  buttonTextPrimary: {
+  buttonTextFilled: {
     color: '#FFFFFF',
   },
   buttonTextDestructive: {
-    color: '#FFFFFF',
-  },
-  buttonTextCancel: {
-    color: '#4B5563', 
+    color: '#FF3B30',
   },
 });
