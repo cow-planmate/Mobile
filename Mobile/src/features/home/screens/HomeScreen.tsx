@@ -10,7 +10,9 @@ import {
 } from '../../../api/trips';
 import { useAlert } from '../../../contexts/AlertContext';
 import { useInvitationSse } from '../../../hooks/useInvitationSse';
+import Toast from 'react-native-toast-message';
 import {
+  InvitationPushOrigin,
   IS_FCM_RUNTIME_ENABLED,
   useFcmNotifications,
 } from '../../../hooks/useFcmNotifications';
@@ -114,9 +116,40 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     onRequestResult: handleRequestResult,
   });
 
+  /**
+   * 알림을 눌러 들어왔으면 알림함을 연다.
+   *
+   * 목록만 새로 받고 끝내면 화면에 아무 변화가 없어 눌린 것조차 알 수 없었다.
+   * 앱을 보고 있는 중에 온 알림은 안드로이드가 띄워 주지 않으므로, 대신 눌러서
+   * 열 수 있는 토스트를 내준다.
+   */
+  const handleInvitationPush = useCallback(
+    async (origin: InvitationPushOrigin) => {
+      await fetchPendingRequests();
+
+      if (origin === 'opened') {
+        setNotificationModalVisible(true);
+        return;
+      }
+
+      Toast.show({
+        type: 'info',
+        text1: '새 일정 알림이 왔어요',
+        text2: '눌러서 확인하기',
+        position: 'top',
+        visibilityTime: 5000,
+        onPress: () => {
+          Toast.hide();
+          setNotificationModalVisible(true);
+        },
+      });
+    },
+    [fetchPendingRequests],
+  );
+
   useFcmNotifications({
     enabled: !!user && IS_FCM_RUNTIME_ENABLED,
-    onInvitationPush: () => fetchPendingRequests(),
+    onInvitationPush: handleInvitationPush,
   });
 
   useEffect(() => {

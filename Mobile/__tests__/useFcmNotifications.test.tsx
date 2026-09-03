@@ -39,7 +39,7 @@ function TestComponent({
   onInvitationPush,
 }: {
   enabled: boolean;
-  onInvitationPush?: () => void;
+  onInvitationPush?: (origin: 'arrived' | 'opened') => void;
 }) {
   useFcmNotifications({ enabled, onInvitationPush });
   return null;
@@ -126,6 +126,50 @@ describe('useFcmNotifications', () => {
     });
 
     expect(mockGetToken).toHaveBeenCalledTimes(1);
+  });
+
+  // 알림을 눌러 들어온 것과 앱을 보는 중에 온 것은 화면이 해야 할 일이 다르다.
+  // 구분이 사라지면 눌러도 아무 일이 없던 예전 동작으로 조용히 되돌아간다.
+  it('알림을 눌러 들어오면 opened로 알린다', async () => {
+    const onInvitationPush = jest.fn();
+    mockGetInitialNotification.mockResolvedValue({
+      messageId: 'opened-1',
+      notification: { title: '일정 초대', body: '민영님이 초대했습니다.' },
+    });
+
+    await act(async () => {
+      ReactTestRenderer.create(
+        <TestComponent enabled={true} onInvitationPush={onInvitationPush} />,
+      );
+      await new Promise(resolve => setTimeout(resolve, 50));
+    });
+
+    expect(onInvitationPush).toHaveBeenCalledWith('opened');
+  });
+
+  it('앱을 보는 중에 온 알림은 arrived로 알린다', async () => {
+    const onInvitationPush = jest.fn();
+    let foregroundHandler: ((message: unknown) => Promise<void>) | undefined;
+    mockOnMessage.mockImplementation((handler: any) => {
+      foregroundHandler = handler;
+      return jest.fn();
+    });
+
+    await act(async () => {
+      ReactTestRenderer.create(
+        <TestComponent enabled={true} onInvitationPush={onInvitationPush} />,
+      );
+      await new Promise(resolve => setTimeout(resolve, 50));
+    });
+
+    await act(async () => {
+      await foregroundHandler?.({
+        messageId: 'arrived-1',
+        data: { type: 'INVITE' },
+      });
+    });
+
+    expect(onInvitationPush).toHaveBeenCalledWith('arrived');
   });
 
   it('초기화 도중 해제되면 리스너를 남기지 않는다', async () => {

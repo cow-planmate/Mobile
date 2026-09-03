@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { ToastConfig } from 'react-native-toast-message';
 import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
 import Info from 'lucide-react-native/dist/esm/icons/info';
@@ -57,23 +57,49 @@ const ToastBody = ({ text1, text2 }: { text1?: string; text2?: string }) => (
   </View>
 );
 
+/**
+ * onPress를 넘겨도 눌리지 않던 것을 살린다.
+ *
+ * 토스트 라이브러리는 onPress를 그대로 넘겨줄 뿐이라, 여기서 감싸 주지 않으면
+ * 손이 닿을 자리가 없다. 넘기지 않은 토스트는 지금까지처럼 그냥 알리기만 한다.
+ */
+const ToastShell = ({
+  onPress,
+  children,
+}: {
+  onPress?: () => void;
+  children: React.ReactNode;
+}) =>
+  onPress ? (
+    <TouchableOpacity
+      style={toastStyles.container}
+      onPress={onPress}
+      activeOpacity={0.85}
+      accessibilityRole="button"
+    >
+      {children}
+    </TouchableOpacity>
+  ) : (
+    <View style={toastStyles.container}>{children}</View>
+  );
+
 export const toastConfig: ToastConfig = {
-  error: ({ text1, text2 }) => (
-    <View style={toastStyles.container}>
+  error: ({ text1, text2, onPress }) => (
+    <ToastShell onPress={onPress}>
       <XCircle size={18} color="#D92D20" strokeWidth={2.5} />
       <ToastBody text1={text1} text2={text2} />
-    </View>
+    </ToastShell>
   ),
-  success: ({ text1, text2 }) => (
-    <View style={toastStyles.container}>
+  success: ({ text1, text2, onPress }) => (
+    <ToastShell onPress={onPress}>
       <CheckCircle2 size={18} color="#067647" strokeWidth={2.5} />
       <ToastBody text1={text1} text2={text2} />
-    </View>
+    </ToastShell>
   ),
-  info: ({ text1, text2 }) => (
-    <View style={toastStyles.container}>
+  info: ({ text1, text2, onPress }) => (
+    <ToastShell onPress={onPress}>
       <Info size={18} color={tokens.colors.primary} strokeWidth={2.5} />
       <ToastBody text1={text1} text2={text2} />
-    </View>
+    </ToastShell>
   ),
 };

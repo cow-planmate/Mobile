@@ -9,9 +9,18 @@ import {
   FCM_STORAGE_KEYS,
 } from '../constants/storageKeys';
 
+/**
+ * 알림이 어떻게 도착했는지.
+ *
+ * 'arrived'는 앱을 보고 있는 중에 온 것이라 화면에 뜨지 않는다 — 알릴 자리를
+ * 직접 만들어야 한다. 'opened'는 사용자가 알림을 눌러 들어온 것이므로,
+ * 목록만 새로 받고 끝내면 아무 일도 안 일어난 것처럼 보인다.
+ */
+export type InvitationPushOrigin = 'arrived' | 'opened';
+
 interface UseFcmNotificationsParams {
   enabled: boolean;
-  onInvitationPush?: () => void | Promise<void>;
+  onInvitationPush?: (origin: InvitationPushOrigin) => void | Promise<void>;
 }
 
 const [FCM_TOKEN_STORAGE_KEY, FCM_TOKEN_LAST_SYNCED_KEY] = FCM_STORAGE_KEYS;
@@ -175,7 +184,10 @@ export function useFcmNotifications({
     // 리스너를 해제할 수 없다. 취소 여부를 보고 등록 자체를 건너뛴다.
     let cancelled = false;
 
-    const handleInvitationMessage = async (remoteMessage: any) => {
+    const handleInvitationMessage = async (
+      remoteMessage: any,
+      origin: InvitationPushOrigin,
+    ) => {
       const messageId = remoteMessage.messageId || undefined;
       if (messageId && seenMessageIdsRef.current.has(messageId)) {
         return;
@@ -198,7 +210,7 @@ export function useFcmNotifications({
       }
 
       if (isInvitationMessage(remoteMessage)) {
-        await callback();
+        await callback(origin);
       }
     };
 
@@ -239,13 +251,13 @@ export function useFcmNotifications({
       unsubscribeOnMessage = messaging().onMessage(
         async (remoteMessage: any) => {
           fcmLog('[FCM] 포그라운드 메시지 수신:', remoteMessage.data);
-          await handleInvitationMessage(remoteMessage);
+          await handleInvitationMessage(remoteMessage, 'arrived');
         },
       );
 
       unsubscribeOnOpen = messaging().onNotificationOpenedApp(
         async (remoteMessage: any) => {
-          await handleInvitationMessage(remoteMessage);
+          await handleInvitationMessage(remoteMessage, 'opened');
         },
       );
 
@@ -258,7 +270,7 @@ export function useFcmNotifications({
       const initialNotification = await messaging().getInitialNotification();
       if (cancelled) return;
       if (initialNotification) {
-        await handleInvitationMessage(initialNotification);
+        await handleInvitationMessage(initialNotification, 'opened');
       }
     };
 
