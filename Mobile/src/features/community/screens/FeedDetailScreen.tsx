@@ -258,29 +258,6 @@ export default function FeedDetailScreen() {
           )}
         </View>
 
-        <View style={styles.forkBar}>
-          <TouchableOpacity
-            style={[
-              styles.forkButton,
-              (!isForkable || fork.isPending) && styles.forkButtonDisabled,
-            ]}
-            onPress={handleForkPress}
-            disabled={!isForkable || fork.isPending}
-            activeOpacity={0.85}
-            accessibilityState={{ disabled: !isForkable || fork.isPending }}
-          >
-            <Copy size={normalize(15)} color={COLORS.white} />
-            <Text style={styles.forkButtonText}>
-              {fork.isPending ? '가져오는 중…' : '내 일정으로 가져가기'}
-            </Text>
-          </TouchableOpacity>
-          <Text style={styles.forkHint}>
-            {isForkable
-              ? '시작일만 고르면 이 일정 그대로 내 일정에 담겨요.'
-              : '이 여행기에는 가져갈 수 있는 일정 정보가 없어요.'}
-          </Text>
-        </View>
-
         <View style={styles.body}>
           <PostContentView
             content={post.content}
@@ -373,6 +350,39 @@ export default function FeedDetailScreen() {
                 />
               </>
             )}
+
+            {/* 가져가는 대상이 바로 위 일정이다. 다 훑고 정한 그 자리에 둔다.
+                일정을 접어도 이 줄은 남는다 — 이 화면에서 제일 중요한 행동이다. */}
+            <View style={styles.forkBar}>
+              <TouchableOpacity
+                style={[
+                  styles.forkButton,
+                  (!isForkable || fork.isPending) && styles.forkButtonDisabled,
+                ]}
+                onPress={handleForkPress}
+                disabled={!isForkable || fork.isPending}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !isForkable || fork.isPending }}
+              >
+                <Copy
+                  size={normalize(15)}
+                  color={isForkable ? COLORS.white : COLORS.textTertiary}
+                />
+                <Text
+                  style={[
+                    styles.forkButtonText,
+                    !isForkable && styles.forkButtonTextOff,
+                  ]}
+                >
+                  {!isForkable
+                    ? '가져갈 일정이 없어요'
+                    : fork.isPending
+                    ? '가져오는 중…'
+                    : '내 일정으로 가져가기'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
           </>
         )}

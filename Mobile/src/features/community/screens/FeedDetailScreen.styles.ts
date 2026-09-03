@@ -123,11 +123,13 @@ export const styles = StyleSheet.create({
     gap: normalize(3),
   },
 
+  // 일정 목록 끝에 붙는 줄. 좌우 여백은 감싸는 덩어리가 이미 준다.
   forkBar: {
-    paddingHorizontal: normalize(16),
-    paddingVertical: normalize(12),
-    borderBottomWidth: normalize(6),
-    borderBottomColor: COLORS.surface,
+    marginTop: normalize(6),
+    paddingTop: normalize(12),
+    paddingBottom: normalize(4),
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderLight,
   },
   forkButton: {
     flexDirection: 'row',
@@ -146,13 +148,9 @@ export const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.bold,
     color: COLORS.white,
   },
-  forkHint: {
-    marginTop: normalize(7),
-    fontSize: normalize(11),
-    lineHeight: normalize(16),
-    fontFamily: tokens.fontFamily.regular,
+  // 회색 바탕에 흰 글자는 읽히지 않는다. 잠겼을 때는 글자도 함께 낮춘다.
+  forkButtonTextOff: {
     color: COLORS.textTertiary,
-    textAlign: 'center',
   },
 
   section: {
