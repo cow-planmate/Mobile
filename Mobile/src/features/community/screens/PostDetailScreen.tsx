@@ -222,7 +222,10 @@ export default function PostDetailScreen() {
                   }}
                   activeOpacity={0.8}
                 >
-                  <CheckCircle2 size={normalize(12)} color="#059669" />
+                  <CheckCircle2
+                    size={normalize(12)}
+                    color={tokens.tones.success.fg}
+                  />
                   <Text
                     style={[
                       styles.authorActionText,

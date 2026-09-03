@@ -8,7 +8,6 @@ import {
   ScrollView,
   Text,
   Modal,
-  Pressable,
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -20,6 +19,7 @@ import List from 'lucide-react-native/dist/esm/icons/list';
 import SlidersHorizontal from 'lucide-react-native/dist/esm/icons/sliders-horizontal';
 import ArrowDownWideNarrow from 'lucide-react-native/dist/esm/icons/arrow-down-wide-narrow';
 import ArrowUpNarrowWide from 'lucide-react-native/dist/esm/icons/arrow-up-narrow-wide';
+import RotateCcw from 'lucide-react-native/dist/esm/icons/rotate-ccw';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import MapIcon from 'lucide-react-native/dist/esm/icons/map';
@@ -27,6 +27,7 @@ import Plus from 'lucide-react-native/dist/esm/icons/plus';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { Header, NotificationModal } from '../../../components/common';
+import SheetModal from '../../../components/common/SheetModal';
 import TravelFeedList, { TravelFeedItem } from '../components/TravelFeedList';
 import KakaoMapView, { MapPlace } from '../components/KakaoMapView';
 import { acceptInvitation, rejectInvitation } from '../../../api/trips';
@@ -498,34 +499,42 @@ export default function TravelFeedScreen() {
         </TouchableOpacity>
       </View>
 
-      <Modal
+      <SheetModal
         visible={isFilterModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setFilterModalVisible(false)}
+        title="상세 필터"
+        onClose={() => setFilterModalVisible(false)}
+        maxHeightRatio={0.8}
+        headerAction={
+          <TouchableOpacity
+            style={styles.resetLink}
+            onPress={resetFilters}
+            hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
+            accessibilityRole="button"
+            accessibilityLabel="필터 초기화"
+          >
+            <RotateCcw
+              size={normalize(13)}
+              color={tokens.colors.textSecondary}
+              strokeWidth={1.8}
+            />
+            <Text style={styles.resetLinkText}>초기화</Text>
+          </TouchableOpacity>
+        }
+        footer={
+          <TouchableOpacity
+            style={styles.applyButton}
+            onPress={applyFilters}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="필터 적용"
+          >
+            <Text style={styles.applyButtonText}>적용하기</Text>
+          </TouchableOpacity>
+        }
       >
-        <View style={styles.modalOverlay}>
-          <Pressable
-            style={styles.modalDismissOverlay}
-            onPress={() => setFilterModalVisible(false)}
-          />
-          <View style={styles.bottomSheetContainer}>
-            <View style={styles.bottomSheetHeader}>
-              <Text style={styles.bottomSheetTitle}>상세 필터</Text>
-              <TouchableOpacity
-                style={styles.resetLink}
-                onPress={resetFilters}
-                hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
-                accessibilityRole="button"
-                accessibilityLabel="필터 초기화"
-              >
-                <X size={normalize(14)} color={tokens.colors.textSecondary} />
-                <Text style={styles.resetLinkText}>초기화</Text>
-              </TouchableOpacity>
-            </View>
-
             <ScrollView
               style={styles.bottomSheetBody}
+              contentContainerStyle={styles.bottomSheetBodyContent}
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.filterSection}>
@@ -603,20 +612,7 @@ export default function TravelFeedScreen() {
                 </View>
               </View>
             </ScrollView>
-
-            <View style={styles.bottomSheetFooter}>
-              <TouchableOpacity
-                style={styles.applyButton}
-                onPress={applyFilters}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-              >
-                <Text style={styles.applyButtonText}>적용하기</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      </SheetModal>
 
       <Modal
         visible={isMapModalVisible}
@@ -790,39 +786,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-end',
-  },
-  modalDismissOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  bottomSheetContainer: {
-    backgroundColor: tokens.colors.white,
-    borderTopLeftRadius: normalize(24),
-    borderTopRightRadius: normalize(24),
-    padding: normalize(24),
-    maxHeight: '80%',
-    ...tokens.shadows.md,
-  },
-  bottomSheetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: normalize(20),
-  },
-  bottomSheetTitle: {
-    fontSize: normalize(tokens.fontSize.ml),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.text,
-  },
   bottomSheetBody: {
-    marginBottom: normalize(24),
+    flexShrink: 1,
+  },
+  bottomSheetBodyContent: {
+    paddingHorizontal: normalize(16),
+    paddingTop: normalize(4),
   },
   filterSection: {
     marginBottom: normalize(24),
@@ -874,21 +843,15 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.medium,
     color: tokens.colors.textSecondary,
   },
-  bottomSheetFooter: {
-    flexDirection: 'row',
-    gap: normalize(12),
-    paddingBottom: Platform.OS === 'ios' ? normalize(12) : 0,
-  },
   applyButton: {
-    flex: 1,
     height: normalize(48),
-    borderRadius: tokens.radius.l,
+    borderRadius: normalize(12),
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: tokens.colors.primary,
   },
   applyButtonText: {
-    fontSize: normalize(tokens.fontSize.s),
+    fontSize: normalize(15),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.white,
   },

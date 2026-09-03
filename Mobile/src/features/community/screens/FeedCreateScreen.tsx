@@ -29,6 +29,7 @@ import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { useUnsavedChangesPrompt } from '../../../hooks/useUnsavedChangesPrompt';
 import { POST_TITLE_MAX_LENGTH } from '../constants/board';
 import { tokens } from '../../../theme/tokens';
+import { normalize } from '../../../utils/normalize';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import {
   buildFeedUpdatePayload,
@@ -244,6 +245,16 @@ export default function FeedCreateScreen() {
       }
     });
 
+  // 발행 단추가 잠기는 조건. 세 자리(모양·비활성·스크린리더)가 같은 값을 봐야 한다.
+  const isSubmitBlocked =
+    (!isEditMode && !snapshot) ||
+    (isEditMode &&
+      (!existingPost.data?.itinerary ||
+        existingPost.data.category !== 'feed')) ||
+    createPost.isPending ||
+    updatePost.isPending ||
+    isSubmitting;
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, screenInsets]}
@@ -432,30 +443,18 @@ export default function FeedCreateScreen() {
         <TouchableOpacity
           style={[
             styles.submitButton,
-            ((!isEditMode && !snapshot) ||
-              (isEditMode &&
-                (!existingPost.data?.itinerary ||
-                  existingPost.data.category !== 'feed')) ||
-              createPost.isPending ||
-              updatePost.isPending ||
-              isSubmitting) &&
-              styles.submitDisabled,
+            isSubmitBlocked && styles.submitDisabled,
           ]}
           onPress={() => {
             handleSubmit();
           }}
-          disabled={
-            (!isEditMode && !snapshot) ||
-            (isEditMode &&
-              (!existingPost.data?.itinerary ||
-                existingPost.data.category !== 'feed')) ||
-            createPost.isPending ||
-            updatePost.isPending ||
-            isSubmitting
-          }
-          accessibilityState={{ disabled: (!isEditMode && !snapshot) ||             (isEditMode &&               (!existingPost.data?.itinerary ||                 existingPost.data.category !== 'feed')) ||             createPost.isPending ||             updatePost.isPending ||             isSubmitting }}
+          disabled={isSubmitBlocked}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isSubmitBlocked }}
         >
-          <Text style={styles.submitText}>
+          <Text
+            style={[styles.submitText, isSubmitBlocked && styles.submitTextOff]}
+          >
             {createPost.isPending || updatePost.isPending
               ? isEditMode
                 ? '수정 중…'
@@ -473,101 +472,164 @@ export default function FeedCreateScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.white },
   header: {
-    height: 56,
-    paddingHorizontal: 16,
+    height: normalize(56),
+    paddingHorizontal: normalize(16),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.border,
   },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: tokens.colors.text },
-  headerSpace: { width: 24 },
-  body: { padding: 20, gap: 10 },
-  label: { marginTop: 8, fontSize: 14, fontWeight: '700', color: '#374151' },
+  headerTitle: {
+    fontSize: normalize(17),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+  },
+  headerSpace: { width: normalize(24) },
+  body: { padding: normalize(20), gap: normalize(10) },
+  label: {
+    marginTop: normalize(8),
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.textLabel,
+  },
   planCard: {
-    minHeight: 64,
+    minHeight: normalize(64),
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: normalize(12),
+    padding: normalize(14),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  planCardSelected: { borderColor: tokens.colors.primary, backgroundColor: '#EFF6FF' },
-  planName: { fontSize: 15, fontWeight: '600', color: tokens.colors.text },
-  planDate: { marginTop: 4, fontSize: 12, color: tokens.colors.textSecondary },
-  emptyText: { paddingVertical: 16, color: tokens.colors.textSecondary, textAlign: 'center' },
+  planCardSelected: {
+    borderColor: tokens.colors.primary,
+    backgroundColor: tokens.colors.primarySurface,
+  },
+  planName: {
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.text,
+  },
+  planDate: {
+    marginTop: normalize(4),
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textSecondary,
+  },
+  emptyText: {
+    paddingVertical: normalize(16),
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textSecondary,
+    textAlign: 'center',
+  },
   snapshotInfo: {
     flexDirection: 'row',
-    gap: 6,
+    gap: normalize(6),
     alignItems: 'center',
-    backgroundColor: '#EFF6FF',
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: tokens.colors.primarySurface,
+    borderRadius: normalize(8),
+    padding: normalize(12),
   },
-  snapshotText: { flex: 1, fontSize: 13, color: '#1D4ED8' },
+  snapshotText: {
+    flex: 1,
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.primary,
+  },
   itineraryPreview: {
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    borderRadius: 12,
+    borderRadius: normalize(12),
     overflow: 'hidden',
   },
   previewTitle: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: '#374151',
-    fontSize: 13,
-    fontWeight: '700',
+    paddingHorizontal: normalize(12),
+    paddingVertical: normalize(10),
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.textLabel,
     backgroundColor: tokens.colors.surface,
   },
   previewDay: {
     flexDirection: 'row',
-    gap: 10,
-    padding: 12,
+    gap: normalize(10),
+    padding: normalize(12),
     borderTopWidth: 1,
     borderTopColor: tokens.colors.borderLight,
   },
   previewDayLabel: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 7,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: normalize(7),
+    paddingVertical: normalize(4),
+    borderRadius: normalize(6),
     backgroundColor: tokens.colors.sub,
   },
-  previewDayText: { color: tokens.colors.primary, fontSize: 11, fontWeight: '700' },
-  previewPlaces: { flex: 1, gap: 3 },
-  previewPlace: { color: '#374151', fontSize: 13 },
-  previewMore: { color: tokens.colors.textTertiary, fontSize: 12 },
+  previewDayText: {
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.primary,
+  },
+  previewPlaces: { flex: 1, gap: normalize(3) },
+  previewPlace: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textLabel,
+  },
+  previewMore: {
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textTertiary,
+  },
   input: {
-    minHeight: 48,
+    minHeight: normalize(48),
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    fontSize: 14,
+    borderColor: tokens.colors.borderStrong,
+    borderRadius: normalize(10),
+    paddingHorizontal: normalize(12),
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.text,
   },
-  contentInput: { minHeight: 120, paddingTop: 12 },
+  contentInput: { minHeight: normalize(120), paddingTop: normalize(12) },
   imageSelectButton: {
-    minHeight: 46,
+    minHeight: normalize(46),
     borderWidth: 1,
     borderColor: tokens.colors.primary,
-    borderRadius: 10,
+    borderRadius: normalize(10),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  imageSelectText: { color: tokens.colors.primary, fontWeight: '600' },
-  selectedImageName: { color: tokens.colors.textSecondary, fontSize: 12 },
-  footer: { padding: 16, borderTopWidth: 1, borderTopColor: tokens.colors.border },
+  imageSelectText: {
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.primary,
+  },
+  selectedImageName: {
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textSecondary,
+  },
+  footer: {
+    padding: normalize(16),
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.border,
+  },
   submitButton: {
-    minHeight: 52,
-    borderRadius: 12,
+    minHeight: normalize(52),
+    borderRadius: normalize(12),
     backgroundColor: tokens.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  submitDisabled: { backgroundColor: tokens.colors.textTertiary },
-  submitText: { color: tokens.colors.white, fontSize: 15, fontWeight: '700' },
+  submitDisabled: { backgroundColor: tokens.colors.disabled },
+  submitText: {
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
+  },
+  // 회색 바탕에 흰 글자는 읽히지 않는다. 잠겼을 때는 글자도 함께 낮춘다.
+  submitTextOff: { color: tokens.colors.textTertiary },
 });

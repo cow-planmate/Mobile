@@ -77,16 +77,16 @@ export const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.bold,
   },
   statusTagAnswered: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: tokens.tones.success.bg,
   },
   statusTagPending: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: tokens.tones.warning.bg,
   },
   statusTagTextAnswered: {
-    color: '#059669',
+    color: tokens.tones.success.fg,
   },
   statusTagTextPending: {
-    color: '#D97706',
+    color: tokens.tones.warning.fg,
   },
   title: {
     fontSize: normalize(19),
@@ -142,16 +142,16 @@ export const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   authorActionDanger: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: tokens.tones.danger.bg,
   },
   authorActionDangerText: {
     color: tokens.tones.danger.fg,
   },
   authorActionAccent: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: tokens.tones.success.bg,
   },
   authorActionAccentText: {
-    color: '#059669',
+    color: tokens.tones.success.fg,
   },
 
   body: {
@@ -193,11 +193,4 @@ export const styles = StyleSheet.create({
     color: COLORS.white,
   },
 
-  regionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(5),
-    paddingHorizontal: normalize(16),
-    paddingBottom: normalize(16),
-  },
 });
