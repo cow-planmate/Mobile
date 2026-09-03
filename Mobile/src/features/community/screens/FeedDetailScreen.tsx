@@ -359,6 +359,11 @@ export default function FeedDetailScreen() {
                 <ScheduleTimeline
                   entries={entries}
                   emptyText="이 날에는 등록된 장소가 없어요"
+                  showMapLink
+                  // 전체를 고르면 마지막 줄이 마지막 날의 끝이라 '하루'로 닫을 수 없다.
+                  endLabel={
+                    selectedDay === ALL_DAYS ? undefined : '하루 마무리'
+                  }
                 />
               </>
             )}

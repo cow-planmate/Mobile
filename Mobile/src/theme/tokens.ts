@@ -29,6 +29,8 @@ export const tones = {
   danger: { bg: '#FEF2F2', fg: '#DC2626' },
   place: { bg: '#ECFDF5', fg: '#047857' },
   rating: { bg: '#FEFCE8', fg: '#A16207' },
+  // 사용자가 직접 적어 넣은 것. 서버가 준 갈래 넷과 섞이지 않게 따로 둔다.
+  custom: { bg: '#F5F3FF', fg: '#6D28D9' },
 };
 
 // 안드로이드는 shadowColor/Offset/Opacity/Radius를 렌더링하지 않고 elevation만 읽는다.

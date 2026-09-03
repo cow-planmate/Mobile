@@ -3,6 +3,7 @@ import {
   resolveCategoryId,
 } from '../../itinerary/components/TimelineItem';
 import { ScheduleEntry } from '../../itinerary/components/PlanScheduleList';
+import { buildKakaoMapUrl } from '../../../utils/kakaoMapLink';
 import { ItineraryDay } from '../types';
 
 /** \ud558\ub8e8\uac00 \uc544\ub2c8\ub77c \uc804\uccb4\ub97c \uace0\ub978 \uc0c1\ud0dc. */
@@ -34,6 +35,16 @@ export const itineraryEntries = (
         memo: item.memo ?? undefined,
         photoUrl: item.photoUrl ?? undefined,
         badge: showAll ? `${day.day ?? dayIndex + 1}\uc77c\ucc28` : undefined,
+        mapUrl: buildKakaoMapUrl({
+          name: item.place,
+          coords:
+            item.lat != null && item.lng != null
+              ? { lat: item.lat, lng: item.lng }
+              : null,
+          searchQuery: [item.place, item.placeAddress]
+            .filter(Boolean)
+            .join(' '),
+        }),
       };
     }),
   );
