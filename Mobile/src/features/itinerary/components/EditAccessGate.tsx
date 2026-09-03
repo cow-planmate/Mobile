@@ -103,7 +103,13 @@ export default function EditAccessGate({
             accessibilityRole="button"
             accessibilityState={{ disabled: status === 'sending' || status === 'sent' || !planId }}
           >
-            <Text style={styles.primaryButtonText}>
+            <Text
+              style={[
+                styles.primaryButtonText,
+                (status === 'sending' || status === 'sent') &&
+                  styles.buttonTextDisabled,
+              ]}
+            >
               {status === 'sending'
                 ? '요청하는 중…'
                 : status === 'sent'
@@ -179,7 +185,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonDisabled: {
-    backgroundColor: tokens.colors.textTertiary,
+    backgroundColor: tokens.colors.disabled,
+  },
+  buttonTextDisabled: {
+    color: tokens.colors.textTertiary,
   },
   primaryButtonText: {
     fontSize: normalize(tokens.fontSize.m),

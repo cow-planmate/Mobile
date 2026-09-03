@@ -1,10 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
   ScrollView,
   Text,
   TextInput,
@@ -35,6 +31,7 @@ import {
   useReorderChecklistItems,
   useToggleChecklistItem,
 } from '../../hooks/useChecklistQueries';
+import SheetModal from '../../../../components/common/SheetModal';
 import { normalize } from '../../../../utils/normalize';
 import { useAlert } from '../../../../contexts/AlertContext';
 import { styles, COLORS } from './ChecklistSheet.styles';
@@ -249,6 +246,7 @@ export default function ChecklistSheet({
 
     return (
       <ScrollView
+        style={styles.listScroll}
         contentContainerStyle={styles.list}
         keyboardShouldPersistTaps="handled"
       >
@@ -391,52 +389,65 @@ export default function ChecklistSheet({
   ]);
 
   return (
-    <Modal
+    <SheetModal
       visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
+      title="준비물 체크리스트"
+      onClose={onClose}
+      avoidKeyboard
+      footer={
+        <View style={styles.inputRow}>
+          <TextInput
+            style={styles.input}
+            value={draft}
+            onChangeText={setDraft}
+            onSubmitEditing={handleAdd}
+            placeholder="준비물을 입력하세요"
+            placeholderTextColor={COLORS.textTertiary}
+            maxLength={CHECKLIST_CONTENT_MAX_LENGTH}
+            returnKeyType="done"
+          />
+          <TouchableOpacity
+            style={[
+              styles.addButton,
+              !canSubmitDraft && styles.addButtonDisabled,
+            ]}
+            onPress={handleAdd}
+            disabled={!canSubmitDraft}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="준비물 추가"
+            accessibilityState={{ disabled: !canSubmitDraft }}
+          >
+            {createItem.isPending ? (
+              <ActivityIndicator size="small" color={COLORS.white} />
+            ) : (
+              <Check size={normalize(20)} color={COLORS.white} />
+            )}
+          </TouchableOpacity>
+        </View>
+      }
+      headerAction={
+        <TouchableOpacity
+          onPress={handleRefresh}
+          disabled={isFetching || isMutating}
+          accessibilityRole="button"
+          accessibilityLabel="체크리스트 새로고침"
+          activeOpacity={0.7}
+          hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+          accessibilityState={{ disabled: isFetching || isMutating }}
+        >
+          {isFetching ? (
+            <ActivityIndicator size="small" color={COLORS.textTertiary} />
+          ) : (
+            <RefreshCw
+              size={normalize(18)}
+              color={COLORS.textTertiary}
+              strokeWidth={1.8}
+            />
+          )}
+        </TouchableOpacity>
+      }
     >
-      <KeyboardAvoidingView
-        style={styles.keyboardArea}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <Pressable style={styles.backdrop} onPress={onClose} />
-
-        <View style={styles.sheet}>
-          <View style={styles.grabber} />
-
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>준비물 체크리스트</Text>
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={handleRefresh}
-                disabled={isFetching || isMutating}
-                accessibilityLabel="체크리스트 새로고침"
-                activeOpacity={0.7}
-                hitSlop={8}
-                accessibilityState={{ disabled: isFetching || isMutating }}
-              >
-                {isFetching ? (
-                  <ActivityIndicator size="small" color={COLORS.textTertiary} />
-                ) : (
-                  <RefreshCw size={normalize(18)} color={COLORS.textTertiary} />
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={onClose}
-                activeOpacity={0.7}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="닫기"
-              >
-                <X size={normalize(18)} color={COLORS.textTertiary} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
           <View style={styles.tabRow}>
             {SCOPE_TABS.map(tab => {
               const isActive = tab.scope === scope;
@@ -484,37 +495,6 @@ export default function ChecklistSheet({
           )}
 
           {body}
-
-          <View style={styles.inputRow}>
-            <TextInput
-              style={styles.input}
-              value={draft}
-              onChangeText={setDraft}
-              onSubmitEditing={handleAdd}
-              placeholder="준비물을 입력하세요"
-              placeholderTextColor={COLORS.textTertiary}
-              maxLength={CHECKLIST_CONTENT_MAX_LENGTH}
-              returnKeyType="done"
-            />
-            <TouchableOpacity
-              style={[
-                styles.addButton,
-                !canSubmitDraft && styles.addButtonDisabled,
-              ]}
-              onPress={handleAdd}
-              disabled={!canSubmitDraft}
-              activeOpacity={0.8}
-              accessibilityState={{ disabled: !canSubmitDraft }}
-            >
-              {createItem.isPending ? (
-                <ActivityIndicator size="small" color={COLORS.white} />
-              ) : (
-                <Check size={normalize(20)} color={COLORS.white} />
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+    </SheetModal>
   );
 }

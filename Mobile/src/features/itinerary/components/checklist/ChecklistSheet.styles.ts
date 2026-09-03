@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { theme } from '../../../../theme/theme';
+import { tokens } from '../../../../theme/tokens';
 import { normalize } from '../../../../utils/normalize';
 
 const RADIUS = {
@@ -9,57 +9,13 @@ const RADIUS = {
   lg: 20,
 };
 
-export const COLORS = theme.colors;
+export const COLORS = tokens.colors;
 
 export const styles = StyleSheet.create({
 
-  keyboardArea: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(17, 24, 39, 0.35)',
-  },
-  sheet: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: normalize(RADIUS.lg),
-    borderTopRightRadius: normalize(RADIUS.lg),
-    maxHeight: '85%',
-    paddingBottom: normalize(8),
-  },
-  grabber: {
-    alignSelf: 'center',
-    width: normalize(36),
-    height: normalize(4),
-    borderRadius: normalize(2),
-    backgroundColor: COLORS.borderStrong,
-    marginTop: normalize(8),
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: normalize(20),
-    paddingTop: normalize(12),
-    paddingBottom: normalize(10),
-  },
-  headerTitle: {
-    fontSize: normalize(16),
-    fontFamily: theme.typography.fontFamily.semibold,
-    color: COLORS.text,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  closeButton: {
-    padding: normalize(4),
-  },
-
   tabRow: {
     flexDirection: 'row',
-    marginHorizontal: normalize(20),
+    marginHorizontal: normalize(16),
     padding: normalize(4),
     borderRadius: normalize(RADIUS.sm),
     backgroundColor: COLORS.surface,
@@ -75,24 +31,24 @@ export const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: normalize(13),
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: tokens.fontFamily.medium,
     color: COLORS.textTertiary,
   },
   tabLabelActive: {
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.text,
   },
 
   progressBox: {
-    paddingHorizontal: normalize(20),
+    paddingHorizontal: normalize(16),
     paddingTop: normalize(14),
     paddingBottom: normalize(10),
   },
   syncHint: {
-    paddingHorizontal: normalize(20),
+    paddingHorizontal: normalize(16),
     paddingTop: normalize(8),
     fontSize: normalize(11),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textTertiary,
   },
   progressHeader: {
@@ -103,12 +59,12 @@ export const styles = StyleSheet.create({
   },
   progressCaption: {
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: tokens.fontFamily.medium,
     color: COLORS.textSecondary,
   },
   progressCount: {
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.primary,
   },
   progressTrack: {
@@ -123,8 +79,12 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
 
+  // 껍데기의 몸통이 줄어들 때 같이 줄어야 밑줄의 입력칸이 밀려나지 않는다.
+  listScroll: {
+    flexShrink: 1,
+  },
   list: {
-    paddingHorizontal: normalize(20),
+    paddingHorizontal: normalize(16),
     paddingBottom: normalize(12),
   },
   itemRow: {
@@ -143,7 +103,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     marginLeft: normalize(10),
     fontSize: normalize(14),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.text,
   },
   itemTextChecked: {
@@ -159,7 +119,7 @@ export const styles = StyleSheet.create({
     marginLeft: normalize(10),
     paddingVertical: normalize(4),
     fontSize: normalize(14),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.text,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.primary,
@@ -169,14 +129,14 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: normalize(36),
-    paddingHorizontal: normalize(20),
+    paddingHorizontal: normalize(16),
   },
   stateText: {
     marginTop: normalize(10),
     textAlign: 'center',
     fontSize: normalize(13),
     lineHeight: normalize(20),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textSecondary,
   },
   retryButton: {
@@ -189,17 +149,14 @@ export const styles = StyleSheet.create({
   },
   retryLabel: {
     fontSize: normalize(13),
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: tokens.fontFamily.medium,
     color: COLORS.text,
   },
 
+  // 껍데기의 밑줄 자리에 들어간다 — 실선과 좌우 여백은 껍데기가 이미 그린다.
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: normalize(20),
-    paddingTop: normalize(10),
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
   },
   input: {
     flex: 1,
@@ -209,7 +166,7 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.borderStrong,
     fontSize: normalize(14),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.text,
   },
   addButton: {

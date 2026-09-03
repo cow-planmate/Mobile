@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import {
-  Modal,
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  Pressable,
   ActivityIndicator,
 } from 'react-native';
 import Bus from 'lucide-react-native/dist/esm/icons/bus';
@@ -13,7 +11,7 @@ import Car from 'lucide-react-native/dist/esm/icons/car';
 import ChevronDown from 'lucide-react-native/dist/esm/icons/chevron-down';
 import ChevronUp from 'lucide-react-native/dist/esm/icons/chevron-up';
 import Footprints from 'lucide-react-native/dist/esm/icons/footprints';
-import X from 'lucide-react-native/dist/esm/icons/x';
+import SheetModal from '../../../components/common/SheetModal';
 import { TransitRouteOption, TransitStep } from '../../../api/route';
 import { SegmentInfo } from '../hooks/useRouteQueries';
 import {
@@ -419,31 +417,13 @@ export default function RouteSegmentSheet({
   const showRowLoading = isLoading && !data;
 
   return (
-    <Modal
+    <SheetModal
       visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
+      title="구간 정보"
+      onClose={onClose}
+      maxHeightRatio={0.8}
     >
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheet}>
-          <View style={styles.grabber} />
-
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>구간 정보</Text>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={onClose}
-              activeOpacity={0.7}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="닫기"
-            >
-              <X size={normalize(18)} color={COLORS.textTertiary} />
-            </TouchableOpacity>
-          </View>
-
-          {isError ? (
+      {isError ? (
             <View style={styles.stateBox}>
               <Text style={styles.stateText}>
                 구간 정보를 불러오지 못했어요.{'\n'}
@@ -462,7 +442,10 @@ export default function RouteSegmentSheet({
               <Text style={styles.stateText}>구간 정보를 불러오는 중…</Text>
             </View>
           ) : (
-            <ScrollView contentContainerStyle={styles.scroll}>
+            <ScrollView
+              style={styles.scrollArea}
+              contentContainerStyle={styles.scroll}
+            >
               {Array.from({ length: segmentCount }).map((_, i) => (
                 <View key={i} style={styles.segment}>
                   <View style={styles.segmentHeader}>
@@ -508,8 +491,6 @@ export default function RouteSegmentSheet({
               ))}
             </ScrollView>
           )}
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </SheetModal>
   );
 }

@@ -1,51 +1,14 @@
 import { StyleSheet } from 'react-native';
-import { theme } from '../../../theme/theme';
+import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 
-export const COLORS = theme.colors;
+export const COLORS = tokens.colors;
 
 export const styles = StyleSheet.create({
 
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(17, 24, 39, 0.35)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: normalize(20),
-    borderTopRightRadius: normalize(20),
-    maxHeight: '80%',
-    paddingBottom: normalize(8),
-  },
-  grabber: {
-    alignSelf: 'center',
-    width: normalize(36),
-    height: normalize(4),
-    borderRadius: normalize(2),
-    backgroundColor: COLORS.borderStrong,
-    marginTop: normalize(8),
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: normalize(20),
-    paddingTop: normalize(12),
-    paddingBottom: normalize(10),
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
-  },
-  headerTitle: {
-    fontSize: normalize(16),
-    fontFamily: theme.typography.fontFamily.semibold,
-    color: COLORS.text,
-  },
-  closeButton: {
-    width: normalize(28),
-    height: normalize(28),
-    alignItems: 'center',
-    justifyContent: 'center',
+  // 껍데기의 몸통이 줄어들 때 같이 줄어야 목록이 잘리지 않고 굴러간다.
+  scrollArea: {
+    flexShrink: 1,
   },
   scroll: {
     paddingBottom: normalize(16),
@@ -58,13 +21,13 @@ export const styles = StyleSheet.create({
   },
   stateText: {
     fontSize: normalize(13),
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: tokens.fontFamily.medium,
     color: COLORS.textTertiary,
     textAlign: 'center',
   },
 
   segment: {
-    paddingHorizontal: normalize(20),
+    paddingHorizontal: normalize(16),
     paddingVertical: normalize(14),
     borderBottomWidth: 1,
     borderBottomColor: COLORS.borderLight,
@@ -78,7 +41,7 @@ export const styles = StyleSheet.create({
   segmentPlaceName: {
     flexShrink: 1,
     fontSize: normalize(13),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.text,
   },
   segmentArrow: {
@@ -96,7 +59,7 @@ export const styles = StyleSheet.create({
   },
   numberBadgeText: {
     fontSize: normalize(10),
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: tokens.fontFamily.bold,
     color: COLORS.primary,
   },
 
@@ -109,13 +72,13 @@ export const styles = StyleSheet.create({
   modeLabel: {
     width: normalize(52),
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textSecondary,
   },
   modeValue: {
     flex: 1,
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: tokens.fontFamily.medium,
     color: COLORS.textLabel,
   },
   modeValueMuted: {
@@ -131,7 +94,7 @@ export const styles = StyleSheet.create({
   },
   expandButtonText: {
     fontSize: normalize(11),
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: tokens.fontFamily.medium,
     color: COLORS.primary,
   },
 
@@ -145,7 +108,7 @@ export const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: normalize(10),
     paddingVertical: normalize(5),
-    borderRadius: theme.borderRadius.round,
+    borderRadius: tokens.radius.round,
     backgroundColor: COLORS.borderLight,
   },
   chipActive: {
@@ -153,7 +116,7 @@ export const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: normalize(11),
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: tokens.fontFamily.medium,
     color: COLORS.textSecondary,
   },
   chipTextActive: {
@@ -163,7 +126,7 @@ export const styles = StyleSheet.create({
   routeCard: {
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: theme.borderRadius.l,
+    borderRadius: tokens.radius.l,
     padding: normalize(12),
     marginTop: normalize(8),
   },
@@ -174,25 +137,25 @@ export const styles = StyleSheet.create({
   },
   routeTotalTime: {
     fontSize: normalize(16),
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: tokens.fontFamily.bold,
     color: COLORS.text,
   },
   routePayment: {
     fontSize: normalize(12),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.textLabel,
   },
   routeSubtitle: {
     marginTop: normalize(2),
     fontSize: normalize(11),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textTertiary,
   },
 
   bar: {
     flexDirection: 'row',
     height: normalize(18),
-    borderRadius: theme.borderRadius.round,
+    borderRadius: tokens.radius.round,
     overflow: 'hidden',
     marginTop: normalize(8),
     marginBottom: normalize(8),
@@ -205,7 +168,7 @@ export const styles = StyleSheet.create({
   },
   barSegmentText: {
     fontSize: normalize(9),
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: tokens.fontFamily.medium,
     color: COLORS.white,
   },
   barSegmentTextWalk: {
@@ -224,11 +187,11 @@ export const styles = StyleSheet.create({
   stepTag: {
     paddingHorizontal: normalize(6),
     paddingVertical: normalize(1),
-    borderRadius: theme.borderRadius.xs,
+    borderRadius: tokens.radius.xs,
   },
   stepTagText: {
     fontSize: normalize(10),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.white,
   },
   stepBusTag: {
@@ -242,21 +205,21 @@ export const styles = StyleSheet.create({
     paddingVertical: normalize(1),
     borderWidth: 1,
     borderColor: COLORS.borderStrong,
-    borderRadius: theme.borderRadius.xs,
+    borderRadius: tokens.radius.xs,
   },
   stepLaneBadgeText: {
     fontSize: normalize(10),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.textLabel,
   },
   stepText: {
     fontSize: normalize(11),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textSecondary,
   },
   stepTextMuted: {
     fontSize: normalize(10),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textTertiary,
   },
 
@@ -268,7 +231,7 @@ export const styles = StyleSheet.create({
   },
   passStopsButtonText: {
     fontSize: normalize(10),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textTertiary,
   },
   passStopsList: {
@@ -278,14 +241,14 @@ export const styles = StyleSheet.create({
   },
   passStopItem: {
     fontSize: normalize(10),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textSecondary,
   },
 
   mapToggle: {
     marginTop: normalize(10),
     paddingVertical: normalize(7),
-    borderRadius: theme.borderRadius.m,
+    borderRadius: tokens.radius.m,
     backgroundColor: COLORS.borderLight,
     alignItems: 'center',
   },
@@ -294,7 +257,7 @@ export const styles = StyleSheet.create({
   },
   mapToggleText: {
     fontSize: normalize(11),
-    fontFamily: theme.typography.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.semibold,
     color: COLORS.textSecondary,
   },
   mapToggleTextActive: {
@@ -304,7 +267,7 @@ export const styles = StyleSheet.create({
   lastEndStation: {
     marginTop: normalize(6),
     fontSize: normalize(10),
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: tokens.fontFamily.regular,
     color: COLORS.textTertiary,
   },
 });
