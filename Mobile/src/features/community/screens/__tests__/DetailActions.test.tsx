@@ -234,3 +234,45 @@ describe('글 아래 다른 글 목록', () => {
     act(() => tree!.unmount());
   });
 });
+
+// 작성 화면이 빈 본문을 제목으로 채우므로, 그대로 그리면 제목이 두 번 나온다.
+describe('여행기 본문 자리', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUsePosts.mockReturnValue({ data: undefined });
+  });
+
+  it('본문이 제목과 같은 문장이면 본문 자리를 비운다', () => {
+    mockUsePost.mockReturnValue({
+      data: { ...basePost, title: '제주 봄바다', contentText: '제주 봄바다' },
+      isLoading: false,
+      isError: false,
+    });
+
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(<FeedDetailScreen />);
+    });
+
+    expect(tree!.root.findAllByProps({ style: feedStyles.body })).toHaveLength(0);
+    act(() => tree!.unmount());
+  });
+
+  it('본문이 따로 있으면 그대로 그린다', () => {
+    mockUsePost.mockReturnValue({
+      data: { ...basePost, title: '제주 봄바다', contentText: '넷째 날이 좋았다' },
+      isLoading: false,
+      isError: false,
+    });
+
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(<FeedDetailScreen />);
+    });
+
+    expect(
+      tree!.root.findAllByProps({ style: feedStyles.body }).length,
+    ).toBeGreaterThan(0);
+    act(() => tree!.unmount());
+  });
+});

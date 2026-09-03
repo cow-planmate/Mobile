@@ -9,9 +9,16 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.surface,
   },
+  // 글이 짧아도 마지막 덩어리가 바닥까지 내려와 회색 꼬리를 남기지 않는다.
+  scrollBody: {
+    flexGrow: 1,
+  },
   // 흰 덩어리는 화면 폭을 그대로 쓴다 — 모서리도 좌우 테두리도 두지 않는다.
   block: {
     backgroundColor: COLORS.white,
+  },
+  blockFill: {
+    flexGrow: 1,
   },
   // 회색이 보이는 유일한 자리. 덩어리 사이를 벌려 글이 위에 붙지 않게 한다.
   band: {

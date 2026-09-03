@@ -201,6 +201,11 @@ export default function FeedDetailScreen() {
     );
   }
 
+  // 작성 화면이 빈 본문을 제목으로 채운다(content.trim() || title.trim()).
+  // 그대로 그리면 제목 바로 아래에 같은 문장이 한 번 더 적힌다.
+  const bodyText = (post.contentText ?? '').trim();
+  const hasBody = bodyText.length > 0 && bodyText !== post.title.trim();
+
   const durationLabel = formatDuration(post.durationDays);
   const regionLabel = post.location ?? post.region;
 
@@ -209,7 +214,10 @@ export default function FeedDetailScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
       {renderTopBar()}
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollBody}
+      >
         <View style={styles.band} />
 
         <View style={styles.block}>
@@ -258,12 +266,14 @@ export default function FeedDetailScreen() {
           )}
         </View>
 
-        <View style={styles.body}>
-          <PostContentView
-            content={post.content}
-            contentText={post.contentText}
-          />
-        </View>
+        {hasBody && (
+          <View style={styles.body}>
+            <PostContentView
+              content={post.content}
+              contentText={post.contentText}
+            />
+          </View>
+        )}
         </View>
 
         {days.length > 0 && (
@@ -389,7 +399,7 @@ export default function FeedDetailScreen() {
 
         <View style={styles.band} />
 
-        <View style={styles.block}>
+        <View style={[styles.block, styles.blockFill]}>
         <View style={styles.reactionRow}>
           <TouchableOpacity
             style={[

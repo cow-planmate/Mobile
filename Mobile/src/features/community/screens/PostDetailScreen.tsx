@@ -184,7 +184,10 @@ export default function PostDetailScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
       {renderTopBar()}
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollBody}
+      >
         <View style={styles.band} />
 
         <View style={styles.block}>
@@ -366,7 +369,12 @@ export default function PostDetailScreen() {
 
         <View style={styles.band} />
 
-        <View style={styles.block}>
+        <View
+          style={[
+            styles.block,
+            otherPosts.length === 0 && styles.blockFill,
+          ]}
+        >
           <CommentSection postId={post.id} commentCount={post.comments} />
         </View>
 
@@ -374,7 +382,7 @@ export default function PostDetailScreen() {
           <>
             <View style={styles.band} />
 
-            <View style={styles.block}>
+            <View style={[styles.block, styles.blockFill]}>
               <Text style={styles.otherHeading}>
                 {boardLabel(boardCategory)}의 다른 글
               </Text>
