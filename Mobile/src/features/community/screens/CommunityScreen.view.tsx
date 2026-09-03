@@ -4,14 +4,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Pressable,
   FlatList,
   StatusBar,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import Search from 'lucide-react-native/dist/esm/icons/search';
-import FallbackImage from '../../../components/common/FallbackImage';
 import { styles } from './CommunityScreen.styles';
 import { Header, NotificationModal } from '../../../components/common';
 import {
@@ -21,7 +19,7 @@ import {
 import { tokens } from '../../../theme/tokens';
 import { CommunityPostSummary } from '../types';
 import { BoardKey, SortKey, SORT_OPTIONS } from '../constants/board';
-import PostTypeBadges from '../components/PostTypeBadges';
+import PostListItem from '../components/PostListItem';
 
 export interface CommunityScreenViewProps {
   posts: CommunityPostSummary[];
@@ -51,66 +49,6 @@ export interface CommunityScreenViewProps {
   onAcceptInvitation: (requestId: number) => void;
   onRejectInvitation: (requestId: number) => void;
 }
-
-const PostListItem = React.memo(function PostListItem({
-  item,
-  category,
-  onPress,
-}: {
-  item: CommunityPostSummary;
-  category: BoardKey;
-  onPress: (postId: string) => void;
-}) {
-  const handlePress = useCallback(
-    () => onPress(String(item.id)),
-    [onPress, item.id],
-  );
-
-  const meta = [item.author, item.createdAt, `조회 ${item.views.toLocaleString()}`]
-    .filter(Boolean)
-    .join(' · ');
-
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.postRow, pressed && styles.postRowPressed]}
-      onPress={handlePress}
-      accessibilityRole="button"
-      accessibilityLabel={item.title}
-    >
-      <View style={styles.postLeftSection}>
-        <PostTypeBadges post={item} category={category} />
-
-        <Text style={styles.postTitle} numberOfLines={2}>
-          {item.title}
-        </Text>
-
-        <View style={styles.postFootRow}>
-          <Text style={styles.postMeta} numberOfLines={1}>
-            {meta}
-          </Text>
-          <Text style={styles.postCounts}>
-            <Text style={item.likes > 0 ? styles.postCountsOn : undefined}>
-              {`추천 ${item.likes}`}
-            </Text>
-            {` · 댓글 ${item.comments}`}
-          </Text>
-        </View>
-      </View>
-
-      {item.image ? (
-        <View style={styles.postRightSection}>
-          <FallbackImage
-            uri={item.image}
-            style={styles.thumbnailImage}
-            fallback={
-              <View style={[styles.thumbnailImage, styles.thumbnailFallback]} />
-            }
-          />
-        </View>
-      ) : null}
-    </Pressable>
-  );
-});
 
 export default function CommunityScreenView({
   posts,

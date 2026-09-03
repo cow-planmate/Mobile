@@ -1,6 +1,6 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
-import { TouchableOpacity } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 import FeedDetailScreen from '../FeedDetailScreen';
 import PostDetailScreen from '../PostDetailScreen';
 import { styles as feedStyles } from '../FeedDetailScreen.styles';
@@ -10,6 +10,7 @@ const mockShowAlert = jest.fn();
 const mockUsePost = jest.fn();
 const mockReactRequest = jest.fn();
 const mockUpdateAnsweredRequest = jest.fn();
+const mockUsePosts = jest.fn();
 
 const mutation = (request = jest.fn()) => ({
   isPending: false,
@@ -33,6 +34,7 @@ jest.mock('../../../../contexts/AlertContext', () => ({
 
 jest.mock('../../hooks/queries', () => ({
   usePost: (...args: unknown[]) => mockUsePost(...args),
+  usePosts: (...args: unknown[]) => mockUsePosts(...args),
   useReactToPost: () => mutation(mockReactRequest),
   useForkItinerary: () => mutation(),
   useUpdateAnswered: () => mutation(mockUpdateAnsweredRequest),
@@ -86,6 +88,7 @@ describe('community detail action locks', () => {
       isLoading: false,
       isError: false,
     });
+    mockUsePosts.mockReturnValue({ data: undefined });
   });
 
   it('sends only one feed reaction for same-render presses', async () => {
@@ -170,4 +173,64 @@ describe('community detail action locks', () => {
       expect(request).toHaveBeenCalledTimes(1);
     },
   );
+});
+
+// 상세가 목록이 되지 않게 다섯 줄로 끊고, 지금 읽는 글은 뺀다.
+// 둘 중 하나라도 풀리면 같은 글이 제 아래에 또 나오거나 목록이 통째로 붙는다.
+describe('글 아래 다른 글 목록', () => {
+  const summary = (id: number) => ({
+    id,
+    title: `글 ${id}`,
+    author: '글쓴이',
+    createdAt: 'today',
+    views: 0,
+    likes: 0,
+    comments: 0,
+    category: 'free',
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUsePost.mockReturnValue({
+      data: basePost,
+      isLoading: false,
+      isError: false,
+    });
+  });
+
+  it('지금 읽는 글은 빼고 다섯 줄까지만 보여준다', () => {
+    mockUsePosts.mockReturnValue({
+      data: { pages: [{ items: [7, 1, 2, 3, 4, 5, 6].map(summary) }] },
+    });
+
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(<PostDetailScreen />);
+    });
+
+    const titles = tree!.root
+      .findAllByType(Text)
+      .map(node => node.props.children)
+      .filter(child => typeof child === 'string' && child.startsWith('글 '));
+
+    expect(titles).toEqual(['글 1', '글 2', '글 3', '글 4', '글 5']);
+    act(() => tree!.unmount());
+  });
+
+  it('다른 글이 없으면 목록 자체를 그리지 않는다', () => {
+    mockUsePosts.mockReturnValue({ data: { pages: [{ items: [summary(7)] }] } });
+
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(<PostDetailScreen />);
+    });
+
+    const headings = tree!.root
+      .findAllByType(Text)
+      .map(node => node.props.children)
+      .filter(child => typeof child === 'string' && child.endsWith('의 다른 글'));
+
+    expect(headings).toHaveLength(0);
+    act(() => tree!.unmount());
+  });
 });

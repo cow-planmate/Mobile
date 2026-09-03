@@ -66,7 +66,8 @@ export type ScheduleStackParamList = {
 export type AppStackParamList = ScheduleStackParamList;
 
 export type CommunityStackParamList = {
-  CommunityMain: undefined;
+  /** 글 상세에서 '전체 보기'로 나올 때는 보던 게시판을 그대로 편다. */
+  CommunityMain: { category?: 'free' | 'qna' | 'recommend' } | undefined;
   CommunityDetail: {
     postId: string;
   };

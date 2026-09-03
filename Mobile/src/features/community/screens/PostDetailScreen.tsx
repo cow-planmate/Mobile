@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
+import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import Eye from 'lucide-react-native/dist/esm/icons/eye';
 import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import ThumbsDown from 'lucide-react-native/dist/esm/icons/thumbs-down';
@@ -24,14 +25,17 @@ import { CommunityStackParamList } from '../../../navigation/types';
 import {
   useDeletePost,
   usePost,
+  usePosts,
   useReactToPost,
   useUpdateAnswered,
 } from '../hooks/queries';
 import PostContentView from '../components/PostContentView';
+import PostListItem from '../components/PostListItem';
 import CommentSection from '../components/CommentSection';
 import UserAvatar from '../../../components/common/UserAvatar';
 import PublicProfileModal from '../components/PublicProfileModal';
 import { ReactionType } from '../types';
+import { BoardKey, boardLabel } from '../constants/board';
 import { styles, COLORS } from './PostDetailScreen.styles';
 import { tokens } from '../../../theme/tokens';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
@@ -56,6 +60,30 @@ export default function PostDetailScreen() {
   const deletePost = useDeletePost();
 
   const isAuthor = !!post && user?.userId === post.userId;
+
+  /**
+   * 글 아래에 같은 게시판의 다음 글을 붙인다.
+   *
+   * 목록으로 나갔다 들어오지 않고 계속 읽을 수 있어야 한다. 다만 목록을 통째로
+   * 옮기면 상세가 목록이 되므로 다섯 줄만 두고 나머지는 '전체 보기'로 넘긴다.
+   */
+  const boardCategory = (post?.category ?? 'free') as BoardKey;
+  const boardPosts = usePosts(boardCategory, 'latest', '');
+  const otherPosts = useMemo(
+    () =>
+      (boardPosts.data?.pages[0]?.items ?? [])
+        .filter(item => String(item.id) !== String(postId))
+        .slice(0, 5),
+    [boardPosts.data, postId],
+  );
+
+  const openPost = useCallback(
+    (nextPostId: string) => {
+      // push면 글을 타고 넘어갈 때마다 스택이 쌓여 뒤로가기를 그 횟수만큼 눌러야 한다.
+      navigation.replace('CommunityDetail', { postId: nextPostId });
+    },
+    [navigation],
+  );
 
   const reactLock = useSubmitLock();
   const postActionLock = useSubmitLock();
@@ -341,6 +369,45 @@ export default function PostDetailScreen() {
         <View style={styles.block}>
           <CommentSection postId={post.id} commentCount={post.comments} />
         </View>
+
+        {otherPosts.length > 0 && (
+          <>
+            <View style={styles.band} />
+
+            <View style={styles.block}>
+              <Text style={styles.otherHeading}>
+                {boardLabel(boardCategory)}의 다른 글
+              </Text>
+              {otherPosts.map(item => (
+                <PostListItem
+                  key={item.id}
+                  item={item}
+                  category={boardCategory}
+                  onPress={openPost}
+                />
+              ))}
+              <TouchableOpacity
+                style={styles.otherMore}
+                onPress={() =>
+                  navigation.navigate('CommunityMain', {
+                    category: boardCategory,
+                  })
+                }
+                activeOpacity={0.7}
+                accessibilityRole="button"
+              >
+                <Text style={styles.otherMoreText}>
+                  {boardLabel(boardCategory)} 전체 보기
+                </Text>
+                <ChevronRight
+                  size={normalize(15)}
+                  color={COLORS.textTertiary}
+                  strokeWidth={2}
+                />
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
       </ScrollView>
 
       <PublicProfileModal

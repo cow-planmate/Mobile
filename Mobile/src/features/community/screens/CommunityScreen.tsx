@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAlert } from '../../../contexts/AlertContext';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAuthStore } from '../../../store/useAuthStore';
-import { useNavigation } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   acceptInvitation,
@@ -16,6 +16,7 @@ import {
   usePendingInvitations,
 } from '../../../hooks/usePendingInvitations';
 import { BOARDS, BoardKey, SortKey } from '../constants/board';
+import { CommunityStackParamList } from '../../../navigation/types';
 import { usePosts } from '../hooks/queries';
 import CommunityScreenView from './CommunityScreen.view';
 
@@ -24,10 +25,14 @@ const SEARCH_DEBOUNCE_MS = 350;
 export default function CommunityScreen() {
   const { showAlert } = useAlert();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const route =
+    useRoute<RouteProp<CommunityStackParamList, 'CommunityMain'>>();
   const queryClient = useQueryClient();
   const user = useAuthStore(state => state.user);
 
-  const [category, setCategory] = useState<BoardKey>('free');
+  const [category, setCategory] = useState<BoardKey>(
+    route.params?.category ?? 'free',
+  );
   const [sort, setSort] = useState<SortKey>('latest');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');

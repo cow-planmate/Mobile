@@ -202,4 +202,27 @@ export const styles = StyleSheet.create({
     color: COLORS.white,
   },
 
+  otherHeading: {
+    paddingHorizontal: normalize(16),
+    paddingTop: normalize(16),
+    paddingBottom: normalize(10),
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.bold,
+    color: COLORS.text,
+    letterSpacing: -0.2,
+  },
+  // 마지막 줄의 밑선이 이 줄의 윗선을 대신한다 — 겹쳐 긋지 않는다.
+  otherMore: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: normalize(4),
+    paddingVertical: normalize(15),
+  },
+  otherMoreText: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.semibold,
+    color: COLORS.textSecondary,
+  },
+
 });
