@@ -1,19 +1,17 @@
 import React, { useCallback, useState, useEffect, useRef } from 'react';
 import {
-  Modal,
   View,
   Text,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
   StyleSheet,
-  Pressable,
+  ScrollView,
   Share,
   NativeModules,
   Switch,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import X from 'lucide-react-native/dist/esm/icons/x';
 import {
   getShareUrl,
   updateShareStatus,
@@ -21,9 +19,10 @@ import {
   getEditors,
   removeEditor,
 } from '../../api/trips';
-import { theme } from '../../theme/theme';
+import PopupModal from './PopupModal';
 import { useAlert } from '../../contexts/AlertContext';
 import { getNicknameLengthError } from '../../utils/nickname';
+import { normalize } from '../../utils/normalize';
 import { tokens } from '../../theme/tokens';
 import {
   getDisplayErrorMessage,
@@ -34,14 +33,6 @@ import { useSubmitLock } from '../../hooks/useSubmitLock';
 const ALREADY_MEMBER_CODE = 'COLLAB_002';
 
 const DUPLICATE_PENDING_CODE = 'COLLAB_003';
-
-const COLORS = theme.colors;
-const FONTS = {
-  regular: 'Pretendard-Regular',
-  medium: 'Pretendard-Medium',
-  semibold: 'Pretendard-SemiBold',
-  bold: 'Pretendard-Bold',
-};
 
 interface ShareModalProps {
   visible: boolean;
@@ -273,302 +264,281 @@ export default function ShareModal({
   };
 
   return (
-    <Modal
+    <PopupModal
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
+      title="일정 공유 및 초대"
+      onClose={onClose}
+      doneLabel="확인"
     >
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.container} onPress={e => e.stopPropagation()}>
-          <View style={styles.header}>
-            <Text style={styles.title}>일정 공유 및 초대</Text>
-            <TouchableOpacity
-              onPress={onClose}
-              accessibilityRole="button"
-              accessibilityLabel="닫기"
-              hitSlop={8}
-            >
-              <X size={22} color={tokens.colors.textTertiary} strokeWidth={1.5} />
-            </TouchableOpacity>
+      <ScrollView
+        contentContainerStyle={styles.body}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {isOwner && (
+          <View style={styles.switchRow}>
+            <Text style={styles.switchLabel}>일정 공유 허용</Text>
+            <Switch
+              value={isShared}
+              onValueChange={handleToggleShare}
+              disabled={shareStatusLock.isSubmitting}
+              accessibilityState={{
+                disabled: shareStatusLock.isSubmitting,
+              }}
+              trackColor={{
+                false: tokens.colors.borderStrong,
+                true: tokens.colors.primary,
+              }}
+              thumbColor={tokens.colors.white}
+            />
           </View>
+        )}
 
-          <View style={styles.section}>
-            {isOwner && (
-              <View style={styles.switchRow}>
-                <Text style={styles.label}>일정 공유 허용</Text>
-                <Switch
-                  value={isShared}
-                  onValueChange={handleToggleShare}
-                  disabled={shareStatusLock.isSubmitting}
-                  accessibilityState={{
-                    disabled: shareStatusLock.isSubmitting,
-                  }}
-                  trackColor={{ false: '#D1D5DB', true: COLORS.primary }}
-                  thumbColor={tokens.colors.white}
-                />
-              </View>
-            )}
-            <View style={styles.linkContainer}>
-              <TextInput
-                style={styles.linkInput}
-                value={shareLink}
-                editable={false}
-                selectTextOnFocus
-              />
-              <TouchableOpacity style={styles.copyButton} onPress={handleCopyLink}>
-                <Text style={styles.copyButtonText}>복사</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity style={styles.shareButton} onPress={handleShareLink}>
-              <Text style={styles.shareButtonText}>링크 공유하기</Text>
-            </TouchableOpacity>
-            <Text style={styles.helperText}>
-              링크를 복사하거나 공유하여 친구들에게 보내세요.
-            </Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.section}>
-            <Text style={styles.label}>함께 편집할 친구 초대</Text>
-            <View style={styles.inviteContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="친구 닉네임 입력"
-                value={nickname}
-                onChangeText={setNickname}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity
-                style={[
-                  styles.inviteButton,
-                  inviteLock.isSubmitting && styles.disabledButton,
-                ]}
-                onPress={handleInvite}
-                disabled={inviteLock.isSubmitting}
-                accessibilityState={{ disabled: inviteLock.isSubmitting }}
-              >
-                {inviteLock.isSubmitting ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <Text style={styles.inviteButtonText}>초대</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {editors.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.label}>참여 중인 편집자</Text>
-              {editors.map((editor: any) => (
-                <View key={editor.userId} style={styles.editorRow}>
-                  <View style={styles.editorInfo}>
-                    <View style={styles.avatar}>
-                      <Text style={styles.avatarText}>
-                        {editor.nickname ? editor.nickname.charAt(0) : '?'}
-                      </Text>
-                    </View>
-                    <Text style={styles.editorName}>{editor.nickname}</Text>
-                  </View>
-                  {isOwner && (
-                    <TouchableOpacity
-                      onPress={() => handleRemoveEditor(editor.userId)}
-                      style={styles.removeButton}
-                    >
-                      <Text style={styles.removeButtonText}>삭제</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              ))}
-            </View>
-          )}
-
-          <TouchableOpacity style={styles.confirmButton} onPress={onClose}>
-            <Text style={styles.confirmButtonText}>닫기</Text>
+        <View style={styles.linkRow}>
+          <TextInput
+            style={styles.linkInput}
+            value={shareLink}
+            editable={false}
+            selectTextOnFocus
+          />
+          <TouchableOpacity
+            style={styles.copyButton}
+            onPress={handleCopyLink}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="공유 링크 복사"
+          >
+            <Text style={styles.copyText}>복사</Text>
           </TouchableOpacity>
-        </Pressable>
-      </Pressable>
-    </Modal>
+        </View>
+
+        <TouchableOpacity
+          style={styles.shareButton}
+          onPress={handleShareLink}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="공유 링크 보내기"
+        >
+          <Text style={styles.shareText}>링크 공유하기</Text>
+        </TouchableOpacity>
+        <Text style={styles.helper}>
+          링크를 복사하거나 공유하여 친구들에게 보내세요.
+        </Text>
+
+        <Text style={styles.sectionLabel}>함께 편집할 친구 초대</Text>
+        <View style={styles.inviteRow}>
+          <TextInput
+            style={styles.input}
+            placeholder="친구 닉네임 입력"
+            placeholderTextColor={tokens.colors.textTertiary}
+            value={nickname}
+            onChangeText={setNickname}
+            autoCapitalize="none"
+          />
+          <TouchableOpacity
+            style={[
+              styles.inviteButton,
+              inviteLock.isSubmitting && styles.inviteButtonOff,
+            ]}
+            onPress={handleInvite}
+            disabled={inviteLock.isSubmitting}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: inviteLock.isSubmitting }}
+          >
+            {inviteLock.isSubmitting ? (
+              <ActivityIndicator color={tokens.colors.white} size="small" />
+            ) : (
+              <Text style={styles.inviteText}>초대</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {editors.length > 0 && (
+          <>
+            <Text style={styles.sectionLabel}>참여 중인 편집자</Text>
+            {editors.map((editor: any) => (
+              <View key={editor.userId} style={styles.editorRow}>
+                <View style={styles.editorInfo}>
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>
+                      {editor.nickname ? editor.nickname.charAt(0) : '?'}
+                    </Text>
+                  </View>
+                  <Text style={styles.editorName} numberOfLines={1}>
+                    {editor.nickname}
+                  </Text>
+                </View>
+                {isOwner && (
+                  <TouchableOpacity
+                    onPress={() => handleRemoveEditor(editor.userId)}
+                    style={styles.removeButton}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${editor.nickname} 편집 권한 삭제`}
+                  >
+                    <Text style={styles.removeText}>삭제</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+          </>
+        )}
+      </ScrollView>
+    </PopupModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  body: {
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(4),
   },
-  container: {
-    width: '90%',
-    backgroundColor: tokens.colors.white,
-    borderRadius: 20,
-    padding: 24,
-    maxHeight: '80%',
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  header: {
+  switchRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    justifyContent: 'space-between',
+    paddingBottom: normalize(12),
   },
-  title: {
-    fontSize: 20,
-    fontFamily: FONTS.bold,
+  switchLabel: {
+    fontSize: normalize(13.5),
+    fontFamily: tokens.fontFamily.semibold,
     color: tokens.colors.text,
   },
-  section: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 14,
-    fontFamily: FONTS.semibold,
-    color: tokens.colors.textSecondary,
-    marginBottom: 8,
-  },
-  linkContainer: {
+  // 주소와 복사 단추를 한 테두리 안에 넣어 둘이 한 덩이로 읽히게 한다.
+  linkRow: {
     flexDirection: 'row',
-    backgroundColor: tokens.colors.borderLight,
-    borderRadius: 8,
-    padding: 4,
+    alignItems: 'center',
+    backgroundColor: tokens.colors.surface,
+    borderRadius: normalize(10),
     borderWidth: 1,
     borderColor: tokens.colors.border,
+    padding: normalize(4),
   },
   linkInput: {
     flex: 1,
-    padding: 12,
-    fontSize: 14,
-    color: tokens.colors.text,
-    fontFamily: FONTS.regular,
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(9),
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textSecondary,
   },
   copyButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
+    height: normalize(36),
+    paddingHorizontal: normalize(14),
+    borderRadius: normalize(7),
+    backgroundColor: tokens.colors.primary,
     alignItems: 'center',
-    margin: 4,
+    justifyContent: 'center',
   },
-  copyButtonText: {
+  copyText: {
+    fontSize: normalize(12.5),
+    fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.white,
-    fontFamily: FONTS.semibold,
-    fontSize: 13,
   },
   shareButton: {
-    backgroundColor: '#EBF0FF',
-    borderRadius: 8,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
+    marginTop: normalize(8),
+    height: normalize(44),
+    borderRadius: normalize(10),
+    backgroundColor: tokens.colors.primaryTint,
     borderWidth: 1,
-    borderColor: '#D2DFFF',
+    borderColor: tokens.colors.sub,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  shareButtonText: {
-    color: COLORS.primary,
-    fontFamily: FONTS.semibold,
-    fontSize: 14,
+  shareText: {
+    fontSize: normalize(13.5),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.primary,
   },
-  helperText: {
-    fontSize: 12,
+  helper: {
+    marginTop: normalize(6),
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.textTertiary,
-    marginTop: 6,
-    fontFamily: FONTS.regular,
   },
-  divider: {
-    height: 1,
-    backgroundColor: tokens.colors.border,
-    marginBottom: 24,
+  // 이름표가 곧 칸막이다. 위에 실선을 얹어 따로 divider를 두지 않는다.
+  sectionLabel: {
+    marginTop: normalize(16),
+    paddingTop: normalize(14),
+    marginBottom: normalize(8),
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.borderLight,
+    fontSize: normalize(12.5),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.textLabel,
   },
-  inviteContainer: {
+  inviteRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: normalize(8),
   },
   input: {
     flex: 1,
-    backgroundColor: tokens.colors.borderLight,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 14,
-    fontFamily: FONTS.regular,
+    height: normalize(44),
+    backgroundColor: tokens.colors.surface,
+    borderRadius: normalize(10),
     borderWidth: 1,
     borderColor: tokens.colors.border,
+    paddingHorizontal: normalize(14),
+    paddingVertical: 0,
+    fontSize: normalize(13.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.text,
   },
   inviteButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
+    height: normalize(44),
+    minWidth: normalize(72),
+    paddingHorizontal: normalize(18),
+    borderRadius: normalize(10),
+    backgroundColor: tokens.colors.primary,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  disabledButton: {
+  inviteButtonOff: {
     opacity: 0.6,
   },
-  inviteButtonText: {
+  inviteText: {
+    fontSize: normalize(13.5),
+    fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.white,
-    fontFamily: FONTS.semibold,
-    fontSize: 14,
   },
   editorRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    paddingVertical: normalize(6),
   },
   editorInfo: {
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: normalize(10),
   },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: tokens.colors.border,
-    justifyContent: 'center',
+    width: normalize(32),
+    height: normalize(32),
+    borderRadius: normalize(16),
+    backgroundColor: tokens.colors.primaryTint,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarText: {
-    fontSize: 14,
-    fontFamily: FONTS.semibold,
-    color: tokens.colors.textSecondary,
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.primary,
   },
   editorName: {
-    fontSize: 14,
+    flexShrink: 1,
+    fontSize: normalize(13.5),
+    fontFamily: tokens.fontFamily.medium,
     color: tokens.colors.text,
-    fontFamily: FONTS.regular,
   },
   removeButton: {
-    padding: 8,
+    paddingVertical: normalize(8),
+    paddingLeft: normalize(12),
   },
-  removeButtonText: {
-    fontSize: 12,
-    color: '#EF4444',
-    fontFamily: FONTS.medium,
-  },
-  confirmButton: {
-    backgroundColor: tokens.colors.borderLight,
-    borderRadius: 12,
-    height: 52,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  confirmButtonText: {
-    fontSize: 16,
-    fontFamily: FONTS.semibold,
-    color: tokens.colors.text,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+  removeText: {
+    fontSize: normalize(12.5),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.tones.danger.fg,
   },
 });

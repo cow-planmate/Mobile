@@ -1,15 +1,13 @@
 import React, { useRef, useState } from 'react';
 import {
-  Modal,
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Pressable,
 } from 'react-native';
-import X from 'lucide-react-native/dist/esm/icons/x';
-import { theme } from '../../theme/theme';
+import PopupModal from './PopupModal';
+import { normalize } from '../../utils/normalize';
 import { tokens } from '../../theme/tokens';
 import {
   CollaborationRequestType,
@@ -31,14 +29,6 @@ interface NotificationModalProps {
   onAccept: (requestId: number) => void | Promise<void>;
   onReject: (requestId: number) => void | Promise<void>;
 }
-
-const COLORS = theme.colors;
-const FONTS = {
-  regular: 'Pretendard-Regular',
-  medium: 'Pretendard-Medium',
-  semibold: 'Pretendard-SemiBold',
-  bold: 'Pretendard-Bold',
-};
 
 const NotificationModal = ({
   visible,
@@ -72,184 +62,130 @@ const NotificationModal = ({
   };
 
   return (
-    <Modal
+    <PopupModal
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
+      title="알림"
+      onClose={onClose}
+      doneLabel="확인"
     >
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.container} onPress={e => e.stopPropagation()}>
-          <View style={styles.header}>
-            <Text style={styles.title}>알림</Text>
-            <TouchableOpacity
-              onPress={onClose}
-              style={styles.closeButton}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel="닫기"
-            >
-              <X size={20} color={tokens.colors.textTertiary} strokeWidth={1.5} />
-            </TouchableOpacity>
-          </View>
-
-          {invitations.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>새로운 알림이 없어요.</Text>
-            </View>
-          ) : (
-            <ScrollView style={styles.listContainer}>
-              {invitations.map(invite => (
-                <View key={invite.requestId} style={styles.itemContainer}>
-                  <View style={styles.textContainer}>
-                    <Text style={styles.inviteText}>
-                      <Text style={styles.highlight}>
-                        {invite.senderNickname}
-                      </Text>
-                      님이{' '}
-                      <Text style={styles.highlight}>{invite.planName}</Text>{' '}
-                      {describeCollaborationRequest(invite.type)}
-                    </Text>
-                  </View>
-                  <View style={styles.buttonContainer}>
-                    <TouchableOpacity
-                      style={[styles.button, styles.rejectButton]}
-                      onPress={() => runAction(invite.requestId, onReject)}
-                      disabled={processingIds.has(invite.requestId)}
-                      accessibilityRole="button"
-                      accessibilityState={{
-                        disabled: processingIds.has(invite.requestId),
-                      }}
-                      accessibilityLabel={`${invite.senderNickname}님의 요청 거절`}
-                    >
-                      <Text style={styles.rejectButtonText}>거절</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.button, styles.acceptButton]}
-                      onPress={() => runAction(invite.requestId, onAccept)}
-                      disabled={processingIds.has(invite.requestId)}
-                      accessibilityRole="button"
-                      accessibilityState={{
-                        disabled: processingIds.has(invite.requestId),
-                      }}
-                      accessibilityLabel={`${invite.senderNickname}님의 요청 수락`}
-                    >
-                      <Text style={styles.acceptButtonText}>수락</Text>
-                    </TouchableOpacity>
-                  </View>
+      {invitations.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>새로운 알림이 없어요.</Text>
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+        >
+          {invitations.map((invite, idx) => {
+            const busy = processingIds.has(invite.requestId);
+            return (
+              <View
+                key={invite.requestId}
+                style={[styles.item, idx > 0 && styles.itemDivided]}
+              >
+                <Text style={styles.inviteText}>
+                  <Text style={styles.highlight}>{invite.senderNickname}</Text>
+                  님이 <Text style={styles.highlight}>{invite.planName}</Text>{' '}
+                  {describeCollaborationRequest(invite.type)}
+                </Text>
+                <View style={styles.actions}>
+                  <TouchableOpacity
+                    style={[styles.button, styles.reject]}
+                    onPress={() => runAction(invite.requestId, onReject)}
+                    disabled={busy}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: busy }}
+                    accessibilityLabel={`${invite.senderNickname}님의 요청 거절`}
+                  >
+                    <Text style={styles.rejectText}>거절</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, styles.accept]}
+                    onPress={() => runAction(invite.requestId, onAccept)}
+                    disabled={busy}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: busy }}
+                    accessibilityLabel={`${invite.senderNickname}님의 요청 수락`}
+                  >
+                    <Text style={styles.acceptText}>수락</Text>
+                  </TouchableOpacity>
                 </View>
-              ))}
-            </ScrollView>
-          )}
-        </Pressable>
-      </Pressable>
-    </Modal>
+              </View>
+            );
+          })}
+        </ScrollView>
+      )}
+    </PopupModal>
   );
-}
+};
 
 export default React.memo(NotificationModal);
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)', 
-    justifyContent: 'center',
-    alignItems: 'center',
+  list: {
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(4),
   },
-  container: {
-    width: '85%',
-    backgroundColor: tokens.colors.white,
-    borderRadius: 20, 
-    padding: 24,
-    maxHeight: '70%',
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 18,
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-    color: tokens.colors.text,
-  },
-  closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: tokens.colors.borderLight, 
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  listContainer: {
-    marginTop: 8,
-  },
-  emptyContainer: {
-    padding: 20,
+  empty: {
+    paddingVertical: normalize(36),
     alignItems: 'center',
   },
   emptyText: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.medium,
     color: tokens.colors.textTertiary,
-    fontSize: 14,
-    fontFamily: FONTS.regular,
   },
-  itemContainer: {
-    marginBottom: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.border,
+  item: {
+    paddingVertical: normalize(12),
+    gap: normalize(10),
   },
-  textContainer: {
-    marginBottom: 12,
+  // 줄 사이만 가른다. 첫 줄 위와 마지막 줄 아래는 껍데기가 이미 나눠 준다.
+  itemDivided: {
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.borderLight,
   },
   inviteText: {
-    fontSize: 14,
+    fontSize: normalize(13.5),
+    lineHeight: normalize(20),
+    fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.text,
-    lineHeight: 20,
-    fontFamily: FONTS.regular,
   },
   highlight: {
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-    color: COLORS.primary,
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.primary,
   },
-  buttonContainer: {
+  actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 8,
+    gap: normalize(8),
   },
   button: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    minWidth: 70,
-    minHeight: 48,
-    justifyContent: 'center',
+    minWidth: normalize(72),
+    minHeight: normalize(44),
+    paddingHorizontal: normalize(16),
+    borderRadius: normalize(8),
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  acceptButton: {
-    backgroundColor: COLORS.primary,
+  accept: {
+    backgroundColor: tokens.colors.primary,
   },
-  acceptButtonText: {
+  acceptText: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.white,
-    fontSize: 13,
-    fontFamily: FONTS.semibold,
-    fontWeight: '600',
   },
-  rejectButton: {
-    backgroundColor: tokens.colors.borderLight,
+  reject: {
     borderWidth: 1,
     borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.white,
   },
-  rejectButtonText: {
+  rejectText: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.semibold,
     color: tokens.colors.textSecondary,
-    fontSize: 13,
-    fontFamily: FONTS.semibold,
-    fontWeight: '600',
   },
 });
