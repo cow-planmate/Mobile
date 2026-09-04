@@ -143,7 +143,13 @@ export function useInvitationSse({
       method: 'GET',
 
       pollingInterval: 0,
-      timeout: 60000,
+      // 0으로 둔다. react-native-sse의 timeout은 무응답 감지가 아니라 요청을
+      // 보낸 시점부터 도는 일회성 타이머라, 값을 주면 멀쩡한 스트림도 그 시간마다
+      // 끊는다. 60초를 주고 있었기 때문에 1분마다 붙었다 끊기를 반복하며 그
+      // 사이의 알림을 흘리고 있었다. 연결 수명은 서버가 쥔다 — 30초 하트비트로
+      // 죽은 연결을 걸러내고 30분마다 스스로 닫으며, 그때는 close·error를 받아
+      // 여기서 다시 잇는다.
+      timeout: 0,
     });
 
     const onOpen = () => {
