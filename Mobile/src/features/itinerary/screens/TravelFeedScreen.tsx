@@ -7,11 +7,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Text,
-  Modal,
-  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import Toast from 'react-native-toast-message';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Search from 'lucide-react-native/dist/esm/icons/search';
 import LayoutGrid from 'lucide-react-native/dist/esm/icons/layout-grid';
@@ -20,16 +17,12 @@ import SlidersHorizontal from 'lucide-react-native/dist/esm/icons/sliders-horizo
 import ArrowDownWideNarrow from 'lucide-react-native/dist/esm/icons/arrow-down-wide-narrow';
 import ArrowUpNarrowWide from 'lucide-react-native/dist/esm/icons/arrow-up-narrow-wide';
 import RotateCcw from 'lucide-react-native/dist/esm/icons/rotate-ccw';
-import X from 'lucide-react-native/dist/esm/icons/x';
-import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
-import MapIcon from 'lucide-react-native/dist/esm/icons/map';
 import Plus from 'lucide-react-native/dist/esm/icons/plus';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { Header, NotificationModal } from '../../../components/common';
 import SheetModal from '../../../components/common/SheetModal';
 import TravelFeedList, { TravelFeedItem } from '../components/TravelFeedList';
-import KakaoMapView, { MapPlace } from '../components/KakaoMapView';
 import { acceptInvitation, rejectInvitation } from '../../../api/trips';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidatePlanCaches } from '../../../hooks/planCache';
@@ -47,7 +40,6 @@ import {
 } from '../../community/services/communityApi';
 import { resolveAvatarUrl } from '../../community/utils/avatar';
 import { buildFeedRegionOptions } from '../../community/utils/feedRegions';
-import { getRegionCoords } from '../../community/utils/regionCoords';
 import { FeedFilterParams } from '../../community/types';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
@@ -74,6 +66,18 @@ const SORT_PARAMS: Record<string, string> = {
 
 
 const ALL = '전체';
+
+/**
+ * 상세 필터에 늘 펴 두는 지역. 웹과 같은 열일곱 시·도다.
+ *
+ * 서버는 글이 있는 지역만 세어 주므로 그것만 늘어놓으면 목록이 들쭉날쭉하고,
+ * 방금 비워진 지역은 고를 수조차 없다. 이름은 regionCoords가 이미 쓰는 축약형과
+ * 같아야 지도 좌표가 붙는다.
+ */
+const FEED_REGIONS = [
+  '서울', '부산', '인천', '대구', '대전', '광주', '울산', '세종',
+  '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주',
+];
 const TAGS = ['#뚜벅이최적화', '#극한의J', '#여유로운P', '#동선낭비없는'];
 const DURATIONS = [ALL, '1일', '2-3일', '4일 이상'];
 const SORT_OPTIONS = ['최신순', '인기순', '좋아요순', '가져가기순'];
@@ -133,7 +137,6 @@ export default function TravelFeedScreen() {
   const [isFilterModalVisible, setFilterModalVisible] = useState(false);
   const [isNotificationModalVisible, setNotificationModalVisible] =
     useState(false);
-  const [isMapModalVisible, setMapModalVisible] = useState(false);
   const { data: pendingRequests = [] } = usePendingInvitations(!!user);
   const pendingInvitations = usePendingInvitationActions();
 
@@ -148,14 +151,13 @@ export default function TravelFeedScreen() {
     () => buildFeedRegionOptions(regionCountsQuery.data),
     [regionCountsQuery.data],
   );
-  const regions = useMemo(
-    () => [ALL, ...regionOptions.map(option => option.region)],
-    [regionOptions],
-  );
-  const regionCountByName = useMemo(
-    () => new Map(regionOptions.map(option => [option.region, option.count])),
-    [regionOptions],
-  );
+  const regions = useMemo(() => {
+    // 서버가 표준 목록에 없는 이름을 세어 주면 그것도 고를 수 있게 뒤에 붙인다.
+    const extras = regionOptions
+      .map(option => option.region)
+      .filter(region => !FEED_REGIONS.includes(region));
+    return [ALL, ...FEED_REGIONS, ...extras];
+  }, [regionOptions]);
 
   const isFilterApplied =
     filterDuration !== ALL ||
@@ -175,22 +177,6 @@ export default function TravelFeedScreen() {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 350);
     return () => clearTimeout(timer);
   }, [searchQuery]);
-
-  useEffect(() => {
-    if (
-      regionCountsQuery.isSuccess &&
-      filterRegion !== ALL &&
-      !regions.includes(filterRegion)
-    ) {
-      setFilterRegion(ALL);
-      Toast.show({
-        type: 'info',
-        text1: `'${filterRegion}' 지역의 여행기가 없어 전체로 되돌렸어요.`,
-        position: 'top',
-        visibilityTime: 2500,
-      });
-    }
-  }, [filterRegion, regions, regionCountsQuery.isSuccess]);
 
   const feedFilters: FeedFilterParams = useMemo(() => {
     const duration = DURATION_RANGES[filterDuration];
@@ -334,25 +320,6 @@ export default function TravelFeedScreen() {
     setTempRegion(ALL);
   };
 
-  // 게시글이 있는 지역 중 좌표를 아는 곳만 지도에 올린다
-  const mapPlaces = useMemo(
-    (): MapPlace[] =>
-      regionOptions
-        .map(option => {
-          const coords = getRegionCoords(option.region);
-          if (!coords) return null;
-          return {
-            id: option.region,
-            name: `${option.region} (${option.count})`,
-            address: `${option.region} 여행기 ${option.count}건`,
-            latitude: coords.lat,
-            longitude: coords.lng,
-          };
-        })
-        .filter((place): place is MapPlace => place !== null),
-    [regionOptions],
-  );
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -414,21 +381,6 @@ export default function TravelFeedScreen() {
 
         {/* 목록 바로 위는 정렬이 맡는다. 지역은 고를 것이 많아 상세 필터로 옮겼다. */}
         <View style={styles.sortBarContainer}>
-          <TouchableOpacity
-            style={styles.mapButton}
-            onPress={() => setMapModalVisible(true)}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="여행지 지도 보기"
-            hitSlop={8}
-          >
-            <MapIcon
-              size={normalize(17)}
-              color={tokens.colors.textTertiary}
-              strokeWidth={1.8}
-            />
-          </TouchableOpacity>
-
           <View style={styles.sortTabs}>
             {QUICK_SORTS.map(option => {
               const selected = sortBy === option;
@@ -552,22 +504,14 @@ export default function TravelFeedScreen() {
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionLabel}>지역</Text>
                 <View style={styles.optionsRow}>
-                  {regions.map(region => {
-                    const count =
-                      region === ALL
-                        ? undefined
-                        : regionCountByName.get(region);
-                    return (
-                      <FilterOption
-                        key={region}
-                        label={
-                          count === undefined ? region : `${region} ${count}`
-                        }
-                        selected={tempRegion === region}
-                        onPress={() => setTempRegion(region)}
-                      />
-                    );
-                  })}
+                  {regions.map(region => (
+                    <FilterOption
+                      key={region}
+                      label={region}
+                      selected={tempRegion === region}
+                      onPress={() => setTempRegion(region)}
+                    />
+                  ))}
                 </View>
               </View>
 
@@ -647,39 +591,6 @@ export default function TravelFeedScreen() {
               </View>
             </ScrollView>
       </SheetModal>
-
-      <Modal
-        visible={isMapModalVisible}
-        animationType="slide"
-        onRequestClose={() => setMapModalVisible(false)}
-      >
-        <View style={styles.mapModalContainer}>
-          <View style={styles.mapModalHeader}>
-            <View style={styles.mapModalTitleRow}>
-              <MapPin size={20} color={tokens.colors.primary} />
-              <Text style={styles.mapModalTitle}>전체 여행지 지도</Text>
-              <View style={styles.mapModalCountBadge}>
-                <Text style={styles.mapModalCountText}>
-                  {mapPlaces.length}곳
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity
-              style={styles.mapModalCloseButton}
-              onPress={() => setMapModalVisible(false)}
-              accessibilityRole="button"
-              accessibilityLabel="닫기"
-              hitSlop={9}
-            >
-              <X size={22} color={tokens.colors.text} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.mapContainer}>
-            <KakaoMapView places={mapPlaces} style={styles.mapView} />
-          </View>
-        </View>
-      </Modal>
 
       <NotificationModal
         visible={isNotificationModalVisible}
@@ -813,9 +724,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: normalize(18),
   },
-  mapButton: {
-    paddingBottom: normalize(9),
-  },
   bottomSheetBody: {
     flexShrink: 1,
   },
@@ -886,49 +794,4 @@ const styles = StyleSheet.create({
     color: tokens.colors.white,
   },
 
-  mapModalContainer: {
-    flex: 1,
-    backgroundColor: tokens.colors.white,
-  },
-  mapModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: normalize(16),
-    paddingTop: Platform.OS === 'ios' ? normalize(54) : normalize(16),
-    paddingBottom: normalize(16),
-    borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.border,
-  },
-  mapModalTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(6),
-  },
-  mapModalTitle: {
-    fontSize: normalize(tokens.fontSize.ml),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.text,
-  },
-  mapModalCountBadge: {
-    paddingHorizontal: normalize(8),
-    paddingVertical: normalize(2),
-    borderRadius: tokens.radius.round,
-    backgroundColor: tokens.colors.primaryTint,
-  },
-  mapModalCountText: {
-    fontSize: normalize(tokens.fontSize.xs),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.primary,
-  },
-  mapModalCloseButton: {
-    padding: normalize(4),
-  },
-  mapContainer: {
-    flex: 1,
-    backgroundColor: tokens.colors.surface,
-  },
-  mapView: {
-    flex: 1,
-  },
 });
