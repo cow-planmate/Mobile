@@ -22,7 +22,7 @@ export const styles = StyleSheet.create({
   },
   // 회색이 보이는 유일한 자리. 덩어리 사이를 벌려 글이 위에 붙지 않게 한다.
   band: {
-    height: normalize(10),
+    height: normalize(20),
   },
 
   topBar: {
