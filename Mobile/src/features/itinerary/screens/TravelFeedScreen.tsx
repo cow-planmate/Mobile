@@ -78,6 +78,18 @@ const TAGS = ['#뚜벅이최적화', '#극한의J', '#여유로운P', '#동선�
 const DURATIONS = [ALL, '1일', '2-3일', '4일 이상'];
 const SORT_OPTIONS = ['최신순', '인기순', '좋아요순', '가져가기순'];
 
+/**
+ * 목록 위에 바로 두는 정렬 셋. 웹과 같다.
+ *
+ * 넷을 다 올리면 좁은 화면에서 줄이 넘치고, 좋아요순은 인기순과 겹쳐 읽힌다.
+ * 나머지 하나와 정렬 방향은 상세 필터가 맡는다.
+ */
+const QUICK_SORTS = ['최신순', '인기순', '가져가기순'];
+
+/** '가져가기순'은 정렬 이름이고, 탭에서는 웹과 같이 '가져간 순'으로 읽힌다. */
+const quickSortLabel = (option: string) =>
+  option === '가져가기순' ? '가져간 순' : option;
+
 /** 상세 필터의 선택 버튼. 웹 패널과 같은 라운드 8 사각형이다. */
 const FilterOption = ({
   label,
@@ -129,6 +141,7 @@ export default function TravelFeedScreen() {
   const [tempSortOrder, setTempSortOrder] = useState<'asc' | 'desc'>('desc');
   const [tempDuration, setTempDuration] = useState(ALL);
   const [tempTag, setTempTag] = useState<string | null>(null);
+  const [tempRegion, setTempRegion] = useState(ALL);
 
   const regionCountsQuery = useFeedRegionCounts();
   const regionOptions = useMemo(
@@ -146,12 +159,14 @@ export default function TravelFeedScreen() {
 
   const isFilterApplied =
     filterDuration !== ALL ||
-    sortBy !== '최신순' ||
+    filterRegion !== ALL ||
     sortOrder !== 'desc' ||
     !!selectedTag;
+  // 정렬 기준은 목록 위 탭에도 드러나 있으므로 여기서 세지 않는다 — 세면
+  // 탭을 옮겼을 뿐인데 상세 필터에 뱃지가 붙어 뭘 걸었는지 헷갈린다.
   const activeFilterCount =
     (filterDuration !== ALL ? 1 : 0) +
-    (sortBy !== '최신순' ? 1 : 0) +
+    (filterRegion !== ALL ? 1 : 0) +
     (sortOrder !== 'desc' ? 1 : 0) +
     (selectedTag ? 1 : 0);
 
@@ -298,6 +313,7 @@ export default function TravelFeedScreen() {
     setTempSortOrder(sortOrder);
     setTempDuration(filterDuration);
     setTempTag(selectedTag);
+    setTempRegion(filterRegion);
     setFilterModalVisible(true);
   };
 
@@ -306,6 +322,7 @@ export default function TravelFeedScreen() {
     setSortOrder(tempSortOrder);
     setFilterDuration(tempDuration);
     setSelectedTag(tempTag);
+    setFilterRegion(tempRegion);
     setFilterModalVisible(false);
   };
 
@@ -314,6 +331,7 @@ export default function TravelFeedScreen() {
     setTempSortOrder('desc');
     setTempDuration(ALL);
     setTempTag(null);
+    setTempRegion(ALL);
   };
 
   // 게시글이 있는 지역 중 좌표를 아는 곳만 지도에 올린다
@@ -394,7 +412,8 @@ export default function TravelFeedScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.regionBarContainer}>
+        {/* 목록 바로 위는 정렬이 맡는다. 지역은 고를 것이 많아 상세 필터로 옮겼다. */}
+        <View style={styles.sortBarContainer}>
           <TouchableOpacity
             style={styles.mapButton}
             onPress={() => setMapModalVisible(true)}
@@ -409,39 +428,32 @@ export default function TravelFeedScreen() {
               strokeWidth={1.8}
             />
           </TouchableOpacity>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.regionBarContent}
-          >
-            {regions.map(region => {
-              const selected = filterRegion === region;
-              const count =
-                region === ALL ? undefined : regionCountByName.get(region);
+
+          <View style={styles.sortTabs}>
+            {QUICK_SORTS.map(option => {
+              const selected = sortBy === option;
               return (
                 <TouchableOpacity
-                  key={region}
-                  style={[styles.regionTab, selected && styles.regionTabOn]}
-                  onPress={() => setFilterRegion(region)}
+                  key={option}
+                  style={[styles.sortTab, selected && styles.sortTabOn]}
+                  onPress={() => setSortBy(option)}
                   activeOpacity={0.7}
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
                 >
                   <Text
                     style={[
-                      styles.regionTabText,
-                      selected && styles.regionTabTextOn,
+                      styles.sortTabText,
+                      selected && styles.sortTabTextOn,
                     ]}
                   >
-                    {region}
-                    {count !== undefined ? (
-                      <Text style={styles.regionTabCount}>{` ${count}`}</Text>
-                    ) : null}
+                    {quickSortLabel(option)}
                   </Text>
                 </TouchableOpacity>
               );
             })}
-          </ScrollView>
+          </View>
+
           <TouchableOpacity
             style={styles.viewToggle}
             onPress={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
@@ -537,6 +549,28 @@ export default function TravelFeedScreen() {
               contentContainerStyle={styles.bottomSheetBodyContent}
               showsVerticalScrollIndicator={false}
             >
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionLabel}>지역</Text>
+                <View style={styles.optionsRow}>
+                  {regions.map(region => {
+                    const count =
+                      region === ALL
+                        ? undefined
+                        : regionCountByName.get(region);
+                    return (
+                      <FilterOption
+                        key={region}
+                        label={
+                          count === undefined ? region : `${region} ${count}`
+                        }
+                        selected={tempRegion === region}
+                        onPress={() => setTempRegion(region)}
+                      />
+                    );
+                  })}
+                </View>
+              </View>
+
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionLabel}>여행 기간</Text>
                 <View style={styles.optionsRow}>
@@ -732,27 +766,23 @@ const styles = StyleSheet.create({
   },
 
   // 지역은 알약 대신 밑줄 탭이다. 밑줄 2px이 아래 구분선 1px을 덮도록 겹친다.
-  regionTab: {
+  sortTab: {
     paddingBottom: normalize(9),
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
     marginBottom: -1,
   },
-  regionTabOn: {
+  sortTabOn: {
     borderBottomColor: tokens.colors.text,
   },
-  regionTabText: {
-    fontSize: normalize(12.5),
+  sortTabText: {
+    fontSize: normalize(13.5),
     fontFamily: tokens.fontFamily.medium,
     color: tokens.colors.textTertiary,
   },
-  regionTabTextOn: {
+  sortTabTextOn: {
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.text,
-  },
-  regionTabCount: {
-    fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.borderStrong,
   },
   viewToggle: {
     paddingBottom: normalize(9),
@@ -769,7 +799,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
     padding: 0,
   },
-  regionBarContainer: {
+  sortBarContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     backgroundColor: tokens.colors.white,
@@ -778,14 +808,14 @@ const styles = StyleSheet.create({
     borderBottomColor: tokens.colors.border,
     gap: normalize(12),
   },
+  sortTabs: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: normalize(18),
+  },
   mapButton: {
     paddingBottom: normalize(9),
   },
-  regionBarContent: {
-    gap: normalize(14),
-    alignItems: 'flex-end',
-  },
-
   bottomSheetBody: {
     flexShrink: 1,
   },
