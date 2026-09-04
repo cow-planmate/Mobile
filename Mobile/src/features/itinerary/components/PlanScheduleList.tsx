@@ -13,11 +13,7 @@ import { normalize } from '../../../utils/normalize';
 import { toSecureImageUrl } from '../../../utils/imageUrl';
 import { buildKakaoMapUrl } from '../../../utils/kakaoMapLink';
 import { openExternalUrl } from '../../../utils/externalLink';
-import {
-  CATEGORY_NAMES,
-  Place,
-  resolveCategoryId,
-} from './TimelineItem';
+import { Place, resolveCategoryId } from './TimelineItem';
 
 /** 웹의 완성 화면과 같은 표기. 2026년 9월 5일 (금) */
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -30,18 +26,30 @@ export const formatFullDate = (date?: Date | null): string => {
 };
 
 /**
- * 다 짠 일정을 읽는 목록만의 갈래 색.
+ * 다 짠 일정을 읽는 목록의 갈래 색·이름. 웹과 같은 값이다.
  *
- * 편집 화면(TimelineItem.styles)의 색을 빌려 쓰지 않는다 — 거기 식당은 파랑이라
- * 앱 기본색과 겹치고 관광지는 앱 어디에도 없는 연두다. 여기서는 앱이 이미 가진
- * tones만 쓴다.
+ * 웹의 완성 화면(Complete/ScheduledItem)과 여행기 상세(FeedDetailPage)가 쓰는
+ * 색을 그대로 옮겼다. 지하철 노선 색처럼 두 플랫폼이 같아야 하는 값이라 여기에
+ * 직접 적는다 — 앱 tones로 대신하면 웹과 미세하게 어긋난다.
+ *
+ * '직접 추가'는 웹에 짝이 없다. 웹은 모르는 갈래를 회색 기본값으로 떨어뜨리므로
+ * 여기서도 '기타'와 같은 회색을 준다 — 숙소와 같은 보라를 주면 둘이 구별되지 않는다.
  */
 const CATEGORY_TONE: Record<number, { bg: string; fg: string }> = {
-  0: tokens.tones.primary,
-  1: tokens.tones.warning,
-  2: tokens.tones.place,
-  3: tokens.tones.custom,
-  4: tokens.tones.neutral,
+  0: { bg: '#EFF6FF', fg: '#1344FF' },
+  1: { bg: '#F5F3FF', fg: '#7C3AED' },
+  2: { bg: '#FFF7ED', fg: '#EA580C' },
+  3: { bg: '#F3F4F6', fg: '#4B5563' },
+  4: { bg: '#F3F4F6', fg: '#4B5563' },
+};
+
+/** 웹과 같은 이름. 편집 화면의 CATEGORY_NAMES는 그쪽 그대로 둔다. */
+const CATEGORY_LABEL: Record<number, string> = {
+  0: '관광',
+  1: '숙소',
+  2: '식당',
+  3: '직접 추가',
+  4: '기타',
 };
 
 const CATEGORY_ICON: Record<
@@ -57,6 +65,9 @@ const CATEGORY_ICON: Record<
 
 const toneFor = (categoryId: number) =>
   CATEGORY_TONE[categoryId] ?? CATEGORY_TONE[4];
+
+export const categoryLabel = (categoryId: number, fallback?: string) =>
+  CATEGORY_LABEL[categoryId] ?? fallback ?? CATEGORY_LABEL[4];
 
 /** 시각 목록 한 줄이 필요로 하는 값. 완성 화면과 여행기가 같은 모양을 쓰도록 추린다. */
 export type ScheduleEntry = {
@@ -82,7 +93,7 @@ export const placeToEntry = (place: Place): ScheduleEntry => {
     startTime: place.startTime,
     endTime: place.endTime,
     categoryId,
-    categoryName: CATEGORY_NAMES[categoryId] || place.type || '기타',
+    categoryName: categoryLabel(categoryId, place.type),
     name: place.name,
     subtitle: place.address,
     memo: place.memo ?? undefined,

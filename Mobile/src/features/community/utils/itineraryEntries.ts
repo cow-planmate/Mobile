@@ -1,8 +1,8 @@
+import { resolveCategoryId } from '../../itinerary/components/TimelineItem';
 import {
-  CATEGORY_NAMES,
-  resolveCategoryId,
-} from '../../itinerary/components/TimelineItem';
-import { ScheduleEntry } from '../../itinerary/components/PlanScheduleList';
+  categoryLabel,
+  ScheduleEntry,
+} from '../../itinerary/components/PlanScheduleList';
 import { buildKakaoMapUrl } from '../../../utils/kakaoMapLink';
 import { ItineraryDay } from '../types';
 
@@ -29,12 +29,12 @@ export const itineraryEntries = (
         startTime: item.time,
         endTime: item.endTime ?? undefined,
         categoryId,
-        categoryName: CATEGORY_NAMES[categoryId] ?? '\uae30\ud0c0',
+        categoryName: categoryLabel(categoryId),
         name: item.place,
         subtitle: item.placeAddress ?? item.description ?? undefined,
         memo: item.memo ?? undefined,
         photoUrl: item.photoUrl ?? undefined,
-        badge: showAll ? `${day.day ?? dayIndex + 1}\uc77c\ucc28` : undefined,
+        badge: showAll ? `Day ${day.day ?? dayIndex + 1}` : undefined,
         mapUrl: buildKakaoMapUrl({
           name: item.place,
           coords:

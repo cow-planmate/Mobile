@@ -60,7 +60,7 @@ describe('itineraryEntries', () => {
   it('갈래 이름을 붙인다', () => {
     const [home, beach] = itineraryEntries(days, 0);
     expect(home.categoryName).toBe('직접 추가');
-    expect(beach.categoryName).toBe('관광지');
+    expect(beach.categoryName).toBe('관광');
     expect(itineraryEntries(days, 1)[0].categoryName).toBe('숙소');
   });
 
@@ -81,7 +81,7 @@ describe('itineraryEntries', () => {
   it('전체를 고르면 모든 날을 잇고 며칠차인지 붙인다', () => {
     const entries = itineraryEntries(days, ALL_DAYS);
     expect(entries).toHaveLength(3);
-    expect(entries.map(e => e.badge)).toEqual(['1일차', '1일차', '2일차']);
+    expect(entries.map(e => e.badge)).toEqual(['Day 1', 'Day 1', 'Day 2']);
   });
 
   it('하루만 볼 때는 며칠차 꼬리표를 달지 않는다', () => {

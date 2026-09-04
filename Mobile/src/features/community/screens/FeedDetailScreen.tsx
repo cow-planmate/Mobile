@@ -9,10 +9,12 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import CalendarIcon from 'lucide-react-native/dist/esm/icons/calendar';
 import ChevronDown from 'lucide-react-native/dist/esm/icons/chevron-down';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ChevronUp from 'lucide-react-native/dist/esm/icons/chevron-up';
 import Copy from 'lucide-react-native/dist/esm/icons/copy';
+import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import ThumbsDown from 'lucide-react-native/dist/esm/icons/thumbs-down';
 import ThumbsUp from 'lucide-react-native/dist/esm/icons/thumbs-up';
@@ -22,7 +24,12 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CalendarModal } from '../../../components/common';
 import { FeedStackParamList } from '../../../navigation/types';
-import { usePost, useReactToPost, useForkItinerary } from '../hooks/queries';
+import {
+  usePost,
+  useReactToPost,
+  useForkItinerary,
+  useSimilarFeedPosts,
+} from '../hooks/queries';
 import { formatDuration } from '../services/communityApi';
 import { canForkItinerary } from '../utils/itineraryToPlan';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
@@ -30,6 +37,7 @@ import { resolveAvatarUrl } from '../utils/avatar';
 import PostContentView from '../components/PostContentView';
 import CommentSection from '../components/CommentSection';
 import UserAvatar from '../../../components/common/UserAvatar';
+import FallbackImage from '../../../components/common/FallbackImage';
 import PublicProfileModal from '../components/PublicProfileModal';
 import { ReactionType } from '../types';
 import { ScheduleTimeline } from '../../itinerary/components/PlanScheduleList';
@@ -72,6 +80,9 @@ export default function FeedDetailScreen() {
     [days, selectedDay],
   );
   const isForkable = canForkItinerary(post?.itinerary);
+
+  const similarRegion = post?.location ?? post?.region ?? undefined;
+  const { data: similarPosts = [] } = useSimilarFeedPosts(similarRegion, postId);
   const reactionLock = useSubmitLock();
 
   const handleReact = (type: ReactionType) =>
@@ -206,6 +217,69 @@ export default function FeedDetailScreen() {
   const bodyText = (post.contentText ?? '').trim();
   const hasBody = bodyText.length > 0 && bodyText !== post.title.trim();
 
+  const renderReactions = () => (
+    <View style={styles.reactionRow}>
+      <TouchableOpacity
+        style={[
+          styles.reactionButton,
+          post.myReaction === 'like' && styles.reactionButtonActive,
+        ]}
+        onPress={() => handleReact('like')}
+        activeOpacity={0.85}
+        disabled={react.isPending || reactionLock.isSubmitting}
+        accessibilityState={{
+          disabled: react.isPending || reactionLock.isSubmitting,
+        }}
+      >
+        <ThumbsUp
+          size={normalize(14)}
+          color={
+            post.myReaction === 'like' ? COLORS.white : COLORS.textSecondary
+          }
+        />
+        <Text
+          style={[
+            styles.reactionText,
+            post.myReaction === 'like' && styles.reactionTextActive,
+          ]}
+        >
+          좋아요 {post.likes.toLocaleString()}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[
+          styles.reactionButton,
+          post.myReaction === 'dislike' &&
+            styles.reactionButtonActiveDislike,
+        ]}
+        onPress={() => handleReact('dislike')}
+        activeOpacity={0.85}
+        disabled={react.isPending || reactionLock.isSubmitting}
+        accessibilityState={{
+          disabled: react.isPending || reactionLock.isSubmitting,
+        }}
+      >
+        <ThumbsDown
+          size={normalize(14)}
+          color={
+            post.myReaction === 'dislike'
+              ? COLORS.white
+              : COLORS.textSecondary
+          }
+        />
+        <Text
+          style={[
+            styles.reactionText,
+            post.myReaction === 'dislike' && styles.reactionTextActive,
+          ]}
+        >
+          싫어요 {post.dislikes}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   const durationLabel = formatDuration(post.durationDays);
   const regionLabel = post.location ?? post.region;
 
@@ -240,17 +314,34 @@ export default function FeedDetailScreen() {
               />
               <Text style={styles.metaAuthor}>{post.author}</Text>
             </TouchableOpacity>
+            {/* 웹과 같은 짜임: 이름 | 지역 · 기간.
+                작성자와 여행 정보는 성격이 달라 세로선으로 끊고,
+                지역과 기간은 한 덩이라 가운뎃점으로 잇는다. */}
+            {(!!regionLabel || !!durationLabel) && (
+              <View style={styles.metaRule} />
+            )}
             {!!regionLabel && (
-              <>
-                <Text style={styles.metaDivider}>·</Text>
+              <View style={styles.metaFact}>
+                <MapPin
+                  size={normalize(13)}
+                  color={COLORS.primary}
+                  strokeWidth={2}
+                />
                 <Text style={styles.metaRegion}>{regionLabel}</Text>
-              </>
+              </View>
+            )}
+            {!!regionLabel && !!durationLabel && (
+              <Text style={styles.metaDivider}>·</Text>
             )}
             {!!durationLabel && (
-              <>
-                <Text style={styles.metaDivider}>·</Text>
+              <View style={styles.metaFact}>
+                <CalendarIcon
+                  size={normalize(13)}
+                  color={COLORS.textLabel}
+                  strokeWidth={2}
+                />
                 <Text style={styles.metaDuration}>{durationLabel}</Text>
-              </>
+              </View>
             )}
           </View>
 
@@ -290,7 +381,7 @@ export default function FeedDetailScreen() {
               <View style={styles.sectionTitleGroup}>
                 <Text style={styles.sectionTitle}>상세 일정</Text>
                 <Text style={styles.sectionSubtitle}>
-                  {days.length}일 · 총 {totalPlaces}곳
+                  총 {totalPlaces}개의 장소
                 </Text>
               </View>
               {isScheduleOpen ? (
@@ -342,7 +433,7 @@ export default function FeedDetailScreen() {
                             isActive && styles.dayTabTextActive,
                           ]}
                         >
-                          {day.day ?? index + 1}일차
+                          Day {day.day ?? index + 1}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -361,8 +452,10 @@ export default function FeedDetailScreen() {
               </>
             )}
 
-            {/* 가져가는 대상이 바로 위 일정이다. 다 훑고 정한 그 자리에 둔다.
-                일정을 접어도 이 줄은 남는다 — 이 화면에서 제일 중요한 행동이다. */}
+            {/* 좋아요·싫어요와 가져가기를 일정 아래 한 칸에 모은다. 셋 다 이 일정을
+                다 보고 나서 하는 일이라, 흩어 두면 훑다 말고 되돌아가야 한다. */}
+            <View style={styles.actionBar}>{renderReactions()}</View>
+
             <View style={styles.forkBar}>
               <TouchableOpacity
                 style={[
@@ -397,72 +490,81 @@ export default function FeedDetailScreen() {
           </>
         )}
 
+        {days.length === 0 && (
+          <>
+            <View style={styles.band} />
+            {/* 일정이 없는 여행기도 좋아요·싫어요는 눌릴 수 있어야 한다. */}
+            <View style={styles.block}>
+              <View style={styles.loneActionBar}>{renderReactions()}</View>
+            </View>
+          </>
+        )}
+
         <View style={styles.band} />
 
-        <View style={[styles.block, styles.blockFill]}>
-        <View style={styles.reactionRow}>
-          <TouchableOpacity
-            style={[
-              styles.reactionButton,
-              post.myReaction === 'like' && styles.reactionButtonActive,
-            ]}
-            onPress={() => handleReact('like')}
-            activeOpacity={0.85}
-            disabled={react.isPending || reactionLock.isSubmitting}
-            accessibilityState={{
-              disabled: react.isPending || reactionLock.isSubmitting,
-            }}
-          >
-            <ThumbsUp
-              size={normalize(14)}
-              color={
-                post.myReaction === 'like' ? COLORS.white : COLORS.textSecondary
-              }
-            />
-            <Text
-              style={[
-                styles.reactionText,
-                post.myReaction === 'like' && styles.reactionTextActive,
-              ]}
-            >
-              좋아요 {post.likes.toLocaleString()}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.reactionButton,
-              post.myReaction === 'dislike' &&
-                styles.reactionButtonActiveDislike,
-            ]}
-            onPress={() => handleReact('dislike')}
-            activeOpacity={0.85}
-            disabled={react.isPending || reactionLock.isSubmitting}
-            accessibilityState={{
-              disabled: react.isPending || reactionLock.isSubmitting,
-            }}
-          >
-            <ThumbsDown
-              size={normalize(14)}
-              color={
-                post.myReaction === 'dislike'
-                  ? COLORS.white
-                  : COLORS.textSecondary
-              }
-            />
-            <Text
-              style={[
-                styles.reactionText,
-                post.myReaction === 'dislike' && styles.reactionTextActive,
-              ]}
-            >
-              싫어요 {post.dislikes}
-            </Text>
-          </TouchableOpacity>
+        <View
+          style={[
+            styles.block,
+            similarPosts.length === 0 && styles.blockFill,
+          ]}
+        >
+          <CommentSection postId={post.id} commentCount={post.comments} feed />
         </View>
 
-        <CommentSection postId={post.id} commentCount={post.comments} feed />
-        </View>
+        {similarPosts.length > 0 && (
+          <>
+            <View style={styles.band} />
+
+            <View style={[styles.block, styles.blockFill]}>
+              <Text style={styles.similarHeading}>
+                {regionLabel}의 다른 여행기
+              </Text>
+              <Text style={styles.similarSubtitle}>
+                추천이 많은 순으로 보여드려요
+              </Text>
+              {similarPosts.map(item => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.similarRow}
+                  onPress={() =>
+                    // push면 여행기를 타고 넘어갈 때마다 스택이 쌓인다.
+                    navigation.replace('FeedDetail', { postId: String(item.id) })
+                  }
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.title}
+                >
+                  <FallbackImage
+                    uri={item.image}
+                    style={styles.similarThumb}
+                    fallback={
+                      <View style={[styles.similarThumb, styles.similarThumbEmpty]}>
+                        <MapPin
+                          size={normalize(16)}
+                          color={COLORS.borderStrong}
+                          strokeWidth={1.8}
+                        />
+                      </View>
+                    }
+                  />
+                  <View style={styles.similarBody}>
+                    <Text style={styles.similarTitle} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <Text style={styles.similarMeta} numberOfLines={1}>
+                      {[formatDuration(item.durationDays), item.author]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </Text>
+                    <Text style={styles.similarCounts}>
+                      추천 {item.likes} · 가져감 {item.forks ?? 0}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
       </ScrollView>
 
       <PublicProfileModal

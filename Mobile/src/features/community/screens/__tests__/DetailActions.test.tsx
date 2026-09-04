@@ -37,6 +37,8 @@ jest.mock('../../hooks/queries', () => ({
   usePosts: (...args: unknown[]) => mockUsePosts(...args),
   useReactToPost: () => mutation(mockReactRequest),
   useForkItinerary: () => mutation(),
+  // 댓글 아래 '다른 여행기'. 이 시험들은 그 목록을 보지 않는다.
+  useSimilarFeedPosts: () => ({ data: [] }),
   useUpdateAnswered: () => mutation(mockUpdateAnsweredRequest),
   useDeletePost: () => mutation(),
 }));
@@ -273,6 +275,29 @@ describe('여행기 본문 자리', () => {
     expect(
       tree!.root.findAllByProps({ style: feedStyles.body }).length,
     ).toBeGreaterThan(0);
+    act(() => tree!.unmount());
+  });
+});
+
+// 좋아요·싫어요를 일정 칸으로 옮기면서, 일정이 없는 여행기에서 통째로
+// 사라질 뻔했다. 홀로 서는 자리를 남겨 뒀는지 지킨다.
+describe('일정이 없는 여행기', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUsePost.mockReturnValue({
+      data: { ...basePost, itinerary: null },
+      isLoading: false,
+      isError: false,
+    });
+  });
+
+  it('좋아요·싫어요는 그대로 눌린다', () => {
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(<FeedDetailScreen />);
+    });
+
+    expect(findButtonByStyle(tree!, feedStyles.reactionButton)).toBeDefined();
     act(() => tree!.unmount());
   });
 });

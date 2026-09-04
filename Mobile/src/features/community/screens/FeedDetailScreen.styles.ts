@@ -88,9 +88,21 @@ export const styles = StyleSheet.create({
     gap: normalize(6),
     marginBottom: normalize(6),
   },
+  // 작성자와 여행 정보를 끊는 세로선. 가운뎃점보다 두 덩이임이 분명하다.
+  metaRule: {
+    width: 1,
+    height: normalize(11),
+    marginHorizontal: normalize(2),
+    backgroundColor: COLORS.border,
+  },
   metaDivider: {
     fontSize: normalize(11),
-    color: COLORS.border,
+    color: COLORS.borderStrong,
+  },
+  metaFact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(3),
   },
   metaRegion: {
     fontSize: normalize(12),
@@ -100,7 +112,7 @@ export const styles = StyleSheet.create({
   metaDuration: {
     fontSize: normalize(12),
     fontFamily: tokens.fontFamily.semibold,
-    color: COLORS.textSecondary,
+    color: COLORS.textLabel,
   },
   tagLine: {
     marginTop: normalize(8),
@@ -130,13 +142,21 @@ export const styles = StyleSheet.create({
     gap: normalize(3),
   },
 
-  // 일정 목록 끝에 붙는 줄. 좌우 여백은 감싸는 덩어리가 이미 준다.
-  forkBar: {
+  // 일정 목록 끝에 붙는 줄들. 좌우 여백은 감싸는 덩어리가 이미 준다.
+  actionBar: {
     marginTop: normalize(6),
-    paddingTop: normalize(12),
-    paddingBottom: normalize(4),
+    paddingTop: normalize(14),
     borderTopWidth: 1,
     borderTopColor: COLORS.borderLight,
+  },
+  forkBar: {
+    paddingTop: normalize(10),
+    paddingBottom: normalize(4),
+  },
+  // 일정이 없어 홀로 설 때는 위에 실선을 그을 것이 없다.
+  loneActionBar: {
+    paddingHorizontal: normalize(16),
+    paddingVertical: normalize(16),
   },
   forkButton: {
     flexDirection: 'row',
@@ -191,11 +211,12 @@ export const styles = StyleSheet.create({
     gap: normalize(6),
     marginBottom: normalize(12),
   },
+  // 웹과 같은 라운드 8 사각형. 알약이 아니라 각진 칸이라 아래 목록과 결이 맞는다.
   dayTab: {
-    paddingHorizontal: normalize(12),
-    paddingVertical: normalize(6),
-    borderRadius: tokens.radius.round,
-    backgroundColor: COLORS.surface,
+    paddingHorizontal: normalize(14),
+    paddingVertical: normalize(7),
+    borderRadius: tokens.radius.m,
+    backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
@@ -205,7 +226,7 @@ export const styles = StyleSheet.create({
   },
   dayTabText: {
     fontSize: normalize(12),
-    fontFamily: tokens.fontFamily.medium,
+    fontFamily: tokens.fontFamily.bold,
     color: COLORS.textSecondary,
   },
   dayTabTextActive: {
@@ -223,7 +244,6 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: normalize(10),
-    paddingBottom: normalize(20),
   },
   reactionButton: {
     flexDirection: 'row',
@@ -249,6 +269,61 @@ export const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.semibold,
     color: COLORS.textSecondary,
   },
+  similarHeading: {
+    paddingHorizontal: normalize(16),
+    paddingTop: normalize(16),
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.bold,
+    color: COLORS.text,
+    letterSpacing: -0.2,
+  },
+  similarSubtitle: {
+    paddingHorizontal: normalize(16),
+    paddingTop: normalize(3),
+    paddingBottom: normalize(10),
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: COLORS.textTertiary,
+  },
+  similarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(12),
+    paddingHorizontal: normalize(16),
+    paddingVertical: normalize(10),
+  },
+  similarThumb: {
+    width: normalize(64),
+    height: normalize(64),
+    borderRadius: normalize(8),
+  },
+  similarThumbEmpty: {
+    backgroundColor: COLORS.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  similarBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  similarTitle: {
+    fontSize: normalize(13.5),
+    fontFamily: tokens.fontFamily.bold,
+    color: COLORS.text,
+  },
+  similarMeta: {
+    marginTop: normalize(2),
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: COLORS.textSecondary,
+  },
+  similarCounts: {
+    marginTop: normalize(3),
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.regular,
+    color: COLORS.textTertiary,
+  },
+
   reactionTextActive: {
     color: COLORS.white,
   },

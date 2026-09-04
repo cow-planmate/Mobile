@@ -72,6 +72,28 @@ export const useFeedPosts = (filters: FeedFilterParams, size = 12) =>
     staleTime: 30_000,
   });
 
+/**
+ * 지금 보는 여행기와 같은 지역의 다른 여행기. 웹과 같은 자리·같은 규칙이다.
+ *
+ * 추천이 많은 순으로 받아 지금 글을 걸러내고 넷만 남긴다 — 넉넉히 받는 이유는
+ * 지금 글이 그 안에 섞여 나오기 때문이다. 지역을 모르면 고를 근거가 없어 쉰다.
+ */
+export const useSimilarFeedPosts = (
+  region: string | undefined,
+  excludePostId: number | string | undefined,
+) =>
+  useQuery({
+    queryKey: ['community', 'posts', 'feed', 'similar', region, excludePostId] as const,
+    queryFn: ({ signal }) =>
+      fetchFeedPosts(0, 9, { region, sort: 'likes' }, signal),
+    enabled: !!region && region !== '전국' && !!excludePostId,
+    staleTime: 30_000,
+    select: page =>
+      page.items
+        .filter(item => String(item.id) !== String(excludePostId))
+        .slice(0, 4),
+  });
+
 export const useFeedRegionCounts = () =>
   useQuery({
     queryKey: ['community', 'feed-regions'],
