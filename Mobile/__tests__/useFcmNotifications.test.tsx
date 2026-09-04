@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   useFcmNotifications,
   isInvitationMessage,
+  classifyInvitationPush,
 } from '../src/hooks/useFcmNotifications';
 
 jest.mock('axios');
@@ -39,7 +40,10 @@ function TestComponent({
   onInvitationPush,
 }: {
   enabled: boolean;
-  onInvitationPush?: (origin: 'arrived' | 'opened') => void;
+  onInvitationPush?: (
+    origin: 'arrived' | 'opened',
+    kind: 'request' | 'result',
+  ) => void;
 }) {
   useFcmNotifications({ enabled, onInvitationPush });
   return null;
@@ -144,7 +148,7 @@ describe('useFcmNotifications', () => {
       await new Promise(resolve => setTimeout(resolve, 50));
     });
 
-    expect(onInvitationPush).toHaveBeenCalledWith('opened');
+    expect(onInvitationPush).toHaveBeenCalledWith('opened', 'request');
   });
 
   it('앱을 보는 중에 온 알림은 arrived로 알린다', async () => {
@@ -169,7 +173,7 @@ describe('useFcmNotifications', () => {
       });
     });
 
-    expect(onInvitationPush).toHaveBeenCalledWith('arrived');
+    expect(onInvitationPush).toHaveBeenCalledWith('arrived', 'request');
   });
 
   it('초기화 도중 해제되면 리스너를 남기지 않는다', async () => {
@@ -212,5 +216,55 @@ describe('useFcmNotifications', () => {
     expect(mockOnNotificationOpenedApp.mock.calls.length).toBe(
       unsubscribeOpen.mock.calls.length,
     );
+  });
+});
+
+// Backend-v2가 FCM에 제목·본문만 실어 보내 data가 없다. 그래서 결과 알림은
+// 서버가 고정 형식으로 만드는 문구로 잡는다 — 되살아나면 눌러도 무반응이 된다.
+describe('classifyInvitationPush', () => {
+  it('수락·거절 결과를 문구로 가려낸다', () => {
+    expect(
+      classifyInvitationPush({
+        notification: {
+          title: '요청 수락',
+          body: "민영님이 '제주 여행' 관련 요청을 수락했습니다.",
+        },
+      }),
+    ).toBe('result');
+    expect(
+      classifyInvitationPush({
+        notification: {
+          title: '요청 거절',
+          body: "민영님이 '제주 여행' 관련 요청을 거절했습니다.",
+        },
+      }),
+    ).toBe('result');
+  });
+
+  it('아직 답해야 하는 알림은 request로 남는다', () => {
+    expect(
+      classifyInvitationPush({
+        notification: {
+          title: '일정 초대',
+          body: "민영님이 '제주 여행' 일정에 초대했습니다.",
+        },
+      }),
+    ).toBe('request');
+    expect(
+      classifyInvitationPush({
+        notification: {
+          title: '편집 권한 요청',
+          body: "민영님이 '제주 여행' 일정의 편집 권한을 요청했습니다.",
+        },
+      }),
+    ).toBe('request');
+  });
+
+  it('서버가 타입을 실어 보내면 문구보다 그것을 믿는다', () => {
+    expect(classifyInvitationPush({ data: { type: 'REQUEST_RESULT' } })).toBe(
+      'result',
+    );
+    expect(classifyInvitationPush({ data: { type: 'INVITE' } })).toBe('request');
+    expect(classifyInvitationPush({ data: { type: 'comment' } })).toBeNull();
   });
 });

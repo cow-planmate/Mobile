@@ -12,6 +12,7 @@ import { useAlert } from '../../../contexts/AlertContext';
 import { useInvitationSse } from '../../../hooks/useInvitationSse';
 import Toast from 'react-native-toast-message';
 import {
+  InvitationPushKind,
   InvitationPushOrigin,
   IS_FCM_RUNTIME_ENABLED,
   useFcmNotifications,
@@ -124,7 +125,17 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
    * 열 수 있는 토스트를 내준다.
    */
   const handleInvitationPush = useCallback(
-    async (origin: InvitationPushOrigin) => {
+    async (origin: InvitationPushOrigin, kind: InvitationPushKind) => {
+      // 내가 보낸 요청에 상대가 답한 것. 알림함에는 답할 것이 없고 바뀐 것은
+      // 내 일정 쪽이라, 목록을 새로 받고 그리로 보낸다. 앱을 보고 있을 때는
+      // SSE가 이미 같은 소식을 알려주므로 여기서 또 알리지 않는다.
+      if (kind === 'result') {
+        if (origin !== 'opened') return;
+        await invalidatePlanCaches(queryClient);
+        navigation.navigate('MySchedule');
+        return;
+      }
+
       await fetchPendingRequests();
 
       if (origin === 'opened') {
@@ -144,7 +155,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         },
       });
     },
-    [fetchPendingRequests],
+    [fetchPendingRequests, navigation, queryClient],
   );
 
   useFcmNotifications({

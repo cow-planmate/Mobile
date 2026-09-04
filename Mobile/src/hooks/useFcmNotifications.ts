@@ -20,7 +20,10 @@ export type InvitationPushOrigin = 'arrived' | 'opened';
 
 interface UseFcmNotificationsParams {
   enabled: boolean;
-  onInvitationPush?: (origin: InvitationPushOrigin) => void | Promise<void>;
+  onInvitationPush?: (
+    origin: InvitationPushOrigin,
+    kind: InvitationPushKind,
+  ) => void | Promise<void>;
 }
 
 const [FCM_TOKEN_STORAGE_KEY, FCM_TOKEN_LAST_SYNCED_KEY] = FCM_STORAGE_KEYS;
@@ -43,28 +46,57 @@ const getMessaging = () => {
   }
 };
 
+/**
+ * 협업 알림의 갈래.
+ *
+ * 'request'는 아직 내가 답해야 하는 것(초대·편집 권한 요청)이라 알림함으로 간다.
+ * 'result'는 내가 보낸 요청에 상대가 답한 것이라 알림함에는 아무것도 없다 —
+ * 바뀐 것은 내 일정 쪽이다. 둘을 뭉뚱그리면 눌렀을 때 빈 알림함이 열린다.
+ */
+export type InvitationPushKind = 'request' | 'result';
+
 // 서버가 타입을 실어 보내면 그것을 우선 신뢰한다. 문구 매칭은 타입이 없는
 // 메시지에 대한 폴백일 뿐이라, 범용 단어까지 넣으면 오탐이 늘어난다.
 const INVITATION_DATA_KEYS = ['type', 'notificationType', 'eventType'];
 
-const INVITATION_TYPES = new Set([
+const REQUEST_TYPES = new Set([
   'invite',
   'invitation',
   'request',
   'collaboration',
   'collaboration_request',
   'collaboration-request',
-  'requestresult',
-  'request_result',
 ]);
 
-const INVITATION_HINTS = [
+const RESULT_TYPES = new Set([
+  'requestresult',
+  'request_result',
+  'collaboration_result',
+]);
+
+const REQUEST_HINTS = [
   'invite',
   'invitation',
   'collaboration',
   '초대',
   '편집 권한',
   '함께 편집',
+];
+
+/**
+ * 결과 알림을 문구로 잡는 근거.
+ *
+ * Backend-v2가 FCM에 제목·본문만 실어 보내 data가 비어 있다. 다행히 문구는
+ * 서버가 고정 형식으로 만든다 — 제목 "요청 수락"/"요청 거절", 본문
+ * "…님이 '…' 관련 요청을 수락했습니다."(CollaborationRequestService).
+ * 서버가 data.type을 실어 보내기 시작하면 위 RESULT_TYPES가 먼저 걸려
+ * 이 목록은 쓰이지 않는다.
+ */
+const RESULT_HINTS = [
+  '요청 수락',
+  '요청 거절',
+  '요청을 수락',
+  '요청을 거절',
 ];
 
 const resolveDeclaredType = (data: Record<string, unknown>): string | null => {
@@ -118,12 +150,15 @@ const noticePermissionDeniedOnce = async () => {
   });
 };
 
-export const isInvitationMessage = (remoteMessage: any): boolean => {
+export const classifyInvitationPush = (
+  remoteMessage: any,
+): InvitationPushKind | null => {
   const data = (remoteMessage?.data || {}) as Record<string, unknown>;
 
   const declaredType = resolveDeclaredType(data);
   if (declaredType) {
-    return INVITATION_TYPES.has(declaredType);
+    if (RESULT_TYPES.has(declaredType)) return 'result';
+    return REQUEST_TYPES.has(declaredType) ? 'request' : null;
   }
 
   const notificationText = [
@@ -139,8 +174,18 @@ export const isInvitationMessage = (remoteMessage: any): boolean => {
     .toLowerCase()
     .concat(' ', notificationText);
 
-  return INVITATION_HINTS.some((hint: string) => joined.includes(hint));
+  // 결과를 먼저 본다. 두 목록은 겹치지 않지만, 겹치는 문구가 생기면
+  // 답할 것이 없는 결과가 알림함을 여는 쪽으로 새는 편이 더 나쁘다.
+  if (RESULT_HINTS.some((hint: string) => joined.includes(hint))) {
+    return 'result';
+  }
+  return REQUEST_HINTS.some((hint: string) => joined.includes(hint))
+    ? 'request'
+    : null;
 };
+
+export const isInvitationMessage = (remoteMessage: any): boolean =>
+  classifyInvitationPush(remoteMessage) !== null;
 
 const syncFcmToken = async (token: string, force: boolean = false) => {
   try {
@@ -209,8 +254,9 @@ export function useFcmNotifications({
         return;
       }
 
-      if (isInvitationMessage(remoteMessage)) {
-        await callback(origin);
+      const kind = classifyInvitationPush(remoteMessage);
+      if (kind) {
+        await callback(origin, kind);
       }
     };
 
