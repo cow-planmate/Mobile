@@ -468,7 +468,7 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
   },
 
-  // 탭은 상자가 아니라 밑줄이 맡는다. 피드·커뮤니티와 같은 규칙이다.
+  // 탭은 상자가 아니라 밑줄이 맡는다. 여행기·커뮤니티와 같은 규칙이다.
   sectionTabsWrap: {
     backgroundColor: COLORS.white,
   },

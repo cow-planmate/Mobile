@@ -190,7 +190,7 @@ export const styles = StyleSheet.create({
   postList: {
     paddingBottom: normalize(32),
   },
-  // 카드 테두리 대신 전체 폭 구분선 하나로 나눈다. 피드 목록과 같은 틀이다.
+  // 카드 테두리 대신 전체 폭 구분선 하나로 나눈다. 여행기 목록과 같은 틀이다.
   postRow: {
     flexDirection: 'row',
     gap: normalize(12),
