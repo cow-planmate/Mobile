@@ -97,12 +97,11 @@ const LEAVE_EDITOR_CONCURRENCY = 4;
 type ProfileSection = 'profile' | 'travel' | 'stories';
 type TripTab = 'upcoming' | 'past';
 
-// 웹 마이페이지의 세 갈래를 그대로 옮긴 것. 웹 이름(여행 일정 및 캘린더,
-// 커뮤니티 활동)은 폰 탭에 담기에 길어 탭에는 짧은 이름을 쓴다.
+// 웹 마이페이지의 세 갈래를 이름까지 그대로 옮긴 것.
 const PROFILE_SECTIONS = [
   { key: 'profile', label: '프로필' },
-  { key: 'travel', label: '여행' },
-  { key: 'stories', label: '이야기' },
+  { key: 'travel', label: '여행 일정 및 캘린더' },
+  { key: 'stories', label: '커뮤니티 활동' },
 ];
 
 interface PlanItem {
