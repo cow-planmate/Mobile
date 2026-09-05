@@ -40,7 +40,6 @@ const Header: React.FC<HeaderProps> = ({
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const logout = useAuthStore(state => state.logout);
-  const logout = useAuthStore((state) => state.logout);
   const { disconnect } = useWebSocket();
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 16 });
@@ -90,7 +89,6 @@ const Header: React.FC<HeaderProps> = ({
         accessibilityRole="button"
         accessibilityLabel="일정 생성으로 이동"
       >
-        <Text style={styles.logo}>planMate</Text>
         <Logo width={normalize(95)} height={normalize(21)} />
       </TouchableOpacity>
       <View style={styles.topIcons}>
@@ -108,7 +106,6 @@ const Header: React.FC<HeaderProps> = ({
             color={tokens.colors.text}
             strokeWidth={1.6}
           />
-          <Bell size={normalize(22)} color={tokens.colors.text} strokeWidth={1.6} />
           {pendingRequestsCount > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{pendingRequestsCount}</Text>
@@ -127,7 +124,6 @@ const Header: React.FC<HeaderProps> = ({
           <View
             style={[styles.userAvatar, menuVisible && styles.userAvatarActive]}
           >
-          <View style={[styles.userAvatar, menuVisible && styles.userAvatarActive]}>
             <FallbackImage
               uri={email ? gravatarUrl(email, 100) : null}
               style={styles.avatarImage}
@@ -137,7 +133,6 @@ const Header: React.FC<HeaderProps> = ({
                   size={normalize(14)}
                   color={tokens.colors.textTertiary}
                 />
-                <UserIcon size={normalize(14)} color={tokens.colors.textTertiary} />
               }
             />
           </View>
@@ -152,8 +147,6 @@ const Header: React.FC<HeaderProps> = ({
       >
         <Pressable
           style={styles.modalOverlay}
-        <Pressable 
-          style={styles.modalOverlay} 
           onPress={() => setMenuVisible(false)}
         >
           <View
@@ -162,7 +155,6 @@ const Header: React.FC<HeaderProps> = ({
               { top: menuPosition.top, right: menuPosition.right },
             ]}
           >
-          <View style={[styles.dropdownMenu, { top: menuPosition.top, right: menuPosition.right }]}>
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => handleMenuItemPress('profile')}
@@ -201,12 +193,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.borderLight,
     zIndex: 10,
-  },
-  logo: {
-    fontSize: normalize(20),
-    fontFamily: 'Pretendard-Bold',
-    fontWeight: '800',
-    color: tokens.colors.primary,
   },
   topIcons: {
     flexDirection: 'row',
