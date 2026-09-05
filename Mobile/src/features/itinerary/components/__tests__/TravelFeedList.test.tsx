@@ -6,9 +6,9 @@ jest.mock('@shopify/flash-list', () => {
   const { View } = require('react-native');
   return {
     FlashList: (props: any) => {
-      const { data, renderItem, ListHeaderComponent, ListFooterComponent, ListEmptyComponent } = props;
+      const { data, renderItem, ListHeaderComponent, ListFooterComponent, ListEmptyComponent, onScroll } = props;
       return (
-        <View testID="mock-flash-list">
+        <View testID="mock-flash-list" onScroll={onScroll}>
           {ListHeaderComponent && ListHeaderComponent()}
           {data && data.length > 0
             ? data.map((item: any, index: number) => {
@@ -91,6 +91,13 @@ const mockItem = {
   placeCount: 7,
 };
 
+function flattenStyle(style: any): any {
+  if (Array.isArray(style)) {
+    return Object.assign({}, ...style.map(flattenStyle));
+  }
+  return style || {};
+}
+
 describe('TravelFeedList Component', () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -151,6 +158,54 @@ describe('TravelFeedList Component', () => {
     const tree = JSON.stringify(component.toJSON());
     expect(tree).toContain(mockItem.title);
     expect(tree).not.toContain('DAY 1');
+  });
+
+  // 설명이 짧거나 없어도 두 줄 자리를 지켜야 카드마다 코스 줄과 작성자 줄이
+  // 같은 높이에서 시작한다.
+  it.each([
+    ['설명이 있을 때', mockItem.description],
+    ['설명이 비었을 때', ''],
+  ])('%s 설명 자리를 두 줄 높이로 지킨다', async (_name, description) => {
+    let component: any;
+
+    await act(async () => {
+      component = renderer.create(
+        <TravelFeedList items={[{ ...mockItem, description }]} viewMode="list" />,
+      );
+    });
+
+    const slots = component.root
+      .findAllByType(require('react-native').Text)
+      .map((node: any) => flattenStyle(node.props.style))
+      .filter((style: any) => style.lineHeight === 19);
+
+    expect(slots).toHaveLength(1);
+    expect(slots[0].height).toBe(38);
+  });
+
+  it('목록이 굴러가면 굴러간 거리를 알린다', async () => {
+    const onScrollOffset = jest.fn();
+    let component: any;
+
+    await act(async () => {
+      component = renderer.create(
+        <TravelFeedList
+          items={[mockItem]}
+          viewMode="list"
+          onScrollOffset={onScrollOffset}
+        />,
+      );
+    });
+
+    const list = component.root.findAllByProps({
+      testID: 'mock-flash-list',
+    })[0];
+
+    await act(async () => {
+      list.props.onScroll({ nativeEvent: { contentOffset: { y: 140 } } });
+    });
+
+    expect(onScrollOffset).toHaveBeenCalledWith(140);
   });
 
   it('renders a populated grid card with an author avatar fallback', async () => {

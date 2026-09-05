@@ -8,6 +8,8 @@ import {
   RefreshControl,
   Pressable,
   StyleProp,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import Copy from 'lucide-react-native/dist/esm/icons/copy';
@@ -52,6 +54,8 @@ interface TravelFeedListProps {
   isFiltered?: boolean;
   onRefresh?: () => void;
   onLoadMore?: () => void;
+  /** 목록이 굴러간 세로 거리. 화면이 여행기 쓰기 단추를 접는 데 쓴다. */
+  onScrollOffset?: (offsetY: number) => void;
 }
 
 // 화면이 좁아 네 곳까지만 들어간다. 나머지는 "외 N곳"으로 접는다.
@@ -179,11 +183,9 @@ const FeedListItem = React.memo(function FeedListItem({
           <Text style={styles.gridTitle} numberOfLines={2}>
             {item.title}
           </Text>
-          {item.description ? (
-            <Text style={styles.description} numberOfLines={2}>
-              {item.description}
-            </Text>
-          ) : null}
+          <Text style={styles.description} numberOfLines={2}>
+            {item.description}
+          </Text>
           <FeedRoute item={item} />
           <FeedByline item={item} />
         </View>
@@ -206,11 +208,9 @@ const FeedListItem = React.memo(function FeedListItem({
           <Text style={styles.listTitle} numberOfLines={2}>
             {item.title}
           </Text>
-          {item.description ? (
-            <Text style={styles.description} numberOfLines={2}>
-              {item.description}
-            </Text>
-          ) : null}
+          <Text style={styles.description} numberOfLines={2}>
+            {item.description}
+          </Text>
         </View>
         <FeedThumbnail uri={item.thumbnailUrl} style={styles.listThumbnail} />
       </View>
@@ -230,7 +230,15 @@ export default function TravelFeedList({
   isFiltered = false,
   onRefresh,
   onLoadMore,
+  onScrollOffset,
 }: TravelFeedListProps) {
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      onScrollOffset?.(event.nativeEvent.contentOffset.y);
+    },
+    [onScrollOffset],
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: TravelFeedItem }) => (
       <FeedListItem
@@ -279,6 +287,8 @@ export default function TravelFeedList({
         keyExtractor={item => item.id}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.5}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         ListFooterComponent={renderFooter}
         ListEmptyComponent={renderEmpty}
         refreshControl={
@@ -363,11 +373,14 @@ const styles = StyleSheet.create({
     color: tokens.colors.textTertiary,
     marginBottom: normalize(3),
   },
+  // 설명이 한 줄이거나 아예 없어도 두 줄 자리를 지킨다. 그래야 카드마다
+  // 코스 줄과 작성자 줄이 같은 높이에서 시작한다.
   description: {
     fontSize: normalize(12.5),
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.textSecondary,
     lineHeight: normalize(19),
+    height: normalize(19) * 2,
     marginTop: normalize(4),
   },
 

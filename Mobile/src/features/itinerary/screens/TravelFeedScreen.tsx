@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import {
   View,
   StyleSheet,
@@ -7,6 +13,9 @@ import {
   TouchableOpacity,
   ScrollView,
   Text,
+  Animated,
+  Easing,
+  AccessibilityInfo,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -47,9 +56,15 @@ import {
   describeAcceptResult,
   describeRejectResult,
 } from '../../../utils/collaborationRequest';
+import {
+  CREATE_BUTTON_COLLAPSED,
+  shouldOpenCreateButton,
+} from '../utils/createButtonCollapse';
 
 const FEED_FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=800';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 const DURATION_RANGES: Record<string, { minDays?: number; maxDays?: number }> = {
   '1일': { minDays: 1, maxDays: 1 },
@@ -177,6 +192,50 @@ export default function TravelFeedScreen() {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 350);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // 목록을 내리는 동안에는 여행기 쓰기 단추를 동그랗게 접어 카드를 덜 가린다.
+  // 펼친 너비와 글자 너비는 첫 배치에서 재 둔다 — 글자 크기 설정에 따라
+  // 달라지므로 숫자로 박지 않는다.
+  const [isCreateOpen, setCreateOpen] = useState(true);
+  const [createWidth, setCreateWidth] = useState<number | null>(null);
+  const [createLabelWidth, setCreateLabelWidth] = useState<number | null>(null);
+  const createAnim = useRef(new Animated.Value(1)).current;
+  const lastFeedOffset = useRef(0);
+  const reduceMotion = useRef(false);
+
+  useEffect(() => {
+    let alive = true;
+    AccessibilityInfo.isReduceMotionEnabled().then(enabled => {
+      if (alive) reduceMotion.current = enabled;
+    });
+    const subscription = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      enabled => {
+        reduceMotion.current = enabled;
+      },
+    );
+    return () => {
+      alive = false;
+      subscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    Animated.timing(createAnim, {
+      toValue: isCreateOpen ? 1 : 0,
+      duration: reduceMotion.current ? 0 : 200,
+      easing: Easing.out(Easing.cubic),
+      // 너비는 네이티브 드라이버로 옮길 수 없다. 움직이는 것이 단추 하나뿐이라
+      // 자바스크립트 쪽에서 돌려도 끊기지 않는다.
+      useNativeDriver: false,
+    }).start();
+  }, [isCreateOpen, createAnim]);
+
+  const handleFeedScroll = useCallback((offsetY: number) => {
+    const previous = lastFeedOffset.current;
+    lastFeedOffset.current = offsetY;
+    setCreateOpen(open => shouldOpenCreateButton(previous, offsetY, open));
+  }, []);
 
   const feedFilters: FeedFilterParams = useMemo(() => {
     const duration = DURATION_RANGES[filterDuration];
@@ -448,19 +507,63 @@ export default function TravelFeedScreen() {
             }
             onRefresh={() => feedQuery.refetch()}
             onLoadMore={handleLoadMore}
+            onScrollOffset={handleFeedScroll}
           />
         </View>
 
-        <TouchableOpacity
-          style={styles.createButton}
+        <AnimatedTouchable
+          style={[
+            styles.createButton,
+            {
+              paddingHorizontal: createAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, normalize(16)],
+              }),
+            },
+            createWidth !== null && {
+              width: createAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [normalize(CREATE_BUTTON_COLLAPSED), createWidth],
+              }),
+            },
+          ]}
+          onLayout={event => {
+            if (createWidth === null) {
+              setCreateWidth(event.nativeEvent.layout.width);
+            }
+          }}
           onPress={handleCreateFeed}
           activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel="여행기 쓰기"
         >
           <Plus size={20} color={tokens.colors.white} />
-          <Text style={styles.createButtonText}>여행기 쓰기</Text>
-        </TouchableOpacity>
+          {/* 접힐 때 글자 너비까지 0으로 줄여야 +가 한가운데에 온다 */}
+          <Animated.Text
+            style={[
+              styles.createButtonText,
+              { opacity: createAnim },
+              createLabelWidth !== null && {
+                width: createAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, createLabelWidth],
+                }),
+                marginLeft: createAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, normalize(6)],
+                }),
+              },
+            ]}
+            numberOfLines={1}
+            onLayout={event => {
+              if (createLabelWidth === null) {
+                setCreateLabelWidth(event.nativeEvent.layout.width);
+              }
+            }}
+          >
+            여행기 쓰기
+          </Animated.Text>
+        </AnimatedTouchable>
       </View>
 
       <SheetModal
@@ -618,13 +721,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: normalize(20),
     bottom: normalize(20),
-    minHeight: normalize(48),
-    paddingHorizontal: normalize(16),
+    height: normalize(CREATE_BUTTON_COLLAPSED),
     borderRadius: tokens.radius.round,
     backgroundColor: tokens.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: normalize(6),
+    justifyContent: 'center',
     ...tokens.shadows.md,
   },
   createButtonText: {
