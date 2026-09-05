@@ -141,7 +141,8 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(18),
     paddingVertical: normalize(16),
     borderWidth: 1,
-    borderColor: tokens.colors.border,
+    // 바깥 테두리는 안쪽 선보다 한 단계 진해야 카드가 흰 바탕에서 떠오른다.
+    borderColor: tokens.colors.borderStrong,
     position: 'relative',
   },
   timelineTrack: {
@@ -150,7 +151,7 @@ export const styles = StyleSheet.create({
     top: normalize(28),
     bottom: normalize(28),
     width: 2,
-    backgroundColor: tokens.colors.borderLight,
+    backgroundColor: tokens.colors.border,
     zIndex: 1,
   },
   timelineRow: {
@@ -169,7 +170,7 @@ export const styles = StyleSheet.create({
     borderRadius: normalize(10),
     backgroundColor: tokens.colors.white,
     borderWidth: 2,
-    borderColor: tokens.colors.border,
+    borderColor: tokens.colors.borderStrong,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: normalize(12),
@@ -186,10 +187,12 @@ export const styles = StyleSheet.create({
   timelineDotTextFilled: {
     color: tokens.colors.white,
   },
+  // 여행지·기간·인원수를 가르는 선. borderLight는 흰 바탕과 대비가 1.05:1이라
+  // 사실상 보이지 않았다.
   timelineContent: {
     flex: 1,
     borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.borderLight,
+    borderBottomColor: tokens.colors.border,
     paddingBottom: normalize(8),
   },
   timelineContentLast: {
