@@ -1,6 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import ItineraryEditorScreen from '../features/itinerary/screens/ItineraryEditorScreen';
 import ItineraryViewScreen from '../features/itinerary/screens/ItineraryViewScreen';
@@ -126,6 +127,7 @@ const CommunityTabIcon = ({ color, size }: { color: string; size: number }) => (
 );
 
 function MainTabs() {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       initialRouteName={INITIAL_TAB}
@@ -139,11 +141,15 @@ function MainTabs() {
         tabBarLabelStyle: {
           fontFamily: 'Pretendard-SemiBold',
           fontSize: 11,
-          marginTop: -2,
+          marginTop: 4,
         },
-        tabBarStyle: baseTabBarStyle,
+        tabBarStyle: {
+          ...baseTabBarStyle,
+          paddingBottom: Math.max(insets.bottom, 8),
+          height: 54 + Math.max(insets.bottom, 8),
+        },
         tabBarIconStyle: {
-          marginBottom: -2,
+          marginBottom: 0,
         },
       })}
     >
