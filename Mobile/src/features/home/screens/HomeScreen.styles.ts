@@ -49,13 +49,13 @@ export const styles = StyleSheet.create({
   heroEmptyTitle: {
     fontSize: normalize(13.5),
     fontFamily: tokens.fontFamily.semibold,
-    color: '#4E5561',
+    color: '#1F2937',
     textAlign: 'center',
   },
   heroEmptyDesc: {
     fontSize: normalize(12),
     fontFamily: tokens.fontFamily.regular,
-    color: '#9AA0AC',
+    color: '#4B5563',
     textAlign: 'center',
     lineHeight: normalize(18),
     marginTop: normalize(5),
@@ -65,7 +65,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     fontSize: normalize(11.5),
     fontFamily: tokens.fontFamily.regular,
-    color: '#6E7481',
+    color: '#4B5563',
   },
   relationRegion: {
     fontFamily: tokens.fontFamily.semibold,
@@ -201,7 +201,7 @@ export const styles = StyleSheet.create({
     fontSize: normalize(11),
     fontFamily: tokens.fontFamily.medium,
     fontWeight: '500',
-    color: '#64748B',
+    color: '#374151',
     letterSpacing: -0.2,
     marginBottom: normalize(2),
   },
@@ -222,7 +222,7 @@ export const styles = StyleSheet.create({
     fontSize: normalize(15),
     fontFamily: tokens.fontFamily.regular,
     fontWeight: '400',
-    color: '#94A3B8',
+    color: '#64748B',
     letterSpacing: -0.3,
   },
   rowIcon: {
@@ -246,6 +246,6 @@ export const styles = StyleSheet.create({
     backgroundColor: tokens.colors.borderLight,
   },
   submitButtonTextDisabled: {
-    color: tokens.colors.textTertiary,
+    color: '#6B7280',
   },
 });

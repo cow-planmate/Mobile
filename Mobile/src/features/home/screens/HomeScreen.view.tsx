@@ -90,7 +90,7 @@ const InputRow = ({
             <Text style={styles.placeholderText}>{placeholder}</Text>
           )}
           <View style={styles.rowIcon}>
-            <Icon color="#94A3B8" size={18} />
+            <Icon color="#64748B" size={18} />
           </View>
         </View>
       </View>
@@ -139,7 +139,7 @@ export interface HomeScreenViewProps {
 export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   nickname,
   email,
-  pendingRequestsCount, 
+  pendingRequestsCount,
   destination,
   dateText,
   paxText,
@@ -270,12 +270,13 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-
         <View style={styles.heroCarouselSection}>
           {spotCount === 0 ? (
             <View style={styles.heroEmpty}>
               <Text style={styles.heroEmptyTitle}>
-                {destination ? `${destination}의 명소 사진을 준비하고 있어요` : '여행지를 고르면'}
+                {destination
+                  ? `${destination}의 명소 사진을 준비하고 있어요`
+                  : '여행지를 고르면'}
               </Text>
               {!destination && (
                 <Text style={styles.heroEmptyDesc}>
@@ -296,7 +297,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
                 contentContainerStyle={{ paddingHorizontal: sidePadding }}
                 onScroll={Animated.event(
                   [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-                  { useNativeDriver: true }
+                  { useNativeDriver: true },
                 )}
                 scrollEventThrottle={16}
                 onScrollBeginDrag={pauseHeroRotation}
@@ -344,7 +345,10 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
                         {
                           width: cardWidth,
                           marginRight: index === spotCount - 1 ? 0 : cardGap,
-                          transform: [{ translateX: cardTranslateX }, { scale }],
+                          transform: [
+                            { translateX: cardTranslateX },
+                            { scale },
+                          ],
                           opacity,
                         },
                       ]}
