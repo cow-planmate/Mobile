@@ -18,6 +18,7 @@ import { useWebSocket } from '../../contexts/WebSocketContext';
 import { normalize } from '../../utils/normalize';
 import gravatarUrl from '../../utils/gravatarUrl';
 import FallbackImage from './FallbackImage';
+import Logo from './Logo';
 import { tokens } from '../../theme/tokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -38,6 +39,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const logout = useAuthStore(state => state.logout);
   const logout = useAuthStore((state) => state.logout);
   const { disconnect } = useWebSocket();
   const [menuVisible, setMenuVisible] = useState(false);
@@ -89,6 +91,7 @@ const Header: React.FC<HeaderProps> = ({
         accessibilityLabel="일정 생성으로 이동"
       >
         <Text style={styles.logo}>planMate</Text>
+        <Logo width={normalize(95)} height={normalize(21)} />
       </TouchableOpacity>
       <View style={styles.topIcons}>
         <TouchableOpacity
@@ -100,6 +103,11 @@ const Header: React.FC<HeaderProps> = ({
             pendingRequestsCount > 0 ? `알림 ${pendingRequestsCount}건` : '알림'
           }
         >
+          <Bell
+            size={normalize(22)}
+            color={tokens.colors.text}
+            strokeWidth={1.6}
+          />
           <Bell size={normalize(22)} color={tokens.colors.text} strokeWidth={1.6} />
           {pendingRequestsCount > 0 && (
             <View style={styles.badge}>
@@ -116,12 +124,19 @@ const Header: React.FC<HeaderProps> = ({
           accessibilityRole="button"
           accessibilityLabel={`${nickname || '사용자'}님 메뉴 열기`}
         >
+          <View
+            style={[styles.userAvatar, menuVisible && styles.userAvatarActive]}
+          >
           <View style={[styles.userAvatar, menuVisible && styles.userAvatarActive]}>
             <FallbackImage
               uri={email ? gravatarUrl(email, 100) : null}
               style={styles.avatarImage}
               accessible={false}
               fallback={
+                <UserIcon
+                  size={normalize(14)}
+                  color={tokens.colors.textTertiary}
+                />
                 <UserIcon size={normalize(14)} color={tokens.colors.textTertiary} />
               }
             />
@@ -135,10 +150,18 @@ const Header: React.FC<HeaderProps> = ({
         animationType="fade"
         onRequestClose={() => setMenuVisible(false)}
       >
+        <Pressable
+          style={styles.modalOverlay}
         <Pressable 
           style={styles.modalOverlay} 
           onPress={() => setMenuVisible(false)}
         >
+          <View
+            style={[
+              styles.dropdownMenu,
+              { top: menuPosition.top, right: menuPosition.right },
+            ]}
+          >
           <View style={[styles.dropdownMenu, { top: menuPosition.top, right: menuPosition.right }]}>
             <TouchableOpacity
               style={styles.menuItem}
