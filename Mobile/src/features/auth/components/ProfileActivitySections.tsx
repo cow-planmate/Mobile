@@ -44,15 +44,17 @@ const CATEGORY_LABEL: Record<string, string> = {
   feed: '여행기',
 };
 
+// 하위 탭 이름은 웹 마이페이지를 그대로 따른다. 웹에 있는 '좋아요한 여행'은
+// 앱에 목록 자체가 없어 여기 넣지 않았다.
 const TRAVEL_LOG_TABS = [
-  { key: 'logs', label: '여행기' },
-  { key: 'comments', label: '댓글' },
+  { key: 'logs', label: '작성한 여행기' },
+  { key: 'comments', label: '내가 쓴 댓글' },
 ];
 
 const ACTIVITY_TABS = [
   { key: 'posts', label: '작성글' },
-  { key: 'likes', label: '좋아요' },
-  { key: 'comments', label: '댓글' },
+  { key: 'likes', label: '좋아요한 글' },
+  { key: 'comments', label: '작성 댓글' },
 ];
 
 const isDateInPlan = (date: Date, plan: ProfilePlan) =>
@@ -239,7 +241,7 @@ export function ProfileFootprintSection({ plans }: { plans: ProfilePlan[] }) {
     <Card style={styles.card} variant="flat">
       <SectionHeader
         title="여행 발자취"
-        count={plans.length > 0 ? plans.length : undefined}
+        count={plans.length > 0 ? `총 ${plans.length}곳` : undefined}
       />
       {plans.length === 0 ? (
         <EmptyState
@@ -321,8 +323,8 @@ export function ProfileTravelLogSection() {
     if (travelLogs.length === 0) {
       return (
         <EmptyState
-          title="작성한 여행기가 없어요"
-          description="다녀온 여행을 여행기로 남겨보세요."
+          title="아직 작성한 여행기가 없어요"
+          description="완성한 일정을 피드에 공유해 보세요!"
           style={styles.innerEmpty}
         />
       );
@@ -422,7 +424,7 @@ export function ProfileCommunitySection() {
         <EmptyState
           title={
             activityTab === 'posts'
-              ? '작성한 커뮤니티 글이 없어요'
+              ? '작성한 글이 없어요'
               : '좋아요한 글이 없어요'
           }
           style={styles.innerEmpty}
@@ -453,8 +455,10 @@ export function ProfileCommunitySection() {
 }
 
 const styles = StyleSheet.create({
+  // 회색 바탕 위 흰 덩어리는 화면 폭을 그대로 쓴다 — 모서리도 바깥 여백도
+  // 두지 않는다. 덩어리 사이는 화면 쪽 20px 띠가 벌려 준다.
   card: {
-    marginTop: normalize(12),
+    borderRadius: 0,
   },
   // 탭 하나가 가로 12를 이미 쓰므로 4만 더해 본문 여백 16에 맞춘다.
   subTabs: {

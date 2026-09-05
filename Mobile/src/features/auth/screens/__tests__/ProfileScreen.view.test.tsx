@@ -62,6 +62,74 @@ jest.mock('../../components/ProfileActivitySections', () => ({
 jest.mock('react-native-linear-gradient', () => () => null);
 jest.mock('react-native-date-picker', () => () => null);
 
+const BASE_PROPS = {
+  loading: false,
+  loadError: false,
+  onRetryLoad: jest.fn(),
+  user: {
+    name: 'Mate',
+    email: 'mate@example.com',
+    profileImageUrl: '',
+    profilePublic: false,
+    birthdate: '',
+    gender: '',
+    preferredThemes: [],
+    socialLogin: false,
+    myPlans: [],
+  },
+  isThemeModalVisible: false,
+  setThemeModalVisible: jest.fn(),
+  isPasswordModalVisible: false,
+  setPasswordModalVisible: jest.fn(),
+  handleUpdateNickname: jest.fn(),
+  handleUpdateBirthdate: jest.fn(),
+  handleUpdateGender: jest.fn(),
+  handleUpdateTheme: jest.fn(),
+  handleUpdatePassword: jest.fn(),
+  handleResign: jest.fn(),
+  onRenamePlan: jest.fn(),
+  onChangeProfileVisibility: jest.fn(),
+  isProfileVisibilityUpdating: false,
+  onChangeProfileImage: jest.fn(),
+  onDeleteProfileImage: jest.fn(),
+  isProfileImageUpdating: false,
+};
+
+function textOf(tree: renderer.ReactTestRenderer): string {
+  return JSON.stringify(tree.toJSON());
+}
+
+describe('ProfileScreenView 탭', () => {
+  it('그냥 열면 웹 차림표와 같이 프로필 탭이 켜진다', () => {
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(<ProfileScreenView {...(BASE_PROPS as any)} />);
+    });
+
+    const body = textOf(tree!);
+    expect(body).toContain('나를 소개하는 정보와 여행 취향을 편안하게 관리해요.');
+    expect(body).toContain('내가 좋아하는 여행');
+    expect(body).not.toContain('여행 타임라인');
+    act(() => tree!.unmount());
+  });
+
+  // 일정 화면에서 "일정 자리로 굴려 달라"며 넘어온 길은 여행 탭이 켜져 있어야
+  // 굴릴 자리가 생긴다. 프로필 탭에서 열리면 아무 일도 일어나지 않는다.
+  it('일정 자리로 굴리라고 넘어오면 여행 탭이 켜진다', () => {
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <ProfileScreenView {...(BASE_PROPS as any)} scrollToItinerary />,
+      );
+    });
+
+    const body = textOf(tree!);
+    expect(body).toContain('여행 타임라인');
+    expect(body).not.toContain('내가 좋아하는 여행');
+    act(() => tree!.unmount());
+  });
+});
+
 describe('ProfileScreenView profile save', () => {
   it('submits profile changes only once for same-render presses', async () => {
     let resolveUpdate: (() => void) | undefined;

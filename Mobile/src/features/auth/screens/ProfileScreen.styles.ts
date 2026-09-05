@@ -58,9 +58,11 @@ export const styles = StyleSheet.create({
     fontSize: normalize(14),
     color: COLORS.textSecondary,
   },
+  // 바탕은 회색이고 덩어리만 흰색이다. 덩어리 사이 20px 띠가 이 회색을
+  // 드러내 선을 긋지 않고도 나뉜다.
   scrollContainer: {
     paddingBottom: normalize(40),
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
   },
 
   avatarImage: {
@@ -471,6 +473,8 @@ export const styles = StyleSheet.create({
   // 탭은 상자가 아니라 밑줄이 맡는다. 여행기·커뮤니티와 같은 규칙이다.
   sectionTabsWrap: {
     backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   editButton: {
     paddingVertical: normalize(2),
@@ -578,7 +582,7 @@ export const styles = StyleSheet.create({
   },
   tasteRow: {
     borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
+    borderTopColor: COLORS.border,
     paddingHorizontal: normalize(16),
     paddingVertical: normalize(12),
     backgroundColor: COLORS.white,
@@ -602,12 +606,20 @@ export const styles = StyleSheet.create({
   tasteDivider: {
     color: COLORS.border,
   },
+  // 회색 바탕이 비쳐 보이는 자리. 여행기 상세·커뮤니티 상세와 같은 규칙으로,
+  // 8px 띠에 흐린 선을 얹던 예전 방식은 흰 바탕과 구별되지 않았다.
   sectionBand: {
-    height: normalize(8),
-    backgroundColor: COLORS.surface,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: COLORS.borderLight,
+    height: normalize(20),
+  },
+  // 탭이 무엇을 담는지 웹처럼 한 줄로 알린다.
+  sectionDescription: {
+    paddingHorizontal: normalize(16),
+    paddingTop: normalize(14),
+    paddingBottom: normalize(2),
+    fontSize: normalize(12),
+    fontFamily: FONTS.regular,
+    color: COLORS.textSecondary,
+    lineHeight: normalize(18),
   },
   sectionBlock: {
     backgroundColor: COLORS.white,
@@ -645,8 +657,9 @@ export const styles = StyleSheet.create({
   planRowSelected: {
     backgroundColor: COLORS.borderLight,
   },
+  // D-Day가 한 줄에 들어가야 한다. 46이면 '한 D-Da / y'로 접혔다.
   planRail: {
-    width: normalize(46),
+    width: normalize(58),
     alignItems: 'center',
     paddingTop: normalize(1),
   },

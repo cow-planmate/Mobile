@@ -51,6 +51,7 @@ import gravatarUrl from '../../../utils/gravatarUrl';
 import { resolveAvatarUrl } from '../../community/utils/avatar';
 import FallbackImage from '../../../components/common/FallbackImage';
 import { normalize } from '../../../utils/normalize';
+import ProfileTasteCard from '../components/ProfileTasteCard';
 import { allSettledWithConcurrency } from '../../../utils/concurrency';
 import { toPlanDate } from '../utils/profileCalendar';
 import {
@@ -93,14 +94,23 @@ import { styles, COLORS } from './ProfileScreen.styles';
 
 const LEAVE_EDITOR_CONCURRENCY = 4;
 
-type ProfileSection = 'travel' | 'journey' | 'stories';
+type ProfileSection = 'profile' | 'travel' | 'stories';
 type TripTab = 'upcoming' | 'past';
 
+// 웹 마이페이지의 세 갈래를 그대로 옮긴 것. 웹 이름(여행 일정 및 캘린더,
+// 커뮤니티 활동)은 폰 탭에 담기에 길어 탭에는 짧은 이름을 쓰고, 무엇을 담는
+// 탭인지는 아래 한 줄 설명이 대신한다.
 const PROFILE_SECTIONS = [
+  { key: 'profile', label: '프로필' },
   { key: 'travel', label: '여행' },
-  { key: 'journey', label: '기록' },
   { key: 'stories', label: '이야기' },
 ];
+
+const SECTION_DESCRIPTIONS: Record<ProfileSection, string> = {
+  profile: '나를 소개하는 정보와 여행 취향을 편안하게 관리해요.',
+  travel: '상세 일정부터 캘린더와 여행 발자취까지 한곳에서 확인해요.',
+  stories: '내가 남긴 여행기와 게시글, 댓글과 좋아요 기록을 모아봐요.',
+};
 
 interface PlanItem {
   planId: string;
@@ -216,7 +226,9 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
       )}
 
       <View style={styles.planRail}>
-        <Text style={styles.planRailValue}>{rail.value}</Text>
+        <Text style={styles.planRailValue} numberOfLines={1}>
+          {rail.value}
+        </Text>
         <Text style={styles.planRailCaption}>{rail.caption}</Text>
       </View>
 
@@ -351,7 +363,10 @@ const PastPlanRow = React.memo(function PastPlanRow({
       )}
 
       <View style={styles.planRail}>
-        <Text style={[styles.planRailValue, styles.planRailValuePast]}>
+        <Text
+          style={[styles.planRailValue, styles.planRailValuePast]}
+          numberOfLines={1}
+        >
           {rail.value}
         </Text>
         <Text style={styles.planRailCaption}>{rail.caption}</Text>
@@ -473,18 +488,26 @@ export default function ProfileScreenView({
 
   // 섹션이 6개라 세로로 쌓으면 스크롤이 과도해진다 — 프로필 헤더만 고정하고
   // 나머지는 탭으로 나눈다 (웹 마이페이지 섹션 구성을 모바일 깊이로 재배치)
-  const [profileSection, setProfileSection] = useState<ProfileSection>('travel');
+  // 웹 차림표와 같이 프로필로 연다. 다만 일정 화면에서 "일정 자리로 굴려
+  // 달라"며 넘어온 길은 여행 탭이 켜져 있어야 굴릴 자리가 생긴다.
+  const [profileSection, setProfileSection] = useState<ProfileSection>(
+    scrollToItinerary ? 'travel' : 'profile',
+  );
   // 여행 일정은 예정/지난을 탭으로 나눈다 (웹 TripSection과 동일)
   const [tripTab, setTripTab] = useState<TripTab>('upcoming');
 
   React.useEffect(() => {
-    if (scrollToItinerary && itineraryY > 0) {
+    if (scrollToItinerary) setProfileSection('travel');
+  }, [scrollToItinerary]);
+
+  React.useEffect(() => {
+    if (scrollToItinerary && profileSection === 'travel' && itineraryY > 0) {
       const timer = setTimeout(() => {
         scrollRef.current?.scrollTo({ y: itineraryY, animated: true });
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [scrollToItinerary, itineraryY]);
+  }, [scrollToItinerary, profileSection, itineraryY]);
 
   React.useEffect(() => {
     if (user && user.myPlans) {
@@ -931,13 +954,32 @@ export default function ProfileScreenView({
         <Text style={styles.headerTitle}>마이페이지</Text>
         <View style={styles.headerSpacer} />
       </View>
+
+      {/* 프로필이 탭 하나로 내려오면서 탭줄이 머리에 붙는다. 굴려도 따라오지
+          않고 제자리에 있어야 최상단 전환기로 읽힌다. */}
+      <View style={styles.sectionTabsWrap}>
+        <UnderlineTabs
+          items={PROFILE_SECTIONS}
+          selectedKey={profileSection}
+          onSelect={key => setProfileSection(key as ProfileSection)}
+          scrollable={false}
+          align="start"
+          style={styles.tabsInset}
+        />
+      </View>
+
       <ScrollView
         ref={scrollRef}
         style={{ backgroundColor: tokens.colors.surface }}
         contentContainerStyle={[styles.scrollContainer, { paddingBottom: normalize(40) }]}
         showsVerticalScrollIndicator={false}
       >
+        <Text style={styles.sectionDescription}>
+          {SECTION_DESCRIPTIONS[profileSection]}
+        </Text>
 
+        {profileSection === 'profile' && (
+        <>
         <View style={styles.profileHeader}>
           <View style={styles.profileTopRow}>
             <FallbackImage
@@ -969,9 +1011,9 @@ export default function ProfileScreenView({
               activeOpacity={0.7}
               hitSlop={12}
               accessibilityRole="button"
-              accessibilityLabel="프로필 편집"
+              accessibilityLabel="프로필 수정"
             >
-              <Text style={styles.profileEditText}>편집</Text>
+              <Text style={styles.profileEditText}>프로필 수정</Text>
             </TouchableOpacity>
           </View>
 
@@ -985,43 +1027,13 @@ export default function ProfileScreenView({
           </Text>
         </View>
 
-        {tasteGroups.length > 0 && (
-          <View style={styles.tasteRow}>
-            <Text style={styles.tasteHeading}>여행 취향</Text>
-            <Text style={styles.tasteText}>
-              {tasteGroups.map((group, index) => (
-                <Text key={group.label}>
-                  {index > 0 && (
-                    <Text style={styles.tasteDivider}>{'   |   '}</Text>
-                  )}
-                  <Text style={styles.tasteLabel}>{`${group.label} `}</Text>
-                  {group.names.join('·')}
-                </Text>
-              ))}
-            </Text>
-          </View>
-        )}
-
         <View style={styles.sectionBand} />
 
-        <View style={styles.sectionTabsWrap}>
-          <UnderlineTabs
-            items={PROFILE_SECTIONS}
-            selectedKey={profileSection}
-            onSelect={key => setProfileSection(key as ProfileSection)}
-            scrollable={false}
-            align="start"
-            style={styles.tabsInset}
-          />
-        </View>
-
-
-        {profileSection === 'journey' && (
-          <>
-            <ProfileCalendarSection plans={plans} />
-            <View style={styles.sectionBand} />
-            <ProfileFootprintSection plans={plans} />
-          </>
+        <ProfileTasteCard
+          groups={tasteGroups}
+          onEdit={() => setThemeModalVisible(true)}
+        />
+        </>
         )}
 
         {profileSection === 'stories' && (
@@ -1033,13 +1045,14 @@ export default function ProfileScreenView({
         )}
 
         {profileSection === 'travel' && (
+        <>
         <View
           style={styles.sectionBlock}
           onLayout={e => setItineraryY(e.nativeEvent.layout.y)}
         >
 
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionHeaderTitle}>여행 상세 일정</Text>
+            <Text style={styles.sectionHeaderTitle}>여행 타임라인</Text>
             {!isEditMode ? (
               <TouchableOpacity
                 onPress={() => setIsEditMode(true)}
@@ -1129,7 +1142,7 @@ export default function ProfileScreenView({
             ) : (
               <View style={styles.planEmpty}>
                 <Text style={styles.noPlanText}>
-                  진행 중이거나 예정된 여행 일정이 없어요.
+                  다음 여행을 계획해 보세요.
                 </Text>
                 <TouchableOpacity
                   onPress={() =>
@@ -1169,6 +1182,14 @@ export default function ProfileScreenView({
             </View>
           )}
         </View>
+
+        {/* 웹은 일정·캘린더·발자취를 한 갈래에 세로로 쌓는다. 앱도 같은 탭에
+            담고 덩어리 사이만 회색 띠로 벌린다. */}
+        <View style={styles.sectionBand} />
+        <ProfileCalendarSection plans={plans} />
+        <View style={styles.sectionBand} />
+        <ProfileFootprintSection plans={plans} />
+        </>
         )}
 
       </ScrollView>
