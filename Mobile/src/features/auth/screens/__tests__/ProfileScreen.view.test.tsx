@@ -107,7 +107,6 @@ describe('ProfileScreenView 탭', () => {
     });
 
     const body = textOf(tree!);
-    expect(body).toContain('나를 소개하는 정보와 여행 취향을 편안하게 관리해요.');
     expect(body).toContain('내가 좋아하는 여행');
     expect(body).not.toContain('여행 타임라인');
     act(() => tree!.unmount());

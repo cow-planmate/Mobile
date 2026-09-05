@@ -323,7 +323,7 @@ export function ProfileTravelLogSection() {
     if (travelLogs.length === 0) {
       return (
         <EmptyState
-          title="아직 작성한 여행기가 없어요"
+          title="아직 작성한 여행기가 없습니다."
           description="완성한 일정을 피드에 공유해 보세요!"
           style={styles.innerEmpty}
         />
@@ -424,8 +424,8 @@ export function ProfileCommunitySection() {
         <EmptyState
           title={
             activityTab === 'posts'
-              ? '작성한 글이 없어요'
-              : '좋아요한 글이 없어요'
+              ? '작성한 글이 없습니다.'
+              : '좋아요한 글이 없습니다.'
           }
           style={styles.innerEmpty}
         />

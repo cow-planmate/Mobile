@@ -611,16 +611,6 @@ export const styles = StyleSheet.create({
   sectionBand: {
     height: normalize(20),
   },
-  // 탭이 무엇을 담는지 웹처럼 한 줄로 알린다.
-  sectionDescription: {
-    paddingHorizontal: normalize(16),
-    paddingTop: normalize(14),
-    paddingBottom: normalize(2),
-    fontSize: normalize(12),
-    fontFamily: FONTS.regular,
-    color: COLORS.textSecondary,
-    lineHeight: normalize(18),
-  },
   sectionBlock: {
     backgroundColor: COLORS.white,
   },
@@ -657,9 +647,8 @@ export const styles = StyleSheet.create({
   planRowSelected: {
     backgroundColor: COLORS.borderLight,
   },
-  // D-Day가 한 줄에 들어가야 한다. 46이면 '한 D-Da / y'로 접혔다.
   planRail: {
-    width: normalize(58),
+    width: normalize(46),
     alignItems: 'center',
     paddingTop: normalize(1),
   },

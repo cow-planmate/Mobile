@@ -98,19 +98,12 @@ type ProfileSection = 'profile' | 'travel' | 'stories';
 type TripTab = 'upcoming' | 'past';
 
 // 웹 마이페이지의 세 갈래를 그대로 옮긴 것. 웹 이름(여행 일정 및 캘린더,
-// 커뮤니티 활동)은 폰 탭에 담기에 길어 탭에는 짧은 이름을 쓰고, 무엇을 담는
-// 탭인지는 아래 한 줄 설명이 대신한다.
+// 커뮤니티 활동)은 폰 탭에 담기에 길어 탭에는 짧은 이름을 쓴다.
 const PROFILE_SECTIONS = [
   { key: 'profile', label: '프로필' },
   { key: 'travel', label: '여행' },
   { key: 'stories', label: '이야기' },
 ];
-
-const SECTION_DESCRIPTIONS: Record<ProfileSection, string> = {
-  profile: '나를 소개하는 정보와 여행 취향을 편안하게 관리해요.',
-  travel: '상세 일정부터 캘린더와 여행 발자취까지 한곳에서 확인해요.',
-  stories: '내가 남긴 여행기와 게시글, 댓글과 좋아요 기록을 모아봐요.',
-};
 
 interface PlanItem {
   planId: string;
@@ -226,9 +219,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
       )}
 
       <View style={styles.planRail}>
-        <Text style={styles.planRailValue} numberOfLines={1}>
-          {rail.value}
-        </Text>
+        <Text style={styles.planRailValue}>{rail.value}</Text>
         <Text style={styles.planRailCaption}>{rail.caption}</Text>
       </View>
 
@@ -363,10 +354,7 @@ const PastPlanRow = React.memo(function PastPlanRow({
       )}
 
       <View style={styles.planRail}>
-        <Text
-          style={[styles.planRailValue, styles.planRailValuePast]}
-          numberOfLines={1}
-        >
+        <Text style={[styles.planRailValue, styles.planRailValuePast]}>
           {rail.value}
         </Text>
         <Text style={styles.planRailCaption}>{rail.caption}</Text>
@@ -974,10 +962,6 @@ export default function ProfileScreenView({
         contentContainerStyle={[styles.scrollContainer, { paddingBottom: normalize(40) }]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.sectionDescription}>
-          {SECTION_DESCRIPTIONS[profileSection]}
-        </Text>
-
         {profileSection === 'profile' && (
         <>
         <View style={styles.profileHeader}>
@@ -1142,7 +1126,7 @@ export default function ProfileScreenView({
             ) : (
               <View style={styles.planEmpty}>
                 <Text style={styles.noPlanText}>
-                  다음 여행을 계획해 보세요.
+                  다음 여행을 계획해보세요.
                 </Text>
                 <TouchableOpacity
                   onPress={() =>
