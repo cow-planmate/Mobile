@@ -33,7 +33,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(12),
     paddingVertical: normalize(10),
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
+    borderBottomColor: COLORS.border,
   },
   topBarButton: {
     width: normalize(32),
@@ -75,7 +75,7 @@ export const styles = StyleSheet.create({
     paddingTop: normalize(16),
     paddingBottom: normalize(14),
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
+    borderBottomColor: COLORS.border,
   },
   statusRow: {
     flexDirection: 'row',

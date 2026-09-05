@@ -234,7 +234,7 @@ export const styles = StyleSheet.create({
   textInputDisabled: {
     backgroundColor: COLORS.surface,
     color: COLORS.placeholder,
-    borderColor: COLORS.borderLight,
+    borderColor: COLORS.border,
   },
   rowInputWrap: {
     flexDirection: 'row',
@@ -448,7 +448,7 @@ export const styles = StyleSheet.create({
     borderRadius: normalize(12),
     marginBottom: normalize(16),
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: COLORS.border,
   },
   header: {
     flexDirection: 'row',
@@ -458,7 +458,7 @@ export const styles = StyleSheet.create({
     height: normalize(52),
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
+    borderBottomColor: COLORS.border,
   },
   backButton: {
     padding: normalize(4),
@@ -482,12 +482,12 @@ export const styles = StyleSheet.create({
   // 탭 하나가 가로 12를 이미 쓰므로 4만 더해 본문과 같은 16에 맞춘다.
   tabsInset: {
     paddingHorizontal: normalize(4),
-    borderBottomColor: COLORS.borderLight,
+    borderBottomColor: COLORS.border,
   },
   tripTabs: {
     marginTop: normalize(11),
     paddingHorizontal: normalize(4),
-    borderBottomColor: COLORS.borderLight,
+    borderBottomColor: COLORS.border,
   },
 
   headerSpacer: {
@@ -670,7 +670,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     borderLeftWidth: 1,
-    borderLeftColor: COLORS.borderLight,
+    borderLeftColor: COLORS.border,
     paddingLeft: normalize(14),
   },
   planTitle: {

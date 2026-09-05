@@ -17,7 +17,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(12),
     paddingVertical: normalize(10),
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
+    borderBottomColor: COLORS.border,
   },
   topBarButton: {
     width: normalize(40),

@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     paddingTop: normalize(12),
     borderTopWidth: 1,
-    borderTopColor: tokens.colors.borderLight,
+    borderTopColor: tokens.colors.border,
     marginTop: normalize(8),
   },
 });

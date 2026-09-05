@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
     paddingTop: normalize(14),
     marginBottom: normalize(8),
     borderTopWidth: 1,
-    borderTopColor: tokens.colors.borderLight,
+    borderTopColor: tokens.colors.border,
     fontSize: normalize(12.5),
     fontFamily: tokens.fontFamily.semibold,
     color: tokens.colors.textLabel,

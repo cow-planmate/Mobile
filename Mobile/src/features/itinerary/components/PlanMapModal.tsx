@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     paddingTop: normalize(14),
     paddingBottom: normalize(12),
     borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.borderLight,
+    borderBottomColor: tokens.colors.border,
   },
   headerText: {
     flex: 1,

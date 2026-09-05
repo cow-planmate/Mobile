@@ -30,7 +30,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     paddingVertical: normalize(14),
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
+    borderBottomColor: COLORS.border,
   },
   segmentHeader: {
     flexDirection: 'row',

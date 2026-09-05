@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     paddingBottom: normalize(4),
     backgroundColor: tokens.colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.borderLight,
+    borderBottomColor: tokens.colors.border,
     zIndex: 10,
   },
   topIcons: {

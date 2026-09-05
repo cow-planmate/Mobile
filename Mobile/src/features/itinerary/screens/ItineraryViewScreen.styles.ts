@@ -32,7 +32,7 @@ export const styles = StyleSheet.create({
     height: 52,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
+    borderBottomColor: COLORS.border,
   },
   topBarBackButton: {
     padding: 4,
