@@ -27,6 +27,7 @@ interface PendingBlockSync {
   action: 'update' | 'delete';
   place: Place;
   timetableId: number;
+  fields: string[];
 }
 
 interface PendingPlaceCreate {
@@ -266,7 +267,8 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
   );
 
   const sendBlockSync = useCallback(
-    (action: 'update' | 'delete', place: Place, timetableId: number) => {
+    (action: 'update' | 'delete', place: Place, timetableId: number,
+      fields = ['blockStartTime', 'blockEndTime']) => {
       if (isTempPlaceId(place.id)) {
         const prev = pendingBlockSyncRef.current.get(place.id);
         if (prev?.action === 'delete') return; 
@@ -274,14 +276,22 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
           action,
           place,
           timetableId,
+          fields: [...new Set([...(prev?.fields || []), ...fields])],
         });
         return;
       }
 
+      const dto = mapToTimetablePlaceBlockDto(place, timetableId);
       sendMessage(
         action,
         'timetableplaceblock',
-        mapToTimetablePlaceBlockDto(place, timetableId),
+        {
+          blockId: dto.blockId,
+          timeTableId: timetableId,
+          ...(action === 'update' ? Object.fromEntries(
+            fields.map(field => [field, dto[field as keyof typeof dto]]),
+          ) : {}),
+        },
       );
     },
     [sendMessage],
@@ -293,17 +303,15 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
       if (!pending) return undefined;
       pendingBlockSyncRef.current.delete(tempId);
 
-      sendMessage(
+      sendBlockSync(
         pending.action,
-        'timetableplaceblock',
-        mapToTimetablePlaceBlockDto(
-          { ...pending.place, id: realId },
-          pending.timetableId,
-        ),
+        { ...pending.place, id: realId },
+        pending.timetableId,
+        pending.fields,
       );
       return pending.action;
     },
-    [sendMessage],
+    [sendBlockSync],
   );
 
   const handleWebSocketMessage = useCallback(
@@ -385,7 +393,8 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
                   };
                   setLastAddedPlaceId(prev => (prev === eventId ? realId : prev));
                 }
-                dayToUpdate.places = existingPlaces;
+                dayToUpdate.places = existingPlaces.filter((place, index) =>
+                  !realId || place.id !== realId || index === tempIndex);
               } else {
                 const parseTime = (time: any) => {
                   if (typeof time === 'string') return normalizeTime(time);
@@ -722,7 +731,7 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
 
     setTimeout(() => {
       if (finalPlace && hasTimetableId(dayTimetableId) && dayDateString) {
-        sendBlockSync('update', finalPlace, dayTimetableId);
+        sendBlockSync('update', finalPlace, dayTimetableId, ['memo']);
       }
     }, 0);
   }, [sendBlockSync]);
@@ -794,7 +803,15 @@ export function ItineraryProvider({ children }: PropsWithChildren) {
     setTimeout(() => {
       if (hasTimetableId(dayTimetableId) && dayDateString) {
         placesToSync.forEach(p => {
-          sendBlockSync('update', p, dayTimetableId!);
+          const fields = p.id === placeId
+            ? [
+                ...(isTimeChanged ? ['blockStartTime', 'blockEndTime'] : []),
+                ...Object.keys(updates).flatMap(key =>
+                  ({ name: 'placeName', address: 'placeAddress', memo: 'memo' }[key]) || [],
+                ),
+              ]
+            : ['blockStartTime', 'blockEndTime'];
+          sendBlockSync('update', p, dayTimetableId!, fields);
         });
       }
     }, 0);

@@ -183,6 +183,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const planId = route.params.planId;
   const destination = route.params.destination;
   const [isScheduleEditVisible, setScheduleEditVisible] = useState(false);
+  const scheduleEditBaseRef = useRef(days);
   const [isShareModalVisible, setShareModalVisible] = useState(false);
   const [isChecklistVisible, setChecklistVisible] = useState(false);
   const [isPlaceEditModalVisible, setPlaceEditModalVisible] = useState(false);
@@ -333,8 +334,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const isConnectedRef = useRef(isConnected);
   isConnectedRef.current = isConnected;
 
-  const intentionalDisconnectRef = useRef(false);
-
   const fetchPlanDetailsRef = useRef(fetchPlanDetails);
   fetchPlanDetailsRef.current = fetchPlanDetails;
 
@@ -367,7 +366,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         resyncIfDisconnected();
       } else if (nextAppState === 'background') {
 
-        intentionalDisconnectRef.current = true;
         disconnect();
       }
     };
@@ -382,25 +380,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   }, [planId, connect, disconnect, isAccessDenied, navigation]);
 
-  const wasConnectedRef = useRef(false);
-  const awaitingAutoResyncRef = useRef(false);
-
   useEffect(() => {
     if (isConnected) {
-      if (awaitingAutoResyncRef.current) {
-
-        awaitingAutoResyncRef.current = false;
-        void fetchPlanDetailsRef.current();
-      }
-      wasConnectedRef.current = true;
-    } else {
-      if (wasConnectedRef.current && !intentionalDisconnectRef.current) {
-        awaitingAutoResyncRef.current = true;
-      }
-      intentionalDisconnectRef.current = false;
-      wasConnectedRef.current = false;
+      void fetchPlanDetailsRef.current();
     }
-
   }, [isConnected]);
 
   const isEditingTripNameRef = useRef(isEditingTripName);
@@ -423,6 +406,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       const remoteName = list.find((dto: any) => dto?.planName)?.planName;
       if (!remoteName || isEditingTripNameRef.current) return;
 
+      syncedTripNameRef.current = remoteName;
       setTripName((prev: string) =>
         prev === remoteName ? prev : remoteName,
       );
@@ -465,18 +449,26 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const handlePlaceSave = useCallback(
     (updatedPlace: any) => {
 
-      updatePlaceDetails(selectedDayIndex, updatedPlace.id, {
+      const values = {
         startTime: normalizeTime(updatedPlace.startTime),
         endTime: normalizeTime(updatedPlace.endTime),
         memo: updatedPlace.memo,
         name: updatedPlace.name,
         address: updatedPlace.address,
-      });
+      };
+      const changes = Object.fromEntries(Object.entries(values).filter(([key, value]) => {
+        const original = key === 'startTime' || key === 'endTime'
+          ? normalizeTime(editingPlace?.[key]) : editingPlace?.[key];
+        return value !== original;
+      }));
+      if (Object.keys(changes).length > 0) {
+        updatePlaceDetails(selectedDayIndex, updatedPlace.id, changes);
+      }
 
       setPlaceEditModalVisible(false);
       setEditingPlace(null);
     },
-    [updatePlaceDetails, selectedDayIndex],
+    [updatePlaceDetails, selectedDayIndex, editingPlace],
   );
 
   const handleSaveTripName = useCallback(async () => {
@@ -488,7 +480,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     sendMessage('update', 'plan', buildPlanSyncPayload(planId, tripName));
     syncedTripNameRef.current = tripName;
 
-    if (isPlanOwner) {
+    if (isPlanOwner && !isConnected) {
       try {
         await axios.patch(
           resolveApiUrl(`/api/plan/${planId}/name`),
@@ -511,6 +503,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     }
   }, [
     buildPlanSyncPayload,
+    isConnected,
     isPlanOwner,
     planId,
     sendMessage,
@@ -553,12 +546,13 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   const onConfirmScheduleEdit = (updatedDays: any[]) => {
     if (updatedDays.length === 0) return;
+    const originalDays = scheduleEditBaseRef.current;
 
     if (!planId) {
       console.warn('[Schedule] planId 없음 — timetable 동기화를 건너뜁니다.');
     } else {
       const { creates, updates, deletes } = buildScheduleEditSync(
-        days,
+        originalDays,
         updatedDays,
         planId,
       );
@@ -568,7 +562,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       if (deletes.length > 0) sendMessage('delete', 'timetable', deletes);
     }
 
-    setDays(prevDays => mergeScheduleEditDays(prevDays, updatedDays));
+    setDays(prevDays => mergeScheduleEditDays(prevDays, updatedDays, originalDays));
 
     setScheduleEditVisible(false);
 
@@ -620,11 +614,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     isSavingRef.current = true;
     setIsSaving(true);
     isCompletingRef.current = true;
+    const nameChanged = tripName && tripName !== syncedTripNameRef.current;
 
     if (
       route.params.planId &&
-      tripName &&
-      tripName !== syncedTripNameRef.current
+      nameChanged
     ) {
       sendMessage(
         'update',
@@ -640,7 +634,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
       try {
 
-        if (isPlanOwner && tripName) {
+        if (isPlanOwner && nameChanged && !isConnected) {
           await axios.patch(
             resolveApiUrl(`/api/plan/${route.params.planId}/name`),
             { planName: tripName },
@@ -812,7 +806,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         onCancelPreview={handleCancelPreview}
         selectedDay={selectedDay}
         isScheduleEditVisible={isScheduleEditVisible}
-        setScheduleEditVisible={setScheduleEditVisible}
+        setScheduleEditVisible={(visible: boolean) => {
+          if (visible) scheduleEditBaseRef.current = days;
+          setScheduleEditVisible(visible);
+        }}
         onConfirmScheduleEdit={onConfirmScheduleEdit}
         onConfirmTimePicker={onConfirmTimePicker}
         destination={destination || ''}
@@ -915,4 +912,3 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     </>
   );
 }
-

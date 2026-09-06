@@ -20,7 +20,7 @@ export interface ScheduleEditDay {
 
 export interface ScheduleEditSync {
   creates: TimeTableDtoPayload[];
-  updates: TimeTableDtoPayload[];
+  updates: Partial<TimeTableDtoPayload>[];
   deletes: TimeTableDtoPayload[];
 }
 
@@ -52,7 +52,7 @@ export const buildScheduleEditSync = (
   planId: string,
 ): ScheduleEditSync => {
   const creates: TimeTableDtoPayload[] = [];
-  const updates: TimeTableDtoPayload[] = [];
+  const updates: Partial<TimeTableDtoPayload>[] = [];
   const deletes: TimeTableDtoPayload[] = [];
 
   const shared = Math.min(currentDays.length, updatedDays.length);
@@ -71,7 +71,15 @@ export const buildScheduleEditSync = (
     });
 
     if (hasServerId(current)) {
-      updates.push(payload);
+      updates.push({
+        timeTableId: payload.timeTableId,
+        planId,
+        ...(formatDateLocal(current.date) !== payload.date ? { date: payload.date } : {}),
+        ...(normalizeStart(current.startTime) !== payload.timeTableStartTime
+          ? { timeTableStartTime: payload.timeTableStartTime } : {}),
+        ...(normalizeEnd(current.endTime) !== payload.timeTableEndTime
+          ? { timeTableEndTime: payload.timeTableEndTime } : {}),
+      });
     } else {
       creates.push({ ...payload, timeTableId: null });
     }
@@ -110,23 +118,32 @@ export const buildScheduleEditSync = (
 export const mergeScheduleEditDays = (
   currentDays: Day[],
   updatedDays: ScheduleEditDay[],
-): Day[] =>
-  updatedDays.map((updated, index) => {
-    const current = currentDays[index];
-    if (current) {
-      return {
-        ...current,
-        date: updated.date,
-        startTime: normalizeStart(updated.startTime ?? current.startTime),
-        endTime: normalizeEnd(updated.endTime ?? current.endTime),
-        dayNumber: index + 1,
-      };
-    }
-    return {
-      date: updated.date,
-      dayNumber: index + 1,
-      startTime: normalizeStart(updated.startTime),
-      endTime: normalizeEnd(updated.endTime),
-      places: [],
-    };
+  originalDays: Day[] = currentDays,
+): Day[] => {
+  const key = (day: ScheduleEditDay) => hasServerId(day)
+    ? String(day.timetableId) : formatDateLocal(day.date);
+  const originalById = new Map(originalDays.map((day, index) => [key(day), { day, index }]));
+  const merged = currentDays.flatMap(current => {
+    const original = originalById.get(key(current));
+    if (!original) return [current];
+    const updated = updatedDays[original.index];
+    if (!updated) return [];
+    return [{
+      ...current,
+      date: formatDateLocal(updated.date) !== formatDateLocal(original.day.date) ? updated.date : current.date,
+      startTime: normalizeStart(updated.startTime) !== normalizeStart(original.day.startTime)
+        ? normalizeStart(updated.startTime) : current.startTime,
+      endTime: normalizeEnd(updated.endTime) !== normalizeEnd(original.day.endTime)
+        ? normalizeEnd(updated.endTime) : current.endTime,
+    }];
   });
+  updatedDays.slice(originalDays.length).forEach(updated => merged.push({
+    date: updated.date,
+    dayNumber: 0,
+    startTime: normalizeStart(updated.startTime),
+    endTime: normalizeEnd(updated.endTime),
+    places: [],
+  }));
+  return merged.sort((a, b) => a.date.getTime() - b.date.getTime())
+    .map((day, index) => ({ ...day, dayNumber: index + 1 }));
+};

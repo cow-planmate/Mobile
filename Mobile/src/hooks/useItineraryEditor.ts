@@ -14,19 +14,18 @@ import {
   useItinerary,
   Day,
   Place,
-  isFetchAtLeastAsComplete,
 } from '../contexts/ItineraryContext';
 import {
   timeToMinutes,
   minutesToTime,
   parseLocalDate,
-  resolveConflictsAndSort,
   formatMonthDayDot,
   normalizeTime,
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
 } from '../utils/timeUtils';
 import { createTempPlaceId } from '../utils/planSyncPayload';
+import { mergeItinerarySnapshot } from '../utils/mergeItinerarySnapshot';
 import { dropPlanComplete } from './planCompleteCache';
 import { MINUTE_HEIGHT } from '../features/itinerary/screens/ItineraryEditorScreen.styles';
 import Toast from 'react-native-toast-message';
@@ -69,6 +68,9 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   const timelineScrollRef = useRef<ScrollView>(null);
 
   const loadedPlanIdRef = useRef<string | null>(null);
+  const daysRef = useRef(days);
+  daysRef.current = days;
+  const fetchRequestRef = useRef(0);
 
   const [isInitialPlanLoading, setIsInitialPlanLoading] = useState(true);
 
@@ -108,6 +110,8 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     const targetPlanId = String(route.params.planId);
 
     const isSamePlan = loadedPlanIdRef.current === targetPlanId;
+    const daysAtRequest = daysRef.current;
+    const requestId = ++fetchRequestRef.current;
 
     try {
 
@@ -115,7 +119,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
         resolveApiUrl(`/api/plan/${route.params.planId}/complete`),
         { signal },
       );
-      if (signal?.aborted) return;
+      if (signal?.aborted || requestId !== fetchRequestRef.current) return;
       const { planFrame, placeBlocks, timetables } = response.data;
 
       if (planFrame?.planName) {
@@ -123,7 +127,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
       }
       setPlanMetadata(planFrame);
 
-      if (timetables && timetables.length > 0) {
+      if (Array.isArray(timetables)) {
         const newDays: Day[] = timetables.map((tt: any, index: number) => {
           const ttId = tt.timetableId ?? tt.timeTableId;
           const ttDateStr = tt.date ? String(tt.date).substring(0, 10) : '';
@@ -133,7 +137,7 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
             .filter((pb: any) => {
               const pbTtId = pb.timeTableId ?? pb.timetableId ?? pb.time_table_id;
               if (pbTtId !== undefined && pbTtId !== null && ttId !== undefined && ttId !== null) {
-                if (String(pbTtId) === String(ttId)) return true;
+                return String(pbTtId) === String(ttId);
               }
               const pbDateStr = pb.date ? String(pb.date).substring(0, 10) : '';
               if (pbDateStr && ttDateStr && pbDateStr === ttDateStr) return true;
@@ -213,25 +217,21 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
 
             startTime: tt.timeTableStartTime || DEFAULT_DAY_START,
             endTime: tt.timeTableEndTime || DEFAULT_DAY_END,
-            places: resolveConflictsAndSort(dayPlaces),
+            places: dayPlaces.sort((a: Place, b: Place) =>
+              timeToMinutes(a.startTime) - timeToMinutes(b.startTime)),
           };
         });
 
-        setDays(prevDays =>
-          !isSamePlan || isFetchAtLeastAsComplete(newDays, prevDays)
-            ? newDays
-            : prevDays,
-        );
+        setDays(prevDays => mergeItinerarySnapshot(newDays, prevDays, daysAtRequest));
         loadedPlanIdRef.current = targetPlanId;
       } else {
         initDaysFromDates();
         loadedPlanIdRef.current = targetPlanId;
       }
     } catch (error) {
-      if (signal?.aborted || axios.isCancel(error)) return;
+      if (signal?.aborted || requestId !== fetchRequestRef.current || axios.isCancel(error)) return;
       console.error('일정 정보 조회 실패:', error);
-      initDaysFromDates();
-      loadedPlanIdRef.current = targetPlanId;
+      if (!isSamePlan && daysRef.current.length === 0) initDaysFromDates();
     }
   }, [route.params?.planId, initDaysFromDates, setDays]);
 

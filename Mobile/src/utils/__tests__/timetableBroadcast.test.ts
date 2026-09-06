@@ -22,6 +22,13 @@ const place = (id: string) =>
   ({ id, name: '장소', startTime: '10:00', endTime: '11:00' } as any);
 
 describe('applyTimetableBroadcast', () => {
+  it('같은 날짜를 동시에 생성해도 서로 다른 서버 ID의 일차를 합치지 않는다', () => {
+    const current = [day(100, 2026, 8, 10)];
+    const { days } = applyTimetableBroadcast(current, 'create', [
+      { timeTableId: 101, date: '2026-08-10' },
+    ]);
+    expect(days.map(d => d.timetableId)).toEqual([100, 101]);
+  });
   it('timetableId로 매칭해 날짜만 update하고 장소를 보존한다', () => {
     const current = [day(100, 2026, 8, 10, '09:00:00', '20:00:00', [place('1')])];
 

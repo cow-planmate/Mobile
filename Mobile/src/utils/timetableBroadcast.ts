@@ -45,7 +45,9 @@ export const applyTimetableBroadcast = (
       : -1;
 
     if (idx === -1 && dateStr) {
-      idx = nextDays.findIndex(d => formatDateLocal(d.date) === dateStr);
+      idx = nextDays.findIndex(d =>
+        formatDateLocal(d.date) === dateStr && (!hasId || d.timetableId == null),
+      );
     }
 
     if (idx !== -1) {

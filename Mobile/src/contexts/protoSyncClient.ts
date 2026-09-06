@@ -220,7 +220,7 @@ export function createProtoSyncClient({
   // ---------- 수신 ----------
 
   function handleFrame(bytes: Uint8Array) {
-    if (!schema) return;
+    if (disposed || !schema) return;
     const frame: any = schema.ServerFrame.decode(bytes);
 
     switch (frame.frame) {
@@ -228,37 +228,42 @@ export function createProtoSyncClient({
         // 내가 인코딩에 쓴 스키마의 해시를 주장한다. 서버가 준 값을 되돌려주면
         // 검사가 항상 통과해 스키마 스큐 검사 자체가 무력해진다.
         send({ join: { roomId, schemaHash: schema.hash } });
-        adapter.connected = true;
         log(
           `[proto] 연결 완료 (client ${schema.hash} / server ${frame.hello?.schemaHash})`,
         );
-        onConnect?.();
         break;
 
       case 'sync':
         onSync?.(toSyncBody(frame.sync));
         break;
 
-      case 'presence':
+      case 'presence': {
+        const joining = !adapter.connected;
+        adapter.connected = true;
         onPresence?.(
           schema.PresenceEvent.toObject(frame.presence, {
             enums: String,
             defaults: true,
           }),
         );
+        if (joining) onConnect?.();
         break;
+      }
 
       case 'error':
         console.warn(
           `[proto] 서버 오류 ${frame.error?.code}: ${frame.error?.message}`,
         );
         if (frame.error?.code === 'NOT_JOINED') {
+          adapter.connected = false;
           send({ join: { roomId, schemaHash: schema.hash } });
         } else if (frame.error?.code === 'SCHEMA_MISMATCH') {
           // 서버가 배포되며 스키마가 바뀌었다. 캐시를 버리고 다시 받아야 한다 —
           // 그대로 재연결하면 같은 이유로 계속 끊긴다.
           console.warn('[proto] 서버 스키마가 바뀌었다. 다시 받는다.');
           schema = null;
+          adapter.connected = false;
+          ws?.close();
         }
         break;
 

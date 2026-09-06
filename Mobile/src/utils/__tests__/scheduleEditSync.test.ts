@@ -38,15 +38,11 @@ describe('buildScheduleEditSync', () => {
       {
         timeTableId: 100,
         date: '2026-08-15',
-        timeTableStartTime: '09:00:00',
-        timeTableEndTime: '20:00:00',
         planId: PLAN_ID,
       },
       {
         timeTableId: 101,
         date: '2026-08-16',
-        timeTableStartTime: '09:00:00',
-        timeTableEndTime: '20:00:00',
         planId: PLAN_ID,
       },
     ]);
@@ -119,7 +115,6 @@ describe('buildScheduleEditSync', () => {
     expect(updates).toEqual([
       {
         timeTableId: 100,
-        date: '2026-08-10',
         timeTableStartTime: '10:00:00',
         timeTableEndTime: '22:00:00',
         planId: PLAN_ID,
@@ -197,6 +192,19 @@ describe('findInvalidDateOrder', () => {
 describe('mergeScheduleEditDays', () => {
   const place = (id: string) =>
     ({ id, name: '장소', startTime: '10:00', endTime: '11:00' } as any);
+
+  it('편집 창을 연 뒤 수신한 운영시간과 새 일차를 보존한다', () => {
+    const original = [{ ...day(100, 2026, 8, 10), timetableId: 100, dayNumber: 1, places: [] }];
+    const remote = [
+      { ...original[0], startTime: '08:00:00' },
+      { ...original[0], timetableId: 101, date: new Date(2026, 7, 12) },
+    ];
+    const result = mergeScheduleEditDays(remote, [day(null, 2026, 8, 11)], original);
+    expect(result).toHaveLength(2);
+    expect(result[0].startTime).toBe('08:00:00');
+    expect(result[0].date.getDate()).toBe(11);
+    expect(result[1].timetableId).toBe(101);
+  });
 
   it('날짜를 옮겨도 timetableId와 장소를 유지한다', () => {
     const current = [

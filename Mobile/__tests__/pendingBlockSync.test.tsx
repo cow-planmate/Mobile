@@ -109,6 +109,20 @@ describe('임시 ID 블록의 변경 보류', () => {
     mockHandlers.length = 0;
   });
 
+  it('메모와 시간을 각각 수정할 때 변경하지 않은 필드를 전송하지 않는다', async () => {
+    mount();
+    const tempId = await addPlace();
+    emitCreateConfirmation(tempId);
+    mockSendMessage.mockClear();
+    act(() => context.updatePlaceMemo(0, String(REAL_BLOCK_ID), '동시 메모'));
+    await flushTimers();
+    expect(callsOf('update')[0][2]).toEqual({ blockId: REAL_BLOCK_ID, timeTableId: TIMETABLE_ID, memo: '동시 메모' });
+    mockSendMessage.mockClear();
+    act(() => context.updatePlaceTimes(0, String(REAL_BLOCK_ID), '14:00', '15:00'));
+    await flushTimers();
+    expect(callsOf('update')[0][2]).toEqual({ blockId: REAL_BLOCK_ID, timeTableId: TIMETABLE_ID, blockStartTime: '14:00:00', blockEndTime: '15:00:00' });
+  });
+
   it('blockId가 확정되기 전 수정은 전송하지 않는다', async () => {
     mount();
     const tempId = await addPlace();
@@ -119,6 +133,16 @@ describe('임시 ID 블록의 변경 보류', () => {
     await flushTimers();
 
     expect(callsOf('update')).toHaveLength(0);
+  });
+
+  it('재조회에서 먼저 받은 블록과 생성 응답의 임시 블록을 하나로 합친다', async () => {
+    mount();
+    const tempId = await addPlace();
+    act(() => context.setDays(days => days.map(day => ({
+      ...day, places: [...day.places, { ...day.places[0], id: String(REAL_BLOCK_ID) }],
+    }))));
+    emitCreateConfirmation(tempId);
+    expect(context.days[0].places.map(place => place.id)).toEqual([String(REAL_BLOCK_ID)]);
   });
 
   it('create가 확정되면 보류분을 실제 blockId로 다시 보낸다', async () => {

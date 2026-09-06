@@ -1,6 +1,7 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 import { View, Text, Button } from 'react-native';
+import axios from 'axios';
 
 jest.mock('@react-navigation/material-top-tabs', () => {
   const React = require('react');
@@ -84,6 +85,8 @@ jest.mock('../src/features/itinerary/components/TimelineItem', () => {
   const { Text } = require('react-native');
   return {
     __esModule: true,
+    CATEGORY_NAMES: { 4: '검색' },
+    resolveCategoryId: () => 4,
     default: ({ item }: any) => React.createElement(Text, { testID: `timeline-item-${item.id}` }, item.name),
   };
 });
@@ -171,6 +174,7 @@ jest.mock('react-native-date-picker', () => {
 import ItineraryEditorScreenView from '../src/features/itinerary/screens/ItineraryEditorScreen.view';
 import ItineraryEditorScreen from '../src/features/itinerary/screens/ItineraryEditorScreen';
 import EditAccessGate from '../src/features/itinerary/components/EditAccessGate';
+import PlaceEditModal from '../src/features/itinerary/components/PlaceEditModal';
 import { Day } from '../src/contexts/ItineraryContext';
 
 const mockShowAlert = jest.fn();
@@ -491,6 +495,7 @@ describe('ItineraryEditorScreen Component', () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
     mockWebSocket.isConnected = false;
+    mockItineraryEditor.planMetadata = {};
     mockPlanOwnership.isOwner = true;
     mockPlanOwnership.isEditor = false;
     mockPlanOwnership.canEdit = true;
@@ -499,6 +504,53 @@ describe('ItineraryEditorScreen Component', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+  });
+
+  it('장소 편집 창에서 바꾼 필드만 저장하여 다른 사람의 시간 변경을 보존한다', async () => {
+    mockItineraryEditor.days = mockDays;
+    mockItineraryEditor.selectedDay = mockDays[0];
+    const navigation = { addListener: jest.fn(() => jest.fn()), goBack: jest.fn(), navigate: jest.fn(), setParams: jest.fn() } as any;
+    const route = { params: { planId: 'plan-123', destination: '제주도' } } as any;
+    let tree: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderer.create(<ItineraryEditorScreen route={route} navigation={navigation} />);
+    });
+    const place = mockDays[0].places[0];
+    await act(async () => {
+      tree!.root.findByType(ItineraryEditorScreenView).props.onOpenDetail(place);
+    });
+    mockItineraryEditor.days = [{ ...mockDays[0], places: [{ ...place, startTime: '11:00:00' }] }];
+    await act(async () => {
+      tree!.update(<ItineraryEditorScreen route={route} navigation={navigation} />);
+    });
+    await act(async () => {
+      tree!.root.findByType(PlaceEditModal).props.onSave({ ...place, memo: '메모만 변경' });
+    });
+    expect(mockItinerary.updatePlaceDetails).toHaveBeenCalledWith(0, place.id, { memo: '메모만 변경' });
+    await act(async () => { tree!.unmount(); });
+  });
+
+  it('연결 중 이름을 저장한 뒤 완료해도 REST로 같은 이름을 다시 덮어쓰지 않는다', async () => {
+    mockWebSocket.isConnected = true;
+    mockItineraryEditor.planMetadata = { planName: '이전 이름', adultCount: 3, childCount: 2 };
+    mockItineraryEditor.days = mockDays;
+    mockItineraryEditor.selectedDay = mockDays[0];
+    const navigation = { addListener: jest.fn(() => jest.fn()), goBack: jest.fn(), navigate: jest.fn(), setParams: jest.fn() } as any;
+    const route = { params: { planId: 'plan-123', destination: '제주도' } } as any;
+    let tree: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderer.create(<ItineraryEditorScreen route={route} navigation={navigation} />);
+    });
+    await act(async () => {
+      await tree!.root.findByType(ItineraryEditorScreenView).props.onSaveTripName();
+      await tree!.root.findByType(ItineraryEditorScreenView).props.onComplete();
+    });
+    expect(mockWebSocket.sendMessage.mock.calls.filter(call => call[1] === 'plan')).toHaveLength(1);
+    expect(mockWebSocket.sendMessage).toHaveBeenCalledWith('update', 'plan', {
+      planId: 'plan-123', planName: mockItineraryEditor.tripName, adultCount: 3, childCount: 2,
+    });
+    expect(axios.patch).not.toHaveBeenCalled();
+    await act(async () => { tree!.unmount(); });
   });
 
   it('편집 권한이 없으면 요청 게이트를 띄우고 소켓·이탈 경고를 건너뛴다', async () => {
@@ -677,7 +729,7 @@ describe('ItineraryEditorScreen Component', () => {
     expect(mockShowAlert).not.toHaveBeenCalled();
   });
 
-  it('화면 전환 없이 소켓만 끊겼다 재연결되면 자동으로 재조회한다', async () => {
+  it('최초 방 입장과 소켓 재연결 후 최신 일정을 조회한다', async () => {
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
     mockWebSocket.isConnected = true;
@@ -701,7 +753,7 @@ describe('ItineraryEditorScreen Component', () => {
         <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
       );
     });
-    expect(mockItineraryEditor.fetchPlanDetails).not.toHaveBeenCalled();
+    expect(mockItineraryEditor.fetchPlanDetails).toHaveBeenCalledTimes(1);
 
     mockWebSocket.isConnected = false;
     await act(async () => {
@@ -709,7 +761,7 @@ describe('ItineraryEditorScreen Component', () => {
         <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
       );
     });
-    expect(mockItineraryEditor.fetchPlanDetails).not.toHaveBeenCalled();
+    expect(mockItineraryEditor.fetchPlanDetails).toHaveBeenCalledTimes(1);
 
     mockWebSocket.isConnected = true;
     await act(async () => {
@@ -718,7 +770,7 @@ describe('ItineraryEditorScreen Component', () => {
       );
     });
 
-    expect(mockItineraryEditor.fetchPlanDetails).toHaveBeenCalledTimes(1);
+    expect(mockItineraryEditor.fetchPlanDetails).toHaveBeenCalledTimes(2);
   });
 
   it('제목을 다시 저장해도 값이 그대로면 요청을 한 번만 보낸다', async () => {
