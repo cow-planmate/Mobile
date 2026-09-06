@@ -114,6 +114,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   useInvitationSse({
     enabled: !!user,
     onInvitationEvent: () => fetchPendingRequests(),
+    onConnected: () => invalidatePlanCaches(queryClient),
     onRequestResult: handleRequestResult,
   });
 
@@ -127,11 +128,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const handleInvitationPush = useCallback(
     async (origin: InvitationPushOrigin, kind: InvitationPushKind) => {
       // 내가 보낸 요청에 상대가 답한 것. 알림함에는 답할 것이 없고 바뀐 것은
-      // 내 일정 쪽이라, 목록을 새로 받고 그리로 보낸다. 앱을 보고 있을 때는
-      // SSE가 이미 같은 소식을 알려주므로 여기서 또 알리지 않는다.
+      // 내 일정 쪽이라 권한 목록을 갱신한다. 화면 이동은 알림을 눌렀을 때만 한다.
       if (kind === 'result') {
-        if (origin !== 'opened') return;
         await invalidatePlanCaches(queryClient);
+        if (origin !== 'opened') return;
         navigation.navigate('MySchedule');
         return;
       }
@@ -175,16 +175,23 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
       if (wasBackground && isNowActive && user) {
         void fetchPendingRequests();
+        void invalidatePlanCaches(queryClient);
       }
     });
 
     return () => {
       subscription.remove();
     };
-  }, [appState, fetchPendingRequests, user]);
+  }, [appState, fetchPendingRequests, queryClient, user]);
 
   const findRequestType = (requestId: number) =>
     pendingRequests.find(r => r.requestId === requestId)?.type;
+
+  const handleAlreadyProcessed = async (requestId: number, error: unknown) => {
+    if (!(await pendingInvitations.removeIfProcessed(requestId, error))) return false;
+    showAlert({ title: '이미 처리된 요청', message: '처리된 요청을 알림 목록에서 정리했어요.' });
+    return true;
+  };
 
   const handleAccept = async (requestId: number) => {
     const type = findRequestType(requestId);
@@ -193,11 +200,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
       void invalidatePlanCaches(queryClient);
       showAlert({ title: '수락 완료', message: describeAcceptResult(type) });
-      pendingInvitations.remove(requestId);
+      await pendingInvitations.remove(requestId);
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
       }
     } catch (e) {
+      if (await handleAlreadyProcessed(requestId, e)) return;
       showAlert({
         title: '수락하지 못했어요',
         message: '네트워크 상태를 확인하고 다시 시도해주세요.',
@@ -214,11 +222,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     try {
       await rejectInvitation(requestId);
       showAlert({ title: '거절 완료', message: describeRejectResult(type) });
-      pendingInvitations.remove(requestId);
+      await pendingInvitations.remove(requestId);
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
       }
     } catch (e) {
+      if (await handleAlreadyProcessed(requestId, e)) return;
       showAlert({
         title: '거절하지 못했어요',
         message: '네트워크 상태를 확인하고 다시 시도해주세요.',

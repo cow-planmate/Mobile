@@ -303,11 +303,15 @@ export default function TravelFeedScreen() {
 
       void invalidatePlanCaches(queryClient);
       showAlert({ title: '수락 완료', message: describeAcceptResult(type) });
-      pendingInvitations.remove(requestId);
+      await pendingInvitations.remove(requestId);
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
       }
     } catch (e) {
+      if (await pendingInvitations.removeIfProcessed(requestId, e)) {
+        showAlert({ title: '이미 처리된 요청', message: '처리된 요청을 알림 목록에서 정리했어요.' });
+        return;
+      }
       showAlert({ title: '오류', message: '수락하지 못했어요.' });
     }
   };
@@ -317,11 +321,15 @@ export default function TravelFeedScreen() {
     try {
       await rejectInvitation(requestId);
       showAlert({ title: '거절 완료', message: describeRejectResult(type) });
-      pendingInvitations.remove(requestId);
+      await pendingInvitations.remove(requestId);
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
       }
     } catch (e) {
+      if (await pendingInvitations.removeIfProcessed(requestId, e)) {
+        showAlert({ title: '이미 처리된 요청', message: '처리된 요청을 알림 목록에서 정리했어요.' });
+        return;
+      }
       showAlert({ title: '오류', message: '거절하지 못했어요.' });
     }
   };

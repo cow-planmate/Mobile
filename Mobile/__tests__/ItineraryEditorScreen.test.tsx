@@ -553,7 +553,7 @@ describe('ItineraryEditorScreen Component', () => {
     await act(async () => { tree!.unmount(); });
   });
 
-  it('편집 권한이 없으면 요청 게이트를 띄우고 소켓·이탈 경고를 건너뛴다', async () => {
+  it('권한이 없으면 편집을 막고 수락 후 권한이 갱신되면 같은 화면에서 연결한다', async () => {
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
     mockPlanOwnership.isOwner = false;
@@ -597,6 +597,14 @@ describe('ItineraryEditorScreen Component', () => {
 
     expect(mockPreventDefault).not.toHaveBeenCalled();
     expect(mockShowAlert).not.toHaveBeenCalled();
+    mockPlanOwnership.isEditor = true;
+    mockPlanOwnership.canEdit = true;
+    await act(async () => {
+      tree!.update(<ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />);
+    });
+    expect(tree!.root.findByType(EditAccessGate).props.visible).toBe(false);
+    expect(mockWebSocket.connect).toHaveBeenCalledWith('plan-123');
+    await act(async () => { tree!.unmount(); });
   });
 
   it('registers beforeRemove listener and shows warning alert on exit', async () => {

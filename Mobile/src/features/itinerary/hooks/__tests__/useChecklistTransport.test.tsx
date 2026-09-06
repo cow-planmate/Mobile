@@ -5,25 +5,22 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 const mockWs = {
   isConnected: true,
   roomId: 'plan-1' as string | null,
-  sent: [] as Array<{ action: string; eventId?: string; target: any }>,
+  sendMessage: jest.fn(),
   listeners: new Set<(msg: any) => void>(),
 };
 
 const mockCreateChecklistItem = jest.fn();
+const mockDeleteChecklistItem = jest.fn();
+const mockEditChecklistItemChecked = jest.fn();
+const mockEditChecklistItemContent = jest.fn();
 const mockGetChecklist = jest.fn();
+const mockReorderChecklistItems = jest.fn();
 
 jest.mock('../../../../contexts/WebSocketContext', () => ({
   useWebSocket: () => ({
     isConnected: mockWs.isConnected,
     getCurrentRoomId: () => mockWs.roomId,
-    sendMessage: (
-      action: string,
-      _targetName: string,
-      target: any,
-      eventId?: string,
-    ) => {
-      mockWs.sent.push({ action, target, eventId });
-    },
+    sendMessage: mockWs.sendMessage,
     subscribeToMessages: (cb: (msg: any) => void) => mockWs.listeners.add(cb),
     unsubscribeFromMessages: (cb: (msg: any) => void) =>
       mockWs.listeners.delete(cb),
@@ -33,29 +30,35 @@ jest.mock('../../../../contexts/WebSocketContext', () => ({
 jest.mock('../../../../api/checklist', () => ({
   ...jest.requireActual('../../../../api/checklist'),
   createChecklistItem: (...args: any[]) => mockCreateChecklistItem(...args),
+  deleteChecklistItem: (...args: any[]) => mockDeleteChecklistItem(...args),
+  editChecklistItemChecked: (...args: any[]) =>
+    mockEditChecklistItemChecked(...args),
+  editChecklistItemContent: (...args: any[]) =>
+    mockEditChecklistItemContent(...args),
   getChecklist: (...args: any[]) => mockGetChecklist(...args),
+  reorderChecklistItems: (...args: any[]) =>
+    mockReorderChecklistItems(...args),
 }));
 
 import {
-  ChecklistAckTimeoutError,
   checklistKeys,
   useCreateChecklistItem,
+  useDeleteChecklistItem,
+  useEditChecklistItemContent,
   usePlanChecklists,
+  useReorderChecklistItems,
+  useToggleChecklistItem,
 } from '../useChecklistQueries';
 
 const emit = (message: any) => {
   [...mockWs.listeners].forEach(listener => listener(message));
 };
 
-const tick = async ({ fakeTimers = false } = {}) => {
+const tick = async () => {
   await act(async () => {
     for (let i = 0; i < 5; i += 1) {
       await Promise.resolve();
-      if (fakeTimers) {
-        await jest.advanceTimersByTimeAsync(1);
-      } else {
-        await new Promise(resolve => setTimeout(resolve, 0));
-      }
+      await jest.advanceTimersByTimeAsync(1);
     }
   });
 };
@@ -99,15 +102,19 @@ const renderHookValue = <T,>(useHook: () => T) => {
   return { holder, client };
 };
 
-describe('공동 체크리스트 실시간 전송', () => {
+describe('공유 체크리스트 저장 경로', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     mockWs.isConnected = true;
     mockWs.roomId = 'plan-1';
-    mockWs.sent = [];
+    mockWs.sendMessage.mockReset();
     mockWs.listeners.clear();
     mockCreateChecklistItem.mockReset().mockResolvedValue(10);
+    mockDeleteChecklistItem.mockReset().mockResolvedValue(undefined);
+    mockEditChecklistItemChecked.mockReset().mockResolvedValue(undefined);
+    mockEditChecklistItemContent.mockReset().mockResolvedValue(undefined);
     mockGetChecklist.mockReset().mockResolvedValue([]);
+    mockReorderChecklistItems.mockReset().mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -115,92 +122,61 @@ describe('공동 체크리스트 실시간 전송', () => {
     jest.useRealTimers();
   });
 
-  it('다른 일정에 연결돼 있으면 실시간으로 보내지 않고 REST로 추가한다', async () => {
-    mockWs.roomId = 'plan-other';
-    const { holder } = renderHookValue(() =>
-      useCreateChecklistItem('plan-1', 'shared'),
-    );
+  it('실시간 연결 중에도 모든 변경을 필드별 REST API로 저장한다', async () => {
+    const { holder, client } = renderHookValue(() => ({
+      create: useCreateChecklistItem('plan-1', 'shared'),
+      edit: useEditChecklistItemContent('plan-1', 'shared'),
+      toggle: useToggleChecklistItem('plan-1', 'shared'),
+      remove: useDeleteChecklistItem('plan-1', 'shared'),
+      reorder: useReorderChecklistItems('plan-1', 'shared'),
+    }));
+    client.setQueryData(checklistKeys.scope('plan-1', 'shared'), [
+      { itemId: 1, content: '여권', isChecked: false, sortOrder: 0 },
+      { itemId: 2, content: '충전기', isChecked: false, sortOrder: 1 },
+    ]);
 
     await act(async () => {
-      await holder.current!.mutateAsync('여권');
+      await holder.current!.create.mutateAsync('보험');
+      await holder.current!.edit.mutateAsync({ itemId: 1, content: '새 여권' });
+      await holder.current!.toggle.mutateAsync({ itemId: 1, isChecked: true });
+      await holder.current!.remove.mutateAsync(2);
+      await holder.current!.reorder.mutateAsync([2, 1]);
     });
 
-    expect(mockWs.sent).toHaveLength(0);
     expect(mockCreateChecklistItem).toHaveBeenCalledWith(
       'plan-1',
       'shared',
-      '여권',
+      '보험',
     );
-  });
-
-  it('브로드캐스트가 돌아오면 REST로 다시 보내지 않는다', async () => {
-    const { holder } = renderHookValue(() =>
-      useCreateChecklistItem('plan-1', 'shared'),
+    expect(mockEditChecklistItemContent).toHaveBeenCalledWith(
+      'plan-1',
+      'shared',
+      1,
+      '새 여권',
     );
-
-    let pending: Promise<unknown> | undefined;
-    act(() => {
-      pending = holder.current!.mutateAsync('여권');
-    });
-    await tick({ fakeTimers: true });
-
-    expect(mockWs.sent).toHaveLength(1);
-
-    await act(async () => {
-      emit({ eventId: mockWs.sent[0].eventId });
-      await pending;
-    });
-
-    expect(mockCreateChecklistItem).not.toHaveBeenCalled();
-  });
-
-  it('브로드캐스트가 없으면 REST로 재전송하지 않고 실패로 끊는다', async () => {
-    const { holder } = renderHookValue(() =>
-      useCreateChecklistItem('plan-1', 'shared'),
+    expect(mockEditChecklistItemChecked).toHaveBeenCalledWith(
+      'plan-1',
+      'shared',
+      1,
+      true,
     );
-
-    let caught: unknown;
-    let pending: Promise<unknown> | undefined;
-    act(() => {
-      pending = holder.current!.mutateAsync('여권').catch(e => {
-        caught = e;
-      });
-    });
-    await tick({ fakeTimers: true });
-
-    expect(mockWs.sent).toHaveLength(1);
-
-    await act(async () => {
-      jest.advanceTimersByTime(5000);
-      await pending;
-    });
-
-    expect(mockCreateChecklistItem).not.toHaveBeenCalled();
-    expect(caught).toBeInstanceOf(ChecklistAckTimeoutError);
-  });
-
-  it('새 항목의 sortOrder는 개수가 아니라 최댓값 다음 번호를 쓴다', async () => {
-    const { holder, client } = renderHookValue(() =>
-      useCreateChecklistItem('plan-1', 'shared'),
+    expect(mockDeleteChecklistItem).toHaveBeenCalledWith(
+      'plan-1',
+      'shared',
+      2,
     );
-
-    client.setQueryData(checklistKeys.scope('plan-1', 'shared'), [
-      { itemId: 2, content: '충전기', isChecked: false, sortOrder: 1 },
-      { itemId: 3, content: '상비약', isChecked: false, sortOrder: 2 },
-    ]);
-
-    act(() => {
-      void holder.current!.mutateAsync('여권').catch(() => undefined);
-    });
-    await tick({ fakeTimers: true });
-
-    expect(mockWs.sent[0].target[0].sortOrder).toBe(3);
+    expect(mockReorderChecklistItems).toHaveBeenCalledWith(
+      'plan-1',
+      'shared',
+      [2, 1],
+    );
+    expect(mockWs.sendMessage).not.toHaveBeenCalled();
   });
 });
 
-describe('공동 체크리스트 이벤트 수신', () => {
+describe('공유 체크리스트 이벤트 수신', () => {
   beforeEach(() => {
-    jest.useRealTimers();
+    jest.useFakeTimers();
     mockWs.isConnected = true;
     mockWs.roomId = 'plan-1';
     mockWs.listeners.clear();
@@ -211,21 +187,18 @@ describe('공동 체크리스트 이벤트 수신', () => {
 
   afterEach(() => {
     cleanupMounted();
+    jest.useRealTimers();
   });
 
-  it('수신한 변경을 반영하되 재조회하지 않는다', async () => {
+  it('수신한 변경을 즉시 반영한다', async () => {
     const { holder } = renderHookValue(() =>
       usePlanChecklists('plan-1', true),
     );
-
     await tick();
-
-    const fetchesAfterLoad = mockGetChecklist.mock.calls.length;
 
     await act(async () => {
       emit({
         target: 'planchecklistitem',
-        eventId: 'other-device',
         data: {
           action: 'update',
           planChecklistItemDtos: [
@@ -243,15 +216,52 @@ describe('공동 체크리스트 이벤트 수신', () => {
     await tick();
 
     expect(holder.current!.sharedItems[0].isChecked).toBe(true);
-
-    expect(mockGetChecklist.mock.calls.length).toBe(fetchesAfterLoad);
   });
 
-  it('planId 대소문자가 달라도 같은 일정의 이벤트로 본다', async () => {
+  it('수신 이벤트 뒤 늦게 끝난 조회가 최신 캐시를 덮지 않는다', async () => {
+    let resolveShared: ((items: unknown[]) => void) | undefined;
+    mockGetChecklist.mockImplementation((_planId, scope) =>
+      scope === 'shared'
+        ? new Promise(resolve => {
+            resolveShared = resolve;
+          })
+        : Promise.resolve([]),
+    );
     const { holder } = renderHookValue(() =>
       usePlanChecklists('plan-1', true),
     );
 
+    await act(async () => {
+      emit({
+        target: 'planchecklistitem',
+        data: {
+          action: 'update',
+          planChecklistItemDtos: [
+            {
+              checklistItemId: 1,
+              planId: 'plan-1',
+              content: '최신 여권',
+              isChecked: true,
+              sortOrder: 0,
+            },
+          ],
+        },
+      });
+      resolveShared?.([
+        { itemId: 1, content: '이전 여권', isChecked: false, sortOrder: 0 },
+      ]);
+    });
+    await tick();
+
+    expect(holder.current!.sharedItems).toEqual([
+      { itemId: 1, content: '최신 여권', isChecked: true, sortOrder: 0 },
+    ]);
+  });
+
+  it('planId 대소문자가 달라도 같은 일정의 삭제를 반영한다', async () => {
+    const { holder } = renderHookValue(() =>
+      usePlanChecklists('plan-1', true),
+    );
     await tick();
 
     await act(async () => {

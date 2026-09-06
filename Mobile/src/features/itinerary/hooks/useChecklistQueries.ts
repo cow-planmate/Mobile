@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef } from 'react';
 import {
   ChecklistItem,
   ChecklistScope,
-  ChecklistSyncAction,
   PlanChecklistSyncItem,
   createChecklistItem,
   deleteChecklistItem,
@@ -24,43 +23,15 @@ export const checklistKeys = {
 
 const CHECKLIST_ERROR_FALLBACK = '체크리스트를 저장하지 못했어요.';
 
-const CHECKLIST_ACK_TIMEOUT_MS = 5000;
-
-let checklistEventSeq = 0;
-
-const nextChecklistEventId = () =>
-  `checklist-${Date.now()}-${(checklistEventSeq += 1)}`;
-
-type ChecklistSendResult = 'skipped' | 'acked' | 'timeout';
-
-export class ChecklistAckTimeoutError extends Error {
-  constructor() {
-    super('저장 결과를 확인하지 못했어요. 목록을 새로 고칠게요.');
-    this.name = 'ChecklistAckTimeoutError';
-  }
-}
-
 interface ChecklistSyncEvent {
   action?: string;
   planChecklistItemDtos?: PlanChecklistSyncItem[];
 }
 
-interface ChecklistTransportResult {
-  transport: 'websocket';
-}
-
 interface OptimisticChecklistContext {
   previousItems: ChecklistItem[] | undefined;
-  cancelledFetch: boolean;
+  optimisticItems: ChecklistItem[] | undefined;
 }
-
-const isChecklistTransportResult = (
-  value: unknown,
-): value is ChecklistTransportResult =>
-  typeof value === 'object' &&
-  value !== null &&
-  'transport' in value &&
-  (value as ChecklistTransportResult).transport === 'websocket';
 
 export function applyChecklistSync(
   currentItems: ChecklistItem[] | undefined,
@@ -96,65 +67,7 @@ export function applyChecklistSync(
   );
 }
 
-const nextSortOrder = (items: ChecklistItem[]) =>
-  items.reduce((max, item) => Math.max(max, item.sortOrder + 1), 0);
-
-function useSharedChecklistTransport(
-  planId: string | null | undefined,
-  scope: ChecklistScope,
-) {
-  const {
-    isConnected,
-    sendMessage,
-    getCurrentRoomId,
-    subscribeToMessages,
-    unsubscribeFromMessages,
-  } = useWebSocket();
-
-  return (
-    action: ChecklistSyncAction,
-    items: PlanChecklistSyncItem[],
-  ): Promise<ChecklistSendResult> => {
-    if (
-      scope !== 'shared' ||
-      !planId ||
-      !isConnected ||
-      getCurrentRoomId() !== planId
-    ) {
-      return Promise.resolve('skipped');
-    }
-
-    const eventId = nextChecklistEventId();
-
-    return new Promise<ChecklistSendResult>(resolve => {
-      let settled = false;
-      let timer: ReturnType<typeof setTimeout> | undefined;
-
-      const listener = (message: any) => {
-        if (settled || message?.eventId !== eventId) return;
-        settled = true;
-        if (timer) clearTimeout(timer);
-        unsubscribeFromMessages(listener);
-        resolve('acked');
-      };
-
-      subscribeToMessages(listener);
-
-      timer = setTimeout(() => {
-        if (settled) return;
-        settled = true;
-        unsubscribeFromMessages(listener);
-        resolve('timeout');
-      }, CHECKLIST_ACK_TIMEOUT_MS);
-
-      sendMessage(action, 'planchecklistitem', items, eventId);
-    });
-  };
-}
-
 export function getChecklistErrorMessage(error: unknown): string {
-
-  if (error instanceof ChecklistAckTimeoutError) return error.message;
   return getDisplayErrorMessage(error, CHECKLIST_ERROR_FALLBACK);
 }
 
@@ -168,6 +81,8 @@ export function useChecklist(
     queryFn: ({ signal }) => getChecklist(planId as string, scope, signal),
     enabled: !!planId && enabled,
     refetchOnMount: 'always',
+    refetchInterval: scope === 'shared' && enabled ? 3000 : false,
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -180,43 +95,16 @@ function useInvalidateScope(planId: string | null | undefined) {
     });
 }
 
+// SharedSync update DTOs cannot represent partial writes, so mutations use field-specific REST and shared polling propagates them.
 export function useCreateChecklistItem(
   planId: string | null | undefined,
   scope: ChecklistScope,
 ) {
   const invalidateScope = useInvalidateScope(planId);
-  const queryClient = useQueryClient();
-  const sendSharedChecklist = useSharedChecklistTransport(planId, scope);
 
-  return useMutation<number | ChecklistTransportResult, unknown, string>({
-    mutationFn: async content => {
-      const sharedItems =
-        queryClient.getQueryData<ChecklistItem[]>(
-          checklistKeys.scope(planId ?? '', 'shared'),
-        ) ?? [];
-      const sent = await sendSharedChecklist('create', [
-        {
-          planId: planId as string,
-          content,
-          isChecked: false,
-          sortOrder: nextSortOrder(sharedItems),
-        },
-      ]);
-
-      if (sent === 'acked') {
-        return { transport: 'websocket' } satisfies ChecklistTransportResult;
-      }
-
-      if (sent === 'timeout') throw new ChecklistAckTimeoutError();
-
-      return createChecklistItem(planId as string, scope, content);
-    },
-    onSuccess: result => {
-      if (isChecklistTransportResult(result)) return;
-      Promise.resolve(invalidateScope(scope)).catch(() => undefined);
-    },
-    onError: error => {
-      if (!(error instanceof ChecklistAckTimeoutError)) return;
+  return useMutation<number, unknown, string>({
+    mutationFn: content => createChecklistItem(planId as string, scope, content),
+    onSuccess: () => {
       Promise.resolve(invalidateScope(scope)).catch(() => undefined);
     },
   });
@@ -227,38 +115,11 @@ export function useEditChecklistItemContent(
   scope: ChecklistScope,
 ) {
   const invalidateScope = useInvalidateScope(planId);
-  const queryClient = useQueryClient();
-  const sendSharedChecklist = useSharedChecklistTransport(planId, scope);
 
-  return useMutation<
-    void | ChecklistTransportResult,
-    unknown,
-    { itemId: number; content: string }
-  >({
-    mutationFn: async ({ itemId, content }) => {
-      const currentItem = queryClient
-        .getQueryData<ChecklistItem[]>(
-          checklistKeys.scope(planId ?? '', 'shared'),
-        )
-        ?.find(item => item.itemId === itemId);
-      const sent = currentItem
-        ? await sendSharedChecklist('update', [
-            {
-              planId: planId as string,
-              checklistItemId: itemId,
-              content,
-              isChecked: currentItem.isChecked,
-              sortOrder: currentItem.sortOrder,
-            },
-          ])
-        : 'skipped';
-
-      return sent === 'acked'
-        ? ({ transport: 'websocket' } satisfies ChecklistTransportResult)
-        : editChecklistItemContent(planId as string, scope, itemId, content);
-    },
-    onSuccess: result => {
-      if (isChecklistTransportResult(result)) return;
+  return useMutation<void, unknown, { itemId: number; content: string }>({
+    mutationFn: ({ itemId, content }) =>
+      editChecklistItemContent(planId as string, scope, itemId, content),
+    onSuccess: () => {
       Promise.resolve(invalidateScope(scope)).catch(() => undefined);
     },
   });
@@ -270,62 +131,42 @@ export function useToggleChecklistItem(
 ) {
   const queryClient = useQueryClient();
   const queryKey = checklistKeys.scope(planId ?? '', scope);
-  const sendSharedChecklist = useSharedChecklistTransport(planId, scope);
 
   return useMutation<
-    void | ChecklistTransportResult,
+    void,
     unknown,
     { itemId: number; isChecked: boolean },
     OptimisticChecklistContext
   >({
-    mutationFn: async ({ itemId, isChecked }) => {
-      const currentItem = queryClient
-        .getQueryData<ChecklistItem[]>(
-          checklistKeys.scope(planId ?? '', 'shared'),
-        )
-        ?.find(item => item.itemId === itemId);
-      const sent = currentItem
-        ? await sendSharedChecklist('update', [
-            {
-              planId: planId as string,
-              checklistItemId: itemId,
-              content: currentItem.content,
-              isChecked,
-              sortOrder: currentItem.sortOrder,
-            },
-          ])
-        : 'skipped';
-
-      return sent === 'acked'
-        ? ({ transport: 'websocket' } satisfies ChecklistTransportResult)
-        : editChecklistItemChecked(planId as string, scope, itemId, isChecked);
-    },
+    mutationFn: ({ itemId, isChecked }) =>
+      editChecklistItemChecked(planId as string, scope, itemId, isChecked),
     onMutate: async ({ itemId, isChecked }) => {
-      const cancelledFetch =
-        queryClient.getQueryState(queryKey)?.fetchStatus === 'fetching';
       await queryClient.cancelQueries({ queryKey });
       const previousItems = queryClient.getQueryData<ChecklistItem[]>(queryKey);
 
-      queryClient.setQueryData<ChecklistItem[]>(queryKey, items =>
-        (items ?? []).map(item =>
-          item.itemId === itemId ? { ...item, isChecked } : item,
-        ),
+      const optimisticItems = queryClient.setQueryData<ChecklistItem[]>(
+        queryKey,
+        items =>
+          (items ?? []).map(item =>
+            item.itemId === itemId ? { ...item, isChecked } : item,
+          ),
       );
 
-      return { previousItems, cancelledFetch };
+      return { previousItems, optimisticItems };
     },
     onError: (_error, _variables, context) => {
-      if (context?.previousItems) {
+      if (
+        context?.previousItems &&
+        queryClient.getQueryData(queryKey) === context.optimisticItems
+      ) {
         queryClient.setQueryData(queryKey, context.previousItems);
       }
     },
 
-    onSettled: (_data, error, _variables, context) => {
-      if (error || context?.cancelledFetch) {
-        Promise.resolve(queryClient.invalidateQueries({ queryKey })).catch(
-          () => undefined,
-        );
-      }
+    onSettled: () => {
+      Promise.resolve(queryClient.invalidateQueries({ queryKey })).catch(
+        () => undefined,
+      );
     },
   });
 }
@@ -335,21 +176,10 @@ export function useDeleteChecklistItem(
   scope: ChecklistScope,
 ) {
   const invalidateScope = useInvalidateScope(planId);
-  const sendSharedChecklist = useSharedChecklistTransport(planId, scope);
 
-  return useMutation<void | ChecklistTransportResult, unknown, number>({
-    mutationFn: async itemId => {
-      const sent = await sendSharedChecklist('delete', [
-        { planId: planId as string, checklistItemId: itemId },
-      ]);
-
-      return sent === 'acked'
-        ? ({ transport: 'websocket' } satisfies ChecklistTransportResult)
-        : deleteChecklistItem(planId as string, scope, itemId);
-    },
-    onSettled: result => {
-      if (isChecklistTransportResult(result)) return;
-
+  return useMutation<void, unknown, number>({
+    mutationFn: itemId => deleteChecklistItem(planId as string, scope, itemId),
+    onSettled: () => {
       Promise.resolve(invalidateScope(scope)).catch(() => undefined);
     },
   });
@@ -361,75 +191,47 @@ export function useReorderChecklistItems(
 ) {
   const queryClient = useQueryClient();
   const queryKey = checklistKeys.scope(planId ?? '', scope);
-  const sendSharedChecklist = useSharedChecklistTransport(planId, scope);
 
   return useMutation<
-    void | ChecklistTransportResult,
+    void,
     unknown,
     number[],
     OptimisticChecklistContext
   >({
-    mutationFn: async itemIds => {
-      const itemsById = new Map(
-        (
-          queryClient.getQueryData<ChecklistItem[]>(
-            checklistKeys.scope(planId ?? '', 'shared'),
-          ) ?? []
-        ).map(item => [item.itemId, item]),
-      );
-      const syncItems = itemIds.flatMap((itemId, sortOrder) => {
-        const item = itemsById.get(itemId);
-        return item
-          ? [
-              {
-                planId: planId as string,
-                checklistItemId: item.itemId,
-                content: item.content,
-                isChecked: item.isChecked,
-                sortOrder,
-              },
-            ]
-          : [];
-      });
-      const sent =
-        syncItems.length > 0
-          ? await sendSharedChecklist('update', syncItems)
-          : 'skipped';
-
-      return sent === 'acked'
-        ? ({ transport: 'websocket' } satisfies ChecklistTransportResult)
-        : reorderChecklistItems(planId as string, scope, itemIds);
-    },
+    mutationFn: itemIds =>
+      reorderChecklistItems(planId as string, scope, itemIds),
     onMutate: async itemIds => {
-      const cancelledFetch =
-        queryClient.getQueryState(queryKey)?.fetchStatus === 'fetching';
       await queryClient.cancelQueries({ queryKey });
       const previousItems = queryClient.getQueryData<ChecklistItem[]>(queryKey);
 
-      queryClient.setQueryData<ChecklistItem[]>(queryKey, items => {
-        const byId = new Map((items ?? []).map(item => [item.itemId, item]));
-        return itemIds
-          .map((itemId, index) => {
-            const item = byId.get(itemId);
-            return item ? { ...item, sortOrder: index } : null;
-          })
-          .filter((item): item is ChecklistItem => !!item);
-      });
+      const optimisticItems = queryClient.setQueryData<ChecklistItem[]>(
+        queryKey,
+        items => {
+          const byId = new Map((items ?? []).map(item => [item.itemId, item]));
+          return itemIds
+            .map((itemId, index) => {
+              const item = byId.get(itemId);
+              return item ? { ...item, sortOrder: index } : null;
+            })
+            .filter((item): item is ChecklistItem => !!item);
+        },
+      );
 
-      return { previousItems, cancelledFetch };
+      return { previousItems, optimisticItems };
     },
     onError: (_error, _variables, context) => {
-      if (context?.previousItems) {
+      if (
+        context?.previousItems &&
+        queryClient.getQueryData(queryKey) === context.optimisticItems
+      ) {
         queryClient.setQueryData(queryKey, context.previousItems);
       }
     },
 
-    onSettled: (_data, error, _variables, context) => {
-      if (error || context?.cancelledFetch) {
-        Promise.resolve(queryClient.invalidateQueries({ queryKey })).catch(
-          () => undefined,
-        );
-      }
+    onSettled: () => {
+      Promise.resolve(queryClient.invalidateQueries({ queryKey })).catch(
+        () => undefined,
+      );
     },
   });
 }
@@ -466,8 +268,10 @@ export function usePlanChecklists(
         return;
       }
 
+      const queryKey = checklistKeys.scope(planId, 'shared');
+      void queryClient.cancelQueries({ queryKey }, { revert: false });
       queryClient.setQueryData<ChecklistItem[]>(
-        checklistKeys.scope(planId, 'shared'),
+        queryKey,
         items => applyChecklistSync(items, event),
       );
     };

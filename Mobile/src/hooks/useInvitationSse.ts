@@ -38,6 +38,7 @@ type InvitationCustomEvent = (typeof CUSTOM_EVENT_TYPES)[number];
 interface UseInvitationSseParams {
   enabled: boolean;
   onInvitationEvent: () => void | Promise<void>;
+  onConnected?: () => void | Promise<void>;
 
   onRequestResult?: (result: CollaborationRequestResult) => void;
 }
@@ -52,6 +53,7 @@ const resolveSseUrl = (): string => {
 export function useInvitationSse({
   enabled,
   onInvitationEvent,
+  onConnected,
   onRequestResult,
 }: UseInvitationSseParams) {
   const sourceRef = useRef<EventSource | null>(null);
@@ -61,11 +63,16 @@ export function useInvitationSse({
   const seenEventIdsRef = useRef<Set<string>>(new Set());
   const authRetryCountRef = useRef(0);
   const onInvitationEventRef = useRef(onInvitationEvent);
+  const onConnectedRef = useRef(onConnected);
   const onRequestResultRef = useRef(onRequestResult);
 
   useEffect(() => {
     onInvitationEventRef.current = onInvitationEvent;
   }, [onInvitationEvent]);
+
+  useEffect(() => {
+    onConnectedRef.current = onConnected;
+  }, [onConnected]);
 
   useEffect(() => {
     onRequestResultRef.current = onRequestResult;
@@ -156,6 +163,9 @@ export function useInvitationSse({
       reconnectDelayRef.current = INITIAL_RECONNECT_DELAY_MS;
       authRetryCountRef.current = 0;
       sseLog('[SSE] 초대 스트림에 연결되었습니다.');
+      Promise.resolve(onConnectedRef.current?.()).catch(error => {
+        sseLog('[SSE] connection callback failed:', error);
+      });
       Promise.resolve(onInvitationEventRef.current()).catch(error => {
         sseLog('[SSE] 초대 목록 재동기화 실패:', error);
       });
