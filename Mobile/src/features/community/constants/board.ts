@@ -2,7 +2,7 @@ export const POST_TITLE_MAX_LENGTH = 100;
 
 export const BOARDS = [
   { key: 'free', label: '자유게시판' },
-  { key: 'qna', label: 'Q&A' },
+  { key: 'qna', label: '질문게시판' },
   { key: 'recommend', label: '장소 추천' },
 ] as const;
 
