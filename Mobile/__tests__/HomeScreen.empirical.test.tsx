@@ -118,9 +118,9 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
       const texts = renderer.root
         .findAllByType(Text)
         .map(t => t.props.children);
-      expect(texts).toContain('여행지 선택');
-      expect(texts).toContain('날짜 선택');
-      expect(texts).toContain('인원 선택');
+      expect(texts).toContain('여행지를 선택해 주세요');
+      expect(texts).toContain('날짜를 선택해 주세요');
+      expect(texts).toContain('인원을 선택해 주세요');
     });
 
     it('renders valid filled state and enables CTA interaction', () => {
@@ -191,7 +191,7 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
       expect(submitBtn!.props.accessibilityState.disabled).toBe(true);
 
       const submitText = submitBtn!.findByType(Text);
-      expect(submitText.props.children).toBe('일정 만드는 중…');
+      expect(submitText.props.children).toBe('일정을 만드는 중…');
     });
 
     it('handles extreme long text without crashing and applies numberOfLines={1}', () => {
@@ -284,12 +284,12 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
       const dateRow = touchables.find(
         t =>
           t.props.accessibilityLabel &&
-          t.props.accessibilityLabel.startsWith('기간'),
+          t.props.accessibilityLabel.startsWith('여행 기간'),
       );
       const paxRow = touchables.find(
         t =>
           t.props.accessibilityLabel &&
-          t.props.accessibilityLabel.startsWith('인원수'),
+          t.props.accessibilityLabel.startsWith('함께하는 인원'),
       );
 
       expect(destRow).toBeDefined();

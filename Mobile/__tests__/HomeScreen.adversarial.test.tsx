@@ -166,7 +166,7 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
         const touchables = renderer.root.findAllByType(TouchableOpacity);
         const calendarTouchable = touchables.find(t => {
           const label = t.props.accessibilityLabel;
-          return label && label.includes('기간');
+          return label && label.includes('여행 기간');
         });
 
         expect(calendarTouchable).toBeDefined();
@@ -188,7 +188,7 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
         const touchables = renderer.root.findAllByType(TouchableOpacity);
         const paxTouchable = touchables.find(t => {
           const label = t.props.accessibilityLabel;
-          return label && label.includes('인원수');
+          return label && label.includes('함께하는 인원');
         });
 
         expect(paxTouchable).toBeDefined();
@@ -269,7 +269,7 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
 
         const texts = submitBtn!.findAllByType(Text);
         const hasCreatingText = texts.some(
-          t => t.props.children === '일정 만드는 중…',
+          t => t.props.children === '일정을 만드는 중…',
         );
         expect(hasCreatingText).toBe(true);
       });
@@ -288,13 +288,13 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
 
       const touchables = renderer.root.findAllByType(TouchableOpacity);
       const searchTouchable = touchables.find(
-        t => t.props.accessibilityLabel === '여행지, 여행지 선택',
+        t => t.props.accessibilityLabel === '여행지, 여행지를 선택해 주세요',
       );
       const calendarTouchable = touchables.find(
-        t => t.props.accessibilityLabel === '기간, 날짜 선택',
+        t => t.props.accessibilityLabel === '여행 기간, 날짜를 선택해 주세요',
       );
       const paxTouchable = touchables.find(
-        t => t.props.accessibilityLabel === '인원수, 인원 선택',
+        t => t.props.accessibilityLabel === '함께하는 인원, 인원을 선택해 주세요',
       );
 
       expect(searchTouchable).toBeDefined();
@@ -320,10 +320,10 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
         t => t.props.accessibilityLabel === `여행지, ${complexDest}`,
       );
       const calendarTouchable = touchables.find(
-        t => t.props.accessibilityLabel === `기간, ${complexDate}`,
+        t => t.props.accessibilityLabel === `여행 기간, ${complexDate}`,
       );
       const paxTouchable = touchables.find(
-        t => t.props.accessibilityLabel === `인원수, ${complexPax}`,
+        t => t.props.accessibilityLabel === `함께하는 인원, ${complexPax}`,
       );
 
       expect(searchTouchable).toBeDefined();

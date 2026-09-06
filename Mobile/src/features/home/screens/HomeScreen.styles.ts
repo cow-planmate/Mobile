@@ -88,26 +88,36 @@ export const styles = StyleSheet.create({
   heroInfo: {
     zIndex: 2,
   },
-  // 여러 지역을 섞어 보여줄 때만 나오는 지역 이름.
-  placeRegion: {
+  // 웹 히어로의 작은 라벨 자리. 웹은 대문자 로마자라 트래킹을 줬지만
+  // 한글 문장에는 트래킹을 주지 않는다.
+  placeAsk: {
     fontSize: normalize(11),
     fontFamily: tokens.fontFamily.medium,
-    color: 'rgba(255, 255, 255, 0.78)',
-    marginBottom: normalize(3),
+    color: 'rgba(255, 255, 255, 0.74)',
+    letterSpacing: -0.2,
+    marginBottom: normalize(5),
   },
   placeTitle: {
-    fontSize: normalize(22),
-    fontFamily: tokens.fontFamily.semibold,
+    fontSize: normalize(24),
+    fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.white,
-    lineHeight: normalize(26),
-    letterSpacing: -0.6,
+    lineHeight: normalize(28),
+    letterSpacing: -1,
+  },
+  // 지역명은 여러 지역을 섞어 보여줄 때만 앞에 붙는다. 여행지를 고른 뒤에는
+  // 아래 설명 줄과 폼 카드가 이미 지역명을 말하므로 로마자만 남는다.
+  placeCaption: {
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.medium,
+    color: 'rgba(255, 255, 255, 0.7)',
+    letterSpacing: -0.2,
+    marginTop: normalize(4),
   },
   placeRoman: {
     fontSize: normalize(10),
     fontFamily: tokens.fontFamily.medium,
-    color: 'rgba(255, 255, 255, 0.66)',
-    letterSpacing: 1.8,
-    marginTop: normalize(2),
+    color: 'rgba(255, 255, 255, 0.6)',
+    letterSpacing: 1.4,
     textTransform: 'uppercase',
   },
   progressBarContainer: {
@@ -168,9 +178,9 @@ export const styles = StyleSheet.create({
     width: normalize(20),
     height: normalize(20),
     borderRadius: normalize(10),
-    backgroundColor: tokens.colors.white,
+    backgroundColor: tokens.colors.primarySurface,
     borderWidth: 2,
-    borderColor: tokens.colors.borderStrong,
+    borderColor: '#BFD3FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: normalize(12),
@@ -182,7 +192,7 @@ export const styles = StyleSheet.create({
   timelineDotText: {
     fontSize: normalize(10),
     fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.textSecondary,
+    color: tokens.colors.primary,
   },
   timelineDotTextFilled: {
     color: tokens.colors.white,

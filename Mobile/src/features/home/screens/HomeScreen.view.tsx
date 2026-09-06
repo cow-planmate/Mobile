@@ -94,7 +94,7 @@ const InputRow = ({
             <Text style={styles.placeholderText}>{placeholder}</Text>
           )}
           <View style={styles.rowIcon}>
-            <Icon color="#64748B" size={18} />
+            <Icon color={tokens.colors.primary} size={18} />
           </View>
         </View>
       </View>
@@ -369,16 +369,23 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
                         />
                       </View>
                       <LinearGradient
-                        colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.4)']}
-                        locations={[0.62, 1]}
+                        colors={[
+                          'rgba(0, 0, 0, 0)',
+                          'rgba(0, 0, 0, 0.14)',
+                          'rgba(0, 0, 0, 0.58)',
+                        ]}
+                        locations={[0, 0.5, 1]}
                         style={styles.heroOverlay}
                       />
                       <View style={styles.heroInfo}>
-                        {!!item.region && (
-                          <Text style={styles.placeRegion}>{item.region}</Text>
-                        )}
-                        <Text style={styles.placeTitle}>{item.place}</Text>
-                        <Text style={styles.placeRoman}>{item.roman}</Text>
+                        <Text style={styles.placeAsk}>이런 곳은 어떠세요?</Text>
+                        <Text style={styles.placeTitle} numberOfLines={1}>
+                          {item.place}
+                        </Text>
+                        <Text style={styles.placeCaption} numberOfLines={1}>
+                          {item.region ? `${item.region} · ` : ''}
+                          <Text style={styles.placeRoman}>{item.roman}</Text>
+                        </Text>
                       </View>
                     </Animated.View>
                   );
@@ -423,25 +430,25 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
               stepNumber={1}
               label="여행지"
               value={destination}
-              placeholder="여행지 선택"
+              placeholder="여행지를 선택해 주세요"
               icon={MapPin}
               onPress={onOpenSearchModal}
             />
 
             <InputRow
               stepNumber={2}
-              label="기간"
+              label="여행 기간"
               value={dateText}
-              placeholder="날짜 선택"
+              placeholder="날짜를 선택해 주세요"
               icon={CalendarIcon}
               onPress={onOpenCalendar}
             />
 
             <InputRow
               stepNumber={3}
-              label="인원수"
+              label="함께하는 인원"
               value={paxText}
-              placeholder="인원 선택"
+              placeholder="인원을 선택해 주세요"
               icon={UserIcon}
               onPress={onOpenPaxModal}
               isLast
@@ -466,7 +473,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
                 (!isFormValid || isCreating) && styles.submitButtonTextDisabled,
               ]}
             >
-              {isCreating ? '일정 만드는 중…' : '나만의 일정 만들기'}
+              {isCreating ? '일정을 만드는 중…' : '나만의 일정 만들기'}
             </Text>
             {!isCreating && (
               <ArrowRight

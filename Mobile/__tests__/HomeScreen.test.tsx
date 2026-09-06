@@ -466,7 +466,7 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
     const paxRow = touchables.find(
       t =>
         t.props.accessibilityLabel &&
-        t.props.accessibilityLabel.startsWith('인원수'),
+        t.props.accessibilityLabel.startsWith('함께하는 인원'),
     );
     expect(paxRow).toBeDefined();
   });
