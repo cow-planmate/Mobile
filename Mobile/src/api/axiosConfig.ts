@@ -11,7 +11,9 @@ import { isTokenAuthFailure } from '../utils/authError';
 const normalizedApiUrl = (API_URL ?? '').trim().replace(/\/+$/, '');
 
 if (!normalizedApiUrl && __DEV__) {
-  console.warn('[axiosConfig] API_URL이 비어 있습니다. .env 설정을 확인하세요.');
+  console.warn(
+    '[axiosConfig] API_URL이 비어 있습니다. .env 설정을 확인하세요.',
+  );
 }
 
 // 로그아웃 상태에서만 호출되는 경로. 만료된 토큰이 남아 있으면 요청 직전에
@@ -25,7 +27,6 @@ const NO_AUTH_PATHS = [
   '/api/auth/password/email',
   '/api/oauth/exchange',
   '/api/oauth/complete',
-  '/api/beta/feedback',
 ];
 
 const TOKEN_REFRESH_LEEWAY_MS = 60 * 1000;
@@ -38,7 +39,9 @@ const requestPath = (url: string | undefined): string => {
 
 const matchesPath = (url: string | undefined, paths: string[]) => {
   const pathname = requestPath(url);
-  return paths.some(path => pathname === path || pathname.startsWith(`${path}/`));
+  return paths.some(
+    path => pathname === path || pathname.startsWith(`${path}/`),
+  );
 };
 
 let refreshPromise: Promise<string | null> | null = null;
@@ -117,108 +120,107 @@ const clearSession = async () => {
 
 if (axios && axios.defaults) {
   axios.defaults.baseURL = normalizedApiUrl;
-  axios.defaults.timeout = 15000; 
+  axios.defaults.timeout = 15000;
   if (axios.defaults.headers && axios.defaults.headers.common) {
     axios.defaults.headers.common['Content-Type'] = 'application/json';
   }
 }
 
 if (axios && axios.interceptors && axios.interceptors.request) {
-axios.interceptors.request.use(
-  async (config: InternalAxiosRequestConfig) => {
+  axios.interceptors.request.use(
+    async (config: InternalAxiosRequestConfig) => {
+      const isNoAuthPath = matchesPath(config.url, NO_AUTH_PATHS);
 
-    const isNoAuthPath = matchesPath(config.url, NO_AUTH_PATHS);
+      if (isNoAuthPath) {
+        delete config.headers.Authorization;
+      } else if (!config.headers.Authorization) {
+        let token = await AsyncStorage.getItem('accessToken');
 
-    if (isNoAuthPath) {
-      delete config.headers.Authorization;
-    } else if (!config.headers.Authorization) {
+        if (isTokenExpiringSoon(token, TOKEN_REFRESH_LEEWAY_MS, clockSkewMs)) {
+          token = (await refreshAccessToken()) ?? token;
+        }
 
-      let token = await AsyncStorage.getItem('accessToken');
-
-      if (isTokenExpiringSoon(token, TOKEN_REFRESH_LEEWAY_MS, clockSkewMs)) {
-        token = (await refreshAccessToken()) ?? token;
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
 
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
+      if (__DEV__) {
+        const fullUrl =
+          config.baseURL && !config.url?.startsWith('http')
+            ? `${config.baseURL}${config.url}`
+            : config.url;
 
-    if (__DEV__) {
-      const fullUrl =
-        config.baseURL && !config.url?.startsWith('http')
-          ? `${config.baseURL}${config.url}`
-          : config.url;
-
-      console.log(
-        `\x1b[36m[API REQ]\x1b[0m ${config.method?.toUpperCase()} ${fullUrl}`,
-        config.data ? { data: config.data } : '',
-      );
-    }
-
-    return config;
-  },
-  (error: AxiosError) => {
-    if (__DEV__) {
-      console.error('\x1b[31m[API REQ ERR]\x1b[0m', error);
-    }
-    return Promise.reject(error);
-  },
-);
-
-if (axios && axios.interceptors && axios.interceptors.response) {
-axios.interceptors.response.use(
-  response => {
-    if (__DEV__) {
-      console.log(`\x1b[32m[API RES]\x1b[0m ${response.status} ${response.config.url}`);
-    }
-    return response;
-  },
-  async (error: AxiosError) => {
-    const isCanceled =
-      axios.isCancel?.(error) ||
-      error.code === 'ERR_CANCELED' ||
-      error.name === 'CanceledError';
-
-    if (__DEV__ && !isCanceled) {
-      const resData = error.response?.data as any;
-      const statusCode = error.response?.status || 'FAIL';
-      const errCode = resData?.code || 'UNKNOWN';
-      const errMsg = resData?.message || error.message;
-
-      console.error(
-        `\x1b[31m[API ERR]\x1b[0m ${statusCode} [${errCode}] ${errMsg} (${error.config?.url})`,
-      );
-    }
-
-    const originalRequest = error.config as InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    };
-
-    if (
-      isTokenAuthFailure(error) &&
-      originalRequest &&
-      !originalRequest._retry &&
-      !matchesPath(originalRequest.url, NO_AUTH_PATHS)
-    ) {
-
-      originalRequest._retry = true;
-
-      const newAccessToken = await refreshAccessToken();
-
-      if (newAccessToken) {
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        return axios(originalRequest);
+        console.log(
+          `\x1b[36m[API REQ]\x1b[0m ${config.method?.toUpperCase()} ${fullUrl}`,
+          config.data ? { data: config.data } : '',
+        );
       }
 
-      await clearSession();
+      return config;
+    },
+    (error: AxiosError) => {
+      if (__DEV__) {
+        console.error('\x1b[31m[API REQ ERR]\x1b[0m', error);
+      }
       return Promise.reject(error);
-    }
+    },
+  );
 
-    return Promise.reject(error);
-  },
-);
-}
+  if (axios && axios.interceptors && axios.interceptors.response) {
+    axios.interceptors.response.use(
+      response => {
+        if (__DEV__) {
+          console.log(
+            `\x1b[32m[API RES]\x1b[0m ${response.status} ${response.config.url}`,
+          );
+        }
+        return response;
+      },
+      async (error: AxiosError) => {
+        const isCanceled =
+          axios.isCancel?.(error) ||
+          error.code === 'ERR_CANCELED' ||
+          error.name === 'CanceledError';
+
+        if (__DEV__ && !isCanceled) {
+          const resData = error.response?.data as any;
+          const statusCode = error.response?.status || 'FAIL';
+          const errCode = resData?.code || 'UNKNOWN';
+          const errMsg = resData?.message || error.message;
+
+          console.error(
+            `\x1b[31m[API ERR]\x1b[0m ${statusCode} [${errCode}] ${errMsg} (${error.config?.url})`,
+          );
+        }
+
+        const originalRequest = error.config as InternalAxiosRequestConfig & {
+          _retry?: boolean;
+        };
+
+        if (
+          isTokenAuthFailure(error) &&
+          originalRequest &&
+          !originalRequest._retry &&
+          !matchesPath(originalRequest.url, NO_AUTH_PATHS)
+        ) {
+          originalRequest._retry = true;
+
+          const newAccessToken = await refreshAccessToken();
+
+          if (newAccessToken) {
+            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+            return axios(originalRequest);
+          }
+
+          await clearSession();
+          return Promise.reject(error);
+        }
+
+        return Promise.reject(error);
+      },
+    );
+  }
 }
 
 export default axios;

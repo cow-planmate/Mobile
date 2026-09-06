@@ -15,18 +15,13 @@ import ProfileScreenView from './ProfileScreen.view';
 import { resolveApiUrl } from '../../../utils/apiUrl';
 import { changePassword } from '../../../api/auth';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
-import {
-  changeProfileVisibility,
-  deleteProfileImage,
-  uploadProfileImage,
-} from '../../../api/user';
+import { deleteProfileImage, uploadProfileImage } from '../../../api/user';
 import {
   useUserProfile,
   UserProfile,
   USER_PROFILE_QUERY_KEY,
 } from '../../../hooks/useUserProfile';
 import { buildProfileImageUploadFile } from '../utils/profileImage';
-import { useSubmitLock } from '../../../hooks/useSubmitLock';
 const EMPTY_PROFILE: UserProfile = {
   name: '',
   email: '',
@@ -50,10 +45,6 @@ export default function ProfileScreen({ route }: any) {
   const [isThemeModalVisible, setThemeModalVisible] = useState(false);
   const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
   const [isProfileImageUpdating, setIsProfileImageUpdating] = useState(false);
-  const {
-    isSubmitting: isProfileVisibilityUpdating,
-    runExclusive: runProfileVisibilityExclusive,
-  } = useSubmitLock();
 
   const patchProfile = useCallback(
     (patch: Partial<UserProfile>) => {
@@ -281,15 +272,6 @@ export default function ProfileScreen({ route }: any) {
     [queryClient],
   );
 
-  const handleChangeProfileVisibility = useCallback(
-    (profilePublic: boolean) =>
-      runProfileVisibilityExclusive(async () => {
-        await changeProfileVisibility(profilePublic);
-        patchProfile({ profilePublic });
-      }),
-    [patchProfile, runProfileVisibilityExclusive],
-  );
-
   const handleChangeProfileImage = useCallback(async () => {
     let result: ImagePickerResponse;
     try {
@@ -376,13 +358,10 @@ export default function ProfileScreen({ route }: any) {
   return (
     <ProfileScreenView
       loading={isLoading}
-
       loadError={isError}
       onRetryLoad={refetch}
       user={user}
       onRenamePlan={handleRenamePlan}
-      onChangeProfileVisibility={handleChangeProfileVisibility}
-      isProfileVisibilityUpdating={isProfileVisibilityUpdating}
       onChangeProfileImage={handleChangeProfileImage}
       onDeleteProfileImage={handleDeleteProfileImage}
       isProfileImageUpdating={isProfileImageUpdating}

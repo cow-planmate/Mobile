@@ -26,19 +26,15 @@ export async function deleteProfileImage(): Promise<void> {
   await axios.delete(resolveApiUrl('/api/user/profile-image'));
 }
 
-export async function changeProfileVisibility(
-  profilePublic: boolean,
-): Promise<void> {
-  await axios.patch(resolveApiUrl('/api/user/profile/visibility'), {
-    profilePublic,
-  });
-}
-
 export interface PublicUserProfile {
   userId: string;
   nickname: string;
   profileImageUrl: string | null;
-  preferredThemes: { preferredThemeId: number; preferredThemeName: string; category: string }[];
+  preferredThemes: {
+    preferredThemeId: number;
+    preferredThemeName: string;
+    category: string;
+  }[];
   myPlanCount: number;
   editablePlanCount: number;
 }

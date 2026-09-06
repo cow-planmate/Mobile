@@ -3,9 +3,11 @@ import { action } from 'storybook/actions';
 import ProfileScreenView from './ProfileScreen.view';
 
 const noop = () => {};
-const asyncAction = (label: string) => async (...args: unknown[]) => {
-  action(label)(...args);
-};
+const asyncAction =
+  (label: string) =>
+  async (...args: unknown[]) => {
+    action(label)(...args);
+  };
 
 const USER = {
   name: '민영',
@@ -58,7 +60,6 @@ const meta = {
     handleUpdatePassword: action('비밀번호 변경'),
     handleResign: action('회원 탈퇴'),
     onRenamePlan: asyncAction('일정 이름 변경'),
-    onChangeProfileVisibility: asyncAction('프로필 공개 범위 변경'),
     onChangeProfileImage: asyncAction('프로필 사진 변경'),
     onDeleteProfileImage: asyncAction('프로필 사진 삭제'),
     isProfileImageUpdating: false,
@@ -75,11 +76,6 @@ export const TravelSection: Story = { name: '여행 목록' };
 export const NoPlans: Story = {
   name: '일정 없음',
   args: { user: { ...USER, myPlans: [] } },
-};
-
-export const PrivateProfile: Story = {
-  name: '비공개 프로필',
-  args: { user: { ...USER, profilePublic: false } },
 };
 
 export const StatsLoading: Story = {

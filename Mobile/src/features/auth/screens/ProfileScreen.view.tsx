@@ -9,7 +9,6 @@ import {
   Pressable,
   TextInput,
   Alert,
-  Switch,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import PopupModal from '../../../components/common/PopupModal';
@@ -81,7 +80,6 @@ import {
 } from '../components/ProfileActivitySections';
 import { UnderlineTabs } from '../../../components/ui';
 import { tokens } from '../../../theme/tokens';
-import FeedbackModal from '../components/FeedbackModal';
 import { verifyNicknameAvailable } from '../../../api/auth';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
@@ -406,11 +404,6 @@ interface ProfileScreenViewProps {
 
   onRenamePlan: (planId: string, newName: string) => Promise<void>;
 
-  onChangeProfileVisibility: (
-    profilePublic: boolean,
-  ) => Promise<void | undefined>;
-  isProfileVisibilityUpdating?: boolean;
-
   onChangeProfileImage: () => Promise<void>;
 
   onDeleteProfileImage: () => Promise<void>;
@@ -434,8 +427,6 @@ export default function ProfileScreenView({
   handleUpdatePassword,
   handleResign,
   onRenamePlan,
-  onChangeProfileVisibility,
-  isProfileVisibilityUpdating = false,
   onChangeProfileImage,
   onDeleteProfileImage,
   isProfileImageUpdating,
@@ -446,7 +437,6 @@ export default function ProfileScreenView({
   const queryClient = useQueryClient();
   const { showAlert } = useAlert();
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [isFeedbackModalVisible, setFeedbackModalVisible] = useState(false);
   const [tempNickname, setTempNickname] = useState('');
   const [tempBirthdate, setTempBirthdate] = useState('');
   const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
@@ -502,12 +492,7 @@ export default function ProfileScreenView({
     }
   }, [user]);
 
-  const [isProfilePublic, setIsProfilePublic] = useState(user.profilePublic);
-  const profileVisibilityLock = useSubmitLock();
   const profileSaveLock = useSubmitLock();
-  useEffect(() => {
-    setIsProfilePublic(user.profilePublic);
-  }, [user.profilePublic]);
 
   const [menuPlan, setMenuPlan] = useState<PlanItem | null>(null);
   const [isPlanMenuVisible, setPlanMenuVisible] = useState(false);
@@ -789,21 +774,6 @@ export default function ProfileScreenView({
     resolveAvatarUrl(user.profileImageUrl, null, 200) ??
     (user.email ? gravatarUrl(user.email, 200) : null);
 
-  const handleToggleProfilePublic = (next: boolean) =>
-    profileVisibilityLock.runExclusive(async () => {
-      setIsProfilePublic(next);
-      try {
-        await onChangeProfileVisibility(next);
-      } catch (e) {
-        setIsProfilePublic(!next);
-        Toast.show({
-          type: 'error',
-          text1: '프로필 공개 설정을 변경하지 못했어요.',
-          position: 'top',
-        });
-      }
-    });
-
   const handleProfileImagePress = () => {
     if (isProfileImageUpdating) return;
 
@@ -999,15 +969,6 @@ export default function ProfileScreenView({
               <Text style={styles.profileEditText}>프로필 수정</Text>
             </TouchableOpacity>
           </View>
-
-          <Text style={styles.profileVisibility}>
-            <Text style={styles.profileVisibilityStrong}>
-              {isProfilePublic ? '공개 프로필' : '비공개 프로필'}
-            </Text>
-            {isProfilePublic
-              ? ' · 다른 사람이 내 여행기를 볼 수 있어요'
-              : ' · 나만 볼 수 있어요'}
-          </Text>
         </View>
 
         <View style={styles.sectionBand} />
@@ -1370,45 +1331,6 @@ export default function ProfileScreenView({
                 {user.socialLogin ? '소셜 로그인' : '변경하기'}
               </Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.linkRow}
-              onPress={() => setFeedbackModalVisible(true)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-            >
-              <Text style={styles.linkLabel}>피드백</Text>
-              <Text style={styles.linkValue}>보내기</Text>
-            </TouchableOpacity>
-
-            <View style={styles.linkRow}>
-              <View style={styles.visibilityText}>
-                <Text style={styles.linkLabel}>프로필 공개</Text>
-                <Text style={styles.visibilityDescription}>
-                  {isProfilePublic
-                    ? '다른 사람이 내 프로필을 볼 수 있어요'
-                    : '나만 내 프로필을 볼 수 있어요'}
-                </Text>
-              </View>
-              <Switch
-                value={isProfilePublic}
-                onValueChange={handleToggleProfilePublic}
-                disabled={
-                  isProfileVisibilityUpdating ||
-                  profileVisibilityLock.isSubmitting
-                }
-                accessibilityState={{
-                  disabled:
-                    isProfileVisibilityUpdating ||
-                    profileVisibilityLock.isSubmitting,
-                }}
-                trackColor={{
-                  false: tokens.colors.border,
-                  true: COLORS.primary,
-                }}
-                thumbColor={tokens.colors.white}
-              />
-            </View>
           </View>
 
           <TouchableOpacity
@@ -1436,10 +1358,6 @@ export default function ProfileScreenView({
         visible={isPasswordModalVisible}
         onClose={() => setPasswordModalVisible(false)}
         onConfirm={handleUpdatePassword}
-      />
-      <FeedbackModal
-        visible={isFeedbackModalVisible}
-        onClose={() => setFeedbackModalVisible(false)}
       />
 
       <MenuModal

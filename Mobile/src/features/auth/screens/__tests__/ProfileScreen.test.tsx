@@ -2,7 +2,6 @@ import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 import axios from 'axios';
 import ProfileScreen from '../ProfileScreen';
-import { changeProfileVisibility } from '../../../../api/user';
 
 jest.mock('axios', () => ({
   __esModule: true,
@@ -88,7 +87,6 @@ jest.mock('../../../community/hooks/queries', () => ({
 }));
 
 jest.mock('../../../../api/user', () => ({
-  changeProfileVisibility: jest.fn(),
   deleteProfileImage: jest.fn(),
   uploadProfileImage: jest.fn(),
 }));
@@ -102,10 +100,6 @@ jest.mock('../ProfileScreen.view', () => {
   };
 });
 
-const mockChangeProfileVisibility =
-  changeProfileVisibility as jest.MockedFunction<
-    typeof changeProfileVisibility
-  >;
 const mockAxiosDelete = axios.delete as jest.MockedFunction<
   typeof axios.delete
 >;
@@ -118,36 +112,6 @@ describe('ProfileScreen mutations', () => {
     mockClearSession.mockResolvedValue(undefined);
     mockRevokeRefreshToken.mockResolvedValue(undefined);
     mockAxiosDelete.mockResolvedValue({ status: 204 } as any);
-  });
-
-  it('sends only one profile visibility request for same-render toggles', async () => {
-    let resolveChange: (() => void) | undefined;
-    mockChangeProfileVisibility.mockImplementationOnce(
-      () =>
-        new Promise<void>(resolve => {
-          resolveChange = resolve;
-        }),
-    );
-
-    let tree: renderer.ReactTestRenderer;
-    act(() => {
-      tree = renderer.create(<ProfileScreen route={{ params: {} }} />);
-    });
-    const props = tree!.root.findByType('ProfileScreenView' as any).props;
-
-    let first: Promise<unknown>;
-    let second: Promise<unknown>;
-    act(() => {
-      first = props.onChangeProfileVisibility(true);
-      second = props.onChangeProfileVisibility(false);
-    });
-
-    await act(async () => {
-      resolveChange?.();
-      await Promise.all([first!, second!]);
-    });
-    act(() => tree!.unmount());
-    expect(mockChangeProfileVisibility).toHaveBeenCalledTimes(1);
   });
 
   it('clears the local session before the account deletion success alert is confirmed', async () => {

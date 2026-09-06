@@ -50,7 +50,6 @@ jest.mock('../../../../api/trips', () => ({
 jest.mock('../../../../api/auth', () => ({
   verifyNicknameAvailable: jest.fn(),
 }));
-jest.mock('../../components/FeedbackModal', () => () => null);
 jest.mock('../../../../components/common/FallbackImage', () => () => null);
 jest.mock('../../components/ProfileActivitySections', () => ({
   ProfileCalendarSection: () => null,
@@ -88,8 +87,6 @@ const BASE_PROPS = {
   handleUpdatePassword: jest.fn(),
   handleResign: jest.fn(),
   onRenamePlan: jest.fn(),
-  onChangeProfileVisibility: jest.fn(),
-  isProfileVisibilityUpdating: false,
   onChangeProfileImage: jest.fn(),
   onDeleteProfileImage: jest.fn(),
   isProfileImageUpdating: false,
@@ -166,8 +163,6 @@ describe('ProfileScreenView profile save', () => {
           handleUpdatePassword={jest.fn()}
           handleResign={jest.fn()}
           onRenamePlan={jest.fn()}
-          onChangeProfileVisibility={jest.fn()}
-          isProfileVisibilityUpdating={false}
           onChangeProfileImage={jest.fn()}
           onDeleteProfileImage={jest.fn()}
           isProfileImageUpdating={false}

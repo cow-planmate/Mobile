@@ -215,11 +215,6 @@ export const styles = StyleSheet.create({
     fontSize: normalize(14),
     color: COLORS.text,
   },
-  visibilityDescription: {
-    flex: 1,
-    fontSize: normalize(12),
-    color: COLORS.textSecondary,
-  },
 
   pickerField: {
     justifyContent: 'center',
@@ -436,7 +431,8 @@ export const styles = StyleSheet.create({
     borderColor: COLORS.placeholder,
     borderRadius: normalize(4),
     alignItems: 'center',
-    justifyContent: 'center',    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    backgroundColor: COLORS.white,
   },
   editSubToolbar: {
     flexDirection: 'row',
@@ -550,15 +546,6 @@ export const styles = StyleSheet.create({
     fontSize: normalize(12.5),
     fontFamily: FONTS.bold,
     color: COLORS.primary,
-  },
-  profileVisibility: {
-    marginTop: normalize(11),
-    fontSize: normalize(11.5),
-    color: COLORS.placeholder,
-  },
-  profileVisibilityStrong: {
-    color: COLORS.text,
-    fontFamily: FONTS.bold,
   },
   profileStatRow: {
     flexDirection: 'row',
@@ -771,10 +758,6 @@ export const styles = StyleSheet.create({
   },
   linkValueOff: {
     color: tokens.colors.textTertiary,
-  },
-  visibilityText: {
-    flex: 1,
-    minWidth: 0,
   },
   disabledOpacity: {
     opacity: 0.5,
