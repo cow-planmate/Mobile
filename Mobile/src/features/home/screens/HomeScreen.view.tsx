@@ -1,4 +1,11 @@
-import React, { useRef, useEffect, useMemo, useState, useCallback } from 'react';
+import React, {
+  useRef,
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+} from 'react';
+import ArrowRight from 'lucide-react-native/dist/esm/icons/arrow-right';
 import CalendarIcon from 'lucide-react-native/dist/esm/icons/calendar';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import UserIcon from 'lucide-react-native/dist/esm/icons/user';
@@ -17,15 +24,22 @@ import FastImage from 'react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
 
 const AnimatedFastImage = Animated.createAnimatedComponent(FastImage);
-import { CalendarModal, Header, Invitation, NotificationModal, PaxModal, SearchLocationModal } from '../../../components/common';
+import {
+  CalendarModal,
+  Header,
+  Invitation,
+  NotificationModal,
+  PaxModal,
+  SearchLocationModal,
+} from '../../../components/common';
 import { normalize } from '../../../utils/normalize';
+import { tokens } from '../../../theme/tokens';
 import { styles } from './HomeScreen.styles';
 import { getRegionSpots, getShowcaseSpots } from '../constants/regionSpots';
 
 // 명소 순환 주기와, 손이 닿은 뒤 다시 돌기까지 기다리는 시간.
 const HERO_ROTATE_MS = 7000;
 const HERO_RESUME_DELAY_MS = 6000;
-
 
 type InputRowProps = {
   stepNumber: number;
@@ -54,17 +68,10 @@ const InputRow = ({
       activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityLabel={
-        hasValue
-          ? `${label}, ${value}`
-          : `${label}, ${placeholder ?? '미입력'}`
+        hasValue ? `${label}, ${value}` : `${label}, ${placeholder ?? '미입력'}`
       }
     >
-      <View
-        style={[
-          styles.timelineDot,
-          hasValue && styles.timelineDotFilled,
-        ]}
-      >
+      <View style={[styles.timelineDot, hasValue && styles.timelineDotFilled]}>
         <Text
           style={[
             styles.timelineDotText,
@@ -75,10 +82,7 @@ const InputRow = ({
         </Text>
       </View>
       <View
-        style={[
-          styles.timelineContent,
-          isLast && styles.timelineContentLast,
-        ]}
+        style={[styles.timelineContent, isLast && styles.timelineContentLast]}
       >
         <Text style={styles.label}>{label}</Text>
         <View style={styles.valueContainer}>
@@ -453,7 +457,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
             disabled={!isFormValid || isCreating}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel="일정 생성"
+            accessibilityLabel="나만의 일정 만들기"
             accessibilityState={{ disabled: !isFormValid || isCreating }}
           >
             <Text
@@ -462,8 +466,15 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
                 (!isFormValid || isCreating) && styles.submitButtonTextDisabled,
               ]}
             >
-              {isCreating ? '일정 만드는 중…' : '일정 생성'}
+              {isCreating ? '일정 만드는 중…' : '나만의 일정 만들기'}
             </Text>
+            {!isCreating && (
+              <ArrowRight
+                size={normalize(18)}
+                color={!isFormValid ? '#6B7280' : tokens.colors.white}
+                strokeWidth={2.2}
+              />
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>

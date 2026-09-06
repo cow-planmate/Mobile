@@ -16,8 +16,10 @@ jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native');
   const inset = { top: 0, right: 0, bottom: 0, left: 0 };
   return {
-    SafeAreaProvider: ({ children }: any) => React.createElement(View, null, children),
-    SafeAreaView: ({ children }: any) => React.createElement(View, null, children),
+    SafeAreaProvider: ({ children }: any) =>
+      React.createElement(View, null, children),
+    SafeAreaView: ({ children }: any) =>
+      React.createElement(View, null, children),
     useSafeAreaInsets: () => inset,
   };
 });
@@ -37,7 +39,12 @@ jest.mock('react-native-fast-image', () => {
   const React = require('react');
   const { View } = require('react-native');
   const FastImage: any = (props: any) => React.createElement(View, props);
-  FastImage.resizeMode = { cover: 'cover', contain: 'contain', stretch: 'stretch', center: 'center' };
+  FastImage.resizeMode = {
+    cover: 'cover',
+    contain: 'contain',
+    stretch: 'stretch',
+    center: 'center',
+  };
   FastImage.priority = { low: 'low', normal: 'normal', high: 'high' };
   return FastImage;
 });
@@ -54,7 +61,10 @@ jest.mock('react-native-date-picker', () => {
   return (props: any) => React.createElement(View, props);
 });
 
-import { HomeScreenView, HomeScreenViewProps } from '../src/features/home/screens/HomeScreen.view';
+import {
+  HomeScreenView,
+  HomeScreenViewProps,
+} from '../src/features/home/screens/HomeScreen.view';
 
 describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
   let queryClient: QueryClient;
@@ -74,7 +84,7 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
       renderer = ReactTestRenderer.create(
         <QueryClientProvider client={queryClient}>
           <HomeScreenView {...props} />
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
     });
     return renderer!;
@@ -200,12 +210,16 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
         });
 
         const touchables = renderer.root.findAllByType(TouchableOpacity);
-        const submitBtn = touchables.find(t => t.props.accessibilityLabel === '일정 생성');
+        const submitBtn = touchables.find(
+          t => t.props.accessibilityLabel === '나만의 일정 만들기',
+        );
 
         expect(submitBtn).toBeDefined();
         expect(submitBtn!.props.accessibilityRole).toBe('button');
         expect(submitBtn!.props.disabled).toBe(false);
-        expect(submitBtn!.props.accessibilityState).toEqual({ disabled: false });
+        expect(submitBtn!.props.accessibilityState).toEqual({
+          disabled: false,
+        });
         expect(submitBtn!.props.activeOpacity).toBe(0.8);
 
         ReactTestRenderer.act(() => {
@@ -225,7 +239,9 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
         });
 
         const touchables = renderer.root.findAllByType(TouchableOpacity);
-        const submitBtn = touchables.find(t => t.props.accessibilityLabel === '일정 생성');
+        const submitBtn = touchables.find(
+          t => t.props.accessibilityLabel === '나만의 일정 만들기',
+        );
 
         expect(submitBtn).toBeDefined();
         expect(submitBtn!.props.disabled).toBe(true);
@@ -243,14 +259,18 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
         });
 
         const touchables = renderer.root.findAllByType(TouchableOpacity);
-        const submitBtn = touchables.find(t => t.props.accessibilityLabel === '일정 생성');
+        const submitBtn = touchables.find(
+          t => t.props.accessibilityLabel === '나만의 일정 만들기',
+        );
 
         expect(submitBtn).toBeDefined();
         expect(submitBtn!.props.disabled).toBe(true);
         expect(submitBtn!.props.accessibilityState).toEqual({ disabled: true });
 
         const texts = submitBtn!.findAllByType(Text);
-        const hasCreatingText = texts.some(t => t.props.children === '일정 만드는 중…');
+        const hasCreatingText = texts.some(
+          t => t.props.children === '일정 만드는 중…',
+        );
         expect(hasCreatingText).toBe(true);
       });
     });
@@ -267,9 +287,15 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
       });
 
       const touchables = renderer.root.findAllByType(TouchableOpacity);
-      const searchTouchable = touchables.find(t => t.props.accessibilityLabel === '여행지, 여행지 선택');
-      const calendarTouchable = touchables.find(t => t.props.accessibilityLabel === '기간, 날짜 선택');
-      const paxTouchable = touchables.find(t => t.props.accessibilityLabel === '인원수, 인원 선택');
+      const searchTouchable = touchables.find(
+        t => t.props.accessibilityLabel === '여행지, 여행지 선택',
+      );
+      const calendarTouchable = touchables.find(
+        t => t.props.accessibilityLabel === '기간, 날짜 선택',
+      );
+      const paxTouchable = touchables.find(
+        t => t.props.accessibilityLabel === '인원수, 인원 선택',
+      );
 
       expect(searchTouchable).toBeDefined();
       expect(calendarTouchable).toBeDefined();
@@ -290,9 +316,15 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
       });
 
       const touchables = renderer.root.findAllByType(TouchableOpacity);
-      const searchTouchable = touchables.find(t => t.props.accessibilityLabel === `여행지, ${complexDest}`);
-      const calendarTouchable = touchables.find(t => t.props.accessibilityLabel === `기간, ${complexDate}`);
-      const paxTouchable = touchables.find(t => t.props.accessibilityLabel === `인원수, ${complexPax}`);
+      const searchTouchable = touchables.find(
+        t => t.props.accessibilityLabel === `여행지, ${complexDest}`,
+      );
+      const calendarTouchable = touchables.find(
+        t => t.props.accessibilityLabel === `기간, ${complexDate}`,
+      );
+      const paxTouchable = touchables.find(
+        t => t.props.accessibilityLabel === `인원수, ${complexPax}`,
+      );
 
       expect(searchTouchable).toBeDefined();
       expect(calendarTouchable).toBeDefined();

@@ -235,9 +235,11 @@ export const styles = StyleSheet.create({
     backgroundColor: tokens.colors.primary,
     height: normalize(54),
     borderRadius: tokens.radius.l,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: normalize(14),
+    gap: normalize(6),
   },
   submitButtonText: {
     fontSize: normalize(tokens.fontSize.m),

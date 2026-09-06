@@ -1,7 +1,10 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import { Text, TouchableOpacity } from 'react-native';
-import { HomeScreenView, HomeScreenViewProps } from '../src/features/home/screens/HomeScreen.view';
+import {
+  HomeScreenView,
+  HomeScreenViewProps,
+} from '../src/features/home/screens/HomeScreen.view';
 import { tokens } from '../src/theme/tokens';
 import fs from 'fs';
 import path from 'path';
@@ -25,16 +28,23 @@ jest.mock('../src/components/common', () => {
   const React = require('react');
   const { View } = require('react-native');
   return {
-    Header: (props: any) => React.createElement(View, { testID: 'header', ...props }),
-    CalendarModal: (props: any) => React.createElement(View, { testID: 'calendarModal', ...props }),
-    PaxModal: (props: any) => React.createElement(View, { testID: 'paxModal', ...props }),
-    SearchLocationModal: (props: any) => React.createElement(View, { testID: 'searchModal', ...props }),
-    NotificationModal: (props: any) => React.createElement(View, { testID: 'notificationModal', ...props }),
+    Header: (props: any) =>
+      React.createElement(View, { testID: 'header', ...props }),
+    CalendarModal: (props: any) =>
+      React.createElement(View, { testID: 'calendarModal', ...props }),
+    PaxModal: (props: any) =>
+      React.createElement(View, { testID: 'paxModal', ...props }),
+    SearchLocationModal: (props: any) =>
+      React.createElement(View, { testID: 'searchModal', ...props }),
+    NotificationModal: (props: any) =>
+      React.createElement(View, { testID: 'notificationModal', ...props }),
     AirplaneLoading: () => null,
   };
 });
 
-const createBaseProps = (overrides?: Partial<HomeScreenViewProps>): HomeScreenViewProps => ({
+const createBaseProps = (
+  overrides?: Partial<HomeScreenViewProps>,
+): HomeScreenViewProps => ({
   nickname: '테스터',
   email: 'test@planmate.app',
   pendingRequestsCount: 0,
@@ -79,7 +89,7 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
     'option4',
   ];
 
-  describe.each(variants)('Variant: %s', (variant) => {
+  describe.each(variants)('Variant: %s', variant => {
     it('renders empty state correctly with placeholders and disabled CTA', () => {
       const props = createBaseProps({
         variant,
@@ -96,14 +106,18 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
       });
 
       const touchables = renderer.root.findAllByType(TouchableOpacity);
-      const submitBtn = touchables.find((t) => t.props.accessibilityLabel === '일정 생성');
+      const submitBtn = touchables.find(
+        t => t.props.accessibilityLabel === '나만의 일정 만들기',
+      );
 
       expect(submitBtn).toBeDefined();
       expect(submitBtn!.props.disabled).toBe(true);
       expect(submitBtn!.props.accessibilityState.disabled).toBe(true);
 
       // Verify placeholders
-      const texts = renderer.root.findAllByType(Text).map((t) => t.props.children);
+      const texts = renderer.root
+        .findAllByType(Text)
+        .map(t => t.props.children);
       expect(texts).toContain('여행지 선택');
       expect(texts).toContain('날짜 선택');
       expect(texts).toContain('인원 선택');
@@ -127,7 +141,9 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
       });
 
       const touchables = renderer.root.findAllByType(TouchableOpacity);
-      const submitBtn = touchables.find((t) => t.props.accessibilityLabel === '일정 생성');
+      const submitBtn = touchables.find(
+        t => t.props.accessibilityLabel === '나만의 일정 만들기',
+      );
 
       expect(submitBtn).toBeDefined();
       expect(submitBtn!.props.disabled).toBe(false);
@@ -140,7 +156,9 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
       expect(onCreateItinerary).toHaveBeenCalledTimes(1);
 
       // Verify rendered values
-      const texts = renderer.root.findAllByType(Text).map((t) => t.props.children);
+      const texts = renderer.root
+        .findAllByType(Text)
+        .map(t => t.props.children);
       expect(texts).toContain('제주도');
       expect(texts).toContain('2026.09.12 - 2026.09.14');
       expect(texts).toContain('성인 2명');
@@ -164,7 +182,9 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
       });
 
       const touchables = renderer.root.findAllByType(TouchableOpacity);
-      const submitBtn = touchables.find((t) => t.props.accessibilityLabel === '일정 생성');
+      const submitBtn = touchables.find(
+        t => t.props.accessibilityLabel === '나만의 일정 만들기',
+      );
 
       expect(submitBtn).toBeDefined();
       expect(submitBtn!.props.disabled).toBe(true);
@@ -177,7 +197,8 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
     it('handles extreme long text without crashing and applies numberOfLines={1}', () => {
       const longDestination =
         '아주아주아주아주 길고 긴 특별시 특별자치도 유네스코 세계문화유산 등재 명소 여행지 대한민국 구석구석 어디까지 가봤니';
-      const longDate = '2026.12.01 (월) ~ 2027.01.15 (일) 총 46박 47일간의 대장정 장기 여행';
+      const longDate =
+        '2026.12.01 (월) ~ 2027.01.15 (일) 총 46박 47일간의 대장정 장기 여행';
       const longPax = '성인 10명, 어린이 12명, 유아 5명, 반려동물 3마리';
 
       const props = createBaseProps({
@@ -197,9 +218,11 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
       }).not.toThrow();
 
       const textNodes = renderer.root.findAllByType(Text);
-      const destNode = textNodes.find((t) => t.props.children === longDestination);
-      const dateNode = textNodes.find((t) => t.props.children === longDate);
-      const paxNode = textNodes.find((t) => t.props.children === longPax);
+      const destNode = textNodes.find(
+        t => t.props.children === longDestination,
+      );
+      const dateNode = textNodes.find(t => t.props.children === longDate);
+      const paxNode = textNodes.find(t => t.props.children === longPax);
 
       expect(destNode).toBeDefined();
       expect(destNode!.props.numberOfLines).toBe(1);
@@ -254,13 +277,19 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
       const touchables = renderer.root.findAllByType(TouchableOpacity);
 
       const destRow = touchables.find(
-        (t) => t.props.accessibilityLabel && t.props.accessibilityLabel.startsWith('여행지')
+        t =>
+          t.props.accessibilityLabel &&
+          t.props.accessibilityLabel.startsWith('여행지'),
       );
       const dateRow = touchables.find(
-        (t) => t.props.accessibilityLabel && t.props.accessibilityLabel.startsWith('기간')
+        t =>
+          t.props.accessibilityLabel &&
+          t.props.accessibilityLabel.startsWith('기간'),
       );
       const paxRow = touchables.find(
-        (t) => t.props.accessibilityLabel && t.props.accessibilityLabel.startsWith('인원수')
+        t =>
+          t.props.accessibilityLabel &&
+          t.props.accessibilityLabel.startsWith('인원수'),
       );
 
       expect(destRow).toBeDefined();
@@ -295,7 +324,9 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
 
       // In timeline design, cardWrapper is rendered and submitButton is rendered outside cardWrapper
       const touchables = renderer.root.findAllByType(TouchableOpacity);
-      const submitBtn = touchables.find((t) => t.props.accessibilityLabel === '일정 생성');
+      const submitBtn = touchables.find(
+        t => t.props.accessibilityLabel === '나만의 일정 만들기',
+      );
       expect(submitBtn).toBeDefined();
       expect(submitBtn!.props.style).toEqual(
         expect.arrayContaining([
@@ -303,7 +334,7 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
             borderRadius: expect.any(Number),
             height: expect.any(Number),
           }),
-        ])
+        ]),
       );
     });
   });
