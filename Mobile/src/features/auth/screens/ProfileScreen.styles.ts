@@ -481,6 +481,10 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(4),
     borderBottomColor: COLORS.border,
   },
+  // 세 칸으로 똑같이 나누므로 바깥 여백을 두지 않는다.
+  sectionTabs: {
+    borderBottomColor: COLORS.border,
+  },
   tripTabs: {
     marginTop: normalize(11),
     paddingHorizontal: normalize(4),

@@ -929,8 +929,9 @@ export default function ProfileScreenView({
           selectedKey={profileSection}
           onSelect={key => setProfileSection(key as ProfileSection)}
           scrollable={false}
-          align="start"
-          style={styles.tabsInset}
+          align="fill"
+          compact
+          style={styles.sectionTabs}
         />
       </View>
 

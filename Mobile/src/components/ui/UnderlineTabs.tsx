@@ -30,6 +30,11 @@ export interface UnderlineTabsProps {
    * 붙는다 — 탭 이름의 길이 차이가 그대로 보여야 할 때 쓴다.
    */
   align?: 'fill' | 'start';
+  /**
+   * 이름이 긴 탭을 균등하게 나눌 때 쓴다. 글자를 14에서 13.5로 줄이고 좌우
+   * 여백을 12에서 4로 좁혀, 세 칸으로 나눠도 이름이 한 줄에 들어가게 한다.
+   */
+  compact?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -39,6 +44,7 @@ export default function UnderlineTabs({
   onSelect,
   scrollable = true,
   align = 'fill',
+  compact = false,
   style,
 }: UnderlineTabsProps) {
   const tabs = items.map(item => {
@@ -48,6 +54,7 @@ export default function UnderlineTabs({
         key={item.key}
         style={[
           styles.tab,
+          compact && styles.tabCompact,
           !scrollable && align === 'fill' && styles.tabFlexible,
           isActive && styles.tabActive,
         ]}
@@ -58,7 +65,11 @@ export default function UnderlineTabs({
       >
         {item.icon ? <View style={styles.icon}>{item.icon}</View> : null}
         <Text
-          style={[styles.label, isActive && styles.labelActive]}
+          style={[
+            styles.label,
+            compact && styles.labelCompact,
+            isActive && styles.labelActive,
+          ]}
           numberOfLines={1}
         >
           {item.label}
@@ -112,6 +123,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
+  tabCompact: {
+    paddingHorizontal: normalize(4),
+  },
   tabFlexible: {
     flex: 1,
     justifyContent: 'center',
@@ -127,6 +141,9 @@ const styles = StyleSheet.create({
     fontSize: normalize(tokens.fontSize.s),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.textSecondary,
+  },
+  labelCompact: {
+    fontSize: normalize(13.5),
   },
   labelActive: {
     color: tokens.colors.primary,
