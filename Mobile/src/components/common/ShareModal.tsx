@@ -60,24 +60,27 @@ export default function ShareModal({
   const currentPlanIdRef = useRef(planId);
   currentPlanIdRef.current = planId;
 
-  const fetchShareLink = useCallback(async (signal?: AbortSignal) => {
-    if (isMock) {
-      setShareLink('https://planmate.cow/share/mock-trip-123');
-      setIsShared(true);
-      return;
-    }
-    try {
-      const response = await getShareUrl(planId, signal);
-      if (signal?.aborted) return;
-      setShareLink(response.shareUrl);
-      if (typeof response.isShared === 'boolean') {
-        setIsShared(response.isShared);
+  const fetchShareLink = useCallback(
+    async (signal?: AbortSignal) => {
+      if (isMock) {
+        setShareLink('https://planmate.cow/share/mock-trip-123');
+        setIsShared(true);
+        return;
       }
-    } catch (error) {
-      if (signal?.aborted) return;
-      console.error('Failed to fetch share link:', error);
-    }
-  }, [isMock, planId]);
+      try {
+        const response = await getShareUrl(planId, signal);
+        if (signal?.aborted) return;
+        setShareLink(response.shareUrl);
+        if (typeof response.isShared === 'boolean') {
+          setIsShared(response.isShared);
+        }
+      } catch (error) {
+        if (signal?.aborted) return;
+        console.error('Failed to fetch share link:', error);
+      }
+    },
+    [isMock, planId],
+  );
 
   const handleToggleShare = (newValue: boolean) =>
     shareStatusLock.runExclusive(async () => {
@@ -122,7 +125,9 @@ export default function ShareModal({
       }
     }
 
-    console.warn('Native RNCClipboard module not available. Falling back to native Share API.');
+    console.warn(
+      'Native RNCClipboard module not available. Falling back to native Share API.',
+    );
     handleShareLink();
   };
 
@@ -137,27 +142,30 @@ export default function ShareModal({
     }
   };
 
-  const fetchEditors = useCallback(async (signal?: AbortSignal) => {
-    if (isMock) {
-      setEditors(prev =>
-        prev.length === 0
-          ? [
-              { userId: 1, nickname: '홍길동' },
-              { userId: 2, nickname: '김철수' },
-            ]
-          : prev,
-      );
-      return;
-    }
-    try {
-      const response = await getEditors(planId, signal);
-      if (signal?.aborted) return;
-      setEditors(Array.isArray(response) ? response : []);
-    } catch (error) {
-      if (signal?.aborted) return;
-      console.error('Failed to fetch editors:', error);
-    }
-  }, [isMock, planId]);
+  const fetchEditors = useCallback(
+    async (signal?: AbortSignal) => {
+      if (isMock) {
+        setEditors(prev =>
+          prev.length === 0
+            ? [
+                { userId: 1, nickname: '홍길동' },
+                { userId: 2, nickname: '김철수' },
+              ]
+            : prev,
+        );
+        return;
+      }
+      try {
+        const response = await getEditors(planId, signal);
+        if (signal?.aborted) return;
+        setEditors(Array.isArray(response) ? response : []);
+      } catch (error) {
+        if (signal?.aborted) return;
+        console.error('Failed to fetch editors:', error);
+      }
+    },
+    [isMock, planId],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -217,7 +225,8 @@ export default function ShareModal({
         } else if (code === DUPLICATE_PENDING_CODE) {
           showAlert({
             title: '초대 대기 중',
-            message: '이미 초대를 보낸 사용자예요. 상대방의 수락을 기다려 주세요.',
+            message:
+              '이미 초대를 보낸 사용자예요. 상대방의 수락을 기다려 주세요.',
           });
         } else {
           showAlert({
@@ -421,6 +430,7 @@ const styles = StyleSheet.create({
     fontSize: normalize(13),
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.textSecondary,
+    textAlign: 'left',
   },
   copyButton: {
     height: normalize(36),

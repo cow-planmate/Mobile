@@ -30,8 +30,10 @@ import Compass from 'lucide-react-native/dist/esm/icons/compass';
 import PlusCircle from 'lucide-react-native/dist/esm/icons/circle-plus';
 
 const FeedStackNavigator = createNativeStackNavigator<FeedStackParamList>();
-const ScheduleStackNavigator = createNativeStackNavigator<ScheduleStackParamList>();
-const CommunityStackNavigator = createNativeStackNavigator<CommunityStackParamList>();
+const ScheduleStackNavigator =
+  createNativeStackNavigator<ScheduleStackParamList>();
+const CommunityStackNavigator =
+  createNativeStackNavigator<CommunityStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
@@ -52,10 +54,7 @@ function FeedStack() {
         animationDuration: 250,
       }}
     >
-      <FeedStackNavigator.Screen
-        name="FeedMain"
-        component={TravelFeedScreen}
-      />
+      <FeedStackNavigator.Screen name="FeedMain" component={TravelFeedScreen} />
       <FeedStackNavigator.Screen
         name="FeedCreate"
         component={FeedCreateScreen}
@@ -77,10 +76,7 @@ function ScheduleStack() {
         animationDuration: 250,
       }}
     >
-      <ScheduleStackNavigator.Screen
-        name="Home"
-        component={HomeScreen}
-      />
+      <ScheduleStackNavigator.Screen name="Home" component={HomeScreen} />
       <ScheduleStackNavigator.Screen
         name="MySchedule"
         component={ProfileScreen}

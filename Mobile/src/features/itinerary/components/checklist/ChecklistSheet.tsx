@@ -37,13 +37,13 @@ import { useAlert } from '../../../../contexts/AlertContext';
 import { styles, COLORS } from './ChecklistSheet.styles';
 
 const SCOPE_TABS: { scope: ChecklistScope; label: string }[] = [
-  { scope: 'shared', label: '공동 준비' },
-  { scope: 'personal', label: '나의 준비' },
+  { scope: 'shared', label: '공동 준비물' },
+  { scope: 'personal', label: '개인 준비물' },
 ];
 
 const SCOPE_EMPTY_TEXT: Record<ChecklistScope, string> = {
   shared: '함께 준비할 것을 적어 두면\n같은 일정을 보는 사람에게도 보여요.',
-  personal: '나만 보는 준비물 목록이에요.\n첫 항목을 추가해 보세요.',
+  personal: '나만 보는 체크리스트예요.\n첫 항목을 추가해 보세요.',
 };
 
 interface ChecklistSheetProps {
@@ -66,7 +66,6 @@ export default function ChecklistSheet({
     sharedItems,
     personalItems,
     counts,
-    isRealtime,
     isLoading,
     isFetching,
     isError,
@@ -80,8 +79,6 @@ export default function ChecklistSheet({
   const reorderItems = useReorderChecklistItems(planId, scope);
 
   const items = scope === 'shared' ? sharedItems : personalItems;
-  const count = counts[scope];
-  const progress = count.total > 0 ? count.done / count.total : 0;
 
   const isMutating =
     createItem.isPending ||
@@ -212,7 +209,7 @@ export default function ChecklistSheet({
       return (
         <View style={styles.stateBox}>
           <ActivityIndicator color={COLORS.primary} />
-          <Text style={styles.stateText}>준비물을 불러오는 중…</Text>
+          <Text style={styles.stateText}>체크리스트를 불러오는 중…</Text>
         </View>
       );
     }
@@ -221,7 +218,7 @@ export default function ChecklistSheet({
       return (
         <View style={styles.stateBox}>
           <Text style={styles.stateText}>
-            준비물을 불러오지 못했어요.{'\n'}잠시 후 다시 시도해 주세요.
+            체크리스트를 불러오지 못했어요.{'\n'}잠시 후 다시 시도해 주세요.
           </Text>
           <TouchableOpacity
             style={styles.retryButton}
@@ -340,7 +337,10 @@ export default function ChecklistSheet({
                     activeOpacity={0.7}
                     accessibilityState={{ disabled: isMutating || index === 0 }}
                   >
-                    <ChevronUp size={normalize(16)} color={COLORS.textTertiary} />
+                    <ChevronUp
+                      size={normalize(16)}
+                      color={COLORS.textTertiary}
+                    />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.itemAction}
@@ -349,9 +349,14 @@ export default function ChecklistSheet({
                     accessibilityLabel={`${item.content} 아래로 이동`}
                     hitSlop={6}
                     activeOpacity={0.7}
-                    accessibilityState={{ disabled: isMutating || index === items.length - 1 }}
+                    accessibilityState={{
+                      disabled: isMutating || index === items.length - 1,
+                    }}
                   >
-                    <ChevronDown size={normalize(16)} color={COLORS.textTertiary} />
+                    <ChevronDown
+                      size={normalize(16)}
+                      color={COLORS.textTertiary}
+                    />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.itemAction}
@@ -391,7 +396,7 @@ export default function ChecklistSheet({
   return (
     <SheetModal
       visible={visible}
-      title="준비물 체크리스트"
+      title="체크리스트"
       onClose={onClose}
       avoidKeyboard
       footer={
@@ -401,7 +406,7 @@ export default function ChecklistSheet({
             value={draft}
             onChangeText={setDraft}
             onSubmitEditing={handleAdd}
-            placeholder="준비물을 입력하세요"
+            placeholder="체크리스트를 입력하세요"
             placeholderTextColor={COLORS.textTertiary}
             maxLength={CHECKLIST_CONTENT_MAX_LENGTH}
             returnKeyType="done"
@@ -415,7 +420,7 @@ export default function ChecklistSheet({
             disabled={!canSubmitDraft}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel="준비물 추가"
+            accessibilityLabel="체크리스트 추가"
             accessibilityState={{ disabled: !canSubmitDraft }}
           >
             {createItem.isPending ? (
@@ -448,53 +453,28 @@ export default function ChecklistSheet({
         </TouchableOpacity>
       }
     >
-          <View style={styles.tabRow}>
-            {SCOPE_TABS.map(tab => {
-              const isActive = tab.scope === scope;
+      <View style={styles.tabRow}>
+        {SCOPE_TABS.map(tab => {
+          const isActive = tab.scope === scope;
 
-              return (
-                <TouchableOpacity
-                  key={tab.scope}
-                  style={[styles.tabButton, isActive && styles.tabButtonActive]}
-                  onPress={() => handleChangeScope(tab.scope)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.tabLabel,
-                      isActive && styles.tabLabelActive,
-                    ]}
-                  >
-                    {tab.label} {counts[tab.scope].done}/
-                    {counts[tab.scope].total}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          <View style={styles.progressBox}>
-            <View style={styles.progressHeader}>
-              <Text style={styles.progressCaption}>준비 완료</Text>
-              <Text style={styles.progressCount}>
-                {count.done}/{count.total}
+          return (
+            <TouchableOpacity
+              key={tab.scope}
+              style={[styles.tabButton, isActive && styles.tabButtonActive]}
+              onPress={() => handleChangeScope(tab.scope)}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[styles.tabLabel, isActive && styles.tabLabelActive]}
+              >
+                {tab.label} {counts[tab.scope].done}/{counts[tab.scope].total}
               </Text>
-            </View>
-            <View style={styles.progressTrack}>
-              <View
-                style={[styles.progressFill, { width: `${progress * 100}%` }]}
-              />
-            </View>
-          </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
-          {scope === 'shared' && !isRealtime && (
-            <Text style={styles.syncHint}>
-              실시간 연결이 아니라 변경이 바로 전달되지 않아요. 새로고침으로 최신
-              목록을 확인해 주세요.
-            </Text>
-          )}
-
-          {body}
+      {body}
     </SheetModal>
   );
 }
