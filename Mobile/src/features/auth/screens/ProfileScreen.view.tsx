@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
@@ -114,7 +113,12 @@ export const PLAN_MENU_OPTIONS = [
   { label: '제목 바꾸기', action: 'rename', icon: Type },
   { label: '수정하기', action: 'edit', icon: PenLine },
   { label: '공유 및 초대', action: 'share', icon: Share2 },
-  { label: '삭제하기', action: 'delete', icon: Trash2Icon, isDestructive: true },
+  {
+    label: '삭제하기',
+    action: 'delete',
+    icon: Trash2Icon,
+    isDestructive: true,
+  },
 ];
 
 export const SHARED_PLAN_MENU_OPTIONS = [
@@ -240,11 +244,11 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
           accessibilityState={{ disabled: isEditMode }}
           accessibilityLabel={
             hasChecklistCache
-              ? `준비물 ${checklistItems.length}개 중 ${completedCount}개 완료, 눌러서 열기`
-              : '준비물 확인하기'
+              ? `체크리스트 ${checklistItems.length}개 중 ${completedCount}개 완료, 눌러서 열기`
+              : '체크리스트 확인하기'
           }
         >
-          <Text style={styles.planChecklistLabel}>준비물</Text>
+          <Text style={styles.planChecklistLabel}>체크리스트</Text>
           <View style={styles.planChecklistTrack}>
             <View
               style={[
@@ -542,7 +546,6 @@ export default function ProfileScreenView({
     try {
       await onRenamePlan(menuPlan.planId, newName);
     } catch (e) {
-
       setRenameVisible(false);
       return;
     }
@@ -578,7 +581,6 @@ export default function ProfileScreenView({
                   position: 'top',
                 });
               } catch (e) {
-
                 console.error('편집 권한 포기 실패:', e);
                 Toast.show({
                   type: 'error',
@@ -586,9 +588,9 @@ export default function ProfileScreenView({
                   position: 'top',
                 });
               }
-            }
-          }
-        ]
+            },
+          },
+        ],
       });
     } else {
       showAlert({
@@ -620,9 +622,9 @@ export default function ProfileScreenView({
                   position: 'top',
                 });
               }
-            }
-          }
-        ]
+            },
+          },
+        ],
       });
     }
   };
@@ -646,7 +648,9 @@ export default function ProfileScreenView({
   );
 
   const allPlanIds = useMemo(() => plans.map(p => p.planId), [plans]);
-  const isAllSelected = allPlanIds.length > 0 && allPlanIds.every(id => selectedPlanIds.includes(id));
+  const isAllSelected =
+    allPlanIds.length > 0 &&
+    allPlanIds.every(id => selectedPlanIds.includes(id));
 
   const handleSelectAll = () => {
     if (isAllSelected) {
@@ -671,8 +675,12 @@ export default function ProfileScreenView({
             const selected = plans.filter(p =>
               selectedPlanIds.includes(p.planId),
             );
-            const ownedIds = selected.filter(p => !p.isShared).map(p => p.planId);
-            const sharedIds = selected.filter(p => p.isShared).map(p => p.planId);
+            const ownedIds = selected
+              .filter(p => !p.isShared)
+              .map(p => p.planId);
+            const sharedIds = selected
+              .filter(p => p.isShared)
+              .map(p => p.planId);
 
             const processedIds: string[] = [];
             let failed = 0;
@@ -703,7 +711,9 @@ export default function ProfileScreenView({
             }
 
             if (processedIds.length > 0) {
-              setPlans(prev => prev.filter(p => !processedIds.includes(p.planId)));
+              setPlans(prev =>
+                prev.filter(p => !processedIds.includes(p.planId)),
+              );
               patchPlansCache(list =>
                 list.filter(p => !processedIds.includes(p.planId)),
               );
@@ -881,7 +891,6 @@ export default function ProfileScreenView({
         }
         setEditModalVisible(false);
       } catch (err) {
-
         if (__DEV__) console.log('Failed to save profile modifications', err);
       }
     });
@@ -927,57 +936,62 @@ export default function ProfileScreenView({
 
       <ScrollView
         ref={scrollRef}
-        style={{ backgroundColor: tokens.colors.surface }}
-        contentContainerStyle={[styles.scrollContainer, { paddingBottom: normalize(40) }]}
+        style={{ backgroundColor: tokens.colors.pageGround }}
+        contentContainerStyle={[
+          styles.scrollContainer,
+          { paddingBottom: normalize(40) },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {profileSection === 'profile' && (
-        <>
-        <View style={styles.profileHeader}>
-          <View style={styles.profileTopRow}>
-            <FallbackImage
-              uri={avatarUri}
-              style={styles.profileAvatar}
-              fallback={
-                <View style={styles.profileAvatarFallback}>
-                  <User size={26} color={tokens.colors.textTertiary} />
-                </View>
-              }
-            />
+          <>
+            <View style={styles.profileHeader}>
+              <View style={styles.profileTopRow}>
+                <FallbackImage
+                  uri={avatarUri}
+                  style={styles.profileAvatar}
+                  fallback={
+                    <View style={styles.profileAvatarFallback}>
+                      <User size={26} color={tokens.colors.textTertiary} />
+                    </View>
+                  }
+                />
 
-            <View style={styles.profileNameBlock}>
-              <Text style={styles.profileName} numberOfLines={1}>
-                {user.name || '사용자'}
-              </Text>
-              <Text style={styles.profileMeta} numberOfLines={1}>
-                {[
-                  user.email || '이메일 없음',
-                  user.gender || '성별 미설정',
-                  profileAge === null ? '나이 미설정' : `만 ${profileAge}세`,
-                ].join(' · ')}
-              </Text>
+                <View style={styles.profileNameBlock}>
+                  <Text style={styles.profileName} numberOfLines={1}>
+                    {user.name || '사용자'}
+                  </Text>
+                  <Text style={styles.profileMeta} numberOfLines={1}>
+                    {[
+                      user.email || '이메일 없음',
+                      user.gender || '성별 미설정',
+                      profileAge === null
+                        ? '나이 미설정'
+                        : `만 ${profileAge}세`,
+                    ].join(' · ')}
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={handleOpenEditModal}
+                  activeOpacity={0.7}
+                  hitSlop={12}
+                  accessibilityRole="button"
+                  accessibilityLabel="프로필 수정"
+                >
+                  <Text style={styles.profileEditText}>프로필 수정</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={handleOpenEditModal}
-              activeOpacity={0.7}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel="프로필 수정"
-            >
-              <Text style={styles.profileEditText}>프로필 수정</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+            <View style={styles.sectionBand} />
 
-        <View style={styles.sectionBand} />
-
-        <ProfileTasteCard
-          groups={tasteGroups}
-          onEdit={() => setThemeModalVisible(true)}
-        />
-        </>
+            <ProfileTasteCard
+              groups={tasteGroups}
+              onEdit={() => setThemeModalVisible(true)}
+            />
+          </>
         )}
 
         {profileSection === 'stories' && (
@@ -989,153 +1003,166 @@ export default function ProfileScreenView({
         )}
 
         {profileSection === 'travel' && (
-        <>
-        <View
-          style={styles.sectionBlock}
-          onLayout={e => setItineraryY(e.nativeEvent.layout.y)}
-        >
+          <>
+            <View
+              style={styles.sectionBlock}
+              onLayout={e => setItineraryY(e.nativeEvent.layout.y)}
+            >
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionHeaderTitle}>여행 타임라인</Text>
+                {!isEditMode ? (
+                  <TouchableOpacity
+                    onPress={() => setIsEditMode(true)}
+                    activeOpacity={0.7}
+                    hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel="일정 관리"
+                  >
+                    <Text style={styles.sectionHeaderAction}>일정 관리</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.editActionCancel}
+                    onPress={handleCancelEditMode}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.editActionCancelText}>취소</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
 
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionHeaderTitle}>여행 타임라인</Text>
-            {!isEditMode ? (
-              <TouchableOpacity
-                onPress={() => setIsEditMode(true)}
-                activeOpacity={0.7}
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel="일정 관리"
-              >
-                <Text style={styles.sectionHeaderAction}>일정 관리</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity 
-                style={styles.editActionCancel} 
-                onPress={handleCancelEditMode}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.editActionCancelText}>취소</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+              {isEditMode && (
+                <View style={styles.editSubToolbar}>
+                  <TouchableOpacity
+                    style={styles.editActionSelectAll}
+                    onPress={handleSelectAll}
+                    activeOpacity={0.8}
+                  >
+                    <View
+                      style={[
+                        styles.selectAllCheckSquare,
+                        isAllSelected && styles.selectAllCheckSquareChecked,
+                      ]}
+                    >
+                      {isAllSelected && (
+                        <Check size={8} color={tokens.colors.white} />
+                      )}
+                    </View>
+                    <Text style={styles.editActionSelectAllText}>
+                      전체 선택
+                    </Text>
+                  </TouchableOpacity>
 
-          {isEditMode && (
-            <View style={styles.editSubToolbar}>
-
-              <TouchableOpacity 
-                style={styles.editActionSelectAll} 
-                onPress={handleSelectAll}
-                activeOpacity={0.8}
-              >
-                <View style={[
-                  styles.selectAllCheckSquare,
-                  isAllSelected && styles.selectAllCheckSquareChecked
-                ]}>
-                  {isAllSelected && <Check size={8} color={tokens.colors.white} />}
+                  <TouchableOpacity
+                    style={[
+                      styles.editActionDeleteSelected,
+                      selectedPlanIds.length === 0 && styles.disabledOpacity,
+                    ]}
+                    onPress={handleDeleteSelected}
+                    disabled={selectedPlanIds.length === 0}
+                    activeOpacity={0.8}
+                    accessibilityState={{
+                      disabled: selectedPlanIds.length === 0,
+                    }}
+                  >
+                    <Trash2
+                      size={12}
+                      color="#EF4444"
+                      style={styles.iconSpacingSmall}
+                    />
+                    <Text style={styles.editActionDeleteSelectedText}>
+                      선택 삭제 ({selectedPlanIds.length})
+                    </Text>
+                  </TouchableOpacity>
                 </View>
-                <Text style={styles.editActionSelectAllText}>전체 선택</Text>
-              </TouchableOpacity>
+              )}
 
-              <TouchableOpacity 
-                style={[
-                  styles.editActionDeleteSelected,
-                  selectedPlanIds.length === 0 && styles.disabledOpacity
+              <UnderlineTabs
+                items={[
+                  {
+                    key: 'upcoming',
+                    label: '예정된 일정',
+                    count: upcomingPlans.length,
+                  },
+                  { key: 'past', label: '지난 일정', count: pastPlans.length },
                 ]}
-                onPress={handleDeleteSelected}
-                disabled={selectedPlanIds.length === 0}
-                activeOpacity={0.8}
-                accessibilityState={{ disabled: selectedPlanIds.length === 0 }}
-              >
-                <Trash2 size={12} color="#EF4444" style={styles.iconSpacingSmall} />
-                <Text style={styles.editActionDeleteSelectedText}>선택 삭제 ({selectedPlanIds.length})</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+                selectedKey={tripTab}
+                onSelect={key => setTripTab(key as TripTab)}
+                scrollable={false}
+                align="start"
+                style={styles.tripTabs}
+              />
 
-          <UnderlineTabs
-            items={[
-              {
-                key: 'upcoming',
-                label: '예정된 일정',
-                count: upcomingPlans.length,
-              },
-              { key: 'past', label: '지난 일정', count: pastPlans.length },
-            ]}
-            selectedKey={tripTab}
-            onSelect={key => setTripTab(key as TripTab)}
-            scrollable={false}
-            align="start"
-            style={styles.tripTabs}
-          />
-
-          {tripTab === 'upcoming' ? (
-            upcomingPlans.length > 0 ? (
-              <View>
-                {upcomingPlans.map((plan: any) => (
-                  <ItineraryCardItem
-                    key={plan.planId}
-                    plan={plan}
-                    onOpenMenu={handleOpenPlanMenu}
-                    navigation={navigation}
-                    isEditMode={isEditMode}
-                    isSelected={selectedPlanIds.includes(plan.planId)}
-                    onSelectToggle={handleSelectToggle}
-                    onOpenChecklist={handleOpenChecklist}
-                  />
-                ))}
-              </View>
-            ) : (
-              <View style={styles.planEmpty}>
-                <Text style={styles.noPlanText}>
-                  다음 여행을 계획해보세요.
-                </Text>
-                <TouchableOpacity
-                  onPress={() =>
-                    navigation.navigate('MainTabs', {
-                      screen: INITIAL_TAB,
-                      params: { screen: 'Home' },
-                    })
-                  }
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.createPlanLink}>새로운 여행 계획하기</Text>
-                </TouchableOpacity>
-              </View>
-            )
-          ) : (
-            <View style={styles.sectionBlock}>
-              {pastPlans.length > 0 ? (
-                pastPlans.map((plan: any) => (
-                  <PastPlanRow
-                    key={plan.planId}
-                    plan={plan}
-                    onOpenMenu={handleOpenPlanMenu}
-                    navigation={navigation}
-                    isEditMode={isEditMode}
-                    isSelected={selectedPlanIds.includes(plan.planId)}
-                    onSelectToggle={handleSelectToggle}
-                  />
-                ))
+              {tripTab === 'upcoming' ? (
+                upcomingPlans.length > 0 ? (
+                  <View>
+                    {upcomingPlans.map((plan: any) => (
+                      <ItineraryCardItem
+                        key={plan.planId}
+                        plan={plan}
+                        onOpenMenu={handleOpenPlanMenu}
+                        navigation={navigation}
+                        isEditMode={isEditMode}
+                        isSelected={selectedPlanIds.includes(plan.planId)}
+                        onSelectToggle={handleSelectToggle}
+                        onOpenChecklist={handleOpenChecklist}
+                      />
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.planEmpty}>
+                    <Text style={styles.noPlanText}>
+                      다음 여행을 계획해보세요.
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate('MainTabs', {
+                          screen: INITIAL_TAB,
+                          params: { screen: 'Home' },
+                        })
+                      }
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.createPlanLink}>
+                        새로운 여행 계획하기
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )
               ) : (
-                <View style={styles.planEmpty}>
-                  <Text style={styles.noPastRecordText}>
-                    지난 여행 기록이 없어요.
-                  </Text>
+                <View style={styles.sectionBlock}>
+                  {pastPlans.length > 0 ? (
+                    pastPlans.map((plan: any) => (
+                      <PastPlanRow
+                        key={plan.planId}
+                        plan={plan}
+                        onOpenMenu={handleOpenPlanMenu}
+                        navigation={navigation}
+                        isEditMode={isEditMode}
+                        isSelected={selectedPlanIds.includes(plan.planId)}
+                        onSelectToggle={handleSelectToggle}
+                      />
+                    ))
+                  ) : (
+                    <View style={styles.planEmpty}>
+                      <Text style={styles.noPastRecordText}>
+                        지난 여행 기록이 없어요.
+                      </Text>
+                    </View>
+                  )}
                 </View>
               )}
             </View>
-          )}
-        </View>
 
-        {/* 웹은 일정·캘린더·발자취를 한 갈래에 세로로 쌓는다. 앱도 같은 탭에
+            {/* 웹은 일정·캘린더·발자취를 한 갈래에 세로로 쌓는다. 앱도 같은 탭에
             담고 덩어리 사이만 회색 띠로 벌린다. */}
-        <View style={styles.sectionBand} />
-        <ProfileCalendarSection plans={plans} />
-        <View style={styles.sectionBand} />
-        <ProfileFootprintSection plans={plans} />
-        </>
+            <View style={styles.sectionBand} />
+            <ProfileCalendarSection plans={plans} />
+            <View style={styles.sectionBand} />
+            <ProfileFootprintSection plans={plans} />
+          </>
         )}
-
       </ScrollView>
 
       <DatePicker

@@ -188,7 +188,7 @@ export default function PostDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollBody}
       >
-        <View style={styles.band} />
+        <View style={[styles.band, styles.bandUnderTopBar]} />
 
         <View style={styles.block}>
         <View style={styles.header}>

@@ -16,6 +16,7 @@ export const COLORS = {
   white: tokens.colors.white,
   error: tokens.tones.danger.fg,
   surface: tokens.colors.surface,
+  pageGround: tokens.colors.pageGround,
 };
 
 export const FONTS = tokens.fontFamily;
@@ -62,7 +63,7 @@ export const styles = StyleSheet.create({
   // 드러내 선을 긋지 않고도 나뉜다.
   scrollContainer: {
     paddingBottom: normalize(40),
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.pageGround,
   },
 
   avatarImage: {
@@ -597,6 +598,9 @@ export const styles = StyleSheet.create({
   // 8px 띠에 흐린 선을 얹던 예전 방식은 흰 바탕과 구별되지 않았다.
   sectionBand: {
     height: normalize(20),
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: COLORS.border,
   },
   sectionBlock: {
     backgroundColor: COLORS.white,

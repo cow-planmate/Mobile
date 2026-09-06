@@ -7,6 +7,12 @@ export const colors = {
 
   background: '#FFFFFF',
   surface: '#F8F9FA',
+  /**
+   * 흰 덩어리를 얹는 바탕. surface(#F8F9FA)는 흰색과 명도차가 1.04:1이라
+   * 덩어리 사이 띠가 보이지 않았다. 알약·썸네일 자리에도 쓰이는 surface를
+   * 통째로 바꾸면 엉뚱한 데까지 번지므로 바탕 전용으로 따로 둔다.
+   */
+  pageGround: '#F1F3F5',
   white: '#FFFFFF',
 
   text: '#1A1A1A',
