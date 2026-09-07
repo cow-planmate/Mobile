@@ -13,7 +13,7 @@
  * 시절의 데이터가 그렇다.
  */
 const GROUPS = [
-  { category: 'ATTRACTION', label: '장소', hint: '즐길 곳' },
+  { category: 'ATTRACTION', label: '관광지', hint: '즐길 곳' },
   { category: 'ACCOMMODATION', label: '숙소', hint: '머무는 방식' },
   { category: 'RESTAURANT', label: '식당', hint: '미식 취향' },
 ] as const;

@@ -18,7 +18,7 @@ import {
  * 훑어야 닿던 자리다.
  */
 const ICONS = {
-  장소: { Icon: Landmark, bg: tokens.colors.primaryTint, fg: tokens.colors.primary },
+  관광지: { Icon: Landmark, bg: tokens.colors.primaryTint, fg: tokens.colors.primary },
   숙소: { Icon: BedDouble, bg: '#F3EEFF', fg: '#7B52C9' },
   식당: { Icon: Utensils, bg: '#FFF1E8', fg: '#D1703A' },
 } as const;
@@ -52,7 +52,7 @@ export default function ProfileTasteCard({
 
       <View style={styles.rows}>
         {groups.map(group => {
-          const icon = ICONS[group.label as keyof typeof ICONS] ?? ICONS.장소;
+          const icon = ICONS[group.label as keyof typeof ICONS] ?? ICONS.관광지;
           const { Icon } = icon;
           return (
             <View key={group.label} style={styles.row}>

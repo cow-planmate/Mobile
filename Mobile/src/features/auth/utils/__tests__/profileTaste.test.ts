@@ -4,7 +4,7 @@ import {
 } from '../profileTaste';
 
 const EMPTY = [
-  { label: '장소', hint: '즐길 곳', names: [] },
+  { label: '관광지', hint: '즐길 곳', names: [] },
   { label: '숙소', hint: '머무는 방식', names: [] },
   { label: '식당', hint: '미식 취향', names: [] },
 ];
@@ -19,7 +19,7 @@ describe('groupPreferredThemes', () => {
         { preferredThemeName: '이자카야', category: 'RESTAURANT' },
       ]),
     ).toEqual([
-      { label: '장소', hint: '즐길 곳', names: ['미술관'] },
+      { label: '관광지', hint: '즐길 곳', names: ['미술관'] },
       { label: '숙소', hint: '머무는 방식', names: ['호텔'] },
       { label: '식당', hint: '미식 취향', names: ['퓨전음식', '이자카야'] },
     ]);
@@ -32,7 +32,7 @@ describe('groupPreferredThemes', () => {
         { preferredThemeName: '호텔', category: 'ACCOMMODATION' },
       ]),
     ).toEqual([
-      { label: '장소', hint: '즐길 곳', names: [] },
+      { label: '관광지', hint: '즐길 곳', names: [] },
       { label: '숙소', hint: '머무는 방식', names: ['호텔'] },
       { label: '식당', hint: '미식 취향', names: [] },
     ]);
@@ -40,7 +40,7 @@ describe('groupPreferredThemes', () => {
 
   it('문자열만 오면 장소로 보고 앞의 #을 뗀다', () => {
     expect(groupPreferredThemes(['#해수욕장', '한식'])[0]).toEqual({
-      label: '장소',
+      label: '관광지',
       hint: '즐길 곳',
       names: ['해수욕장', '한식'],
     });
