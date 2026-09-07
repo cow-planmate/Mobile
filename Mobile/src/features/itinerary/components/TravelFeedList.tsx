@@ -31,7 +31,6 @@ export interface TravelFeedItem {
   comments: number;
   views: number;
   forks: number;
-  tags: string[];
   location: string;
   duration: string;
   /** 첫날 코스. 목록 API가 placesByDay로 내려주는 값이다. */

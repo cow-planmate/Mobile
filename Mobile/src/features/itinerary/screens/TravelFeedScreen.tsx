@@ -277,7 +277,6 @@ export default function TravelFeedScreen() {
           comments: post.comments,
           views: post.views,
           forks: post.forks ?? 0,
-          tags: post.tags ?? [],
           location: post.region ?? post.location ?? '',
           duration: formatDuration(post.durationDays),
           routePlaces: post.placesByDay?.[0]?.places ?? [],

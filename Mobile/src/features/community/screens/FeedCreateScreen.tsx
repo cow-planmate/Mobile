@@ -33,7 +33,6 @@ import { normalize } from '../../../utils/normalize';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import {
   buildFeedUpdatePayload,
-  parseFeedTags,
 } from '../utils/feedPostPayload';
 import {
   buildFeedPlanSnapshot,
@@ -73,8 +72,10 @@ export default function FeedCreateScreen() {
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [tags, setTags] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
+  // 지금 앱은 메모를 늘 함께 보낸다. 기본값을 true로 두어 그 동작을 지키고,
+  // 끄고 싶을 때만 끌 수 있게 한다 (웹 기본값은 false다).
+  const [includeMemo, setIncludeMemo] = useState(true);
   const [thumbnailFile, setThumbnailFile] =
     useState<FeedImageUploadFile | null>(null);
 
@@ -96,7 +97,6 @@ export default function FeedCreateScreen() {
     hydratedPostId.current = postId;
     setTitle(post.title);
     setContent(post.contentText);
-    setTags((post.tags ?? []).join(', '));
     setThumbnailUrl(post.image ?? '');
   }, [existingPost.data, postId]);
 
@@ -186,6 +186,19 @@ export default function FeedCreateScreen() {
       }
 
       const contentText = content.trim() || title.trim();
+      // 메모를 안 내보내기로 했으면 스냅샷에서 털어낸다. 서버가 받은 대로 저장하므로
+      // 여기서 빼지 않으면 가져가는 사람에게 그대로 복사된다.
+      const itineraryToSend = snapshot
+        ? includeMemo
+          ? snapshot.itinerary
+          : {
+              ...snapshot.itinerary,
+              days: snapshot.itinerary.days.map(day => ({
+                ...day,
+                items: day.items.map(({ memo: _memo, ...item }) => item),
+              })),
+            }
+        : null;
       let uploadedThumbnailUrl: string | null = null;
       try {
         const resolvedThumbnailUrl = thumbnailFile
@@ -206,7 +219,6 @@ export default function FeedCreateScreen() {
               buildFeedUpdatePayload({
                 title,
                 content,
-                tags,
                 thumbnailUrl: resolvedThumbnailUrl ?? '',
               }),
             )
@@ -219,8 +231,7 @@ export default function FeedCreateScreen() {
               region: snapshot!.destinationName,
               location: snapshot!.destinationName,
               durationDays: snapshot!.itinerary.days.length,
-              itinerary: snapshot!.itinerary,
-              tags: parseFeedTags(tags),
+              itinerary: itineraryToSend!,
               sourcePlanId: snapshot!.planId,
             });
         allowLeave();
@@ -238,7 +249,7 @@ export default function FeedCreateScreen() {
         }
         if (!isMountedRef.current) return;
         showAlert({
-          title: isEditMode ? '여행기 수정 실패' : '여행기 발행 실패',
+          title: isEditMode ? '여행기 수정 실패' : '여행기 등록 실패',
           message: getBackendErrorMessage(error),
           type: 'error',
         });
@@ -269,13 +280,20 @@ export default function FeedCreateScreen() {
         >
           <ChevronLeft size={24} color={tokens.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {isEditMode ? '여행기 수정' : '여행기 발행'}
-        </Text>
-        <View style={styles.headerSpace} />
+        <View style={styles.headerText}>
+          <Text style={styles.headerTitle}>
+            {isEditMode ? '여행기 수정' : '여행기 작성'}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {isEditMode
+              ? '작성한 여행기를 수정할 수 있어요'
+              : '당신의 여행을 다른 사람들과 공유해보세요'}
+          </Text>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
+        <Text style={styles.section}>여행 정보</Text>
         <Text style={styles.label}>공개할 일정</Text>
         {isEditMode && existingPost.isLoading ? (
           <ActivityIndicator color={tokens.colors.primary} />
@@ -374,13 +392,51 @@ export default function FeedCreateScreen() {
           </View>
         )}
 
+        {previewDays.length > 0 && (
+          <>
+            <Text style={styles.label}>여행 기간</Text>
+            <View style={styles.durationRow}>
+              <Text style={styles.durationText}>
+                {`${Math.max(0, previewDays.length - 1)}박 ${previewDays.length}일`}
+              </Text>
+              <Text style={styles.durationHint}>
+                고른 일정의 일수로 자동 계산돼요
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.memoRow}
+              onPress={() => setIncludeMemo(current => !current)}
+              activeOpacity={0.7}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: includeMemo }}
+              accessibilityLabel="블록 메모도 함께 공개"
+            >
+              <View
+                style={[styles.memoBox, includeMemo && styles.memoBoxOn]}
+              >
+                {includeMemo && (
+                  <Check size={normalize(12)} color={tokens.colors.white} />
+                )}
+              </View>
+              <View style={styles.memoTextWrap}>
+                <Text style={styles.memoLabel}>블록 메모도 함께 공개</Text>
+                <Text style={styles.memoHint}>가져갈 때 메모까지 복사됩니다</Text>
+              </View>
+            </TouchableOpacity>
+          </>
+        )}
+
+        <Text style={[styles.section, styles.sectionGap]}>기본 정보</Text>
         <Text style={styles.label}>제목</Text>
         <TextInput
           value={title}
           onChangeText={setTitle}
           style={styles.input}
           placeholder={
-            isHydrating ? '기존 내용을 불러오는 중…' : '여행기 제목을 입력하세요'
+            isHydrating
+              ? '기존 내용을 불러오는 중…'
+              : '예: 서울 3박 4일 완벽 여행 코스'
           }
           editable={!isHydrating}
           maxLength={POST_TITLE_MAX_LENGTH}
@@ -400,15 +456,6 @@ export default function FeedCreateScreen() {
           multiline
           textAlignVertical="top"
           accessibilityLabel="여행기 설명"
-        />
-
-        <Text style={styles.label}>태그</Text>
-        <TextInput
-          value={tags}
-          onChangeText={setTags}
-          style={styles.input}
-          placeholder="#뚜벅이, #가족여행"
-          editable={!isHydrating}
         />
 
         <Text style={styles.label}>썸네일</Text>
@@ -458,10 +505,10 @@ export default function FeedCreateScreen() {
             {createPost.isPending || updatePost.isPending
               ? isEditMode
                 ? '수정 중…'
-                : '발행 중…'
+                : '등록 중…'
               : isEditMode
-                ? '여행기 수정하기'
-                : '여행기 발행하기'}
+                ? '수정 완료'
+                : '피드 등록하기'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -480,12 +527,75 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.border,
   },
+  headerText: { flex: 1 },
   headerTitle: {
     fontSize: normalize(17),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.text,
   },
-  headerSpace: { width: normalize(24) },
+  // 웹 CreatePostHeader의 부제. 무엇을 쓰는 곳인지 한 줄로 알린다.
+  headerSubtitle: {
+    marginTop: normalize(2),
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textSecondary,
+  },
+  // 웹은 카드 두 장으로 나누지만 앱은 제목만 놓는다. 라벨(14)보다 한 단계 위다.
+  section: {
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+    letterSpacing: -0.3,
+  },
+  sectionGap: { marginTop: normalize(18) },
+  durationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(10),
+    minHeight: normalize(44),
+  },
+  durationText: {
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.primary,
+  },
+  durationHint: {
+    flex: 1,
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textTertiary,
+  },
+  memoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(10),
+    paddingVertical: normalize(6),
+  },
+  memoBox: {
+    width: normalize(20),
+    height: normalize(20),
+    borderRadius: normalize(6),
+    borderWidth: 1.5,
+    borderColor: tokens.colors.borderStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  memoBoxOn: {
+    backgroundColor: tokens.colors.primary,
+    borderColor: tokens.colors.primary,
+  },
+  memoTextWrap: { flex: 1 },
+  memoLabel: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.text,
+  },
+  memoHint: {
+    marginTop: normalize(2),
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textTertiary,
+  },
   body: { padding: normalize(20), gap: normalize(10) },
   label: {
     marginTop: normalize(8),
