@@ -1013,7 +1013,7 @@ const TimelineTabScreen = React.memo(() => {
           onPress={onUndo}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel="실행 취소"
+          accessibilityLabel="되돌리기"
           hitSlop={3}
         >
           <Undo2 color={COLORS.text} size={16} />
@@ -1528,7 +1528,7 @@ export default function ItineraryEditorScreenView({
         >
           <ChevronLeft size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.topBarHeaderTitle}>일정편집</Text>
+        <Text style={styles.topBarHeaderTitle}>일정 편집</Text>
         <View style={styles.topBarSpacer} />
       </View>
 
