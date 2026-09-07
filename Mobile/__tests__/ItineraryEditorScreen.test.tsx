@@ -172,6 +172,9 @@ jest.mock('react-native-date-picker', () => {
 });
 
 import ItineraryEditorScreenView from '../src/features/itinerary/screens/ItineraryEditorScreen.view';
+import { TAB_FILL } from '../src/features/itinerary/screens/ItineraryEditorScreen.styles';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import ItineraryEditorScreen from '../src/features/itinerary/screens/ItineraryEditorScreen';
 import EditAccessGate from '../src/features/itinerary/components/EditAccessGate';
 import PlaceEditModal from '../src/features/itinerary/components/PlaceEditModal';
@@ -821,5 +824,30 @@ describe('ItineraryEditorScreen Component', () => {
       (call: any[]) => call[0] === 'update' && call[1] === 'plan',
     );
     expect(planUpdateCalls).toHaveLength(1);
+  });
+});
+
+// 웹 Create2에 맞춘 자리들. 되돌아가면 여기서 걸린다.
+describe('웹과 맞춘 일정 편집 문구', () => {
+  it('갈래 탭 채움 색이 갈래마다 다르다', () => {
+    const fills = Object.values(TAB_FILL);
+    expect(fills).toHaveLength(5);
+    // 다섯 개가 서로 달라야 갈래를 색으로 가릴 수 있다.
+    expect(new Set(fills).size).toBe(5);
+    // 흰 글자를 얹으므로 500 계열(밝은 쪽)이 섞이면 안 된다.
+    expect(fills).not.toContain('#84cc16');
+    expect(TAB_FILL['관광지']).toBe('#4D7C0F');
+  });
+
+  it('놓을 자리 안내가 이름 뒤에 조사를 붙이지 않는다', () => {
+    const source = readFileSync(
+      join(__dirname, '../src/features/itinerary/screens/ItineraryEditorScreen.view.tsx'),
+      'utf8',
+    );
+
+    expect(source).toContain("'{pendingPlace.name}' 놓을 자리를 눌러 주세요");
+    // 폰에는 클릭이 없고, '우도'을처럼 받침을 안 보는 조사도 쓰지 않는다.
+    expect(source).not.toContain('클릭해 주세요');
+    expect(source).not.toContain("'을 배치할");
   });
 });

@@ -238,7 +238,7 @@ export default function PlaceEditModal({
             style={styles.input}
             value={memo}
             onChangeText={setMemo}
-            placeholder="메모를 입력하세요"
+            placeholder="일정에 대한 메모를 남겨보세요."
             placeholderTextColor={tokens.colors.textTertiary}
             multiline
           />

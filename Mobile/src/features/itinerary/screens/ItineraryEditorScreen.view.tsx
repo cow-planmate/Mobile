@@ -47,6 +47,7 @@ import {
   MIN_ITEM_HEIGHT,
   GRID_SNAP_HEIGHT,
   GRID_TOP_OFFSET,
+  TAB_FILL,
 } from './ItineraryEditorScreen.styles';
 import {
   timeToMinutes,
@@ -800,7 +801,7 @@ const TimelineComponent = React.memo(
                 {pendingPlace && isDragging && dropBlocked && (
                   <View style={[styles.previewBanner, styles.previewBannerBlocked]}>
                     <Text style={styles.previewBannerBlockedText}>
-                      놓을 자리가 없어요
+                      공간 부족
                     </Text>
                   </View>
                 )}
@@ -923,7 +924,13 @@ const SheetCategoryRow = React.memo(function SheetCategoryRow({
         return (
           <TouchableOpacity
             key={tab}
-            style={[styles.sheetCat, isOn && styles.sheetCatOn]}
+            style={[
+              styles.sheetCat,
+              isOn && {
+                backgroundColor: TAB_FILL[tab] ?? COLORS.primary,
+                borderColor: TAB_FILL[tab] ?? COLORS.primary,
+              },
+            ]}
             onPress={() => onSelect(tab)}
             activeOpacity={0.8}
             accessibilityRole="tab"
@@ -1684,12 +1691,12 @@ export default function ItineraryEditorScreenView({
         )}
       </View>
 
-      {/* 끄는 동안에는 띄우지 않는다. '클릭해 주세요'가 맞지도 않고,
+      {/* 끄는 동안에는 띄우지 않는다. 이미 끌고 있는 손에 '눌러 주세요'는 맞지 않고,
           띠가 끼어들며 시간표가 밀려 놓이는 자리가 어긋난다. */}
       {pendingPlace && !draggingPlace && (
         <View style={styles.pendingPlaceBanner}>
           <Text style={styles.pendingPlaceBannerText}>
-            '{pendingPlace.name}'을 배치할 타임라인의 빈 영역을 클릭해 주세요.
+            '{pendingPlace.name}' 놓을 자리를 눌러 주세요
           </Text>
           <TouchableOpacity
             onPress={onCancelPlacement}

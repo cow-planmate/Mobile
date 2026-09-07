@@ -40,7 +40,7 @@ export default function PlanMapModal({
       <View style={[styles.container, screenInsets]}>
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.title}>일정 지도</Text>
+            <Text style={styles.title}>여행 동선</Text>
             <Text style={styles.subtitle}>
               지금 보고 있는 일차의 장소
             </Text>

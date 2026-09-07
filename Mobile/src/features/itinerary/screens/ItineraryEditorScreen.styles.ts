@@ -1,6 +1,19 @@
 import { Platform, StyleSheet } from 'react-native';
 import { tokens } from '../../../theme/tokens';
 
+/**
+ * 갈래 탭을 채우는 색. 웹 Sidebar가 쓰는 700 계열과 같다.
+ * 목록 쪽 TAB_COLORS(500 계열)는 장소 행의 점처럼 작은 표식용이라 흰 글자를 얹지 못한다 -
+ * #84cc16 위 흰 글자는 대비가 1.9:1이고 #4D7C0F는 5.9:1이다.
+ */
+export const TAB_FILL: Record<string, string> = {
+  관광지: '#4D7C0F',
+  숙소: '#C2410C',
+  식당: '#1D4ED8',
+  '직접 추가': '#6D28D9',
+  검색: '#374151',
+};
+
 export const COLORS = {
   primary: tokens.colors.primary,
   primaryTint: tokens.colors.primaryTint,
@@ -792,10 +805,6 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 9,
     paddingVertical: 5,
-  },
-  sheetCatOn: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
   },
   sheetCatText: {
     fontSize: 11.5,
