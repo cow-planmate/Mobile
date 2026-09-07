@@ -73,20 +73,6 @@ export const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: COLORS.primary,
   },
-  levelBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: normalize(8),
-    paddingVertical: normalize(2),
-    borderRadius: normalize(12),
-    gap: normalize(3),
-  },
-  levelBadgeText: {
-    fontSize: normalize(10),
-    color: COLORS.white,
-    fontWeight: 'bold',
-  },
   experienceSection: {
     marginBottom: normalize(16),
   },

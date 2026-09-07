@@ -89,7 +89,7 @@ export default function PostDetailScreen() {
   const postActionLock = useSubmitLock();
   const handleReact = (type: ReactionType) => {
     if (!isLoggedIn) {
-      showAlert({ title: '로그인 필요', message: '로그인 후 이용할 수 있어요.' });
+      showAlert({ title: '로그인 필요', message: '로그인이 필요합니다.' });
       return;
     }
     return reactLock.runExclusive(async () => {
@@ -109,7 +109,7 @@ export default function PostDetailScreen() {
     if (!post) return;
     showAlert({
       title: '게시글 삭제',
-      message: '게시글을 삭제할까요? 되돌릴 수 없어요.',
+      message: '게시글을 삭제할까요? 되돌릴 수 없습니다.',
       type: 'confirm',
       buttons: [
         { text: '취소', style: 'cancel' },
@@ -167,9 +167,7 @@ export default function PostDetailScreen() {
       <View style={[styles.container, screenInsets]}>
         {renderTopBar()}
         <View style={styles.stateBox}>
-          <Text style={styles.stateText}>
-            게시글을 찾을 수 없어요.{'\n'}삭제됐거나 접근할 수 없는 글이에요.
-          </Text>
+          <Text style={styles.stateText}>게시글을 찾을 수 없습니다.</Text>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.stateLink}>목록으로 돌아가기</Text>
           </TouchableOpacity>
@@ -226,7 +224,7 @@ export default function PostDetailScreen() {
                 name={post.author}
                 imageUrl={post.authorImage}
                 avatarHash={post.authorAvatarHash}
-                size={normalize(24)}
+                size={normalize(28)}
               />
               <Text style={styles.metaAuthor}>{post.author}</Text>
             </TouchableOpacity>
@@ -266,7 +264,7 @@ export default function PostDetailScreen() {
                       styles.authorActionAccentText,
                     ]}
                   >
-                    {post.isAnswered ? '답변대기로' : '답변완료로'}
+                    {post.isAnswered ? '답변대기로 변경' : '답변완료로 표시'}
                   </Text>
                 </TouchableOpacity>
               )}

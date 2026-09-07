@@ -191,9 +191,10 @@ export const styles = StyleSheet.create({
   reactionButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: normalize(6),
-    paddingHorizontal: normalize(18),
-    paddingVertical: normalize(9),
+    height: normalize(44),
+    paddingHorizontal: normalize(20),
     borderRadius: tokens.radius.l,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -208,7 +209,7 @@ export const styles = StyleSheet.create({
     borderColor: COLORS.textSecondary,
   },
   reactionText: {
-    fontSize: normalize(12),
+    fontSize: normalize(13),
     fontFamily: tokens.fontFamily.semibold,
     color: COLORS.textSecondary,
   },

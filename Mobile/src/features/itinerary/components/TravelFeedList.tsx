@@ -24,7 +24,6 @@ export interface TravelFeedItem {
   description: string;
   author: string;
   authorAvatar: string;
-  authorLevel: number;
   thumbnailUrl: string;
   createdAt: string;
   likes: number;

@@ -161,7 +161,7 @@ export default function CommentSection({
   }, [commentsQuery.data?.pages]);
 
   const requireLogin = useCallback(() => {
-    showAlert({ title: '로그인 필요', message: '로그인 후 이용할 수 있어요.' });
+    showAlert({ title: '로그인 필요', message: '로그인이 필요합니다.' });
   }, [showAlert]);
 
   const commentLock = useSubmitLock();
@@ -237,7 +237,7 @@ export default function CommentSection({
     showAlert({
       title: '댓글 삭제',
       message: hasReplies
-        ? '댓글을 삭제할까요? 답글도 함께 삭제돼요.'
+        ? '댓글을 삭제할까요? 답글도 함께 삭제됩니다.'
         : '댓글을 삭제할까요?',
       type: 'confirm',
       buttons: [
@@ -309,7 +309,7 @@ export default function CommentSection({
                       }}
                       hitSlop={6}
                     >
-                      <Text style={styles.action}>답글</Text>
+                      <Text style={styles.action}>답글 달기</Text>
                     </TouchableOpacity>
                   )}
                   {isAuthor && (
@@ -341,7 +341,7 @@ export default function CommentSection({
 
         {replyingTo === comment.id && (
           <CommentComposer
-            placeholder="답글을 입력하세요"
+            placeholder={`@${comment.author}님에게 답글 작성...`}
             containerStyle={styles.replyInputRow}
             submitting={createComment.isPending || replyLock.isSubmitting}
             onSubmit={text => handleReplySubmit(comment.id, text)}
@@ -362,7 +362,7 @@ export default function CommentSection({
 
       <CommentComposer
         placeholder={
-          isLoggedIn ? '댓글을 입력하세요' : '로그인 후 댓글을 쓸 수 있어요'
+          isLoggedIn ? '댓글을 입력하세요' : '댓글을 작성하려면 로그인하세요.'
         }
         editable={isLoggedIn}
         submitting={createComment.isPending || commentLock.isSubmitting}
@@ -375,7 +375,7 @@ export default function CommentSection({
           color={tokens.colors.primary}
         />
       ) : topLevel.length === 0 ? (
-        <Text style={styles.empty}>첫 댓글을 남겨보세요</Text>
+        <Text style={styles.empty}>첫 댓글을 남겨보세요!</Text>
       ) : (
         <>
           {topLevel.map(comment => renderComment(comment, false))}

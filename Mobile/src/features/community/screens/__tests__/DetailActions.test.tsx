@@ -305,3 +305,71 @@ describe('일정이 없는 여행기', () => {
     act(() => tree!.unmount());
   });
 });
+
+// 웹 PostDetailPage와 같은 문구를 쓰는지 본다. 앱 말투로 되돌아가면 여기서 걸린다.
+describe('웹과 맞춘 문구', () => {
+  const textsOf = (tree: renderer.ReactTestRenderer): string[] =>
+    tree.root
+      .findAllByType(Text)
+      .flatMap(node => {
+        const children = node.props.children;
+        return Array.isArray(children) ? children : [children];
+      })
+      .filter(child => typeof child === 'string' || typeof child === 'number')
+      .map(String);
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUsePosts.mockReturnValue({ data: { pages: [{ items: [] }] } });
+  });
+
+  it('글을 못 찾으면 한 줄로만 말한다', () => {
+    mockUsePost.mockReturnValue({ data: null, isLoading: false, isError: true });
+
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(<PostDetailScreen />);
+    });
+
+    const texts = textsOf(tree!);
+    expect(texts).toContain('게시글을 찾을 수 없습니다.');
+    expect(texts).toContain('목록으로 돌아가기');
+    expect(texts.some(t => t.includes('삭제됐거나'))).toBe(false);
+
+    act(() => tree!.unmount());
+  });
+
+  it('질문게시판 글쓴이에게는 답변완료로 표시가 보인다', () => {
+    mockUsePost.mockReturnValue({
+      data: { ...basePost, userId: 'viewer', category: 'qna', isAnswered: false },
+      isLoading: false,
+      isError: false,
+    });
+
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(<PostDetailScreen />);
+    });
+
+    expect(textsOf(tree!)).toContain('답변완료로 표시');
+
+    act(() => tree!.unmount());
+  });
+
+  it('이미 답변완료면 답변대기로 변경이 보인다', () => {
+    mockUsePost.mockReturnValue({
+      data: { ...basePost, userId: 'viewer', category: 'qna', isAnswered: true },
+      isLoading: false,
+      isError: false,
+    });
+
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(<PostDetailScreen />);
+    });
+
+    expect(textsOf(tree!)).toContain('답변대기로 변경');
+
+    act(() => tree!.unmount());
+  });
+});
