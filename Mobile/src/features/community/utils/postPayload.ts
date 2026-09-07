@@ -6,11 +6,14 @@ export function buildPostPayload({
   title,
   content,
   location,
+  rating,
 }: {
   category: Exclude<CommunityCategory, 'feed'>;
   title: string;
   content: string;
   location: string;
+  /** 0이면 고르지 않은 것 — 보내지 않는다 */
+  rating?: number;
 }): CreatePostPayload {
   const payload: CreatePostPayload = {
     category,
@@ -21,6 +24,9 @@ export function buildPostPayload({
 
   if (category === 'recommend') {
     payload.location = location.trim();
+    if (rating && rating > 0) {
+      payload.rating = rating;
+    }
   }
 
   return payload;

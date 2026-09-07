@@ -133,4 +133,67 @@ export const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.regular,
     color: COLORS.textTertiary,
   },
+
+  // 평점 — 별은 노랑으로 채운다. 목록의 평점 배지가 이미 금색 별이라
+  // 입력에서 회색을 쓰면 같은 값이 두 화면에서 다른 색이 된다.
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(2),
+  },
+  // 숫자는 별과 같은 노랑으로 두되 흰 바탕 위에서는 안 읽힌다(1.6:1).
+  // 목록의 평점 배지와 같은 연노랑 알약에 얹어 4.9:1을 지킨다.
+  ratingPill: {
+    marginLeft: normalize(8),
+    paddingHorizontal: normalize(7),
+    paddingVertical: normalize(2),
+    borderRadius: tokens.radius.s,
+    backgroundColor: tokens.tones.rating.bg,
+  },
+  ratingPillText: {
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.tones.rating.fg,
+  },
+
+  // 작성 팁 — 웹 GuidelineSection 자리
+  tipsBox: {
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    backgroundColor: '#F7FAFF',
+    borderRadius: tokens.radius.l,
+    paddingHorizontal: normalize(14),
+    paddingVertical: normalize(13),
+  },
+  tipsHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(6),
+    marginBottom: normalize(7),
+  },
+  tipsTitle: {
+    fontSize: normalize(12.5),
+    fontFamily: tokens.fontFamily.bold,
+    color: COLORS.primary,
+  },
+  tipRow: {
+    flexDirection: 'row',
+    gap: normalize(6),
+  },
+  tipText: {
+    flex: 1,
+    fontSize: normalize(12.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: '#3F5BB5',
+    lineHeight: normalize(20),
+  },
+  tipDot: {
+    fontSize: normalize(12.5),
+    color: '#3F5BB5',
+    lineHeight: normalize(20),
+  },
 });
+
+/** 채운 별과 빈 별. tokens.tones.rating(#FEFCE8 · #A16207) 계단에 밝은 한 칸을 더한 값이다. */
+export const STAR_ON = '#FACC15';
+export const STAR_OFF = '#D1D5DB';

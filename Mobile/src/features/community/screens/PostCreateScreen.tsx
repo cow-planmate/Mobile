@@ -13,17 +13,25 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
+import Lightbulb from 'lucide-react-native/dist/esm/icons/lightbulb';
+import Star from 'lucide-react-native/dist/esm/icons/star';
 import { normalize } from '../../../utils/normalize';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CommunityStackParamList } from '../../../navigation/types';
-import { BOARDS, BoardKey, POST_TITLE_MAX_LENGTH } from '../constants/board';
+import {
+  BOARDS,
+  BOARD_TIPS,
+  BoardKey,
+  boardLabel,
+  POST_TITLE_MAX_LENGTH,
+} from '../constants/board';
 import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
 import { buildPostPayload } from '../utils/postPayload';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { useUnsavedChangesPrompt } from '../../../hooks/useUnsavedChangesPrompt';
 import { searchPlacesByKeyword } from '../../../api/trips';
-import { styles, COLORS } from './PostCreateScreen.styles';
+import { styles, COLORS, STAR_ON, STAR_OFF } from './PostCreateScreen.styles';
 import { tokens } from '../../../theme/tokens';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
 
@@ -46,6 +54,8 @@ export default function PostCreateScreen() {
   const [location, setLocation] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  // 0이면 고르지 않은 것. 웹은 장소마다 평점을 매기지만 앱은 장소가 하나라 글에 하나만 붙인다.
+  const [rating, setRating] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(() => setLocationQuery(location.trim()), 300);
@@ -78,6 +88,7 @@ export default function PostCreateScreen() {
     setTitle(post.title);
     setContent(post.contentText);
     setLocation(post.location ?? '');
+    setRating(Number(post.rating ?? 0) || 0);
   }, [existingPost.data, postId]);
 
   const { isSubmitting, runExclusive } = useSubmitLock();
@@ -104,6 +115,7 @@ export default function PostCreateScreen() {
         title,
         content,
         location,
+        rating,
       });
 
       try {
@@ -230,7 +242,7 @@ export default function PostCreateScreen() {
             <Text style={styles.fieldLabel}>장소 (선택)</Text>
             <TextInput
               style={styles.input}
-              placeholder="예: 갑천생태호수공원"
+              placeholder="장소 검색 (예: 카페 델문도)"
               placeholderTextColor={COLORS.textTertiary}
               value={location}
               onChangeText={text => {
@@ -261,6 +273,40 @@ export default function PostCreateScreen() {
           </View>
         )}
 
+        {category === 'recommend' && (
+          <View>
+            <Text style={styles.fieldLabel}>평점 (선택)</Text>
+            <View style={styles.ratingRow}>
+              {[1, 2, 3, 4, 5].map(score => {
+                const filled = score <= rating;
+                return (
+                  <TouchableOpacity
+                    key={score}
+                    // 같은 별을 다시 누르면 지운다 — 그래야 '선택'이라는 말이 참이 된다.
+                    onPress={() => setRating(rating === score ? 0 : score)}
+                    hitSlop={4}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={`평점 ${score}점`}
+                    accessibilityState={{ selected: filled }}
+                  >
+                    <Star
+                      size={normalize(24)}
+                      color={filled ? STAR_ON : STAR_OFF}
+                      fill={filled ? STAR_ON : 'transparent'}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
+              {rating > 0 && (
+                <View style={styles.ratingPill}>
+                  <Text style={styles.ratingPillText}>{rating.toFixed(1)}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
         <View>
           <Text style={styles.fieldLabel}>내용</Text>
           <TextInput
@@ -277,6 +323,21 @@ export default function PostCreateScreen() {
             앱에서는 글자 서식 없이 작성해요. 줄바꿈은 그대로 유지되고,
             웹에서도 같은 문단으로 보여요.
           </Text>
+        </View>
+
+        <View style={styles.tipsBox}>
+          <View style={styles.tipsHead}>
+            <Lightbulb size={normalize(14)} color={COLORS.primary} />
+            <Text style={styles.tipsTitle}>
+              {`${boardLabel(category)} 작성 팁`}
+            </Text>
+          </View>
+          {BOARD_TIPS[category].map(tip => (
+            <View key={tip} style={styles.tipRow}>
+              <Text style={styles.tipDot}>·</Text>
+              <Text style={styles.tipText}>{tip}</Text>
+            </View>
+          ))}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
