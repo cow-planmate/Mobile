@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import FallbackImage from '../../../components/common/FallbackImage';
+import UserAvatar from '../../../components/common/UserAvatar';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import { BoardKey } from '../constants/board';
@@ -12,6 +13,10 @@ import PostTypeBadges from './PostTypeBadges';
  *
  * 커뮤니티 목록과 글 상세 아래의 '다른 글'이 같은 줄을 쓴다 — 목록에서 보던
  * 것과 다른 모양이 상세 아래에 또 나오면 같은 게시판으로 읽히지 않는다.
+ *
+ * 구성은 웹 PostListItem의 좁은 화면 갈래(sm:hidden)를 따른다 — 제목 뒤에 댓글 수,
+ * 그 아래 한 줄에 글쓴이 · 등록일 · 조회 · 추천. 썸네일만 웹과 다르게 사진을 그대로
+ * 띄운다 — 여행 글은 사진이 곧 정보라 아이콘으로 바꾸면 목록에서 잃는 게 크다.
  */
 const PostListItem = React.memo(function PostListItem({
   item,
@@ -27,7 +32,11 @@ const PostListItem = React.memo(function PostListItem({
     [onPress, item.id],
   );
 
-  const meta = [item.author, item.createdAt, `조회 ${item.views.toLocaleString()}`]
+  const meta = [
+    item.createdAt,
+    `조회 ${item.views.toLocaleString()}`,
+    `추천 ${item.likes.toLocaleString()}`,
+  ]
     .filter(Boolean)
     .join(' · ');
 
@@ -43,17 +52,21 @@ const PostListItem = React.memo(function PostListItem({
 
         <Text style={styles.title} numberOfLines={2}>
           {item.title}
+          {item.comments > 0 ? (
+            <Text style={styles.commentCount}>{` [${item.comments}]`}</Text>
+          ) : null}
         </Text>
 
-        <View style={styles.footRow}>
+        <View style={styles.metaRow}>
+          <UserAvatar
+            name={item.author}
+            imageUrl={item.authorImage}
+            avatarHash={item.authorAvatarHash}
+            size={normalize(20)}
+          />
           <Text style={styles.meta} numberOfLines={1}>
-            {meta}
-          </Text>
-          <Text style={styles.counts}>
-            <Text style={item.likes > 0 ? styles.countsOn : undefined}>
-              {`추천 ${item.likes}`}
-            </Text>
-            {` · 댓글 ${item.comments}`}
+            <Text style={styles.author}>{item.author}</Text>
+            {` · ${meta}`}
           </Text>
         </View>
       </View>
@@ -95,30 +108,29 @@ const styles = StyleSheet.create({
     fontSize: normalize(tokens.fontSize.s),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.text,
-    marginBottom: normalize(6),
+    lineHeight: normalize(20),
   },
-  footRow: {
+  // 웹은 제목 뒤에 [12] 꼴로 댓글 수를 붙인다. 메타 줄에서 빼 자리다.
+  commentCount: {
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.primary,
+  },
+  metaRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    gap: normalize(10),
-    marginTop: normalize(6),
+    alignItems: 'center',
+    gap: normalize(6),
+    marginTop: normalize(7),
   },
+  // #9CA3AF는 흰 바탕 대비 2.6:1로 본문 기준에 미달이라 웹 값(4.8:1)으로 올렸다.
   meta: {
     flex: 1,
     fontSize: normalize(11.5),
     fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
+    color: '#6B7280',
   },
-  counts: {
-    flex: 0,
-    fontSize: normalize(11.5),
-    fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
-  },
-  countsOn: {
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.primary,
+  author: {
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textLabel,
   },
   right: {
     marginLeft: normalize(12),

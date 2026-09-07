@@ -4,11 +4,14 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
+  ScrollView,
   FlatList,
   StatusBar,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import Plus from 'lucide-react-native/dist/esm/icons/plus';
 import Search from 'lucide-react-native/dist/esm/icons/search';
 import { styles } from './CommunityScreen.styles';
 import { Header, NotificationModal } from '../../../components/common';
@@ -17,12 +20,58 @@ import {
   UnderlineTabs,
 } from '../../../components/ui';
 import { tokens } from '../../../theme/tokens';
+import { normalize } from '../../../utils/normalize';
 import { CommunityPostSummary } from '../types';
 import { BoardKey, SortKey, SORT_OPTIONS } from '../constants/board';
 import PostListItem from '../components/PostListItem';
+import PostTypeBadges from '../components/PostTypeBadges';
+import UserAvatar from '../../../components/common/UserAvatar';
+
+/**
+ * 지금 뜨는 글 카드 — 웹 HotPostCard와 같은 순서로 쌓는다.
+ * 순위 → 배지 → 제목 두 줄 → 글쓴이 · 추천 · 댓글.
+ */
+const HotPostCard = ({
+  post,
+  rank,
+  category,
+  onPress,
+}: {
+  post: CommunityPostSummary;
+  rank: number;
+  category: BoardKey;
+  onPress: (postId: string) => void;
+}) => (
+  <Pressable
+    style={({ pressed }) => [styles.hotCard, pressed && styles.hotCardPressed]}
+    onPress={() => onPress(String(post.id))}
+    accessibilityRole="button"
+    accessibilityLabel={`${rank}위 ${post.title}`}
+  >
+    <Text style={[styles.hotRank, rank > 1 && styles.hotRankRest]}>{rank}</Text>
+    <View style={styles.hotBody}>
+      <PostTypeBadges post={post} category={category} />
+      <Text style={styles.hotCardTitle} numberOfLines={2}>
+        {post.title}
+      </Text>
+      <View style={styles.hotMetaRow}>
+        <UserAvatar
+          name={post.author}
+          imageUrl={post.authorImage}
+          avatarHash={post.authorAvatarHash}
+          size={normalize(18)}
+        />
+        <Text style={styles.hotMeta} numberOfLines={1}>
+          {`${post.author} · 추천 ${post.likes} · 댓글 ${post.comments}`}
+        </Text>
+      </View>
+    </View>
+  </Pressable>
+);
 
 export interface CommunityScreenViewProps {
   posts: CommunityPostSummary[];
+  hotPosts: CommunityPostSummary[];
   boards: readonly { key: BoardKey; label: string }[];
   selectedCategory: BoardKey;
   onSelectCategory: (category: BoardKey) => void;
@@ -52,6 +101,7 @@ export interface CommunityScreenViewProps {
 
 export default function CommunityScreenView({
   posts,
+  hotPosts,
   boards,
   selectedCategory,
   onSelectCategory,
@@ -103,48 +153,65 @@ export default function CommunityScreenView({
           onSelect={key => onSelectCategory(key as BoardKey)}
         />
 
+        {hotPosts.length > 0 ? (
+          <View style={styles.hotSection}>
+            <View style={styles.hotHead}>
+              <Text style={styles.hotHeadTitle}>지금 뜨는 글</Text>
+              <Text style={styles.hotHeadSub}>최근 24시간</Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.hotStrip}
+            >
+              {hotPosts.slice(0, 3).map((post, index) => (
+                <HotPostCard
+                  key={post.id}
+                  post={post}
+                  rank={index + 1}
+                  category={selectedCategory}
+                  onPress={onPostPress}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
+
         <View style={styles.searchBarRow}>
           <View style={styles.searchBarContainer}>
             <Search
-              size={18}
+              size={20}
               color={tokens.colors.textTertiary}
               style={styles.searchIcon}
             />
             <TextInput
               style={styles.searchInput}
               placeholder={`${selectedLabel} 내 검색...`}
-              placeholderTextColor={tokens.colors.textTertiary}
+              placeholderTextColor="#A6ABB5"
               value={searchQuery}
               onChangeText={onSearchChange}
               returnKeyType="search"
             />
           </View>
-          <TouchableOpacity
-            style={styles.writeButton}
-            onPress={onWritePost}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessibilityRole="button"
-            accessibilityLabel="글쓰기"
-          >
-            <Text style={styles.writeButtonText}>글쓰기</Text>
-          </TouchableOpacity>
         </View>
 
-        <View style={styles.sortRow}>
+        <View style={styles.sortTrack}>
           {SORT_OPTIONS.map(option => {
             const selected = selectedSort === option.key;
             return (
               <TouchableOpacity
                 key={option.key}
-                style={[styles.sortTab, selected && styles.sortTabOn]}
+                style={[styles.sortPill, selected && styles.sortPillOn]}
                 onPress={() => onSelectSort(option.key)}
                 activeOpacity={0.7}
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
               >
                 <Text
-                  style={[styles.sortTabText, selected && styles.sortTabTextOn]}
+                  style={[
+                    styles.sortPillText,
+                    selected && styles.sortPillTextOn,
+                  ]}
                 >
                   {option.label}
                 </Text>
@@ -152,10 +219,13 @@ export default function CommunityScreenView({
             );
           })}
         </View>
+
+        <View style={styles.listHeaderGap} />
       </View>
     ),
     [
       tabItems,
+      hotPosts,
       selectedCategory,
       selectedLabel,
       selectedSort,
@@ -163,7 +233,7 @@ export default function CommunityScreenView({
       onSelectCategory,
       onSelectSort,
       onSearchChange,
-      onWritePost,
+      onPostPress,
     ],
   );
 
@@ -189,7 +259,7 @@ export default function CommunityScreenView({
     if (isError) {
       return (
         <EmptyState
-          title="게시글을 불러오지 못했어요"
+          title="게시글을 불러오지 못했습니다"
           description="아래로 당겨 다시 시도해 주세요."
           style={styles.listStateBox}
         />
@@ -197,16 +267,12 @@ export default function CommunityScreenView({
     }
     return (
       <EmptyState
-        title={searchQuery ? '검색 결과가 없어요' : '아직 게시글이 없어요'}
-        description={
-          searchQuery ? undefined : '첫 글을 작성해 이야기를 시작해 보세요.'
-        }
-        actionLabel={searchQuery ? undefined : '글쓰기'}
-        onAction={searchQuery ? undefined : onWritePost}
+        title={searchQuery ? '검색 결과가 없습니다.' : '아직 게시글이 없어요'}
+        description={searchQuery ? undefined : '첫 글을 작성해보세요!'}
         style={styles.listStateBox}
       />
     );
-  }, [isLoading, isError, searchQuery, onWritePost]);
+  }, [isLoading, isError, searchQuery]);
 
   return (
     <View style={styles.container}>
@@ -243,6 +309,21 @@ export default function CommunityScreenView({
           />
         }
       />
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={onWritePost}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel="글쓰기"
+      >
+        <Plus
+          size={normalize(18)}
+          color={tokens.colors.white}
+          strokeWidth={2.4}
+        />
+        <Text style={styles.fabText}>글쓰기</Text>
+      </TouchableOpacity>
 
       <NotificationModal
         visible={isNotificationModalVisible}

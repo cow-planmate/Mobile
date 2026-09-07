@@ -17,7 +17,7 @@ import {
 } from '../../../hooks/usePendingInvitations';
 import { BOARDS, BoardKey, SortKey } from '../constants/board';
 import { CommunityStackParamList } from '../../../navigation/types';
-import { usePosts } from '../hooks/queries';
+import { useHotPosts, usePosts } from '../hooks/queries';
 import CommunityScreenView from './CommunityScreen.view';
 
 const SEARCH_DEBOUNCE_MS = 350;
@@ -50,6 +50,8 @@ export default function CommunityScreen() {
   }, [searchQuery]);
 
   const postsQuery = usePosts(category, sort, debouncedQuery);
+  // 지금 뜨는 글은 검색·정렬과 무관하게 게시판마다 고정이다 (웹 CommunityPage와 동일)
+  const hotPostsQuery = useHotPosts(category);
 
   // 게시판을 바꾸면 정렬·검색어를 초기 상태로 되돌린다 (웹 CommunityPage와 동일)
   const handleSelectCategory = useCallback((next: BoardKey) => {
@@ -114,7 +116,7 @@ export default function CommunityScreen() {
     if (!user) {
       showAlert({
         title: '로그인 필요',
-        message: '글을 쓰려면 로그인이 필요해요.',
+        message: '로그인 후 글을 작성할 수 있습니다.',
       });
       return;
     }
@@ -141,6 +143,7 @@ export default function CommunityScreen() {
   return (
     <CommunityScreenView
       posts={posts}
+      hotPosts={hotPostsQuery.data ?? []}
       boards={BOARDS}
       selectedCategory={category}
       onSelectCategory={handleSelectCategory}

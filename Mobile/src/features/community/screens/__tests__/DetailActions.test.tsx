@@ -210,9 +210,13 @@ describe('글 아래 다른 글 목록', () => {
       tree = renderer.create(<PostDetailScreen />);
     });
 
+    // 제목 Text는 댓글 수가 붙으면 children이 배열이 된다. 첫 조각만 본다.
     const titles = tree!.root
       .findAllByType(Text)
-      .map(node => node.props.children)
+      .map(node => {
+        const children = node.props.children;
+        return Array.isArray(children) ? children[0] : children;
+      })
       .filter(child => typeof child === 'string' && child.startsWith('글 '));
 
     expect(titles).toEqual(['글 1', '글 2', '글 3', '글 4', '글 5']);

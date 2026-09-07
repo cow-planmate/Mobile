@@ -53,6 +53,7 @@ const meta = {
   component: CommunityScreenView,
   args: {
     posts: POSTS,
+    hotPosts: [POSTS[0], POSTS[2]],
     boards: BOARDS,
     selectedCategory: 'free' as BoardKey,
     onSelectCategory: action('게시판 전환'),

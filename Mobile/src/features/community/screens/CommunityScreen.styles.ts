@@ -23,248 +23,169 @@ export const styles = StyleSheet.create({
     backgroundColor: tokens.colors.white,
   },
 
+  // 글쓰기가 FAB로 빠져 검색칸이 폭 전체를 쓴다. 치수는 웹 SearchBar와 같다.
   searchBarRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: normalize(16),
     paddingTop: normalize(12),
-    gap: normalize(8),
+    backgroundColor: tokens.colors.white,
   },
   searchBarContainer: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: tokens.colors.white,
+    backgroundColor: '#FBFCFD',
     borderWidth: 1,
-    borderColor: tokens.colors.border,
-    borderRadius: normalize(8),
-    paddingHorizontal: normalize(11),
-    height: normalize(38),
+    borderColor: '#D9DCE2',
+    borderRadius: tokens.radius.l,
+    paddingHorizontal: normalize(14),
+    height: normalize(48),
   },
   searchIcon: {
-    marginRight: normalize(8),
+    marginRight: normalize(10),
   },
   searchInput: {
     flex: 1,
-    fontSize: normalize(tokens.fontSize.s),
+    fontSize: normalize(15),
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.text,
     padding: 0,
   },
-  // 탭바 가운데가 이미 만들기 버튼이다. 여기까지 파란 덩어리를 둘 이유가 없다.
-  writeButton: {
-    paddingHorizontal: normalize(2),
-  },
-  writeButtonText: {
-    fontSize: normalize(13),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.primary,
-  },
 
-  hotSectionContainer: {
-    paddingTop: normalize(18),
+  // 웹은 3열 그리드지만 360dp에 세 칸은 못 넣는다. 가로로 굴려 다음 장이 살짝 보이게 한다.
+  hotSection: {
+    backgroundColor: tokens.colors.white,
+    paddingTop: normalize(16),
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.border,
   },
-  hotHeaderRow: {
+  hotHead: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: normalize(8),
     paddingHorizontal: normalize(16),
-    marginBottom: normalize(10),
+    marginBottom: normalize(11),
   },
-  hotIconWrap: {
-    backgroundColor: tokens.tones.hot.bg,
-    borderRadius: tokens.radius.m,
-    padding: normalize(6),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hotListScroll: {
-    paddingHorizontal: normalize(16),
-    paddingBottom: normalize(4),
-    gap: normalize(10),
-  },
-  hotPostCard: {
-    flexDirection: 'row',
-    width: normalize(290),
-  },
-  hotCardLeft: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  hotRankRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(6),
-    marginBottom: normalize(6),
-  },
-  hotRankNum: {
-    fontSize: normalize(tokens.fontSize.s),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.tones.hot.fg,
-  },
-  hotViewsWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(3),
-    marginLeft: 'auto',
-  },
-  hotViewsText: {
-    fontSize: normalize(tokens.fontSize.xxs),
-    fontFamily: tokens.fontFamily.medium,
-    color: tokens.colors.textTertiary,
-  },
-  hotCardTitle: {
-    fontSize: normalize(tokens.fontSize.s),
+  hotHeadTitle: {
+    fontSize: normalize(15),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.text,
-    marginBottom: normalize(10),
+    letterSpacing: -0.4,
   },
-  hotCardFooter: {
+  hotHeadSub: {
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textTertiary,
+  },
+  hotStrip: {
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(16),
+    gap: normalize(10),
+  },
+  hotCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: normalize(8),
+    gap: normalize(10),
+    width: normalize(290),
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    borderRadius: tokens.radius.l,
+    paddingHorizontal: normalize(13),
+    paddingVertical: normalize(12),
+    backgroundColor: tokens.colors.white,
   },
-  hotCardAuthorRow: {
+  hotCardPressed: {
+    backgroundColor: tokens.colors.surface,
+  },
+  // 1위만 본색, 2·3위는 한 단계 눕힌다 — 웹 HotPostCard와 같다.
+  hotRank: {
+    fontSize: normalize(20),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.primary,
+    lineHeight: normalize(22),
+  },
+  hotRankRest: {
+    color: '#7390FF',
+  },
+  hotBody: {
     flex: 1,
+  },
+  hotCardTitle: {
+    fontSize: normalize(13.5),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+    lineHeight: normalize(19),
+    letterSpacing: -0.3,
+  },
+  hotMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: normalize(5),
+    marginTop: normalize(8),
   },
-  hotAuthorText: {
-    flexShrink: 1,
-    fontSize: normalize(tokens.fontSize.xs),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.textSecondary,
-  },
-  hotLikesWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(3),
-    backgroundColor: tokens.tones.hot.bg,
-    paddingHorizontal: normalize(6),
-    paddingVertical: normalize(2),
-    borderRadius: tokens.radius.s,
-  },
-  hotLikesText: {
-    fontSize: normalize(tokens.fontSize.xxs),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.tones.hot.fg,
-  },
-  hotCardRight: {
-    marginLeft: normalize(10),
-  },
-  hotThumbnail: {
-    width: normalize(66),
-    height: normalize(66),
-    borderRadius: tokens.radius.m,
+  hotMeta: {
+    flex: 1,
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: '#6B7280',
   },
 
-  // 정렬도 게시판 탭과 같은 밑줄 형태로 맞춘다. 알약을 섞지 않는다.
-  sortRow: {
+  // 게시판 전환은 밑줄, 정렬은 알약. 모양으로 갈려야 둘이 다른 일이라는 게 읽힌다.
+  sortTrack: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: normalize(18),
-    paddingHorizontal: normalize(16),
-    paddingTop: normalize(11),
-    borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.borderLight,
+    gap: normalize(2),
+    marginHorizontal: normalize(16),
+    marginTop: normalize(12),
+    padding: normalize(4),
+    borderRadius: tokens.radius.l,
+    backgroundColor: '#F1F1F3',
+  },
+  sortPill: {
+    flex: 1,
+    height: normalize(36),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: tokens.radius.m,
+  },
+  sortPillOn: {
     backgroundColor: tokens.colors.white,
+    ...tokens.shadows.sm,
   },
-  sortTab: {
-    paddingBottom: normalize(9),
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-    marginBottom: -1,
-  },
-  sortTabOn: {
-    borderBottomColor: tokens.colors.text,
-  },
-  sortTabText: {
+  sortPillText: {
     fontSize: normalize(13),
-    fontFamily: tokens.fontFamily.medium,
-    color: tokens.colors.textTertiary,
-  },
-  sortTabTextOn: {
     fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.text,
+    color: '#454A55',
+  },
+  sortPillTextOn: {
+    color: tokens.colors.primary,
+  },
+  // 머리와 목록 사이 회색 띠. 흰 덩어리 둘이 맞붙지 않게 한다.
+  listHeaderGap: {
+    height: normalize(12),
+    backgroundColor: tokens.colors.surface,
   },
 
   postList: {
-    paddingBottom: normalize(32),
+    paddingBottom: normalize(96),
   },
-  // 카드 테두리 대신 전체 폭 구분선 하나로 나눈다. 여행기 목록과 같은 틀이다.
-  postRow: {
-    flexDirection: 'row',
-    gap: normalize(12),
-    paddingHorizontal: normalize(16),
-    paddingVertical: normalize(15),
-    borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.borderLight,
-    backgroundColor: tokens.colors.white,
-  },
-  postRowPressed: {
-    backgroundColor: tokens.colors.surface,
-  },
-  postFootRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    gap: normalize(10),
-    marginTop: normalize(6),
-  },
-  postMeta: {
-    flex: 1,
-    fontSize: normalize(11.5),
-    fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
-  },
-  postCounts: {
-    flex: 0,
-    fontSize: normalize(11.5),
-    fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
-  },
-  postCountsOn: {
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.primary,
-  },
-  postLeftSection: {
-    flex: 1,
-  },
-  postTitle: {
-    fontSize: normalize(tokens.fontSize.s),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.text,
-    marginBottom: normalize(6),
-  },
-  postMetaRow: {
+
+  // 여행기 createButton과 같은 값(높이 48 · 오른쪽 20 · 아래 20).
+  // 그림자는 tokens.shadows.md 하나만 쓴다 — 안드로이드는 elevation만 읽는다.
+  fab: {
+    position: 'absolute',
+    right: normalize(20),
+    bottom: normalize(20),
+    height: normalize(48),
+    paddingHorizontal: normalize(20),
+    borderRadius: tokens.radius.round,
+    backgroundColor: tokens.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: normalize(5),
+    justifyContent: 'center',
+    gap: normalize(7),
+    ...tokens.shadows.md,
   },
-  authorName: {
-    flexShrink: 1,
-    fontSize: normalize(tokens.fontSize.xs),
+  fabText: {
+    fontSize: normalize(tokens.fontSize.s),
     fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.textSecondary,
-  },
-  postTime: {
-    fontSize: normalize(tokens.fontSize.xs),
-    fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
-  },
-  postStatsRow: {
-    marginTop: normalize(10),
-    paddingTop: normalize(10),
-  },
-  postRightSection: {
-    marginLeft: normalize(12),
-  },
-  thumbnailImage: {
-    width: normalize(72),
-    height: normalize(72),
-    borderRadius: tokens.radius.m,
-  },
-  thumbnailFallback: {
-    backgroundColor: tokens.colors.surface,
+    color: tokens.colors.white,
   },
 
   listFooterLoading: {
