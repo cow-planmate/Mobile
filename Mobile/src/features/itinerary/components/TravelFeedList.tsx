@@ -182,7 +182,7 @@ const FeedListItem = React.memo(function FeedListItem({
             {item.title}
           </Text>
           <Text style={styles.description} numberOfLines={2}>
-            {item.description}
+            {item.description.replace(/\s+/g, ' ').trim()}
           </Text>
           <FeedRoute item={item} />
           <FeedByline item={item} />
@@ -207,7 +207,7 @@ const FeedListItem = React.memo(function FeedListItem({
             {item.title}
           </Text>
           <Text style={styles.description} numberOfLines={2}>
-            {item.description}
+            {item.description.replace(/\s+/g, ' ').trim()}
           </Text>
         </View>
         <FeedThumbnail uri={item.thumbnailUrl} style={styles.listThumbnail} />
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.textSecondary,
     lineHeight: normalize(19),
-    height: normalize(19) * 2,
+    minHeight: normalize(19) * 2,
     marginTop: normalize(4),
   },
 

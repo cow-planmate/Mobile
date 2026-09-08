@@ -6,16 +6,28 @@ jest.mock('@shopify/flash-list', () => {
   const { View } = require('react-native');
   return {
     FlashList: (props: any) => {
-      const { data, renderItem, ListHeaderComponent, ListFooterComponent, ListEmptyComponent, onScroll } = props;
+      const {
+        data,
+        renderItem,
+        ListHeaderComponent,
+        ListFooterComponent,
+        ListEmptyComponent,
+        onScroll,
+      } = props;
       return (
         <View testID="mock-flash-list" onScroll={onScroll}>
           {ListHeaderComponent && ListHeaderComponent()}
           {data && data.length > 0
             ? data.map((item: any, index: number) => {
                 const element = renderItem({ item, index });
-                return require('react').cloneElement(element, { key: item.id || index.toString() });
+                return require('react').cloneElement(element, {
+                  key: item.id || index.toString(),
+                });
               })
-            : ListEmptyComponent && (typeof ListEmptyComponent === 'function' ? ListEmptyComponent() : ListEmptyComponent)}
+            : ListEmptyComponent &&
+              (typeof ListEmptyComponent === 'function'
+                ? ListEmptyComponent()
+                : ListEmptyComponent)}
           {ListFooterComponent && ListFooterComponent()}
         </View>
       );
@@ -170,7 +182,10 @@ describe('TravelFeedList Component', () => {
 
     await act(async () => {
       component = renderer.create(
-        <TravelFeedList items={[{ ...mockItem, description }]} viewMode="list" />,
+        <TravelFeedList
+          items={[{ ...mockItem, description }]}
+          viewMode="list"
+        />,
       );
     });
 
@@ -180,8 +195,31 @@ describe('TravelFeedList Component', () => {
       .filter((style: any) => style.lineHeight === 19);
 
     expect(slots).toHaveLength(1);
-    expect(slots[0].height).toBe(38);
+    expect(slots[0].minHeight).toBe(38);
+    expect(slots[0].height).toBeUndefined();
   });
+
+  it.each(['list', 'grid'] as const)(
+    '%s에서 줄바꿈 때문에 요약이 조기에 잘리지 않는다',
+    async viewMode => {
+      let tree: renderer.ReactTestRenderer;
+      await act(async () => {
+        tree = renderer.create(
+          <TravelFeedList
+            items={[
+              { ...mockItem, description: '첫째 날\n\n둘째 날\t셋째 날' },
+            ]}
+            viewMode={viewMode}
+          />,
+        );
+      });
+      const summary = tree!.root
+        .findAllByType(require('react-native').Text)
+        .find(node => node.props.children === '첫째 날 둘째 날 셋째 날');
+      expect(summary?.props.numberOfLines).toBe(2);
+      act(() => tree!.unmount());
+    },
+  );
 
   it('목록이 굴러가면 굴러간 거리를 알린다', async () => {
     const onScrollOffset = jest.fn();

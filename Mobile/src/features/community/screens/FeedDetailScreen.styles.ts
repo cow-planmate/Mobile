@@ -23,9 +23,6 @@ export const styles = StyleSheet.create({
   // 회색이 보이는 유일한 자리. 덩어리 사이를 벌려 글이 위에 붙지 않게 한다.
   band: {
     height: normalize(20),
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: COLORS.border,
   },
   // 머리 바로 아래 띠는 머리의 아래 선과 맞닿아 두 줄이 된다. 위 선을 뺀다.
   bandUnderTopBar: {
@@ -73,13 +70,15 @@ export const styles = StyleSheet.create({
     color: COLORS.primary,
   },
 
-
   header: {
     paddingHorizontal: normalize(16),
     paddingTop: normalize(16),
-    paddingBottom: normalize(14),
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    paddingBottom: normalize(24),
+    marginHorizontal: normalize(16),
+    marginTop: normalize(12),
+    marginBottom: normalize(16),
+    borderRadius: normalize(16),
+    backgroundColor: COLORS.surface,
   },
   title: {
     fontSize: normalize(19),
@@ -239,7 +238,6 @@ export const styles = StyleSheet.create({
   dayTabTextActive: {
     color: COLORS.white,
   },
-
 
   body: {
     paddingHorizontal: normalize(16),

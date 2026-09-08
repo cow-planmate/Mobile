@@ -548,7 +548,7 @@ export default function FeedDetailScreen() {
                     }
                   />
                   <View style={styles.similarBody}>
-                    <Text style={styles.similarTitle} numberOfLines={1}>
+                    <Text style={styles.similarTitle} numberOfLines={2}>
                       {item.title}
                     </Text>
                     <Text style={styles.similarMeta} numberOfLines={1}>
