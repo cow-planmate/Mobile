@@ -837,6 +837,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       />
 
       <PlanMapModal
+        dayLabel={selectedDay ? `${selectedDay.dayNumber}일차` : undefined}
         visible={isMapPreviewVisible}
         onClose={handleCloseMap}
         onApplyOptimizedOrder={handleApplyOptimizedOrder}
@@ -882,6 +883,15 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         />
       )}
       <PlanInfoModal
+        onEditName={canEdit ? () => {
+          setPlanInfoVisible(false);
+          setIsEditingTripName(true);
+        } : undefined}
+        onEditPeriod={canEdit ? () => {
+          setPlanInfoVisible(false);
+          scheduleEditBaseRef.current = days;
+          setScheduleEditVisible(true);
+        } : undefined}
         visible={isPlanInfoVisible}
         onClose={() => setPlanInfoVisible(false)}
         planName={tripName}

@@ -13,7 +13,7 @@ import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
 import CheckIcon from 'lucide-react-native/dist/esm/icons/check';
 import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import Share2 from 'lucide-react-native/dist/esm/icons/share-2';
-import RouteMapSection from '../components/RouteMapSection';
+import PlanMapModal from '../components/PlanMapModal';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
 import { ShareModal, AirplaneLoading } from '../../../components/common';
 import PlanScheduleList, {
@@ -271,13 +271,12 @@ export default function ItineraryViewScreenView({
         )}
       </View>
 
-      {isMapVisible && (
-        <View style={styles.mapContainer}>
-          <View style={styles.mapInner}>
-            <RouteMapSection places={mapPlaces} />
-          </View>
-        </View>
-      )}
+      <PlanMapModal
+        visible={isMapVisible}
+        onClose={() => setMapVisible(false)}
+        places={mapPlaces}
+        dayLabel={selectedDay ? `${selectedDay.dayNumber}일차` : undefined}
+      />
 
       <View style={styles.flex1}>
         {selectedDay && (

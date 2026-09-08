@@ -154,6 +154,7 @@ export const Timeline: Story = {
 
 export const WithMap: Story = {
   name: '지도 포함',
+  parameters: { dismissibleFullScreenModal: true },
   render: () => <ViewHarness initialMapVisible />,
 };
 

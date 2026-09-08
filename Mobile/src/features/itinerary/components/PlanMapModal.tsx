@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ScrollView,
 } from 'react-native';
 import XIcon from 'lucide-react-native/dist/esm/icons/x';
 import RouteMapSection from './RouteMapSection';
@@ -18,6 +19,7 @@ export interface PlanMapModalProps {
   onClose: () => void;
   places: MapPlace[];
   onApplyOptimizedOrder?: (orderedPlaceIds: string[]) => void;
+  dayLabel?: string;
 }
 
 export default function PlanMapModal({
@@ -25,10 +27,12 @@ export default function PlanMapModal({
   onClose,
   places,
   onApplyOptimizedOrder,
+  dayLabel,
 }: PlanMapModalProps) {
   // 안드로이드가 edge-to-edge를 강제해 상단바를 직접 그리는 화면은
   // 이 여백을 얹지 않으면 제목이 상태바 아래로 깔린다.
   const screenInsets = useScreenInsets();
+  if (!visible) return null;
 
   return (
     <Modal
@@ -42,7 +46,7 @@ export default function PlanMapModal({
           <View style={styles.headerText}>
             <Text style={styles.title}>여행 동선</Text>
             <Text style={styles.subtitle}>
-              지금 보고 있는 일차의 장소
+              {dayLabel ?? '선택한 일차'} · {places.length}곳
             </Text>
           </View>
           <TouchableOpacity
@@ -61,6 +65,21 @@ export default function PlanMapModal({
             onApplyOptimizedOrder={onApplyOptimizedOrder}
           />
         </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.placeStrip}
+          contentContainerStyle={styles.placeStripContent}
+        >
+          {places.map((place, index) => (
+            <View key={place.id} style={styles.placeLabel}>
+              <Text style={styles.placeNumber}>{index + 1}</Text>
+              <Text style={styles.placeName} numberOfLines={1}>
+                {place.name}
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -99,6 +118,27 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
-    padding: normalize(16),
+  },
+  placeStrip: { flexGrow: 0, maxHeight: normalize(68) },
+  placeStripContent: { padding: normalize(12), gap: normalize(8) },
+  placeLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(8),
+    paddingHorizontal: normalize(12),
+    minHeight: normalize(40),
+    borderRadius: normalize(12),
+    backgroundColor: tokens.colors.primaryTint,
+  },
+  placeNumber: {
+    color: tokens.colors.primary,
+    fontFamily: tokens.fontFamily.bold,
+    fontSize: normalize(13),
+  },
+  placeName: {
+    maxWidth: normalize(180),
+    color: tokens.colors.text,
+    fontFamily: tokens.fontFamily.medium,
+    fontSize: normalize(13),
   },
 });

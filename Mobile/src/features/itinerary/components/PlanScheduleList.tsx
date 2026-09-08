@@ -20,9 +20,9 @@ const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 export const formatFullDate = (date?: Date | null): string => {
   if (!date || Number.isNaN(date.getTime())) return '';
-  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 (${
-    WEEKDAYS[date.getDay()]
-  })`;
+  return `${date.getFullYear()}년 ${
+    date.getMonth() + 1
+  }월 ${date.getDate()}일 (${WEEKDAYS[date.getDay()]})`;
 };
 
 /**
@@ -124,14 +124,12 @@ const ScheduleRow = React.memo(
   ({
     entry,
     isFirst,
-    isLast,
     continueRail,
     showMapLink,
     onPress,
   }: {
     entry: ScheduleEntry;
     isFirst: boolean;
-    isLast: boolean;
     /** 마지막 줄 아래로 이음줄을 더 내릴지. 닫는 표시가 뒤따를 때만 참이다. */
     continueRail: boolean;
     showMapLink?: boolean;
@@ -180,55 +178,56 @@ const ScheduleRow = React.memo(
           )}
         </View>
 
-        {/* 실선은 이음줄을 건드리지 않고 내용 쪽만 끊는다 — 메모가 긴 곳과 다음 곳이 붙어 보이지 않게. */}
-        <View style={[styles.body, !isLast && styles.bodyDivided]}>
-          <CategoryChip entry={entry} />
-          <Text style={styles.name} numberOfLines={2}>
-            {entry.name}
-          </Text>
-          {!!entry.subtitle && (
-            <Text style={styles.address} numberOfLines={2}>
-              {entry.subtitle}
+        <View style={styles.card}>
+          <View style={styles.body}>
+            <CategoryChip entry={entry} />
+            <Text style={styles.name} numberOfLines={2}>
+              {entry.name}
             </Text>
-          )}
-          {!!memo && (
-            <View style={styles.memoRow}>
-              <MessageSquareText
-                size={normalize(12)}
-                color={tokens.colors.primary}
-                strokeWidth={2}
-              />
-              <Text style={styles.memo} numberOfLines={3}>
-                {memo}
+            {!!entry.subtitle && (
+              <Text style={styles.address} numberOfLines={2}>
+                {entry.subtitle}
               </Text>
-            </View>
-          )}
-          {canOpenMap && (
-            <TouchableOpacity
-              style={styles.mapLink}
-              onPress={() => openExternalUrl(entry.mapUrl)}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="link"
-              accessibilityLabel={`${entry.name} 지도에서 보기`}
-            >
-              <ExternalLink
-                size={normalize(12)}
-                color={tokens.colors.primary}
-                strokeWidth={2}
-              />
-              <Text style={styles.mapLinkText}>지도에서 보기</Text>
-            </TouchableOpacity>
+            )}
+            {!!memo && (
+              <View style={styles.memoRow}>
+                <MessageSquareText
+                  size={normalize(12)}
+                  color={tokens.colors.primary}
+                  strokeWidth={2}
+                />
+                <Text style={styles.memo} numberOfLines={3}>
+                  {memo}
+                </Text>
+              </View>
+            )}
+            {canOpenMap && (
+              <TouchableOpacity
+                style={styles.mapLink}
+                onPress={() => openExternalUrl(entry.mapUrl)}
+                activeOpacity={0.7}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="link"
+                accessibilityLabel={`${entry.name} 지도에서 보기`}
+              >
+                <ExternalLink
+                  size={normalize(12)}
+                  color={tokens.colors.primary}
+                  strokeWidth={2}
+                />
+                <Text style={styles.mapLinkText}>지도에서 보기</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {!!photo && (
+            <FallbackImage
+              uri={photo}
+              style={styles.photo}
+              fallback={<View style={[styles.photo, styles.photoEmpty]} />}
+            />
           )}
         </View>
-
-        {!!photo && (
-          <FallbackImage
-            uri={photo}
-            style={styles.photo}
-            fallback={<View style={[styles.photo, styles.photoEmpty]} />}
-          />
-        )}
       </TouchableOpacity>
     );
   },
@@ -296,7 +295,9 @@ export function ScheduleTimeline({
     return emptyText ? <Text style={styles.empty}>{emptyText}</Text> : null;
   }
 
-  const closingTime = endLabel ? entries[entries.length - 1].endTime : undefined;
+  const closingTime = endLabel
+    ? entries[entries.length - 1].endTime
+    : undefined;
 
   return (
     <>
@@ -305,7 +306,6 @@ export function ScheduleTimeline({
           key={entry.key}
           entry={entry}
           isFirst={index === 0}
-          isLast={index === entries.length - 1}
           continueRail={index < entries.length - 1 || !!endLabel}
           showMapLink={showMapLink}
           onPress={onPressEntry ? () => onPressEntry(entry, index) : undefined}
@@ -426,16 +426,22 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
 
-  body: {
+  card: {
     flex: 1,
     minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     paddingTop: normalize(12),
     paddingBottom: normalize(14),
     paddingRight: normalize(12),
+    paddingLeft: normalize(12),
+    marginBottom: normalize(10),
+    borderRadius: normalize(14),
+    backgroundColor: tokens.colors.surface,
   },
-  bodyDivided: {
-    borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.borderLight,
+  body: {
+    flex: 1,
+    minWidth: 0,
   },
   chip: {
     alignSelf: 'flex-start',
@@ -499,7 +505,7 @@ const styles = StyleSheet.create({
     width: normalize(56),
     height: normalize(56),
     borderRadius: normalize(6),
-    marginTop: normalize(12),
+    marginLeft: normalize(10),
   },
   photoEmpty: {
     backgroundColor: tokens.colors.borderLight,
