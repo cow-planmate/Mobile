@@ -13,6 +13,7 @@ import { INITIAL_TAB } from '../../navigation/types';
 import UserIcon from 'lucide-react-native/dist/esm/icons/user';
 import LogOut from 'lucide-react-native/dist/esm/icons/log-out';
 import Bell from 'lucide-react-native/dist/esm/icons/bell';
+import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useWebSocket } from '../../contexts/WebSocketContext';
 import { normalize } from '../../utils/normalize';
@@ -42,20 +43,37 @@ const Header: React.FC<HeaderProps> = ({
   const logout = useAuthStore(state => state.logout);
   const { disconnect } = useWebSocket();
   const [menuVisible, setMenuVisible] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 16 });
-  const profileRef = useRef<React.ComponentRef<typeof TouchableOpacity>>(null);
+  const [menuPosition, setMenuPosition] = useState({
+    top: 0,
+    right: 16,
+    pointerRight: 12,
+  });
+  const profileRef = useRef<View>(null);
+  const overlayRef = useRef<View>(null);
 
-  const handleProfilePress = () => {
-    profileRef.current?.measure((x, y, width, height, pageX, pageY) => {
-      const screenWidth = Dimensions.get('window').width;
-      const right = screenWidth - (pageX + width);
+  const positionMenu = (
+    originX = 0,
+    originY = 0,
+    screenWidth = Dimensions.get('window').width,
+  ) => {
+    profileRef.current?.measureInWindow((pageX, pageY, width, height) => {
+      const right = Math.max(
+        normalize(16),
+        screenWidth - (pageX - originX + width),
+      );
       setMenuPosition({
-        top: pageY + height + 3,
-        right: Math.max(16, right),
+        top: pageY - originY + height + normalize(6),
+        right,
+        pointerRight: Math.max(
+          normalize(18),
+          screenWidth - (pageX - originX + width / 2) - right - normalize(5),
+        ),
       });
       setMenuVisible(true);
     });
   };
+
+  const handleProfilePress = () => positionMenu();
 
   const handleMenuItemPress = (action: 'profile' | 'logout') => {
     setMenuVisible(false);
@@ -114,14 +132,16 @@ const Header: React.FC<HeaderProps> = ({
         </TouchableOpacity>
 
         <TouchableOpacity
-          ref={profileRef}
           style={styles.profileButton}
           onPress={handleProfilePress}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel={`${nickname || '사용자'}님 메뉴 열기`}
+          accessibilityState={{ expanded: menuVisible }}
         >
           <View
+            ref={profileRef}
+            collapsable={false}
             style={[styles.userAvatar, menuVisible && styles.userAvatarActive]}
           >
             <FallbackImage
@@ -143,26 +163,62 @@ const Header: React.FC<HeaderProps> = ({
         visible={menuVisible}
         transparent={true}
         animationType="fade"
+        onShow={() =>
+          overlayRef.current?.measureInWindow((x, y, width) =>
+            positionMenu(x, y, width),
+          )
+        }
         onRequestClose={() => setMenuVisible(false)}
       >
-        <Pressable
+        <View
+          ref={overlayRef}
+          testID="profile-menu-overlay"
+          collapsable={false}
           style={styles.modalOverlay}
-          onPress={() => setMenuVisible(false)}
         >
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setMenuVisible(false)}
+            accessibilityRole="button"
+            accessibilityLabel="프로필 메뉴 닫기"
+          />
           <View
+            testID="profile-menu"
             style={[
               styles.dropdownMenu,
               { top: menuPosition.top, right: menuPosition.right },
             ]}
           >
+            <View
+              pointerEvents="none"
+              style={[styles.menuPointer, { right: menuPosition.pointerRight }]}
+            />
+            <View style={styles.accountInfo}>
+              <Text style={styles.accountLabel}>내 계정</Text>
+              <Text style={styles.accountName} numberOfLines={1}>
+                {nickname || '사용자'}
+              </Text>
+              {!!email && (
+                <Text style={styles.accountEmail} numberOfLines={1}>
+                  {email}
+                </Text>
+              )}
+            </View>
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => handleMenuItemPress('profile')}
               accessibilityRole="button"
               accessibilityLabel="마이페이지"
+              activeOpacity={0.65}
             >
-              <UserIcon size={16} color="#374151" style={styles.menuIcon} />
+              <View style={styles.menuIcon}>
+                <UserIcon size={normalize(18)} color={tokens.colors.primary} />
+              </View>
               <Text style={styles.menuText}>마이페이지</Text>
+              <ChevronRight
+                size={normalize(16)}
+                color={tokens.colors.textTertiary}
+              />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -170,12 +226,15 @@ const Header: React.FC<HeaderProps> = ({
               onPress={() => handleMenuItemPress('logout')}
               accessibilityRole="button"
               accessibilityLabel="로그아웃"
+              activeOpacity={0.65}
             >
-              <LogOut size={16} color="#EF4444" style={styles.menuIcon} />
+              <View style={[styles.menuIcon, styles.logoutIcon]}>
+                <LogOut size={normalize(18)} color={tokens.tones.danger.fg} />
+              </View>
               <Text style={styles.logoutText}>로그아웃</Text>
             </TouchableOpacity>
           </View>
-        </Pressable>
+        </View>
       </Modal>
     </View>
   );
@@ -250,46 +309,96 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    backgroundColor: 'rgba(15, 23, 42, 0.36)',
+  },
+  menuPointer: {
+    position: 'absolute',
+    top: -normalize(5),
+    width: normalize(10),
+    height: normalize(10),
+    backgroundColor: tokens.colors.white,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderColor: 'rgba(15, 23, 42, 0.08)',
+    transform: [{ rotate: '45deg' }],
   },
   dropdownMenu: {
     position: 'absolute',
     backgroundColor: tokens.colors.white,
     borderRadius: normalize(16),
-    paddingVertical: normalize(8),
-    width: normalize(140),
+    padding: normalize(8),
+    width: normalize(248),
+    maxWidth: '90%',
     borderWidth: 1,
-    borderColor: tokens.colors.border,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
+    borderColor: 'rgba(15, 23, 42, 0.08)',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  accountInfo: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: normalize(12),
+    paddingHorizontal: normalize(12),
+    paddingTop: normalize(10),
+    paddingBottom: normalize(12),
+    marginBottom: normalize(4),
+    borderWidth: 1,
+    borderColor: 'rgba(15, 23, 42, 0.04)',
+  },
+  accountLabel: {
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textSecondary,
+    marginBottom: normalize(4),
+  },
+  accountName: {
+    fontSize: normalize(16),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+  },
+  accountEmail: {
+    marginTop: normalize(3),
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textSecondary,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: normalize(10),
-    paddingHorizontal: normalize(16),
+    minHeight: normalize(52),
+    paddingVertical: normalize(8),
+    paddingHorizontal: normalize(8),
+    gap: normalize(10),
   },
   menuIcon: {
-    marginRight: normalize(10),
+    width: normalize(32),
+    height: normalize(32),
+    borderRadius: normalize(10),
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.primaryTint,
+  },
+  logoutIcon: {
+    backgroundColor: tokens.tones.danger.bg,
   },
   menuText: {
-    fontSize: normalize(13),
-    color: '#374151',
-    fontWeight: '500',
+    flex: 1,
+    fontSize: normalize(14),
+    color: tokens.colors.text,
+    fontFamily: tokens.fontFamily.semibold,
   },
   logoutItem: {
     borderTopWidth: 1,
     borderTopColor: tokens.colors.borderLight,
     marginTop: normalize(4),
-    paddingTop: normalize(12),
+    paddingTop: normalize(10),
   },
   logoutText: {
-    fontSize: normalize(13),
-    color: '#EF4444',
-    fontWeight: '600',
+    fontSize: normalize(14),
+    color: tokens.tones.danger.fg,
+    fontFamily: tokens.fontFamily.medium,
   },
 });
 
