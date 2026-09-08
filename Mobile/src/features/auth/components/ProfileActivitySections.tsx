@@ -27,14 +27,32 @@ import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import {
   getCalendarCells,
+  getCalendarPlanLanes,
   isDateInPlanPeriod,
 } from '../utils/profileCalendar';
+
+const CALENDAR_TONES = [
+  tokens.tones.primary,
+  tokens.tones.place,
+  tokens.tones.custom,
+  tokens.tones.warning,
+];
 
 type ActivityTab = 'posts' | 'likes' | 'comments';
 
 const MONTH_LABELS = [
-  '1월', '2월', '3월', '4월', '5월', '6월',
-  '7월', '8월', '9월', '10월', '11월', '12월',
+  '1월',
+  '2월',
+  '3월',
+  '4월',
+  '5월',
+  '6월',
+  '7월',
+  '8월',
+  '9월',
+  '10월',
+  '11월',
+  '12월',
 ];
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -68,7 +86,7 @@ const PostRow = ({ post }: { post: CommunityPostSummary }) => (
       </Text>
       <Text style={styles.date}>{post.createdAt}</Text>
     </View>
-    <Text style={styles.rowTitle} numberOfLines={1}>
+    <Text style={styles.rowTitle} numberOfLines={2}>
       {post.title}
     </Text>
     <View style={styles.counts}>
@@ -82,7 +100,7 @@ const PostRow = ({ post }: { post: CommunityPostSummary }) => (
 
 const CommentRow = ({ comment }: { comment: CommunityComment }) => (
   <View style={styles.activityRow}>
-    <Text style={styles.rowTitle} numberOfLines={1}>
+    <Text style={styles.rowTitle} numberOfLines={2}>
       {comment.postTitle ?? '게시글'}
     </Text>
     <Text style={styles.commentText} numberOfLines={2}>
@@ -97,6 +115,11 @@ export function ProfileCalendarSection({ plans }: { plans: ProfilePlan[] }) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const calendarCells = useMemo(() => getCalendarCells(month), [month]);
 
+  const calendarPlans = useMemo(
+    () => getCalendarPlanLanes(calendarCells, plans),
+    [calendarCells, plans],
+  );
+
   const selectedPlans = useMemo(
     () =>
       selectedDate
@@ -107,16 +130,14 @@ export function ProfileCalendarSection({ plans }: { plans: ProfilePlan[] }) {
 
   const shiftMonth = (delta: number) => {
     setSelectedDate(null);
-    setMonth(current =>
-      new Date(current.getFullYear(), current.getMonth() + delta, 1),
+    setMonth(
+      current => new Date(current.getFullYear(), current.getMonth() + delta, 1),
     );
   };
 
   return (
     <Card style={styles.card} variant="flat">
-      <SectionHeader
-        title="여행 캘린더"
-      />
+      <SectionHeader title="여행 캘린더" />
 
       <View style={styles.monthNav}>
         <Pressable
@@ -153,50 +174,98 @@ export function ProfileCalendarSection({ plans }: { plans: ProfilePlan[] }) {
         ))}
       </View>
 
-      <View style={styles.calendarGrid}>
-        {calendarCells.map(date => {
-          const relatedPlans = plans.filter(plan => isDateInPlan(date, plan));
-          const isCurrentMonth = date.getMonth() === month.getMonth();
-          const isSelected =
-            selectedDate !== null &&
-            date.toDateString() === selectedDate.toDateString();
-
+      <View>
+        {Array.from({ length: 6 }, (_, week) => {
+          const weekStart = week * 7;
+          const weekPlans = calendarPlans.filter(
+            plan =>
+              plan.startIndex <= weekStart + 6 && plan.endIndex >= weekStart,
+          );
+          const laneCount = weekPlans.reduce(
+            (count, plan) => Math.max(count, plan.lane + 1),
+            0,
+          );
           return (
-            <Pressable
-              key={date.toISOString()}
-              style={styles.dayCellPressable}
-              onPress={() => setSelectedDate(isSelected ? null : date)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isSelected }}
-              accessibilityLabel={`${date.getMonth() + 1}월 ${date.getDate()}일${
-                relatedPlans.length > 0 ? `, 일정 ${relatedPlans.length}건` : ''
-              }`}
-            >
-              <View style={styles.dayCell}>
-                <View
-                  style={[
-                    styles.dayNumber,
-                    isSelected && styles.dayNumberSelected,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.dayText,
-                      !isCurrentMonth && styles.dayTextMuted,
-                      isSelected && styles.dayTextSelected,
-                    ]}
-                  >
-                    {date.getDate()}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.planBar,
-                    relatedPlans.length === 0 && styles.planBarHidden,
-                  ]}
-                />
+            <View key={week} style={styles.calendarWeek}>
+              <View style={styles.calendarGrid}>
+                {calendarCells.slice(weekStart, weekStart + 7).map(date => {
+                  const isSelected =
+                    selectedDate?.toDateString() === date.toDateString();
+                  return (
+                    <Pressable
+                      key={date.toISOString()}
+                      style={styles.dayCellPressable}
+                      onPress={() => setSelectedDate(isSelected ? null : date)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                      accessibilityLabel={`${
+                        date.getMonth() + 1
+                      }월 ${date.getDate()}일`}
+                    >
+                      <View style={styles.dayCell}>
+                        <View
+                          style={[
+                            styles.dayNumber,
+                            isSelected && styles.dayNumberSelected,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.dayText,
+                              date.getMonth() !== month.getMonth() &&
+                                styles.dayTextMuted,
+                              isSelected && styles.dayTextSelected,
+                            ]}
+                          >
+                            {date.getDate()}
+                          </Text>
+                        </View>
+                      </View>
+                    </Pressable>
+                  );
+                })}
               </View>
-            </Pressable>
+              <View style={{ height: normalize(Math.max(1, laneCount) * 26) }}>
+                {weekPlans.map(plan => {
+                  const start =
+                    Math.max(plan.startIndex, weekStart) - weekStart;
+                  const end =
+                    Math.min(plan.endIndex, weekStart + 6) - weekStart;
+                  const tone =
+                    CALENDAR_TONES[plan.lane % CALENDAR_TONES.length];
+                  return (
+                    <Pressable
+                      key={plan.planId}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${plan.planName}, ${
+                        plan.startDate
+                      }부터 ${plan.endDate ?? plan.startDate}까지`}
+                      onPress={() =>
+                        setSelectedDate(
+                          calendarCells[Math.max(plan.startIndex, weekStart)],
+                        )
+                      }
+                      style={[
+                        styles.tripBar,
+                        {
+                          left: `${(start / 7) * 100}%`,
+                          width: `${((end - start + 1) / 7) * 100}%`,
+                          top: normalize(plan.lane * 26),
+                          backgroundColor: tone.bg,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[styles.tripBarText, { color: tone.fg }]}
+                        numberOfLines={1}
+                      >
+                        {plan.planName}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
           );
         })}
       </View>
@@ -335,9 +404,7 @@ export function ProfileTravelLogSection() {
   return (
     <Card style={styles.card} variant="flat" padding="none">
       <View style={styles.cardInnerHeader}>
-        <SectionHeader
-          title="나의 여행기"
-        />
+        <SectionHeader title="나의 여행기" />
       </View>
       <UnderlineTabs
         items={TRAVEL_LOG_TABS}
@@ -437,9 +504,7 @@ export function ProfileCommunitySection() {
   return (
     <Card style={styles.card} variant="flat" padding="none">
       <View style={styles.cardInnerHeader}>
-        <SectionHeader
-          title="커뮤니티 활동"
-        />
+        <SectionHeader title="커뮤니티 활동" />
       </View>
       <UnderlineTabs
         items={ACTIVITY_TABS}
@@ -505,6 +570,18 @@ const styles = StyleSheet.create({
   },
   weekLabelSunday: {
     color: tokens.tones.danger.fg,
+  },
+  calendarWeek: { marginBottom: normalize(6) },
+  tripBar: {
+    position: 'absolute',
+    height: normalize(22),
+    borderRadius: normalize(5),
+    paddingHorizontal: normalize(5),
+    justifyContent: 'center',
+  },
+  tripBarText: {
+    fontFamily: tokens.fontFamily.semibold,
+    fontSize: normalize(10),
   },
   calendarGrid: {
     flexDirection: 'row',
