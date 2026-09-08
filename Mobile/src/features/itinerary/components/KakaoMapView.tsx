@@ -113,29 +113,51 @@ export default function KakaoMapView({
       flex-direction: column;
       align-items: center;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.18));
+      cursor: pointer;
+      border: 0;
+      background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     }
     .marker-pill {
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 26px;
-      height: 26px;
-      padding: 0 7px;
-      background: #1344FF;
-      color: #fff;
-      border-radius: 13px;
+      max-width: 180px;
+      min-height: 36px;
+      gap: 7px;
+      padding: 5px 12px 5px 5px;
+      background: ${tokens.colors.white};
+      color: ${tokens.colors.text};
+      border-radius: 18px;
       font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.2px;
-      border: 2px solid #fff;
+      border: 1px solid ${tokens.colors.border};
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .marker-number {
+      display: flex;
+      flex-shrink: 0;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 4px;
+      border-radius: 12px;
+      color: ${tokens.colors.white};
+      background: ${tokens.colors.primary};
+    }
+    .marker-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .marker-tail {
       width: 0;
       height: 0;
       border-left: 5px solid transparent;
       border-right: 5px solid transparent;
-      border-top: 6px solid #1344FF;
+      border-top: 6px solid ${tokens.colors.white};
       margin-top: -1px;
     }
 
@@ -268,15 +290,18 @@ export default function KakaoMapView({
           bounds.extend(position);
           linePath.push(position);
 
-          var markerContent =
-            '<div class="marker-wrap">' +
-              '<div class="marker-pill">' + place.order + '</div>' +
-              '<div class="marker-tail"></div>' +
-            '</div>';
+          var markerContent = document.createElement('button');
+          markerContent.className = 'marker-wrap';
+          markerContent.type = 'button';
+          markerContent.setAttribute('aria-label', place.order + '번 장소 ' + place.name);
+          markerContent.innerHTML = '<span class="marker-pill"><span class="marker-number"></span><span class="marker-name"></span></span><span class="marker-tail"></span>';
+          markerContent.querySelector('.marker-number').textContent = place.order;
+          markerContent.querySelector('.marker-name').textContent = place.name;
           var customOverlay = new kakao.maps.CustomOverlay({
             position: position,
             content: markerContent,
-            yAnchor: 2.2
+            yAnchor: 1,
+            zIndex: 10
           });
           customOverlay.setMap(map);
           markerOverlays.push(customOverlay);
@@ -306,11 +331,13 @@ export default function KakaoMapView({
           });
           clickMarkers.push(marker);
 
-          kakao.maps.event.addListener(marker, 'click', function() {
+          var openPlaceInfo = function() {
             if (openInfowindow) openInfowindow.close();
             infowindow.open(map, marker);
             openInfowindow = infowindow;
-          });
+          };
+          markerContent.addEventListener('click', openPlaceInfo);
+          kakao.maps.event.addListener(marker, 'click', openPlaceInfo);
         });
 
         if (linePath.length > 1) {
