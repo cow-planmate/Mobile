@@ -5,13 +5,50 @@ import { normalize } from '../../../utils/normalize';
 export const COLORS = tokens.colors;
 
 export const styles = StyleSheet.create({
-
   // 껍데기의 몸통이 줄어들 때 같이 줄어야 목록이 잘리지 않고 굴러간다.
   scrollArea: {
     flexShrink: 1,
   },
   scroll: {
+    paddingHorizontal: normalize(16),
     paddingBottom: normalize(16),
+  },
+  summary: {
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.medium,
+    color: COLORS.textSecondary,
+    marginBottom: normalize(20),
+  },
+  timelineRail: {
+    alignItems: 'center',
+    width: normalize(26),
+  },
+  timelineLine: {
+    flex: 1,
+    width: 1,
+    backgroundColor: COLORS.borderStrong,
+    marginVertical: normalize(5),
+  },
+  segmentBody: {
+    flex: 1,
+    minWidth: 0,
+    paddingBottom: normalize(22),
+  },
+  segmentCaption: {
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.medium,
+    color: COLORS.textSecondary,
+    marginBottom: normalize(8),
+  },
+  modePanel: {
+    backgroundColor: COLORS.surface,
+    borderRadius: normalize(12),
+    padding: normalize(12),
+  },
+  destination: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(12),
   },
 
   stateBox: {
@@ -27,47 +64,42 @@ export const styles = StyleSheet.create({
   },
 
   segment: {
-    paddingHorizontal: normalize(16),
-    paddingVertical: normalize(14),
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    flexDirection: 'row',
+    gap: normalize(12),
   },
   segmentHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: normalize(10),
+    minHeight: normalize(26),
+    marginBottom: normalize(8),
     gap: normalize(5),
   },
   segmentPlaceName: {
     flexShrink: 1,
-    fontSize: normalize(13),
+    fontSize: normalize(15),
     fontFamily: tokens.fontFamily.semibold,
     color: COLORS.text,
   },
-  segmentArrow: {
-    fontSize: normalize(13),
-    color: COLORS.textTertiary,
-  },
   numberBadge: {
-    width: normalize(20),
-    height: normalize(20),
-    borderRadius: normalize(10),
-    borderWidth: 1,
-    borderColor: COLORS.primary,
+    minWidth: normalize(26),
+    height: normalize(26),
+    paddingHorizontal: normalize(4),
+    borderRadius: normalize(13),
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   numberBadgeText: {
-    fontSize: normalize(10),
+    fontSize: normalize(12),
     fontFamily: tokens.fontFamily.bold,
-    color: COLORS.primary,
+    color: COLORS.white,
   },
 
   modeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: normalize(8),
-    paddingVertical: normalize(3),
+    paddingVertical: normalize(8),
   },
   modeLabel: {
     width: normalize(52),
@@ -77,7 +109,7 @@ export const styles = StyleSheet.create({
   },
   modeValue: {
     flex: 1,
-    fontSize: normalize(12),
+    fontSize: normalize(13),
     fontFamily: tokens.fontFamily.medium,
     color: COLORS.textLabel,
   },
@@ -90,7 +122,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: normalize(4),
     paddingLeft: normalize(28),
-    paddingVertical: normalize(4),
+    minHeight: normalize(44),
   },
   expandButtonText: {
     fontSize: normalize(11),
@@ -106,13 +138,15 @@ export const styles = StyleSheet.create({
     marginBottom: normalize(4),
   },
   chip: {
+    minHeight: normalize(44),
+    justifyContent: 'center',
     paddingHorizontal: normalize(10),
     paddingVertical: normalize(5),
     borderRadius: tokens.radius.round,
     backgroundColor: COLORS.borderLight,
   },
   chipActive: {
-    backgroundColor: COLORS.text,
+    backgroundColor: COLORS.primary,
   },
   chipText: {
     fontSize: normalize(11),
@@ -124,6 +158,7 @@ export const styles = StyleSheet.create({
   },
 
   routeCard: {
+    backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: tokens.radius.l,
@@ -246,6 +281,8 @@ export const styles = StyleSheet.create({
   },
 
   mapToggle: {
+    minHeight: normalize(44),
+    justifyContent: 'center',
     marginTop: normalize(10),
     paddingVertical: normalize(7),
     borderRadius: tokens.radius.m,
@@ -253,7 +290,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mapToggleActive: {
-    backgroundColor: COLORS.text,
+    backgroundColor: COLORS.primary,
   },
   mapToggleText: {
     fontSize: normalize(11),

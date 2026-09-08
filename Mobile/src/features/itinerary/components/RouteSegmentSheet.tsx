@@ -86,7 +86,7 @@ const ModeRow = ({
       style={[styles.modeValue, !value && styles.modeValueMuted]}
       numberOfLines={1}
     >
-      {isLoading ? '불러오는 중…' : value ?? '—'}
+      {isLoading ? '불러오는 중…' : value ?? '정보 없음'}
     </Text>
   </View>
 );
@@ -164,7 +164,8 @@ const StepDetailRow = ({ step }: { step: TransitStep }) => {
         <View style={styles.stepLine}>
           <View style={[styles.stepTag, styles.stepBusTag]}>
             <Text style={[styles.stepTagText, styles.stepBusTagText]}>
-              {(step.busType != null && BUS_TYPE_LABELS[step.busType]) || '버스'}
+              {(step.busType != null && BUS_TYPE_LABELS[step.busType]) ||
+                '버스'}
             </Text>
           </View>
           {!!step.startName && (
@@ -248,9 +249,7 @@ const TransitRouteCard = ({
       ))}
 
       {!!route.lastEndStation && (
-        <Text style={styles.lastEndStation}>
-          ○ 하차 {route.lastEndStation}
-        </Text>
+        <Text style={styles.lastEndStation}>○ 하차 {route.lastEndStation}</Text>
       )}
 
       {!!route.mapObj && (
@@ -265,7 +264,7 @@ const TransitRouteCard = ({
               isLaneActive && styles.mapToggleTextActive,
             ]}
           >
-            {isLaneActive ? '지도에서 숨기기' : '지도에 보기'}
+            {isLaneActive ? '지도에서 숨기기' : '지도에서 보기'}
           </Text>
         </TouchableOpacity>
       )}
@@ -419,50 +418,55 @@ export default function RouteSegmentSheet({
   return (
     <SheetModal
       visible={visible}
-      title="구간 정보"
+      title="구간별 이동"
       onClose={onClose}
       maxHeightRatio={0.8}
     >
       {isError ? (
-            <View style={styles.stateBox}>
-              <Text style={styles.stateText}>
-                구간 정보를 불러오지 못했어요.{'\n'}
-                잠시 후 다시 시도해 주세요.
-              </Text>
-            </View>
-          ) : segmentCount === 0 ? (
-            <View style={styles.stateBox}>
-              <Text style={styles.stateText}>
-                장소를 2개 이상 추가하면 구간 정보를 볼 수 있어요.
-              </Text>
-            </View>
-          ) : isLoading && !data ? (
-            <View style={styles.stateBox}>
-              <ActivityIndicator color={COLORS.primary} />
-              <Text style={styles.stateText}>구간 정보를 불러오는 중…</Text>
-            </View>
-          ) : (
-            <ScrollView
-              style={styles.scrollArea}
-              contentContainerStyle={styles.scroll}
-            >
-              {Array.from({ length: segmentCount }).map((_, i) => (
-                <View key={i} style={styles.segment}>
-                  <View style={styles.segmentHeader}>
-                    <NumberBadge number={i + 1} />
-                    <Text style={styles.segmentPlaceName} numberOfLines={1}>
-                      {placeNames[i]}
-                    </Text>
-                    <Text style={styles.segmentArrow}>→</Text>
-                    <NumberBadge number={i + 2} />
-                    <Text style={styles.segmentPlaceName} numberOfLines={1}>
-                      {placeNames[i + 1]}
-                    </Text>
-                  </View>
-
+        <View style={styles.stateBox}>
+          <Text style={styles.stateText}>
+            구간 정보를 불러오지 못했어요.{'\n'}
+            잠시 후 다시 시도해 주세요.
+          </Text>
+        </View>
+      ) : segmentCount === 0 ? (
+        <View style={styles.stateBox}>
+          <Text style={styles.stateText}>
+            장소를 2개 이상 추가하면 구간 정보를 볼 수 있어요.
+          </Text>
+        </View>
+      ) : isLoading && !data ? (
+        <View style={styles.stateBox}>
+          <ActivityIndicator color={COLORS.primary} />
+          <Text style={styles.stateText}>구간 정보를 불러오는 중…</Text>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.scrollArea}
+          contentContainerStyle={styles.scroll}
+        >
+          <Text style={styles.summary}>
+            {placeNames.length}곳 · {segmentCount}구간
+          </Text>
+          {Array.from({ length: segmentCount }).map((_, i) => (
+            <View key={i} style={styles.segment}>
+              <View style={styles.timelineRail}>
+                <NumberBadge number={i + 1} />
+                <View style={styles.timelineLine} />
+              </View>
+              <View style={styles.segmentBody}>
+                <View style={styles.segmentHeader}>
+                  <Text style={styles.segmentPlaceName} numberOfLines={2}>
+                    {placeNames[i]}
+                  </Text>
+                </View>
+                <Text style={styles.segmentCaption}>
+                  {i + 1} → {i + 2} 구간
+                </Text>
+                <View style={styles.modePanel}>
                   <ModeRow
                     icon={<Car size={normalize(14)} color={COLORS.primary} />}
-                    label="차량"
+                    label="자동차"
                     isLoading={showRowLoading}
                     value={joinParts(
                       formatSeconds(data?.driving?.durations?.[i]?.[i + 1]),
@@ -488,9 +492,17 @@ export default function RouteSegmentSheet({
                     onToggleLane={onToggleLane}
                   />
                 </View>
-              ))}
-            </ScrollView>
-          )}
+              </View>
+            </View>
+          ))}
+          <View style={styles.destination}>
+            <NumberBadge number={placeNames.length} />
+            <Text style={styles.segmentPlaceName} numberOfLines={2}>
+              {placeNames[placeNames.length - 1]}
+            </Text>
+          </View>
+        </ScrollView>
+      )}
     </SheetModal>
   );
 }
