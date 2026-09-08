@@ -9,7 +9,10 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { PreferredThemeVO, changePreferredThemes } from '../../api/themes';
-import ThemeSelector, { ThemeSelectorResult, CATEGORY_MAP } from './ThemeSelector';
+import ThemeSelector, {
+  ThemeSelectorResult,
+  CATEGORY_MAP,
+} from './ThemeSelector';
 import PopupModal from './PopupModal';
 import { normalize } from '../../utils/normalize';
 import { useAlert } from '../../contexts/AlertContext';
@@ -42,46 +45,50 @@ export default function UpdateThemeModal({
   const { showAlert } = useAlert();
   const queryClient = useQueryClient();
   const [selectedThemes, setSelectedThemes] = useState<ThemeSelectorResult>({});
-  const [isSelectorVisible, setSelectorVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [isSelectorVisible, setSelectorVisible] = useState(true);
+  const [loading, setLoading] = useState(true);
   const { isSubmitting: saving, runExclusive } = useSubmitLock();
 
-  const fetchUserThemes = useCallback(async (signal?: AbortSignal) => {
-    try {
-      setLoading(true);
+  const fetchUserThemes = useCallback(
+    async (signal?: AbortSignal) => {
+      try {
+        setLoading(true);
 
-      const cachedThemes = queryClient.getQueryData<UserProfile>(
-        USER_PROFILE_QUERY_KEY,
-      )?.preferredThemes;
-      const themes: PreferredThemeVO[] =
-        cachedThemes ??
-        (await axios.get(resolveApiUrl('/api/user/profile'), { signal })).data
-          .preferredThemes ??
-        [];
+        const cachedThemes = queryClient.getQueryData<UserProfile>(
+          USER_PROFILE_QUERY_KEY,
+        )?.preferredThemes;
+        const themes: PreferredThemeVO[] =
+          cachedThemes ??
+          (await axios.get(resolveApiUrl('/api/user/profile'), { signal })).data
+            .preferredThemes ??
+          [];
 
-      if (signal?.aborted) return;
+        if (signal?.aborted) return;
 
-      const grouped: ThemeSelectorResult = {};
-      themes.forEach(t => {
-        const categoryId = CATEGORY_MAP[t.category]?.id;
-        if (categoryId === undefined) return;
-        if (!grouped[categoryId]) {
-          grouped[categoryId] = [];
-        }
-        grouped[categoryId].push(t);
-      });
-      setSelectedThemes(grouped);
-    } catch (error) {
-      if (signal?.aborted) return;
-      console.error('Failed to fetch user themes:', error);
-    } finally {
-      if (!signal?.aborted) setLoading(false);
-    }
-  }, [queryClient]);
+        const grouped: ThemeSelectorResult = {};
+        themes.forEach(t => {
+          const categoryId = CATEGORY_MAP[t.category]?.id;
+          if (categoryId === undefined) return;
+          if (!grouped[categoryId]) {
+            grouped[categoryId] = [];
+          }
+          grouped[categoryId].push(t);
+        });
+        setSelectedThemes(grouped);
+      } catch (error) {
+        if (signal?.aborted) return;
+        console.error('Failed to fetch user themes:', error);
+      } finally {
+        if (!signal?.aborted) setLoading(false);
+      }
+    },
+    [queryClient],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
     if (visible) {
+      setSelectorVisible(true);
       void fetchUserThemes(controller.signal);
     }
     return () => controller.abort();
@@ -120,18 +127,18 @@ export default function UpdateThemeModal({
   return (
     <>
       <PopupModal
-        visible={visible && !isSelectorVisible}
+        visible={visible && (!isSelectorVisible || loading)}
         title="선호 테마 변경"
         onClose={onClose}
         footer={
           <TouchableOpacity
             style={styles.confirmButton}
             onPress={handleSave}
-            disabled={saving}
+            disabled={saving || loading}
             activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel="선호 테마 저장"
-            accessibilityState={{ disabled: saving }}
+            accessibilityState={{ disabled: saving || loading }}
           >
             {saving ? (
               <ActivityIndicator size="small" color={tokens.colors.white} />
@@ -182,8 +189,8 @@ export default function UpdateThemeModal({
       </PopupModal>
 
       <ThemeSelector
-        visible={isSelectorVisible}
-        onClose={() => setSelectorVisible(false)}
+        visible={visible && isSelectorVisible && !loading}
+        onClose={onClose}
         onComplete={handleSelectorComplete}
         initialSelections={selectedThemes}
       />

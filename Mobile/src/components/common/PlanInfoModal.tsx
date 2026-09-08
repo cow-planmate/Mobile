@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import PopupModal from './PopupModal';
 import { normalize } from '../../utils/normalize';
 import { tokens } from '../../theme/tokens';
@@ -14,14 +14,34 @@ type PlanInfoModalProps = {
   endDate?: string;
   adultCount: number;
   childCount: number;
+  onEditName?: () => void;
+  onEditPeriod?: () => void;
 };
 
-const Row = ({ label, value }: { label: string; value: string }) => (
+const Row = ({
+  label,
+  value,
+  onEdit,
+}: {
+  label: string;
+  value: string;
+  onEdit?: () => void;
+}) => (
   <View style={styles.row}>
     <Text style={styles.label}>{label}</Text>
     <Text style={styles.value} numberOfLines={2}>
       {value}
     </Text>
+    {onEdit && (
+      <TouchableOpacity
+        onPress={onEdit}
+        style={styles.editButton}
+        accessibilityRole="button"
+        accessibilityLabel={`${label} 편집`}
+      >
+        <Text style={styles.editText}>편집</Text>
+      </TouchableOpacity>
+    )}
   </View>
 );
 
@@ -34,6 +54,8 @@ export default function PlanInfoModal({
   endDate,
   adultCount,
   childCount,
+  onEditName,
+  onEditPeriod,
 }: PlanInfoModalProps) {
   const period = formatPeriod(startDate, endDate) || '미지정';
   const pax =
@@ -47,9 +69,9 @@ export default function PlanInfoModal({
       doneLabel="확인"
     >
       <View style={styles.list}>
-        <Row label="이름" value={planName} />
+        <Row label="이름" value={planName} onEdit={onEditName} />
         <Row label="여행지" value={destination} />
-        <Row label="기간" value={period} />
+        <Row label="기간" value={period} onEdit={onEditPeriod} />
         <Row label="인원" value={pax} />
       </View>
     </PopupModal>
@@ -57,6 +79,19 @@ export default function PlanInfoModal({
 }
 
 const styles = StyleSheet.create({
+  editButton: {
+    minHeight: normalize(44),
+    minWidth: normalize(44),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: -normalize(10),
+    marginLeft: normalize(8),
+  },
+  editText: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.primary,
+  },
   list: {
     paddingHorizontal: normalize(16),
     paddingBottom: normalize(4),

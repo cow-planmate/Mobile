@@ -97,6 +97,27 @@ function textOf(tree: renderer.ReactTestRenderer): string {
 }
 
 describe('ProfileScreenView 탭', () => {
+  it('새 일정도 체크리스트 0/0과 소유 구분을 바로 표시한다', () => {
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <ProfileScreenView {...(BASE_PROPS as any)} scrollToItinerary user={{
+          ...BASE_PROPS.user,
+          myPlans: [
+            { planId: 'mine', planName: '내 제주 여행', isShared: false, startDate: '2099.09.01', endDate: '2099.09.03' },
+            { planId: 'invited', planName: '함께 부산 여행', isShared: true, startDate: '2099.10.01', endDate: '2099.10.03' },
+          ],
+        }} />,
+      );
+    });
+    const body = textOf(tree!);
+    expect(body).toContain('0/0');
+    expect(body).not.toContain('확인하기');
+    expect(body).toContain('내 일정');
+    expect(body).toContain('초대받은 일정');
+    act(() => tree!.unmount());
+  });
+
   it('그냥 열면 웹 차림표와 같이 프로필 탭이 켜진다', () => {
     let tree: renderer.ReactTestRenderer;
     act(() => {

@@ -3,6 +3,7 @@ import renderer, { act } from 'react-test-renderer';
 import { TextInput, TouchableOpacity } from 'react-native';
 import UpdatePasswordModal from '../UpdatePasswordModal';
 import UpdateThemeModal from '../UpdateThemeModal';
+import ThemeSelector from '../ThemeSelector';
 import { changePreferredThemes } from '../../../api/themes';
 
 const mockShowAlert = jest.fn();
@@ -106,6 +107,10 @@ describe('mutation modals', () => {
         <UpdateThemeModal visible onClose={jest.fn()} onConfirm={jest.fn()} />,
       );
       await Promise.resolve();
+    });
+    act(() => {
+      const selector = tree!.root.findByType(ThemeSelector);
+      selector.props.onComplete(selector.props.initialSelections);
     });
     const saveButton = tree!.root
       .findAllByType(TouchableOpacity)

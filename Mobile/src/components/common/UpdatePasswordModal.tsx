@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   TextInput,
   StyleSheet,
+  ScrollView,
 } from 'react-native';
 import Eye from 'lucide-react-native/dist/esm/icons/eye';
 import EyeOff from 'lucide-react-native/dist/esm/icons/eye-off';
@@ -91,6 +92,13 @@ export default function UpdatePasswordModal({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const { isSubmitting, runExclusive } = useSubmitLock();
+  const requirements = getPasswordRequirements(newPassword);
+  const canSubmit =
+    !!currentPassword &&
+    requirements.hasMinLength &&
+    requirements.hasCombination &&
+    newPassword !== currentPassword &&
+    newPassword === confirmPassword;
 
   const handleConfirm = () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -103,7 +111,8 @@ export default function UpdatePasswordModal({
     if (!hasMinLength || !hasCombination) {
       showAlert({
         title: '오류',
-        message: '새 비밀번호는 8자 이상이고 영문·숫자·특수문자를 포함해야 해요.',
+        message:
+          '새 비밀번호는 8자 이상이고 영문·숫자·특수문자를 포함해야 해요.',
       });
       return;
     }
@@ -142,41 +151,79 @@ export default function UpdatePasswordModal({
       title="비밀번호 변경"
       onClose={handleClose}
       footer={
-        <TouchableOpacity
-          style={styles.confirmButton}
-          onPress={handleConfirm}
-          disabled={isSubmitting}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="비밀번호 변경"
-          accessibilityState={{ disabled: isSubmitting }}
-        >
-          <Text style={styles.confirmText}>
-            {isSubmitting ? '변경 중…' : '확인'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.footerActions}>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={handleClose}
+            disabled={isSubmitting}
+            accessibilityRole="button"
+          >
+            <Text style={styles.cancelText}>취소</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.confirmButton,
+              (!canSubmit || isSubmitting) && styles.confirmButtonOff,
+            ]}
+            onPress={handleConfirm}
+            disabled={isSubmitting || !canSubmit}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="비밀번호 변경"
+            accessibilityState={{ disabled: isSubmitting || !canSubmit }}
+          >
+            <Text style={styles.confirmText}>
+              {isSubmitting ? '변경 중…' : '비밀번호 변경 완료'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       }
     >
-      <View style={styles.body}>
+      <ScrollView
+        contentContainerStyle={styles.body}
+        keyboardShouldPersistTaps="handled"
+      >
         <PasswordInput
           label="현재 비밀번호"
           value={currentPassword}
           onChangeText={setCurrentPassword}
-          placeholder="지금 쓰는 비밀번호"
+          placeholder="현재 비밀번호 입력"
         />
         <PasswordInput
           label="새 비밀번호"
           value={newPassword}
           onChangeText={setNewPassword}
-          placeholder="8자 이상, 영문·숫자·특수문자"
+          placeholder="새로운 비밀번호 입력"
         />
+        <View style={styles.requirements}>
+          <Text
+            style={[
+              styles.requirement,
+              requirements.hasMinLength && styles.requirementMet,
+            ]}
+          >
+            {requirements.hasMinLength ? '✓' : '○'} 최소 8자
+          </Text>
+          <Text
+            style={[
+              styles.requirement,
+              requirements.hasCombination && styles.requirementMet,
+            ]}
+          >
+            {requirements.hasCombination ? '✓' : '○'} 영문, 숫자, 특수문자 3가지
+            조합
+          </Text>
+        </View>
         <PasswordInput
-          label="새 비밀번호 다시"
+          label="비밀번호 재입력"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
-          placeholder="한 번 더 입력"
+          placeholder="비밀번호 다시 입력"
         />
-      </View>
+        {!!confirmPassword && confirmPassword !== newPassword && (
+          <Text style={styles.mismatch}>비밀번호가 일치하지 않습니다.</Text>
+        )}
+      </ScrollView>
     </PopupModal>
   );
 }
@@ -193,15 +240,16 @@ const styles = StyleSheet.create({
   label: {
     fontSize: normalize(12),
     fontFamily: tokens.fontFamily.medium,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textLabel,
   },
   // 테두리 색만 바꿔 초점을 알린다. 두께까지 바꾸면 칸이 들씩거린다.
   inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: normalize(8),
-    height: normalize(46),
-    borderRadius: normalize(8),
+    minHeight: normalize(50),
+    borderRadius: normalize(12),
+    backgroundColor: tokens.colors.surface,
     borderWidth: 1,
     borderColor: tokens.colors.border,
     paddingHorizontal: normalize(12),
@@ -217,12 +265,40 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
   },
   confirmButton: {
+    flex: 2,
     height: normalize(48),
     borderRadius: normalize(12),
     backgroundColor: tokens.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  footerActions: { flexDirection: 'row', gap: normalize(10) },
+  cancelButton: {
+    flex: 1,
+    minHeight: normalize(48),
+    borderRadius: normalize(12),
+    backgroundColor: tokens.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelText: {
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.textLabel,
+  },
+  confirmButtonOff: { opacity: 0.45 },
+  requirements: {
+    padding: normalize(12),
+    borderRadius: normalize(12),
+    backgroundColor: tokens.colors.surface,
+    gap: normalize(8),
+  },
+  requirement: {
+    fontSize: normalize(12),
+    color: tokens.colors.textSecondary,
+    fontFamily: tokens.fontFamily.medium,
+  },
+  requirementMet: { color: tokens.tones.success.fg },
+  mismatch: { fontSize: normalize(12), color: tokens.tones.danger.fg },
   confirmText: {
     fontSize: normalize(15),
     fontFamily: tokens.fontFamily.bold,

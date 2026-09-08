@@ -168,7 +168,6 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
     ...(sharedChecklist ?? []),
     ...(personalChecklist ?? []),
   ];
-  const hasChecklistCache = !!sharedChecklist || !!personalChecklist;
   const completedCount = checklistItems.filter(item => item.isChecked).length;
   const progressPercent =
     checklistItems.length > 0
@@ -225,14 +224,19 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
       </View>
 
       <View style={styles.planBody}>
+        <Text
+          style={[
+            styles.planOwnership,
+            plan.isShared && styles.planOwnershipInvited,
+          ]}
+        >
+          {plan.isShared ? '초대받은 일정' : '내 일정'}
+        </Text>
         <Text style={styles.planTitle} numberOfLines={1}>
           {plan.planName}
         </Text>
         <Text style={styles.planMeta} numberOfLines={1}>
-          {period ? `${period} · ` : ''}
-          <Text style={styles.planMetaStrong}>
-            {plan.isShared ? '공유된 일정' : '나의 일정'}
-          </Text>
+          {period}
         </Text>
 
         <Pressable
@@ -242,11 +246,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
           hitSlop={{ top: 6, bottom: 10, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityState={{ disabled: isEditMode }}
-          accessibilityLabel={
-            hasChecklistCache
-              ? `체크리스트 ${checklistItems.length}개 중 ${completedCount}개 완료, 눌러서 열기`
-              : '체크리스트 확인하기'
-          }
+          accessibilityLabel={`체크리스트 ${checklistItems.length}개 중 ${completedCount}개 완료, 눌러서 열기`}
         >
           <Text style={styles.planChecklistLabel}>체크리스트</Text>
           <View style={styles.planChecklistTrack}>
@@ -258,9 +258,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
             />
           </View>
           <Text style={styles.planChecklistCount}>
-            {hasChecklistCache
-              ? `${completedCount}/${checklistItems.length}`
-              : '확인하기'}
+            {`${completedCount}/${checklistItems.length}`}
           </Text>
           <ChevronRight
             size={normalize(13)}
@@ -362,14 +360,19 @@ const PastPlanRow = React.memo(function PastPlanRow({
       </View>
 
       <View style={styles.planBody}>
+        <Text
+          style={[
+            styles.planOwnership,
+            plan.isShared && styles.planOwnershipInvited,
+          ]}
+        >
+          {plan.isShared ? '초대받은 일정' : '내 일정'}
+        </Text>
         <Text style={styles.planTitle} numberOfLines={1}>
           {plan.planName}
         </Text>
         <Text style={styles.planMeta} numberOfLines={1}>
-          {duration ? `${duration} · ` : ''}
-          <Text style={styles.planMetaStrong}>
-            {plan.isShared ? '공유된 일정' : '나의 일정'}
-          </Text>
+          {duration}
         </Text>
       </View>
 
@@ -1188,17 +1191,30 @@ export default function ProfileScreenView({
         title="프로필 수정"
         onClose={() => setEditModalVisible(false)}
         footer={
-          <TouchableOpacity
-            style={styles.saveButton}
-            onPress={handleSaveProfile}
-            disabled={profileSaveLock.isSubmitting}
-            accessibilityRole="button"
-            accessibilityLabel="변경사항 저장"
-            accessibilityState={{ disabled: profileSaveLock.isSubmitting }}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.saveButtonText}>저장</Text>
-          </TouchableOpacity>
+          <View>
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleSaveProfile}
+              disabled={profileSaveLock.isSubmitting}
+              accessibilityRole="button"
+              accessibilityLabel="변경사항 저장"
+              accessibilityState={{ disabled: profileSaveLock.isSubmitting }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.saveButtonText}>저장</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.resignLinkButton}
+              onPress={() => {
+                setEditModalVisible(false);
+                setTimeout(handleResign, 200);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="계정 탈퇴하기"
+            >
+              <Text style={styles.resignLinkText}>계정 탈퇴하기</Text>
+            </TouchableOpacity>
+          </View>
         }
       >
         <ScrollView
@@ -1360,20 +1376,6 @@ export default function ProfileScreenView({
               </Text>
             </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            style={styles.resignLinkButton}
-            onPress={() => {
-              setEditModalVisible(false);
-              setTimeout(() => {
-                handleResign();
-              }, 200);
-            }}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-          >
-            <Text style={styles.resignLinkText}>계정 탈퇴하기</Text>
-          </TouchableOpacity>
         </ScrollView>
       </PopupModal>
 

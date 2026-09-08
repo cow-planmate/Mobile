@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   },
   // 고른 뒤 눈과 손이 머무는 아래쪽에 둔다. 헤더 구석의 글자보다 겨냥하기 쉽다.
   footer: {
-    paddingHorizontal: normalize(16),
+    marginHorizontal: normalize(16),
     paddingTop: normalize(12),
     borderTopWidth: 1,
     borderTopColor: tokens.colors.border,
