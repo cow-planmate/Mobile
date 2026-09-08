@@ -12,8 +12,12 @@ import {
   Switch,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
+import Link2 from 'lucide-react-native/dist/esm/icons/link-2';
+import Lock from 'lucide-react-native/dist/esm/icons/lock';
+import Copy from 'lucide-react-native/dist/esm/icons/copy';
 import {
   getShareUrl,
+  buildShareUrl,
   updateShareStatus,
   inviteEditor,
   getEditors,
@@ -51,7 +55,11 @@ export default function ShareModal({
   isOwner = false,
 }: ShareModalProps) {
   const { showAlert } = useAlert();
-  const [shareLink, setShareLink] = useState('');
+  const shareLink = isMock
+    ? 'https://planmate.cow/share/mock-trip-123'
+    : planId
+    ? buildShareUrl(planId)
+    : '';
   const [nickname, setNickname] = useState('');
   const [isShared, setIsShared] = useState(true);
   const [editors, setEditors] = useState<any[]>([]);
@@ -63,14 +71,12 @@ export default function ShareModal({
   const fetchShareLink = useCallback(
     async (signal?: AbortSignal) => {
       if (isMock) {
-        setShareLink('https://planmate.cow/share/mock-trip-123');
         setIsShared(true);
         return;
       }
       try {
         const response = await getShareUrl(planId, signal);
         if (signal?.aborted) return;
-        setShareLink(response.shareUrl);
         if (typeof response.isShared === 'boolean') {
           setIsShared(response.isShared);
         }
@@ -93,7 +99,7 @@ export default function ShareModal({
         if (currentPlanIdRef.current !== targetPlanId) return;
         Toast.show({
           type: 'success',
-          text1: newValue ? '일정 공유를 켰어요.' : '일정을 비공개로 바꿨어요.',
+          text1: newValue ? '일정 공유를 켰습니다.' : '일정 공유를 껐습니다.',
           position: 'top',
           visibilityTime: 1500,
         });
@@ -101,7 +107,7 @@ export default function ShareModal({
         if (currentPlanIdRef.current !== targetPlanId) return;
         console.error('Failed to update share status:', error);
         setIsShared(previousValue);
-        showAlert({ title: '오류', message: '공유 상태를 변경하지 못했어요.' });
+        showAlert({ title: '오류', message: '공유 상태 변경에 실패했습니다.' });
       }
     });
 
@@ -115,7 +121,7 @@ export default function ShareModal({
         Clipboard.setString(shareLink);
         Toast.show({
           type: 'success',
-          text1: '링크를 복사했어요.',
+          text1: '링크가 복사되었습니다.',
           position: 'top',
           visibilityTime: 1500,
         });
@@ -170,7 +176,6 @@ export default function ShareModal({
   useEffect(() => {
     const controller = new AbortController();
     if (visible && planId) {
-      setShareLink('');
       setEditors([]);
       void fetchShareLink(controller.signal);
       void fetchEditors(controller.signal);
@@ -199,7 +204,7 @@ export default function ShareModal({
           ]);
           showAlert({
             title: '성공',
-            message: `${receiverNickname}님을 초대했어요.`,
+            message: '초대를 보냈습니다.',
           });
           setNickname('');
         } else {
@@ -207,7 +212,7 @@ export default function ShareModal({
           if (currentPlanIdRef.current !== targetPlanId) return;
           showAlert({
             title: '성공',
-            message: `${receiverNickname}님을 초대했어요.`,
+            message: '초대를 보냈습니다.',
           });
           setNickname('');
           fetchEditors();
@@ -244,7 +249,7 @@ export default function ShareModal({
   const handleRemoveEditor = async (userId: number) => {
     showAlert({
       title: '편집자 삭제',
-      message: '정말 이 사용자의 편집 권한을 삭제하시겠습니까?',
+      message: '해당 사용자의 편집 권한을 삭제하시겠습니까?',
       type: 'confirm',
       buttons: [
         { text: '취소', style: 'cancel' },
@@ -275,7 +280,7 @@ export default function ShareModal({
   return (
     <PopupModal
       visible={visible}
-      title="일정 공유 및 초대"
+      title="공유 및 초대"
       onClose={onClose}
       doneLabel="확인"
     >
@@ -284,61 +289,89 @@ export default function ShareModal({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {isOwner && (
+        <Text style={styles.groupTitle}>링크로 공유</Text>
+        <View style={styles.sharePanel}>
           <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>일정 공유 허용</Text>
-            <Switch
-              value={isShared}
-              onValueChange={handleToggleShare}
-              disabled={shareStatusLock.isSubmitting}
-              accessibilityState={{
-                disabled: shareStatusLock.isSubmitting,
-              }}
-              trackColor={{
-                false: tokens.colors.borderStrong,
-                true: tokens.colors.primary,
-              }}
-              thumbColor={tokens.colors.white}
-            />
+            <View
+              style={[styles.statusIcon, !isShared && styles.statusIconOff]}
+            >
+              {isShared ? (
+                <Link2 size={normalize(18)} color={tokens.colors.primary} />
+              ) : (
+                <Lock
+                  size={normalize(18)}
+                  color={tokens.colors.textSecondary}
+                />
+              )}
+            </View>
+            <View style={styles.statusBody}>
+              <Text style={styles.switchLabel}>
+                {isShared ? '링크가 있는 모든 사용자' : '제한됨'}
+              </Text>
+              <Text style={styles.statusDescription}>
+                {isShared
+                  ? '링크를 아는 사람은 일정을 볼 수 있어요.'
+                  : '초대받은 사용자만 일정에 접근할 수 있어요.'}
+              </Text>
+            </View>
+            {isOwner && (
+              <Switch
+                accessibilityLabel="공유 링크 사용"
+                value={isShared}
+                onValueChange={handleToggleShare}
+                disabled={shareStatusLock.isSubmitting}
+                accessibilityState={{
+                  disabled: shareStatusLock.isSubmitting,
+                }}
+                trackColor={{
+                  false: tokens.colors.borderStrong,
+                  true: tokens.colors.primary,
+                }}
+                thumbColor={tokens.colors.white}
+              />
+            )}
           </View>
-        )}
 
-        <View style={styles.linkRow}>
-          <TextInput
-            style={styles.linkInput}
-            value={shareLink}
-            editable={false}
-            selectTextOnFocus
-          />
+          <View style={styles.linkRow}>
+            <Text
+              style={styles.linkInput}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              accessibilityLabel="공유 링크"
+            >
+              {shareLink}
+            </Text>
+            <TouchableOpacity
+              style={styles.copyButton}
+              onPress={handleCopyLink}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="공유 링크 복사"
+            >
+              <Copy size={normalize(14)} color={tokens.colors.primary} />
+              <Text style={styles.copyText}>링크 복사</Text>
+            </TouchableOpacity>
+          </View>
+
           <TouchableOpacity
-            style={styles.copyButton}
-            onPress={handleCopyLink}
+            style={styles.shareButton}
+            onPress={handleShareLink}
             activeOpacity={0.85}
             accessibilityRole="button"
-            accessibilityLabel="공유 링크 복사"
+            accessibilityLabel="공유 링크 보내기"
           >
-            <Text style={styles.copyText}>복사</Text>
+            <Text style={styles.shareText}>링크 공유하기</Text>
           </TouchableOpacity>
+          <Text style={styles.helper}>
+            링크를 복사하거나 공유하여 친구들에게 보내세요.
+          </Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.shareButton}
-          onPress={handleShareLink}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="공유 링크 보내기"
-        >
-          <Text style={styles.shareText}>링크 공유하기</Text>
-        </TouchableOpacity>
-        <Text style={styles.helper}>
-          링크를 복사하거나 공유하여 친구들에게 보내세요.
-        </Text>
-
-        <Text style={styles.sectionLabel}>함께 편집할 친구 초대</Text>
+        <Text style={styles.sectionLabel}>일정 편집 초대</Text>
         <View style={styles.inviteRow}>
           <TextInput
             style={styles.input}
-            placeholder="친구 닉네임 입력"
+            placeholder="닉네임"
             placeholderTextColor={tokens.colors.textTertiary}
             value={nickname}
             onChangeText={setNickname}
@@ -365,7 +398,9 @@ export default function ShareModal({
 
         {editors.length > 0 && (
           <>
-            <Text style={styles.sectionLabel}>참여 중인 편집자</Text>
+            <Text style={styles.sectionLabel}>
+              편집 권한이 있는 사용자 · {editors.length}명
+            </Text>
             {editors.map((editor: any) => (
               <View key={editor.userId} style={styles.editorRow}>
                 <View style={styles.editorInfo}>
@@ -402,11 +437,46 @@ const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     paddingBottom: normalize(4),
   },
+  groupTitle: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.textLabel,
+    marginBottom: normalize(10),
+  },
+  sharePanel: {
+    padding: normalize(12),
+    borderRadius: normalize(14),
+    backgroundColor: tokens.colors.surface,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  statusIcon: {
+    width: normalize(36),
+    height: normalize(36),
+    borderRadius: normalize(18),
+    backgroundColor: tokens.colors.sub,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusIconOff: {
+    backgroundColor: tokens.colors.border,
+  },
+  statusBody: {
+    flex: 1,
+  },
+  statusDescription: {
+    marginTop: normalize(4),
+    fontSize: normalize(12),
+    lineHeight: normalize(18),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textSecondary,
+  },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingBottom: normalize(12),
+    gap: normalize(8),
   },
   switchLabel: {
     fontSize: normalize(13.5),
@@ -417,7 +487,7 @@ const styles = StyleSheet.create({
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.white,
     borderRadius: normalize(10),
     borderWidth: 1,
     borderColor: tokens.colors.border,
@@ -433,23 +503,25 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
   copyButton: {
-    height: normalize(36),
-    paddingHorizontal: normalize(14),
+    minHeight: normalize(44),
+    paddingHorizontal: normalize(10),
+    flexDirection: 'row',
+    gap: normalize(5),
     borderRadius: normalize(7),
-    backgroundColor: tokens.colors.primary,
+    backgroundColor: tokens.colors.primaryTint,
     alignItems: 'center',
     justifyContent: 'center',
   },
   copyText: {
     fontSize: normalize(12.5),
     fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.white,
+    color: tokens.colors.primary,
   },
   shareButton: {
     marginTop: normalize(8),
     height: normalize(44),
     borderRadius: normalize(10),
-    backgroundColor: tokens.colors.primaryTint,
+    backgroundColor: tokens.colors.primary,
     borderWidth: 1,
     borderColor: tokens.colors.sub,
     alignItems: 'center',
@@ -458,13 +530,14 @@ const styles = StyleSheet.create({
   shareText: {
     fontSize: normalize(13.5),
     fontFamily: tokens.fontFamily.semibold,
-    color: tokens.colors.primary,
+    color: tokens.colors.white,
   },
   helper: {
     marginTop: normalize(6),
-    fontSize: normalize(11.5),
+    fontSize: normalize(12),
+    lineHeight: normalize(18),
     fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textSecondary,
   },
   // 이름표가 곧 칸막이다. 위에 실선을 얹어 따로 divider를 두지 않는다.
   sectionLabel: {
@@ -515,7 +588,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: normalize(6),
+    padding: normalize(10),
+    marginBottom: normalize(6),
+    borderRadius: normalize(10),
+    backgroundColor: tokens.colors.surface,
   },
   editorInfo: {
     flexShrink: 1,

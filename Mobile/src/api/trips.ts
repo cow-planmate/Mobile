@@ -290,6 +290,10 @@ export async function updateShareStatus(planId: string, isShared: boolean): Prom
   await axios.patch(resolveApiUrl(`/api/plan/${planId}/share`), { isShared });
 }
 
+export function buildShareUrl(planId: string): string {
+  return `${WEB_URL}/create?id=${planId}`;
+}
+
 export async function getShareUrl(
   planId: string,
   signal?: AbortSignal,
@@ -303,7 +307,7 @@ export async function getShareUrl(
     if (__DEV__) console.log('Failed to fetch share status:', e);
   }
   return {
-    shareUrl: `${WEB_URL}/create?id=${planId}`,
+    shareUrl: buildShareUrl(planId),
     isShared,
   };
 }

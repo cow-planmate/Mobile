@@ -1,6 +1,7 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 import { Switch } from 'react-native';
+import { WEB_URL } from '@env';
 import ShareModal from '../ShareModal';
 import {
   getEditors,
@@ -10,6 +11,7 @@ import {
 } from '../../../api/trips';
 
 jest.mock('../../../api/trips', () => ({
+  buildShareUrl: jest.requireActual('../../../api/trips').buildShareUrl,
   getEditors: jest.fn(),
   getShareUrl: jest.fn(),
   inviteEditor: jest.fn(),
@@ -95,7 +97,21 @@ describe('ShareModal', () => {
     act(() => tree!.unmount());
   });
 
-  it('다른 일정으로 바뀌면 이전 링크와 편집자를 즉시 비운다', async () => {
+  it('공유 상태 응답 전부터 링크를 표시한다', async () => {
+    mockGetShareUrl.mockImplementationOnce(() => new Promise(() => undefined));
+    let tree: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderer.create(
+        <ShareModal visible onClose={jest.fn()} planId="plan-1" isOwner />,
+      );
+    });
+    expect(tree!.root.findByProps({ accessibilityLabel: '공유 링크' }).props.children).toBe(
+      `${WEB_URL}/create?id=plan-1`,
+    );
+    act(() => tree!.unmount());
+  });
+
+  it('다른 일정으로 바뀌면 링크를 즉시 교체하고 이전 편집자를 비운다', async () => {
     mockGetShareUrl.mockResolvedValueOnce({
       shareUrl: 'https://example.com/plan-1',
       isShared: true,
@@ -121,8 +137,11 @@ describe('ShareModal', () => {
     });
 
     expect(
-      tree!.root.findAllByProps({ value: 'https://example.com/plan-1' }),
+      tree!.root.findAllByProps({ children: `${WEB_URL}/create?id=plan-1` }),
     ).toHaveLength(0);
+    expect(tree!.root.findByProps({ accessibilityLabel: '공유 링크' }).props.children).toBe(
+      `${WEB_URL}/create?id=plan-2`,
+    );
     expect(
       tree!.root.findAllByProps({ children: '이전 편집자' }),
     ).toHaveLength(0);
@@ -145,7 +164,7 @@ describe('ShareModal', () => {
     });
 
     const nicknameInput = tree!.root.findByProps({
-      placeholder: '친구 닉네임 입력',
+      placeholder: '닉네임',
     });
     act(() => nicknameInput.props.onChangeText('친구'));
     const inviteButton = tree!.root
@@ -237,7 +256,7 @@ describe('ShareModal', () => {
     });
     act(() => {
       tree!.root
-        .findByProps({ placeholder: '친구 닉네임 입력' })
+        .findByProps({ placeholder: '닉네임' })
         .props.onChangeText('친구');
     });
     const inviteButton = tree!.root
