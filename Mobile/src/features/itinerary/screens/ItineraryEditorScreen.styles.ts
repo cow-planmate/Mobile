@@ -38,6 +38,7 @@ export const GRID_SNAP_HEIGHT = HOUR_HEIGHT / 4;
 
 export const GRID_TOP_OFFSET = 40;
 export const BOTTOM_TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 85 : 60;
+export const SHEET_HANDLE_HEIGHT = 62;
 
 export const styles = StyleSheet.create({
   container: {
@@ -408,7 +409,7 @@ export const styles = StyleSheet.create({
   quarterBlock: {
     height: HOUR_HEIGHT / 4,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border, 
+    borderTopColor: COLORS.border,
   },
   firstQuarterBlock: {
     borderTopColor: COLORS.placeholder,
@@ -623,29 +624,37 @@ export const styles = StyleSheet.create({
 
   floatingHistoryContainer: {
     position: 'absolute',
-    bottom: BOTTOM_TAB_BAR_HEIGHT + 16,
-    left: 0,
-    right: 0,
+    left: 16,
+    bottom: SHEET_HANDLE_HEIGHT + 14,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    gap: 16,
     zIndex: 30,
   },
   floatingHistoryButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2.5,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 4,
     borderWidth: 1,
     borderColor: COLORS.border,
+  },
+  floatingUndoButton: {
+    flexDirection: 'row',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  floatingHistoryLabel: {
+    color: COLORS.text,
+    fontSize: 13,
+    fontFamily: FONTS.semibold,
   },
   floatingHistoryButtonDisabled: {
     backgroundColor: COLORS.borderLight,
@@ -660,7 +669,7 @@ export const styles = StyleSheet.create({
     borderColor: COLORS.primary,
     borderStyle: 'dashed',
     borderRadius: 12,
-    backgroundColor: 'rgba(19, 68, 255, 0.08)',
+    backgroundColor: 'rgba(19, 68, 255, 0.11)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -777,16 +786,18 @@ export const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
     overflow: 'hidden',
+    zIndex: 40,
+    elevation: 16,
   },
   // 잡는 자리는 막대만. 갈래 줄까지 여기 넣으면 갈래를 누를 때 시트가 여닫힌다.
   sheetGrabArea: {
-    height: 22,
+    height: 26,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.white,
   },
   sheetGrabber: {
-    width: 36,
+    width: 40,
     height: 4,
     borderRadius: 2,
     backgroundColor: COLORS.border,

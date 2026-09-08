@@ -10,13 +10,18 @@ jest.mock('@react-navigation/material-top-tabs', () => {
   return {
     createMaterialTopTabNavigator: () => {
       return {
-        Navigator: ({ children }: any) => <View testID="mock-top-tab-navigator">{children}</View>,
+        Navigator: ({ children }: any) => (
+          <View testID="mock-top-tab-navigator">{children}</View>
+        ),
         Screen: ({ name, children, component }: any) => {
-          const renderedContent = typeof children === 'function' ? children() : (component ? React.createElement(component) : null);
+          const renderedContent =
+            typeof children === 'function'
+              ? children()
+              : component
+              ? React.createElement(component)
+              : null;
           return (
-            <View testID={`mock-tab-screen-${name}`}>
-              {renderedContent}
-            </View>
+            <View testID={`mock-tab-screen-${name}`}>{renderedContent}</View>
           );
         },
       };
@@ -36,7 +41,8 @@ jest.mock('@react-navigation/native', () => ({
 
 jest.mock('react-native-reanimated', () => {
   const React = require('react');
-  const View = ({ children, style }: any) => React.createElement('View', { style }, children);
+  const View = ({ children, style }: any) =>
+    React.createElement('View', { style }, children);
   return {
     __esModule: true,
     default: {
@@ -62,7 +68,8 @@ jest.mock('@fortawesome/react-native-fontawesome', () => {
   const React = require('react');
   const { View } = require('react-native');
   return {
-    FontAwesomeIcon: () => React.createElement(View, { testID: 'mock-fa-icon' }),
+    FontAwesomeIcon: () =>
+      React.createElement(View, { testID: 'mock-fa-icon' }),
   };
 });
 
@@ -71,8 +78,10 @@ jest.mock('lucide-react-native', () => {
   const { View } = require('react-native');
   return {
     Map: () => React.createElement(View, { testID: 'mock-lucide-map-icon' }),
-    ChevronLeft: () => React.createElement(View, { testID: 'mock-lucide-chevron-left' }),
-    ListChecks: () => React.createElement(View, { testID: 'mock-lucide-list-checks' }),
+    ChevronLeft: () =>
+      React.createElement(View, { testID: 'mock-lucide-chevron-left' }),
+    ListChecks: () =>
+      React.createElement(View, { testID: 'mock-lucide-list-checks' }),
   };
 });
 
@@ -87,7 +96,12 @@ jest.mock('../src/features/itinerary/components/TimelineItem', () => {
     __esModule: true,
     CATEGORY_NAMES: { 4: '검색' },
     resolveCategoryId: () => 4,
-    default: ({ item }: any) => React.createElement(Text, { testID: `timeline-item-${item.id}` }, item.name),
+    default: ({ item }: any) =>
+      React.createElement(
+        Text,
+        { testID: `timeline-item-${item.id}` },
+        item.name,
+      ),
   };
 });
 
@@ -101,25 +115,32 @@ jest.mock('../src/components/common', () => {
   const React = require('react');
   const { View } = require('react-native');
   return {
-    AirplaneLoading: () => React.createElement(View, { testID: 'mock-airplane-loading' }),
-    ScheduleEditModal: () => React.createElement(View, { testID: 'mock-schedule-edit-modal' }),
-    TimePickerModal: () => React.createElement(View, { testID: 'mock-time-picker-modal' }),
-    PlanInfoModal: () => React.createElement(View, { testID: 'mock-plan-info-modal' }),
+    AirplaneLoading: () =>
+      React.createElement(View, { testID: 'mock-airplane-loading' }),
+    ScheduleEditModal: () =>
+      React.createElement(View, { testID: 'mock-schedule-edit-modal' }),
+    TimePickerModal: () =>
+      React.createElement(View, { testID: 'mock-time-picker-modal' }),
+    PlanInfoModal: () =>
+      React.createElement(View, { testID: 'mock-plan-info-modal' }),
     ShareModal: () => React.createElement(View, { testID: 'mock-share-modal' }),
   };
 });
 
-jest.mock('../src/features/itinerary/components/PlaceRecommendationList', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  const Mock = () =>
-    React.createElement(View, { testID: 'mock-place-recommendation-list' });
-  Mock.__esModule = true;
-  Mock.default = Mock;
-  Mock.PLACE_TABS = ['관광지', '숙소', '식당', '직접 추가', '검색'];
-  Mock.PLACE_PICK_UP_MS = 350;
-  return Mock;
-});
+jest.mock(
+  '../src/features/itinerary/components/PlaceRecommendationList',
+  () => {
+    const React = require('react');
+    const { View } = require('react-native');
+    const Mock = () =>
+      React.createElement(View, { testID: 'mock-place-recommendation-list' });
+    Mock.__esModule = true;
+    Mock.default = Mock;
+    Mock.PLACE_TABS = ['관광지', '숙소', '식당', '직접 추가', '검색'];
+    Mock.PLACE_PICK_UP_MS = 350;
+    return Mock;
+  },
+);
 
 jest.mock('../src/features/itinerary/components/weather/WeatherHeader', () => {
   const React = require('react');
@@ -157,12 +178,16 @@ jest.mock('react-native-fast-image', () => {
   return FastImage;
 });
 
-jest.mock('@env', () => ({
-  API_URL: 'mock-api-url',
-}), { virtual: true });
+jest.mock(
+  '@env',
+  () => ({
+    API_URL: 'mock-api-url',
+  }),
+  { virtual: true },
+);
 
 jest.mock('@react-native-async-storage/async-storage', () =>
-  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
 jest.mock('react-native-date-picker', () => {
@@ -307,7 +332,6 @@ const mockDays: Day[] = [
 
 describe('ItineraryEditorScreenView Component', () => {
   it('correctly propagates Context values when the selected day index changes', async () => {
-
     const TestWrapper = () => {
       const [selectedDayIndex, setSelectedDayIndex] = React.useState(0);
 
@@ -336,7 +360,7 @@ describe('ItineraryEditorScreenView Component', () => {
             setTimePickerVisible={() => {}}
             editingTime={null}
             timelineScrollRef={{ current: null } as any}
-            formatDate={(d) => d.toISOString().split('T')[0]}
+            formatDate={d => d.toISOString().split('T')[0]}
             handleEditTime={() => {}}
             handleUpdatePlaceTimes={() => {}}
             handleDeletePlace={() => {}}
@@ -384,8 +408,12 @@ describe('ItineraryEditorScreenView Component', () => {
     const timelineScreenDay1 = rendererInstance!.root.findByProps({
       testID: 'editor-timeline',
     });
-    expect(timelineScreenDay1.findByProps({ testID: 'timeline-item-1' })).toBeTruthy();
-    expect(() => timelineScreenDay1.findByProps({ testID: 'timeline-item-2' })).toThrow();
+    expect(
+      timelineScreenDay1.findByProps({ testID: 'timeline-item-1' }),
+    ).toBeTruthy();
+    expect(() =>
+      timelineScreenDay1.findByProps({ testID: 'timeline-item-2' }),
+    ).toThrow();
 
     const btnDay2 = rendererInstance!.root.findByProps({ testID: 'btn-day-2' });
     await act(async () => {
@@ -395,8 +423,12 @@ describe('ItineraryEditorScreenView Component', () => {
     const timelineScreenDay2 = rendererInstance!.root.findByProps({
       testID: 'editor-timeline',
     });
-    expect(timelineScreenDay2.findByProps({ testID: 'timeline-item-2' })).toBeTruthy();
-    expect(() => timelineScreenDay2.findByProps({ testID: 'timeline-item-1' })).toThrow();
+    expect(
+      timelineScreenDay2.findByProps({ testID: 'timeline-item-2' }),
+    ).toBeTruthy();
+    expect(() =>
+      timelineScreenDay2.findByProps({ testID: 'timeline-item-1' }),
+    ).toThrow();
 
     const btnDay1 = rendererInstance!.root.findByProps({ testID: 'btn-day-1' });
     await act(async () => {
@@ -406,13 +438,16 @@ describe('ItineraryEditorScreenView Component', () => {
     const timelineScreenDay1Again = rendererInstance!.root.findByProps({
       testID: 'editor-timeline',
     });
-    expect(timelineScreenDay1Again.findByProps({ testID: 'timeline-item-1' })).toBeTruthy();
-    expect(() => timelineScreenDay1Again.findByProps({ testID: 'timeline-item-2' })).toThrow();
+    expect(
+      timelineScreenDay1Again.findByProps({ testID: 'timeline-item-1' }),
+    ).toBeTruthy();
+    expect(() =>
+      timelineScreenDay1Again.findByProps({ testID: 'timeline-item-2' }),
+    ).toThrow();
   });
 
-  it('renders undo and redo buttons in the Timeline screen', async () => {
+  it('renders undo button integrated with place sheet', async () => {
     const mockUndo = jest.fn();
-    const mockRedo = jest.fn();
 
     let rendererInstance: renderer.ReactTestRenderer | undefined;
 
@@ -431,7 +466,7 @@ describe('ItineraryEditorScreenView Component', () => {
           setTimePickerVisible={() => {}}
           editingTime={null}
           timelineScrollRef={{ current: null } as any}
-          formatDate={(d) => d.toISOString().split('T')[0]}
+          formatDate={d => d.toISOString().split('T')[0]}
           handleEditTime={() => {}}
           handleUpdatePlaceTimes={() => {}}
           handleDeletePlace={() => {}}
@@ -448,7 +483,7 @@ describe('ItineraryEditorScreenView Component', () => {
           onOpenShare={() => {}}
           onOpenChecklist={() => {}}
           onUndo={mockUndo}
-          onRedo={mockRedo}
+          onRedo={() => {}}
           participantsCount={0}
           planId={null}
           onOpenDetail={() => {}}
@@ -463,33 +498,27 @@ describe('ItineraryEditorScreenView Component', () => {
           onConfirmPlacement={() => {}}
           onCancelPlacement={() => {}}
           onCancelPreview={() => {}}
-        />
+        />,
       );
     });
 
     expect(rendererInstance).toBeDefined();
 
-    const timelineScreen = rendererInstance!.root.findByProps({
-      testID: 'editor-timeline',
+    const undoButton = rendererInstance!.root.findByProps({
+      testID: 'btn-undo',
     });
-
-    const undoButton = timelineScreen?.findByProps({ testID: 'btn-undo' });
-    const redoButton = timelineScreen?.findByProps({ testID: 'btn-redo' });
-
     expect(undoButton).toBeDefined();
-    expect(redoButton).toBeDefined();
 
-    // 아이콘은 lucide 딥임포트로 렌더된다 — 버튼마다 아이콘이 한 개씩 붙어 있는지 확인
-    expect(React.Children.count(undoButton?.props.children)).toBeGreaterThanOrEqual(1);
-    expect(React.Children.count(redoButton?.props.children)).toBeGreaterThanOrEqual(1);
+    // 아이콘은 lucide 딥임포트로 렌더된다 — 버튼에 아이콘이 붙어 있는지 확인
+    expect(
+      React.Children.count(undoButton?.props.children),
+    ).toBeGreaterThanOrEqual(1);
 
     await act(async () => {
       undoButton?.props.onPress();
-      redoButton?.props.onPress();
     });
 
     expect(mockUndo).toHaveBeenCalledTimes(1);
-    expect(mockRedo).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -509,51 +538,153 @@ describe('ItineraryEditorScreen Component', () => {
     jest.useRealTimers();
   });
 
+  it('장소 이동 미리보기 중에는 저장하지 않고 놓을 때 한 번만 추가한다', async () => {
+    mockItineraryEditor.days = mockDays;
+    mockItineraryEditor.selectedDay = mockDays[0];
+    const navigation = {
+      addListener: jest.fn(() => jest.fn()),
+      goBack: jest.fn(),
+      navigate: jest.fn(),
+      setParams: jest.fn(),
+    } as any;
+    const route = {
+      params: { planId: 'plan-123', destination: '제주도' },
+    } as any;
+    const RecommendationList = require('../src/features/itinerary/components/PlaceRecommendationList');
+    let tree: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderer.create(
+        <ItineraryEditorScreen route={route} navigation={navigation} />,
+      );
+    });
+    tree!.root
+      .findAll(node => jest.isMockFunction(node.instance?.measureInWindow))
+      .forEach(node => {
+        node.instance.measureInWindow.mockImplementation(
+          (
+            callback: (
+              x: number,
+              y: number,
+              width: number,
+              height: number,
+            ) => void,
+          ) => callback(0, 100, 400, 600),
+        );
+      });
+    const place = {
+      ...mockDays[0].places[0],
+      id: 'new-place',
+      name: '새 장소',
+    };
+    act(() => {
+      tree!.root.findByType(RecommendationList).props.onPickUpPlace(place, 300);
+    });
+    expect(
+      tree!.root.findByType(ItineraryEditorScreenView).props.pendingPlace.name,
+    ).toBe('새 장소');
+    expect(mockItineraryEditor.handleAddPlace).not.toHaveBeenCalled();
+    act(() => {
+      tree!.root.findByType(RecommendationList).props.onDragPlace(200);
+      tree!.root.findByType(RecommendationList).props.onDropPlace(200);
+    });
+    expect(mockItineraryEditor.handleAddPlace).toHaveBeenCalledTimes(1);
+    expect(mockItineraryEditor.handleAddPlace).toHaveBeenCalledWith(
+      expect.objectContaining({ name: '새 장소' }),
+    );
+    expect(
+      tree!.root.findByType(ItineraryEditorScreenView).props.pendingPlace,
+    ).toBeNull();
+    act(() => tree!.unmount());
+  });
+
   it('장소 편집 창에서 바꾼 필드만 저장하여 다른 사람의 시간 변경을 보존한다', async () => {
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
-    const navigation = { addListener: jest.fn(() => jest.fn()), goBack: jest.fn(), navigate: jest.fn(), setParams: jest.fn() } as any;
-    const route = { params: { planId: 'plan-123', destination: '제주도' } } as any;
+    const navigation = {
+      addListener: jest.fn(() => jest.fn()),
+      goBack: jest.fn(),
+      navigate: jest.fn(),
+      setParams: jest.fn(),
+    } as any;
+    const route = {
+      params: { planId: 'plan-123', destination: '제주도' },
+    } as any;
     let tree: renderer.ReactTestRenderer;
     await act(async () => {
-      tree = renderer.create(<ItineraryEditorScreen route={route} navigation={navigation} />);
+      tree = renderer.create(
+        <ItineraryEditorScreen route={route} navigation={navigation} />,
+      );
     });
     const place = mockDays[0].places[0];
     await act(async () => {
-      tree!.root.findByType(ItineraryEditorScreenView).props.onOpenDetail(place);
+      tree!.root
+        .findByType(ItineraryEditorScreenView)
+        .props.onOpenDetail(place);
     });
-    mockItineraryEditor.days = [{ ...mockDays[0], places: [{ ...place, startTime: '11:00:00' }] }];
+    mockItineraryEditor.days = [
+      { ...mockDays[0], places: [{ ...place, startTime: '11:00:00' }] },
+    ];
     await act(async () => {
-      tree!.update(<ItineraryEditorScreen route={route} navigation={navigation} />);
+      tree!.update(
+        <ItineraryEditorScreen route={route} navigation={navigation} />,
+      );
     });
     await act(async () => {
-      tree!.root.findByType(PlaceEditModal).props.onSave({ ...place, memo: '메모만 변경' });
+      tree!.root
+        .findByType(PlaceEditModal)
+        .props.onSave({ ...place, memo: '메모만 변경' });
     });
-    expect(mockItinerary.updatePlaceDetails).toHaveBeenCalledWith(0, place.id, { memo: '메모만 변경' });
-    await act(async () => { tree!.unmount(); });
+    expect(mockItinerary.updatePlaceDetails).toHaveBeenCalledWith(0, place.id, {
+      memo: '메모만 변경',
+    });
+    await act(async () => {
+      tree!.unmount();
+    });
   });
 
   it('연결 중 이름을 저장한 뒤 완료해도 REST로 같은 이름을 다시 덮어쓰지 않는다', async () => {
     mockWebSocket.isConnected = true;
-    mockItineraryEditor.planMetadata = { planName: '이전 이름', adultCount: 3, childCount: 2 };
+    mockItineraryEditor.planMetadata = {
+      planName: '이전 이름',
+      adultCount: 3,
+      childCount: 2,
+    };
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
-    const navigation = { addListener: jest.fn(() => jest.fn()), goBack: jest.fn(), navigate: jest.fn(), setParams: jest.fn() } as any;
-    const route = { params: { planId: 'plan-123', destination: '제주도' } } as any;
+    const navigation = {
+      addListener: jest.fn(() => jest.fn()),
+      goBack: jest.fn(),
+      navigate: jest.fn(),
+      setParams: jest.fn(),
+    } as any;
+    const route = {
+      params: { planId: 'plan-123', destination: '제주도' },
+    } as any;
     let tree: renderer.ReactTestRenderer;
     await act(async () => {
-      tree = renderer.create(<ItineraryEditorScreen route={route} navigation={navigation} />);
+      tree = renderer.create(
+        <ItineraryEditorScreen route={route} navigation={navigation} />,
+      );
     });
     await act(async () => {
-      await tree!.root.findByType(ItineraryEditorScreenView).props.onSaveTripName();
+      await tree!.root
+        .findByType(ItineraryEditorScreenView)
+        .props.onSaveTripName();
       await tree!.root.findByType(ItineraryEditorScreenView).props.onComplete();
     });
-    expect(mockWebSocket.sendMessage.mock.calls.filter(call => call[1] === 'plan')).toHaveLength(1);
+    expect(
+      mockWebSocket.sendMessage.mock.calls.filter(call => call[1] === 'plan'),
+    ).toHaveLength(1);
     expect(mockWebSocket.sendMessage).toHaveBeenCalledWith('update', 'plan', {
-      planId: 'plan-123', planName: mockItineraryEditor.tripName, adultCount: 3, childCount: 2,
+      planId: 'plan-123',
+      planName: mockItineraryEditor.tripName,
+      adultCount: 3,
+      childCount: 2,
     });
     expect(axios.patch).not.toHaveBeenCalled();
-    await act(async () => { tree!.unmount(); });
+    await act(async () => {
+      tree!.unmount();
+    });
   });
 
   it('권한이 없으면 편집을 막고 수락 후 권한이 갱신되면 같은 화면에서 연결한다', async () => {
@@ -562,7 +693,10 @@ describe('ItineraryEditorScreen Component', () => {
     mockPlanOwnership.isOwner = false;
     mockPlanOwnership.canEdit = false;
 
-    const mockAddListener = jest.fn<() => jest.Mock, [string, (...args: any[]) => void]>(() => jest.fn());
+    const mockAddListener = jest.fn<
+      () => jest.Mock,
+      [string, (...args: any[]) => void]
+    >(() => jest.fn());
     const mockNavigation = {
       addListener: mockAddListener,
       goBack: jest.fn(),
@@ -579,7 +713,7 @@ describe('ItineraryEditorScreen Component', () => {
     let tree: renderer.ReactTestRenderer;
     await act(async () => {
       tree = renderer.create(
-        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />,
       );
     });
 
@@ -587,7 +721,7 @@ describe('ItineraryEditorScreen Component', () => {
     expect(mockWebSocket.connect).not.toHaveBeenCalled();
 
     const beforeRemoveHandler = mockAddListener.mock.calls.find(
-      (call) => call[0] === 'beforeRemove'
+      call => call[0] === 'beforeRemove',
     )?.[1];
 
     const mockPreventDefault = jest.fn();
@@ -603,19 +737,25 @@ describe('ItineraryEditorScreen Component', () => {
     mockPlanOwnership.isEditor = true;
     mockPlanOwnership.canEdit = true;
     await act(async () => {
-      tree!.update(<ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />);
+      tree!.update(
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />,
+      );
     });
     expect(tree!.root.findByType(EditAccessGate).props.visible).toBe(false);
     expect(mockWebSocket.connect).toHaveBeenCalledWith('plan-123');
-    await act(async () => { tree!.unmount(); });
+    await act(async () => {
+      tree!.unmount();
+    });
   });
 
   it('registers beforeRemove listener and shows warning alert on exit', async () => {
-
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
 
-    const mockAddListener = jest.fn<() => jest.Mock, [string, (...args: any[]) => void]>(() => jest.fn());
+    const mockAddListener = jest.fn<
+      () => jest.Mock,
+      [string, (...args: any[]) => void]
+    >(() => jest.fn());
     const mockDispatch = jest.fn();
     const mockNavigation = {
       addListener: mockAddListener,
@@ -634,14 +774,17 @@ describe('ItineraryEditorScreen Component', () => {
 
     await act(async () => {
       renderer.create(
-        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />,
       );
     });
 
-    expect(mockAddListener).toHaveBeenCalledWith('beforeRemove', expect.any(Function));
+    expect(mockAddListener).toHaveBeenCalledWith(
+      'beforeRemove',
+      expect.any(Function),
+    );
 
     const beforeRemoveHandler = mockAddListener.mock.calls.find(
-      (call) => call[0] === 'beforeRemove'
+      call => call[0] === 'beforeRemove',
     )?.[1];
 
     expect(beforeRemoveHandler).toBeDefined();
@@ -664,12 +807,12 @@ describe('ItineraryEditorScreen Component', () => {
         title: '변경사항 저장 안 됨',
         type: 'warning',
         buttons: expect.any(Array),
-      })
+      }),
     );
 
     const alertOptions = mockShowAlert.mock.calls[0][0];
     const leaveButton = alertOptions.buttons.find(
-      (btn: any) => btn.text === '나가기'
+      (btn: any) => btn.text === '나가기',
     );
     expect(leaveButton).toBeDefined();
 
@@ -690,7 +833,10 @@ describe('ItineraryEditorScreen Component', () => {
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
 
-    const mockAddListener = jest.fn<() => jest.Mock, [string, (...args: any[]) => void]>(() => jest.fn());
+    const mockAddListener = jest.fn<
+      () => jest.Mock,
+      [string, (...args: any[]) => void]
+    >(() => jest.fn());
     const mockNavigation = {
       addListener: mockAddListener,
       goBack: jest.fn(),
@@ -710,11 +856,13 @@ describe('ItineraryEditorScreen Component', () => {
 
     await act(async () => {
       rendererInstance = renderer.create(
-        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />,
       );
     });
 
-    const viewComponent = rendererInstance!.root.findByType(ItineraryEditorScreenView);
+    const viewComponent = rendererInstance!.root.findByType(
+      ItineraryEditorScreenView,
+    );
     expect(viewComponent).toBeDefined();
 
     await act(async () => {
@@ -722,7 +870,7 @@ describe('ItineraryEditorScreen Component', () => {
     });
 
     const beforeRemoveHandler = mockAddListener.mock.calls.find(
-      (call) => call[0] === 'beforeRemove'
+      call => call[0] === 'beforeRemove',
     )?.[1];
     expect(beforeRemoveHandler).toBeDefined();
 
@@ -761,7 +909,7 @@ describe('ItineraryEditorScreen Component', () => {
 
     await act(async () => {
       rendererInstance = renderer.create(
-        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />,
       );
     });
     expect(mockItineraryEditor.fetchPlanDetails).toHaveBeenCalledTimes(1);
@@ -769,7 +917,7 @@ describe('ItineraryEditorScreen Component', () => {
     mockWebSocket.isConnected = false;
     await act(async () => {
       rendererInstance!.update(
-        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />,
       );
     });
     expect(mockItineraryEditor.fetchPlanDetails).toHaveBeenCalledTimes(1);
@@ -777,7 +925,7 @@ describe('ItineraryEditorScreen Component', () => {
     mockWebSocket.isConnected = true;
     await act(async () => {
       rendererInstance!.update(
-        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />,
       );
     });
 
@@ -785,7 +933,6 @@ describe('ItineraryEditorScreen Component', () => {
   });
 
   it('제목을 다시 저장해도 값이 그대로면 요청을 한 번만 보낸다', async () => {
-
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
     mockItineraryEditor.tripName = '제주도 여행';
@@ -807,11 +954,13 @@ describe('ItineraryEditorScreen Component', () => {
 
     await act(async () => {
       rendererInstance = renderer.create(
-        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />,
       );
     });
 
-    const viewComponent = rendererInstance!.root.findByType(ItineraryEditorScreenView);
+    const viewComponent = rendererInstance!.root.findByType(
+      ItineraryEditorScreenView,
+    );
 
     await act(async () => {
       await viewComponent.props.onSaveTripName();
@@ -841,7 +990,10 @@ describe('웹과 맞춘 일정 편집 문구', () => {
 
   it('놓을 자리 안내가 이름 뒤에 조사를 붙이지 않는다', () => {
     const source = readFileSync(
-      join(__dirname, '../src/features/itinerary/screens/ItineraryEditorScreen.view.tsx'),
+      join(
+        __dirname,
+        '../src/features/itinerary/screens/ItineraryEditorScreen.view.tsx',
+      ),
       'utf8',
     );
 
@@ -849,5 +1001,59 @@ describe('웹과 맞춘 일정 편집 문구', () => {
     // 폰에는 클릭이 없고, '우도'을처럼 받침을 안 보는 조사도 쓰지 않는다.
     expect(source).not.toContain('클릭해 주세요');
     expect(source).not.toContain("'을 배치할");
+  });
+});
+
+describe('일정 편집기 제스처 및 UI 동작 개선', () => {
+  const source = readFileSync(
+    join(
+      __dirname,
+      '../src/features/itinerary/screens/ItineraryEditorScreen.view.tsx',
+    ),
+    'utf8',
+  );
+
+  it('중복 라벨(movingPlace)이 제거되었다', () => {
+    expect(source).not.toContain('styles.movingPlace');
+    expect(source).not.toContain('movingPlaceName');
+  });
+
+  it('실행 취소 버튼이 플로팅 버튼으로 시트와 동기화되어 렌더된다', () => {
+    expect(source).toContain('styles.floatingHistoryContainer');
+    expect(source).toContain('styles.floatingHistoryButton');
+    expect(source).not.toContain('styles.sheetTopBar');
+  });
+
+  it('카드 이동 제스처에 activateAfterLongPress가 설정되어 스크롤과 분리된다', () => {
+    expect(source).toContain('.activateAfterLongPress(200)');
+    expect(source).toContain('scrollEnabled={!isItemDragging && !isDragging}');
+  });
+
+  it('장소 추가 시 터치 오프셋 보정(FINGER_TARGET_OFFSET)과 Math.floor를 적용한다', () => {
+    expect(source).toContain('FINGER_TARGET_OFFSET = 20');
+    expect(source).toContain('Math.floor(minutes / 15) * 15');
+  });
+
+  it('카드 드래그 중 의도치 않은 시간표 스크롤을 유발하던 startScrollInterval이 제거되었다', () => {
+    expect(source).not.toContain('startScrollInterval');
+    expect(source).not.toContain('clearScrollInterval');
+  });
+
+  it('다른 아이템 드래그 또는 새 장소 배치 중에는 카드 제스처가 비활성화된다', () => {
+    expect(source).toContain('draggingPlaceId !== place.id');
+    expect(source).toContain('.enabled(!disabled)');
+  });
+
+  it('카드 삭제 시 구식 수평 슬라이드 대신 마이크로 축소 및 침강 애니메이션과 중복 인터랙션 차단이 적용된다', () => {
+    expect(source).not.toContain('exitTranslateX');
+    expect(source).toContain('exitTranslateY');
+    expect(source).toContain('Easing.bezier(0.25, 1, 0.5, 1)');
+    expect(source).toContain("pointerEvents={isDeleting ? 'none' : 'auto'}");
+    expect(source).toContain('isDeletingRef.current');
+  });
+
+  it('장소 추가 시트가 날씨 헤더 바로 밑까지 최대 확장되며 1.0 스냅을 지원한다', () => {
+    expect(source).toContain('SHEET_SNAPS = [0, 1 / 3, 2 / 3, 1]');
+    expect(source).toContain('sheetTopGap = hasWeather ? 72 : 8');
   });
 });

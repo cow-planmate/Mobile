@@ -2,6 +2,7 @@ import React, {
   useCallback,
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -23,13 +24,22 @@ import Animated, {
   withSpring,
   withTiming,
   withSequence,
+  withDelay,
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
-import TimelineItem, {
-  Place,
-} from '../components/TimelineItem';
-import { AirplaneLoading, ScheduleEditModal, TimePickerModal } from '../../../components/common';
+
+const PREVIEW_SPRING_CONFIG = {
+  damping: 22,
+  stiffness: 220,
+  mass: 0.6,
+};
+import TimelineItem, { Place } from '../components/TimelineItem';
+import {
+  AirplaneLoading,
+  ScheduleEditModal,
+  TimePickerModal,
+} from '../../../components/common';
 import PlaceRecommendationList, {
   PLACE_TABS,
   type PlaceTab,
@@ -47,6 +57,7 @@ import {
   MIN_ITEM_HEIGHT,
   GRID_SNAP_HEIGHT,
   GRID_TOP_OFFSET,
+  SHEET_HANDLE_HEIGHT,
   TAB_FILL,
 } from './ItineraryEditorScreen.styles';
 import {
@@ -63,7 +74,6 @@ import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
 import CalendarDaysIcon from 'lucide-react-native/dist/esm/icons/calendar-days';
 import CheckIcon from 'lucide-react-native/dist/esm/icons/check';
 import InfoIcon from 'lucide-react-native/dist/esm/icons/info';
-import Redo2 from 'lucide-react-native/dist/esm/icons/redo-2';
 import Undo2 from 'lucide-react-native/dist/esm/icons/undo-2';
 import UserPlusIcon from 'lucide-react-native/dist/esm/icons/user-plus';
 import UsersIcon from 'lucide-react-native/dist/esm/icons/users';
@@ -208,438 +218,677 @@ const TimeGridBackground = React.memo(
   },
 );
 
-const DraggableTimelineItem = React.memo(({
-  place,
-  offsetMinutes,
-  maxEndMinutes,
-  minStartMinutes,
-  onDelete,
-  onEditTime,
-  onDragEnd,
-  onPress,
-  onOverflow,
-  scrollRef,
-}: {
-  place: Place;
-  offsetMinutes: number;
-  maxEndMinutes: number;
-  minStartMinutes: number;
-  onDelete: (placeId: string) => void;
-  onEditTime: (
-    placeId: string,
-    type: 'startTime' | 'endTime',
-    time: string,
-  ) => void;
-  onDragEnd: (
-    placeId: string,
-    newStartMinutes: number,
-    newEndMinutes: number,
-  ) => void;
-  onPress?: (place: Place) => void;
-  onOverflow?: () => void;
-  scrollRef?: React.RefObject<ScrollView | null>;
-}) => {
+const DraggableTimelineItem = React.memo(
+  ({
+    place,
+    offsetMinutes,
+    maxEndMinutes,
+    minStartMinutes,
+    onDelete,
+    onEditTime,
+    onDragEnd,
+    onPress,
+    onOverflow,
+    scrollRef,
+    onItemDragStart,
+    onItemDragEnd,
+    disabled = false,
+  }: {
+    place: Place;
+    offsetMinutes: number;
+    maxEndMinutes: number;
+    minStartMinutes: number;
+    onDelete: (placeId: string) => void;
+    onEditTime: (
+      placeId: string,
+      type: 'startTime' | 'endTime',
+      time: string,
+    ) => void;
+    onDragEnd: (
+      placeId: string,
+      newStartMinutes: number,
+      newEndMinutes: number,
+    ) => void;
+    onPress?: (place: Place) => void;
+    onOverflow?: () => void;
+    scrollRef?: React.RefObject<ScrollView | null>;
+    onItemDragStart?: (placeId: string) => void;
+    onItemDragEnd?: () => void;
+    disabled?: boolean;
+  }) => {
+    const MIN_TOP_PX =
+      GRID_TOP_OFFSET + (minStartMinutes - offsetMinutes) * MINUTE_HEIGHT;
+    const MAX_BOTTOM_PX =
+      GRID_TOP_OFFSET + (maxEndMinutes - offsetMinutes) * MINUTE_HEIGHT;
 
-  const MIN_TOP_PX =
-    GRID_TOP_OFFSET + (minStartMinutes - offsetMinutes) * MINUTE_HEIGHT;
-  const MAX_BOTTOM_PX =
-    GRID_TOP_OFFSET + (maxEndMinutes - offsetMinutes) * MINUTE_HEIGHT;
+    const startMinutes = timeToMinutes(place.startTime);
+    const endMinutes = timeToMinutes(place.endTime);
+    const durationMinutes = endMinutes - startMinutes;
 
-  const startMinutes = timeToMinutes(place.startTime);
-  const endMinutes = timeToMinutes(place.endTime);
-  const durationMinutes = endMinutes - startMinutes;
+    const initialTop =
+      (startMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
+    const calculatedHeight = durationMinutes * MINUTE_HEIGHT;
+    const initialHeight = Math.max(calculatedHeight, MIN_ITEM_HEIGHT);
 
-  const initialTop =
-    (startMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
-  const calculatedHeight = durationMinutes * MINUTE_HEIGHT;
-  const initialHeight = Math.max(calculatedHeight, MIN_ITEM_HEIGHT);
+    const top = useSharedValue(initialTop);
+    const height = useSharedValue(initialHeight);
+    const previewHeight = useSharedValue(initialHeight);
 
-  const top = useSharedValue(initialTop);
-  const height = useSharedValue(initialHeight);
-  const previewHeight = useSharedValue(initialHeight);
+    React.useEffect(() => {
+      const newStartMinutes = timeToMinutes(place.startTime);
+      const newEndMinutes = timeToMinutes(place.endTime);
+      const newDurationMinutes = newEndMinutes - newStartMinutes;
 
-  React.useEffect(() => {
-    const newStartMinutes = timeToMinutes(place.startTime);
-    const newEndMinutes = timeToMinutes(place.endTime);
-    const newDurationMinutes = newEndMinutes - newStartMinutes;
-
-    const newTop =
-      (newStartMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
-    const newCalculatedHeight = newDurationMinutes * MINUTE_HEIGHT;
-    const newHeight = Math.max(newCalculatedHeight, MIN_ITEM_HEIGHT);
-
-    if (top.value !== newTop) {
-      top.value = withSpring(newTop);
-    }
-    if (height.value !== newHeight) {
-      height.value = withSpring(newHeight);
-    }
-    previewHeight.value = newHeight;
-  }, [place.startTime, place.endTime, offsetMinutes, top, height, previewHeight]);
-
-  const startY = useSharedValue(0);
-  const startHeight = useSharedValue(0);
-  const isResizingTop = useSharedValue(0);
-  const isResizingBottom = useSharedValue(0);
-  const isDragging = useSharedValue(0);
-  const previewTop = useSharedValue(initialTop);
-
-  const exitOpacity = useSharedValue(1);
-  const exitScale = useSharedValue(1);
-  const exitTranslateX = useSharedValue(0);
-
-  const dragOpacity = useSharedValue(1);
-  const dragScale = useSharedValue(1);
-
-  const placeId = place.id;
-
-  const handleDeleteWithAnim = React.useCallback(() => {
-    exitScale.value = withTiming(0.8, { duration: 250 });
-    exitTranslateX.value = withTiming(400, { duration: 250 });
-    exitOpacity.value = withTiming(0, { duration: 250 }, (finished) => {
-      if (finished) {
-        runOnJS(onDelete)(placeId);
-      }
-    });
-  }, [onDelete, placeId, exitOpacity, exitScale, exitTranslateX]);
-
-  const handleEditTime = React.useCallback(
-    (type: 'startTime' | 'endTime') => {
-      onEditTime(
-        placeId,
-        type,
-        type === 'startTime' ? place.startTime : place.endTime,
-      );
-    },
-    [onEditTime, placeId, place.startTime, place.endTime],
-  );
-
-  const handlePress = React.useCallback(() => {
-    onPress?.(place);
-  }, [onPress, place]);
-
-  const scrollIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(
-    null,
-  );
-  const clearScrollInterval = () => {
-    if (scrollIntervalRef.current) {
-      clearInterval(scrollIntervalRef.current);
-      scrollIntervalRef.current = null;
-    }
-  };
-
-  const startScrollInterval = (bottomEdge: number) => {
-    if (!scrollIntervalRef.current && scrollRef?.current) {
-      scrollIntervalRef.current = setInterval(() => {
-        scrollRef.current?.scrollTo({
-          y: bottomEdge - 200,
-          animated: true,
-        });
-      }, 100);
-    }
-  };
-
-  React.useEffect(() => clearScrollInterval, []);
-
-  const panGestureMove = Gesture.Pan()
-    .minDistance(10)
-    .onBegin(() => {
-      startY.value = top.value;
-      previewTop.value = top.value;
-      previewHeight.value = height.value;
-      isDragging.value = 1;
-      dragOpacity.value = withSpring(0.9);
-      dragScale.value = withSpring(1.015);
-    })
-    .onUpdate(event => {
-      const newTop = startY.value + event.translationY;
-      const maxTop = MAX_BOTTOM_PX - height.value;
-      const clampedTop = Math.max(MIN_TOP_PX, Math.min(newTop, maxTop));
-      top.value = clampedTop;
-
-      previewTop.value =
-        Math.round((clampedTop - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
-          GRID_SNAP_HEIGHT +
-        GRID_TOP_OFFSET;
-      previewHeight.value = height.value;
-
-      if (scrollRef) {
-        const bottomEdge = clampedTop + height.value;
-        const totalHeight =
-          (maxEndMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET * 2;
-        if (bottomEdge > totalHeight - 100) {
-
-          runOnJS(startScrollInterval)(bottomEdge);
-        } else if (bottomEdge <= totalHeight - 100) {
-          runOnJS(clearScrollInterval)();
-        }
-      }
-    })
-    .onEnd(() => {
-      isDragging.value = 0;
-      dragOpacity.value = withSpring(1);
-      dragScale.value = withSpring(1);
-      runOnJS(clearScrollInterval)();
-      const snappedTop =
-        Math.round((top.value - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
-          GRID_SNAP_HEIGHT +
-        GRID_TOP_OFFSET;
-
-      let newStartMinutes =
-        (snappedTop - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
-      let newEndMinutes = newStartMinutes + durationMinutes;
-
-      if (newEndMinutes > maxEndMinutes) {
-        newEndMinutes = maxEndMinutes;
-        newStartMinutes = maxEndMinutes - durationMinutes;
-        if (onOverflow) runOnJS(onOverflow)();
-      }
-
-      const finalTop =
+      const newTop =
         (newStartMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
-      top.value = withSpring(finalTop);
-      previewTop.value = finalTop;
-      previewHeight.value = height.value;
+      const newCalculatedHeight = newDurationMinutes * MINUTE_HEIGHT;
+      const newHeight = Math.max(newCalculatedHeight, MIN_ITEM_HEIGHT);
 
-      runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
-    })
-    .onFinalize(() => {
-      isDragging.value = 0;
-      dragOpacity.value = withSpring(1);
-      dragScale.value = withSpring(1);
-    });
+      if (top.value !== newTop) {
+        top.value = withSpring(newTop);
+      }
+      if (height.value !== newHeight) {
+        height.value = withSpring(newHeight);
+      }
+      previewHeight.value = newHeight;
+    }, [
+      place.startTime,
+      place.endTime,
+      offsetMinutes,
+      top,
+      height,
+      previewHeight,
+    ]);
 
-  const panGestureResizeTop = Gesture.Pan()
-    .minDistance(4)
-    .onBegin(() => {
-      startY.value = top.value;
-      startHeight.value = height.value;
-      isDragging.value = 1;
-      dragOpacity.value = withSpring(0.9);
-      dragScale.value = withSpring(1.015);
-      previewTop.value = top.value;
-      previewHeight.value = height.value;
-      isResizingTop.value = withSpring(1);
-    })
-    .onUpdate(event => {
-      const newTop = startY.value + event.translationY;
-      const newHeight = startHeight.value - (newTop - startY.value);
+    const startY = useSharedValue(0);
+    const startHeight = useSharedValue(0);
+    const isResizingTop = useSharedValue(0);
+    const isResizingBottom = useSharedValue(0);
+    const isDragging = useSharedValue(0);
+    const previewTop = useSharedValue(initialTop);
+    const indicatorOpacity = useSharedValue(0);
+    const indicatorScale = useSharedValue(0.97);
 
-      if (newHeight >= MIN_ITEM_HEIGHT && newTop >= MIN_TOP_PX) {
-        top.value = newTop;
-        height.value = newHeight;
+    const exitOpacity = useSharedValue(1);
+    const exitScale = useSharedValue(1);
+    const exitTranslateY = useSharedValue(0);
 
-        const snappedTop =
-          Math.round((newTop - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
+    const dragOpacity = useSharedValue(1);
+    const dragScale = useSharedValue(1);
+
+    const placeId = place.id;
+    const isDeletingRef = useRef(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDeleteWithAnim = React.useCallback(() => {
+      if (isDeletingRef.current) return;
+      isDeletingRef.current = true;
+      setIsDeleting(true);
+
+      exitScale.value = withTiming(0.88, {
+        duration: 220,
+        easing: Easing.bezier(0.25, 1, 0.5, 1),
+      });
+      exitTranslateY.value = withTiming(8, {
+        duration: 220,
+        easing: Easing.bezier(0.25, 1, 0.5, 1),
+      });
+      exitOpacity.value = withTiming(
+        0,
+        { duration: 200, easing: Easing.out(Easing.cubic) },
+        () => {
+          runOnJS(onDelete)(placeId);
+        },
+      );
+    }, [onDelete, placeId, exitOpacity, exitScale, exitTranslateY]);
+
+    const handleEditTime = React.useCallback(
+      (type: 'startTime' | 'endTime') => {
+        if (isDeletingRef.current) return;
+        onEditTime(
+          placeId,
+          type,
+          type === 'startTime' ? place.startTime : place.endTime,
+        );
+      },
+      [onEditTime, placeId, place.startTime, place.endTime],
+    );
+
+    const handlePress = React.useCallback(() => {
+      if (isDeletingRef.current) return;
+      onPress?.(place);
+    }, [onPress, place]);
+
+    const panGestureMove = Gesture.Pan()
+      .enabled(!disabled)
+      .activateAfterLongPress(200)
+      .onBegin(() => {
+        if (isDeletingRef.current) return;
+        startY.value = top.value;
+        previewTop.value = top.value;
+        previewHeight.value = height.value;
+      })
+      .onStart(() => {
+        isDragging.value = 1;
+        dragOpacity.value = withSpring(0.76, PREVIEW_SPRING_CONFIG);
+        dragScale.value = withSpring(0.91, PREVIEW_SPRING_CONFIG);
+        indicatorOpacity.value = withTiming(1, { duration: 150 });
+        indicatorScale.value = withSpring(1, PREVIEW_SPRING_CONFIG);
+        if (onItemDragStart) runOnJS(onItemDragStart)(placeId);
+      })
+      .onUpdate(event => {
+        const newTop = startY.value + event.translationY;
+        const maxTop = MAX_BOTTOM_PX - height.value;
+        const clampedTop = Math.max(MIN_TOP_PX, Math.min(newTop, maxTop));
+        top.value = clampedTop;
+
+        previewTop.value =
+          Math.round((clampedTop - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
             GRID_SNAP_HEIGHT +
           GRID_TOP_OFFSET;
+        previewHeight.value = height.value;
+      })
+      .onEnd(() => {
+        isDragging.value = 0;
+        dragOpacity.value = withSpring(1);
+        dragScale.value = withSpring(1);
+        const snappedTop =
+          Math.round((top.value - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
+            GRID_SNAP_HEIGHT +
+          GRID_TOP_OFFSET;
+
+        let newStartMinutes =
+          (snappedTop - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
+        let newEndMinutes = newStartMinutes + durationMinutes;
+
+        if (newEndMinutes > maxEndMinutes) {
+          newEndMinutes = maxEndMinutes;
+          newStartMinutes = maxEndMinutes - durationMinutes;
+          if (onOverflow) runOnJS(onOverflow)();
+        }
+
+        const finalTop =
+          (newStartMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
+        top.value = withSpring(finalTop);
+        previewTop.value = finalTop;
+        previewHeight.value = height.value;
+
+        indicatorOpacity.value = withDelay(
+          80,
+          withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) }),
+        );
+        indicatorScale.value = withDelay(
+          80,
+          withTiming(0.98, { duration: 220 }),
+        );
+
+        runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
+        if (onItemDragEnd) runOnJS(onItemDragEnd)();
+      })
+      .onFinalize((_event, success) => {
+        if (!success) {
+          isDragging.value = 0;
+          dragOpacity.value = withSpring(1);
+          dragScale.value = withSpring(1);
+          indicatorOpacity.value = withTiming(0, { duration: 150 });
+          indicatorScale.value = withTiming(0.97, { duration: 150 });
+          if (onItemDragEnd) runOnJS(onItemDragEnd)();
+        }
+      });
+
+    const panGestureResizeTop = Gesture.Pan()
+      .enabled(!disabled)
+      .minDistance(4)
+      .onBegin(() => {
+        if (isDeletingRef.current) return;
+        startY.value = top.value;
+        startHeight.value = height.value;
+        previewTop.value = top.value;
+        previewHeight.value = height.value;
+      })
+      .onStart(() => {
+        isDragging.value = 1;
+        dragOpacity.value = withSpring(0.82, PREVIEW_SPRING_CONFIG);
+        dragScale.value = withSpring(0.96, PREVIEW_SPRING_CONFIG);
+        isResizingTop.value = withSpring(1);
+        indicatorOpacity.value = withTiming(1, { duration: 150 });
+        indicatorScale.value = withSpring(1, PREVIEW_SPRING_CONFIG);
+        if (onItemDragStart) runOnJS(onItemDragStart)(placeId);
+      })
+      .onUpdate(event => {
+        const newTop = startY.value + event.translationY;
+        const newHeight = startHeight.value - (newTop - startY.value);
+
+        if (newHeight >= MIN_ITEM_HEIGHT && newTop >= MIN_TOP_PX) {
+          top.value = newTop;
+          height.value = newHeight;
+
+          const snappedTop =
+            Math.round((newTop - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
+              GRID_SNAP_HEIGHT +
+            GRID_TOP_OFFSET;
+          const bottom = startY.value + startHeight.value;
+          let finalTop = Math.max(MIN_TOP_PX, snappedTop);
+          let finalHeight = bottom - finalTop;
+
+          if (finalHeight < MIN_ITEM_HEIGHT) {
+            finalHeight = MIN_ITEM_HEIGHT;
+            finalTop = bottom - MIN_ITEM_HEIGHT;
+          }
+
+          previewTop.value = finalTop;
+          previewHeight.value = finalHeight;
+        }
+      })
+      .onEnd(() => {
+        isDragging.value = 0;
+        dragOpacity.value = withSpring(1);
+        dragScale.value = withSpring(1);
+        const snappedTop =
+          Math.round((top.value - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
+            GRID_SNAP_HEIGHT +
+          GRID_TOP_OFFSET;
+
         const bottom = startY.value + startHeight.value;
         let finalTop = Math.max(MIN_TOP_PX, snappedTop);
-        let finalHeight = bottom - finalTop;
+        let finalHeight =
+          Math.round((bottom - finalTop) / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
 
         if (finalHeight < MIN_ITEM_HEIGHT) {
           finalHeight = MIN_ITEM_HEIGHT;
-          finalTop = bottom - MIN_ITEM_HEIGHT;
+          finalTop = Math.max(MIN_TOP_PX, bottom - MIN_ITEM_HEIGHT);
         }
 
+        top.value = withSpring(finalTop);
+        height.value = withSpring(finalHeight);
         previewTop.value = finalTop;
         previewHeight.value = finalHeight;
-      }
-    })
-    .onEnd(() => {
-      isDragging.value = 0;
-      dragOpacity.value = withSpring(1);
-      dragScale.value = withSpring(1);
-      const snappedTop =
-        Math.round((top.value - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
-          GRID_SNAP_HEIGHT +
-        GRID_TOP_OFFSET;
 
-      const bottom = startY.value + startHeight.value;
-      let finalTop = Math.max(MIN_TOP_PX, snappedTop);
-      let finalHeight =
-        Math.round((bottom - finalTop) / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
+        indicatorOpacity.value = withDelay(
+          80,
+          withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) }),
+        );
+        indicatorScale.value = withDelay(
+          80,
+          withTiming(0.98, { duration: 220 }),
+        );
 
-      if (finalHeight < MIN_ITEM_HEIGHT) {
-        finalHeight = MIN_ITEM_HEIGHT;
-        finalTop = Math.max(MIN_TOP_PX, bottom - MIN_ITEM_HEIGHT);
-      }
+        const newStartMinutes =
+          (finalTop - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
+        const newEndMinutes = newStartMinutes + finalHeight / MINUTE_HEIGHT;
 
-      top.value = withSpring(finalTop);
-      height.value = withSpring(finalHeight);
-      previewTop.value = finalTop;
-      previewHeight.value = finalHeight;
+        runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
+        if (onItemDragEnd) runOnJS(onItemDragEnd)();
+      })
+      .onFinalize((_event, success) => {
+        isResizingTop.value = withSpring(0);
+        if (!success) {
+          isDragging.value = 0;
+          dragOpacity.value = withSpring(1);
+          dragScale.value = withSpring(1);
+          indicatorOpacity.value = withTiming(0, { duration: 150 });
+          if (onItemDragEnd) runOnJS(onItemDragEnd)();
+        }
+      });
 
-      const newStartMinutes =
-        (finalTop - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
-      const newEndMinutes = newStartMinutes + finalHeight / MINUTE_HEIGHT;
+    const panGestureResizeBottom = Gesture.Pan()
+      .enabled(!disabled)
+      .minDistance(4)
+      .onBegin(() => {
+        if (isDeletingRef.current) return;
+        startHeight.value = height.value;
+        previewTop.value = top.value;
+        previewHeight.value = height.value;
+      })
+      .onStart(() => {
+        isDragging.value = 1;
+        dragOpacity.value = withSpring(0.82, PREVIEW_SPRING_CONFIG);
+        dragScale.value = withSpring(0.96, PREVIEW_SPRING_CONFIG);
+        isResizingBottom.value = withSpring(1);
+        indicatorOpacity.value = withTiming(1, { duration: 150 });
+        indicatorScale.value = withSpring(1, PREVIEW_SPRING_CONFIG);
+        if (onItemDragStart) runOnJS(onItemDragStart)(placeId);
+      })
+      .onUpdate(event => {
+        const newHeight = startHeight.value + event.translationY;
+        const newBottom = top.value + newHeight;
 
-      runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
-    })
-    .onFinalize(() => {
-      isResizingTop.value = withSpring(0);
-      isDragging.value = 0;
-      dragOpacity.value = withSpring(1);
-      dragScale.value = withSpring(1);
-    });
+        if (newHeight >= MIN_ITEM_HEIGHT && newBottom <= MAX_BOTTOM_PX) {
+          height.value = newHeight;
 
-  const panGestureResizeBottom = Gesture.Pan()
-    .minDistance(4)
-    .onBegin(() => {
-      startHeight.value = height.value;
-      isDragging.value = 1;
-      dragOpacity.value = withSpring(0.9);
-      dragScale.value = withSpring(1.015);
-      previewTop.value = top.value;
-      previewHeight.value = height.value;
-      isResizingBottom.value = withSpring(1);
-    })
-    .onUpdate(event => {
-      const newHeight = startHeight.value + event.translationY;
-      const newBottom = top.value + newHeight;
+          const snappedHeight =
+            Math.round(newHeight / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
+          let finalHeight = Math.max(snappedHeight, MIN_ITEM_HEIGHT);
+          if (top.value + finalHeight > MAX_BOTTOM_PX) {
+            finalHeight = MAX_BOTTOM_PX - top.value;
+          }
 
-      if (newHeight >= MIN_ITEM_HEIGHT && newBottom <= MAX_BOTTOM_PX) {
-        height.value = newHeight;
-
+          previewHeight.value = finalHeight;
+        }
+      })
+      .onEnd(() => {
+        isDragging.value = 0;
+        dragOpacity.value = withSpring(1);
+        dragScale.value = withSpring(1);
         const snappedHeight =
-          Math.round(newHeight / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
+          Math.round(height.value / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
         let finalHeight = Math.max(snappedHeight, MIN_ITEM_HEIGHT);
         if (top.value + finalHeight > MAX_BOTTOM_PX) {
-          finalHeight = MAX_BOTTOM_PX - top.value;
+          finalHeight = Math.max(
+            Math.floor((MAX_BOTTOM_PX - top.value) / GRID_SNAP_HEIGHT) *
+              GRID_SNAP_HEIGHT,
+            MIN_ITEM_HEIGHT,
+          );
+          if (onOverflow) runOnJS(onOverflow)();
         }
 
+        height.value = withSpring(finalHeight);
         previewHeight.value = finalHeight;
-      }
-    })
-    .onEnd(() => {
-      isDragging.value = 0;
-      dragOpacity.value = withSpring(1);
-      dragScale.value = withSpring(1);
-      const snappedHeight =
-        Math.round(height.value / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
-      let finalHeight = Math.max(snappedHeight, MIN_ITEM_HEIGHT);
-      if (top.value + finalHeight > MAX_BOTTOM_PX) {
 
-        finalHeight = Math.max(
-          Math.floor((MAX_BOTTOM_PX - top.value) / GRID_SNAP_HEIGHT) *
-            GRID_SNAP_HEIGHT,
-          MIN_ITEM_HEIGHT,
+        indicatorOpacity.value = withDelay(
+          80,
+          withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) }),
         );
-        if (onOverflow) runOnJS(onOverflow)();
-      }
+        indicatorScale.value = withDelay(
+          80,
+          withTiming(0.98, { duration: 220 }),
+        );
 
-      height.value = withSpring(finalHeight);
-      previewHeight.value = finalHeight;
+        const newStartMinutes =
+          (top.value - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
+        const newEndMinutes = newStartMinutes + finalHeight / MINUTE_HEIGHT;
 
-      const newStartMinutes =
-        (top.value - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
-      const newEndMinutes = newStartMinutes + finalHeight / MINUTE_HEIGHT;
+        runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
+        if (onItemDragEnd) runOnJS(onItemDragEnd)();
+      })
+      .onFinalize((_event, success) => {
+        isResizingBottom.value = withSpring(0);
+        if (!success) {
+          isDragging.value = 0;
+          dragOpacity.value = withSpring(1);
+          dragScale.value = withSpring(1);
+          indicatorOpacity.value = withTiming(0, { duration: 150 });
+          if (onItemDragEnd) runOnJS(onItemDragEnd)();
+        }
+      });
 
-      runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
-    })
-    .onFinalize(() => {
-      isResizingBottom.value = withSpring(0);
-      isDragging.value = 0;
-      dragOpacity.value = withSpring(1);
-      dragScale.value = withSpring(1);
+    const animatedStyle = useAnimatedStyle(() => {
+      return {
+        position: 'absolute',
+        top: top.value,
+        height: height.value,
+        left: 60,
+        right: 15,
+        opacity: exitOpacity.value * dragOpacity.value,
+        transform: [
+          { scale: exitScale.value * dragScale.value },
+          { translateY: exitTranslateY.value },
+        ],
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: isDragging.value === 1 ? 8 : 0 },
+        shadowOpacity: isDragging.value === 1 ? 0.22 : 0,
+        shadowRadius: isDragging.value === 1 ? 16 : 0,
+        elevation: isDragging.value === 1 ? 8 : 0,
+        zIndex: isDragging.value === 1 ? 100 : 1,
+      };
     });
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      position: 'absolute',
-      top: top.value,
-      height: height.value,
-      left: 60,
-      right: 15,
-      opacity: exitOpacity.value * dragOpacity.value,
-      transform: [
-        { scale: exitScale.value * dragScale.value },
-        { translateX: exitTranslateX.value },
-      ],
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: isDragging.value === 1 ? 6 : 0 },
-      shadowOpacity: isDragging.value === 1 ? 0.15 : 0,
-      shadowRadius: isDragging.value === 1 ? 10 : 0,
-      elevation: isDragging.value === 1 ? 5 : 0,
-      zIndex: isDragging.value === 1 ? 100 : 1,
-    };
-  });
+    const indicatorStyle = useAnimatedStyle(() => {
+      return {
+        position: 'absolute',
+        top: withSpring(previewTop.value, PREVIEW_SPRING_CONFIG),
+        height: withSpring(previewHeight.value, PREVIEW_SPRING_CONFIG),
+        left: 60,
+        right: 15,
+        borderWidth: 2,
+        borderColor: COLORS.primary,
+        borderStyle: 'dashed',
+        borderRadius: 12,
+        backgroundColor: 'rgba(19, 68, 255, 0.11)',
+        opacity: indicatorOpacity.value,
+        transform: [{ scale: indicatorScale.value }],
+        zIndex: -1,
+      };
+    });
 
-  const indicatorStyle = useAnimatedStyle(() => {
-    return {
-      position: 'absolute',
-      top: withSpring(previewTop.value, {
-        damping: 15,
-        stiffness: 120,
-        mass: 0.8,
-      }),
-      height: height.value,
-      left: 60,
-      right: 15,
-      borderWidth: 2,
-      borderColor: COLORS.primary,
-      borderStyle: 'dashed',
-      borderRadius: 12,
-      backgroundColor: 'rgba(19, 68, 255, 0.08)',
-      opacity: isDragging.value,
-      zIndex: -1,
-    };
-  });
+    const topHandleStyle = useAnimatedStyle(() => {
+      return {
+        transform: [
+          { scaleX: 1 + isResizingTop.value * 0.14 },
+          { scaleY: 1 + isResizingTop.value * 0.14 },
+        ],
+      };
+    });
 
-  const topHandleStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { scaleX: 1 + isResizingTop.value * 0.14 },
-        { scaleY: 1 + isResizingTop.value * 0.14 },
-      ],
-    };
-  });
+    const bottomHandleStyle = useAnimatedStyle(() => {
+      return {
+        transform: [
+          { scaleX: 1 + isResizingBottom.value * 0.14 },
+          { scaleY: 1 + isResizingBottom.value * 0.14 },
+        ],
+      };
+    });
 
-  const bottomHandleStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { scaleX: 1 + isResizingBottom.value * 0.14 },
-        { scaleY: 1 + isResizingBottom.value * 0.14 },
-      ],
-    };
-  });
+    return (
+      <>
+        <Animated.View style={indicatorStyle} pointerEvents="none" />
+        <Animated.View
+          style={animatedStyle}
+          pointerEvents={isDeleting ? 'none' : 'auto'}
+        >
+          <GestureDetector gesture={panGestureMove}>
+            <Animated.View style={styles.flex1}>
+              <TimelineItem
+                item={place}
+                onDelete={handleDeleteWithAnim}
+                onEditTime={handleEditTime}
+                onPress={handlePress}
+                style={styles.flex1}
+              />
+            </Animated.View>
+          </GestureDetector>
 
-  return (
-    <>
-      <Animated.View style={indicatorStyle} pointerEvents="none" />
-      <Animated.View style={animatedStyle}>
-        <GestureDetector gesture={panGestureMove}>
-          <Animated.View style={styles.flex1}>
-            <TimelineItem
-              item={place}
-              onDelete={handleDeleteWithAnim}
-              onEditTime={handleEditTime}
-              onPress={handlePress}
-              style={styles.flex1}
-            />
-          </Animated.View>
-        </GestureDetector>
+          <GestureDetector gesture={panGestureResizeTop}>
+            <Animated.View style={styles.resizeHandleTop}>
+              <Animated.View
+                style={[styles.resizeHandleIndicator, topHandleStyle]}
+              />
+            </Animated.View>
+          </GestureDetector>
 
-        <GestureDetector gesture={panGestureResizeTop}>
-          <Animated.View style={styles.resizeHandleTop}>
-            <Animated.View
-              style={[styles.resizeHandleIndicator, topHandleStyle]}
-            />
-          </Animated.View>
-        </GestureDetector>
-
-        <GestureDetector gesture={panGestureResizeBottom}>
-          <Animated.View style={styles.resizeHandleBottom}>
-            <Animated.View
-              style={[styles.resizeHandleIndicator, bottomHandleStyle]}
-            />
-          </Animated.View>
-        </GestureDetector>
-      </Animated.View>
-    </>
-  );
-});
+          <GestureDetector gesture={panGestureResizeBottom}>
+            <Animated.View style={styles.resizeHandleBottom}>
+              <Animated.View
+                style={[styles.resizeHandleIndicator, bottomHandleStyle]}
+              />
+            </Animated.View>
+          </GestureDetector>
+        </Animated.View>
+      </>
+    );
+  },
+);
 DraggableTimelineItem.displayName = 'DraggableTimelineItem';
+
+interface AnimatedPlacementPreviewProps {
+  pendingPlace?: Omit<Place, 'startTime' | 'endTime'> | null;
+  previewStartTime?: string | null;
+  previewEndTime?: string | null;
+  offsetMinutes: number;
+  isDragging?: boolean;
+  dropBlocked?: boolean;
+  onCancel?: () => void;
+  onConfirm?: () => void;
+}
+
+const AnimatedPlacementPreview: React.FC<AnimatedPlacementPreviewProps> =
+  React.memo(
+    ({
+      pendingPlace,
+      previewStartTime,
+      previewEndTime,
+      offsetMinutes,
+      isDragging = false,
+      dropBlocked = false,
+      onCancel,
+      onConfirm,
+    }) => {
+      const startMin = previewStartTime
+        ? timeToMinutes(previewStartTime)
+        : null;
+      const endMin = previewEndTime ? timeToMinutes(previewEndTime) : null;
+
+      const targetTop = useMemo(() => {
+        if (startMin === null) return null;
+        return (startMin - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
+      }, [startMin, offsetMinutes]);
+
+      const targetHeight = useMemo(() => {
+        if (startMin === null || endMin === null) return MIN_ITEM_HEIGHT;
+        return Math.max((endMin - startMin) * MINUTE_HEIGHT, MIN_ITEM_HEIGHT);
+      }, [startMin, endMin]);
+
+      const lastTopRef = useRef<number>(targetTop ?? GRID_TOP_OFFSET);
+      if (targetTop !== null) {
+        lastTopRef.current = targetTop;
+      }
+      const lastHeightRef = useRef<number>(targetHeight);
+      if (startMin !== null && endMin !== null) {
+        lastHeightRef.current = targetHeight;
+      }
+
+      const animTop = useSharedValue(targetTop ?? GRID_TOP_OFFSET);
+      const animHeight = useSharedValue(targetHeight);
+      const animOpacity = useSharedValue(0);
+      const animScale = useSharedValue(0.96);
+      const prevPlaceRef = useRef(pendingPlace);
+
+      useEffect(() => {
+        if (!pendingPlace) {
+          animOpacity.value = withTiming(0, { duration: 120 });
+          animScale.value = withTiming(0.96, { duration: 120 });
+          return;
+        }
+
+        const isNewPlace = prevPlaceRef.current !== pendingPlace;
+        prevPlaceRef.current = pendingPlace;
+
+        if (targetTop !== null) {
+          if (isNewPlace || animOpacity.value === 0) {
+            animTop.value = targetTop;
+            animHeight.value = targetHeight;
+            animOpacity.value = withTiming(1, {
+              duration: 160,
+              easing: Easing.out(Easing.cubic),
+            });
+            animScale.value = withSpring(1, PREVIEW_SPRING_CONFIG);
+          } else {
+            animTop.value = withSpring(targetTop, PREVIEW_SPRING_CONFIG);
+            animHeight.value = withSpring(targetHeight, PREVIEW_SPRING_CONFIG);
+            animOpacity.value = withTiming(1, { duration: 120 });
+            animScale.value = withSpring(1, PREVIEW_SPRING_CONFIG);
+          }
+        } else if (dropBlocked) {
+          animTop.value = withSpring(lastTopRef.current, PREVIEW_SPRING_CONFIG);
+          animHeight.value = withSpring(
+            lastHeightRef.current,
+            PREVIEW_SPRING_CONFIG,
+          );
+          animOpacity.value = withTiming(1, { duration: 150 });
+          animScale.value = withSequence(
+            withTiming(0.97, { duration: 80 }),
+            withSpring(1, PREVIEW_SPRING_CONFIG),
+          );
+        } else {
+          animOpacity.value = withTiming(0, { duration: 120 });
+          animScale.value = withTiming(0.96, { duration: 120 });
+        }
+      }, [
+        pendingPlace,
+        targetTop,
+        targetHeight,
+        dropBlocked,
+        animTop,
+        animHeight,
+        animOpacity,
+        animScale,
+      ]);
+
+      const animatedStyle = useAnimatedStyle(() => ({
+        top: animTop.value,
+        height: animHeight.value,
+        opacity: animOpacity.value,
+        transform: [{ scale: animScale.value }],
+      }));
+
+      if (!pendingPlace) return null;
+      if (targetTop === null && !dropBlocked) return null;
+
+      if (dropBlocked) {
+        return (
+          <Animated.View
+            style={[
+              styles.previewBanner,
+              styles.previewBannerBlocked,
+              animatedStyle,
+            ]}
+            pointerEvents="none"
+          >
+            <Text style={styles.previewBannerBlockedText}>공간 부족</Text>
+          </Animated.View>
+        );
+      }
+
+      return (
+        <Animated.View
+          style={[
+            styles.previewBanner,
+            isDragging && styles.previewBannerDragging,
+            animatedStyle,
+          ]}
+          pointerEvents={isDragging ? 'none' : 'box-none'}
+        >
+          <View style={styles.previewBannerInfo}>
+            <Text style={styles.previewBannerName} numberOfLines={1}>
+              {pendingPlace.name}
+            </Text>
+            <Text style={styles.previewBannerTime}>
+              {previewStartTime} - {previewEndTime} ({pendingPlace.type})
+            </Text>
+          </View>
+          {!isDragging && (
+            <View style={styles.previewBannerActions}>
+              <TouchableOpacity
+                onPress={onCancel}
+                style={[
+                  styles.previewBannerActionButton,
+                  styles.previewBannerCancelButton,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="장소 배치 취소"
+                hitSlop={8}
+              >
+                <XIcon color={COLORS.white} size={14} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={onConfirm}
+                style={[
+                  styles.previewBannerActionButton,
+                  styles.previewBannerConfirmButton,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="장소 배치 확정"
+                hitSlop={8}
+              >
+                <CheckIcon color={COLORS.white} size={14} />
+              </TouchableOpacity>
+            </View>
+          )}
+        </Animated.View>
+      );
+    },
+  );
+AnimatedPlacementPreview.displayName = 'AnimatedPlacementPreview';
 
 const TimelineComponent = React.memo(
   React.forwardRef<
@@ -674,6 +923,8 @@ const TimelineComponent = React.memo(
       isDragging?: boolean;
       /** 비켜설 빈자리조차 없을 때 */
       dropBlocked?: boolean;
+      onItemDragStart?: () => void;
+      onItemDragEnd?: () => void;
     }
   >(
     (
@@ -695,10 +946,11 @@ const TimelineComponent = React.memo(
         gridRef,
         isDragging = false,
         dropBlocked = false,
+        onItemDragStart,
+        onItemDragEnd,
       },
       ref,
     ) => {
-
       const bannerOpacity = useSharedValue(0);
       const bannerTranslateY = useSharedValue(20);
       const bannerAnimStyle = useAnimatedStyle(() => ({
@@ -748,18 +1000,36 @@ const TimelineComponent = React.memo(
         };
       }, [selectedDay?.startTime, selectedDay?.endTime]);
 
+      const [draggingPlaceId, setDraggingPlaceId] = useState<string | null>(
+        null,
+      );
+      const isItemDragging = draggingPlaceId !== null;
+      const handleItemDragStart = useCallback(
+        (placeId?: string) => {
+          setDraggingPlaceId(placeId || 'active');
+          onItemDragStart?.();
+        },
+        [onItemDragStart],
+      );
+      const handleItemDragEnd = useCallback(() => {
+        setDraggingPlaceId(null);
+        onItemDragEnd?.();
+      }, [onItemDragEnd]);
+
       return (
         <View style={styles.tabContentContainer}>
           <ScrollView
             ref={ref}
+            scrollEnabled={!isItemDragging && !isDragging}
             contentContainerStyle={[
               styles.timelineContentContainer,
               { paddingTop: topPadding, paddingBottom: bottomPadding },
             ]}
           >
             <Pressable
-              onPress={(evt) => {
-                if (!pendingPlace || !setPreviewStartTime || !setPreviewEndTime) return;
+              onPress={evt => {
+                if (!pendingPlace || !setPreviewStartTime || !setPreviewEndTime)
+                  return;
                 const clickY = evt.nativeEvent.locationY;
                 const minutes =
                   (clickY - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
@@ -795,68 +1065,25 @@ const TimelineComponent = React.memo(
                     onPress={onPressPlace}
                     onOverflow={showOverflowBanner}
                     scrollRef={ref as React.RefObject<ScrollView | null>}
+                    onItemDragStart={handleItemDragStart}
+                    onItemDragEnd={handleItemDragEnd}
+                    disabled={
+                      isDragging ||
+                      (isItemDragging && draggingPlaceId !== place.id)
+                    }
                   />
                 ))}
 
-                {pendingPlace && isDragging && dropBlocked && (
-                  <View style={[styles.previewBanner, styles.previewBannerBlocked]}>
-                    <Text style={styles.previewBannerBlockedText}>
-                      공간 부족
-                    </Text>
-                  </View>
-                )}
-
-                {pendingPlace && previewStartTime && previewEndTime && (
-                  <View
-                    style={[
-                      styles.previewBanner,
-                      isDragging && styles.previewBannerDragging,
-                      {
-                        top:
-                          (timeToMinutes(previewStartTime) - offsetMinutes) *
-                            MINUTE_HEIGHT +
-                          GRID_TOP_OFFSET,
-                        height: Math.max(
-                          (timeToMinutes(previewEndTime) -
-                            timeToMinutes(previewStartTime)) *
-                            MINUTE_HEIGHT,
-                          MIN_ITEM_HEIGHT,
-                        ),
-                      },
-                    ]}
-                  >
-                    <View style={styles.previewBannerInfo}>
-                      <Text style={styles.previewBannerName} numberOfLines={1}>
-                        {pendingPlace.name}
-                      </Text>
-                      <Text style={styles.previewBannerTime}>
-                        {previewStartTime} - {previewEndTime} ({pendingPlace.type})
-                      </Text>
-                    </View>
-                    {isDragging ? null : (
-                    <View style={styles.previewBannerActions}>
-                      <TouchableOpacity
-                        onPress={onCancelPreview}
-                        style={[styles.previewBannerActionButton, styles.previewBannerCancelButton]}
-                        accessibilityRole="button"
-                        accessibilityLabel="장소 배치 취소"
-                        hitSlop={8}
-                      >
-                        <XIcon color={COLORS.white} size={14} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={onConfirmPlacement}
-                        style={[styles.previewBannerActionButton, styles.previewBannerConfirmButton]}
-                        accessibilityRole="button"
-                        accessibilityLabel="장소 배치 확정"
-                        hitSlop={8}
-                      >
-                        <CheckIcon color={COLORS.white} size={14} />
-                      </TouchableOpacity>
-                    </View>
-                    )}
-                  </View>
-                )}
+                <AnimatedPlacementPreview
+                  pendingPlace={pendingPlace}
+                  previewStartTime={previewStartTime}
+                  previewEndTime={previewEndTime}
+                  offsetMinutes={offsetMinutes}
+                  isDragging={isDragging}
+                  dropBlocked={dropBlocked}
+                  onCancel={onCancelPreview}
+                  onConfirm={onConfirmPlacement}
+                />
               </View>
             </Pressable>
           </ScrollView>
@@ -897,14 +1124,12 @@ export const EditorStateContext = createContext<{
   dropBlocked: boolean;
   gridRef: React.RefObject<View | null>;
   sheetInset: number;
+  onItemDragStart?: () => void;
+  onItemDragEnd?: () => void;
 } | null>(null);
 
-/** 손잡이 줄 높이 — 잡는 막대와 갈래 줄. 접혀도 이만큼은 남는다. */
-const SHEET_HANDLE_HEIGHT = 62;
-/** 시트가 아무리 커도 시간표에 이만큼은 남긴다. */
-const MIN_TIMELINE_HEIGHT = 96;
-/** 붙는 자리 — 접힘 / 1·3 / 2·3 / 거의 전체 */
-const SHEET_SNAPS = [0, 1 / 3, 2 / 3, 0.88];
+/** 붙는 자리 — 접힘 / 1·3 / 2·3 / 최대 확장 */
+const SHEET_SNAPS = [0, 1 / 3, 2 / 3, 1];
 
 const nearestSnap = (value: number, points: number[]) =>
   points.reduce((a, b) => (Math.abs(b - value) < Math.abs(a - value) ? b : a));
@@ -970,6 +1195,8 @@ const TimelineTabScreen = React.memo(() => {
     dropBlocked,
     gridRef,
     sheetInset,
+    onItemDragStart,
+    onItemDragEnd,
   } = state;
 
   const localDateStr = selectedDay ? formatDateLocal(selectedDay.date) : '';
@@ -979,10 +1206,7 @@ const TimelineTabScreen = React.memo(() => {
     <View style={styles.timelineStage}>
       <View pointerEvents="none" style={styles.timelineSceneBackdrop} />
       {selectedDay && currentWeather && (
-        <View
-          pointerEvents="none"
-          style={styles.timelineWeatherOverlay}
-        >
+        <View pointerEvents="none" style={styles.timelineWeatherOverlay}>
           <WeatherHeader
             dayNumber={selectedDay.dayNumber}
             weather={currentWeather}
@@ -1009,40 +1233,9 @@ const TimelineTabScreen = React.memo(() => {
         isDragging={isDragging}
         dropBlocked={dropBlocked}
         gridRef={gridRef}
+        onItemDragStart={onItemDragStart}
+        onItemDragEnd={onItemDragEnd}
       />
-
-      <View
-        style={[styles.floatingHistoryContainer, { bottom: sheetInset + 16 }]}
-      >
-        <TouchableOpacity
-          testID="btn-undo"
-          style={styles.floatingHistoryButton}
-          onPress={onUndo}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel="되돌리기"
-          hitSlop={3}
-        >
-          <Undo2 color={COLORS.text} size={16} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          testID="btn-redo"
-          style={[
-            styles.floatingHistoryButton,
-            !onRedo && styles.floatingHistoryButtonDisabled,
-          ]}
-          onPress={onRedo}
-          disabled={!onRedo}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel="다시 실행"
-          accessibilityState={{ disabled: !onRedo }}
-          hitSlop={3}
-        >
-          <Redo2 color={onRedo ? COLORS.text : COLORS.placeholder} size={16} />
-        </TouchableOpacity>
-      </View>
     </View>
   );
 });
@@ -1162,13 +1355,16 @@ export default function ItineraryEditorScreenView({
   onPlaceAt,
   onCancelPreview,
 }: ItineraryEditorScreenViewProps) {
-  const screenInsets = useScreenInsets(true);  const [inputWidth, setInputWidth] = useState(120);
+  const screenInsets = useScreenInsets(true);
+  const [inputWidth, setInputWidth] = useState(120);
   const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
   const [dayScrollLayoutWidth, setDayScrollLayoutWidth] = useState(0);
   const [dayScrollX, setDayScrollX] = useState(0);
   const isDayScrollable = dayScrollContentWidth > dayScrollLayoutWidth;
   const showLeftFade = isDayScrollable && dayScrollX > 5;
-  const showRightFade = isDayScrollable && dayScrollX < dayScrollContentWidth - dayScrollLayoutWidth - 5;
+  const showRightFade =
+    isDayScrollable &&
+    dayScrollX < dayScrollContentWidth - dayScrollLayoutWidth - 5;
 
   React.useEffect(() => {
     const keyboardDidHideListener = Keyboard.addListener(
@@ -1191,6 +1387,15 @@ export default function ItineraryEditorScreenView({
     'startTime' | 'endTime'
   > | null>(null);
   const [dropBlocked, setDropBlocked] = useState(false);
+  const [isTimelineItemDragging, setIsTimelineItemDragging] = useState(false);
+  const handleTimelineItemDragStart = useCallback(
+    () => setIsTimelineItemDragging(true),
+    [],
+  );
+  const handleTimelineItemDragEnd = useCallback(
+    () => setIsTimelineItemDragging(false),
+    [],
+  );
   const gridViewRef = useRef<View>(null);
   /** 시간표 아래 여백에 쓰는, 손을 뗀 뒤의 시트 높이. */
   const [sheetRest, setSheetRest] = useState(0);
@@ -1221,6 +1426,8 @@ export default function ItineraryEditorScreenView({
       dropBlocked,
       gridRef: gridViewRef,
       sheetInset: SHEET_HANDLE_HEIGHT + sheetRest,
+      onItemDragStart: handleTimelineItemDragStart,
+      onItemDragEnd: handleTimelineItemDragEnd,
     };
   }, [
     timelineScrollRef,
@@ -1246,6 +1453,8 @@ export default function ItineraryEditorScreenView({
     draggingPlace,
     dropBlocked,
     sheetRest,
+    handleTimelineItemDragStart,
+    handleTimelineItemDragEnd,
   ]);
 
   // ── 장소 시트 ──
@@ -1274,9 +1483,7 @@ export default function ItineraryEditorScreenView({
     (height: number, animate = true) => {
       const next = Math.max(0, Math.min(sheetMaxRef.current, height));
       sheetHeightRef.current = next;
-      sheetBody.value = animate
-        ? withTiming(next, { duration: 220 })
-        : next;
+      sheetBody.value = animate ? withTiming(next, { duration: 220 }) : next;
       // 끄는 동안에는 시간표를 다시 짜지 않는다. 손을 뗀 자리에서만 맞춘다.
       if (animate) setSheetRest(next);
     },
@@ -1288,49 +1495,114 @@ export default function ItineraryEditorScreenView({
     [],
   );
 
+  const measureGrid = useCallback(() => {
+    bodyViewRef.current?.measureInWindow((_x, y) => {
+      bodyTop.current = y;
+    });
+    timelineViewRef.current?.measureInWindow((_x, y) => {
+      timelineTop.current = y;
+    });
+    gridViewRef.current?.measureInWindow((_x, y) => {
+      gridTopRef.current = y;
+    });
+  }, []);
+
+  const selectedDayDateStr = selectedDay
+    ? formatDateLocal(selectedDay.date)
+    : '';
+  const hasWeather = Boolean(
+    selectedDay && weatherMap && weatherMap[selectedDayDateStr],
+  );
+  /** 날씨 카드가 있으면 그 바로 밑(72px), 없으면 일차 탭 바로 밑(8px)까지만 남긴다. */
+  const sheetTopGap = hasWeather ? 72 : 8;
+
   const onBodyLayout = useCallback(
     (event: any) => {
       const { height } = event.nativeEvent.layout;
       bodyHeight.current = height;
       sheetMaxRef.current = Math.max(
         0,
-        height - SHEET_HANDLE_HEIGHT - MIN_TIMELINE_HEIGHT,
+        height - SHEET_HANDLE_HEIGHT - sheetTopGap,
       );
       if (!sheetInited.current && sheetMaxRef.current > 0) {
         sheetInited.current = true;
         setSheetHeight(Math.round(sheetMaxRef.current / 3));
       }
-      bodyViewRef.current?.measureInWindow((_x, y) => {
-        bodyTop.current = y;
-      });
+      measureGrid();
     },
-    [setSheetHeight],
+    [setSheetHeight, measureGrid, sheetTopGap],
   );
+
+  useEffect(() => {
+    if (bodyHeight.current > 0) {
+      const newMax = Math.max(
+        0,
+        bodyHeight.current - SHEET_HANDLE_HEIGHT - sheetTopGap,
+      );
+      sheetMaxRef.current = newMax;
+      if (sheetHeightRef.current > newMax) {
+        setSheetHeight(newMax, true);
+      }
+    }
+  }, [sheetTopGap, setSheetHeight]);
 
   const sheetGesture = useMemo(
     () =>
       Gesture.Exclusive(
         Gesture.Pan()
           .runOnJS(true)
-          .hitSlop({ top: 12, bottom: 12 })
+          .enabled(!isTimelineItemDragging && !draggingPlace)
+          .hitSlop({ top: 16, bottom: 16, left: 30, right: 30 })
           .onBegin(() => {
             sheetStartRef.current = sheetHeightRef.current;
           })
           .onUpdate(e =>
             setSheetHeight(sheetStartRef.current - e.translationY, false),
           )
-          .onEnd(() =>
-            setSheetHeight(nearestSnap(sheetHeightRef.current, snapPoints())),
-          ),
+          .onEnd(e => {
+            const current = sheetHeightRef.current;
+            const points = snapPoints();
+            const velocityY = e.velocityY;
+            const translationY = e.translationY;
+
+            // 빠른 스와이프(플릭) 또는 30px 이상의 명확한 드래그 방향 반영
+            if (velocityY < -250 || translationY < -30) {
+              const higherPoints = points.filter(p => p > current + 10);
+              const target =
+                higherPoints.length > 0
+                  ? higherPoints[0]
+                  : points[points.length - 1];
+              setSheetHeight(target);
+            } else if (velocityY > 250 || translationY > 30) {
+              const lowerPoints = points.filter(p => p < current - 10);
+              const target =
+                lowerPoints.length > 0
+                  ? lowerPoints[lowerPoints.length - 1]
+                  : points[0];
+              setSheetHeight(target);
+            } else {
+              setSheetHeight(nearestSnap(current, points));
+            }
+          }),
         Gesture.Tap()
           .runOnJS(true)
-          .hitSlop({ top: 12, bottom: 12 })
+          .enabled(!isTimelineItemDragging && !draggingPlace)
+          .hitSlop({ top: 16, bottom: 16, left: 30, right: 30 })
           .onEnd(() => {
             const points = snapPoints();
-            setSheetHeight(sheetHeightRef.current <= 1 ? points[1] : 0);
+            const maxPoint = points[points.length - 1];
+            const peekPoint = points[1] || Math.round(maxPoint / 3);
+            // 접힌 상태면 피크(1/3)로, 이미 열려 있으면 최대로 확장, 최대면 다시 피크로 전환
+            if (sheetHeightRef.current <= 1) {
+              setSheetHeight(peekPoint);
+            } else if (sheetHeightRef.current >= maxPoint - 20) {
+              setSheetHeight(peekPoint);
+            } else {
+              setSheetHeight(maxPoint);
+            }
           }),
       ),
-    [setSheetHeight, snapPoints],
+    [setSheetHeight, snapPoints, isTimelineItemDragging, draggingPlace],
   );
 
   const sheetAnimStyle = useAnimatedStyle(() => ({
@@ -1338,12 +1610,29 @@ export default function ItineraryEditorScreenView({
     transform: [{ translateY: sheetShift.value }],
   }));
 
+  const floatingAnimStyle = useAnimatedStyle(() => {
+    const max = sheetMaxRef.current || 400;
+    const progress = Math.max(0, Math.min(1, sheetBody.value / max));
+    const opacity =
+      progress < 0.5 ? 1 : Math.max(0, 1 - (progress - 0.5) / 0.25);
+    return {
+      opacity,
+      transform: [
+        {
+          translateY: -sheetBody.value + sheetShift.value,
+        },
+      ],
+    };
+  });
+
   // ── 꾹 눌러 집고, 끌고, 놓기 ──
   const dayStartMinutes = timeToMinutes(
     selectedDay?.startTime || DEFAULT_DAY_START,
   );
   const dayEndMinutes = timeToMinutes(selectedDay?.endTime || DEFAULT_DAY_END);
   const gridOffsetMinutes = Math.floor(dayStartMinutes / 60) * 60;
+
+  const FINGER_TARGET_OFFSET = 20;
 
   /**
    * 손가락의 화면 좌표를 시간표의 15분 눈금으로 옮긴다. 시간표 밖이면 null.
@@ -1353,7 +1642,12 @@ export default function ItineraryEditorScreenView({
    */
   const minutesAt = useCallback(
     (absoluteY: number) => {
-      const gridTop = gridTopRef.current;
+      const gridTop =
+        gridTopRef.current ||
+        bodyTop.current +
+          (selectedDay && weatherMap[formatDateLocal(selectedDay.date)]
+            ? 62
+            : 0);
       const areaTop = timelineTop.current;
       // 시트가 접힌 뒤의 시간표 바닥. 손잡이 줄 위까지가 놓을 수 있는 자리다.
       const areaBottom =
@@ -1362,14 +1656,21 @@ export default function ItineraryEditorScreenView({
       if (areaTop && absoluteY < areaTop) return null;
       if (bodyHeight.current && absoluteY > areaBottom) return null;
 
+      const targetY = absoluteY - FINGER_TARGET_OFFSET;
       const minutes =
-        (absoluteY - gridTop - GRID_TOP_OFFSET) / MINUTE_HEIGHT +
+        (targetY - gridTop - GRID_TOP_OFFSET) / MINUTE_HEIGHT +
         gridOffsetMinutes;
-      const snapped = Math.round(minutes / 15) * 15;
+      const snapped = Math.floor(minutes / 15) * 15;
       if (snapped + 60 < dayStartMinutes) return null;
       return Math.max(dayStartMinutes, Math.min(snapped, dayEndMinutes - 60));
     },
-    [dayStartMinutes, dayEndMinutes, gridOffsetMinutes],
+    [
+      dayStartMinutes,
+      dayEndMinutes,
+      gridOffsetMinutes,
+      selectedDay,
+      weatherMap,
+    ],
   );
 
   /**
@@ -1426,17 +1727,15 @@ export default function ItineraryEditorScreenView({
       draggingRef.current = place;
       setDraggingPlace(place);
       handleAddPlace(place);
-      timelineViewRef.current?.measureInWindow((_x, y) => {
-        timelineTop.current = y;
-      });
-      gridViewRef.current?.measureInWindow((_x, y) => {
-        gridTopRef.current = y;
-      });
+      measureGrid();
       // 높이를 줄이면 목록이 짜부라지며 집고 있던 손가락이 끊긴다.
       // 자리는 그대로 두고 아래로 밀어 내려 손잡이 줄만 남긴다.
-      sheetShift.value = withTiming(sheetHeightRef.current, { duration: 220 });
+      sheetShift.value = withTiming(sheetHeightRef.current, {
+        duration: 260,
+        easing: Easing.out(Easing.cubic),
+      });
     },
-    [handleAddPlace, sheetShift],
+    [handleAddPlace, sheetShift, measureGrid],
   );
 
   const handleDragPlace = useCallback(
@@ -1450,7 +1749,10 @@ export default function ItineraryEditorScreenView({
     draggingRef.current = null;
     setDraggingPlace(null);
     setDropBlocked(false);
-    sheetShift.value = withTiming(0, { duration: 220 });
+    sheetShift.value = withTiming(0, {
+      duration: 260,
+      easing: Easing.out(Easing.cubic),
+    });
   }, [sheetShift]);
 
   const handleDropPlace = useCallback(
@@ -1461,11 +1763,7 @@ export default function ItineraryEditorScreenView({
         onCancelPlacement?.();
       } else {
         // handleAddPlace는 pendingPlace만 세우는 자리라 여기서는 쓰지 않는다.
-        onPlaceAt?.(
-          place,
-          minutesToTime(minutes),
-          minutesToTime(minutes + 60),
-        );
+        onPlaceAt?.(place, minutesToTime(minutes), minutesToTime(minutes + 60));
       }
       restoreSheet();
     },
@@ -1507,16 +1805,12 @@ export default function ItineraryEditorScreenView({
     (y: number) => dragCallbacks.current.drop(y),
     [],
   );
-  const onCancelStable = useCallback(
-    () => dragCallbacks.current.cancel(),
-    [],
-  );
+  const onCancelStable = useCallback(() => dragCallbacks.current.cancel(), []);
   const onPressPlaceStable = useCallback(
     (place: Omit<Place, 'startTime' | 'endTime'>) =>
       dragCallbacks.current.press(place as Place),
     [],
   );
-
 
   if (!selectedDay) {
     return <AirplaneLoading />;
@@ -1545,7 +1839,7 @@ export default function ItineraryEditorScreenView({
             <>
               <Text
                 style={[styles.toolbarTitleInput, styles.toolbarTitleMeasure]}
-                onLayout={(e) => {
+                onLayout={e => {
                   const { width } = e.nativeEvent.layout;
                   const finalWidth = Math.max(30, Math.min(170, width + 8));
                   setInputWidth(finalWidth);
@@ -1583,10 +1877,7 @@ export default function ItineraryEditorScreenView({
             </TouchableOpacity>
           )}
 
-          <ToolbarIconButton
-            onPress={onOpenPlanInfo}
-            variant="info"
-          >
+          <ToolbarIconButton onPress={onOpenPlanInfo} variant="info">
             <InfoIcon color={COLORS.text} size={18} />
           </ToolbarIconButton>
           <ToolbarIconButton onPress={onOpenChecklist} variant="outlineDark">
@@ -1620,9 +1911,9 @@ export default function ItineraryEditorScreenView({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.dayTabsContainer}
           style={styles.dayTabsScroll}
-          onContentSizeChange={(w) => setDayScrollContentWidth(w)}
-          onLayout={(e) => setDayScrollLayoutWidth(e.nativeEvent.layout.width)}
-          onScroll={(e) => setDayScrollX(e.nativeEvent.contentOffset.x)}
+          onContentSizeChange={w => setDayScrollContentWidth(w)}
+          onLayout={e => setDayScrollLayoutWidth(e.nativeEvent.layout.width)}
+          onScroll={e => setDayScrollX(e.nativeEvent.contentOffset.x)}
           scrollEventThrottle={16}
         >
           {days.map((day, index) => {
@@ -1708,7 +1999,11 @@ export default function ItineraryEditorScreenView({
       )}
 
       <EditorStateContext.Provider value={editorStateContextValue}>
-        <View style={styles.editorBody} ref={bodyViewRef} onLayout={onBodyLayout}>
+        <View
+          style={styles.editorBody}
+          ref={bodyViewRef}
+          onLayout={onBodyLayout}
+        >
           <View
             style={styles.editorTimeline}
             ref={timelineViewRef}
@@ -1716,6 +2011,27 @@ export default function ItineraryEditorScreenView({
           >
             <TimelineTabScreen />
           </View>
+
+          <Animated.View
+            pointerEvents={
+              sheetRest > (sheetMaxRef.current || 400) * 0.7
+                ? 'none'
+                : 'box-none'
+            }
+            style={[styles.floatingHistoryContainer, floatingAnimStyle]}
+          >
+            <TouchableOpacity
+              testID="btn-undo"
+              style={styles.floatingHistoryButton}
+              onPress={onUndo}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="실행 취소"
+              hitSlop={6}
+            >
+              <Undo2 color={COLORS.text} size={18} />
+            </TouchableOpacity>
+          </Animated.View>
 
           <Animated.View style={[styles.placeSheet, sheetAnimStyle]}>
             <GestureDetector gesture={sheetGesture}>
@@ -1732,7 +2048,8 @@ export default function ItineraryEditorScreenView({
 
             <View style={styles.sheetBody}>
               <Text style={styles.sheetHint}>
-                <Text style={styles.sheetHintStrong}>꾹 눌러</Text> 시간표에 놓기
+                <Text style={styles.sheetHintStrong}>꾹 눌러</Text> 시간표에
+                놓기
               </Text>
               <PlaceRecommendationList
                 onAddPlace={handleAddPlace}
