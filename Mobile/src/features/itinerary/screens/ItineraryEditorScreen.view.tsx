@@ -1469,7 +1469,7 @@ export default function ItineraryEditorScreenView({
   const sheetShift = useSharedValue(0);
 
   const sheetHeightRef = useRef(0);
-  const sheetMaxRef = useRef(0);
+  const sheetMax = useSharedValue(0);
   const sheetStartRef = useRef(0);
   const sheetInited = useRef(false);
   const bodyTop = useRef(0);
@@ -1481,18 +1481,18 @@ export default function ItineraryEditorScreenView({
 
   const setSheetHeight = useCallback(
     (height: number, animate = true) => {
-      const next = Math.max(0, Math.min(sheetMaxRef.current, height));
+      const next = Math.max(0, Math.min(sheetMax.value, height));
       sheetHeightRef.current = next;
       sheetBody.value = animate ? withTiming(next, { duration: 220 }) : next;
       // 끄는 동안에는 시간표를 다시 짜지 않는다. 손을 뗀 자리에서만 맞춘다.
       if (animate) setSheetRest(next);
     },
-    [sheetBody],
+    [sheetBody, sheetMax],
   );
 
   const snapPoints = useCallback(
-    () => SHEET_SNAPS.map(ratio => Math.round(sheetMaxRef.current * ratio)),
-    [],
+    () => SHEET_SNAPS.map(ratio => Math.round(sheetMax.value * ratio)),
+    [sheetMax],
   );
 
   const measureGrid = useCallback(() => {
@@ -1520,17 +1520,14 @@ export default function ItineraryEditorScreenView({
     (event: any) => {
       const { height } = event.nativeEvent.layout;
       bodyHeight.current = height;
-      sheetMaxRef.current = Math.max(
-        0,
-        height - SHEET_HANDLE_HEIGHT - sheetTopGap,
-      );
-      if (!sheetInited.current && sheetMaxRef.current > 0) {
+      sheetMax.value = Math.max(0, height - SHEET_HANDLE_HEIGHT - sheetTopGap);
+      if (!sheetInited.current && sheetMax.value > 0) {
         sheetInited.current = true;
-        setSheetHeight(Math.round(sheetMaxRef.current / 3));
+        setSheetHeight(Math.round(sheetMax.value / 3));
       }
       measureGrid();
     },
-    [setSheetHeight, measureGrid, sheetTopGap],
+    [setSheetHeight, measureGrid, sheetTopGap, sheetMax],
   );
 
   useEffect(() => {
@@ -1539,14 +1536,14 @@ export default function ItineraryEditorScreenView({
         0,
         bodyHeight.current - SHEET_HANDLE_HEIGHT - sheetTopGap,
       );
-      sheetMaxRef.current = newMax;
+      sheetMax.value = newMax;
       if (sheetHeightRef.current > newMax) {
         setSheetHeight(newMax, true);
       }
     }
-  }, [sheetTopGap, setSheetHeight]);
+  }, [sheetTopGap, setSheetHeight, sheetMax]);
 
-  const sheetGesture = useMemo(
+  const createSheetGesture = useCallback(
     () =>
       Gesture.Exclusive(
         Gesture.Pan()
@@ -1605,13 +1602,16 @@ export default function ItineraryEditorScreenView({
     [setSheetHeight, snapPoints, isTimelineItemDragging, draggingPlace],
   );
 
+  const sheetGesture = useMemo(createSheetGesture, [createSheetGesture]);
+  const sheetHintGesture = useMemo(createSheetGesture, [createSheetGesture]);
+
   const sheetAnimStyle = useAnimatedStyle(() => ({
     height: SHEET_HANDLE_HEIGHT + sheetBody.value,
     transform: [{ translateY: sheetShift.value }],
   }));
 
   const floatingAnimStyle = useAnimatedStyle(() => {
-    const max = sheetMaxRef.current || 400;
+    const max = sheetMax.value || 400;
     const progress = Math.max(0, Math.min(1, sheetBody.value / max));
     const opacity =
       progress < 0.5 ? 1 : Math.max(0, 1 - (progress - 0.5) / 0.25);
@@ -2014,7 +2014,9 @@ export default function ItineraryEditorScreenView({
 
           <Animated.View
             pointerEvents={
-              sheetRest > (sheetMaxRef.current || 400) * 0.7
+              sheetRest >
+              (bodyHeight.current - SHEET_HANDLE_HEIGHT - sheetTopGap || 400) *
+                0.7
                 ? 'none'
                 : 'box-none'
             }
@@ -2047,10 +2049,14 @@ export default function ItineraryEditorScreenView({
             <SheetCategoryRow selected={placeTab} onSelect={setPlaceTab} />
 
             <View style={styles.sheetBody}>
-              <Text style={styles.sheetHint}>
-                <Text style={styles.sheetHintStrong}>꾹 눌러</Text> 시간표에
-                놓기
-              </Text>
+              <GestureDetector gesture={sheetHintGesture}>
+                <View>
+                  <Text style={styles.sheetHint}>
+                    <Text style={styles.sheetHintStrong}>꾹 눌러</Text> 시간표에
+                    놓기
+                  </Text>
+                </View>
+              </GestureDetector>
               <PlaceRecommendationList
                 onAddPlace={handleAddPlace}
                 destination={destination}
