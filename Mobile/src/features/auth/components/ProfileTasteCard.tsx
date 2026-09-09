@@ -5,10 +5,7 @@ import BedDouble from 'lucide-react-native/dist/esm/icons/bed-double';
 import Utensils from 'lucide-react-native/dist/esm/icons/utensils';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
-import {
-  TasteGroup,
-  countPreferredThemes,
-} from '../utils/profileTaste';
+import { TasteGroup, countPreferredThemes } from '../utils/profileTaste';
 
 /**
  * 웹 마이페이지의 '내가 좋아하는 여행' 카드를 폰 폭에 맞춰 세운 것.
@@ -18,7 +15,11 @@ import {
  * 훑어야 닿던 자리다.
  */
 const ICONS = {
-  관광지: { Icon: Landmark, bg: tokens.colors.primaryTint, fg: tokens.colors.primary },
+  관광지: {
+    Icon: Landmark,
+    bg: tokens.colors.primaryTint,
+    fg: tokens.colors.primary,
+  },
   숙소: { Icon: BedDouble, bg: '#F3EEFF', fg: '#7B52C9' },
   식당: { Icon: Utensils, bg: '#FFF1E8', fg: '#D1703A' },
 } as const;
@@ -51,19 +52,32 @@ export default function ProfileTasteCard({
       </View>
 
       <View style={styles.rows}>
-        {groups.map(group => {
+        {groups.map((group, index) => {
           const icon = ICONS[group.label as keyof typeof ICONS] ?? ICONS.관광지;
           const { Icon } = icon;
+          const isLast = index === groups.length - 1;
           return (
-            <View key={group.label} style={styles.row}>
-              <View style={[styles.icon, { backgroundColor: icon.bg }]}>
-                <Icon size={normalize(17)} color={icon.fg} strokeWidth={1.9} />
+            <View
+              key={group.label}
+              style={[styles.row, isLast && styles.rowLast]}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.icon, { backgroundColor: icon.bg }]}>
+                  <Icon
+                    size={normalize(17)}
+                    color={icon.fg}
+                    strokeWidth={1.9}
+                  />
+                </View>
+                <View>
+                  <Text style={styles.rowTitle}>{group.label}</Text>
+                  {group.hint ? (
+                    <Text style={styles.rowHint}>{group.hint}</Text>
+                  ) : null}
+                </View>
               </View>
-              <View style={styles.rowBody}>
-                <Text style={styles.rowTitle}>
-                  {group.label}
-                  <Text style={styles.rowHint}>{`  ${group.hint}`}</Text>
-                </Text>
+
+              <View style={styles.rowRight}>
                 {group.names.length > 0 ? (
                   <View style={styles.pills}>
                     {group.names.map(name => (
@@ -73,7 +87,7 @@ export default function ProfileTasteCard({
                     ))}
                   </View>
                 ) : (
-                  <Text style={styles.rowEmpty}>아직 선택한 취향이 없어요</Text>
+                  <Text style={styles.rowEmpty}>선택된 취향 없음</Text>
                 )}
               </View>
             </View>
@@ -119,13 +133,25 @@ const styles = StyleSheet.create({
   },
   rows: {
     paddingHorizontal: normalize(16),
+    paddingTop: normalize(6),
     paddingBottom: normalize(6),
   },
   row: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: normalize(12),
-    paddingVertical: normalize(13),
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: normalize(11),
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  rowLast: {
+    borderBottomWidth: 0,
+  },
+  rowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(10),
+    flexShrink: 0,
   },
   icon: {
     width: normalize(34),
@@ -134,43 +160,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowBody: {
-    flex: 1,
-    minWidth: 0,
-  },
   rowTitle: {
     fontSize: normalize(13),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.text,
   },
   rowHint: {
-    fontSize: normalize(11),
+    fontSize: normalize(10.5),
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.textTertiary,
+    marginTop: normalize(1),
+  },
+  rowRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+    marginLeft: normalize(12),
   },
   pills: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: normalize(6),
-    marginTop: normalize(7),
+    justifyContent: 'flex-end',
+    gap: normalize(4),
   },
   pill: {
-    paddingHorizontal: normalize(10),
+    paddingHorizontal: normalize(8),
     paddingVertical: normalize(3),
-    borderRadius: normalize(12),
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
+    borderRadius: normalize(6),
+    backgroundColor: '#F1F5F9',
   },
   pillText: {
-    fontSize: normalize(12),
-    fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textLabel,
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.medium,
+    color: '#475569',
   },
   rowEmpty: {
-    fontSize: normalize(12),
+    fontSize: normalize(11.5),
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.textTertiary,
-    marginTop: normalize(6),
   },
 });

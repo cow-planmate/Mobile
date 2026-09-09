@@ -33,6 +33,9 @@ import {
 import { invalidatePlanCaches } from '../../../hooks/planCache';
 
 import User from 'lucide-react-native/dist/esm/icons/user';
+import Camera from 'lucide-react-native/dist/esm/icons/camera';
+import Lock from 'lucide-react-native/dist/esm/icons/lock';
+import Calendar from 'lucide-react-native/dist/esm/icons/calendar';
 import Trash2 from 'lucide-react-native/dist/esm/icons/trash-2';
 import Check from 'lucide-react-native/dist/esm/icons/check';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
@@ -410,6 +413,7 @@ interface ProfileScreenViewProps {
   handleUpdateTheme: () => void;
   handleUpdatePassword: (cur: string, n: string) => void;
   handleResign: () => void;
+  handleLogout?: () => void;
 
   onRenamePlan: (planId: string, newName: string) => Promise<void>;
 
@@ -435,6 +439,7 @@ export default function ProfileScreenView({
   handleUpdateTheme,
   handleUpdatePassword,
   handleResign,
+  handleLogout,
   onRenamePlan,
   onChangeProfileImage,
   onDeleteProfileImage,
@@ -967,28 +972,40 @@ export default function ProfileScreenView({
                   <Text style={styles.profileName} numberOfLines={1}>
                     {user.name || '사용자'}
                   </Text>
-                  <Text style={styles.profileMeta} numberOfLines={1}>
-                    {[
-                      user.email || '이메일 없음',
-                      user.gender || '성별 미설정',
-                      profileAge === null
-                        ? '나이 미설정'
-                        : `만 ${profileAge}세`,
-                    ].join(' · ')}
+                  <Text style={styles.profileEmail} numberOfLines={1}>
+                    {user.email || '이메일 없음'}
                   </Text>
+                  <View style={styles.profileMetaChips}>
+                    <View style={styles.profileMetaChip}>
+                      <Text style={styles.profileMetaChipText}>
+                        {user.gender || '성별 미설정'}
+                      </Text>
+                    </View>
+                    <View style={styles.profileMetaChip}>
+                      <Text style={styles.profileMetaChipText}>
+                        {profileAge === null
+                          ? '나이 미설정'
+                          : `만 ${profileAge}세`}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={handleOpenEditModal}
-                  activeOpacity={0.7}
-                  hitSlop={12}
-                  accessibilityRole="button"
-                  accessibilityLabel="프로필 수정"
-                >
-                  <Text style={styles.profileEditText}>프로필 수정</Text>
-                </TouchableOpacity>
               </View>
+
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={handleOpenEditModal}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="프로필 수정"
+              >
+                <PenLine
+                  size={13}
+                  color="#4B5563"
+                  style={styles.editButtonIcon}
+                />
+                <Text style={styles.profileEditText}>프로필 수정</Text>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.sectionBand} />
@@ -997,6 +1014,32 @@ export default function ProfileScreenView({
               groups={tasteGroups}
               onEdit={() => setThemeModalVisible(true)}
             />
+
+            <View style={styles.sectionBand} />
+
+            <View style={styles.accountSection}>
+              <TouchableOpacity
+                style={styles.accountItem}
+                onPress={handleLogout}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="로그아웃"
+              >
+                <Text style={styles.accountItemText}>로그아웃</Text>
+              </TouchableOpacity>
+
+              <View style={styles.accountItemDivider} />
+
+              <TouchableOpacity
+                style={styles.accountItem}
+                onPress={handleResign}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="회원탈퇴"
+              >
+                <Text style={styles.accountResignText}>회원탈퇴</Text>
+              </TouchableOpacity>
+            </View>
           </>
         )}
 
@@ -1193,7 +1236,7 @@ export default function ProfileScreenView({
         title="프로필 수정"
         onClose={() => setEditModalVisible(false)}
         footer={
-          <View>
+          <View style={styles.editFooterWrap}>
             <TouchableOpacity
               style={styles.saveButton}
               onPress={handleSaveProfile}
@@ -1205,17 +1248,17 @@ export default function ProfileScreenView({
             >
               <Text style={styles.saveButtonText}>저장</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.resignLinkButton}
-              onPress={() => {
-                setEditModalVisible(false);
-                setTimeout(handleResign, 200);
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="계정 탈퇴하기"
-            >
-              <Text style={styles.resignLinkText}>계정 탈퇴하기</Text>
-            </TouchableOpacity>
+            {!user.socialLogin && (
+              <TouchableOpacity
+                style={styles.editPasswordLink}
+                onPress={() => setPasswordModalVisible(true)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="비밀번호 변경하기"
+              >
+                <Text style={styles.editPasswordLinkText}>비밀번호 변경하기</Text>
+              </TouchableOpacity>
+            )}
           </View>
         }
       >
@@ -1224,41 +1267,45 @@ export default function ProfileScreenView({
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* 사진은 배지 위에 올리지 않는다. 바꾸는 자리를 카메라 표시 대신
-              글로 적으면 뭐가 누러지는지 바로 읽힌다. */}
           <View style={styles.avatarBlock}>
-            <FallbackImage
-              uri={avatarUri}
-              style={styles.avatarEditImage}
-              fallback={
-                <View style={styles.avatarEditPlaceholder}>
-                  <User size={36} color={tokens.colors.textTertiary} />
-                </View>
-              }
-            />
             <TouchableOpacity
+              style={styles.avatarBadgeBox}
               onPress={handleProfileImagePress}
               disabled={isProfileImageUpdating}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel="프로필 사진 변경"
               accessibilityState={{ disabled: isProfileImageUpdating }}
-              hitSlop={8}
             >
-              <Text style={styles.avatarChangeText}>
-                {isProfileImageUpdating ? '올리는 중…' : '사진 바꾸기'}
-              </Text>
+              <FallbackImage
+                uri={avatarUri}
+                style={styles.avatarEditImage}
+                fallback={
+                  <View style={styles.avatarEditPlaceholder}>
+                    <User size={28} color={tokens.colors.textTertiary} />
+                  </View>
+                }
+              />
+              <View style={styles.cameraBadge}>
+                <Camera size={11} color={tokens.colors.white} strokeWidth={2.2} />
+              </View>
             </TouchableOpacity>
+            {isProfileImageUpdating && (
+              <Text style={styles.avatarUploadingText}>올리는 중…</Text>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>이메일</Text>
-            <TextInput
-              style={[styles.textInput, styles.textInputDisabled]}
-              value={user.email}
-              editable={false}
-              placeholderTextColor={tokens.colors.textTertiary}
-            />
+            <View style={styles.inputLabelRow}>
+              <Text style={styles.inputLabel}>이메일</Text>
+              <Text style={styles.inputLabelHint}>수정 불가</Text>
+            </View>
+            <View style={styles.readOnlyEmailWrap}>
+              <Text style={styles.readOnlyEmailText} numberOfLines={1}>
+                {user.email}
+              </Text>
+              <Lock size={13} color={tokens.colors.textTertiary} />
+            </View>
           </View>
 
           <View style={styles.inputGroup}>
@@ -1313,6 +1360,7 @@ export default function ProfileScreenView({
                 >
                   {tempBirthdate ? formatBirthdate(tempBirthdate) : '선택'}
                 </Text>
+                <Calendar size={13} color={tokens.colors.textTertiary} />
               </TouchableOpacity>
             </View>
 
@@ -1343,40 +1391,6 @@ export default function ProfileScreenView({
                 ))}
               </View>
             </View>
-          </View>
-
-          {/* 여는 줄은 단추처럼 여럿 개 늘어놓는 대신 목록으로 묶는다. */}
-          <View style={styles.linkList}>
-            <TouchableOpacity
-              style={styles.linkRow}
-              onPress={() => setThemeModalVisible(true)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-            >
-              <Text style={styles.linkLabel}>여행 취향</Text>
-              <Text style={styles.linkValue}>테마 변경</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.linkRow}
-              onPress={() => {
-                if (!user.socialLogin) setPasswordModalVisible(true);
-              }}
-              disabled={user.socialLogin}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: user.socialLogin }}
-            >
-              <Text style={styles.linkLabel}>비밀번호</Text>
-              <Text
-                style={[
-                  styles.linkValue,
-                  user.socialLogin && styles.linkValueOff,
-                ]}
-              >
-                {user.socialLogin ? '소셜 로그인' : '변경하기'}
-              </Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
       </PopupModal>

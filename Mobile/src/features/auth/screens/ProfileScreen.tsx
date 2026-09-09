@@ -233,6 +233,27 @@ export default function ProfileScreen({ route }: any) {
     });
   };
 
+  const logout = useAuthStore(state => state.logout);
+
+  const handleLogout = () => {
+    showAlert({
+      title: '로그아웃',
+      message: '정말 로그아웃할까요?',
+      type: 'confirm',
+      buttons: [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '로그아웃',
+          style: 'destructive',
+          onPress: async () => {
+            disconnect();
+            await logout();
+          },
+        },
+      ],
+    });
+  };
+
   const handleRenamePlan = useCallback(
     async (planId: string, newName: string) => {
       const trimmed = newName.trim();
@@ -375,6 +396,7 @@ export default function ProfileScreen({ route }: any) {
       handleUpdateTheme={handleUpdateTheme}
       handleUpdatePassword={handleUpdatePassword}
       handleResign={handleResign}
+      handleLogout={handleLogout}
       scrollToItinerary={route?.params?.scrollToItinerary}
     />
   );
