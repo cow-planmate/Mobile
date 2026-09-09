@@ -24,10 +24,11 @@ import {
   AppStackParamList,
   INITIAL_TAB,
 } from './types';
-import { Platform } from 'react-native';
+import { Platform, View, Animated, AccessibilityInfo } from 'react-native';
 import MessageSquare from 'lucide-react-native/dist/esm/icons/message-square';
 import Compass from 'lucide-react-native/dist/esm/icons/compass';
 import PlusCircle from 'lucide-react-native/dist/esm/icons/circle-plus';
+import Plus from 'lucide-react-native/dist/esm/icons/plus';
 
 const FeedStackNavigator = createNativeStackNavigator<FeedStackParamList>();
 const ScheduleStackNavigator =
@@ -40,9 +41,13 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
 const baseTabBarStyle = {
   backgroundColor: '#FFFFFF',
   borderTopWidth: 1,
-  borderTopColor: '#E5E7EB',
-  paddingTop: 8,
-  elevation: 0,
+  borderTopColor: '#F3F4F6',
+  paddingTop: 6,
+  elevation: 4,
+  shadowColor: '#000000',
+  shadowOffset: { width: 0, height: -2 },
+  shadowOpacity: 0.04,
+  shadowRadius: 8,
 };
 
 function FeedStack() {
@@ -110,16 +115,114 @@ function CommunityStack() {
   );
 }
 
-const FeedTabIcon = ({ color, size }: { color: string; size: number }) => (
-  <Compass size={size} color={color} strokeWidth={1.8} />
+const TabIconWrapper = ({
+  focused,
+  children,
+}: {
+  focused: boolean;
+  children: React.ReactNode;
+}) => {
+  const scale = React.useRef(new Animated.Value(1)).current;
+  const [reduceMotion, setReduceMotion] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    AccessibilityInfo.isReduceMotionEnabled().then(enabled => {
+      if (!cancelled) setReduceMotion(enabled);
+    });
+    const sub = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      setReduceMotion,
+    );
+    return () => {
+      cancelled = true;
+      sub.remove();
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (focused) {
+      if (reduceMotion) {
+        scale.setValue(1);
+        return;
+      }
+      scale.setValue(0.9);
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 4,
+        tension: 160,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      scale.setValue(1);
+    }
+  }, [focused, reduceMotion, scale]);
+
+  return (
+    <Animated.View style={{ transform: [{ scale }] }}>{children}</Animated.View>
+  );
+};
+
+const FeedTabIcon = ({
+  focused,
+  color,
+  size,
+}: {
+  focused: boolean;
+  color: string;
+  size: number;
+}) => (
+  <TabIconWrapper focused={focused}>
+    <Compass size={size} color={color} strokeWidth={focused ? 2.3 : 1.8} />
+  </TabIconWrapper>
 );
 
-const ScheduleTabIcon = ({ color, size }: { color: string; size: number }) => (
-  <PlusCircle size={size} color={color} strokeWidth={1.8} />
+const ScheduleTabIcon = ({
+  focused,
+  color,
+  size,
+}: {
+  focused: boolean;
+  color: string;
+  size: number;
+}) => (
+  <TabIconWrapper focused={focused}>
+    {focused ? (
+      <View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: color,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Plus size={size * 0.62} color="#FFFFFF" strokeWidth={2.4} />
+      </View>
+    ) : (
+      <PlusCircle size={size} color={color} strokeWidth={1.8} />
+    )}
+  </TabIconWrapper>
 );
 
-const CommunityTabIcon = ({ color, size }: { color: string; size: number }) => (
-  <MessageSquare size={size} color={color} strokeWidth={1.8} />
+const CommunityTabIcon = ({
+  focused,
+  color,
+  size,
+}: {
+  focused: boolean;
+  color: string;
+  size: number;
+}) => (
+  <TabIconWrapper focused={focused}>
+    <MessageSquare
+      size={size}
+      color={color}
+      fill={focused ? color : 'none'}
+      strokeWidth={focused ? 2 : 1.8}
+    />
+  </TabIconWrapper>
 );
 
 function MainTabs() {
@@ -133,7 +236,7 @@ function MainTabs() {
       screenOptions={() => ({
         headerShown: false,
         tabBarActiveTintColor: '#1344FF',
-        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarInactiveTintColor: '#6B7280',
         tabBarLabelStyle: {
           fontFamily: 'Pretendard-SemiBold',
           fontSize: 11,
