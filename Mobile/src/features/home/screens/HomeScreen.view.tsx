@@ -24,6 +24,8 @@ import FastImage from 'react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
 
 const AnimatedFastImage = Animated.createAnimatedComponent(FastImage);
+const AnimatedTouchableOpacity =
+  Animated.createAnimatedComponent(TouchableOpacity);
 import {
   CalendarModal,
   Header,
@@ -35,7 +37,11 @@ import {
 import { normalize } from '../../../utils/normalize';
 import { tokens } from '../../../theme/tokens';
 import { styles } from './HomeScreen.styles';
-import { getRegionSpots, getShowcaseSpots } from '../constants/regionSpots';
+import {
+  getRegionSpots,
+  getShowcaseSpots,
+  RegionSpot,
+} from '../constants/regionSpots';
 
 // 명소 순환 주기와, 손이 닿은 뒤 다시 돌기까지 기다리는 시간.
 const HERO_ROTATE_MS = 7000;
@@ -136,6 +142,7 @@ export interface HomeScreenViewProps {
   onClosePaxModal: () => void;
   onConfirmPax: (pax: { adults: number; children: number }) => void;
   onCreateItinerary: () => void;
+  onSelectSpot?: (spot: RegionSpot) => void;
   isCreating?: boolean;
   variant?: 'option1' | 'option2' | 'option3' | 'option4';
 }
@@ -169,6 +176,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   onClosePaxModal,
   onConfirmPax,
   onCreateItinerary,
+  onSelectSpot,
   isCreating = false,
   isNotificationModalVisible,
   pendingRequestList,
@@ -342,8 +350,24 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
                     extrapolate: 'clamp',
                   });
 
+                  const targetRegion = item.region || destination;
+                  const spotLabel = targetRegion
+                    ? `${targetRegion} ${item.place}`
+                    : item.place;
+
+                  const a11yLabel = destination
+                    ? spotLabel
+                    : `${spotLabel}, 이곳으로 일정 만들기`;
+
                   return (
-                    <Animated.View
+                    <AnimatedTouchableOpacity
+                      activeOpacity={destination ? 1 : 0.88}
+                      onPress={
+                        destination ? undefined : () => onSelectSpot?.(item)
+                      }
+                      disabled={Boolean(destination)}
+                      accessibilityRole={!destination ? 'button' : undefined}
+                      accessibilityLabel={a11yLabel}
                       style={[
                         styles.heroCard,
                         {
@@ -377,7 +401,12 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
                         locations={[0, 0.5, 1]}
                         style={styles.heroOverlay}
                       />
-                      <View style={styles.heroInfo}>
+                      <View
+                        style={[
+                          styles.heroInfo,
+                          !destination && styles.heroInfoWithCue,
+                        ]}
+                      >
                         <Text style={styles.placeAsk}>이런 곳은 어떠세요?</Text>
                         <Text style={styles.placeTitle} numberOfLines={1}>
                           {item.place}
@@ -387,24 +416,36 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
                           <Text style={styles.placeRoman}>{item.roman}</Text>
                         </Text>
                       </View>
-                    </Animated.View>
+                      {!destination && (
+                        <View style={styles.touchCueTag} accessible={false}>
+                          <ArrowRight
+                            size={normalize(11)}
+                            color={tokens.colors.white}
+                            strokeWidth={2.2}
+                          />
+                          <Text style={styles.touchCueText}>
+                            이곳으로 일정 만들기
+                          </Text>
+                        </View>
+                      )}
+                    </AnimatedTouchableOpacity>
                   );
                 }}
               />
 
-              <Text style={styles.relationLabel}>
-                {destination ? (
-                  <>
-                    <Text style={styles.relationRegion}>{destination}</Text>
-                    {`의 대표 명소 ${spotCount}곳`}
-                  </>
-                ) : (
-                  `전국의 명소 ${spotCount}곳`
-                )}
-              </Text>
+              <View style={styles.relationRow}>
+                <Text style={styles.relationLabel}>
+                  {destination ? (
+                    <>
+                      <Text style={styles.relationRegion}>{destination}</Text>
+                      {`의 대표 명소 ${spotCount}곳`}
+                    </>
+                  ) : (
+                    `전국의 명소 ${spotCount}곳`
+                  )}
+                </Text>
 
-              {spotCount > 1 && (
-                <View style={styles.progressBarContainer}>
+                {spotCount > 1 && (
                   <View style={[styles.progressTrack, { width: trackWidth }]}>
                     <Animated.View
                       style={[
@@ -416,8 +457,8 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
                       ]}
                     />
                   </View>
-                </View>
-              )}
+                )}
+              </View>
             </>
           )}
         </View>

@@ -470,4 +470,72 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
     );
     expect(paxRow).toBeDefined();
   });
+
+  it('명소 사진을 누르면 해당 지역이 여행지로 자동 선택된다', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <QueryClientProvider client={queryClient}>
+          <HomeScreen navigation={mockNavigation} route={mockRoute} />
+        </QueryClientProvider>,
+      );
+      mountedRenderers.push(renderer!);
+    });
+
+    const view = () =>
+      renderer!.root.findByType(
+        require('../src/features/home/screens/HomeScreen.view').HomeScreenView,
+      );
+    expect(view().props.destination).toBe('');
+
+    await ReactTestRenderer.act(async () => {
+      view().props.onSelectSpot({
+        place: '경포호',
+        roman: 'Gyeongpo Lake',
+        region: '강릉',
+        image: { uri: 'test' },
+      });
+    });
+
+    expect(view().props.destination).toBe('강릉');
+  });
+
+  it('여행지 선택 전에는 이곳으로 일정 만들기 태그가 노출되고, 선택 후에는 노출되지 않는다', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <QueryClientProvider client={queryClient}>
+          <HomeScreen navigation={mockNavigation} route={mockRoute} />
+        </QueryClientProvider>,
+      );
+      mountedRenderers.push(renderer!);
+    });
+
+    const view = () =>
+      renderer!.root.findByType(
+        require('../src/features/home/screens/HomeScreen.view').HomeScreenView,
+      );
+
+    // 여행지 선택 전: 태그 존재
+    let tags = renderer!.root.findAllByProps({
+      children: '이곳으로 일정 만들기',
+    });
+    expect(tags.length).toBeGreaterThan(0);
+
+    // 여행지 선택: 강릉 선택
+    await ReactTestRenderer.act(async () => {
+      view().props.onSelectSpot({
+        place: '경포호',
+        roman: 'Gyeongpo Lake',
+        region: '강릉',
+        image: { uri: 'test' },
+      });
+    });
+
+    // 여행지 선택 후: 태그 제거됨
+    tags = renderer!.root.findAllByProps({
+      children: '이곳으로 일정 만들기',
+    });
+    expect(tags.length).toBe(0);
+  });
 });

@@ -4,10 +4,7 @@ import { AppState, AppStateStatus, Modal, BackHandler } from 'react-native';
 import { AppStackParamList } from '../../../navigation/types';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { HomeScreenView } from './HomeScreen.view';
-import {
-  acceptInvitation,
-  rejectInvitation,
-} from '../../../api/trips';
+import { acceptInvitation, rejectInvitation } from '../../../api/trips';
 import { useAlert } from '../../../contexts/AlertContext';
 import { useInvitationSse } from '../../../hooks/useInvitationSse';
 import Toast from 'react-native-toast-message';
@@ -35,13 +32,16 @@ import {
 } from '../../../utils/collaborationRequest';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { useDoublePressExit } from '../../../hooks/useDoublePressExit';
+import { DESTINATIONS_28 } from '../../../constants/regions';
+import { isRegionMatch } from '../../../utils/regionMatcher';
+import { RegionSpot } from '../constants/regionSpots';
 type HomeScreenProps = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
 // 시트가 닫히고 다음 시트가 올라오기까지의 간격.
 const SHEET_HANDOFF_MS = 220;
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
-  const user = useAuthStore((state) => state.user);
+  const user = useAuthStore(state => state.user);
   const { showAlert } = useAlert();
   const queryClient = useQueryClient();
   const createFullPlanMutation = useCreateFullPlan();
@@ -52,7 +52,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   useEffect(() => {
     if (!isCreating) return;
     const backAction = () => true;
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
     return () => backHandler.remove();
   }, [isCreating]);
 
@@ -61,7 +64,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   useEffect(() => {
     if (!isCreating) return;
-    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+    const unsubscribe = navigation.addListener('beforeRemove', e => {
       e.preventDefault();
     });
     return unsubscribe;
@@ -188,8 +191,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     pendingRequests.find(r => r.requestId === requestId)?.type;
 
   const handleAlreadyProcessed = async (requestId: number, error: unknown) => {
-    if (!(await pendingInvitations.removeIfProcessed(requestId, error))) return false;
-    showAlert({ title: '이미 처리된 요청', message: '처리된 요청을 알림 목록에서 정리했어요.' });
+    if (!(await pendingInvitations.removeIfProcessed(requestId, error)))
+      return false;
+    showAlert({
+      title: '이미 처리된 요청',
+      message: '처리된 요청을 알림 목록에서 정리했어요.',
+    });
     return true;
   };
 
@@ -319,7 +326,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         start.setHours(0, 0, 0, 0);
         end.setHours(0, 0, 0, 0);
 
-        const timetableVOs: { date: string; timeTableStartTime: string; timeTableEndTime: string }[] = [];
+        const timetableVOs: {
+          date: string;
+          timeTableStartTime: string;
+          timeTableEndTime: string;
+        }[] = [];
         const currentDate = new Date(start);
 
         while (currentDate.getTime() <= end.getTime()) {
@@ -344,10 +355,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         const newPlanId = result?.planId;
 
         if (!newPlanId) {
-          console.error('Plan creation response did not include planId:', result);
+          console.error(
+            'Plan creation response did not include planId:',
+            result,
+          );
           showAlert({
             title: '일정을 확인할 수 없어요',
-            message: '일정 생성 응답에 식별자가 없어요. 내 일정에서 생성됐는지 확인해 주세요.',
+            message:
+              '일정 생성 응답에 식별자가 없어요. 내 일정에서 생성됐는지 확인해 주세요.',
           });
           return;
         }
@@ -387,6 +402,31 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     if (id !== undefined) setTravelId(id);
   };
 
+  const handleSelectSpot = useCallback(
+    (spot: RegionSpot) => {
+      const targetRegion = spot.region || destination;
+      if (!targetRegion) return;
+
+      const matched = DESTINATIONS_28.find(d =>
+        isRegionMatch(d.name, targetRegion),
+      );
+      const matchedId = matched?.id ?? 0;
+
+      setDestination(targetRegion);
+      if (matchedId > 0) {
+        setTravelId(matchedId);
+      }
+
+      Toast.show({
+        type: 'info',
+        text1: `'${targetRegion}'을(를) 여행지로 선택했어요.`,
+        position: 'top',
+        visibilityTime: 2000,
+      });
+    },
+    [destination],
+  );
+
   return (
     <>
       <HomeScreenView
@@ -415,10 +455,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         onCloseSearchModal={() => setSearchModalVisible(false)}
         onDoneSearchModal={() => handOff(() => setCalendarVisible(true))}
         onSelectLocation={onSelectLocation}
+        onSelectSpot={handleSelectSpot}
         onOpenCalendar={() => setCalendarVisible(true)}
         onCloseCalendar={() => setCalendarVisible(false)}
         onDoneCalendar={() => handOff(() => setPaxModalVisible(true))}
-        onConfirmCalendar={({ startDate: newStartDate, endDate: newEndDate }) => {
+        onConfirmCalendar={({
+          startDate: newStartDate,
+          endDate: newEndDate,
+        }) => {
           setStartDate(newStartDate);
           setEndDate(newEndDate);
         }}

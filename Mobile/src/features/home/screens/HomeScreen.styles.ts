@@ -60,9 +60,14 @@ export const styles = StyleSheet.create({
     lineHeight: normalize(18),
     marginTop: normalize(5),
   },
-  relationLabel: {
+  relationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginTop: normalize(9),
     paddingHorizontal: normalize(16),
+  },
+  relationLabel: {
     fontSize: normalize(11.5),
     fontFamily: tokens.fontFamily.regular,
     color: '#4B5563',
@@ -87,6 +92,31 @@ export const styles = StyleSheet.create({
   },
   heroInfo: {
     zIndex: 2,
+  },
+  heroInfoWithCue: {
+    paddingRight: normalize(126),
+  },
+  touchCueTag: {
+    position: 'absolute',
+    bottom: normalize(11),
+    right: normalize(15),
+    zIndex: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(4),
+    backgroundColor: 'rgba(0, 0, 0, 0.48)',
+    paddingVertical: normalize(4.5),
+    paddingHorizontal: normalize(8),
+    borderRadius: normalize(8),
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.22)',
+  },
+  touchCueText: {
+    fontSize: normalize(10.5),
+    fontFamily: tokens.fontFamily.medium,
+    fontWeight: '500',
+    color: tokens.colors.white,
+    letterSpacing: -0.2,
   },
   // 웹 히어로의 작은 라벨 자리. 웹은 대문자 로마자라 트래킹을 줬지만
   // 한글 문장에는 트래킹을 주지 않는다.
@@ -120,13 +150,7 @@ export const styles = StyleSheet.create({
     letterSpacing: 1.4,
     textTransform: 'uppercase',
   },
-  progressBarContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: normalize(12),
-    height: normalize(3),
-  },
+
   progressTrack: {
     height: normalize(3),
     backgroundColor: tokens.colors.border,
