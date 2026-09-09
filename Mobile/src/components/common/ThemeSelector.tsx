@@ -34,6 +34,7 @@ interface ThemeSelectorProps {
   onClose: () => void;
   onComplete: (selections: ThemeSelectorResult) => void;
   initialSelections?: ThemeSelectorResult;
+  initialStep?: number;
 }
 
 /**
@@ -48,6 +49,7 @@ export default function ThemeSelector({
   onClose,
   onComplete,
   initialSelections,
+  initialStep = 0,
 }: ThemeSelectorProps) {
   const { showAlert } = useAlert();
   const [loading, setLoading] = useState(true);
@@ -116,11 +118,11 @@ export default function ThemeSelector({
   useEffect(() => {
     const controller = new AbortController();
     if (visible) {
-      setCurrentStep(0);
+      setCurrentStep(initialStep);
       void fetchThemes(controller.signal);
     }
     return () => controller.abort();
-  }, [visible, fetchThemes]);
+  }, [visible, fetchThemes, initialStep]);
 
   const handleToggle = (themeId: number) => {
     setSelectedIds(prev => {

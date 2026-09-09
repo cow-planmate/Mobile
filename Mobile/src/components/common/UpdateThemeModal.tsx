@@ -31,16 +31,24 @@ const CATEGORY_NAMES: Record<number, string> = {
   2: '식당',
 };
 
+const CATEGORY_STEP_MAP: Record<string, number> = {
+  관광지: 0,
+  숙소: 1,
+  식당: 2,
+};
+
 type UpdateThemeModalProps = {
   visible: boolean;
   onClose: () => void;
   onConfirm: () => void | Promise<void>;
+  initialCategory?: '관광지' | '숙소' | '식당';
 };
 
 export default function UpdateThemeModal({
   visible,
   onClose,
   onConfirm,
+  initialCategory,
 }: UpdateThemeModalProps) {
   const { showAlert } = useAlert();
   const queryClient = useQueryClient();
@@ -193,6 +201,9 @@ export default function UpdateThemeModal({
         onClose={onClose}
         onComplete={handleSelectorComplete}
         initialSelections={selectedThemes}
+        initialStep={
+          initialCategory ? (CATEGORY_STEP_MAP[initialCategory] ?? 0) : 0
+        }
       />
     </>
   );

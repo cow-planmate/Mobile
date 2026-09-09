@@ -451,6 +451,9 @@ export default function ProfileScreenView({
   const queryClient = useQueryClient();
   const { showAlert } = useAlert();
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [themeModalCategory, setThemeModalCategory] = useState<
+    '관광지' | '숙소' | '식당' | undefined
+  >(undefined);
   const [tempNickname, setTempNickname] = useState('');
   const [tempBirthdate, setTempBirthdate] = useState('');
   const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
@@ -1012,7 +1015,10 @@ export default function ProfileScreenView({
 
             <ProfileTasteCard
               groups={tasteGroups}
-              onEdit={() => setThemeModalVisible(true)}
+              onEdit={category => {
+                setThemeModalCategory(category);
+                setThemeModalVisible(true);
+              }}
             />
 
             <View style={styles.sectionBand} />
@@ -1397,7 +1403,11 @@ export default function ProfileScreenView({
 
       <UpdateThemeModal
         visible={isThemeModalVisible}
-        onClose={() => setThemeModalVisible(false)}
+        initialCategory={themeModalCategory}
+        onClose={() => {
+          setThemeModalVisible(false);
+          setThemeModalCategory(undefined);
+        }}
         onConfirm={handleUpdateTheme}
       />
       <UpdatePasswordModal

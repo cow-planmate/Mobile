@@ -30,7 +30,7 @@ export default function ProfileTasteCard({
   onEdit,
 }: {
   groups: TasteGroup[];
-  onEdit: () => void;
+  onEdit: (category?: '관광지' | '숙소' | '식당') => void;
 }) {
   const total = countPreferredThemes(groups);
 
@@ -43,7 +43,7 @@ export default function ProfileTasteCard({
         </View>
         <TouchableOpacity
           style={styles.editButton}
-          onPress={onEdit}
+          onPress={() => onEdit()}
           activeOpacity={0.7}
           hitSlop={8}
           accessibilityRole="button"
@@ -91,7 +91,9 @@ export default function ProfileTasteCard({
                 ) : (
                   <TouchableOpacity
                     style={styles.addPillButton}
-                    onPress={onEdit}
+                    onPress={() =>
+                      onEdit(group.label as '관광지' | '숙소' | '식당')
+                    }
                     activeOpacity={0.7}
                     hitSlop={6}
                     accessibilityRole="button"
