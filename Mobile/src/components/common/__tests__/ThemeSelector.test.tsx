@@ -26,7 +26,7 @@ describe('ThemeSelector', () => {
     jest.clearAllMocks();
   });
 
-  it('마지막 단계 건너뛰기는 기존 선택을 비운 결과를 전달한다', async () => {
+  it('마지막 단계 건너뛰기는 기존 선택을 유지한 결과를 전달한다', async () => {
     const theme = {
       preferredThemeId: 1,
       preferredThemeName: '박물관',
@@ -60,7 +60,7 @@ describe('ThemeSelector', () => {
       skipButton!.props.onPress();
     });
 
-    expect(onComplete).toHaveBeenCalledWith({ 0: [] });
+    expect(onComplete).toHaveBeenCalledWith({ 0: [theme] });
     act(() => tree!.unmount());
   });
 

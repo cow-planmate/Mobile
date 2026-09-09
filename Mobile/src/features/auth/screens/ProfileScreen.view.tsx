@@ -820,12 +820,7 @@ export default function ProfileScreenView({
   };
 
   const preferredThemes = user.preferredThemes || [];
-  const themeNames = preferredThemes.map((t: any) => t.preferredThemeName || t);
-  const defaultThemes = ['해수욕장', '호텔', '한식', '고기집', '이자카야'];
-  const displayThemes = themeNames.length > 0 ? themeNames : defaultThemes;
-  const tasteGroups = groupPreferredThemes(
-    preferredThemes.length > 0 ? preferredThemes : displayThemes,
-  );
+  const tasteGroups = groupPreferredThemes(preferredThemes);
   const handleOpenEditModal = () => {
     setTempNickname(user.name);
     setTempBirthdate(user.birthdate || '');

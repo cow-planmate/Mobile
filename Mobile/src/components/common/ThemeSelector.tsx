@@ -170,13 +170,10 @@ export default function ThemeSelector({
   };
 
   const handleSkip = () => {
-    const updated = selectedIds.map(set => new Set(set));
-    updated[currentStep] = new Set();
-    setSelectedIds(updated);
     if (currentStep < categories.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      onComplete(buildResult(updated));
+      onComplete(buildResult(selectedIds));
     }
   };
 
