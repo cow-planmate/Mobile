@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,9 @@ import {
   Modal,
   Pressable,
   Dimensions,
+  Animated,
+  AccessibilityInfo,
+  Easing,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { INITIAL_TAB } from '../../navigation/types';
@@ -46,10 +49,57 @@ const Header: React.FC<HeaderProps> = ({
   const [menuPosition, setMenuPosition] = useState({
     top: 0,
     right: 16,
-    pointerRight: 12,
   });
   const profileRef = useRef<View>(null);
   const overlayRef = useRef<View>(null);
+
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const scaleAnim = useRef(new Animated.Value(0.96)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    let cancelled = false;
+    AccessibilityInfo.isReduceMotionEnabled().then(enabled => {
+      if (!cancelled) setReduceMotion(enabled);
+    });
+    const sub = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      setReduceMotion,
+    );
+    return () => {
+      cancelled = true;
+      sub.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (menuVisible) {
+      if (reduceMotion) {
+        scaleAnim.setValue(1);
+        opacityAnim.setValue(1);
+        return;
+      }
+      scaleAnim.setValue(0.96);
+      opacityAnim.setValue(0);
+      Animated.parallel([
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 150,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 140,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      scaleAnim.setValue(0.96);
+      opacityAnim.setValue(0);
+    }
+  }, [menuVisible, reduceMotion, scaleAnim, opacityAnim]);
 
   const positionMenu = (
     originX = 0,
@@ -64,10 +114,6 @@ const Header: React.FC<HeaderProps> = ({
       setMenuPosition({
         top: pageY - originY + height + normalize(6),
         right,
-        pointerRight: Math.max(
-          normalize(18),
-          screenWidth - (pageX - originX + width / 2) - right - normalize(5),
-        ),
       });
       setMenuVisible(true);
     });
@@ -163,6 +209,8 @@ const Header: React.FC<HeaderProps> = ({
         visible={menuVisible}
         transparent={true}
         animationType="fade"
+        statusBarTranslucent={true}
+        navigationBarTranslucent={true}
         onShow={() =>
           overlayRef.current?.measureInWindow((x, y, width) =>
             positionMenu(x, y, width),
@@ -182,27 +230,43 @@ const Header: React.FC<HeaderProps> = ({
             accessibilityRole="button"
             accessibilityLabel="프로필 메뉴 닫기"
           />
-          <View
+          <Animated.View
             testID="profile-menu"
             style={[
               styles.dropdownMenu,
               { top: menuPosition.top, right: menuPosition.right },
+              reduceMotion
+                ? null
+                : {
+                    opacity: opacityAnim,
+                    transform: [{ scale: scaleAnim }],
+                  },
             ]}
           >
-            <View
-              pointerEvents="none"
-              style={[styles.menuPointer, { right: menuPosition.pointerRight }]}
-            />
             <View style={styles.accountInfo}>
-              <Text style={styles.accountLabel}>내 계정</Text>
-              <Text style={styles.accountName} numberOfLines={1}>
-                {nickname || '사용자'}
-              </Text>
-              {!!email && (
-                <Text style={styles.accountEmail} numberOfLines={1}>
-                  {email}
+              <View style={styles.accountAvatar}>
+                <FallbackImage
+                  uri={email ? gravatarUrl(email, 80) : null}
+                  style={styles.avatarImage}
+                  accessible={false}
+                  fallback={
+                    <UserIcon
+                      size={normalize(18)}
+                      color={tokens.colors.textTertiary}
+                    />
+                  }
+                />
+              </View>
+              <View style={styles.accountTextGroup}>
+                <Text style={styles.accountName} numberOfLines={1}>
+                  {nickname || '사용자'}
                 </Text>
-              )}
+                {!!email && (
+                  <Text style={styles.accountEmail} numberOfLines={1}>
+                    {email}
+                  </Text>
+                )}
+              </View>
             </View>
             <TouchableOpacity
               style={styles.menuItem}
@@ -233,7 +297,7 @@ const Header: React.FC<HeaderProps> = ({
               </View>
               <Text style={styles.logoutText}>로그아웃</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </View>
@@ -292,7 +356,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: normalize(6),
     right: normalize(4),
-
     backgroundColor: '#D92D20',
     borderRadius: 10,
     minWidth: 18,
@@ -309,73 +372,73 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.36)',
-  },
-  menuPointer: {
-    position: 'absolute',
-    top: -normalize(5),
-    width: normalize(10),
-    height: normalize(10),
-    backgroundColor: tokens.colors.white,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderColor: 'rgba(15, 23, 42, 0.08)',
-    transform: [{ rotate: '45deg' }],
+    backgroundColor: 'rgba(15, 23, 42, 0.12)',
   },
   dropdownMenu: {
     position: 'absolute',
     backgroundColor: tokens.colors.white,
-    borderRadius: normalize(16),
-    padding: normalize(8),
-    width: normalize(248),
+    borderRadius: normalize(20),
+    padding: normalize(10),
+    width: normalize(260),
     maxWidth: '90%',
     borderWidth: 1,
-    borderColor: 'rgba(15, 23, 42, 0.08)',
+    borderColor: 'rgba(15, 23, 42, 0.06)',
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
+    shadowOpacity: 0.12,
+    shadowRadius: 28,
     elevation: 12,
   },
   accountInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(10),
     backgroundColor: '#F8FAFC',
-    borderRadius: normalize(12),
+    borderRadius: normalize(14),
     paddingHorizontal: normalize(12),
-    paddingTop: normalize(10),
-    paddingBottom: normalize(12),
+    paddingVertical: normalize(10),
     marginBottom: normalize(4),
     borderWidth: 1,
     borderColor: 'rgba(15, 23, 42, 0.04)',
   },
-  accountLabel: {
-    fontSize: normalize(11),
-    fontFamily: tokens.fontFamily.medium,
-    color: tokens.colors.textSecondary,
-    marginBottom: normalize(4),
+  accountAvatar: {
+    width: normalize(36),
+    height: normalize(36),
+    borderRadius: normalize(18),
+    backgroundColor: '#EEF2F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  accountTextGroup: {
+    flex: 1,
+    justifyContent: 'center',
   },
   accountName: {
-    fontSize: normalize(16),
+    fontSize: normalize(15),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.text,
+    letterSpacing: -0.2,
   },
   accountEmail: {
-    marginTop: normalize(3),
-    fontSize: normalize(12),
+    marginTop: normalize(2),
+    fontSize: normalize(11.5),
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.textSecondary,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: normalize(52),
+    minHeight: normalize(48),
     paddingVertical: normalize(8),
     paddingHorizontal: normalize(8),
+    borderRadius: normalize(12),
     gap: normalize(10),
   },
   menuIcon: {
     width: normalize(32),
     height: normalize(32),
-    borderRadius: normalize(10),
+    borderRadius: normalize(11),
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: tokens.colors.primaryTint,
@@ -387,11 +450,11 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: normalize(14),
     color: tokens.colors.text,
-    fontFamily: tokens.fontFamily.semibold,
+    fontFamily: tokens.fontFamily.medium,
   },
   logoutItem: {
     borderTopWidth: 1,
-    borderTopColor: tokens.colors.borderLight,
+    borderTopColor: '#F3F4F6',
     marginTop: normalize(4),
     paddingTop: normalize(10),
   },
