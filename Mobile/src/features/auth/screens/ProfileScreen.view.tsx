@@ -356,7 +356,9 @@ const PastPlanRow = React.memo(function PastPlanRow({
         <Text style={[styles.planRailValue, styles.planRailValuePast]}>
           {rail.value}
         </Text>
-        <Text style={styles.planRailCaption}>{rail.caption}</Text>
+        <Text style={[styles.planRailCaption, styles.planRailCaptionPast]}>
+          {rail.caption}
+        </Text>
       </View>
 
       <View style={styles.planBody}>

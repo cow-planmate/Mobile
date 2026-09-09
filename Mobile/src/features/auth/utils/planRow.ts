@@ -38,13 +38,13 @@ export const getUpcomingRail = (startDate?: string): PlanRail => {
   };
 };
 
-/** 지난 일정 레일 — 8/15 / 2026 */
+/** 지난 일정 레일 — 2026 / 8/15 */
 export const getPastRail = (startDate?: string): PlanRail => {
   const start = toPlanDate(startDate);
   if (!start) return { value: '—', caption: '날짜 없음' };
   return {
-    value: `${start.getMonth() + 1}/${start.getDate()}`,
-    caption: `${start.getFullYear()}`,
+    value: `${start.getFullYear()}`,
+    caption: `${start.getMonth() + 1}/${start.getDate()}`,
   };
 };
 

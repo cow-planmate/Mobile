@@ -660,11 +660,19 @@ export const styles = StyleSheet.create({
   },
   planRailValuePast: {
     color: COLORS.placeholder,
+    fontSize: normalize(15),
+    letterSpacing: -0.5,
   },
   planRailCaption: {
     fontSize: normalize(10),
     color: COLORS.placeholder,
     marginTop: normalize(1),
+  },
+  planRailCaptionPast: {
+    fontSize: normalize(11),
+    fontFamily: FONTS.medium,
+    color: '#6B7280',
+    marginTop: normalize(1.5),
   },
   planBody: {
     flex: 1,
