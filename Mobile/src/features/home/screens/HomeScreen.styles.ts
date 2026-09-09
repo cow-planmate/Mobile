@@ -27,7 +27,7 @@ export const styles = StyleSheet.create({
   },
   heroCard: {
     aspectRatio: 16 / 9,
-    borderRadius: normalize(10),
+    borderRadius: normalize(20),
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: tokens.colors.border,
@@ -40,7 +40,7 @@ export const styles = StyleSheet.create({
   heroEmpty: {
     marginHorizontal: normalize(16),
     aspectRatio: 16 / 9,
-    borderRadius: normalize(10),
+    borderRadius: normalize(20),
     backgroundColor: '#F5F6F8',
     alignItems: 'center',
     justifyContent: 'center',
@@ -68,7 +68,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
   },
   relationLabel: {
-    fontSize: normalize(11.5),
+    fontSize: normalize(12),
     fontFamily: tokens.fontFamily.regular,
     color: '#4B5563',
   },
@@ -121,9 +121,9 @@ export const styles = StyleSheet.create({
   // 웹 히어로의 작은 라벨 자리. 웹은 대문자 로마자라 트래킹을 줬지만
   // 한글 문장에는 트래킹을 주지 않는다.
   placeAsk: {
-    fontSize: normalize(11),
+    fontSize: normalize(12),
     fontFamily: tokens.fontFamily.medium,
-    color: 'rgba(255, 255, 255, 0.74)',
+    color: 'rgba(255, 255, 255, 0.78)',
     letterSpacing: -0.2,
     marginBottom: normalize(5),
   },
@@ -171,12 +171,11 @@ export const styles = StyleSheet.create({
   },
   cardWrapper: {
     backgroundColor: tokens.colors.white,
-    borderRadius: tokens.radius.xl,
+    borderRadius: normalize(20),
     paddingHorizontal: normalize(18),
     paddingVertical: normalize(16),
     borderWidth: 1,
-    // 바깥 테두리는 안쪽 선보다 한 단계 진해야 카드가 흰 바탕에서 떠오른다.
-    borderColor: tokens.colors.borderStrong,
+    borderColor: tokens.colors.border,
     position: 'relative',
   },
   timelineTrack: {
@@ -226,7 +225,7 @@ export const styles = StyleSheet.create({
   timelineContent: {
     flex: 1,
     borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.border,
+    borderBottomColor: tokens.colors.borderLight,
     paddingBottom: normalize(8),
   },
   timelineContentLast: {
@@ -235,19 +234,22 @@ export const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: normalize(11),
+    fontSize: normalize(12),
     fontFamily: tokens.fontFamily.medium,
     fontWeight: '500',
-    color: '#374151',
+    color: '#4B5563',
     letterSpacing: -0.2,
-    marginBottom: normalize(2),
+    marginBottom: normalize(2.5),
   },
-  valueContainer: {
+  rowMain: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  textContainer: {
+    flex: 1,
   },
   valueText: {
-    flex: 1,
     fontSize: normalize(15),
     fontFamily: tokens.fontFamily.semibold,
     fontWeight: '600',
@@ -255,20 +257,21 @@ export const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   placeholderText: {
-    flex: 1,
     fontSize: normalize(15),
     fontFamily: tokens.fontFamily.regular,
     fontWeight: '400',
-    color: '#64748B',
+    color: '#94A3B8',
     letterSpacing: -0.3,
   },
   rowIcon: {
     marginLeft: normalize(8),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   submitButton: {
     backgroundColor: tokens.colors.primary,
     height: normalize(54),
-    borderRadius: tokens.radius.l,
+    borderRadius: normalize(18),
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',

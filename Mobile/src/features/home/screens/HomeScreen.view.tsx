@@ -90,17 +90,22 @@ const InputRow = ({
       <View
         style={[styles.timelineContent, isLast && styles.timelineContentLast]}
       >
-        <Text style={styles.label}>{label}</Text>
-        <View style={styles.valueContainer}>
-          {hasValue ? (
-            <Text style={styles.valueText} numberOfLines={1}>
-              {value}
-            </Text>
-          ) : (
-            <Text style={styles.placeholderText}>{placeholder}</Text>
-          )}
+        <View style={styles.rowMain}>
+          <View style={styles.textContainer}>
+            <Text style={styles.label}>{label}</Text>
+            {hasValue ? (
+              <Text style={styles.valueText} numberOfLines={1}>
+                {value}
+              </Text>
+            ) : (
+              <Text style={styles.placeholderText}>{placeholder}</Text>
+            )}
+          </View>
           <View style={styles.rowIcon}>
-            <Icon color={tokens.colors.primary} size={18} />
+            <Icon
+              color={hasValue ? tokens.colors.primary : '#94A3B8'}
+              size={normalize(18)}
+            />
           </View>
         </View>
       </View>
