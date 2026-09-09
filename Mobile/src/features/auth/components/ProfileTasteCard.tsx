@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Landmark from 'lucide-react-native/dist/esm/icons/landmark';
 import BedDouble from 'lucide-react-native/dist/esm/icons/bed-double';
 import Utensils from 'lucide-react-native/dist/esm/icons/utensils';
+import Plus from 'lucide-react-native/dist/esm/icons/plus';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import { TasteGroup, countPreferredThemes } from '../utils/profileTaste';
@@ -41,13 +42,14 @@ export default function ProfileTasteCard({
           <Text style={styles.subtitle}>{`선택한 취향 ${total}개`}</Text>
         </View>
         <TouchableOpacity
+          style={styles.editButton}
           onPress={onEdit}
           activeOpacity={0.7}
-          hitSlop={12}
+          hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="여행 취향 편집"
         >
-          <Text style={styles.edit}>편집</Text>
+          <Text style={styles.editText}>편집</Text>
         </TouchableOpacity>
       </View>
 
@@ -87,7 +89,21 @@ export default function ProfileTasteCard({
                     ))}
                   </View>
                 ) : (
-                  <Text style={styles.rowEmpty}>선택된 취향 없음</Text>
+                  <TouchableOpacity
+                    style={styles.addPillButton}
+                    onPress={onEdit}
+                    activeOpacity={0.7}
+                    hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${group.label} 취향 추가`}
+                  >
+                    <Plus
+                      size={normalize(11)}
+                      color={tokens.colors.primary}
+                      strokeWidth={2.2}
+                    />
+                    <Text style={styles.addPillText}>취향 추가</Text>
+                  </TouchableOpacity>
                 )}
               </View>
             </View>
@@ -126,10 +142,20 @@ const styles = StyleSheet.create({
     color: tokens.colors.textTertiary,
     marginTop: normalize(2),
   },
-  edit: {
-    fontSize: normalize(12.5),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.primary,
+  editButton: {
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(4.5),
+    borderRadius: normalize(8),
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editText: {
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.semibold,
+    color: '#475569',
   },
   rows: {
     paddingHorizontal: normalize(16),
@@ -193,9 +219,20 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.medium,
     color: '#475569',
   },
-  rowEmpty: {
+  addPillButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(3),
+    paddingHorizontal: normalize(8),
+    paddingVertical: normalize(4),
+    borderRadius: normalize(6),
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  addPillText: {
     fontSize: normalize(11.5),
-    fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.primary,
   },
 });
