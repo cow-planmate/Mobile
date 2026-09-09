@@ -100,7 +100,7 @@ type TripTab = 'upcoming' | 'past';
 // 웹 마이페이지의 세 갈래를 이름까지 그대로 옮긴 것.
 const PROFILE_SECTIONS = [
   { key: 'profile', label: '프로필' },
-  { key: 'travel', label: '여행 일정 및 캘린더' },
+  { key: 'travel', label: '여행 일정' },
   { key: 'stories', label: '커뮤니티 활동' },
 ];
 

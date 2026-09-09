@@ -504,7 +504,7 @@ export function ProfileCommunitySection() {
   return (
     <Card style={styles.card} variant="flat" padding="none">
       <View style={styles.cardInnerHeader}>
-        <SectionHeader title="커뮤니티 활동" />
+        <SectionHeader title="게시글 활동" />
       </View>
       <UnderlineTabs
         items={ACTIVITY_TABS}
