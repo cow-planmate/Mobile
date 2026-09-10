@@ -6,6 +6,8 @@ import { BOARD_TIPS } from '../../constants/board';
 
 const mockNavigation = { goBack: jest.fn(), replace: jest.fn(), navigate: jest.fn() };
 const mockRouteParams: { category?: string; postId?: string } = {};
+const mockUnsavedChanges = jest.fn();
+let mockExistingPost: any;
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => mockNavigation,
@@ -18,12 +20,12 @@ jest.mock('../../../../contexts/AlertContext', () => ({
 
 jest.mock('../../hooks/queries', () => ({
   useCreatePost: () => ({ isPending: false, mutateAsync: jest.fn() }),
-  usePost: () => ({ data: undefined, isLoading: false, isError: false }),
+  usePost: () => ({ data: mockExistingPost, isLoading: false, isError: false }),
   useUpdatePost: () => ({ isPending: false, mutateAsync: jest.fn() }),
 }));
 
 jest.mock('../../../../hooks/useUnsavedChangesPrompt', () => ({
-  useUnsavedChangesPrompt: () => ({ allowLeave: jest.fn() }),
+  useUnsavedChangesPrompt: (options: unknown) => { mockUnsavedChanges(options); return { allowLeave: jest.fn() }; },
 }));
 
 jest.mock('@tanstack/react-query', () => ({
@@ -54,6 +56,17 @@ const starsOf = (tree: renderer.ReactTestRenderer) =>
     .findAllByType(TouchableOpacity)
     .filter(node => /^평점 \d점$/.test(node.props.accessibilityLabel ?? ''));
 
+it('수정 화면의 기존 내용은 미저장 변경으로 취급하지 않는다', async () => {
+  mockRouteParams.postId = '7';
+  mockExistingPost = { category: 'free', title: '기존 제목', contentText: '내용', location: '', rating: 0 };
+  let tree: renderer.ReactTestRenderer;
+  await act(async () => { tree = renderer.create(<PostCreateScreen />); });
+  expect(mockUnsavedChanges).toHaveBeenLastCalledWith(expect.objectContaining({ hasUnsavedChanges: false }));
+  act(() => tree!.unmount());
+  mockExistingPost = undefined;
+  delete mockRouteParams.postId;
+});
+
 describe('평점 별', () => {
   it('장소 추천에서만 나온다', () => {
     const recommend = render('recommend');
@@ -76,6 +89,7 @@ describe('평점 별', () => {
     );
     expect(on).toHaveLength(4);
     expect(textsOf(tree)).toContain('4.0');
+    expect(mockUnsavedChanges).toHaveBeenLastCalledWith(expect.objectContaining({ hasUnsavedChanges: true }));
 
     act(() => tree.unmount());
   });
@@ -88,6 +102,7 @@ describe('평점 별', () => {
 
     act(() => starsOf(tree)[2].props.onPress());
     expect(textsOf(tree)).not.toContain('3.0');
+    expect(mockUnsavedChanges).toHaveBeenLastCalledWith(expect.objectContaining({ hasUnsavedChanges: false }));
     expect(
       starsOf(tree).filter(node => node.props.accessibilityState?.selected),
     ).toHaveLength(0);

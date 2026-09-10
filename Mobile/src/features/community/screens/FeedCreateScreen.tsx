@@ -73,6 +73,7 @@ export default function FeedCreateScreen() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const initialForm = useRef({ title: '', content: '', thumbnailUrl: '' });
   // 지금 앱은 메모를 늘 함께 보낸다. 기본값을 true로 두어 그 동작을 지키고,
   // 끄고 싶을 때만 끌 수 있게 한다 (웹 기본값은 false다).
   const [includeMemo, setIncludeMemo] = useState(true);
@@ -95,6 +96,11 @@ export default function FeedCreateScreen() {
     if (hydratedPostId.current === postId) return;
 
     hydratedPostId.current = postId;
+    initialForm.current = {
+      title: post.title,
+      content: post.contentText,
+      thumbnailUrl: post.image ?? '',
+    };
     setTitle(post.title);
     setContent(post.contentText);
     setThumbnailUrl(post.image ?? '');
@@ -160,7 +166,11 @@ export default function FeedCreateScreen() {
   };
 
   const { allowLeave } = useUnsavedChangesPrompt({
-    hasUnsavedChanges: !!title.trim() || !!content.trim(),
+    hasUnsavedChanges:
+      title !== initialForm.current.title ||
+      content !== initialForm.current.content ||
+      thumbnailUrl !== initialForm.current.thumbnailUrl ||
+      thumbnailFile !== null || snapshot !== null || !includeMemo,
     title: '작성 취소',
     message: '작성 중인 여행기가 사라져요. 나갈까요?',
   });

@@ -56,6 +56,7 @@ export default function PostCreateScreen() {
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   // 0이면 고르지 않은 것. 웹은 장소마다 평점을 매기지만 앱은 장소가 하나라 글에 하나만 붙인다.
   const [rating, setRating] = useState(0);
+  const initialForm = useRef({ title: '', content: '', location: '', rating: 0, category });
 
   useEffect(() => {
     const timer = setTimeout(() => setLocationQuery(location.trim()), 300);
@@ -84,6 +85,13 @@ export default function PostCreateScreen() {
     if (hydratedPostId.current === postId) return;
 
     hydratedPostId.current = postId;
+    initialForm.current = {
+      title: post.title,
+      content: post.contentText,
+      location: post.location ?? '',
+      rating: Number(post.rating ?? 0) || 0,
+      category: post.category as BoardKey,
+    };
     setCategory(post.category as BoardKey);
     setTitle(post.title);
     setContent(post.contentText);
@@ -94,7 +102,10 @@ export default function PostCreateScreen() {
   const { isSubmitting, runExclusive } = useSubmitLock();
 
   const { allowLeave } = useUnsavedChangesPrompt({
-    hasUnsavedChanges: !!title.trim() || !!content.trim(),
+    hasUnsavedChanges:
+      title !== initialForm.current.title || content !== initialForm.current.content ||
+      location !== initialForm.current.location || rating !== initialForm.current.rating ||
+      category !== initialForm.current.category,
   });
 
   const canSubmit =

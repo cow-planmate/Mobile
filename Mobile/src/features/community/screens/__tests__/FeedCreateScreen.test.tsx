@@ -12,6 +12,7 @@ const mockUpdatePostMutateAsync = jest.fn();
 const mockUploadCommunityImage = jest.fn();
 const mockDeleteCommunityImage = jest.fn();
 let mockExistingPostData: any;
+const mockUnsavedChanges = jest.fn();
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => mockNavigation,
@@ -43,7 +44,7 @@ jest.mock('../../services/communityApi', () => ({
 }));
 
 jest.mock('../../../../hooks/useUnsavedChangesPrompt', () => ({
-  useUnsavedChangesPrompt: () => ({ allowLeave: jest.fn() }),
+  useUnsavedChangesPrompt: (options: unknown) => { mockUnsavedChanges(options); return { allowLeave: jest.fn() }; },
 }));
 
 jest.mock('react-native-image-picker', () => ({
@@ -53,6 +54,19 @@ jest.mock('react-native-image-picker', () => ({
 const mockedLaunchImageLibrary = launchImageLibrary as jest.Mock;
 
 describe('FeedCreateScreen thumbnail', () => {
+  it('기존 글을 수정하지 않고 닫으면 변경 경고를 표시하지 않는다', async () => {
+    mockRouteParams.postId = '42';
+    mockExistingPostData = { category: 'feed', title: '여행기', contentText: '내용', image: '', itinerary: { days: [] } };
+    let tree: renderer.ReactTestRenderer;
+    await act(async () => { tree = renderer.create(<FeedCreateScreen />); });
+    expect(mockUnsavedChanges).toHaveBeenLastCalledWith(expect.objectContaining({ hasUnsavedChanges: false }));
+    const title = tree!.root.findAllByType(TextInput).find(node => node.props.value === '여행기')!;
+    act(() => title.props.onChangeText('바뀐 제목'));
+    expect(mockUnsavedChanges).toHaveBeenLastCalledWith(expect.objectContaining({ hasUnsavedChanges: true }));
+    act(() => title.props.onChangeText('여행기'));
+    expect(mockUnsavedChanges).toHaveBeenLastCalledWith(expect.objectContaining({ hasUnsavedChanges: false }));
+    act(() => tree!.unmount());
+  });
   beforeEach(() => {
     jest.clearAllMocks();
     delete mockRouteParams.postId;
@@ -91,6 +105,7 @@ describe('FeedCreateScreen thumbnail', () => {
     expect(
       tree!.root.findAllByProps({ children: 'feed.jpg' }).length,
     ).toBeGreaterThan(0);
+    expect(mockUnsavedChanges).toHaveBeenLastCalledWith(expect.objectContaining({ hasUnsavedChanges: true }));
     act(() => tree!.unmount());
   });
 
