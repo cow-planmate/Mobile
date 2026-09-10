@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   kicker: {
     fontSize: normalize(11.5),
     fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textSecondary,
     marginBottom: normalize(3),
   },
   // 설명이 한 줄이거나 아예 없어도 두 줄 자리를 지킨다. 그래야 카드마다
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.borderStrong,
   },
   routeRest: {
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textSecondary,
   },
 
   byline: {
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: normalize(11.5),
     fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textSecondary,
   },
   bylineAuthor: {
     fontFamily: tokens.fontFamily.semibold,
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.primary,
   },
   forkTextZero: {
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textSecondary,
   },
 
   footerLoading: {

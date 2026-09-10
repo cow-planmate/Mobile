@@ -664,7 +664,7 @@ export default function TravelFeedScreen() {
                   {SORT_OPTIONS.map(option => (
                     <FilterOption
                       key={option}
-                      label={option}
+                      label={option === '최신순' ? '등록일' : option}
                       selected={tempSortBy === option}
                       onPress={() => setTempSortBy(option)}
                     />
