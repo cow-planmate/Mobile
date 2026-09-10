@@ -78,6 +78,7 @@ import Undo2 from 'lucide-react-native/dist/esm/icons/undo-2';
 import UserPlusIcon from 'lucide-react-native/dist/esm/icons/user-plus';
 import UsersIcon from 'lucide-react-native/dist/esm/icons/users';
 import XIcon from 'lucide-react-native/dist/esm/icons/x';
+import { useCoachmarkTarget } from '../coachmark/CoachmarkContext';
 
 type ToolbarButtonVariant =
   | 'plain'
@@ -94,6 +95,7 @@ const ToolbarIconButton = ({
   disabled = false,
   badgeCount,
   variant = 'info',
+  targetRef,
 }: {
   children: React.ReactNode;
   onPress: () => void;
@@ -101,8 +103,11 @@ const ToolbarIconButton = ({
   disabled?: boolean;
   badgeCount?: number;
   variant?: ToolbarButtonVariant;
+  /** 첫 진입 안내가 이 버튼을 짚을 수 있게 다는 ref. */
+  targetRef?: (node: any) => void;
 }) => (
   <TouchableOpacity
+    ref={targetRef}
     onPress={onPress}
     disabled={disabled}
     activeOpacity={0.8}
@@ -233,6 +238,7 @@ const DraggableTimelineItem = React.memo(
     onItemDragStart,
     onItemDragEnd,
     disabled = false,
+    isTourAnchor = false,
   }: {
     place: Place;
     offsetMinutes: number;
@@ -255,7 +261,10 @@ const DraggableTimelineItem = React.memo(
     onItemDragStart?: (placeId: string) => void;
     onItemDragEnd?: () => void;
     disabled?: boolean;
+    /** 첫 진입 안내는 그날 첫 블록 하나만 짚는다. */
+    isTourAnchor?: boolean;
   }) => {
+    const blockTarget = useCoachmarkTarget('timelineBlock', isTourAnchor);
     const MIN_TOP_PX =
       GRID_TOP_OFFSET + (minStartMinutes - offsetMinutes) * MINUTE_HEIGHT;
     const MAX_BOTTOM_PX =
@@ -673,6 +682,7 @@ const DraggableTimelineItem = React.memo(
       <>
         <Animated.View style={indicatorStyle} pointerEvents="none" />
         <Animated.View
+          ref={blockTarget}
           style={animatedStyle}
           pointerEvents={isDeleting ? 'none' : 'auto'}
         >
@@ -684,6 +694,7 @@ const DraggableTimelineItem = React.memo(
                 onEditTime={handleEditTime}
                 onPress={handlePress}
                 style={styles.flex1}
+                isTourAnchor={isTourAnchor}
               />
             </Animated.View>
           </GestureDetector>
@@ -1052,10 +1063,11 @@ const TimelineComponent = React.memo(
                 pointerEvents="box-none"
               >
                 <TimeGridBackground hours={gridHours} endHour={endHour} />
-                {selectedDay?.places.map(place => (
+                {selectedDay?.places.map((place, placeIndex) => (
                   <DraggableTimelineItem
                     key={place.id}
                     place={place}
+                    isTourAnchor={placeIndex === 0}
                     offsetMinutes={offsetMinutes}
                     maxEndMinutes={maxEndMinutes}
                     minStartMinutes={minStartMinutes}
@@ -1356,6 +1368,20 @@ export default function ItineraryEditorScreenView({
   onCancelPreview,
 }: ItineraryEditorScreenViewProps) {
   const screenInsets = useScreenInsets(true);
+
+  // 첫 진입 안내가 짚을 자리들. 대상 쪽에서 이름표를 달아 두면 안내가 찾아간다.
+  const planNameTarget = useCoachmarkTarget('planName');
+  const planInfoTarget = useCoachmarkTarget('planInfo');
+  const checklistTarget = useCoachmarkTarget('checklist');
+  const participantsTarget = useCoachmarkTarget('participants');
+  const mapTarget = useCoachmarkTarget('map');
+  const inviteTarget = useCoachmarkTarget('invite');
+  const completeTarget = useCoachmarkTarget('complete');
+  const dayTabsTarget = useCoachmarkTarget('dayTabs');
+  const dayPeriodTarget = useCoachmarkTarget('dayPeriod');
+  const placeSheetTarget = useCoachmarkTarget('placeSheet');
+  const undoTarget = useCoachmarkTarget('undo');
+
   const [inputWidth, setInputWidth] = useState(120);
   const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
   const [dayScrollLayoutWidth, setDayScrollLayoutWidth] = useState(0);
@@ -1867,6 +1893,7 @@ export default function ItineraryEditorScreenView({
             </>
           ) : (
             <TouchableOpacity
+              ref={planNameTarget}
               onPress={() => setIsEditingTripName(true)}
               activeOpacity={0.8}
               style={styles.toolbarTitleButton}
@@ -1877,10 +1904,18 @@ export default function ItineraryEditorScreenView({
             </TouchableOpacity>
           )}
 
-          <ToolbarIconButton onPress={onOpenPlanInfo} variant="info">
+          <ToolbarIconButton
+            onPress={onOpenPlanInfo}
+            variant="info"
+            targetRef={planInfoTarget}
+          >
             <InfoIcon color={COLORS.text} size={18} />
           </ToolbarIconButton>
-          <ToolbarIconButton onPress={onOpenChecklist} variant="outlineDark">
+          <ToolbarIconButton
+            onPress={onOpenChecklist}
+            variant="outlineDark"
+            targetRef={checklistTarget}
+          >
             <ListChecks color={COLORS.text} size={17} strokeWidth={2} />
           </ToolbarIconButton>
         </View>
@@ -1890,16 +1925,30 @@ export default function ItineraryEditorScreenView({
             onPress={onOpenParticipants}
             badgeCount={participantsCount}
             variant="outlineBlue"
+            targetRef={participantsTarget}
           >
             <UsersIcon color={COLORS.primary} size={17} />
           </ToolbarIconButton>
-          <ToolbarIconButton onPress={onOpenMap} variant="outlineDark">
+          <ToolbarIconButton
+            onPress={onOpenMap}
+            variant="outlineDark"
+            targetRef={mapTarget}
+          >
             <MapOutlineIcon color={COLORS.text} size={17} strokeWidth={2} />
           </ToolbarIconButton>
-          <ToolbarIconButton onPress={onOpenShare} variant="filledGray">
+          <ToolbarIconButton
+            onPress={onOpenShare}
+            variant="filledGray"
+            targetRef={inviteTarget}
+          >
             <UserPlusIcon color={COLORS.text} size={17} />
           </ToolbarIconButton>
-          <ToolbarIconButton onPress={onComplete} variant="filledBlue" active>
+          <ToolbarIconButton
+            onPress={onComplete}
+            variant="filledBlue"
+            active
+            targetRef={completeTarget}
+          >
             <CheckIcon color={COLORS.white} size={18} />
           </ToolbarIconButton>
         </View>
@@ -1907,6 +1956,7 @@ export default function ItineraryEditorScreenView({
 
       <View style={styles.dayTabsWrapper}>
         <ScrollView
+          ref={dayTabsTarget}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.dayTabsContainer}
@@ -1951,6 +2001,7 @@ export default function ItineraryEditorScreenView({
           })}
         </ScrollView>
         <TouchableOpacity
+          ref={dayPeriodTarget}
           style={styles.dayEditButton}
           onPress={() => setScheduleEditVisible(true)}
           activeOpacity={0.85}
@@ -2023,6 +2074,7 @@ export default function ItineraryEditorScreenView({
             style={[styles.floatingHistoryContainer, floatingAnimStyle]}
           >
             <TouchableOpacity
+              ref={undoTarget}
               testID="btn-undo"
               style={styles.floatingHistoryButton}
               onPress={onUndo}
@@ -2035,7 +2087,10 @@ export default function ItineraryEditorScreenView({
             </TouchableOpacity>
           </Animated.View>
 
-          <Animated.View style={[styles.placeSheet, sheetAnimStyle]}>
+          <Animated.View
+            ref={placeSheetTarget}
+            style={[styles.placeSheet, sheetAnimStyle]}
+          >
             <GestureDetector gesture={sheetGesture}>
               <View
                 style={styles.sheetGrabArea}

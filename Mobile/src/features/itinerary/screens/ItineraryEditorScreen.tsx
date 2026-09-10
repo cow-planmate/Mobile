@@ -39,6 +39,7 @@ import PlanMapModal from '../components/PlanMapModal';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
 import EditAccessGate from '../components/EditAccessGate';
 import { normalizeCategoryId } from '../../../utils/placeCategory';
+import { CoachmarkProvider, EditorCoachmark } from '../coachmark';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
@@ -775,8 +776,30 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     }
   };
 
+  /**
+   * 첫 진입 안내를 시작해도 되는 상태인지. 무엇이 덮여 있으면 그 아래를 짚어
+   * 봐야 보이지 않고, 이름을 고치는 중이면 손을 가로막는다. 볼 권한이 없는
+   * 사람에게는 편집 버튼을 설명할 이유가 없다.
+   */
+  const isCoachmarkReady =
+    canEdit &&
+    !isAccessDenied &&
+    !isInitialPlanLoading &&
+    !isSaving &&
+    !isBacking &&
+    days.length > 0 &&
+    !isEditingTripName &&
+    !isPlanInfoVisible &&
+    !isParticipantsVisible &&
+    !isMapPreviewVisible &&
+    !isShareModalVisible &&
+    !isChecklistVisible &&
+    !isPlaceEditModalVisible &&
+    !isScheduleEditVisible &&
+    !isTimePickerVisible;
+
   return (
-    <>
+    <CoachmarkProvider>
       <ItineraryEditorScreenView
         days={days}
         selectedDayIndex={selectedDayIndex}
@@ -919,6 +942,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         onGoBack={handleGoBack}
         onStaleMembership={handleRefreshMembership}
       />
-    </>
+      <EditorCoachmark enabled={isCoachmarkReady} />
+    </CoachmarkProvider>
   );
 }

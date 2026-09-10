@@ -6,6 +6,7 @@ import { View, Text, Pressable, TouchableOpacity } from 'react-native';
 import { styles, CATEGORY_COLORS } from './TimelineItem.styles';
 import { tokens } from '../../../theme/tokens';
 import { timeToMinutes } from '../../../utils/timeUtils';
+import { useCoachmarkTarget } from '../coachmark/CoachmarkContext';
 
 const IS_COMPACT_VIEW_THRESHOLD_MINUTES = 30;
 
@@ -37,6 +38,8 @@ type TimelineItemProps = {
   onPress?: () => void;
   style?: object;
   isReadOnly?: boolean;
+  /** 첫 진입 안내가 수정·삭제를 짚을 블록 하나에만 켠다. */
+  isTourAnchor?: boolean;
 };
 
 /** 카드와 완성 화면이 같은 기준으로 갈래를 정하도록 한곳에 둔다. */
@@ -75,7 +78,12 @@ const TimelineItem = React.memo(function TimelineItem({
   onPress,
   style,
   isReadOnly = false,
+  isTourAnchor = false,
 }: TimelineItemProps) {
+  const actionsTarget = useCoachmarkTarget(
+    'blockActions',
+    isTourAnchor && !isReadOnly,
+  );
   const durationMinutes =
     timeToMinutes(item.endTime) - timeToMinutes(item.startTime);
   const isCompact = durationMinutes < IS_COMPACT_VIEW_THRESHOLD_MINUTES;
@@ -130,7 +138,7 @@ const TimelineItem = React.memo(function TimelineItem({
         </View>
 
         {!isReadOnly && (
-          <View style={styles.actionContainer}>
+          <View ref={actionsTarget} style={styles.actionContainer}>
             <TouchableOpacity
               style={[
                 styles.actionButton,
