@@ -17,6 +17,10 @@ export const FCM_STORAGE_KEYS = ['fcmToken', 'lastSyncedFcmToken'];
 // 계정과 무관하므로 로그아웃·탈퇴 시 정리 대상에 넣지 않는다.
 export const FCM_PERMISSION_NOTICE_KEY = 'fcmPermissionNoticeShown';
 
+// 일정 편집 화면 버튼 안내를 이미 봤는지. 앱 쓰는 법을 익혔다는 뜻이라
+// 계정이 아니라 기기에 남는다 - 로그아웃했다고 다시 볼 이유가 없다.
+export const EDITOR_COACHMARK_KEY = 'editorCoachmarkSeen';
+
 export const LOGOUT_CLEARED_KEYS = [...AUTH_STORAGE_KEYS, ...FCM_STORAGE_KEYS];
 
 // 탈퇴처럼 계정 흔적까지 지워야 하는 경우에만 추가로 비우는 키.
