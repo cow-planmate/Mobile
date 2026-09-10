@@ -79,7 +79,6 @@ import {
 import {
   ProfileCalendarSection,
   ProfileCommunitySection,
-  ProfileFootprintSection,
   ProfileTravelLogSection,
 } from '../components/ProfileActivitySections';
 import { UnderlineTabs } from '../../../components/ui';
@@ -235,7 +234,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
             plan.isShared && styles.planOwnershipInvited,
           ]}
         >
-          {plan.isShared ? '초대받은 일정' : '내 일정'}
+          {plan.isShared ? '초대받은 일정' : '나의 일정'}
         </Text>
         <Text style={styles.planTitle} numberOfLines={1}>
           {plan.planName}
@@ -373,7 +372,7 @@ const PastPlanRow = React.memo(function PastPlanRow({
             plan.isShared && styles.planOwnershipInvited,
           ]}
         >
-          {plan.isShared ? '초대받은 일정' : '내 일정'}
+          {plan.isShared ? '초대받은 일정' : '나의 일정'}
         </Text>
         <Text style={styles.planTitle} numberOfLines={1}>
           {plan.planName}
@@ -457,7 +456,11 @@ export default function ProfileScreenView({
     '관광지' | '숙소' | '식당' | undefined
   >(undefined);
   const [tempNickname, setTempNickname] = useState('');
-  const savedProfile = React.useRef({ nickname: '', birthdate: '', gender: '' });
+  const savedProfile = React.useRef({
+    nickname: '',
+    birthdate: '',
+    gender: '',
+  });
   const [tempBirthdate, setTempBirthdate] = useState('');
   const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
   const [tempGender, setTempGender] = useState('');
@@ -825,7 +828,11 @@ export default function ProfileScreenView({
   const preferredThemes = user.preferredThemes || [];
   const tasteGroups = groupPreferredThemes(preferredThemes);
   const handleOpenEditModal = () => {
-    savedProfile.current = { nickname: user.name, birthdate: user.birthdate || '', gender: user.gender };
+    savedProfile.current = {
+      nickname: user.name,
+      birthdate: user.birthdate || '',
+      gender: user.gender,
+    };
     setTempNickname(user.name);
     setTempBirthdate(user.birthdate || '');
     setTempGender(user.gender);
@@ -835,8 +842,10 @@ export default function ProfileScreenView({
   const handleCloseEditModal = () => {
     if (profileSaveLock.isSubmitting) return;
     const saved = savedProfile.current;
-    const changed = tempNickname.trim() !== saved.nickname ||
-      tempBirthdate !== saved.birthdate || tempGender !== saved.gender;
+    const changed =
+      tempNickname.trim() !== saved.nickname ||
+      tempBirthdate !== saved.birthdate ||
+      tempGender !== saved.gender;
     if (!changed) {
       setEditModalVisible(false);
       return;
@@ -847,7 +856,11 @@ export default function ProfileScreenView({
       type: 'confirm',
       buttons: [
         { text: '계속 수정', style: 'cancel' },
-        { text: '닫기', style: 'destructive', onPress: () => setEditModalVisible(false) },
+        {
+          text: '닫기',
+          style: 'destructive',
+          onPress: () => setEditModalVisible(false),
+        },
       ],
     });
   };
@@ -929,7 +942,9 @@ export default function ProfileScreenView({
         if (savedFields.length > 0) {
           showAlert({
             title: '일부 정보만 저장됐어요',
-            message: `${savedFields.join(', ')} 항목은 저장됐어요. 나머지 변경사항은 유지했으니 다시 저장해 주세요.`,
+            message: `${savedFields.join(
+              ', ',
+            )} 항목은 저장됐어요. 나머지 변경사항은 유지했으니 다시 저장해 주세요.`,
             type: 'warning',
           });
         }
@@ -1006,20 +1021,6 @@ export default function ProfileScreenView({
                   <Text style={styles.profileEmail} numberOfLines={1}>
                     {user.email || '이메일 없음'}
                   </Text>
-                  <View style={styles.profileMetaChips}>
-                    <View style={styles.profileMetaChip}>
-                      <Text style={styles.profileMetaChipText}>
-                        {user.gender || '성별 미설정'}
-                      </Text>
-                    </View>
-                    <View style={styles.profileMetaChip}>
-                      <Text style={styles.profileMetaChipText}>
-                        {profileAge === null
-                          ? '나이 미설정'
-                          : `만 ${profileAge}세`}
-                      </Text>
-                    </View>
-                  </View>
                 </View>
               </View>
 
@@ -1052,6 +1053,24 @@ export default function ProfileScreenView({
             <View style={styles.sectionBand} />
 
             <View style={styles.accountSection}>
+              {!user.socialLogin && (
+                <>
+                  <TouchableOpacity
+                    style={styles.accountItemRow}
+                    onPress={() => setPasswordModalVisible(true)}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="비밀번호 변경"
+                  >
+                    <Text style={styles.accountItemText}>비밀번호 변경</Text>
+                    <ChevronRight
+                      size={16}
+                      color={tokens.colors.textTertiary}
+                    />
+                  </TouchableOpacity>
+                  <View style={styles.accountItemDivider} />
+                </>
+              )}
               <TouchableOpacity
                 style={styles.accountItem}
                 onPress={handleLogout}
@@ -1261,8 +1280,6 @@ export default function ProfileScreenView({
             담고 덩어리 사이만 회색 띠로 벌린다. */}
             <View style={styles.sectionBand} />
             <ProfileCalendarSection plans={plans} />
-            <View style={styles.sectionBand} />
-            <ProfileFootprintSection plans={plans} />
           </>
         )}
       </ScrollView>
@@ -1301,17 +1318,6 @@ export default function ProfileScreenView({
             >
               <Text style={styles.saveButtonText}>저장</Text>
             </TouchableOpacity>
-            {!user.socialLogin && (
-              <TouchableOpacity
-                style={styles.editPasswordLink}
-                onPress={() => setPasswordModalVisible(true)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="비밀번호 변경하기"
-              >
-                <Text style={styles.editPasswordLinkText}>비밀번호 변경하기</Text>
-              </TouchableOpacity>
-            )}
           </View>
         }
       >
@@ -1340,7 +1346,11 @@ export default function ProfileScreenView({
                 }
               />
               <View style={styles.cameraBadge}>
-                <Camera size={11} color={tokens.colors.white} strokeWidth={2.2} />
+                <Camera
+                  size={11}
+                  color={tokens.colors.white}
+                  strokeWidth={2.2}
+                />
               </View>
             </TouchableOpacity>
             {isProfileImageUpdating && (
@@ -1448,6 +1458,28 @@ export default function ProfileScreenView({
               </View>
             </View>
           </View>
+
+          {!user.socialLogin && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>비밀번호</Text>
+              <TouchableOpacity
+                style={styles.passwordSettingRow}
+                onPress={() => {
+                  setEditModalVisible(false);
+                  setPasswordModalVisible(true);
+                }}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="비밀번호 변경"
+              >
+                <View style={styles.passwordSettingLeft}>
+                  <Lock size={14} color={tokens.colors.textSecondary} />
+                  <Text style={styles.passwordSettingText}>비밀번호 변경</Text>
+                </View>
+                <ChevronRight size={16} color={tokens.colors.textTertiary} />
+              </TouchableOpacity>
+            </View>
+          )}
         </ScrollView>
       </PopupModal>
 

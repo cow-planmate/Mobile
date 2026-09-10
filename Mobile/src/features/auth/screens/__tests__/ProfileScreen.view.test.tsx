@@ -115,7 +115,7 @@ describe('ProfileScreenView 탭', () => {
     const body = textOf(tree!);
     expect(body).toContain('0/0');
     expect(body).not.toContain('확인하기');
-    expect(body).toContain('내 일정');
+    expect(body).toContain('나의 일정');
     expect(body).toContain('초대받은 일정');
     act(() => tree!.unmount());
   });

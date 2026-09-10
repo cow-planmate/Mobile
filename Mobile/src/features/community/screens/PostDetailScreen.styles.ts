@@ -184,17 +184,19 @@ export const styles = StyleSheet.create({
 
   reactionRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: normalize(10),
+    gap: normalize(12),
     paddingBottom: normalize(20),
   },
   reactionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: normalize(6),
-    height: normalize(44),
-    paddingHorizontal: normalize(20),
+    gap: normalize(7),
+    minWidth: normalize(112),
+    height: normalize(42),
+    paddingHorizontal: normalize(16),
     borderRadius: tokens.radius.l,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -209,9 +211,10 @@ export const styles = StyleSheet.create({
     borderColor: COLORS.textSecondary,
   },
   reactionText: {
-    fontSize: normalize(13),
+    fontSize: normalize(12.5),
     fontFamily: tokens.fontFamily.semibold,
     color: COLORS.textSecondary,
+    letterSpacing: -0.2,
   },
   reactionTextActive: {
     color: COLORS.white,

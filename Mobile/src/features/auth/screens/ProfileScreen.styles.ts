@@ -778,9 +778,9 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.borderLight,
   },
   planRail: {
-    width: normalize(46),
+    width: normalize(52),
     alignItems: 'center',
-    paddingTop: normalize(1),
+    paddingTop: normalize(2),
   },
   planRailValue: {
     fontSize: normalize(17),
@@ -789,9 +789,10 @@ export const styles = StyleSheet.create({
     letterSpacing: -0.4,
   },
   planRailValuePast: {
-    color: COLORS.placeholder,
-    fontSize: normalize(15),
-    letterSpacing: -0.5,
+    color: tokens.colors.text,
+    fontSize: normalize(15.5),
+    fontFamily: FONTS.bold,
+    letterSpacing: -0.3,
   },
   planRailCaption: {
     fontSize: normalize(10),
@@ -799,9 +800,9 @@ export const styles = StyleSheet.create({
     marginTop: normalize(1),
   },
   planRailCaptionPast: {
-    fontSize: normalize(11),
-    fontFamily: FONTS.medium,
-    color: '#6B7280',
+    fontSize: normalize(10),
+    fontFamily: FONTS.regular,
+    color: tokens.colors.textTertiary,
     marginTop: normalize(1.5),
   },
   planBody: {
@@ -957,6 +958,12 @@ export const styles = StyleSheet.create({
     paddingVertical: normalize(14),
     justifyContent: 'center',
   },
+  accountItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: normalize(14),
+  },
   accountItemDivider: {
     height: 1,
     backgroundColor: '#F1F5F9',
@@ -970,5 +977,28 @@ export const styles = StyleSheet.create({
     fontSize: normalize(13.5),
     fontFamily: FONTS.medium,
     color: '#EF4444',
+  },
+
+  // ── 프로필 수정 팝업: 비밀번호 설정 행 ──
+  passwordSettingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: normalize(14),
+    paddingVertical: normalize(12),
+    borderRadius: tokens.radius.l,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+  },
+  passwordSettingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(8),
+  },
+  passwordSettingText: {
+    fontSize: normalize(13.5),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.text,
   },
 });

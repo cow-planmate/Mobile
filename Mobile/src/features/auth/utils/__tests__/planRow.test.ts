@@ -53,8 +53,8 @@ describe('getUpcomingRail', () => {
 describe('getPastRail', () => {
   it('지난 일정은 D+가 아니라 출발 날짜를 세운다', () => {
     expect(getPastRail('2026-08-15')).toEqual({
-      value: '2026',
-      caption: '8/15',
+      value: '8/15',
+      caption: '2026',
     });
   });
 
