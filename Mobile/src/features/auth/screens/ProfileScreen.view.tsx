@@ -36,6 +36,8 @@ import User from 'lucide-react-native/dist/esm/icons/user';
 import Camera from 'lucide-react-native/dist/esm/icons/camera';
 import Lock from 'lucide-react-native/dist/esm/icons/lock';
 import Calendar from 'lucide-react-native/dist/esm/icons/calendar';
+import CalendarPlus from 'lucide-react-native/dist/esm/icons/calendar-plus';
+import Plus from 'lucide-react-native/dist/esm/icons/plus';
 import Trash2 from 'lucide-react-native/dist/esm/icons/trash-2';
 import Check from 'lucide-react-native/dist/esm/icons/check';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
@@ -1062,21 +1064,25 @@ export default function ProfileScreenView({
                 <Text style={styles.sectionHeaderTitle}>여행 타임라인</Text>
                 {!isEditMode ? (
                   <TouchableOpacity
+                    style={styles.manageButton}
                     onPress={() => setIsEditMode(true)}
                     activeOpacity={0.7}
-                    hitSlop={10}
+                    hitSlop={8}
                     accessibilityRole="button"
                     accessibilityLabel="일정 관리"
                   >
-                    <Text style={styles.sectionHeaderAction}>일정 관리</Text>
+                    <Text style={styles.manageButtonText}>일정 관리</Text>
                   </TouchableOpacity>
                 ) : (
                   <TouchableOpacity
-                    style={styles.editActionCancel}
+                    style={styles.manageCancelButton}
                     onPress={handleCancelEditMode}
                     activeOpacity={0.8}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="일정 관리 취소"
                   >
-                    <Text style={styles.editActionCancelText}>취소</Text>
+                    <Text style={styles.manageCancelButtonText}>취소</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -1161,20 +1167,35 @@ export default function ProfileScreenView({
                   </View>
                 ) : (
                   <View style={styles.planEmpty}>
-                    <Text style={styles.noPlanText}>
-                      다음 여행을 계획해보세요.
+                    <CalendarPlus
+                      size={normalize(26)}
+                      color={tokens.colors.textTertiary}
+                      strokeWidth={1.8}
+                    />
+                    <Text style={styles.noPlanTitle}>
+                      예정된 여행 일정이 없어요
+                    </Text>
+                    <Text style={styles.noPlanDescription}>
+                      새로운 여행을 계획하고 일정을 만들어보세요.
                     </Text>
                     <TouchableOpacity
+                      style={styles.createPlanCardButton}
                       onPress={() =>
                         navigation.navigate('MainTabs', {
                           screen: INITIAL_TAB,
                           params: { screen: 'Home' },
                         })
                       }
-                      activeOpacity={0.8}
+                      activeOpacity={0.85}
                       accessibilityRole="button"
+                      accessibilityLabel="새로운 여행 계획하기"
                     >
-                      <Text style={styles.createPlanLink}>
+                      <Plus
+                        size={normalize(13)}
+                        color={tokens.colors.white}
+                        strokeWidth={2.4}
+                      />
+                      <Text style={styles.createPlanCardButtonText}>
                         새로운 여행 계획하기
                       </Text>
                     </TouchableOpacity>

@@ -6,6 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import Heart from 'lucide-react-native/dist/esm/icons/heart';
@@ -195,6 +196,7 @@ export function ProfileCalendarSection({ plans }: { plans: ProfilePlan[] }) {
                     <Pressable
                       key={date.toISOString()}
                       style={styles.dayCellPressable}
+                      hitSlop={4}
                       onPress={() => setSelectedDate(isSelected ? null : date)}
                       accessibilityRole="button"
                       accessibilityState={{ selected: isSelected }}
@@ -341,6 +343,7 @@ export function ProfileFootprintSection({ plans }: { plans: ProfilePlan[] }) {
 
 // 여행기 댓글은 커뮤니티 댓글과 별개 도메인이라 커뮤니티 활동이 아니라 이 섹션에서 다룬다.
 export function ProfileTravelLogSection() {
+  const navigation = useNavigation<any>();
   const [tab, setTab] = useState<'logs' | 'comments'>('logs');
   const { data, isLoading, isError } = useMyPosts('feed', 6);
   const {
@@ -369,6 +372,10 @@ export function ProfileTravelLogSection() {
           <EmptyState
             title="여행기에 남긴 댓글이 없어요"
             description="마음에 든 여행기에 한마디 남겨보세요."
+            actionLabel="여행기 피드 둘러보기"
+            onAction={() =>
+              navigation.navigate('MainTabs', { screen: 'FeedTab' })
+            }
             style={styles.innerEmpty}
           />
         );
@@ -394,6 +401,10 @@ export function ProfileTravelLogSection() {
         <EmptyState
           title="아직 작성한 여행기가 없습니다."
           description="완성한 일정을 피드에 공유해 보세요!"
+          actionLabel="여행기 피드 둘러보기"
+          onAction={() =>
+            navigation.navigate('MainTabs', { screen: 'FeedTab' })
+          }
           style={styles.innerEmpty}
         />
       );
@@ -420,6 +431,7 @@ export function ProfileTravelLogSection() {
 }
 
 export function ProfileCommunitySection() {
+  const navigation = useNavigation<any>();
   const [activityTab, setActivityTab] = useState<ActivityTab>('posts');
   const {
     data: postData,
@@ -467,7 +479,14 @@ export function ProfileCommunitySection() {
       const comments = commentData?.items ?? [];
       if (comments.length === 0) {
         return (
-          <EmptyState title="작성한 댓글이 없어요" style={styles.innerEmpty} />
+          <EmptyState
+            title="작성한 댓글이 없어요"
+            actionLabel="커뮤니티 둘러보기"
+            onAction={() =>
+              navigation.navigate('MainTabs', { screen: 'CommunityTab' })
+            }
+            style={styles.innerEmpty}
+          />
         );
       }
       return comments.map(comment => (
@@ -493,6 +512,10 @@ export function ProfileCommunitySection() {
             activityTab === 'posts'
               ? '작성한 글이 없습니다.'
               : '좋아요한 글이 없습니다.'
+          }
+          actionLabel="커뮤니티 둘러보기"
+          onAction={() =>
+            navigation.navigate('MainTabs', { screen: 'CommunityTab' })
           }
           style={styles.innerEmpty}
         />
@@ -589,14 +612,16 @@ const styles = StyleSheet.create({
   },
   dayCellPressable: {
     width: '14.2857%',
+    minHeight: normalize(38),
+    justifyContent: 'center',
   },
   dayCell: {
     alignItems: 'center',
-    paddingVertical: normalize(3),
+    paddingVertical: normalize(2),
   },
   dayNumber: {
-    width: normalize(24),
-    height: normalize(24),
+    width: normalize(28),
+    height: normalize(28),
     borderRadius: tokens.radius.round,
     alignItems: 'center',
     justifyContent: 'center',

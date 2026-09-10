@@ -2,10 +2,7 @@ import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 import { Text, TouchableOpacity } from 'react-native';
 import ThemeSelector from '../ThemeSelector';
-import {
-  getPreferredThemes,
-  PreferredThemeVO,
-} from '../../../api/themes';
+import { getPreferredThemes, PreferredThemeVO } from '../../../api/themes';
 
 jest.mock('../../../api/themes', () => ({
   getPreferredThemes: jest.fn(),
@@ -69,19 +66,16 @@ describe('ThemeSelector', () => {
       | ((value: { preferredThemes: PreferredThemeVO[] }) => void)
       | undefined;
     mockGetPreferredThemes.mockImplementationOnce(
-      () => new Promise(resolve => {
-        resolveThemes = resolve;
-      }),
+      () =>
+        new Promise(resolve => {
+          resolveThemes = resolve;
+        }),
     );
 
     let tree: renderer.ReactTestRenderer;
     await act(async () => {
       tree = renderer.create(
-        <ThemeSelector
-          visible
-          onClose={jest.fn()}
-          onComplete={jest.fn()}
-        />,
+        <ThemeSelector visible onClose={jest.fn()} onComplete={jest.fn()} />,
       );
     });
     const signal = mockGetPreferredThemes.mock.calls[0][0];

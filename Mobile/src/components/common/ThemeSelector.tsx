@@ -62,58 +62,66 @@ export default function ThemeSelector({
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<number>[]>([]);
 
-  const fetchThemes = useCallback(async (signal?: AbortSignal) => {
-    try {
-      setLoading(true);
-      const response = await getPreferredThemes(signal);
-      if (signal?.aborted) return;
-      const themes = response.preferredThemes;
+  const fetchThemes = useCallback(
+    async (signal?: AbortSignal) => {
+      try {
+        setLoading(true);
+        const response = await getPreferredThemes(signal);
+        if (signal?.aborted) return;
+        const themes = response.preferredThemes;
 
-      const categoryMap = new Map<
-        number,
-        { name: string; themes: PreferredThemeVO[] }
-      >();
+        const categoryMap = new Map<
+          number,
+          { name: string; themes: PreferredThemeVO[] }
+        >();
 
-      themes.forEach(theme => {
-        const catInfo = CATEGORY_MAP[theme.category] || { id: 99, name: '기타' };
-        const catId = catInfo.id;
-        if (!categoryMap.has(catId)) {
-          categoryMap.set(catId, {
-            name: catInfo.name,
-            themes: [],
-          });
-        }
-        categoryMap.get(catId)!.themes.push(theme);
-      });
+        themes.forEach(theme => {
+          const catInfo = CATEGORY_MAP[theme.category] || {
+            id: 99,
+            name: '기타',
+          };
+          const catId = catInfo.id;
+          if (!categoryMap.has(catId)) {
+            categoryMap.set(catId, {
+              name: catInfo.name,
+              themes: [],
+            });
+          }
+          categoryMap.get(catId)!.themes.push(theme);
+        });
 
-      const sortedKeys = Array.from(categoryMap.keys()).sort((a, b) => a - b);
-      const cats = sortedKeys.map(k => ({
-        id: k,
-        name: categoryMap.get(k)!.name,
-      }));
-      const grouped = sortedKeys.map(k => categoryMap.get(k)!.themes);
+        const sortedKeys = Array.from(categoryMap.keys()).sort((a, b) => a - b);
+        const cats = sortedKeys.map(k => ({
+          id: k,
+          name: categoryMap.get(k)!.name,
+        }));
+        const grouped = sortedKeys.map(k => categoryMap.get(k)!.themes);
 
-      setCategories(cats);
-      setThemesByCategory(grouped);
+        setCategories(cats);
+        setThemesByCategory(grouped);
 
-      const initSets = sortedKeys.map(catId => {
-        if (initialSelections && initialSelections[catId]) {
-          return new Set(initialSelections[catId].map(t => t.preferredThemeId));
-        }
-        return new Set<number>();
-      });
-      setSelectedIds(initSets);
-    } catch (error) {
-      if (signal?.aborted) return;
-      console.error('Failed to fetch themes:', error);
-      showAlert({
-        title: '오류',
-        message: '테마 목록을 불러오지 못했어요.',
-      });
-    } finally {
-      if (!signal?.aborted) setLoading(false);
-    }
-  }, [initialSelections, showAlert]);
+        const initSets = sortedKeys.map(catId => {
+          if (initialSelections && initialSelections[catId]) {
+            return new Set(
+              initialSelections[catId].map(t => t.preferredThemeId),
+            );
+          }
+          return new Set<number>();
+        });
+        setSelectedIds(initSets);
+      } catch (error) {
+        if (signal?.aborted) return;
+        console.error('Failed to fetch themes:', error);
+        showAlert({
+          title: '오류',
+          message: '테마 목록을 불러오지 못했어요.',
+        });
+      } finally {
+        if (!signal?.aborted) setLoading(false);
+      }
+    },
+    [initialSelections, showAlert],
+  );
 
   useEffect(() => {
     const controller = new AbortController();

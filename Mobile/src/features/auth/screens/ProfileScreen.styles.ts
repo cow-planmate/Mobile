@@ -722,6 +722,32 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     color: COLORS.primary,
   },
+  manageButton: {
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(4.5),
+    borderRadius: normalize(8),
+    backgroundColor: tokens.colors.surface,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderLight,
+  },
+  manageButtonText: {
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textSecondary,
+  },
+  manageCancelButton: {
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(4.5),
+    borderRadius: normalize(8),
+    backgroundColor: tokens.colors.primaryTint,
+    borderWidth: 1,
+    borderColor: tokens.colors.primary,
+  },
+  manageCancelButtonText: {
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.primary,
+  },
 
   // ── 마이페이지 재설계: 일정 행(R3) ──
   planRow: {
@@ -834,11 +860,42 @@ export const styles = StyleSheet.create({
     paddingLeft: normalize(2),
   },
   planEmpty: {
-    paddingHorizontal: normalize(16),
-    paddingVertical: normalize(30),
+    paddingHorizontal: normalize(20),
+    paddingVertical: normalize(32),
     alignItems: 'center',
+    justifyContent: 'center',
     borderBottomWidth: 1,
     borderBottomColor: COLORS.borderLight,
+    gap: normalize(6),
+  },
+  noPlanTitle: {
+    fontSize: normalize(14.5),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+    marginTop: normalize(4),
+  },
+  noPlanDescription: {
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textTertiary,
+    textAlign: 'center',
+    marginBottom: normalize(4),
+  },
+  createPlanCardButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: normalize(6),
+    backgroundColor: tokens.colors.primary,
+    paddingHorizontal: normalize(18),
+    paddingVertical: normalize(9.5),
+    borderRadius: normalize(10),
+    marginTop: normalize(4),
+  },
+  createPlanCardButtonText: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
   },
   // ---- 프로필 수정 팝업 ----
   editBody: {
