@@ -89,6 +89,7 @@ type ToolbarButtonVariant =
   | 'filledBlue';
 
 const ToolbarIconButton = ({
+  label,
   children,
   onPress,
   active = false,
@@ -98,6 +99,7 @@ const ToolbarIconButton = ({
   targetRef,
 }: {
   children: React.ReactNode;
+  label: string;
   onPress: () => void;
   active?: boolean;
   disabled?: boolean;
@@ -123,7 +125,9 @@ const ToolbarIconButton = ({
       active && styles.toolbarIconButtonActive,
       disabled && styles.toolbarIconButtonDisabled,
     ]}
-    accessibilityState={{ disabled: disabled }}
+    accessibilityRole="button"
+    accessibilityLabel={label}
+    accessibilityState={{ disabled }}
   >
     {children}
     {typeof badgeCount === 'number' && badgeCount > 0 && (
@@ -1906,6 +1910,7 @@ export default function ItineraryEditorScreenView({
 
           <ToolbarIconButton
             onPress={onOpenPlanInfo}
+            label="일정 정보"
             variant="info"
             targetRef={planInfoTarget}
           >
@@ -1913,6 +1918,7 @@ export default function ItineraryEditorScreenView({
           </ToolbarIconButton>
           <ToolbarIconButton
             onPress={onOpenChecklist}
+            label="체크리스트"
             variant="outlineDark"
             targetRef={checklistTarget}
           >
@@ -1923,6 +1929,7 @@ export default function ItineraryEditorScreenView({
         <View style={styles.toolbarRightGroup}>
           <ToolbarIconButton
             onPress={onOpenParticipants}
+            label="현재 접속자"
             badgeCount={participantsCount}
             variant="outlineBlue"
             targetRef={participantsTarget}
@@ -1931,6 +1938,7 @@ export default function ItineraryEditorScreenView({
           </ToolbarIconButton>
           <ToolbarIconButton
             onPress={onOpenMap}
+            label="여행 동선"
             variant="outlineDark"
             targetRef={mapTarget}
           >
@@ -1938,6 +1946,7 @@ export default function ItineraryEditorScreenView({
           </ToolbarIconButton>
           <ToolbarIconButton
             onPress={onOpenShare}
+            label="공유 및 초대"
             variant="filledGray"
             targetRef={inviteTarget}
           >
@@ -1945,11 +1954,12 @@ export default function ItineraryEditorScreenView({
           </ToolbarIconButton>
           <ToolbarIconButton
             onPress={onComplete}
+            label="완료"
             variant="filledBlue"
             active
             targetRef={completeTarget}
           >
-            <CheckIcon color={COLORS.white} size={18} />
+            <Text style={styles.toolbarActionText}>완료</Text>
           </ToolbarIconButton>
         </View>
       </View>

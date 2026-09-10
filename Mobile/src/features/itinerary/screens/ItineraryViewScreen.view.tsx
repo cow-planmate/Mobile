@@ -10,7 +10,6 @@ import {
 import MapOutlineIcon from 'lucide-react-native/dist/esm/icons/map';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
-import CheckIcon from 'lucide-react-native/dist/esm/icons/check';
 import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import Share2 from 'lucide-react-native/dist/esm/icons/share-2';
 import PlanMapModal from '../components/PlanMapModal';
@@ -37,6 +36,7 @@ type ToolbarButtonVariant =
   | 'filledBlue';
 
 const ToolbarIconButton = ({
+  label,
   children,
   onPress,
   active = false,
@@ -45,6 +45,7 @@ const ToolbarIconButton = ({
   variant = 'info',
 }: {
   children: React.ReactNode;
+  label: string;
   onPress: () => void;
   active?: boolean;
   disabled?: boolean;
@@ -67,7 +68,9 @@ const ToolbarIconButton = ({
       active && styles.toolbarIconButtonActive,
       disabled && styles.toolbarIconButtonDisabled,
     ]}
-    accessibilityState={{ disabled: disabled }}
+    accessibilityRole="button"
+    accessibilityLabel={label}
+    accessibilityState={{ disabled }}
   >
     {children}
     {typeof badgeCount === 'number' && badgeCount > 0 && (
@@ -176,31 +179,35 @@ export default function ItineraryViewScreenView({
         <View style={styles.toolbarRightGroup}>
           <ToolbarIconButton
             onPress={() => setMapVisible(!isMapVisible)}
+            label="여행 동선"
             variant="outlineDark"
           >
             <MapOutlineIcon color={COLORS.text} size={17} strokeWidth={2} />
           </ToolbarIconButton>
           <ToolbarIconButton
             onPress={() => setChecklistVisible(true)}
+            label="체크리스트"
             variant="outlineDark"
           >
             <ListChecks size={17} color={COLORS.text} strokeWidth={2} />
           </ToolbarIconButton>
           <ToolbarIconButton
             onPress={() => setShareModalVisible(true)}
+            label="공유 및 초대"
             variant="outlineDark"
           >
             <Share2 color={COLORS.text} size={17} />
           </ToolbarIconButton>
-          <ToolbarIconButton onPress={handleEdit} variant="filledGray">
+          <ToolbarIconButton label="일정 수정" onPress={handleEdit} variant="filledGray">
             <Pencil color={COLORS.text} size={17} />
           </ToolbarIconButton>
           <ToolbarIconButton
             onPress={handleConfirm}
+            label="내 일정으로"
             variant="filledBlue"
             active
           >
-            <CheckIcon color={COLORS.white} size={18} />
+            <Text style={styles.toolbarActionText}>내 일정으로</Text>
           </ToolbarIconButton>
         </View>
       </View>

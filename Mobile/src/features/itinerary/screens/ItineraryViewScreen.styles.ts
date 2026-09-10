@@ -112,12 +112,23 @@ export const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   toolbarIconButtonFilledBlue: {
+    width: 'auto',
+    minWidth: 44,
+    height: 'auto',
+    minHeight: 32,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
   toolbarIconButtonActive: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
+  },
+  toolbarActionText: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontFamily: FONTS.bold,
   },
   toolbarIconButtonDisabled: {
     opacity: 0.55,
