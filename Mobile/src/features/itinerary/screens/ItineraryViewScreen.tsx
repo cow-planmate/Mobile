@@ -24,7 +24,6 @@ import {
   SimpleWeatherInfo,
   fetchWeather,
 } from '../../../api/trips';
-import { useAlert } from '../../../contexts/AlertContext';
 import { useWebSocket } from '../../../contexts/WebSocketContext';
 import { usePlanOwnership } from '../../../hooks/usePlanOwnership';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
@@ -56,7 +55,6 @@ const EMPTY_DAYS: Day[] = [];
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryView'>;
 
 export default function ItineraryViewScreen({ route, navigation }: Props) {
-  const { showAlert } = useAlert();
   const queryClient = useQueryClient();
   const {
     days: initialDays = EMPTY_DAYS,
@@ -304,28 +302,12 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     }
   }, [selectedDayIndex]);
 
-  const handleConfirm = async () => {
-
-    showAlert({
-      title: '성공',
-      message: '일정을 저장했어요.',
-      type: 'success',
-      buttons: [
-        {
-          text: '확인',
-          onPress: () => {
-            navigation.reset({
-              index: 1,
-              routes: [
-                { name: 'MainTabs' },
-                {
-                  name: 'Profile',
-                  params: { scrollToItinerary: true },
-                },
-              ],
-            });
-          },
-        },
+  const handleConfirm = () => {
+    navigation.reset({
+      index: 1,
+      routes: [
+        { name: 'MainTabs' },
+        { name: 'Profile', params: { scrollToItinerary: true } },
       ],
     });
   };
