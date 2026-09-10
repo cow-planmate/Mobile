@@ -106,7 +106,7 @@ const ToolbarIconButton = ({
   badgeCount?: number;
   variant?: ToolbarButtonVariant;
   /** 첫 진입 안내가 이 버튼을 짚을 수 있게 다는 ref. */
-  targetRef?: (node: any) => void;
+  targetRef?: (node: unknown) => void;
 }) => (
   <TouchableOpacity
     ref={targetRef}

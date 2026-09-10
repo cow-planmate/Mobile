@@ -27,7 +27,9 @@ function FakeTarget({ id, top }: { id: CoachmarkTargetId; top: number }) {
   const attach = useCoachmarkTarget(id);
   useEffect(() => {
     attach({
-      measureInWindow: cb => cb(20, top, 60, 40),
+      measureInWindow: (
+        cb: (x: number, y: number, width: number, height: number) => void,
+      ) => cb(20, top, 60, 40),
     });
   }, [attach, top]);
   return null;

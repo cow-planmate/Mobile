@@ -76,11 +76,21 @@ export function useCoachmarkTarget(
 ) {
   const registry = useContext(CoachmarkContext);
 
+  // View·ScrollView·Animated.View가 저마다 다른 ref 타입을 요구한다. unknown으로
+  // 받아 잴 수 있는 것인지 직접 확인해야 어디에나 그대로 매달 수 있다.
   return useCallback(
-    (node: MeasurableNode | null) => {
+    (node: unknown) => {
       if (!registry) return;
-      registry.register(id, enabled ? node : null);
+      registry.register(id, enabled && isMeasurable(node) ? node : null);
     },
     [registry, id, enabled],
+  );
+}
+
+function isMeasurable(node: unknown): node is MeasurableNode {
+  return (
+    typeof node === 'object' &&
+    node !== null &&
+    typeof (node as MeasurableNode).measureInWindow === 'function'
   );
 }
