@@ -457,6 +457,7 @@ export default function ProfileScreenView({
     '관광지' | '숙소' | '식당' | undefined
   >(undefined);
   const [tempNickname, setTempNickname] = useState('');
+  const savedProfile = React.useRef({ nickname: '', birthdate: '', gender: '' });
   const [tempBirthdate, setTempBirthdate] = useState('');
   const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
   const [tempGender, setTempGender] = useState('');
@@ -824,10 +825,31 @@ export default function ProfileScreenView({
   const preferredThemes = user.preferredThemes || [];
   const tasteGroups = groupPreferredThemes(preferredThemes);
   const handleOpenEditModal = () => {
+    savedProfile.current = { nickname: user.name, birthdate: user.birthdate || '', gender: user.gender };
     setTempNickname(user.name);
     setTempBirthdate(user.birthdate || '');
     setTempGender(user.gender);
     setEditModalVisible(true);
+  };
+
+  const handleCloseEditModal = () => {
+    if (profileSaveLock.isSubmitting) return;
+    const saved = savedProfile.current;
+    const changed = tempNickname.trim() !== saved.nickname ||
+      tempBirthdate !== saved.birthdate || tempGender !== saved.gender;
+    if (!changed) {
+      setEditModalVisible(false);
+      return;
+    }
+    showAlert({
+      title: '변경사항 취소',
+      message: '저장하지 않은 프로필 변경사항이 있어요. 닫을까요?',
+      type: 'confirm',
+      buttons: [
+        { text: '계속 수정', style: 'cancel' },
+        { text: '닫기', style: 'destructive', onPress: () => setEditModalVisible(false) },
+      ],
+    });
   };
 
   const handleCheckNickname = async () => {
@@ -861,6 +883,7 @@ export default function ProfileScreenView({
 
   const handleSaveProfile = () =>
     profileSaveLock.runExclusive(async () => {
+      const savedFields: string[] = [];
       try {
         const nickname = tempNickname.trim();
         const nicknameError = getNicknameLengthError(nickname);
@@ -878,21 +901,23 @@ export default function ProfileScreenView({
           return;
         }
 
-        let hasChange = false;
-        if (nickname !== user.name) {
+        if (nickname !== savedProfile.current.nickname) {
           await handleUpdateNickname(nickname);
-          hasChange = true;
+          savedProfile.current.nickname = nickname;
+          savedFields.push('닉네임');
         }
-        if (tempBirthdate && tempBirthdate !== user.birthdate) {
+        if (tempBirthdate && tempBirthdate !== savedProfile.current.birthdate) {
           await handleUpdateBirthdate(tempBirthdate);
-          hasChange = true;
+          savedProfile.current.birthdate = tempBirthdate;
+          savedFields.push('생년월일');
         }
-        if (tempGender !== user.gender) {
+        if (tempGender !== savedProfile.current.gender) {
           await handleUpdateGender(tempGender);
-          hasChange = true;
+          savedProfile.current.gender = tempGender;
+          savedFields.push('성별');
         }
 
-        if (hasChange) {
+        if (savedFields.length > 0) {
           Toast.show({
             type: 'success',
             text1: '프로필 정보를 저장했어요.',
@@ -901,7 +926,13 @@ export default function ProfileScreenView({
         }
         setEditModalVisible(false);
       } catch (err) {
-        if (__DEV__) console.log('Failed to save profile modifications', err);
+        if (savedFields.length > 0) {
+          showAlert({
+            title: '일부 정보만 저장됐어요',
+            message: `${savedFields.join(', ')} 항목은 저장됐어요. 나머지 변경사항은 유지했으니 다시 저장해 주세요.`,
+            type: 'warning',
+          });
+        }
       }
     });
 
@@ -1256,7 +1287,7 @@ export default function ProfileScreenView({
       <PopupModal
         visible={editModalVisible}
         title="프로필 수정"
-        onClose={() => setEditModalVisible(false)}
+        onClose={handleCloseEditModal}
         footer={
           <View style={styles.editFooterWrap}>
             <TouchableOpacity
@@ -1336,6 +1367,7 @@ export default function ProfileScreenView({
               <TextInput
                 style={[styles.textInput, styles.flex1]}
                 value={tempNickname}
+                editable={!profileSaveLock.isSubmitting}
                 onChangeText={setTempNickname}
                 placeholder="닉네임을 입력하세요"
                 placeholderTextColor={tokens.colors.textTertiary}
@@ -1370,6 +1402,7 @@ export default function ProfileScreenView({
               <TouchableOpacity
                 style={[styles.textInput, styles.pickerField]}
                 onPress={() => setBirthdatePickerOpen(true)}
+                disabled={profileSaveLock.isSubmitting}
                 activeOpacity={0.7}
                 accessibilityRole="button"
               >
@@ -1397,6 +1430,7 @@ export default function ProfileScreenView({
                       tempGender === option && styles.genderOptionActive,
                     ]}
                     onPress={() => setTempGender(option)}
+                    disabled={profileSaveLock.isSubmitting}
                     activeOpacity={0.8}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: tempGender === option }}

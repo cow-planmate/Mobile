@@ -3,8 +3,10 @@ import renderer, { act } from 'react-test-renderer';
 import { TextInput, TouchableOpacity } from 'react-native';
 import ProfileScreenView from '../ProfileScreen.view';
 import { styles } from '../ProfileScreen.styles';
+import PopupModal from '../../../../components/common/PopupModal';
 
 const mockSetQueryData = jest.fn();
+const mockShowAlert = jest.fn();
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
@@ -22,7 +24,7 @@ jest.mock('@tanstack/react-query', () => ({
 }));
 
 jest.mock('../../../../contexts/AlertContext', () => ({
-  useAlert: () => ({ showAlert: jest.fn() }),
+  useAlert: () => ({ showAlert: mockShowAlert }),
 }));
 
 jest.mock('../../../../components/common', () => ({
@@ -148,6 +150,48 @@ describe('ProfileScreenView 탭', () => {
 });
 
 describe('ProfileScreenView profile save', () => {
+  it('asks before discarding edits but allows closing restored values', () => {
+    mockShowAlert.mockClear();
+    let tree: renderer.ReactTestRenderer;
+    act(() => { tree = renderer.create(<ProfileScreenView {...(BASE_PROPS as any)} />); });
+    act(() => tree!.root.findAllByType(TouchableOpacity).find(node => node.props.style === styles.editButton)!.props.onPress());
+    const nickname = () => tree!.root.findAllByType(TextInput).find(node => node.props.maxLength !== undefined)!;
+    const modal = () => tree!.root.findAllByType(PopupModal).find(node => node.props.visible)!;
+    act(() => nickname().props.onChangeText('Trip'));
+    act(() => modal().props.onClose());
+    expect(mockShowAlert).toHaveBeenCalledWith(expect.objectContaining({ title: '변경사항 취소' }));
+    expect(modal()).toBeDefined();
+    mockShowAlert.mockClear();
+    act(() => nickname().props.onChangeText('Mate'));
+    act(() => modal().props.onClose());
+    expect(mockShowAlert).not.toHaveBeenCalled();
+    expect(modal()).toBeUndefined();
+    act(() => tree!.unmount());
+  });
+
+  it('keeps unsaved fields after a partial save and retries only those fields', async () => {
+    mockShowAlert.mockClear();
+    const handleUpdateNickname = jest.fn().mockResolvedValue(undefined);
+    const handleUpdateGender = jest.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValue(undefined);
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(<ProfileScreenView {...(BASE_PROPS as any)}
+        handleUpdateNickname={handleUpdateNickname} handleUpdateGender={handleUpdateGender} />);
+    });
+    act(() => tree!.root.findAllByType(TouchableOpacity).find(node => node.props.style === styles.editButton)!.props.onPress());
+    act(() => tree!.root.findAllByType(TextInput).find(node => node.props.maxLength !== undefined)!.props.onChangeText('Trip'));
+    act(() => tree!.root.findAllByType(TouchableOpacity).filter(node => node.props.accessibilityRole === 'radio')[1].props.onPress());
+    const save = () => tree!.root.findAllByType(TouchableOpacity).find(node => node.props.style === styles.saveButton)!.props.onPress();
+    await act(async () => { await save(); });
+    expect(mockShowAlert).toHaveBeenCalledWith(expect.objectContaining({
+      title: '일부 정보만 저장됐어요', message: expect.stringContaining('닉네임'),
+    }));
+    await act(async () => { await save(); });
+    expect(handleUpdateNickname).toHaveBeenCalledTimes(1);
+    expect(handleUpdateGender).toHaveBeenCalledTimes(2);
+    act(() => tree!.unmount());
+  });
+
   it('submits profile changes only once for same-render presses', async () => {
     let resolveUpdate: (() => void) | undefined;
     const pendingUpdate = new Promise<void>(resolve => {
