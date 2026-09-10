@@ -261,6 +261,9 @@ export default function CommunityScreenView({
         <EmptyState
           title="게시글을 불러오지 못했습니다"
           description="아래로 당겨 다시 시도해 주세요."
+          loading={isRefreshing}
+          actionLabel={isRefreshing ? undefined : '다시 시도'}
+          onAction={onRefresh}
           style={styles.listStateBox}
         />
       );
@@ -272,7 +275,7 @@ export default function CommunityScreenView({
         style={styles.listStateBox}
       />
     );
-  }, [isLoading, isError, searchQuery]);
+  }, [isLoading, isError, searchQuery, isRefreshing, onRefresh]);
 
   return (
     <View style={styles.container}>

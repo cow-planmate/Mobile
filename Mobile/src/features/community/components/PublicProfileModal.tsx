@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import Lock from 'lucide-react-native/dist/esm/icons/lock';
 import { normalize } from '../../../utils/normalize';
-import { parseBackendError } from '../../../utils/errorHandler';
+import { parseBackendError, getResourceLoadError } from '../../../utils/errorHandler';
 import { fetchPublicProfile } from '../../../api/user';
 import PopupModal from '../../../components/common/PopupModal';
 import UserAvatar from '../../../components/common/UserAvatar';
@@ -37,6 +37,7 @@ export default function PublicProfileModal({
   const isPrivate =
     query.isError && parseBackendError(query.error).code === PROFILE_PRIVATE_CODE;
   const profile = query.data;
+  const failure = getResourceLoadError(query.error, '프로필');
 
   return (
     <PopupModal
@@ -63,8 +64,18 @@ export default function PublicProfileModal({
         </View>
       ) : query.isError || !profile ? (
         <View style={styles.stateBox}>
-          <Text style={styles.stateTitle}>불러오지 못했어요</Text>
-          <Text style={styles.stateText}>잠시 후 다시 시도해주세요.</Text>
+          <Text style={styles.stateText}>{failure.message}</Text>
+          {failure.canRetry && !!userId && (
+            <TouchableOpacity
+              onPress={() => query.refetch()}
+              disabled={query.isFetching}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: query.isFetching }}
+              style={styles.retryButton}
+            >
+              <Text style={styles.retryText}>{query.isFetching ? '불러오는 중…' : '다시 시도'}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <View style={styles.body}>
@@ -108,6 +119,15 @@ export default function PublicProfileModal({
 }
 
 const styles = StyleSheet.create({
+  retryButton: {
+    minHeight: 48,
+    justifyContent: 'center',
+    paddingHorizontal: normalize(16),
+  },
+  retryText: {
+    color: tokens.colors.primary,
+    fontFamily: tokens.fontFamily.semibold,
+  },
   stateBox: {
     alignItems: 'center',
     justifyContent: 'center',

@@ -18,7 +18,7 @@ import ThumbsDown from 'lucide-react-native/dist/esm/icons/thumbs-down';
 import ThumbsUp from 'lucide-react-native/dist/esm/icons/thumbs-up';
 import Trash2 from 'lucide-react-native/dist/esm/icons/trash-2';
 import { normalize } from '../../../utils/normalize';
-import { getBackendErrorMessage } from '../../../utils/errorHandler';
+import { getBackendErrorMessage, getResourceLoadError } from '../../../utils/errorHandler';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CommunityStackParamList } from '../../../navigation/types';
@@ -54,7 +54,7 @@ export default function PostDetailScreen() {
   const user = useAuthStore(state => state.user);
   const isLoggedIn = !!user;
 
-  const { data: post, isLoading, isError } = usePost(postId);
+  const { data: post, isLoading, isError, error, refetch, isFetching } = usePost(postId);
   const react = useReactToPost(postId ?? '');
   const updateAnswered = useUpdateAnswered(postId ?? '');
   const deletePost = useDeletePost();
@@ -163,11 +163,24 @@ export default function PostDetailScreen() {
   }
 
   if (isError || !post) {
+    const failure = isError
+      ? getResourceLoadError(error, '게시글')
+      : { message: '게시글을 찾을 수 없어요.', canRetry: false };
     return (
       <View style={[styles.container, screenInsets]}>
         {renderTopBar()}
         <View style={styles.stateBox}>
-          <Text style={styles.stateText}>게시글을 찾을 수 없습니다.</Text>
+          <Text style={styles.stateText}>{failure.message}</Text>
+          {failure.canRetry && (
+            <TouchableOpacity
+              onPress={() => refetch()}
+              disabled={isFetching}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isFetching }}
+            >
+              <Text style={styles.stateLink}>{isFetching ? '불러오는 중…' : '다시 시도'}</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.stateLink}>목록으로 돌아가기</Text>
           </TouchableOpacity>

@@ -504,6 +504,7 @@ export default function TravelFeedScreen() {
             onItemPress={handleFeedItemPress}
             viewMode={viewMode}
             isLoading={feedQuery.isLoading}
+            isError={feedQuery.isError}
             isLoadingMore={feedQuery.isFetchingNextPage}
             isRefreshing={
               feedQuery.isRefetching && !feedQuery.isFetchingNextPage

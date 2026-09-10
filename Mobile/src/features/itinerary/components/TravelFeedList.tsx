@@ -45,6 +45,7 @@ interface TravelFeedListProps {
   viewMode?: 'list' | 'grid';
 
   isLoading?: boolean;
+  isError?: boolean;
 
   isLoadingMore?: boolean;
   isRefreshing?: boolean;
@@ -223,6 +224,7 @@ export default function TravelFeedList({
   onItemPress,
   viewMode = 'list',
   isLoading = false,
+  isError = false,
   isLoadingMore = false,
   isRefreshing = false,
   isFiltered = false,
@@ -261,6 +263,17 @@ export default function TravelFeedList({
     if (isLoading) {
       return <EmptyState title="여행기를 불러오는 중…" loading />;
     }
+    if (isError) {
+      return (
+        <EmptyState
+          title="여행기를 불러오지 못했어요"
+          description="연결 상태를 확인하고 다시 시도해 주세요."
+          loading={isRefreshing}
+          actionLabel={isRefreshing ? undefined : '다시 시도'}
+          onAction={onRefresh}
+        />
+      );
+    }
     return (
       <EmptyState
         title={
@@ -273,7 +286,7 @@ export default function TravelFeedList({
         }
       />
     );
-  }, [isLoading, isFiltered]);
+  }, [isLoading, isFiltered, isError, isRefreshing, onRefresh]);
 
   return (
     <View style={styles.container}>

@@ -111,6 +111,17 @@ function flattenStyle(style: any): any {
 }
 
 describe('TravelFeedList Component', () => {
+  it('조회 실패는 빈 목록과 구분하고 다시 시도할 수 있다', () => {
+    const onRefresh = jest.fn();
+    let tree: renderer.ReactTestRenderer;
+    act(() => { tree = renderer.create(<TravelFeedList items={[]} isError onRefresh={onRefresh} />); });
+    expect(JSON.stringify(tree!.toJSON())).toContain('여행기를 불러오지 못했어요');
+    expect(JSON.stringify(tree!.toJSON())).not.toContain('등록된 여행기가 없어요');
+    const button = tree!.root.findByType(require('react-native').TouchableOpacity);
+    act(() => button.props.onPress());
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+    act(() => tree!.unmount());
+  });
   beforeEach(() => {
     jest.useFakeTimers();
   });

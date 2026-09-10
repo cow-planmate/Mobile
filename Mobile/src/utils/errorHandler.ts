@@ -48,6 +48,24 @@ export function getBackendErrorMessage(error: unknown): string {
   return parsed.message;
 }
 
+export function getResourceLoadError(error: unknown, resource: string) {
+  const { code } = parseBackendError(error);
+  const status = (error as AxiosError | undefined)?.response?.status;
+  if (status === 404 || code === 'COMMON_004' || code === 'USER_001') {
+    return { message: `${resource} 정보를 찾을 수 없어요.`, canRetry: false };
+  }
+  if (status === 401 || code === 'COMMON_002') {
+    return { message: '로그인 후 다시 이용해 주세요.', canRetry: false };
+  }
+  if (status === 403 || code === 'COMMON_003' || code === 'USER_002') {
+    return { message: `${resource}에 접근할 수 없어요.`, canRetry: false };
+  }
+  return {
+    message: `${resource} 정보를 불러오지 못했어요. 연결 상태를 확인하고 다시 시도해 주세요.`,
+    canRetry: true,
+  };
+}
+
 export function getDisplayErrorMessage(
   error: unknown,
   fallback: string,

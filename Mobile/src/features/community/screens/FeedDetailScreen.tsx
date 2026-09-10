@@ -19,7 +19,7 @@ import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import ThumbsDown from 'lucide-react-native/dist/esm/icons/thumbs-down';
 import ThumbsUp from 'lucide-react-native/dist/esm/icons/thumbs-up';
 import { normalize } from '../../../utils/normalize';
-import { getBackendErrorMessage } from '../../../utils/errorHandler';
+import { getBackendErrorMessage, getResourceLoadError } from '../../../utils/errorHandler';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CalendarModal } from '../../../components/common';
@@ -68,7 +68,7 @@ export default function FeedDetailScreen() {
   const [isScheduleOpen, setScheduleOpen] = useState(true);
   const [isDateModalVisible, setDateModalVisible] = useState(false);
 
-  const { data: post, isLoading, isError } = usePost(postId, true);
+  const { data: post, isLoading, isError, error, refetch, isFetching } = usePost(postId, true);
   const react = useReactToPost(postId ?? '', true);
   const fork = useForkItinerary(postId ?? '');
   const isAuthor = !!post && user?.userId === post.userId;
@@ -197,13 +197,26 @@ export default function FeedDetailScreen() {
   }
 
   if (isError || !post) {
+    const failure = isError
+      ? getResourceLoadError(error, '여행기')
+      : { message: '여행기를 찾을 수 없어요.', canRetry: false };
     return (
       <View style={[styles.container, screenInsets]}>
         {renderTopBar()}
         <View style={styles.stateBox}>
           <Text style={styles.stateText}>
-            여행기를 찾을 수 없어요.{'\n'}삭제됐거나 접근할 수 없는 글이에요.
+            {failure.message}
           </Text>
+          {failure.canRetry && (
+            <TouchableOpacity
+              onPress={() => refetch()}
+              disabled={isFetching}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isFetching }}
+            >
+              <Text style={styles.stateLink}>{isFetching ? '불러오는 중…' : '다시 시도'}</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.stateLink}>목록으로 돌아가기</Text>
           </TouchableOpacity>

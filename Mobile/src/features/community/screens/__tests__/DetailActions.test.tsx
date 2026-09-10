@@ -12,6 +12,28 @@ const mockReactRequest = jest.fn();
 const mockUpdateAnsweredRequest = jest.fn();
 const mockUsePosts = jest.fn();
 
+describe.each([FeedDetailScreen, PostDetailScreen])('detail load recovery', Screen => {
+  it.each([503, 403, 404])('distinguishes HTTP %s and offers retry only for failures', status => {
+    const refetch = jest.fn();
+    mockUsePost.mockReturnValue({
+      isLoading: false, isError: true, error: { response: { status } }, refetch,
+    });
+    mockUsePosts.mockReturnValue({ data: undefined });
+    let tree: renderer.ReactTestRenderer;
+    act(() => { tree = renderer.create(<Screen />); });
+    const retry = tree!.root.findAllByType(Text).find(node => node.props.children === '다시 시도');
+    expect(!!retry).toBe(status === 503);
+    if (retry) {
+      const button = tree!.root.findAllByType(TouchableOpacity).find(node =>
+        node.findAllByType(Text).some(text => text.props.children === '다시 시도'),
+      )!;
+      act(() => button.props.onPress());
+      expect(refetch).toHaveBeenCalledTimes(1);
+    }
+    act(() => tree!.unmount());
+  });
+});
+
 const mutation = (request = jest.fn()) => ({
   isPending: false,
   mutate: request,
@@ -324,7 +346,7 @@ describe('웹과 맞춘 문구', () => {
   });
 
   it('글을 못 찾으면 한 줄로만 말한다', () => {
-    mockUsePost.mockReturnValue({ data: null, isLoading: false, isError: true });
+    mockUsePost.mockReturnValue({ data: null, isLoading: false, isError: true, error: { response: { status: 404 } } });
 
     let tree: renderer.ReactTestRenderer;
     act(() => {
@@ -332,7 +354,7 @@ describe('웹과 맞춘 문구', () => {
     });
 
     const texts = textsOf(tree!);
-    expect(texts).toContain('게시글을 찾을 수 없습니다.');
+    expect(texts).toContain('게시글 정보를 찾을 수 없어요.');
     expect(texts).toContain('목록으로 돌아가기');
     expect(texts.some(t => t.includes('삭제됐거나'))).toBe(false);
 
