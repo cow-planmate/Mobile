@@ -1,9 +1,23 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
-import { Text } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 import RouteSegmentSheet from '../RouteSegmentSheet';
 
 describe('RouteSegmentSheet', () => {
+  it('부분 실패를 표시하고 재시도를 연결한다', () => {
+    const onRetry = jest.fn();
+    let tree: renderer.ReactTestRenderer;
+    act(() => { tree = renderer.create(
+      <RouteSegmentSheet visible onClose={jest.fn()} placeNames={['A', 'B']}
+        data={{ driving: null, foot: null, transit: [null], failures: { driving: true, foot: false, transit: [true] } }}
+        isLoading={false} isError={false} activeLaneKey={null} onToggleLane={jest.fn()} onRetry={onRetry} />,
+    ); });
+    expect(JSON.stringify(tree!.toJSON())).toContain('조회 실패');
+    const button = tree!.root.findAllByType(TouchableOpacity).find(node => node.props.onPress === onRetry)!;
+    act(() => button.props.onPress());
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    act(() => tree!.unmount());
+  });
   it('방문 순서와 구간별 시간·거리를 표시하고 누락된 경로도 렌더링한다', () => {
     let tree: renderer.ReactTestRenderer;
     act(() => {

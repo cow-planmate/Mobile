@@ -22,6 +22,7 @@ export interface SegmentInfo {
   foot: RouteTableResponse | null;
 
   transit: (TransitRouteResponse | null)[];
+  failures?: { driving: boolean; foot: boolean; transit: boolean[] };
 }
 
 export function useDirections(points: RoutePoint[]) {
@@ -64,8 +65,17 @@ export function useSegmentInfo(points: RoutePoint[], enabled: boolean) {
       );
 
       const [drivingResult, footResult, ...transitResults] = results;
+      if (results.every(result => result.status === 'rejected')) {
+        throw (results[0] as PromiseRejectedResult).reason;
+      }
+      const hasFailure = results.some(result => result.status === 'rejected');
 
       return {
+        failures: hasFailure ? {
+          driving: drivingResult.status === 'rejected',
+          foot: footResult.status === 'rejected',
+          transit: transitResults.map(result => result.status === 'rejected'),
+        } : undefined,
         driving:
           drivingResult.status === 'fulfilled'
             ? (drivingResult.value as RouteTableResponse)
@@ -82,7 +92,8 @@ export function useSegmentInfo(points: RoutePoint[], enabled: boolean) {
       };
     },
     enabled: enabled && points.length >= 2,
-    staleTime: 1000 * 60 * 30,
+    staleTime: query => query.state.data?.failures || query.state.data?.transit.some(route => route && !route.available)
+      ? 0 : 1000 * 60 * 30,
     gcTime: 1000 * 60 * 60,
     retry: false,
   });

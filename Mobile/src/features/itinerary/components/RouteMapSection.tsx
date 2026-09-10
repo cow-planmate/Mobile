@@ -207,6 +207,7 @@ export default function RouteMapSection({
         data={segmentQuery.data}
         isLoading={segmentQuery.isFetching}
         isError={segmentQuery.isError}
+        onRetry={() => segmentQuery.refetch()}
         activeLaneKey={activeLane?.key ?? null}
         onToggleLane={handleToggleLane}
       />

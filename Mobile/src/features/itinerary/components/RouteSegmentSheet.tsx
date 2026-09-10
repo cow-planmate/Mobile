@@ -73,11 +73,13 @@ const ModeRow = ({
   label,
   value,
   isLoading,
+  failed = false,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string | null;
   isLoading: boolean;
+  failed?: boolean;
 }) => (
   <View style={styles.modeRow}>
     {icon}
@@ -86,7 +88,7 @@ const ModeRow = ({
       style={[styles.modeValue, !value && styles.modeValueMuted]}
       numberOfLines={1}
     >
-      {isLoading ? '불러오는 중…' : value ?? '정보 없음'}
+      {isLoading ? '불러오는 중…' : failed ? '조회 실패' : value ?? '정보 없음'}
     </Text>
   </View>
 );
@@ -275,12 +277,14 @@ const TransitRouteCard = ({
 const TransitInfo = ({
   transit,
   isLoading,
+  failed,
   segmentIndex,
   activeLaneKey,
   onToggleLane,
 }: {
   transit: SegmentInfo['transit'][number];
   isLoading: boolean;
+  failed?: boolean;
   segmentIndex: number;
   activeLaneKey: string | null;
   onToggleLane: (mapObj: string, key: string) => void;
@@ -314,6 +318,7 @@ const TransitInfo = ({
         icon={<Bus size={normalize(14)} color={COLORS.primary} />}
         label="대중교통"
         isLoading={isLoading}
+        failed={failed}
         value={
           available && best
             ? joinParts(
@@ -396,6 +401,7 @@ export interface RouteSegmentSheetProps {
   data?: SegmentInfo;
   isLoading: boolean;
   isError: boolean;
+  onRetry?: () => void;
 
   activeLaneKey: string | null;
   onToggleLane: (mapObj: string, key: string) => void;
@@ -408,6 +414,7 @@ export default function RouteSegmentSheet({
   data,
   isLoading,
   isError,
+  onRetry,
   activeLaneKey,
   onToggleLane,
 }: RouteSegmentSheetProps) {
@@ -421,6 +428,17 @@ export default function RouteSegmentSheet({
       title="구간별 이동"
       onClose={onClose}
       maxHeightRatio={0.8}
+      footer={(isError || data?.failures || data?.transit.some(route => route && !route.available)) && onRetry ? (
+        <TouchableOpacity
+          onPress={onRetry}
+          disabled={isLoading}
+          style={styles.retryButton}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isLoading }}
+        >
+          <Text style={styles.retryText}>{isLoading ? '불러오는 중…' : '다시 시도'}</Text>
+        </TouchableOpacity>
+      ) : undefined}
     >
       {isError ? (
         <View style={styles.stateBox}>
@@ -448,6 +466,9 @@ export default function RouteSegmentSheet({
           <Text style={styles.summary}>
             {placeNames.length}곳 · {segmentCount}구간
           </Text>
+          {data?.failures && (
+            <Text style={styles.partialError}>일부 이동 정보를 불러오지 못했어요. 다시 시도해 주세요.</Text>
+          )}
           {Array.from({ length: segmentCount }).map((_, i) => (
             <View key={i} style={styles.segment}>
               <View style={styles.timelineRail}>
@@ -467,6 +488,7 @@ export default function RouteSegmentSheet({
                   <ModeRow
                     icon={<Car size={normalize(14)} color={COLORS.primary} />}
                     label="자동차"
+                    failed={data?.failures?.driving}
                     isLoading={showRowLoading}
                     value={joinParts(
                       formatSeconds(data?.driving?.durations?.[i]?.[i + 1]),
@@ -478,6 +500,7 @@ export default function RouteSegmentSheet({
                       <Footprints size={normalize(14)} color={COLORS.primary} />
                     }
                     label="도보"
+                    failed={data?.failures?.foot}
                     isLoading={showRowLoading}
                     value={joinParts(
                       formatSeconds(data?.foot?.durations?.[i]?.[i + 1]),
@@ -485,6 +508,7 @@ export default function RouteSegmentSheet({
                     )}
                   />
                   <TransitInfo
+                    failed={data?.failures?.transit[i]}
                     transit={data?.transit?.[i] ?? null}
                     isLoading={showRowLoading}
                     segmentIndex={i}

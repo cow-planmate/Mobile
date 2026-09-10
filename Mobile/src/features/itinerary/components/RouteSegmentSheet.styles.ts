@@ -5,6 +5,19 @@ import { normalize } from '../../../utils/normalize';
 export const COLORS = tokens.colors;
 
 export const styles = StyleSheet.create({
+  retryButton: {
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: tokens.radius.l,
+    backgroundColor: COLORS.primary,
+  },
+  retryText: { color: COLORS.white, fontFamily: tokens.fontFamily.semibold },
+  partialError: {
+    color: COLORS.textSecondary,
+    marginBottom: normalize(16),
+    fontSize: normalize(13),
+  },
   // 껍데기의 몸통이 줄어들 때 같이 줄어야 목록이 잘리지 않고 굴러간다.
   scrollArea: {
     flexShrink: 1,
