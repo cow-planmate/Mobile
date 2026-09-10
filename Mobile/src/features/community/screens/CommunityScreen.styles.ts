@@ -73,7 +73,7 @@ export const styles = StyleSheet.create({
   hotHeadSub: {
     fontSize: normalize(11.5),
     fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textSecondary,
   },
   hotStrip: {
     paddingHorizontal: normalize(16),

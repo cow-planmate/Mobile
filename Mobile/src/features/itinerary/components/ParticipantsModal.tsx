@@ -31,7 +31,7 @@ export default function ParticipantsModal({
   return (
     <PopupModal
       visible={visible}
-      title={`참여자 ${users.length > 0 ? users.length : ''}`.trim()}
+      title={`현재 접속자 ${users.length}명`}
       onClose={onClose}
       doneLabel="확인"
     >
