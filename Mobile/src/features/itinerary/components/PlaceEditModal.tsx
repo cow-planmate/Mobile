@@ -53,6 +53,25 @@ export default function PlaceEditModal({
     }
   }, [visible, place]);
 
+  const handleClose = () => {
+    const changed = memo !== (place?.memo || '') ||
+      dateToTime(startTime) !== dateToTime(timeToDate(place?.startTime || '09:00')) ||
+      dateToTime(endTime) !== dateToTime(timeToDate(place?.endTime || '10:00'));
+    if (!changed) {
+      onClose();
+      return;
+    }
+    showAlert({
+      title: '변경사항 취소',
+      message: '수정한 시간과 메모가 저장되지 않았어요. 닫을까요?',
+      type: 'confirm',
+      buttons: [
+        { text: '계속 수정', style: 'cancel' },
+        { text: '닫기', style: 'destructive', onPress: onClose },
+      ],
+    });
+  };
+
   const handleSave = () => {
     const formatMinutes = (minutes: number) =>
       `${Math.floor(minutes / 60)
@@ -61,6 +80,8 @@ export default function PlaceEditModal({
 
     let startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
     let endMinutes = endTime.getHours() * 60 + endTime.getMinutes();
+    const requestedStart = startMinutes;
+    const requestedEnd = endMinutes;
 
     // 시간대를 하루 범위 밖으로 잡으면 타임라인 그리드 밖으로 밀려나 화면에서
     // 사라지므로, 저장 전에 그 날의 시작·종료 범위 안으로 당겨온다. 두 조건을
@@ -90,13 +111,28 @@ export default function PlaceEditModal({
       return;
     }
 
-    onSave({
-      ...place,
-      memo,
-      startTime: formatMinutes(startMinutes),
-      endTime: formatMinutes(endMinutes),
-    });
-    onClose();
+    const save = () => {
+      onSave({
+        ...place,
+        memo,
+        startTime: formatMinutes(startMinutes),
+        endTime: formatMinutes(endMinutes),
+      });
+      onClose();
+    };
+    if (startMinutes !== requestedStart || endMinutes !== requestedEnd) {
+      showAlert({
+        title: '시간 조정 확인',
+        message: `하루 일정 범위에 맞춰 ${formatMinutes(startMinutes).slice(0, 5)}–${formatMinutes(endMinutes).slice(0, 5)}로 조정해 저장할까요?`,
+        type: 'confirm',
+        buttons: [
+          { text: '다시 설정', style: 'cancel' },
+          { text: '조정해서 저장', onPress: save },
+        ],
+      });
+      return;
+    }
+    save();
   };
 
   const handleDelete = () => {
@@ -142,7 +178,7 @@ export default function PlaceEditModal({
     <PopupModal
       visible={visible}
       title="장소 수정"
-      onClose={onClose}
+      onClose={handleClose}
       footer={
         <View style={styles.footer}>
           <TouchableOpacity
@@ -204,6 +240,11 @@ export default function PlaceEditModal({
           </TouchableOpacity>
         )}
 
+        {(dayStartTime || dayEndTime) && (
+          <Text style={styles.timeRangeHint}>
+            설정 가능한 시간 {dayStartTime?.slice(0, 5) || '00:00'}–{dayEndTime?.slice(0, 5) || '24:00'}
+          </Text>
+        )}
         <View style={styles.timeRow}>
           <View style={styles.timeCell}>
             <Text style={styles.label}>시작</Text>
@@ -272,6 +313,11 @@ export default function PlaceEditModal({
 }
 
 const styles = StyleSheet.create({
+  timeRangeHint: {
+    color: tokens.colors.textSecondary,
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.regular,
+  },
   content: {
     paddingHorizontal: normalize(16),
     paddingBottom: normalize(6),
