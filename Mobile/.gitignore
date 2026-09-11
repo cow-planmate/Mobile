@@ -71,3 +71,7 @@ docs/
 ios/Podfile.lock
 
 /graphify-out/
+
+# 스킬 스크립트 실행 부산물
+__pycache__/
+*.pyc

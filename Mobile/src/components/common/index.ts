@@ -14,7 +14,6 @@ export { default as PaxModal } from './PaxModal';
 export { default as ScheduleEditModal } from './ScheduleEditModal';
 export { default as SearchLocationModal } from './SearchLocationModal';
 export { default as ShareModal } from './ShareModal';
-export * from './StyledButton';
 
 export { default as ThemeSelector } from './ThemeSelector';
 export * from './ThemeSelector';
