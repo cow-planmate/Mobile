@@ -8,9 +8,9 @@ import Check from 'lucide-react-native/dist/esm/icons/check';
 import Circle from 'lucide-react-native/dist/esm/icons/circle';
 import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import { styles } from './ChangePasswordScreen.styles';
-import { COLORS } from '../authTokens';
-import { sf } from '../../../utils/normalize';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { COLORS } from './ChangePasswordScreen.styles';
+import { normalize } from '../../../utils/normalize';
+import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import { PASSWORD_MAX_LENGTH } from '../../../utils/passwordPolicy';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
@@ -53,9 +53,9 @@ const PasswordRequirement = React.memo(
     <View style={styles.requirementRow}>
 
       {met ? (
-        <Check size={sf(15)} color={COLORS.success} strokeWidth={3} />
+        <Check size={normalize(15)} color={COLORS.success} strokeWidth={3} />
       ) : (
-        <Circle size={sf(15)} color={COLORS.textDisabled} strokeWidth={2} />
+        <Circle size={normalize(15)} color={COLORS.textDisabled} strokeWidth={2} />
       )}
       <Text
         style={[
@@ -76,7 +76,7 @@ const InlineError = ({ message }: { message: string }) => (
     exiting={FadeOut.duration(120)}
     accessibilityLiveRegion="polite"
   >
-    <AlertCircle size={sf(15)} color={COLORS.error} style={styles.errorIcon} />
+    <AlertCircle size={normalize(15)} color={COLORS.error} style={styles.errorIcon} />
     <Text style={styles.errorText}>{message}</Text>
   </Animated.View>
 );
@@ -100,7 +100,7 @@ export const ChangePasswordScreenView = ({
   setIsNewVisible,
   setIsConfirmVisible,
 }: ChangePasswordScreenViewProps) => {
-  const insets = useSafeAreaInsets();
+  const screenInsets = useScreenInsets(true);
   const newPasswordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
 
@@ -108,9 +108,9 @@ export const ChangePasswordScreenView = ({
     invalid ? 'error' : isFocused ? 'focus' : 'default';
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, screenInsets]}>
 
-      <View style={[styles.header, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
         <Pressable
           style={styles.headerBackButton}
           onPress={onBack}
@@ -121,6 +121,8 @@ export const ChangePasswordScreenView = ({
         >
           <ChevronLeft size={24} color={COLORS.text} />
         </Pressable>
+        <Text style={styles.headerTitle}>비밀번호 변경</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
@@ -130,7 +132,6 @@ export const ChangePasswordScreenView = ({
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>비밀번호 변경</Text>
         <Text style={styles.description}>
           현재 비밀번호를 확인한 뒤 새 비밀번호를 설정해 주세요.
         </Text>
@@ -141,12 +142,12 @@ export const ChangePasswordScreenView = ({
               !!errors.currentPassword,
               focusedField === 'currentPassword',
             )}
-            style={styles.authInputContainer}
+            style={styles.inputContainer}
             label="현재 비밀번호"
           >
-            <View style={styles.authInputRow}>
+            <View style={styles.inputRow}>
               <TextInput
-                style={styles.authInput}
+                style={styles.input}
                 placeholderTextColor={COLORS.textSecondary}
                 value={form.currentPassword}
                 onChangeText={value => onChange('currentPassword', value)}
@@ -190,13 +191,13 @@ export const ChangePasswordScreenView = ({
               !!errors.newPassword,
               focusedField === 'newPassword',
             )}
-            style={styles.authInputContainer}
+            style={styles.inputContainer}
             label="새 비밀번호"
           >
-            <View style={styles.authInputRow}>
+            <View style={styles.inputRow}>
               <TextInput
                 ref={newPasswordRef}
-                style={styles.authInput}
+                style={styles.input}
                 placeholder="8자 이상"
                 placeholderTextColor={COLORS.textSecondary}
                 value={form.newPassword}
@@ -255,13 +256,13 @@ export const ChangePasswordScreenView = ({
                 ? 'focus'
                 : 'default'
             }
-            style={styles.authInputContainer}
+            style={styles.inputContainer}
             label="새 비밀번호 확인"
           >
-            <View style={styles.authInputRow}>
+            <View style={styles.inputRow}>
               <TextInput
                 ref={confirmPasswordRef}
-                style={styles.authInput}
+                style={styles.input}
                 placeholder="다시 한 번 입력해 주세요"
                 placeholderTextColor={COLORS.textSecondary}
                 value={form.confirmPassword}
@@ -314,7 +315,7 @@ export const ChangePasswordScreenView = ({
         {!!errors.form && <InlineError message={errors.form} />}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: sf(16) + insets.bottom }]}>
+      <View style={styles.footer}>
         <AuthSubmitButton
           label="비밀번호 변경"
           onPress={onSubmit}
