@@ -1054,6 +1054,8 @@ describe('일정 편집기 제스처 및 UI 동작 개선', () => {
 
   it('장소 추가 시트가 날씨 헤더 바로 밑까지 최대 확장되며 1.0 스냅을 지원한다', () => {
     expect(source).toContain('SHEET_SNAPS = [0, 1 / 3, 2 / 3, 1]');
-    expect(source).toContain('sheetTopGap = hasWeather ? 72 : 8');
+    expect(source).toContain(
+      'sheetTopGap = hasWeather ? normalize(72) : normalize(8)',
+    );
   });
 });

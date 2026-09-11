@@ -7,6 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { normalize } from '../../../utils/normalize';
 import LinearGradient from 'react-native-linear-gradient';
 import {
   View,
@@ -630,8 +631,8 @@ const DraggableTimelineItem = React.memo(
         position: 'absolute',
         top: top.value,
         height: height.value,
-        left: 60,
-        right: 15,
+        left: normalize(60),
+        right: normalize(15),
         opacity: exitOpacity.value * dragOpacity.value,
         transform: [
           { scale: exitScale.value * dragScale.value },
@@ -651,12 +652,12 @@ const DraggableTimelineItem = React.memo(
         position: 'absolute',
         top: withSpring(previewTop.value, PREVIEW_SPRING_CONFIG),
         height: withSpring(previewHeight.value, PREVIEW_SPRING_CONFIG),
-        left: 60,
-        right: 15,
+        left: normalize(60),
+        right: normalize(15),
         borderWidth: 2,
         borderColor: COLORS.primary,
         borderStyle: 'dashed',
-        borderRadius: 12,
+        borderRadius: normalize(12),
         backgroundColor: 'rgba(19, 68, 255, 0.11)',
         opacity: indicatorOpacity.value,
         transform: [{ scale: indicatorScale.value }],
@@ -1544,7 +1545,7 @@ export default function ItineraryEditorScreenView({
     selectedDay && weatherMap && weatherMap[selectedDayDateStr],
   );
   /** 날씨 카드가 있으면 그 바로 밑(72px), 없으면 일차 탭 바로 밑(8px)까지만 남긴다. */
-  const sheetTopGap = hasWeather ? 72 : 8;
+  const sheetTopGap = hasWeather ? normalize(72) : normalize(8);
 
   const onBodyLayout = useCallback(
     (event: any) => {
