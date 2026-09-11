@@ -27,6 +27,7 @@ import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
 import Info from 'lucide-react-native/dist/esm/icons/info';
 import XCircle from 'lucide-react-native/dist/esm/icons/circle-x';
 import type { LucideIcon } from 'lucide-react-native';
+import { tokens } from '../theme/tokens';
 
 type AlertType = 'success' | 'error' | 'info' | 'warning' | 'confirm';
 
@@ -59,7 +60,7 @@ export function useAlert(): AlertContextType {
 
 const ICON_MAP: Record<AlertType, { Icon: LucideIcon; color: string }> = {
   success: { Icon: CheckCircle2, color: '#34C759' },
-  error: { Icon: XCircle, color: '#FF3B30' },
+  error: { Icon: XCircle, color: tokens.tones.danger.fg },
   info: { Icon: Info, color: '#1344FF' },
   warning: { Icon: AlertCircle, color: '#FF9500' },
   confirm: { Icon: AlertCircle, color: '#1344FF' },
@@ -345,7 +346,7 @@ const s = StyleSheet.create({
   },
   // 채우지 않고 테두리만 둘러 취소보다 약하되, 어디까지가 단추인지는 분명하게.
   buttonDestructive: {
-    borderColor: '#FF3B30',
+    borderColor: tokens.tones.danger.fg,
   },
   buttonText: {
     fontSize: 15,
@@ -356,6 +357,6 @@ const s = StyleSheet.create({
     color: '#FFFFFF',
   },
   buttonTextDestructive: {
-    color: '#FF3B30',
+    color: tokens.tones.danger.fg,
   },
 });

@@ -169,7 +169,7 @@ export default function PostCreateScreen() {
           accessibilityLabel="뒤로 가기"
           hitSlop={8}
         >
-          <ChevronLeft size={normalize(22)} color={COLORS.text} />
+          <ChevronLeft size={normalize(24)} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>
           {isEditMode ? '게시글 수정' : '글쓰기'}

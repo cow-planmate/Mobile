@@ -7,7 +7,7 @@ export const COLORS = {
   text: tokens.colors.text,
   placeholder: tokens.colors.textTertiary,
   border: tokens.colors.border,
-  error: '#FF3B30',
+  error: tokens.tones.danger.fg,
   surface: tokens.colors.borderLight,
 };
 

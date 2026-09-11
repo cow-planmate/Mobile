@@ -8,7 +8,7 @@ export const COLORS = {
   white: tokens.colors.white,
   border: tokens.colors.border,
   surface: tokens.colors.borderLight,
-  error: '#FF3B30',
+  error: tokens.tones.danger.fg,
 
   textSecondary: tokens.colors.textSecondary,
 };

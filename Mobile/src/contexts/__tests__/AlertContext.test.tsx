@@ -4,7 +4,7 @@ import { Text } from 'react-native';
 import { AlertProvider, useAlert } from '../AlertContext';
 
 const BLUE = '#1344FF';
-const RED = '#FF3B30';
+const RED = '#DC2626';
 const ORANGE = '#FF9500';
 
 /** showAlert를 밖에서 부를 수 있게 통로만 내주는 껍데기. */

@@ -16,7 +16,7 @@ export const COLORS = {
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.pageGround,
   },
 
   listHeaderContainer: {
@@ -32,7 +32,7 @@ export const styles = StyleSheet.create({
   searchBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FBFCFD',
+    backgroundColor: tokens.colors.white,
     borderWidth: 1,
     borderColor: '#D9DCE2',
     borderRadius: tokens.radius.l,
@@ -135,7 +135,7 @@ export const styles = StyleSheet.create({
     marginTop: normalize(12),
     padding: normalize(4),
     borderRadius: tokens.radius.l,
-    backgroundColor: '#F1F1F3',
+    backgroundColor: tokens.colors.pageGround,
   },
   sortPill: {
     flex: 1,
@@ -159,7 +159,7 @@ export const styles = StyleSheet.create({
   // 머리와 목록 사이 회색 띠. 흰 덩어리 둘이 맞붙지 않게 한다.
   listHeaderGap: {
     height: normalize(12),
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.pageGround,
   },
 
   postList: {

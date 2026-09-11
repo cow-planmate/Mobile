@@ -86,7 +86,7 @@ const ToastShell = ({
 export const toastConfig: ToastConfig = {
   error: ({ text1, text2, onPress }) => (
     <ToastShell onPress={onPress}>
-      <XCircle size={18} color="#D92D20" strokeWidth={2.5} />
+      <XCircle size={18} color={tokens.tones.danger.fg} strokeWidth={2.5} />
       <ToastBody text1={text1} text2={text2} />
     </ToastShell>
   ),

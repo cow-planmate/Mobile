@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import DatePicker from 'react-native-date-picker';
-import ArrowLeft from 'lucide-react-native/dist/esm/icons/arrow-left';
+import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import { styles } from './OAuthAdditionalInfoScreen.styles';
 import { COLORS } from '../authTokens';
@@ -90,7 +90,7 @@ export const OAuthAdditionalInfoScreenView = ({
           accessibilityLabel="뒤로 가기"
           accessibilityState={{ disabled: isSubmitting }}
         >
-          <ArrowLeft size={22} color={COLORS.text} />
+          <ChevronLeft size={24} color={COLORS.text} />
         </Pressable>
       </View>
 

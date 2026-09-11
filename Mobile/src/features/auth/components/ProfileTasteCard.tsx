@@ -148,16 +148,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: normalize(10),
     paddingVertical: normalize(4.5),
     borderRadius: normalize(8),
-    backgroundColor: '#F8FAFC',
+    backgroundColor: tokens.colors.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: tokens.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   editText: {
     fontSize: normalize(12),
     fontFamily: tokens.fontFamily.semibold,
-    color: '#475569',
+    color: tokens.colors.textLabel,
   },
   rows: {
     paddingHorizontal: normalize(16),
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: normalize(11),
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: tokens.colors.borderLight,
   },
   rowLast: {
     borderBottomWidth: 0,
@@ -214,12 +214,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: normalize(8),
     paddingVertical: normalize(3),
     borderRadius: normalize(6),
-    backgroundColor: '#F1F5F9',
+    backgroundColor: tokens.colors.borderLight,
   },
   pillText: {
     fontSize: normalize(11.5),
     fontFamily: tokens.fontFamily.medium,
-    color: '#475569',
+    color: tokens.colors.textLabel,
   },
   addPillButton: {
     flexDirection: 'row',

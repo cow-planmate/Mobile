@@ -164,7 +164,7 @@ export default function FeedDetailScreen() {
         accessibilityLabel="뒤로 가기"
         hitSlop={8}
       >
-        <ChevronLeft size={normalize(22)} color={COLORS.text} />
+        <ChevronLeft size={normalize(24)} color={COLORS.text} />
       </TouchableOpacity>
       <Text style={styles.topBarTitle}>여행기</Text>
       {isAuthor ? (

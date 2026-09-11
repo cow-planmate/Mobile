@@ -79,6 +79,7 @@ import {
 import {
   ProfileCalendarSection,
   ProfileCommunitySection,
+  ProfileFootprintSection,
   ProfileTravelLogSection,
 } from '../components/ProfileActivitySections';
 import { UnderlineTabs } from '../../../components/ui';
@@ -234,6 +235,7 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
             plan.isShared && styles.planOwnershipInvited,
           ]}
         >
+          {plan.isShared ? '초대받은 일정' : '내 일정'}
           {plan.isShared ? '초대받은 일정' : '나의 일정'}
         </Text>
         <Text style={styles.planTitle} numberOfLines={1}>
@@ -372,6 +374,7 @@ const PastPlanRow = React.memo(function PastPlanRow({
             plan.isShared && styles.planOwnershipInvited,
           ]}
         >
+          {plan.isShared ? '초대받은 일정' : '내 일정'}
           {plan.isShared ? '초대받은 일정' : '나의 일정'}
         </Text>
         <Text style={styles.planTitle} numberOfLines={1}>
@@ -1021,6 +1024,20 @@ export default function ProfileScreenView({
                   <Text style={styles.profileEmail} numberOfLines={1}>
                     {user.email || '이메일 없음'}
                   </Text>
+                  <View style={styles.profileMetaChips}>
+                    <View style={styles.profileMetaChip}>
+                      <Text style={styles.profileMetaChipText}>
+                        {user.gender || '성별 미설정'}
+                      </Text>
+                    </View>
+                    <View style={styles.profileMetaChip}>
+                      <Text style={styles.profileMetaChipText}>
+                        {profileAge === null
+                          ? '나이 미설정'
+                          : `만 ${profileAge}세`}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
               </View>
 
@@ -1173,7 +1190,7 @@ export default function ProfileScreenView({
                   >
                     <Trash2
                       size={12}
-                      color="#EF4444"
+                      color={tokens.tones.danger.fg}
                       style={styles.iconSpacingSmall}
                     />
                     <Text style={styles.editActionDeleteSelectedText}>
@@ -1280,6 +1297,8 @@ export default function ProfileScreenView({
             담고 덩어리 사이만 회색 띠로 벌린다. */}
             <View style={styles.sectionBand} />
             <ProfileCalendarSection plans={plans} />
+            <View style={styles.sectionBand} />
+            <ProfileFootprintSection plans={plans} />
           </>
         )}
       </ScrollView>
@@ -1318,6 +1337,19 @@ export default function ProfileScreenView({
             >
               <Text style={styles.saveButtonText}>저장</Text>
             </TouchableOpacity>
+            {!user.socialLogin && (
+              <TouchableOpacity
+                style={styles.editPasswordLink}
+                onPress={() => setPasswordModalVisible(true)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="비밀번호 변경하기"
+              >
+                <Text style={styles.editPasswordLinkText}>
+                  비밀번호 변경하기
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         }
       >

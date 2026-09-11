@@ -9,11 +9,11 @@ export const FONTS = tokens.fontFamily;
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: tokens.colors.white,
+    backgroundColor: tokens.colors.pageGround,
   },
   scroll: {
     flex: 1,
-    backgroundColor: tokens.colors.white,
+    backgroundColor: tokens.colors.pageGround,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -41,7 +41,7 @@ export const styles = StyleSheet.create({
     marginHorizontal: normalize(16),
     aspectRatio: 16 / 9,
     borderRadius: normalize(20),
-    backgroundColor: '#F5F6F8',
+    backgroundColor: tokens.colors.white,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: normalize(24),
@@ -49,13 +49,13 @@ export const styles = StyleSheet.create({
   heroEmptyTitle: {
     fontSize: normalize(13.5),
     fontFamily: tokens.fontFamily.semibold,
-    color: '#1F2937',
+    color: tokens.colors.text,
     textAlign: 'center',
   },
   heroEmptyDesc: {
     fontSize: normalize(12),
     fontFamily: tokens.fontFamily.regular,
-    color: '#4B5563',
+    color: tokens.colors.textLabel,
     textAlign: 'center',
     lineHeight: normalize(18),
     marginTop: normalize(5),
@@ -70,7 +70,7 @@ export const styles = StyleSheet.create({
   relationLabel: {
     fontSize: normalize(12),
     fontFamily: tokens.fontFamily.regular,
-    color: '#4B5563',
+    color: tokens.colors.textLabel,
   },
   relationRegion: {
     fontFamily: tokens.fontFamily.semibold,
@@ -237,7 +237,7 @@ export const styles = StyleSheet.create({
     fontSize: normalize(12),
     fontFamily: tokens.fontFamily.medium,
     fontWeight: '500',
-    color: '#4B5563',
+    color: tokens.colors.textLabel,
     letterSpacing: -0.2,
     marginBottom: normalize(2.5),
   },
@@ -253,14 +253,14 @@ export const styles = StyleSheet.create({
     fontSize: normalize(15),
     fontFamily: tokens.fontFamily.semibold,
     fontWeight: '600',
-    color: '#0F172A',
+    color: tokens.colors.text,
     letterSpacing: -0.3,
   },
   placeholderText: {
     fontSize: normalize(15),
     fontFamily: tokens.fontFamily.regular,
     fontWeight: '400',
-    color: '#94A3B8',
+    color: tokens.colors.textTertiary,
     letterSpacing: -0.3,
   },
   rowIcon: {

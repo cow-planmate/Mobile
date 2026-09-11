@@ -18,7 +18,7 @@ import Animated, {
   FadeOutRight,
 } from 'react-native-reanimated';
 import DatePicker from 'react-native-date-picker';
-import ArrowLeft from 'lucide-react-native/dist/esm/icons/arrow-left';
+import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import Eye from 'lucide-react-native/dist/esm/icons/eye';
 import EyeOff from 'lucide-react-native/dist/esm/icons/eye-off';
 import Check from 'lucide-react-native/dist/esm/icons/check';
@@ -298,7 +298,7 @@ export const SignupScreenView = ({
           accessibilityLabel={step > 1 ? '이전 단계' : '뒤로 가기'}
           accessibilityState={{ disabled: isBusy }}
         >
-          <ArrowLeft size={22} color={COLORS.text} />
+          <ChevronLeft size={24} color={COLORS.text} />
         </Pressable>
 
         <AuthProgressBar step={step} totalSteps={totalSteps} />

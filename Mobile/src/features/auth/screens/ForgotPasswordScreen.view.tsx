@@ -8,7 +8,7 @@ import Animated, {
   FadeOutLeft,
   FadeOutRight,
 } from 'react-native-reanimated';
-import ArrowLeft from 'lucide-react-native/dist/esm/icons/arrow-left';
+import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import Check from 'lucide-react-native/dist/esm/icons/check';
 import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
@@ -147,7 +147,7 @@ export const ForgotPasswordScreenView = ({
           accessibilityRole="button"
           accessibilityLabel={step > 1 ? '이전 단계' : '뒤로 가기'}
         >
-          <ArrowLeft size={22} color={COLORS.text} />
+          <ChevronLeft size={24} color={COLORS.text} />
         </Pressable>
 
         <AuthProgressBar step={step} totalSteps={totalSteps} />

@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
-import ArrowLeft from 'lucide-react-native/dist/esm/icons/arrow-left';
+import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import Eye from 'lucide-react-native/dist/esm/icons/eye';
 import EyeOff from 'lucide-react-native/dist/esm/icons/eye-off';
 import Check from 'lucide-react-native/dist/esm/icons/check';
@@ -119,7 +119,7 @@ export const ChangePasswordScreenView = ({
           accessibilityLabel="뒤로 가기"
           accessibilityState={{ disabled: isSubmitting }}
         >
-          <ArrowLeft size={22} color={COLORS.text} />
+          <ChevronLeft size={24} color={COLORS.text} />
         </Pressable>
       </View>
 

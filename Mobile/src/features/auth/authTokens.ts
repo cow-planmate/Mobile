@@ -11,7 +11,7 @@ export const COLORS = {
   primary: tokens.colors.primary,
   primaryPressed: tokens.colors.primaryPressed,
   onPrimary: tokens.colors.white,
-  error: '#D92D20',
+  error: tokens.tones.danger.fg,
   errorBorder: '#FECDCA',
   errorSurface: '#FEF3F2',
   success: '#067647',

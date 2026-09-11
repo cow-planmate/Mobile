@@ -716,7 +716,7 @@ export default function TravelFeedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.pageGround,
   },
   body: {
     flex: 1,

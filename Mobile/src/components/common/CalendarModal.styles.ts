@@ -11,7 +11,7 @@ export const COLORS = {
   subtextMuted: tokens.colors.textSecondary,
   placeholder: tokens.colors.textTertiary,
   border: tokens.colors.border,
-  danger: '#EF4444',
+  danger: tokens.tones.danger.fg,
   weekendBlue: '#2563EB',
 };
 

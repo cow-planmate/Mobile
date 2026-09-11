@@ -24,19 +24,19 @@ export const FONTS = tokens.fontFamily;
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.pageGround,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.pageGround,
   },
   loadErrorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.pageGround,
     paddingHorizontal: normalize(32),
   },
   loadErrorText: {
@@ -195,7 +195,7 @@ export const styles = StyleSheet.create({
     width: normalize(22),
     height: normalize(22),
     borderRadius: normalize(11),
-    backgroundColor: '#0F172A',
+    backgroundColor: tokens.colors.text,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
@@ -233,14 +233,14 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     height: normalize(40),
     borderRadius: normalize(8),
-    backgroundColor: '#F8FAFC',
+    backgroundColor: tokens.colors.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: tokens.colors.border,
     paddingHorizontal: normalize(12),
   },
   readOnlyEmailText: {
     fontSize: normalize(13),
-    color: '#64748B',
+    color: tokens.colors.textSecondary,
     flex: 1,
     marginRight: normalize(8),
   },
@@ -284,7 +284,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: normalize(12),
     height: normalize(40),
-    backgroundColor: '#F8FAFC',
+    backgroundColor: tokens.colors.surface,
   },
   checkButtonText: {
     fontSize: normalize(12),
@@ -300,7 +300,7 @@ export const styles = StyleSheet.create({
     gap: normalize(4),
     height: normalize(40),
     width: '100%',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: tokens.colors.borderLight,
     borderRadius: normalize(8),
     padding: normalize(3),
   },
@@ -315,7 +315,7 @@ export const styles = StyleSheet.create({
   },
   genderOptionText: {
     fontSize: normalize(12.5),
-    color: '#64748B',
+    color: tokens.colors.textSecondary,
     fontWeight: '600',
   },
   genderOptionActiveText: {
@@ -347,7 +347,7 @@ export const styles = StyleSheet.create({
   editPasswordLinkText: {
     fontSize: normalize(12),
     fontFamily: FONTS.medium,
-    color: '#64748B',
+    color: tokens.colors.textSecondary,
   },
   resignLinkButton: {
     flexDirection: 'row',
@@ -511,7 +511,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: normalize(16),
-    height: normalize(52),
+    height: normalize(56),
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
@@ -538,7 +538,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: normalize(40),
-    backgroundColor: '#F3F4F6',
+    backgroundColor: tokens.colors.borderLight,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderRadius: normalize(10),
@@ -966,17 +966,17 @@ export const styles = StyleSheet.create({
   },
   accountItemDivider: {
     height: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: tokens.colors.borderLight,
   },
   accountItemText: {
     fontSize: normalize(13.5),
     fontFamily: FONTS.medium,
-    color: '#64748B',
+    color: tokens.colors.textSecondary,
   },
   accountResignText: {
     fontSize: normalize(13.5),
     fontFamily: FONTS.medium,
-    color: '#EF4444',
+    color: tokens.tones.danger.fg,
   },
 
   // ── 프로필 수정 팝업: 비밀번호 설정 행 ──
