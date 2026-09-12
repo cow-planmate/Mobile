@@ -305,8 +305,6 @@ export default function FeedDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollBody}
       >
-        <View style={[styles.band, styles.bandUnderTopBar]} />
-
         <View style={styles.block}>
         {/* 큰 사진을 머리에 얹으면 제목과 여행 정보가 첫 화면 밖으로 밀린다.
             사진은 목록과 아래 장소 줄에서 이미 보이므로 여기서는 글로만 열다. */}

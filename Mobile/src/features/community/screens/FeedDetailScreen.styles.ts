@@ -22,11 +22,12 @@ export const styles = StyleSheet.create({
   },
   // 회색이 보이는 유일한 자리. 덩어리 사이를 벌려 글이 위에 붙지 않게 한다.
   band: {
-    height: normalize(20),
+    height: normalize(10),
+    backgroundColor: COLORS.pageGround,
   },
   // 머리 바로 아래 띠는 머리의 아래 선과 맞닿아 두 줄이 된다. 위 선을 뺀다.
   bandUnderTopBar: {
-    borderTopWidth: 0,
+    display: 'none',
   },
 
   topBar: {
@@ -34,6 +35,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: normalize(10),
     paddingHorizontal: normalize(16),
     height: normalize(56),
     borderBottomWidth: 1,
@@ -72,17 +74,15 @@ export const styles = StyleSheet.create({
 
   header: {
     paddingHorizontal: normalize(16),
-    paddingTop: normalize(16),
-    paddingBottom: normalize(24),
-    marginHorizontal: normalize(16),
-    marginTop: normalize(12),
-    marginBottom: normalize(16),
-    borderRadius: normalize(16),
-    backgroundColor: COLORS.surface,
+    paddingTop: normalize(18),
+    paddingBottom: normalize(16),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight,
+    backgroundColor: COLORS.white,
   },
   title: {
-    fontSize: normalize(19),
-    lineHeight: normalize(27),
+    fontSize: normalize(20),
+    lineHeight: normalize(28),
     fontFamily: tokens.fontFamily.bold,
     color: COLORS.text,
     marginBottom: normalize(8),
@@ -259,6 +259,7 @@ export const styles = StyleSheet.create({
     minWidth: normalize(112),
     height: normalize(42),
     paddingHorizontal: normalize(16),
+    paddingVertical: normalize(9),
     borderRadius: tokens.radius.l,
     borderWidth: 1,
     borderColor: COLORS.border,
