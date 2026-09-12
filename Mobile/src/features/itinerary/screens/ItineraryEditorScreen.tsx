@@ -51,14 +51,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     canEdit,
     isResolved: isMembershipResolved,
   } = usePlanOwnership(route.params.planId);
-  let queryClient: any = null;
-  try {
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    queryClient = useQueryClient();
-  } catch (e) {
-
-  }
+  const queryClient = useQueryClient();
   const createFullPlanMutation = useCreateFullPlan();
   const {
     days,
