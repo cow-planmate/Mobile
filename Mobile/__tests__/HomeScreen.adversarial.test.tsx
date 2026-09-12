@@ -245,7 +245,9 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
 
         expect(submitBtn).toBeDefined();
         expect(submitBtn!.props.disabled).toBe(false);
-        expect(submitBtn!.props.accessibilityState).toEqual({ disabled: false });
+        expect(submitBtn!.props.accessibilityState).toEqual({
+          disabled: false,
+        });
       });
 
       it('disables submit button and displays loading text when isCreating is true', () => {
@@ -294,7 +296,8 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
         t => t.props.accessibilityLabel === '여행 기간, 날짜를 선택해 주세요',
       );
       const paxTouchable = touchables.find(
-        t => t.props.accessibilityLabel === '함께하는 인원, 인원을 선택해 주세요',
+        t =>
+          t.props.accessibilityLabel === '함께하는 인원, 인원을 선택해 주세요',
       );
 
       expect(searchTouchable).toBeDefined();
