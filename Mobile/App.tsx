@@ -16,9 +16,17 @@ import { queryClient } from './src/api/queryClient';
 
 import './src/api/axiosConfig';
 
-import { StyleSheet, StatusBar, AppState, AppStateStatus } from 'react-native';
+import {
+  StyleSheet,
+  StatusBar,
+  AppState,
+  AppStateStatus,
+  LogBox,
+} from 'react-native';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from './src/components/common/toastConfig';
+
+LogBox.ignoreAllLogs();
 
 const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && false;
 
@@ -58,20 +66,20 @@ function App() {
         그리지 않아 첫 화면이 빈 채로 남는다.
       */}
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <QueryClientProvider client={queryClient}>
-        <AlertProvider>
-          <PlacesProvider>
-            <WebSocketProvider>
-              <ItineraryProvider>
-                <NavigationContainer>
-                  <AppNavigator />
-                </NavigationContainer>
-                <Toast config={toastConfig} />
-              </ItineraryProvider>
-            </WebSocketProvider>
-          </PlacesProvider>
-        </AlertProvider>
-      </QueryClientProvider>
+        <QueryClientProvider client={queryClient}>
+          <AlertProvider>
+            <PlacesProvider>
+              <WebSocketProvider>
+                <ItineraryProvider>
+                  <NavigationContainer>
+                    <AppNavigator />
+                  </NavigationContainer>
+                  <Toast config={toastConfig} />
+                </ItineraryProvider>
+              </WebSocketProvider>
+            </PlacesProvider>
+          </AlertProvider>
+        </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

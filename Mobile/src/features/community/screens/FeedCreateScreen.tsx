@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -14,8 +15,12 @@ import {
 import axios from 'axios';
 import { launchImageLibrary } from 'react-native-image-picker';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
+import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import Check from 'lucide-react-native/dist/esm/icons/check';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
+import CalendarIcon from 'lucide-react-native/dist/esm/icons/calendar';
+import Search from 'lucide-react-native/dist/esm/icons/search';
+import X from 'lucide-react-native/dist/esm/icons/x';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAlert } from '../../../contexts/AlertContext';
@@ -31,9 +36,7 @@ import { POST_TITLE_MAX_LENGTH } from '../constants/board';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
-import {
-  buildFeedUpdatePayload,
-} from '../utils/feedPostPayload';
+import { buildFeedUpdatePayload } from '../utils/feedPostPayload';
 import {
   buildFeedPlanSnapshot,
   CompletePlanResponse,
@@ -80,6 +83,11 @@ export default function FeedCreateScreen() {
   const [thumbnailFile, setThumbnailFile] =
     useState<FeedImageUploadFile | null>(null);
 
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [planSearch, setPlanSearch] = useState('');
+  const [showSlashMenu, setShowSlashMenu] = useState(false);
+  const contentSelection = useRef({ start: 0, end: 0 });
+
   const contentRef = useRef<TextInput>(null);
   const hydratedPostId = useRef<string | undefined>(undefined);
   const isMountedRef = useRef(true);
@@ -112,6 +120,30 @@ export default function FeedCreateScreen() {
     () => (profile?.myPlans ?? []).filter(plan => !plan.isShared),
     [profile?.myPlans],
   );
+
+  const filteredPlans = useMemo(() => {
+    if (!planSearch.trim()) return ownedPlans;
+    const q = planSearch.toLowerCase();
+    return ownedPlans.filter(
+      plan =>
+        (plan.planName ?? '').toLowerCase().includes(q) ||
+        ((plan as any).destination ?? '').toLowerCase().includes(q),
+    );
+  }, [ownedPlans, planSearch]);
+
+  const handleInsertFormat = (prefix: string, suffix = '') => {
+    const text = content;
+    const { start, end } = contentSelection.current;
+    const selected = text.slice(start, end);
+    const newText =
+      text.slice(0, start) +
+      prefix +
+      (selected || '') +
+      suffix +
+      text.slice(end);
+    setContent(newText);
+    setShowSlashMenu(false);
+  };
   const previewDays =
     snapshot?.itinerary.days ?? existingPost.data?.itinerary?.days ?? [];
 
@@ -151,7 +183,11 @@ export default function FeedCreateScreen() {
 
       const selected = buildFeedImageUploadFile(result.assets?.[0]);
       if ('error' in selected) {
-        showAlert({ title: '이미지 확인', message: selected.error, type: 'error' });
+        showAlert({
+          title: '이미지 확인',
+          message: selected.error,
+          type: 'error',
+        });
         return;
       }
       setThumbnailFile(selected.file);
@@ -170,7 +206,9 @@ export default function FeedCreateScreen() {
       title !== initialForm.current.title ||
       content !== initialForm.current.content ||
       thumbnailUrl !== initialForm.current.thumbnailUrl ||
-      thumbnailFile !== null || snapshot !== null || !includeMemo,
+      thumbnailFile !== null ||
+      snapshot !== null ||
+      !includeMemo,
     title: '작성 취소',
     message: '작성 중인 여행기가 사라져요. 나갈까요?',
   });
@@ -218,7 +256,9 @@ export default function FeedCreateScreen() {
           uploadedThumbnailUrl = resolvedThumbnailUrl;
           if (!isMountedRef.current) {
             if (uploadedThumbnailUrl) {
-              void deleteCommunityImage(uploadedThumbnailUrl).catch(() => undefined);
+              void deleteCommunityImage(uploadedThumbnailUrl).catch(
+                () => undefined,
+              );
             }
             return;
           }
@@ -255,7 +295,9 @@ export default function FeedCreateScreen() {
         }
       } catch (error) {
         if (uploadedThumbnailUrl) {
-          void deleteCommunityImage(uploadedThumbnailUrl).catch(() => undefined);
+          void deleteCommunityImage(uploadedThumbnailUrl).catch(
+            () => undefined,
+          );
         }
         if (!isMountedRef.current) return;
         showAlert({
@@ -292,12 +334,7 @@ export default function FeedCreateScreen() {
         </TouchableOpacity>
         <View style={styles.headerText}>
           <Text style={styles.headerTitle}>
-            {isEditMode ? '여행기 수정' : '여행기 작성'}
-          </Text>
-          <Text style={styles.headerSubtitle}>
-            {isEditMode
-              ? '작성한 여행기를 수정할 수 있어요'
-              : '당신의 여행을 다른 사람들과 공유해보세요'}
+            {isEditMode ? '여행기 수정' : '여행기 쓰기'}
           </Text>
         </View>
       </View>
@@ -319,8 +356,10 @@ export default function FeedCreateScreen() {
             <Text style={styles.snapshotText}>
               {existingPost.data.itinerary.plan?.destinationName ??
                 existingPost.data.location ??
-                existingPost.data.region ?? ''}
-              {' '}· {existingPost.data.itinerary.days.length}일 일정은 그대로 유지돼요.
+                existingPost.data.region ??
+                ''}{' '}
+              · {existingPost.data.itinerary.days.length}일 일정은 그대로
+              유지돼요.
             </Text>
           </View>
         ) : isProfileLoading ? (
@@ -333,68 +372,126 @@ export default function FeedCreateScreen() {
           </Pressable>
         ) : ownedPlans.length === 0 ? (
           <Text style={styles.emptyText}>발행할 내 일정이 없어요.</Text>
+        ) : !snapshot ? (
+          <TouchableOpacity
+            style={styles.planPickerTrigger}
+            onPress={() => setIsPlanModalOpen(true)}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="내 일정 불러오기"
+          >
+            <View style={styles.planPickerLeft}>
+              <View style={styles.planPickerIconWrap}>
+                <CalendarIcon
+                  size={normalize(18)}
+                  color={tokens.colors.primary}
+                />
+              </View>
+              <View>
+                <Text style={styles.planPickerTitle}>내 일정 불러오기</Text>
+                <Text style={styles.planPickerSubtitle}>
+                  공개할 여행 일정을 선택해 주세요
+                </Text>
+              </View>
+            </View>
+            <ChevronRight
+              size={normalize(18)}
+              color={tokens.colors.textTertiary}
+            />
+          </TouchableOpacity>
         ) : (
-          ownedPlans.map(plan => {
-            const selected = snapshot?.planId === plan.planId;
-            const isLoading = loadingPlanId === plan.planId;
-            return (
-              <Pressable
-                key={plan.planId}
-                style={[styles.planCard, selected && styles.planCardSelected]}
-                onPress={() => {
-                  handleSelectPlan(plan.planId);
-                }}
-                disabled={loadingPlanId !== null}
-                accessibilityState={{ disabled: loadingPlanId !== null }}
-              >
-                <View>
-                  <Text style={styles.planName}>{plan.planName}</Text>
-                  <Text style={styles.planDate}>
-                    {plan.startDate ?? '일정 날짜 없음'}
-                  </Text>
-                </View>
-                {isLoading ? (
-                  <ActivityIndicator color={tokens.colors.primary} />
-                ) : selected ? (
-                  <Check size={20} color={tokens.colors.primary} />
-                ) : null}
-              </Pressable>
-            );
-          })
-        )}
-
-        {!isEditMode && snapshot && (
-          <View style={styles.snapshotInfo}>
-            <MapPin size={16} color={tokens.colors.primary} />
-            <Text style={styles.snapshotText}>
-              {snapshot.destinationName} · {snapshot.itinerary.days.length}일 일정이 공개돼요.
-            </Text>
+          <View style={styles.selectedPlanCard}>
+            <View style={styles.selectedPlanLeft}>
+              <View style={styles.selectedPlanIconWrap}>
+                <MapPin size={normalize(18)} color={tokens.colors.primary} />
+              </View>
+              <View style={styles.selectedPlanInfo}>
+                <Text style={styles.selectedPlanName} numberOfLines={1}>
+                  {snapshot.planName}
+                </Text>
+                <Text style={styles.selectedPlanMeta}>
+                  {snapshot.destinationName} · {snapshot.itinerary.days.length}
+                  일 일정
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={styles.changePlanButton}
+              onPress={() => setIsPlanModalOpen(true)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="일정 변경"
+            >
+              <Text style={styles.changePlanButtonText}>변경</Text>
+            </TouchableOpacity>
           </View>
         )}
 
         {previewDays.length > 0 && (
           <View style={styles.itineraryPreview}>
-            <Text style={styles.previewTitle}>일정 미리보기</Text>
+            <View style={styles.previewHeader}>
+              <Text style={styles.previewTitle}>일정 미리보기</Text>
+              <Text style={styles.previewDaysCount}>
+                총 {previewDays.length}일 코스
+              </Text>
+            </View>
             {previewDays.map(day => (
               <View key={day.day} style={styles.previewDay}>
                 <View style={styles.previewDayLabel}>
                   <Text style={styles.previewDayText}>DAY {day.day}</Text>
                 </View>
                 <View style={styles.previewPlaces}>
-                  {day.items.slice(0, 2).map(item => (
-                    <Text
-                      key={`${day.day}-${item.time}-${item.place}`}
-                      style={styles.previewPlace}
-                      numberOfLines={1}
+                  {day.items.slice(0, 3).map((item, idx, arr) => (
+                    <View
+                      key={`${day.day}-${item.time}-${item.place}-${idx}`}
+                      style={styles.timelineItemRow}
                     >
-                      {item.time} {item.place}
-                    </Text>
+                      <View style={styles.timelineTrack}>
+                        <View style={styles.timelineBadge}>
+                          <Text style={styles.timelineBadgeText}>
+                            {idx + 1}
+                          </Text>
+                        </View>
+                        {idx < arr.length - 1 && (
+                          <View style={styles.timelineLine} />
+                        )}
+                      </View>
+                      <View style={styles.timelineContent}>
+                        <View style={styles.timelinePlaceHeader}>
+                          <Text
+                            style={styles.timelinePlaceName}
+                            numberOfLines={1}
+                          >
+                            {item.place}
+                          </Text>
+                          {item.time ? (
+                            <View style={styles.timelineTimeChip}>
+                              <Text style={styles.timelineTimeText}>
+                                {item.time}
+                              </Text>
+                            </View>
+                          ) : null}
+                        </View>
+                        {item.description ? (
+                          <Text
+                            style={styles.timelinePlaceDesc}
+                            numberOfLines={1}
+                          >
+                            {item.description}
+                          </Text>
+                        ) : null}
+                      </View>
+                    </View>
                   ))}
-                  {day.items.length > 2 && (
-                    <Text style={styles.previewMore}>외 {day.items.length - 2}곳</Text>
+                  {day.items.length > 3 && (
+                    <Text style={styles.previewMore}>
+                      외 {day.items.length - 3}곳
+                    </Text>
                   )}
                   {day.items.length === 0 && (
-                    <Text style={styles.previewMore}>등록한 장소가 없어요.</Text>
+                    <Text style={styles.previewMore}>
+                      등록한 장소가 없어요.
+                    </Text>
                   )}
                 </View>
               </View>
@@ -407,7 +504,9 @@ export default function FeedCreateScreen() {
             <Text style={styles.label}>여행 기간</Text>
             <View style={styles.durationRow}>
               <Text style={styles.durationText}>
-                {`${Math.max(0, previewDays.length - 1)}박 ${previewDays.length}일`}
+                {`${Math.max(0, previewDays.length - 1)}박 ${
+                  previewDays.length
+                }일`}
               </Text>
               <Text style={styles.durationHint}>
                 고른 일정의 일수로 자동 계산돼요
@@ -422,16 +521,16 @@ export default function FeedCreateScreen() {
               accessibilityState={{ checked: includeMemo }}
               accessibilityLabel="블록 메모도 함께 공개"
             >
-              <View
-                style={[styles.memoBox, includeMemo && styles.memoBoxOn]}
-              >
+              <View style={[styles.memoBox, includeMemo && styles.memoBoxOn]}>
                 {includeMemo && (
                   <Check size={normalize(12)} color={tokens.colors.white} />
                 )}
               </View>
               <View style={styles.memoTextWrap}>
                 <Text style={styles.memoLabel}>블록 메모도 함께 공개</Text>
-                <Text style={styles.memoHint}>가져갈 때 메모까지 복사됩니다</Text>
+                <Text style={styles.memoHint}>
+                  가져갈 때 메모까지 복사됩니다
+                </Text>
               </View>
             </TouchableOpacity>
           </>
@@ -455,13 +554,144 @@ export default function FeedCreateScreen() {
           accessibilityLabel="여행기 제목"
         />
 
-        <Text style={styles.label}>설명</Text>
+        <View style={styles.editorLabelRow}>
+          <Text style={styles.label}>여행 후기</Text>
+          <TouchableOpacity
+            style={styles.slashBadge}
+            onPress={() => setShowSlashMenu(prev => !prev)}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="서식 메뉴 열기"
+          >
+            <Text style={styles.slashBadgeText}>서식 메뉴</Text>
+            <View style={styles.slashKeyBox}>
+              <Text style={styles.slashKeyChar}>/</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {showSlashMenu && (
+          <View style={styles.slashDropdown}>
+            <TouchableOpacity
+              style={styles.slashItem}
+              onPress={() => handleInsertFormat('# ')}
+            >
+              <Text style={styles.slashItemIcon}>H1</Text>
+              <Text style={styles.slashItemLabel}>제목 1 (큰 제목)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.slashItem}
+              onPress={() => handleInsertFormat('## ')}
+            >
+              <Text style={styles.slashItemIcon}>H2</Text>
+              <Text style={styles.slashItemLabel}>제목 2 (중간 제목)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.slashItem}
+              onPress={() => handleInsertFormat('- ')}
+            >
+              <Text style={styles.slashItemIcon}>•</Text>
+              <Text style={styles.slashItemLabel}>글머리 기호 목록</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.slashItem}
+              onPress={() => handleInsertFormat('1. ')}
+            >
+              <Text style={styles.slashItemIcon}>1.</Text>
+              <Text style={styles.slashItemLabel}>번호 매기기 목록</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.slashItem}
+              onPress={() => handleInsertFormat('> ')}
+            >
+              <Text style={styles.slashItemIcon}>❝</Text>
+              <Text style={styles.slashItemLabel}>인용구</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.slashItem}
+              onPress={() => handleInsertFormat('\n---\n')}
+            >
+              <Text style={styles.slashItemIcon}>―</Text>
+              <Text style={styles.slashItemLabel}>구분선</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.slashItem}
+              onPress={() => handleInsertFormat('**', '**')}
+            >
+              <Text style={[styles.slashItemIcon, { fontWeight: 'bold' }]}>
+                B
+              </Text>
+              <Text style={styles.slashItemLabel}>굵게 (**텍스트**)</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.toolbarScroll}
+          style={styles.formatToolbar}
+        >
+          <TouchableOpacity
+            style={styles.toolBtn}
+            onPress={() => handleInsertFormat('# ')}
+          >
+            <Text style={styles.toolBtnText}>H1</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.toolBtn}
+            onPress={() => handleInsertFormat('## ')}
+          >
+            <Text style={styles.toolBtnText}>H2</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.toolBtn}
+            onPress={() => handleInsertFormat('- ')}
+          >
+            <Text style={styles.toolBtnText}>• 목록</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.toolBtn}
+            onPress={() => handleInsertFormat('1. ')}
+          >
+            <Text style={styles.toolBtnText}>1. 번호</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.toolBtn}
+            onPress={() => handleInsertFormat('> ')}
+          >
+            <Text style={styles.toolBtnText}>❝ 인용</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.toolBtn}
+            onPress={() => handleInsertFormat('\n---\n')}
+          >
+            <Text style={styles.toolBtnText}>― 선</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.toolBtn}
+            onPress={() => handleInsertFormat('**', '**')}
+          >
+            <Text style={[styles.toolBtnText, { fontWeight: 'bold' }]}>
+              B 굵게
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+
         <TextInput
           ref={contentRef}
           value={content}
-          onChangeText={setContent}
+          onChangeText={value => {
+            setContent(value);
+            if (value.endsWith('\n/') || value === '/') {
+              setShowSlashMenu(true);
+            }
+          }}
+          onSelectionChange={e => {
+            contentSelection.current = e.nativeEvent.selection;
+          }}
           style={[styles.input, styles.contentInput]}
-          placeholder="여행을 소개해 주세요"
+          placeholder="여행을 소개해 주세요 ('/' 입력 시 서식 메뉴)"
           editable={!isHydrating}
           multiline
           textAlignVertical="top"
@@ -496,6 +726,98 @@ export default function FeedCreateScreen() {
         />
       </ScrollView>
 
+      <Modal
+        visible={isPlanModalOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setIsPlanModalOpen(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>내 플랜 선택</Text>
+              <TouchableOpacity
+                onPress={() => setIsPlanModalOpen(false)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="닫기"
+              >
+                <X size={normalize(20)} color={tokens.colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.searchBar}>
+              <Search size={normalize(16)} color={tokens.colors.textTertiary} />
+              <TextInput
+                value={planSearch}
+                onChangeText={setPlanSearch}
+                placeholder="플랜 이름 검색..."
+                placeholderTextColor={tokens.colors.textTertiary}
+                style={styles.searchInput}
+              />
+              {planSearch.length > 0 && (
+                <TouchableOpacity onPress={() => setPlanSearch('')} hitSlop={6}>
+                  <X size={normalize(14)} color={tokens.colors.textTertiary} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <ScrollView
+              style={styles.modalList}
+              contentContainerStyle={styles.modalListContent}
+            >
+              {isProfileLoading ? (
+                <ActivityIndicator
+                  color={tokens.colors.primary}
+                  style={{ marginVertical: normalize(24) }}
+                />
+              ) : filteredPlans.length === 0 ? (
+                <Text style={styles.emptyText}>
+                  {planSearch
+                    ? '검색 결과가 없어요.'
+                    : '가져올 수 있는 일정이 없어요.'}
+                </Text>
+              ) : (
+                filteredPlans.map(plan => {
+                  const selected = snapshot?.planId === plan.planId;
+                  const isLoading = loadingPlanId === plan.planId;
+                  return (
+                    <TouchableOpacity
+                      key={plan.planId}
+                      style={[
+                        styles.planCard,
+                        selected && styles.planCardSelected,
+                      ]}
+                      onPress={async () => {
+                        await handleSelectPlan(plan.planId);
+                        setIsPlanModalOpen(false);
+                      }}
+                      disabled={loadingPlanId !== null}
+                      activeOpacity={0.7}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.planName}>{plan.planName}</Text>
+                        <Text style={styles.planDate}>
+                          {plan.startDate ?? '일정 날짜 없음'}
+                        </Text>
+                      </View>
+                      {isLoading ? (
+                        <ActivityIndicator color={tokens.colors.primary} />
+                      ) : selected ? (
+                        <Check size={20} color={tokens.colors.primary} />
+                      ) : null}
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
       <View style={styles.footer}>
         <TouchableOpacity
           style={[
@@ -517,8 +839,8 @@ export default function FeedCreateScreen() {
                 ? '수정 중…'
                 : '등록 중…'
               : isEditMode
-                ? '수정 완료'
-                : '피드 등록하기'}
+              ? '수정 완료'
+              : '피드 등록하기'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -613,6 +935,94 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.textLabel,
   },
+  planPickerTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: normalize(14),
+    borderRadius: normalize(12),
+    borderWidth: 1,
+    borderColor: tokens.colors.borderStrong,
+    borderStyle: 'dashed',
+    backgroundColor: tokens.colors.surface,
+  },
+  planPickerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(12),
+    flex: 1,
+  },
+  planPickerIconWrap: {
+    width: normalize(38),
+    height: normalize(38),
+    borderRadius: normalize(10),
+    backgroundColor: tokens.colors.primarySurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  planPickerTitle: {
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+  },
+  planPickerSubtitle: {
+    marginTop: normalize(2),
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textSecondary,
+  },
+  selectedPlanCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: normalize(14),
+    borderRadius: normalize(12),
+    borderWidth: 1,
+    borderColor: tokens.colors.primary,
+    backgroundColor: tokens.colors.primarySurface,
+  },
+  selectedPlanLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(12),
+    flex: 1,
+    marginRight: normalize(8),
+  },
+  selectedPlanIconWrap: {
+    width: normalize(38),
+    height: normalize(38),
+    borderRadius: normalize(10),
+    backgroundColor: tokens.colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedPlanInfo: {
+    flex: 1,
+  },
+  selectedPlanName: {
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+  },
+  selectedPlanMeta: {
+    marginTop: normalize(2),
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.primary,
+  },
+  changePlanButton: {
+    paddingHorizontal: normalize(12),
+    paddingVertical: normalize(6),
+    borderRadius: normalize(8),
+    backgroundColor: tokens.colors.white,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  changePlanButtonText: {
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.textSecondary,
+  },
   planCard: {
     minHeight: normalize(64),
     borderWidth: 1,
@@ -665,13 +1075,23 @@ const styles = StyleSheet.create({
     borderRadius: normalize(12),
     overflow: 'hidden',
   },
-  previewTitle: {
-    paddingHorizontal: normalize(12),
+  previewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: normalize(14),
     paddingVertical: normalize(10),
+    backgroundColor: tokens.colors.surface,
+  },
+  previewTitle: {
     fontSize: normalize(13),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.textLabel,
-    backgroundColor: tokens.colors.surface,
+  },
+  previewDaysCount: {
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.primary,
   },
   previewDay: {
     flexDirection: 'row',
@@ -692,16 +1112,220 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.primary,
   },
-  previewPlaces: { flex: 1, gap: normalize(3) },
+  previewPlaces: { flex: 1, gap: normalize(6) },
   previewPlace: {
     fontSize: normalize(13),
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.textLabel,
   },
+  timelineItemRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: normalize(10),
+  },
+  timelineTrack: {
+    alignItems: 'center',
+    width: normalize(20),
+  },
+  timelineBadge: {
+    width: normalize(18),
+    height: normalize(18),
+    borderRadius: normalize(9),
+    backgroundColor: tokens.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timelineBadgeText: {
+    fontSize: normalize(10),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
+  },
+  timelineLine: {
+    width: 2,
+    flex: 1,
+    minHeight: normalize(16),
+    backgroundColor: tokens.colors.border,
+    marginVertical: normalize(2),
+  },
+  timelineContent: {
+    flex: 1,
+    paddingBottom: normalize(6),
+  },
+  timelinePlaceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(6),
+  },
+  timelinePlaceName: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.text,
+    flexShrink: 1,
+  },
+  timelineTimeChip: {
+    paddingHorizontal: normalize(6),
+    paddingVertical: normalize(1),
+    borderRadius: normalize(4),
+    backgroundColor: tokens.colors.surface,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderLight,
+  },
+  timelineTimeText: {
+    fontSize: normalize(10),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textTertiary,
+  },
+  timelinePlaceDesc: {
+    marginTop: normalize(2),
+    fontSize: normalize(11.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textSecondary,
+  },
   previewMore: {
     fontSize: normalize(12),
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.textTertiary,
+  },
+  editorLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: normalize(8),
+  },
+  slashBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(4),
+    paddingHorizontal: normalize(8),
+    paddingVertical: normalize(3),
+    borderRadius: normalize(6),
+    backgroundColor: tokens.colors.primarySurface,
+  },
+  slashBadgeText: {
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.primary,
+  },
+  slashKeyBox: {
+    width: normalize(16),
+    height: normalize(16),
+    borderRadius: normalize(3),
+    backgroundColor: tokens.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slashKeyChar: {
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
+    lineHeight: normalize(13),
+  },
+  slashDropdown: {
+    backgroundColor: tokens.colors.white,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderStrong,
+    borderRadius: normalize(10),
+    paddingVertical: normalize(4),
+    marginTop: normalize(4),
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  slashItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: normalize(12),
+    paddingVertical: normalize(8),
+    gap: normalize(10),
+  },
+  slashItemIcon: {
+    width: normalize(24),
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.primary,
+    textAlign: 'center',
+  },
+  slashItemLabel: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.text,
+  },
+  formatToolbar: {
+    marginTop: normalize(6),
+  },
+  toolbarScroll: {
+    flexDirection: 'row',
+    gap: normalize(6),
+    paddingVertical: normalize(4),
+  },
+  toolBtn: {
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(6),
+    borderRadius: normalize(6),
+    backgroundColor: tokens.colors.surface,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  toolBtnText: {
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textSecondary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: tokens.colors.white,
+    borderTopLeftRadius: normalize(20),
+    borderTopRightRadius: normalize(20),
+    maxHeight: '80%',
+    paddingBottom: normalize(24),
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: normalize(20),
+    paddingVertical: normalize(16),
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.borderLight,
+  },
+  modalTitle: {
+    fontSize: normalize(16),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(8),
+    marginHorizontal: normalize(16),
+    marginTop: normalize(12),
+    paddingHorizontal: normalize(12),
+    height: normalize(40),
+    backgroundColor: tokens.colors.surface,
+    borderRadius: normalize(8),
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.text,
+    paddingVertical: 0,
+  },
+  modalList: {
+    marginTop: normalize(8),
+  },
+  modalListContent: {
+    paddingHorizontal: normalize(16),
+    paddingVertical: normalize(8),
+    gap: normalize(8),
   },
   input: {
     minHeight: normalize(48),
@@ -750,6 +1374,5 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.white,
   },
-  // 회색 바탕에 흰 글자는 읽히지 않는다. 잠겼을 때는 글자도 함께 낮춘다.
   submitTextOff: { color: tokens.colors.textTertiary },
 });

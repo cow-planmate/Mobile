@@ -12,6 +12,16 @@ const mockUpdatePostMutateAsync = jest.fn();
 const mockUploadCommunityImage = jest.fn();
 const mockDeleteCommunityImage = jest.fn();
 let mockExistingPostData: any;
+let mockUserProfileData: any = {
+  myPlans: [
+    {
+      planId: 1,
+      planName: '서울 여행',
+      startDate: '2026-09-15',
+      endDate: '2026-09-17',
+    },
+  ],
+};
 const mockUnsavedChanges = jest.fn();
 
 jest.mock('@react-navigation/native', () => ({
@@ -25,7 +35,7 @@ jest.mock('../../../../contexts/AlertContext', () => ({
 
 jest.mock('../../../../hooks/useUserProfile', () => ({
   useUserProfile: () => ({
-    data: { myPlans: [] },
+    data: mockUserProfileData,
     isLoading: false,
     isError: false,
     refetch: jest.fn(),
@@ -33,18 +43,33 @@ jest.mock('../../../../hooks/useUserProfile', () => ({
 }));
 
 jest.mock('../../hooks/queries', () => ({
-  useCreatePost: () => ({ isPending: false, mutateAsync: mockCreatePostMutateAsync }),
-  usePost: () => ({ data: mockExistingPostData, isLoading: false, isError: false }),
-  useUpdatePost: () => ({ isPending: false, mutateAsync: mockUpdatePostMutateAsync }),
+  useCreatePost: () => ({
+    isPending: false,
+    mutateAsync: mockCreatePostMutateAsync,
+  }),
+  usePost: () => ({
+    data: mockExistingPostData,
+    isLoading: false,
+    isError: false,
+  }),
+  useUpdatePost: () => ({
+    isPending: false,
+    mutateAsync: mockUpdatePostMutateAsync,
+  }),
 }));
 
 jest.mock('../../services/communityApi', () => ({
-  uploadCommunityImage: (...args: unknown[]) => mockUploadCommunityImage(...args),
-  deleteCommunityImage: (...args: unknown[]) => mockDeleteCommunityImage(...args),
+  uploadCommunityImage: (...args: unknown[]) =>
+    mockUploadCommunityImage(...args),
+  deleteCommunityImage: (...args: unknown[]) =>
+    mockDeleteCommunityImage(...args),
 }));
 
 jest.mock('../../../../hooks/useUnsavedChangesPrompt', () => ({
-  useUnsavedChangesPrompt: (options: unknown) => { mockUnsavedChanges(options); return { allowLeave: jest.fn() }; },
+  useUnsavedChangesPrompt: (options: unknown) => {
+    mockUnsavedChanges(options);
+    return { allowLeave: jest.fn() };
+  },
 }));
 
 jest.mock('react-native-image-picker', () => ({
@@ -56,15 +81,31 @@ const mockedLaunchImageLibrary = launchImageLibrary as jest.Mock;
 describe('FeedCreateScreen thumbnail', () => {
   it('기존 글을 수정하지 않고 닫으면 변경 경고를 표시하지 않는다', async () => {
     mockRouteParams.postId = '42';
-    mockExistingPostData = { category: 'feed', title: '여행기', contentText: '내용', image: '', itinerary: { days: [] } };
+    mockExistingPostData = {
+      category: 'feed',
+      title: '여행기',
+      contentText: '내용',
+      image: '',
+      itinerary: { days: [] },
+    };
     let tree: renderer.ReactTestRenderer;
-    await act(async () => { tree = renderer.create(<FeedCreateScreen />); });
-    expect(mockUnsavedChanges).toHaveBeenLastCalledWith(expect.objectContaining({ hasUnsavedChanges: false }));
-    const title = tree!.root.findAllByType(TextInput).find(node => node.props.value === '여행기')!;
+    await act(async () => {
+      tree = renderer.create(<FeedCreateScreen />);
+    });
+    expect(mockUnsavedChanges).toHaveBeenLastCalledWith(
+      expect.objectContaining({ hasUnsavedChanges: false }),
+    );
+    const title = tree!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.value === '여행기')!;
     act(() => title.props.onChangeText('바뀐 제목'));
-    expect(mockUnsavedChanges).toHaveBeenLastCalledWith(expect.objectContaining({ hasUnsavedChanges: true }));
+    expect(mockUnsavedChanges).toHaveBeenLastCalledWith(
+      expect.objectContaining({ hasUnsavedChanges: true }),
+    );
     act(() => title.props.onChangeText('여행기'));
-    expect(mockUnsavedChanges).toHaveBeenLastCalledWith(expect.objectContaining({ hasUnsavedChanges: false }));
+    expect(mockUnsavedChanges).toHaveBeenLastCalledWith(
+      expect.objectContaining({ hasUnsavedChanges: false }),
+    );
     act(() => tree!.unmount());
   });
   beforeEach(() => {
@@ -105,7 +146,9 @@ describe('FeedCreateScreen thumbnail', () => {
     expect(
       tree!.root.findAllByProps({ children: 'feed.jpg' }).length,
     ).toBeGreaterThan(0);
-    expect(mockUnsavedChanges).toHaveBeenLastCalledWith(expect.objectContaining({ hasUnsavedChanges: true }));
+    expect(mockUnsavedChanges).toHaveBeenLastCalledWith(
+      expect.objectContaining({ hasUnsavedChanges: true }),
+    );
     act(() => tree!.unmount());
   });
 
@@ -141,9 +184,11 @@ describe('FeedCreateScreen thumbnail', () => {
       tree = renderer.create(<FeedCreateScreen />);
     });
     await act(async () => {
-      await tree!.root.findByProps({
-        accessibilityLabel: '썸네일 이미지 선택',
-      }).props.onPress();
+      await tree!.root
+        .findByProps({
+          accessibilityLabel: '썸네일 이미지 선택',
+        })
+        .props.onPress();
     });
 
     const submitButton = tree!.root.findAllByType(TouchableOpacity).at(-1)!;
@@ -196,15 +241,35 @@ describe('웹에 맞춘 여행기 쓰기 화면', () => {
     jest.clearAllMocks();
     delete mockRouteParams.postId;
     mockExistingPostData = undefined;
+    mockUserProfileData = {
+      myPlans: [
+        {
+          planId: 1,
+          planName: '서울 여행',
+          startDate: '2026-09-15',
+          endDate: '2026-09-17',
+        },
+      ],
+    };
   });
 
-  it('머리에 제목과 부제를 함께 보여준다', () => {
+  it('상단에 여행기 쓰기 제목만 배치하고 보조텍스트를 두지 않는다', () => {
     const tree = render();
     const texts = textsOf(tree);
 
-    expect(texts).toContain('여행기 작성');
-    expect(texts).toContain('당신의 여행을 다른 사람들과 공유해보세요');
-    expect(texts).not.toContain('여행기 발행');
+    expect(texts).toContain('여행기 쓰기');
+    expect(texts).not.toContain('당신의 여행을 다른 사람들과 공유해보세요');
+    expect(texts).not.toContain('여행기 작성');
+
+    act(() => tree.unmount());
+  });
+
+  it('일정 선택 버튼과 서식 메뉴 트리거가 노출된다', () => {
+    const tree = render();
+    const texts = textsOf(tree);
+
+    expect(texts).toContain('내 일정 불러오기');
+    expect(texts).toContain('서식 메뉴');
 
     act(() => tree.unmount());
   });
@@ -245,7 +310,12 @@ describe('웹에 맞춘 여행기 쓰기 화면', () => {
       title: '제주 3박 4일',
       contentText: '내용',
       image: null,
-      itinerary: { days: [{ day: 1, items: [] }, { day: 2, items: [] }] },
+      itinerary: {
+        days: [
+          { day: 1, items: [] },
+          { day: 2, items: [] },
+        ],
+      },
     };
 
     const tree = render();

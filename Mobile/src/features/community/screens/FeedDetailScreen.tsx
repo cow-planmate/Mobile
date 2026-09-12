@@ -273,7 +273,7 @@ export default function FeedDetailScreen() {
             post.myReaction === 'like' && styles.reactionTextActive,
           ]}
         >
-          좋아요 {post.likes.toLocaleString()}
+          추천 {post.likes.toLocaleString()}
         </Text>
       </TouchableOpacity>
 
@@ -301,7 +301,7 @@ export default function FeedDetailScreen() {
             post.myReaction === 'dislike' && styles.reactionTextActive,
           ]}
         >
-          싫어요 {post.dislikes}
+          비추천 {post.dislikes}
         </Text>
       </TouchableOpacity>
     </View>
@@ -391,12 +391,15 @@ export default function FeedDetailScreen() {
           </View>
 
           {hasBody && (
-            <View style={styles.body}>
-              <PostContentView
-                content={post.content}
-                contentText={post.contentText}
-              />
-            </View>
+            <>
+              <View style={styles.headerDivider} />
+              <View style={styles.body}>
+                <PostContentView
+                  content={post.content}
+                  contentText={post.contentText}
+                />
+              </View>
+            </>
           )}
         </View>
 
