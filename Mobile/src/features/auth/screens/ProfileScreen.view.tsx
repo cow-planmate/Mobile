@@ -79,7 +79,6 @@ import {
 import {
   ProfileCalendarSection,
   ProfileCommunitySection,
-  ProfileFootprintSection,
   ProfileTravelLogSection,
 } from '../components/ProfileActivitySections';
 import { UnderlineTabs } from '../../../components/ui';
@@ -1277,8 +1276,6 @@ export default function ProfileScreenView({
             담고 덩어리 사이만 회색 띠로 벌린다. */}
             <View style={styles.sectionBand} />
             <ProfileCalendarSection plans={plans} />
-            <View style={styles.sectionBand} />
-            <ProfileFootprintSection plans={plans} />
           </>
         )}
       </ScrollView>
