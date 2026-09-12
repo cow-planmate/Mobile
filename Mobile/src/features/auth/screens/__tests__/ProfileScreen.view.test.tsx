@@ -103,13 +103,29 @@ describe('ProfileScreenView 탭', () => {
     let tree: renderer.ReactTestRenderer;
     act(() => {
       tree = renderer.create(
-        <ProfileScreenView {...(BASE_PROPS as any)} scrollToItinerary user={{
-          ...BASE_PROPS.user,
-          myPlans: [
-            { planId: 'mine', planName: '내 제주 여행', isShared: false, startDate: '2099.09.01', endDate: '2099.09.03' },
-            { planId: 'invited', planName: '함께 부산 여행', isShared: true, startDate: '2099.10.01', endDate: '2099.10.03' },
-          ],
-        }} />,
+        <ProfileScreenView
+          {...(BASE_PROPS as any)}
+          scrollToItinerary
+          user={{
+            ...BASE_PROPS.user,
+            myPlans: [
+              {
+                planId: 'mine',
+                planName: '내 제주 여행',
+                isShared: false,
+                startDate: '2099.09.01',
+                endDate: '2099.09.03',
+              },
+              {
+                planId: 'invited',
+                planName: '함께 부산 여행',
+                isShared: true,
+                startDate: '2099.10.01',
+                endDate: '2099.10.03',
+              },
+            ],
+          }}
+        />,
       );
     });
     const body = textOf(tree!);
@@ -153,13 +169,26 @@ describe('ProfileScreenView profile save', () => {
   it('asks before discarding edits but allows closing restored values', () => {
     mockShowAlert.mockClear();
     let tree: renderer.ReactTestRenderer;
-    act(() => { tree = renderer.create(<ProfileScreenView {...(BASE_PROPS as any)} />); });
-    act(() => tree!.root.findAllByType(TouchableOpacity).find(node => node.props.style === styles.editButton)!.props.onPress());
-    const nickname = () => tree!.root.findAllByType(TextInput).find(node => node.props.maxLength !== undefined)!;
-    const modal = () => tree!.root.findAllByType(PopupModal).find(node => node.props.visible)!;
+    act(() => {
+      tree = renderer.create(<ProfileScreenView {...(BASE_PROPS as any)} />);
+    });
+    act(() =>
+      tree!.root
+        .findAllByType(TouchableOpacity)
+        .find(node => node.props.style === styles.editButton)!
+        .props.onPress(),
+    );
+    const nickname = () =>
+      tree!.root
+        .findAllByType(TextInput)
+        .find(node => node.props.maxLength !== undefined)!;
+    const modal = () =>
+      tree!.root.findAllByType(PopupModal).find(node => node.props.visible)!;
     act(() => nickname().props.onChangeText('Trip'));
     act(() => modal().props.onClose());
-    expect(mockShowAlert).toHaveBeenCalledWith(expect.objectContaining({ title: '변경사항 취소' }));
+    expect(mockShowAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '변경사항 취소' }),
+    );
     expect(modal()).toBeDefined();
     mockShowAlert.mockClear();
     act(() => nickname().props.onChangeText('Mate'));
@@ -172,21 +201,55 @@ describe('ProfileScreenView profile save', () => {
   it('keeps unsaved fields after a partial save and retries only those fields', async () => {
     mockShowAlert.mockClear();
     const handleUpdateNickname = jest.fn().mockResolvedValue(undefined);
-    const handleUpdateGender = jest.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValue(undefined);
+    const handleUpdateGender = jest
+      .fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue(undefined);
     let tree: renderer.ReactTestRenderer;
     act(() => {
-      tree = renderer.create(<ProfileScreenView {...(BASE_PROPS as any)}
-        handleUpdateNickname={handleUpdateNickname} handleUpdateGender={handleUpdateGender} />);
+      tree = renderer.create(
+        <ProfileScreenView
+          {...(BASE_PROPS as any)}
+          handleUpdateNickname={handleUpdateNickname}
+          handleUpdateGender={handleUpdateGender}
+        />,
+      );
     });
-    act(() => tree!.root.findAllByType(TouchableOpacity).find(node => node.props.style === styles.editButton)!.props.onPress());
-    act(() => tree!.root.findAllByType(TextInput).find(node => node.props.maxLength !== undefined)!.props.onChangeText('Trip'));
-    act(() => tree!.root.findAllByType(TouchableOpacity).filter(node => node.props.accessibilityRole === 'radio')[1].props.onPress());
-    const save = () => tree!.root.findAllByType(TouchableOpacity).find(node => node.props.style === styles.saveButton)!.props.onPress();
-    await act(async () => { await save(); });
-    expect(mockShowAlert).toHaveBeenCalledWith(expect.objectContaining({
-      title: '일부 정보만 저장됐어요', message: expect.stringContaining('닉네임'),
-    }));
-    await act(async () => { await save(); });
+    act(() =>
+      tree!.root
+        .findAllByType(TouchableOpacity)
+        .find(node => node.props.style === styles.editButton)!
+        .props.onPress(),
+    );
+    act(() =>
+      tree!.root
+        .findAllByType(TextInput)
+        .find(node => node.props.maxLength !== undefined)!
+        .props.onChangeText('Trip'),
+    );
+    act(() =>
+      tree!.root
+        .findAllByType(TouchableOpacity)
+        .filter(node => node.props.accessibilityRole === 'radio')[1]
+        .props.onPress(),
+    );
+    const save = () =>
+      tree!.root
+        .findAllByType(TouchableOpacity)
+        .find(node => node.props.style === styles.saveButton)!
+        .props.onPress();
+    await act(async () => {
+      await save();
+    });
+    expect(mockShowAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: '일부 정보만 저장됐어요',
+        message: expect.stringContaining('닉네임'),
+      }),
+    );
+    await act(async () => {
+      await save();
+    });
     expect(handleUpdateNickname).toHaveBeenCalledTimes(1);
     expect(handleUpdateGender).toHaveBeenCalledTimes(2);
     act(() => tree!.unmount());

@@ -235,7 +235,6 @@ const ItineraryCardItem = React.memo(function ItineraryCardItem({
             plan.isShared && styles.planOwnershipInvited,
           ]}
         >
-          {plan.isShared ? '초대받은 일정' : '내 일정'}
           {plan.isShared ? '초대받은 일정' : '나의 일정'}
         </Text>
         <Text style={styles.planTitle} numberOfLines={1}>
@@ -374,7 +373,6 @@ const PastPlanRow = React.memo(function PastPlanRow({
             plan.isShared && styles.planOwnershipInvited,
           ]}
         >
-          {plan.isShared ? '초대받은 일정' : '내 일정'}
           {plan.isShared ? '초대받은 일정' : '나의 일정'}
         </Text>
         <Text style={styles.planTitle} numberOfLines={1}>
