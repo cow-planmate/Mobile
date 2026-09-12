@@ -619,23 +619,6 @@ export const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: normalize(2),
   },
-  profileMetaChips: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(6),
-    marginTop: normalize(6),
-  },
-  profileMetaChip: {
-    backgroundColor: COLORS.pageGround,
-    paddingHorizontal: normalize(7),
-    paddingVertical: normalize(2),
-    borderRadius: normalize(4),
-  },
-  profileMetaChipText: {
-    fontSize: normalize(11),
-    fontFamily: FONTS.medium,
-    color: COLORS.textSecondary,
-  },
   profileMeta: {
     fontSize: normalize(11.5),
     color: COLORS.placeholder,

@@ -71,7 +71,6 @@ import {
 } from '../../../hooks/useUserProfile';
 import DatePicker from 'react-native-date-picker';
 import {
-  toKoreanAge,
   formatBirthdate,
   toBirthdateString,
   parseBirthdate,
@@ -795,8 +794,6 @@ export default function ProfileScreenView({
     );
   }
 
-  const profileAge = toKoreanAge(user.birthdate);
-
   // 커뮤니티 화면과 같은 규칙을 태운다. 백엔드가 사설망 URL을 내려주면
   // 여기만 그대로 렌더해 공백이 되던 불일치가 있었다.
   const avatarUri =
@@ -1021,20 +1018,6 @@ export default function ProfileScreenView({
                   <Text style={styles.profileEmail} numberOfLines={1}>
                     {user.email || '이메일 없음'}
                   </Text>
-                  <View style={styles.profileMetaChips}>
-                    <View style={styles.profileMetaChip}>
-                      <Text style={styles.profileMetaChipText}>
-                        {user.gender || '성별 미설정'}
-                      </Text>
-                    </View>
-                    <View style={styles.profileMetaChip}>
-                      <Text style={styles.profileMetaChipText}>
-                        {profileAge === null
-                          ? '나이 미설정'
-                          : `만 ${profileAge}세`}
-                      </Text>
-                    </View>
-                  </View>
                 </View>
               </View>
 
