@@ -1,12 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import LinearGradient from 'react-native-linear-gradient';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Modal,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import MapOutlineIcon from 'lucide-react-native/dist/esm/icons/map';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
@@ -135,7 +129,9 @@ export default function ItineraryViewScreenView({
   const [dayScrollX, setDayScrollX] = useState(0);
   const isDayScrollable = dayScrollContentWidth > dayScrollLayoutWidth;
   const showLeftFade = isDayScrollable && dayScrollX > 5;
-  const showRightFade = isDayScrollable && dayScrollX < dayScrollContentWidth - dayScrollLayoutWidth - 5;
+  const showRightFade =
+    isDayScrollable &&
+    dayScrollX < dayScrollContentWidth - dayScrollLayoutWidth - 5;
   const screenInsets = useScreenInsets(true);
   const mapPlaces = useMemo(
     () =>
@@ -198,7 +194,11 @@ export default function ItineraryViewScreenView({
           >
             <Share2 color={COLORS.text} size={17} />
           </ToolbarIconButton>
-          <ToolbarIconButton label="일정 수정" onPress={handleEdit} variant="filledGray">
+          <ToolbarIconButton
+            label="일정 수정"
+            onPress={handleEdit}
+            variant="filledGray"
+          >
             <Pencil color={COLORS.text} size={17} />
           </ToolbarIconButton>
         </View>
@@ -210,9 +210,9 @@ export default function ItineraryViewScreenView({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.dayTabsContainer}
           style={styles.dayTabsScroll}
-          onContentSizeChange={(w) => setDayScrollContentWidth(w)}
-          onLayout={(e) => setDayScrollLayoutWidth(e.nativeEvent.layout.width)}
-          onScroll={(e) => setDayScrollX(e.nativeEvent.contentOffset.x)}
+          onContentSizeChange={w => setDayScrollContentWidth(w)}
+          onLayout={e => setDayScrollLayoutWidth(e.nativeEvent.layout.width)}
+          onScroll={e => setDayScrollX(e.nativeEvent.contentOffset.x)}
           scrollEventThrottle={16}
         >
           {days.map((day, index) => {
@@ -289,9 +289,7 @@ export default function ItineraryViewScreenView({
                 >
                   <WeatherHeader
                     dayNumber={selectedDay.dayNumber}
-                    weather={
-                      weatherMap[formatDateLocal(selectedDay.date)]
-                    }
+                    weather={weatherMap[formatDateLocal(selectedDay.date)]}
                     appearance="overlay"
                   />
                 </View>

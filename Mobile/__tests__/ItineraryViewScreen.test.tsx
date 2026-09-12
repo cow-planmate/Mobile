@@ -20,7 +20,9 @@ jest.mock('../src/contexts/WebSocketContext', () => ({
 jest.mock('../src/api/trips', () => ({
   fetchWeather: jest.fn(),
 }));
-const mockFetchWeather = fetchWeather as jest.MockedFunction<typeof fetchWeather>;
+const mockFetchWeather = fetchWeather as jest.MockedFunction<
+  typeof fetchWeather
+>;
 
 const mockNavigate = jest.fn();
 const mockAddListener = jest.fn((event, callback) => {
@@ -43,7 +45,6 @@ const mockRoute = {
 } as any;
 
 jest.mock('@tanstack/react-query', () => {
-
   const client = { setQueryData: jest.fn(), getQueryState: jest.fn() };
   return { useQueryClient: () => client };
 });
@@ -131,7 +132,6 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
   });
 
   it('maintains loading until weather is fully loaded', async () => {
-
     const mockPlanData = {
       message: 'success',
       planFrame: {
@@ -154,7 +154,7 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
     mockedAxios.get.mockResolvedValueOnce({ data: mockPlanData });
 
     let weatherResolve: any;
-    const weatherPromise = new Promise((resolve) => {
+    const weatherPromise = new Promise(resolve => {
       weatherResolve = resolve;
     });
 
@@ -167,7 +167,8 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
     expect(renderer).toBeDefined();
 
     const viewComponent = renderer.root.findByType(
-      require('../src/features/itinerary/screens/ItineraryViewScreen.view').default
+      require('../src/features/itinerary/screens/ItineraryViewScreen.view')
+        .default,
     );
     expect(viewComponent.props.isWeatherLoading).toBe(true);
 
@@ -190,7 +191,12 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
 
   it('passes itinerary dates when navigating back to the editor', async () => {
     mockedAxios.get.mockResolvedValueOnce({
-      data: { message: 'success', planFrame: {}, placeBlocks: [], timetables: [] },
+      data: {
+        message: 'success',
+        planFrame: {},
+        placeBlocks: [],
+        timetables: [],
+      },
     });
     const route = {
       params: {
@@ -207,7 +213,8 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
     );
 
     const viewComponent = renderer.root.findByType(
-      require('../src/features/itinerary/screens/ItineraryViewScreen.view').default,
+      require('../src/features/itinerary/screens/ItineraryViewScreen.view')
+        .default,
     );
     viewComponent.props.handleEdit();
 
@@ -222,11 +229,19 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
 
   it('does not render the removed "내 일정으로" action button', async () => {
     mockedAxios.get.mockResolvedValueOnce({
-      data: { message: 'success', planFrame: {}, placeBlocks: [], timetables: [] },
+      data: {
+        message: 'success',
+        planFrame: {},
+        placeBlocks: [],
+        timetables: [],
+      },
     });
-    const tree = await mount(<ItineraryViewScreen navigation={mockNavigation} route={mockRoute} />);
+    const tree = await mount(
+      <ItineraryViewScreen navigation={mockNavigation} route={mockRoute} />,
+    );
     const { TouchableOpacity } = require('react-native');
-    const action = tree.root.findAllByType(TouchableOpacity)
+    const action = tree.root
+      .findAllByType(TouchableOpacity)
       .find(node => node.props.accessibilityLabel === '내 일정으로');
     expect(action).toBeUndefined();
   });

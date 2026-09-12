@@ -242,5 +242,4 @@ export const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.semibold,
     color: COLORS.textSecondary,
   },
-
 });

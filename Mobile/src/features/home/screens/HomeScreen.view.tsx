@@ -103,7 +103,9 @@ const InputRow = ({
           </View>
           <View style={styles.rowIcon}>
             <Icon
-              color={hasValue ? tokens.colors.primary : tokens.colors.textTertiary}
+              color={
+                hasValue ? tokens.colors.primary : tokens.colors.textTertiary
+              }
               size={normalize(18)}
             />
           </View>
