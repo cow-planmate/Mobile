@@ -2,6 +2,7 @@ import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 import { View, Text, Button } from 'react-native';
 import axios from 'axios';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 jest.mock('@react-navigation/material-top-tabs', () => {
   const React = require('react');
@@ -200,7 +201,23 @@ import ItineraryEditorScreenView from '../src/features/itinerary/screens/Itinera
 import { TAB_FILL } from '../src/features/itinerary/screens/ItineraryEditorScreen.styles';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import ItineraryEditorScreen from '../src/features/itinerary/screens/ItineraryEditorScreen';
+import ItineraryEditorScreenComponent from '../src/features/itinerary/screens/ItineraryEditorScreen';
+
+function ItineraryEditorScreen(
+  props: React.ComponentProps<typeof ItineraryEditorScreenComponent>,
+) {
+  const [queryClient] = React.useState(
+    () =>
+      new QueryClient({
+        defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+      }),
+  );
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ItineraryEditorScreenComponent {...props} />
+    </QueryClientProvider>
+  );
+}
 import EditAccessGate from '../src/features/itinerary/components/EditAccessGate';
 import PlaceEditModal from '../src/features/itinerary/components/PlaceEditModal';
 import { Day } from '../src/contexts/ItineraryContext';
