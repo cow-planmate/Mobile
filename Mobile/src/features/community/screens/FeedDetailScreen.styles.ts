@@ -22,8 +22,11 @@ export const styles = StyleSheet.create({
   },
   // 회색이 보이는 유일한 자리. 덩어리 사이를 벌려 글이 위에 붙지 않게 한다.
   band: {
-    height: normalize(10),
-    backgroundColor: COLORS.pageGround,
+    height: normalize(8),
+    backgroundColor: '#F3F4F6',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#E5E7EB',
   },
   // 머리 바로 아래 띠는 머리의 아래 선과 맞닿아 두 줄이 된다. 위 선을 뺀다.
   bandUnderTopBar: {
@@ -76,16 +79,16 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     paddingTop: normalize(18),
     paddingBottom: normalize(16),
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
     backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   title: {
     fontSize: normalize(20),
     lineHeight: normalize(28),
     fontFamily: tokens.fontFamily.bold,
     color: COLORS.text,
-    marginBottom: normalize(8),
+    marginBottom: normalize(10),
   },
   metaRow: {
     flexDirection: 'row',
@@ -241,19 +244,30 @@ export const styles = StyleSheet.create({
 
   body: {
     paddingHorizontal: normalize(16),
-    paddingTop: normalize(16),
+    paddingTop: normalize(18),
     paddingBottom: normalize(20),
+  },
+  bodyTitle: {
+    fontSize: normalize(15),
+    lineHeight: normalize(22),
+    fontFamily: tokens.fontFamily.bold,
+    color: COLORS.text,
+    marginBottom: normalize(10),
   },
 
   reactionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: normalize(10),
     gap: normalize(12),
   },
   reactionButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: normalize(6),
+    paddingHorizontal: normalize(18),
+    paddingVertical: normalize(9),
     justifyContent: 'center',
     gap: normalize(7),
     minWidth: normalize(112),
@@ -274,6 +288,7 @@ export const styles = StyleSheet.create({
     borderColor: COLORS.textSecondary,
   },
   reactionText: {
+    fontSize: normalize(12),
     fontSize: normalize(12.5),
     fontFamily: tokens.fontFamily.semibold,
     color: COLORS.textSecondary,

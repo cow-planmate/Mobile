@@ -19,7 +19,10 @@ import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import ThumbsDown from 'lucide-react-native/dist/esm/icons/thumbs-down';
 import ThumbsUp from 'lucide-react-native/dist/esm/icons/thumbs-up';
 import { normalize } from '../../../utils/normalize';
-import { getBackendErrorMessage, getResourceLoadError } from '../../../utils/errorHandler';
+import {
+  getBackendErrorMessage,
+  getResourceLoadError,
+} from '../../../utils/errorHandler';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CalendarModal } from '../../../components/common';
@@ -52,7 +55,6 @@ import { useScreenInsets } from '../../../hooks/useScreenInsets';
 
 type FeedDetailRoute = RouteProp<FeedStackParamList, 'FeedDetail'>;
 
-
 export default function FeedDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<FeedDetailRoute>();
@@ -68,7 +70,14 @@ export default function FeedDetailScreen() {
   const [isScheduleOpen, setScheduleOpen] = useState(true);
   const [isDateModalVisible, setDateModalVisible] = useState(false);
 
-  const { data: post, isLoading, isError, error, refetch, isFetching } = usePost(postId, true);
+  const {
+    data: post,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = usePost(postId, true);
   const react = useReactToPost(postId ?? '', true);
   const fork = useForkItinerary(postId ?? '');
   const isAuthor = !!post && user?.userId === post.userId;
@@ -82,13 +91,19 @@ export default function FeedDetailScreen() {
   const isForkable = canForkItinerary(post?.itinerary);
 
   const similarRegion = post?.location ?? post?.region ?? undefined;
-  const { data: similarPosts = [] } = useSimilarFeedPosts(similarRegion, postId);
+  const { data: similarPosts = [] } = useSimilarFeedPosts(
+    similarRegion,
+    postId,
+  );
   const reactionLock = useSubmitLock();
 
   const handleReact = (type: ReactionType) =>
     reactionLock.runExclusive(async () => {
       if (!isLoggedIn) {
-        showAlert({ title: '로그인 필요', message: '로그인 후 이용할 수 있어요.' });
+        showAlert({
+          title: '로그인 필요',
+          message: '로그인 후 이용할 수 있어요.',
+        });
         return;
       }
       try {
@@ -170,7 +185,9 @@ export default function FeedDetailScreen() {
       {isAuthor ? (
         <TouchableOpacity
           style={styles.topBarButton}
-          onPress={() => navigation.navigate('FeedCreate', { postId: String(post.id) })}
+          onPress={() =>
+            navigation.navigate('FeedCreate', { postId: String(post.id) })
+          }
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel="글 수정"
@@ -204,9 +221,7 @@ export default function FeedDetailScreen() {
       <View style={[styles.container, screenInsets]}>
         {renderTopBar()}
         <View style={styles.stateBox}>
-          <Text style={styles.stateText}>
-            {failure.message}
-          </Text>
+          <Text style={styles.stateText}>{failure.message}</Text>
           {failure.canRetry && (
             <TouchableOpacity
               onPress={() => refetch()}
@@ -214,7 +229,9 @@ export default function FeedDetailScreen() {
               accessibilityRole="button"
               accessibilityState={{ disabled: isFetching }}
             >
-              <Text style={styles.stateLink}>{isFetching ? '불러오는 중…' : '다시 시도'}</Text>
+              <Text style={styles.stateLink}>
+                {isFetching ? '불러오는 중…' : '다시 시도'}
+              </Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -263,8 +280,7 @@ export default function FeedDetailScreen() {
       <TouchableOpacity
         style={[
           styles.reactionButton,
-          post.myReaction === 'dislike' &&
-            styles.reactionButtonActiveDislike,
+          post.myReaction === 'dislike' && styles.reactionButtonActiveDislike,
         ]}
         onPress={() => handleReact('dislike')}
         activeOpacity={0.85}
@@ -276,9 +292,7 @@ export default function FeedDetailScreen() {
         <ThumbsDown
           size={normalize(14)}
           color={
-            post.myReaction === 'dislike'
-              ? COLORS.white
-              : COLORS.textSecondary
+            post.myReaction === 'dislike' ? COLORS.white : COLORS.textSecondary
           }
         />
         <Text
@@ -298,206 +312,227 @@ export default function FeedDetailScreen() {
 
   return (
     <View style={[styles.container, screenInsets]}>
-      <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={tokens.colors.white}
+      />
       {renderTopBar()}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollBody}
       >
-        <View style={styles.block}>
-        {/* 큰 사진을 머리에 얹으면 제목과 여행 정보가 첫 화면 밖으로 밀린다.
-            사진은 목록과 아래 장소 줄에서 이미 보이므로 여기서는 글로만 열다. */}
-        <View style={styles.header}>
-          <Text style={styles.title}>{post.title}</Text>
+        <View style={[styles.band, styles.bandUnderTopBar]} />
 
-          <View style={styles.metaRow}>
-            <TouchableOpacity
-              style={styles.authorTouchable}
-              onPress={() => setAuthorProfileVisible(true)}
-              activeOpacity={0.7}
-              hitSlop={6}
-            >
-              <UserAvatar
-                name={post.author}
-                imageUrl={resolveAvatarUrl(post.authorImage, post.authorAvatarHash)}
-                size={normalize(22)}
-              />
-              <Text style={styles.metaAuthor}>{post.author}</Text>
-            </TouchableOpacity>
-            {/* 웹과 같은 짜임: 이름 | 지역 · 기간.
+        <View style={styles.block}>
+          {/* 큰 사진을 머리에 얹으면 제목과 여행 정보가 첫 화면 밖으로 밀린다.
+            사진은 목록과 아래 장소 줄에서 이미 보이므로 여기서는 글로만 열다. */}
+          <View style={styles.header}>
+            <Text style={styles.title}>{post.title}</Text>
+
+            <View style={styles.metaRow}>
+              <TouchableOpacity
+                style={styles.authorTouchable}
+                onPress={() => setAuthorProfileVisible(true)}
+                activeOpacity={0.7}
+                hitSlop={6}
+              >
+                <UserAvatar
+                  name={post.author}
+                  imageUrl={resolveAvatarUrl(
+                    post.authorImage,
+                    post.authorAvatarHash,
+                  )}
+                  size={normalize(22)}
+                />
+                <Text style={styles.metaAuthor}>{post.author}</Text>
+              </TouchableOpacity>
+              {/* 웹과 같은 짜임: 이름 | 지역 · 기간.
                 작성자와 여행 정보는 성격이 달라 세로선으로 끊고,
                 지역과 기간은 한 덩이라 가운뎃점으로 잇는다. */}
-            {(!!regionLabel || !!durationLabel) && (
-              <View style={styles.metaRule} />
-            )}
-            {!!regionLabel && (
-              <View style={styles.metaFact}>
-                <MapPin
-                  size={normalize(13)}
-                  color={COLORS.primary}
-                  strokeWidth={2}
-                />
-                <Text style={styles.metaRegion}>{regionLabel}</Text>
-              </View>
-            )}
-            {!!regionLabel && !!durationLabel && (
-              <Text style={styles.metaDivider}>·</Text>
-            )}
-            {!!durationLabel && (
-              <View style={styles.metaFact}>
-                <CalendarIcon
-                  size={normalize(13)}
-                  color={COLORS.textLabel}
-                  strokeWidth={2}
-                />
-                <Text style={styles.metaDuration}>{durationLabel}</Text>
-              </View>
-            )}
-          </View>
+              {(!!regionLabel || !!durationLabel) && (
+                <View style={styles.metaRule} />
+              )}
+              {!!regionLabel && (
+                <View style={styles.metaFact}>
+                  <MapPin
+                    size={normalize(13)}
+                    color={COLORS.primary}
+                    strokeWidth={2}
+                  />
+                  <Text style={styles.metaRegion}>{regionLabel}</Text>
+                </View>
+              )}
+              {!!regionLabel && !!durationLabel && (
+                <Text style={styles.metaDivider}>·</Text>
+              )}
+              {!!durationLabel && (
+                <View style={styles.metaFact}>
+                  <CalendarIcon
+                    size={normalize(13)}
+                    color={COLORS.textLabel}
+                    strokeWidth={2}
+                  />
+                  <Text style={styles.metaDuration}>{durationLabel}</Text>
+                </View>
+              )}
+            </View>
 
-          <Text style={styles.metaText}>
-            {post.createdAt} · 조회 {post.views.toLocaleString()} · 가져감{' '}
-            {post.forks ?? 0}
-          </Text>
-
-          {(post.tags ?? []).length > 0 && (
-            <Text style={styles.tagLine}>
-              {(post.tags ?? []).map(tag => `#${tag}`).join('  ')}
+            <Text style={styles.metaText}>
+              {post.createdAt} · 조회 {post.views.toLocaleString()} · 가져감{' '}
+              {post.forks ?? 0}
             </Text>
-          )}
-        </View>
 
-        {hasBody && (
-          <View style={styles.body}>
-            <PostContentView
-              content={post.content}
-              contentText={post.contentText}
-            />
+            {(post.tags ?? []).length > 0 && (
+              <Text style={styles.tagLine}>
+                {(post.tags ?? []).map(tag => `#${tag}`).join('  ')}
+              </Text>
+            )}
           </View>
-        )}
+
+          {hasBody && (
+            <View style={styles.body}>
+              <Text style={styles.bodyTitle}>여행기</Text>
+              <PostContentView
+                content={post.content}
+                contentText={post.contentText}
+              />
+            </View>
+          )}
         </View>
 
         {days.length > 0 && (
           <>
-          <View style={styles.band} />
-          <View style={[styles.block, styles.section]}>
-            <TouchableOpacity
-              style={styles.sectionHeader}
-              onPress={() => setScheduleOpen(!isScheduleOpen)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityState={{ expanded: isScheduleOpen }}
-            >
-              <View style={styles.sectionTitleGroup}>
-                <Text style={styles.sectionTitle}>상세 일정</Text>
-                <Text style={styles.sectionSubtitle}>
-                  총 {totalPlaces}개의 장소
-                </Text>
-              </View>
-              {isScheduleOpen ? (
-                <ChevronUp size={normalize(18)} color={COLORS.textSecondary} />
-              ) : (
-                <ChevronDown size={normalize(18)} color={COLORS.textSecondary} />
-              )}
-            </TouchableOpacity>
+            <View style={styles.band} />
+            <View style={[styles.block, styles.section]}>
+              <TouchableOpacity
+                style={styles.sectionHeader}
+                onPress={() => setScheduleOpen(!isScheduleOpen)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: isScheduleOpen }}
+              >
+                <View style={styles.sectionTitleGroup}>
+                  <Text style={styles.sectionTitle}>상세 일정</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    총 {totalPlaces}개의 장소
+                  </Text>
+                </View>
+                {isScheduleOpen ? (
+                  <ChevronUp
+                    size={normalize(18)}
+                    color={COLORS.textSecondary}
+                  />
+                ) : (
+                  <ChevronDown
+                    size={normalize(18)}
+                    color={COLORS.textSecondary}
+                  />
+                )}
+              </TouchableOpacity>
 
-            {isScheduleOpen && (
-              <>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.dayTabs}
-                >
-                  {/* 며칠짜리인지, 흐름이 어떤지는 하루씩 봐서는 안 잡힌다. */}
-                  {days.length > 1 && (
-                    <TouchableOpacity
-                      style={[
-                        styles.dayTab,
-                        selectedDay === ALL_DAYS && styles.dayTabActive,
-                      ]}
-                      onPress={() => setSelectedDay(ALL_DAYS)}
-                      activeOpacity={0.85}
-                    >
-                      <Text
-                        style={[
-                          styles.dayTabText,
-                          selectedDay === ALL_DAYS && styles.dayTabTextActive,
-                        ]}
-                      >
-                        전체
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                  {days.map((day, index) => {
-                    const isActive = selectedDay === index;
-                    return (
+              {isScheduleOpen && (
+                <>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.dayTabs}
+                  >
+                    {/* 며칠짜리인지, 흐름이 어떤지는 하루씩 봐서는 안 잡힌다. */}
+                    {days.length > 1 && (
                       <TouchableOpacity
-                        key={day.day ?? index}
-                        style={[styles.dayTab, isActive && styles.dayTabActive]}
-                        onPress={() => setSelectedDay(index)}
+                        style={[
+                          styles.dayTab,
+                          selectedDay === ALL_DAYS && styles.dayTabActive,
+                        ]}
+                        onPress={() => setSelectedDay(ALL_DAYS)}
                         activeOpacity={0.85}
                       >
                         <Text
                           style={[
                             styles.dayTabText,
-                            isActive && styles.dayTabTextActive,
+                            selectedDay === ALL_DAYS && styles.dayTabTextActive,
                           ]}
                         >
-                          Day {day.day ?? index + 1}
+                          전체
                         </Text>
                       </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
+                    )}
+                    {days.map((day, index) => {
+                      const isActive = selectedDay === index;
+                      return (
+                        <TouchableOpacity
+                          key={day.day ?? index}
+                          style={[
+                            styles.dayTab,
+                            isActive && styles.dayTabActive,
+                          ]}
+                          onPress={() => setSelectedDay(index)}
+                          activeOpacity={0.85}
+                        >
+                          <Text
+                            style={[
+                              styles.dayTabText,
+                              isActive && styles.dayTabTextActive,
+                            ]}
+                          >
+                            Day {day.day ?? index + 1}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
 
-                <ScheduleTimeline
-                  entries={entries}
-                  emptyText="이 날에는 등록된 장소가 없어요"
-                  showMapLink
-                  // 전체를 고르면 마지막 줄이 마지막 날의 끝이라 '하루'로 닫을 수 없다.
-                  endLabel={
-                    selectedDay === ALL_DAYS ? undefined : '하루 마무리'
-                  }
-                />
-              </>
-            )}
+                  <ScheduleTimeline
+                    entries={entries}
+                    emptyText="이 날에는 등록된 장소가 없어요"
+                    showMapLink
+                    // 전체를 고르면 마지막 줄이 마지막 날의 끝이라 '하루'로 닫을 수 없다.
+                    endLabel={
+                      selectedDay === ALL_DAYS ? undefined : '하루 마무리'
+                    }
+                  />
+                </>
+              )}
 
-            {/* 좋아요·싫어요와 가져가기를 일정 아래 한 칸에 모은다. 셋 다 이 일정을
+              {/* 좋아요·싫어요와 가져가기를 일정 아래 한 칸에 모은다. 셋 다 이 일정을
                 다 보고 나서 하는 일이라, 흩어 두면 훑다 말고 되돌아가야 한다. */}
-            <View style={styles.actionBar}>{renderReactions()}</View>
+              <View style={styles.actionBar}>{renderReactions()}</View>
 
-            <View style={styles.forkBar}>
-              <TouchableOpacity
-                style={[
-                  styles.forkButton,
-                  (!isForkable || fork.isPending) && styles.forkButtonDisabled,
-                ]}
-                onPress={handleForkPress}
-                disabled={!isForkable || fork.isPending}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: !isForkable || fork.isPending }}
-              >
-                <Copy
-                  size={normalize(15)}
-                  color={isForkable ? COLORS.white : COLORS.textTertiary}
-                />
-                <Text
+              <View style={styles.forkBar}>
+                <TouchableOpacity
                   style={[
-                    styles.forkButtonText,
-                    !isForkable && styles.forkButtonTextOff,
+                    styles.forkButton,
+                    (!isForkable || fork.isPending) &&
+                      styles.forkButtonDisabled,
                   ]}
+                  onPress={handleForkPress}
+                  disabled={!isForkable || fork.isPending}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityState={{
+                    disabled: !isForkable || fork.isPending,
+                  }}
                 >
-                  {!isForkable
-                    ? '가져갈 일정이 없어요'
-                    : fork.isPending
-                    ? '가져오는 중…'
-                    : '내 일정으로 가져가기'}
-                </Text>
-              </TouchableOpacity>
+                  <Copy
+                    size={normalize(15)}
+                    color={isForkable ? COLORS.white : COLORS.textTertiary}
+                  />
+                  <Text
+                    style={[
+                      styles.forkButtonText,
+                      !isForkable && styles.forkButtonTextOff,
+                    ]}
+                  >
+                    {!isForkable
+                      ? '가져갈 일정이 없어요'
+                      : fork.isPending
+                      ? '가져오는 중…'
+                      : '내 일정으로 가져가기'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
           </>
         )}
 
@@ -514,10 +549,7 @@ export default function FeedDetailScreen() {
         <View style={styles.band} />
 
         <View
-          style={[
-            styles.block,
-            similarPosts.length === 0 && styles.blockFill,
-          ]}
+          style={[styles.block, similarPosts.length === 0 && styles.blockFill]}
         >
           <CommentSection postId={post.id} commentCount={post.comments} feed />
         </View>
@@ -539,7 +571,9 @@ export default function FeedDetailScreen() {
                   style={styles.similarRow}
                   onPress={() =>
                     // push면 여행기를 타고 넘어갈 때마다 스택이 쌓인다.
-                    navigation.replace('FeedDetail', { postId: String(item.id) })
+                    navigation.replace('FeedDetail', {
+                      postId: String(item.id),
+                    })
                   }
                   activeOpacity={0.7}
                   accessibilityRole="button"
@@ -549,7 +583,9 @@ export default function FeedDetailScreen() {
                     uri={item.image}
                     style={styles.similarThumb}
                     fallback={
-                      <View style={[styles.similarThumb, styles.similarThumbEmpty]}>
+                      <View
+                        style={[styles.similarThumb, styles.similarThumbEmpty]}
+                      >
                         <MapPin
                           size={normalize(16)}
                           color={COLORS.borderStrong}
