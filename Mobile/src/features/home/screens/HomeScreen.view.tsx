@@ -504,19 +504,19 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
           <TouchableOpacity
             style={[
               styles.submitButton,
-              (!isFormValid || isCreating) && styles.submitButtonDisabled,
+              isCreating && styles.submitButtonDisabled,
             ]}
             onPress={onCreateItinerary}
-            disabled={!isFormValid || isCreating}
+            disabled={isCreating}
             activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel="나만의 일정 만들기"
-            accessibilityState={{ disabled: !isFormValid || isCreating }}
+            accessibilityState={{ disabled: Boolean(isCreating) }}
           >
             <Text
               style={[
                 styles.submitButtonText,
-                (!isFormValid || isCreating) && styles.submitButtonTextDisabled,
+                isCreating && styles.submitButtonTextDisabled,
               ]}
             >
               {isCreating ? '일정을 만드는 중…' : '나만의 일정 만들기'}
@@ -524,7 +524,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
             {!isCreating && (
               <ArrowRight
                 size={normalize(18)}
-                color={!isFormValid ? '#6B7280' : tokens.colors.white}
+                color={tokens.colors.white}
                 strokeWidth={2.2}
               />
             )}

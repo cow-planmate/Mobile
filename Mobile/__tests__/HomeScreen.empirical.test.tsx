@@ -90,7 +90,7 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
   ];
 
   describe.each(variants)('Variant: %s', variant => {
-    it('renders empty state correctly with placeholders and disabled CTA', () => {
+    it('renders empty state correctly with placeholders and active CTA', () => {
       const props = createBaseProps({
         variant,
         destination: '',
@@ -111,8 +111,8 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
       );
 
       expect(submitBtn).toBeDefined();
-      expect(submitBtn!.props.disabled).toBe(true);
-      expect(submitBtn!.props.accessibilityState.disabled).toBe(true);
+      expect(submitBtn!.props.disabled).toBe(false);
+      expect(submitBtn!.props.accessibilityState.disabled).toBe(false);
 
       // Verify placeholders
       const texts = renderer.root

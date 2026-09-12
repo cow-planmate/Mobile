@@ -302,20 +302,30 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   };
 
   const handleCreateItinerary = () => {
-    if (!isFormValid) {
-      return;
-    }
-
-    if (travelId <= 0) {
+    if (!destination || travelId <= 0) {
       showAlert({
         title: '알림',
-        message:
-          '여행지가 올바르게 선택되지 않았어요.\n목록에서 다시 선택해 주세요.',
+        message: '여행지를 먼저 선택해 주세요.',
       });
+      setSearchModalVisible(true);
       return;
     }
 
     if (!startDate || !endDate) {
+      showAlert({
+        title: '알림',
+        message: '여행 기간을 선택해 주세요.',
+      });
+      setCalendarVisible(true);
+      return;
+    }
+
+    if (adults === null) {
+      showAlert({
+        title: '알림',
+        message: '인원을 선택해 주세요.',
+      });
+      setPaxModalVisible(true);
       return;
     }
 

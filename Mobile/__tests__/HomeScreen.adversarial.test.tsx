@@ -228,7 +228,7 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
         expect(onCreateItinerary).toHaveBeenCalledTimes(1);
       });
 
-      it('disables submit button and sets accessibilityState when isFormValid is false', () => {
+      it('keeps submit button active with primary styling when isFormValid is false', () => {
         const onCreateItinerary = jest.fn();
         const renderer = renderWithQuery({
           ...baseProps,
@@ -244,8 +244,8 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
         );
 
         expect(submitBtn).toBeDefined();
-        expect(submitBtn!.props.disabled).toBe(true);
-        expect(submitBtn!.props.accessibilityState).toEqual({ disabled: true });
+        expect(submitBtn!.props.disabled).toBe(false);
+        expect(submitBtn!.props.accessibilityState).toEqual({ disabled: false });
       });
 
       it('disables submit button and displays loading text when isCreating is true', () => {
