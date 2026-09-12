@@ -220,19 +220,14 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
     );
   });
 
-  it('opens my itineraries directly from the labeled action', async () => {
+  it('does not render the removed "내 일정으로" action button', async () => {
     mockedAxios.get.mockResolvedValueOnce({
       data: { message: 'success', planFrame: {}, placeBlocks: [], timetables: [] },
     });
     const tree = await mount(<ItineraryViewScreen navigation={mockNavigation} route={mockRoute} />);
     const { TouchableOpacity } = require('react-native');
     const action = tree.root.findAllByType(TouchableOpacity)
-      .find(node => node.props.accessibilityLabel === '내 일정으로')!;
-    ReactTestRenderer.act(() => action.props.onPress());
-    expect(mockNavigation.reset).toHaveBeenCalledWith({
-      index: 1,
-      routes: [{ name: 'MainTabs' }, { name: 'Profile', params: { scrollToItinerary: true } }],
-    });
-    expect(require('../src/contexts/AlertContext').useAlert().showAlert).not.toHaveBeenCalled();
+      .find(node => node.props.accessibilityLabel === '내 일정으로');
+    expect(action).toBeUndefined();
   });
 });

@@ -145,30 +145,32 @@ export default function PopupModal({
 
           <View style={styles.body}>{children}</View>
 
-          <View style={styles.footer}>
-            {footer !== undefined ? (
-              footer
-            ) : (
-              <TouchableOpacity
-                style={styles.doneButton}
-                onPress={handleDone}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel={isNext ? '다음 단계로' : '선택 완료'}
-              >
-                <Text style={styles.doneButtonText}>
-                  {doneLabel ?? (isNext ? '다음' : '완료')}
-                </Text>
-                {isNext ? (
-                  <ArrowRight
-                    size={normalize(15)}
-                    color={tokens.colors.white}
-                    strokeWidth={2.2}
-                  />
-                ) : null}
-              </TouchableOpacity>
-            )}
-          </View>
+          {footer !== null && (
+            <View style={styles.footer}>
+              {footer !== undefined ? (
+                footer
+              ) : (
+                <TouchableOpacity
+                  style={styles.doneButton}
+                  onPress={handleDone}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel={isNext ? '다음 단계로' : '선택 완료'}
+                >
+                  <Text style={styles.doneButtonText}>
+                    {doneLabel ?? (isNext ? '다음' : '완료')}
+                  </Text>
+                  {isNext ? (
+                    <ArrowRight
+                      size={normalize(15)}
+                      color={tokens.colors.white}
+                      strokeWidth={2.2}
+                    />
+                  ) : null}
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         </Animated.View>
       </View>
     </Modal>

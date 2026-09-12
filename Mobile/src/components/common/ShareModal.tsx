@@ -10,6 +10,8 @@ import {
   Share,
   NativeModules,
   Switch,
+  Pressable,
+  Animated,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import Link2 from 'lucide-react-native/dist/esm/icons/link-2';
@@ -277,12 +279,22 @@ export default function ShareModal({
     });
   };
 
+  const thumbAnim = useRef(new Animated.Value(isShared ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(thumbAnim, {
+      toValue: isShared ? 1 : 0,
+      duration: 160,
+      useNativeDriver: true,
+    }).start();
+  }, [isShared, thumbAnim]);
+
   return (
     <PopupModal
       visible={visible}
       title="공유 및 초대"
       onClose={onClose}
-      doneLabel="확인"
+      footer={null}
     >
       <ScrollView
         contentContainerStyle={styles.body}
@@ -315,20 +327,57 @@ export default function ShareModal({
               </Text>
             </View>
             {isOwner && (
-              <Switch
+              <Pressable
+                accessibilityRole="switch"
                 accessibilityLabel="공유 링크 사용"
-                value={isShared}
-                onValueChange={handleToggleShare}
-                disabled={shareStatusLock.isSubmitting}
                 accessibilityState={{
+                  checked: isShared,
                   disabled: shareStatusLock.isSubmitting,
                 }}
-                trackColor={{
-                  false: tokens.colors.borderStrong,
-                  true: tokens.colors.primary,
-                }}
-                thumbColor={tokens.colors.white}
-              />
+                disabled={shareStatusLock.isSubmitting}
+                onPress={() => handleToggleShare(!isShared)}
+                style={[
+                  styles.switchTrack,
+                  {
+                    backgroundColor: isShared
+                      ? tokens.colors.primary
+                      : tokens.colors.borderStrong,
+                  },
+                  shareStatusLock.isSubmitting && styles.switchDisabled,
+                ]}
+              >
+                <Animated.View
+                  style={[
+                    styles.switchThumb,
+                    {
+                      transform: [
+                        {
+                          translateX: thumbAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, normalize(20)],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                />
+                <View style={styles.hiddenNativeSwitch} pointerEvents="none">
+                  <Switch
+                    accessibilityLabel="공유 링크 사용"
+                    value={isShared}
+                    onValueChange={handleToggleShare}
+                    disabled={shareStatusLock.isSubmitting}
+                    accessibilityState={{
+                      disabled: shareStatusLock.isSubmitting,
+                    }}
+                    trackColor={{
+                      false: tokens.colors.borderStrong,
+                      true: tokens.colors.primary,
+                    }}
+                    thumbColor={tokens.colors.white}
+                  />
+                </View>
+              </Pressable>
             )}
           </View>
 
@@ -482,6 +531,29 @@ const styles = StyleSheet.create({
     fontSize: normalize(13.5),
     fontFamily: tokens.fontFamily.semibold,
     color: tokens.colors.text,
+  },
+  switchTrack: {
+    width: normalize(44),
+    height: normalize(24),
+    borderRadius: normalize(12),
+    padding: normalize(2),
+    justifyContent: 'center',
+  },
+  switchDisabled: {
+    opacity: 0.5,
+  },
+  switchThumb: {
+    width: normalize(20),
+    height: normalize(20),
+    borderRadius: normalize(10),
+    backgroundColor: tokens.colors.white,
+  },
+  hiddenNativeSwitch: {
+    position: 'absolute',
+    opacity: 0,
+    width: 0,
+    height: 0,
+    overflow: 'hidden',
   },
   // 주소와 복사 단추를 한 테두리 안에 넣어 둘이 한 덩이로 읽히게 한다.
   linkRow: {

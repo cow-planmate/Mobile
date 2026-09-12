@@ -96,7 +96,7 @@ export interface ItineraryViewScreenViewProps {
 
   isPlanOwner: boolean;
   scrollRef: React.RefObject<ScrollView | null>;
-  handleConfirm: () => void;
+  handleConfirm?: () => void;
   goBack: () => void;
   handleEdit: () => void;
   planId?: string;
@@ -200,14 +200,6 @@ export default function ItineraryViewScreenView({
           </ToolbarIconButton>
           <ToolbarIconButton label="일정 수정" onPress={handleEdit} variant="filledGray">
             <Pencil color={COLORS.text} size={17} />
-          </ToolbarIconButton>
-          <ToolbarIconButton
-            onPress={handleConfirm}
-            label="내 일정으로"
-            variant="filledBlue"
-            active
-          >
-            <Text style={styles.toolbarActionText}>내 일정으로</Text>
           </ToolbarIconButton>
         </View>
       </View>
