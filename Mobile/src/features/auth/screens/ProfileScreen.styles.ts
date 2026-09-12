@@ -958,12 +958,6 @@ export const styles = StyleSheet.create({
     paddingVertical: normalize(14),
     justifyContent: 'center',
   },
-  accountItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: normalize(14),
-  },
   accountItemDivider: {
     height: 1,
     backgroundColor: tokens.colors.borderLight,

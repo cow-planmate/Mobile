@@ -1070,24 +1070,6 @@ export default function ProfileScreenView({
             <View style={styles.sectionBand} />
 
             <View style={styles.accountSection}>
-              {!user.socialLogin && (
-                <>
-                  <TouchableOpacity
-                    style={styles.accountItemRow}
-                    onPress={() => setPasswordModalVisible(true)}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
-                    accessibilityLabel="비밀번호 변경"
-                  >
-                    <Text style={styles.accountItemText}>비밀번호 변경</Text>
-                    <ChevronRight
-                      size={16}
-                      color={tokens.colors.textTertiary}
-                    />
-                  </TouchableOpacity>
-                  <View style={styles.accountItemDivider} />
-                </>
-              )}
               <TouchableOpacity
                 style={styles.accountItem}
                 onPress={handleLogout}
@@ -1337,19 +1319,6 @@ export default function ProfileScreenView({
             >
               <Text style={styles.saveButtonText}>저장</Text>
             </TouchableOpacity>
-            {!user.socialLogin && (
-              <TouchableOpacity
-                style={styles.editPasswordLink}
-                onPress={() => setPasswordModalVisible(true)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="비밀번호 변경하기"
-              >
-                <Text style={styles.editPasswordLinkText}>
-                  비밀번호 변경하기
-                </Text>
-              </TouchableOpacity>
-            )}
           </View>
         }
       >
