@@ -392,7 +392,6 @@ export default function FeedDetailScreen() {
 
           {hasBody && (
             <View style={styles.body}>
-              <Text style={styles.bodyTitle}>여행기</Text>
               <PostContentView
                 content={post.content}
                 contentText={post.contentText}
