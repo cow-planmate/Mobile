@@ -83,6 +83,7 @@ import UserPlusIcon from 'lucide-react-native/dist/esm/icons/user-plus';
 import UsersIcon from 'lucide-react-native/dist/esm/icons/users';
 import XIcon from 'lucide-react-native/dist/esm/icons/x';
 import { useCoachmarkTarget } from '../coachmark/CoachmarkContext';
+import TutorialLauncher from '../coachmark/TutorialLauncher';
 
 type ToolbarButtonVariant =
   | 'plain'
@@ -2115,6 +2116,9 @@ export default function ItineraryEditorScreenView({
             >
               <Undo2 color={COLORS.text} size={18} />
             </TouchableOpacity>
+            {/* 사용법 단추도 같은 자리에 둔다 - 이 묶음만 시트 높이를 따라
+              움직여서, 시트를 끝까지 올려도 가려지지 않는다. */}
+            <TutorialLauncher />
           </Animated.View>
 
           <Animated.View

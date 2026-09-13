@@ -4,6 +4,7 @@ import React, {
   useContext,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import type { CoachmarkTargetId } from './coachmarkSteps';
 
@@ -29,12 +30,34 @@ interface CoachmarkRegistry {
 
 const CoachmarkContext = createContext<CoachmarkRegistry | null>(null);
 
-export function CoachmarkProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+/**
+ * 안내를 여닫는 손잡이.
+ *
+ * 안내는 스스로 뜨지 않는다 - 물음표 단추를 눌러야 시작한다. 단추
+ * (TutorialLauncher)는 시간표 위에, 안내(EditorCoachmark)는 화면 맨 위에 따로
+ * 떠 있어서 "지금 열려 있는가"만 여기로 모은다. 말풍선을 권할지 말지는 기기에
+ * 남기는 일이라 단추 쪽이 혼자 안다 - 이 파일은 시간표 카드도 함께 읽으므로
+ * 저장소를 끌어들이면 안내와 무관한 곳까지 딸려 온다.
+ */
+interface CoachmarkTour {
+  isRunning: boolean;
+  openTour: () => void;
+  closeTour: () => void;
+}
+
+const CoachmarkTourContext = createContext<CoachmarkTour | null>(null);
+
+export function CoachmarkProvider({ children }: { children: React.ReactNode }) {
   const nodes = useRef(new Map<CoachmarkTargetId, MeasurableNode>()).current;
+  const [isRunning, setIsRunning] = useState(false);
+
+  const openTour = useCallback(() => setIsRunning(true), []);
+  const closeTour = useCallback(() => setIsRunning(false), []);
+
+  const tour = useMemo<CoachmarkTour>(
+    () => ({ isRunning, openTour, closeTour }),
+    [isRunning, openTour, closeTour],
+  );
 
   const registry = useMemo<CoachmarkRegistry>(
     () => ({
@@ -54,13 +77,19 @@ export function CoachmarkProvider({
 
   return (
     <CoachmarkContext.Provider value={registry}>
-      {children}
+      <CoachmarkTourContext.Provider value={tour}>
+        {children}
+      </CoachmarkTourContext.Provider>
     </CoachmarkContext.Provider>
   );
 }
 
 export function useCoachmarkRegistry(): CoachmarkRegistry | null {
   return useContext(CoachmarkContext);
+}
+
+export function useCoachmarkTour(): CoachmarkTour | null {
+  return useContext(CoachmarkTourContext);
 }
 
 /**

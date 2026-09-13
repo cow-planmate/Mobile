@@ -646,6 +646,7 @@ export const styles = StyleSheet.create({
     bottom: SHEET_HANDLE_HEIGHT + 14,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: normalize(10),
     zIndex: 30,
   },
   floatingHistoryButton: {

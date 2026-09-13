@@ -3,6 +3,7 @@ import { Text } from 'react-native';
 import renderer, { act } from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import EditorCoachmark from '../EditorCoachmark';
+import TutorialLauncher from '../TutorialLauncher';
 import { CoachmarkProvider, useCoachmarkTarget } from '../CoachmarkContext';
 import type { CoachmarkTargetId } from '../coachmarkSteps';
 
@@ -39,6 +40,7 @@ function renderTour(children: React.ReactNode) {
   return renderer.create(
     <CoachmarkProvider>
       {children}
+      <TutorialLauncher />
       <EditorCoachmark enabled />
     </CoachmarkProvider>,
   );
@@ -48,9 +50,7 @@ function renderTour(children: React.ReactNode) {
 const visibleTexts = (tree: renderer.ReactTestRenderer): string[] =>
   tree.root.findAllByType(Text).map(node => {
     const children = node.props.children;
-    return Array.isArray(children)
-      ? children.join('')
-      : String(children ?? '');
+    return Array.isArray(children) ? children.join('') : String(children ?? '');
   });
 
 const press = (tree: renderer.ReactTestRenderer, label: string) =>
@@ -58,16 +58,20 @@ const press = (tree: renderer.ReactTestRenderer, label: string) =>
     tree.root.findByProps({ accessibilityLabel: label }).props.onPress();
   });
 
-/** 저장소 확인과 시작 대기가 모두 지나가도록 민다. */
+/** 저장소 확인이 끝나 말풍선 여부가 정해지도록 민다. */
 const settle = async (tree: renderer.ReactTestRenderer) => {
   await act(async () => {
     await Promise.resolve();
+    await Promise.resolve();
   });
+  return tree;
+};
+
+/** 사용법 단추를 눌러 안내를 연다. 열세 자리를 다 재고 나서야 첫 스텝이 뜬다. */
+const openTour = async (tree: renderer.ReactTestRenderer) => {
+  await press(tree, '사용법 보기');
   await act(async () => {
-    jest.advanceTimersByTime(1000);
-  });
-  // Promise.all로 열세 자리를 한 번에 재고 나서야 첫 스텝이 뜬다.
-  await act(async () => {
+    await Promise.resolve();
     await Promise.resolve();
   });
   return tree;
@@ -95,6 +99,9 @@ describe('EditorCoachmark', () => {
       );
     });
     await settle(tree);
+    // 스스로 뜨지 않는다 - 눌러야 시작한다.
+    expect(visibleTexts(tree)).not.toContain('일정 이름');
+    await openTour(tree);
 
     const texts = visibleTexts(tree);
     expect(texts).toContain('일정 이름');
@@ -113,6 +120,7 @@ describe('EditorCoachmark', () => {
       );
     });
     await settle(tree);
+    await openTour(tree);
 
     await press(tree, '다음 안내');
 
@@ -121,21 +129,42 @@ describe('EditorCoachmark', () => {
     expect(texts).toContain('2 / 2');
   });
 
-  it('마지막에서 완료하면 안내를 닫고 봤다고 남긴다', async () => {
+  it('마지막에서 완료하면 안내를 닫고 단추는 남긴다', async () => {
     let tree!: renderer.ReactTestRenderer;
     await act(async () => {
       tree = renderTour(<FakeTarget id="planName" top={100} />);
     });
     await settle(tree);
+    await openTour(tree);
 
     // 자리가 하나뿐이면 첫 스텝이 곧 마지막이다.
     await press(tree, '안내 완료');
 
     expect(visibleTexts(tree)).not.toContain('일정 이름');
-    expect(storage.setItem).toHaveBeenCalledWith('editorCoachmarkSeen', '1');
+    // 다시 볼 수 있어야 하므로 '봤다'는 기록은 남기지 않는다.
+    expect(storage.setItem).not.toHaveBeenCalledWith(
+      'editorCoachmarkSeen',
+      '1',
+    );
+    expect(
+      tree.root.findAllByProps({ accessibilityLabel: '사용법 보기' }).length,
+    ).toBeGreaterThan(0);
   });
 
-  it('건너뛰면 남은 스텝을 버리고 다시 뜨지 않게 한다', async () => {
+  it('닫은 뒤에도 다시 열 수 있다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderTour(<FakeTarget id="planName" top={100} />);
+    });
+    await settle(tree);
+    await openTour(tree);
+    await press(tree, '안내 완료');
+
+    await openTour(tree);
+    expect(visibleTexts(tree)).toContain('일정 이름');
+  });
+
+  it('건너뛰면 남은 스텝을 버린다', async () => {
     let tree!: renderer.ReactTestRenderer;
     await act(async () => {
       tree = renderTour(
@@ -146,15 +175,48 @@ describe('EditorCoachmark', () => {
       );
     });
     await settle(tree);
+    await openTour(tree);
 
     await press(tree, '안내 건너뛰기');
 
     expect(visibleTexts(tree)).not.toContain('일정 이름');
-    expect(storage.setItem).toHaveBeenCalledWith('editorCoachmarkSeen', '1');
   });
 
-  it('이미 본 사람에게는 뜨지 않는다', async () => {
-    storage.getItem.mockResolvedValue('1');
+  it('처음 온 사람에게만 사용법을 권한다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderTour(<FakeTarget id="planName" top={100} />);
+    });
+    await settle(tree);
+
+    expect(visibleTexts(tree)).toContain('일정 만들기가 처음인가요?');
+  });
+
+  it('말풍선을 닫으면 기록하고 다시 권하지 않는다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderTour(<FakeTarget id="planName" top={100} />);
+    });
+    await settle(tree);
+
+    await press(tree, '사용법 안내 닫기');
+
+    expect(visibleTexts(tree)).not.toContain('일정 만들기가 처음인가요?');
+    expect(storage.setItem).toHaveBeenCalledWith(
+      'editorTutorialNudgeDismissed',
+      '1',
+    );
+    // 닫았어도 단추는 남아 있어야 한다.
+    expect(
+      tree.root.findAllByProps({ accessibilityLabel: '사용법 보기' }).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it('옛 자동 안내를 이미 본 사람에게는 권하지 않는다', async () => {
+    // 새 키는 비어 있고 옛 키만 있는 상태 - 예전 버전에서 안내를 끝까지 본 사람.
+    storage.getItem.mockImplementation((key: string) =>
+      Promise.resolve(key === 'editorCoachmarkSeen' ? '1' : null),
+    );
 
     let tree!: renderer.ReactTestRenderer;
     await act(async () => {
@@ -162,18 +224,21 @@ describe('EditorCoachmark', () => {
     });
     await settle(tree);
 
-    expect(visibleTexts(tree)).not.toContain('일정 이름');
+    expect(visibleTexts(tree)).not.toContain('일정 만들기가 처음인가요?');
   });
 
-  it('잴 수 있는 자리가 하나도 없으면 봤다고 치지 않는다', async () => {
+  it('잴 수 있는 자리가 하나도 없으면 조용히 닫는다', async () => {
     let tree!: renderer.ReactTestRenderer;
     await act(async () => {
       tree = renderTour(null);
     });
     await settle(tree);
+    await openTour(tree);
 
-    expect(visibleTexts(tree)).toHaveLength(0);
-    // 다음 진입에 다시 시도해야 하므로 기록을 남기지 않는다.
-    expect(storage.setItem).not.toHaveBeenCalled();
+    // 빈 말풍선을 띄우지 않는다. 단추는 그대로라 다시 누르면 된다.
+    expect(visibleTexts(tree)).not.toContain('1 / 1');
+    expect(
+      tree.root.findAllByProps({ accessibilityLabel: '사용법 보기' }).length,
+    ).toBeGreaterThan(0);
   });
 });
