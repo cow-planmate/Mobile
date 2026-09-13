@@ -81,8 +81,11 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     paddingTop: normalize(16),
     paddingBottom: normalize(14),
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+  },
+  headerDivider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginHorizontal: normalize(16),
   },
   statusRow: {
     flexDirection: 'row',

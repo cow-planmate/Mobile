@@ -313,6 +313,8 @@ export default function PostDetailScreen() {
 
         </View>
 
+        <View style={styles.headerDivider} />
+
         <View style={styles.body}>
           <PostContentView
             content={post.content}
