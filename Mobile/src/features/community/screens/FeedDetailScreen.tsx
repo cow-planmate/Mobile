@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StatusBar,
+  Share,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,8 +17,11 @@ import ChevronUp from 'lucide-react-native/dist/esm/icons/chevron-up';
 import Copy from 'lucide-react-native/dist/esm/icons/copy';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
+import Share2 from 'lucide-react-native/dist/esm/icons/share-2';
 import ThumbsDown from 'lucide-react-native/dist/esm/icons/thumbs-down';
 import ThumbsUp from 'lucide-react-native/dist/esm/icons/thumbs-up';
+import Trash2 from 'lucide-react-native/dist/esm/icons/trash-2';
+import { WEB_URL } from '@env';
 import { normalize } from '../../../utils/normalize';
 import {
   getBackendErrorMessage,
@@ -32,6 +36,7 @@ import {
   useReactToPost,
   useForkItinerary,
   useSimilarFeedPosts,
+  useDeletePost,
 } from '../hooks/queries';
 import { formatDuration } from '../services/communityApi';
 import { canForkItinerary } from '../utils/itineraryToPlan';
@@ -79,6 +84,7 @@ export default function FeedDetailScreen() {
     isFetching,
   } = usePost(postId, true);
   const react = useReactToPost(postId ?? '', true);
+  const deletePost = useDeletePost(true);
   const fork = useForkItinerary(postId ?? '');
   const isAuthor = !!post && user?.userId === post.userId;
 
@@ -169,6 +175,50 @@ export default function FeedDetailScreen() {
       }
     });
 
+  const handleDeletePost = () => {
+    if (!post) return;
+    showAlert({
+      title: '여행기 삭제',
+      message: '여행기를 삭제할까요? 되돌릴 수 없습니다.',
+      type: 'confirm',
+      buttons: [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deletePost.mutateAsync(post.id);
+              navigation.goBack();
+            } catch (deleteError) {
+              showAlert({
+                title: '삭제 실패',
+                message: getBackendErrorMessage(deleteError),
+                type: 'error',
+              });
+            }
+          },
+        },
+      ],
+    });
+  };
+
+  // 웹은 주소창을 복사하지만 앱에는 주소창이 없다. 웹 상세 주소를 만들어
+  // 기기 공유 시트에 넘긴다 — 받는 쪽이 앱을 안 깔았어도 열린다.
+  const handleShare = async () => {
+    if (!post) return;
+    try {
+      await Share.share({
+        message: `[PlanMate] ${post.title}
+${WEB_URL}/travel/${post.id}`,
+      });
+    } catch (shareError) {
+      console.error('Share failed:', shareError);
+    }
+  };
+
+  // 수정·삭제는 본문 머리의 칩으로 내렸다(웹·게시글 상세와 같은 자리).
+  // 상단바 오른쪽을 비워 두어야 가운데 제목이 실제로 가운데에 선다.
   const renderTopBar = () => (
     <View style={styles.topBar}>
       <TouchableOpacity
@@ -182,22 +232,7 @@ export default function FeedDetailScreen() {
         <ChevronLeft size={normalize(24)} color={COLORS.text} />
       </TouchableOpacity>
       <Text style={styles.topBarTitle}>여행기</Text>
-      {isAuthor ? (
-        <TouchableOpacity
-          style={styles.topBarButton}
-          onPress={() =>
-            navigation.navigate('FeedCreate', { postId: String(post.id) })
-          }
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="글 수정"
-          hitSlop={8}
-        >
-          <Pencil size={normalize(18)} color={COLORS.text} />
-        </TouchableOpacity>
-      ) : (
-        <View style={styles.topBarButton} />
-      )}
+      <View style={styles.topBarButton} />
     </View>
   );
 
@@ -304,6 +339,18 @@ export default function FeedDetailScreen() {
           비추천 {post.dislikes}
         </Text>
       </TouchableOpacity>
+
+      {/* 공유는 셀 수가 없어 숫자가 붙지 않는다. 추천·비추천만 남은 너비를
+        반씩 갖고, 공유는 아이콘 하나 크기의 정사각으로 끝을 막는다. */}
+      <TouchableOpacity
+        style={styles.shareButton}
+        onPress={handleShare}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel="여행기 공유"
+      >
+        <Share2 size={normalize(15)} color={COLORS.textSecondary} />
+      </TouchableOpacity>
     </View>
   );
 
@@ -387,6 +434,48 @@ export default function FeedDetailScreen() {
               <Text style={styles.tagLine}>
                 {(post.tags ?? []).map(tag => `#${tag}`).join('  ')}
               </Text>
+            )}
+
+            {isAuthor && (
+              <View style={styles.authorActions}>
+                <TouchableOpacity
+                  style={styles.authorActionButton}
+                  onPress={() =>
+                    navigation.navigate('FeedCreate', {
+                      postId: String(post.id),
+                    })
+                  }
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="여행기 수정"
+                >
+                  <Pencil size={normalize(12)} color={COLORS.textSecondary} />
+                  <Text style={styles.authorActionText}>수정</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.authorActionButton,
+                    styles.authorActionDanger,
+                    deletePost.isPending && styles.authorActionBusy,
+                  ]}
+                  onPress={handleDeletePost}
+                  disabled={deletePost.isPending}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="여행기 삭제"
+                  accessibilityState={{ disabled: deletePost.isPending }}
+                >
+                  <Trash2 size={normalize(12)} color={tokens.tones.danger.fg} />
+                  <Text
+                    style={[
+                      styles.authorActionText,
+                      styles.authorActionDangerText,
+                    ]}
+                  >
+                    삭제
+                  </Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
 

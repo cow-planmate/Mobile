@@ -133,6 +133,36 @@ export const styles = StyleSheet.create({
     color: COLORS.textTertiary,
   },
 
+  // 웹 상세와 같은 자리·같은 모양. 게시글 상세의 authorActions와도 규격을 맞춘다.
+  authorActions: {
+    flexDirection: 'row',
+    gap: normalize(6),
+    marginTop: normalize(12),
+  },
+  authorActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(4),
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(6),
+    borderRadius: tokens.radius.m,
+    backgroundColor: COLORS.borderLight,
+  },
+  authorActionText: {
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.semibold,
+    color: COLORS.textSecondary,
+  },
+  authorActionDanger: {
+    backgroundColor: tokens.tones.danger.bg,
+  },
+  authorActionDangerText: {
+    color: tokens.tones.danger.fg,
+  },
+  authorActionBusy: {
+    opacity: 0.5,
+  },
+
   authorTouchable: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -255,16 +285,27 @@ export const styles = StyleSheet.create({
   reactionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: normalize(10),
+    gap: normalize(8),
   },
   reactionButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: normalize(7),
+    gap: normalize(6),
     height: normalize(44),
-    paddingHorizontal: normalize(12),
+    paddingHorizontal: normalize(8),
+    borderRadius: tokens.radius.l,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
+  },
+  // 추천·비추천과 같은 높이의 정사각. 숫자가 없으니 늘어날 이유도 없다.
+  shareButton: {
+    width: normalize(44),
+    height: normalize(44),
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: tokens.radius.l,
     borderWidth: 1,
     borderColor: COLORS.border,
