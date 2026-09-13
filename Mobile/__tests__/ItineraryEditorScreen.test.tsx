@@ -1090,6 +1090,16 @@ describe('일정 편집기 제스처 및 UI 동작 개선', () => {
     expect(source).not.toContain('if (!sheetInited.current &&');
   });
 
+  it('시트 최대 높이는 JS에서 ref로 읽는다', () => {
+    // 공유값에 쓴 값을 JS에서 곧바로 되읽으면 아직 반영되지 않은 0이 나온다.
+    // 그 0이 setSheetHeight의 상한이 되어 처음 높이가 통째로 잘렸다.
+    const reads = source.match(/sheetMax\.value(?!\s*=)/g) ?? [];
+    // 되읽는 곳은 워클릿(floatingAnimStyle) 한 군데뿐이어야 한다.
+    expect(reads).toHaveLength(1);
+    expect(source).toContain('Math.min(sheetMaxRef.current, height)');
+    expect(source).toContain('Math.round(sheetMaxRef.current * ratio)');
+  });
+
   it('플로팅 실행 취소 단추는 가장 옅은 그림자 토큰을 쓴다', () => {
     const {
       styles: editorStyles,

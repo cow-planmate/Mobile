@@ -1505,9 +1505,14 @@ export default function ItineraryEditorScreenView({
   const sheetShift = useSharedValue(0);
 
   const sheetHeightRef = useRef(0);
+  /**
+   * 열 수 있는 최대 높이. 워클릿(floatingAnimStyle)이 읽어야 해서 공유값으로도
+   * 두지만, JS에서 값을 매기고 곧바로 되읽는 계산은 전부 ref만 본다 — 공유값을
+   * 되읽으면 아직 반영되지 않은 옛 값(0)이 나와 처음 높이가 0으로 잘렸다.
+   */
+  const sheetMaxRef = useRef(0);
   const sheetMax = useSharedValue(0);
   const sheetStartRef = useRef(0);
-  const sheetInited = useRef(false);
   /** 손잡이를 한 번이라도 잡았는가. 잡은 뒤에는 처음 높이로 되돌리지 않는다. */
   const sheetTouched = useRef(false);
   const bodyTop = useRef(0);
@@ -1519,18 +1524,18 @@ export default function ItineraryEditorScreenView({
 
   const setSheetHeight = useCallback(
     (height: number, animate = true) => {
-      const next = Math.max(0, Math.min(sheetMax.value, height));
+      const next = Math.max(0, Math.min(sheetMaxRef.current, height));
       sheetHeightRef.current = next;
       sheetBody.value = animate ? withTiming(next, { duration: 220 }) : next;
       // 끄는 동안에는 시간표를 다시 짜지 않는다. 손을 뗀 자리에서만 맞춘다.
       if (animate) setSheetRest(next);
     },
-    [sheetBody, sheetMax],
+    [sheetBody],
   );
 
   const snapPoints = useCallback(
-    () => SHEET_SNAPS.map(ratio => Math.round(sheetMax.value * ratio)),
-    [sheetMax],
+    () => SHEET_SNAPS.map(ratio => Math.round(sheetMaxRef.current * ratio)),
+    [],
   );
 
   const measureGrid = useCallback(() => {
@@ -1559,12 +1564,12 @@ export default function ItineraryEditorScreenView({
       const { height } = event.nativeEvent.layout;
       bodyHeight.current = height;
       const nextMax = Math.max(0, height - SHEET_HANDLE_HEIGHT - sheetTopGap);
+      sheetMaxRef.current = nextMax;
       sheetMax.value = nextMax;
       // 화면이 뜨는 동안 몸통은 여러 번 재어진다. 그중 처음 잰 값이 실제보다
       // 작으면 그 1/3에 굳어 시트가 접힌 채로 열린 것처럼 보였다.
       // 손잡이를 잡기 전까지는 마지막으로 잰 크기에 맞춰 다시 연다.
       if (!sheetTouched.current && nextMax > 0) {
-        sheetInited.current = true;
         setSheetHeight(Math.round(nextMax * SHEET_INITIAL_RATIO));
       }
       measureGrid();
@@ -1578,6 +1583,7 @@ export default function ItineraryEditorScreenView({
         0,
         bodyHeight.current - SHEET_HANDLE_HEIGHT - sheetTopGap,
       );
+      sheetMaxRef.current = newMax;
       sheetMax.value = newMax;
       if (sheetHeightRef.current > newMax) {
         setSheetHeight(newMax, true);
