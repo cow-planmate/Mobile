@@ -37,6 +37,11 @@ import {
 } from '../types';
 
 const PAGE_SIZE = 20;
+const LIST_REFRESH_OPTIONS = {
+  refetchInterval: 30_000,
+  refetchIntervalInBackground: false,
+  refetchOnWindowFocus: 'always',
+} as const;
 
 const KEYS = {
   posts: (category: string, sort: string, q: string) =>
@@ -53,6 +58,7 @@ const KEYS = {
 export const usePosts = (category: string, sort = 'latest', q = '') =>
   useInfiniteQuery({
     queryKey: KEYS.posts(category, sort, q),
+    ...LIST_REFRESH_OPTIONS,
     queryFn: ({ pageParam, signal }) =>
       fetchPosts(category, pageParam as number, PAGE_SIZE, sort, q, signal),
     initialPageParam: 0,
@@ -64,6 +70,7 @@ export const usePosts = (category: string, sort = 'latest', q = '') =>
 export const useFeedPosts = (filters: FeedFilterParams, size = 12) =>
   useInfiniteQuery({
     queryKey: ['community', 'posts', 'feed', filters, size] as const,
+    ...LIST_REFRESH_OPTIONS,
     queryFn: ({ pageParam, signal }) =>
       fetchFeedPosts(pageParam as number, size, filters, signal),
     initialPageParam: 0,
@@ -97,6 +104,7 @@ export const useSimilarFeedPosts = (
 export const useFeedRegionCounts = () =>
   useQuery({
     queryKey: ['community', 'feed-regions'],
+    ...LIST_REFRESH_OPTIONS,
     queryFn: ({ signal }) => fetchFeedRegionCounts(signal),
     staleTime: 60_000,
   });
@@ -104,6 +112,7 @@ export const useFeedRegionCounts = () =>
 export const useHotPosts = (category: string) =>
   useQuery({
     queryKey: KEYS.hot(category),
+    ...LIST_REFRESH_OPTIONS,
     queryFn: ({ signal }) => fetchHotPosts(category, signal),
     staleTime: 60_000,
   });
@@ -111,6 +120,7 @@ export const useHotPosts = (category: string) =>
 export const usePost = (postId: number | string | undefined, feed = false) =>
   useQuery({
     queryKey: KEYS.post(postId ?? '', feed),
+    refetchOnWindowFocus: 'always',
     queryFn: ({ signal }) => fetchPost(postId as number | string, signal, feed),
     enabled: postId !== undefined && postId !== null && postId !== '',
   });
@@ -140,6 +150,7 @@ export const useMyStats = (enabled = true) =>
 export const useMyPosts = (category?: string, size = PAGE_SIZE) =>
   useQuery({
     queryKey: ['community', 'me', 'posts', category ?? 'all', size] as const,
+    ...LIST_REFRESH_OPTIONS,
     queryFn: ({ signal }) => fetchMyPosts(0, size, category, signal),
     staleTime: 30_000,
   });
@@ -147,6 +158,7 @@ export const useMyPosts = (category?: string, size = PAGE_SIZE) =>
 export const useLikedPosts = (category?: string, size = PAGE_SIZE) =>
   useQuery({
     queryKey: ['community', 'me', 'liked', category ?? 'all', size] as const,
+    ...LIST_REFRESH_OPTIONS,
     queryFn: ({ signal }) => fetchLikedPosts(0, size, category, signal),
     staleTime: 30_000,
   });
@@ -200,7 +212,7 @@ export const useUpdatePost = (postId: number, feed = false) => {
     mutationFn: (payload: Partial<CreatePostPayload>) =>
       updatePost(postId, payload, feed),
     onSuccess: () => {
-      void invalidate.post(postId);
+      void invalidate.post(postId, feed);
       void invalidate.lists();
       void invalidate.me();
       void invalidate.feedRegions();

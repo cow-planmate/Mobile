@@ -357,7 +357,9 @@ export default function CommentSection({
     <View style={styles.container}>
       <View style={styles.header}>
         <MessageCircle size={normalize(16)} color={tokens.colors.primary} />
-        <Text style={styles.headerTitle}>댓글 {commentCount.toLocaleString()}</Text>
+        <Text style={styles.headerTitle}>
+          댓글 {commentCount.toLocaleString()}
+        </Text>
       </View>
 
       <CommentComposer
@@ -384,7 +386,9 @@ export default function CommentSection({
               style={styles.loadMoreButton}
               onPress={() => void commentsQuery.fetchNextPage()}
               disabled={commentsQuery.isFetchingNextPage}
-              accessibilityState={{ disabled: commentsQuery.isFetchingNextPage }}
+              accessibilityState={{
+                disabled: commentsQuery.isFetchingNextPage,
+              }}
             >
               {commentsQuery.isFetchingNextPage ? (
                 <ActivityIndicator color={tokens.colors.primary} />
@@ -460,10 +464,11 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
     textAlignVertical: 'top',
   },
+  // 입력칸과 같은 모서리를 쓴다. 동그라미로 두면 옆의 네모난 입력칸과 따로 논다.
   sendButton: {
     width: normalize(38),
     height: normalize(38),
-    borderRadius: normalize(19),
+    borderRadius: tokens.radius.l,
     backgroundColor: tokens.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

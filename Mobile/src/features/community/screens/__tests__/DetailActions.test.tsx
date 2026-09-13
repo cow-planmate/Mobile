@@ -1,6 +1,6 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
-import { Text, TouchableOpacity } from 'react-native';
+import { Share, Text, TouchableOpacity } from 'react-native';
 import FeedDetailScreen from '../FeedDetailScreen';
 import PostDetailScreen from '../PostDetailScreen';
 import { styles as feedStyles } from '../FeedDetailScreen.styles';
@@ -11,6 +11,7 @@ const mockUsePost = jest.fn();
 const mockReactRequest = jest.fn();
 const mockUpdateAnsweredRequest = jest.fn();
 const mockUsePosts = jest.fn();
+const mockDeleteRequest = jest.fn();
 
 describe.each([FeedDetailScreen, PostDetailScreen])('detail load recovery', Screen => {
   it.each([503, 403, 404])('distinguishes HTTP %s and offers retry only for failures', status => {
@@ -62,7 +63,7 @@ jest.mock('../../hooks/queries', () => ({
   // 댓글 아래 '다른 여행기'. 이 시험들은 그 목록을 보지 않는다.
   useSimilarFeedPosts: () => ({ data: [] }),
   useUpdateAnswered: () => mutation(mockUpdateAnsweredRequest),
-  useDeletePost: () => mutation(),
+  useDeletePost: () => mutation(mockDeleteRequest),
 }));
 
 jest.mock('../../components/PostContentView', () => () => null);
@@ -392,6 +393,96 @@ describe('웹과 맞춘 문구', () => {
 
     expect(textsOf(tree!)).toContain('답변대기로 변경');
 
+    act(() => tree!.unmount());
+  });
+});
+
+describe('여행기 작성자 · 공유', () => {
+  const feedPost = {
+    ...basePost,
+    category: 'feed',
+    userId: 'viewer',
+    title: '부산 2박 3일',
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUsePost.mockReturnValue({
+      data: feedPost,
+      isLoading: false,
+      isError: false,
+    });
+    mockUsePosts.mockReturnValue({ data: undefined });
+  });
+
+  const authorButtons = (tree: renderer.ReactTestRenderer) =>
+    tree.root.findAllByType(TouchableOpacity).filter(node => {
+      const style = node.props.style;
+      return (
+        style === feedStyles.authorActionButton ||
+        (Array.isArray(style) && style[0] === feedStyles.authorActionButton)
+      );
+    });
+
+  it('작성자에게만 수정·삭제를 내준다', () => {
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(<FeedDetailScreen />);
+    });
+    expect(authorButtons(tree!)).toHaveLength(2);
+    act(() => tree!.unmount());
+
+    mockUsePost.mockReturnValue({
+      data: { ...feedPost, userId: 'author' },
+      isLoading: false,
+      isError: false,
+    });
+    act(() => {
+      tree = renderer.create(<FeedDetailScreen />);
+    });
+    expect(authorButtons(tree!)).toHaveLength(0);
+    act(() => tree!.unmount());
+  });
+
+  it('삭제는 한 번 물어본 뒤에만 지운다', async () => {
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(<FeedDetailScreen />);
+    });
+    const remove = authorButtons(tree!)[1];
+
+    act(() => remove.props.onPress());
+    expect(mockDeleteRequest).not.toHaveBeenCalled();
+    expect(mockShowAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '여행기 삭제', type: 'confirm' }),
+    );
+
+    const confirm = mockShowAlert.mock.calls[0][0].buttons[1];
+    await act(async () => {
+      await confirm.onPress();
+    });
+    expect(mockDeleteRequest).toHaveBeenCalledWith(feedPost.id);
+    act(() => tree!.unmount());
+  });
+
+  it('공유는 웹 상세 주소를 공유 시트에 넘긴다', async () => {
+    const share = jest
+      .spyOn(Share, 'share')
+      .mockResolvedValue({ action: 'sharedAction' } as never);
+
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(<FeedDetailScreen />);
+    });
+    const button = findButtonByStyle(tree!, feedStyles.shareButton);
+    await act(async () => {
+      await button.props.onPress();
+    });
+
+    expect(share).toHaveBeenCalledWith({
+      message: expect.stringContaining('/travel/7'),
+    });
+    share.mockRestore();
     act(() => tree!.unmount());
   });
 });

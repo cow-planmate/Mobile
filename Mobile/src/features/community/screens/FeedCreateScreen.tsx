@@ -343,6 +343,8 @@ export default function FeedCreateScreen() {
             {isEditMode ? '여행기 수정' : '여행기 쓰기'}
           </Text>
         </View>
+        {/* 뒤로 가기와 같은 너비의 빈 칸. 이게 없으면 제목이 왼쪽으로 쏠린다. */}
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
@@ -848,7 +850,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.border,
   },
-  headerText: { flex: 1 },
+  headerText: { flex: 1, alignItems: 'center' },
+  headerSpacer: { width: normalize(24) },
   headerTitle: {
     fontSize: normalize(17),
     fontFamily: tokens.fontFamily.bold,
