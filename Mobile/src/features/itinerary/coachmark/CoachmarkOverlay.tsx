@@ -7,6 +7,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { tokens } from '../../../theme/tokens';
 import type { CoachmarkStep } from './coachmarkSteps';
 import type { CoachmarkRect } from './measureTarget';
@@ -14,7 +15,12 @@ import type { CoachmarkRect } from './measureTarget';
 const COLORS = tokens.colors;
 const FONTS = tokens.fontFamily;
 
-const SCRIM = 'rgba(10, 13, 20, 0.76)';
+// 웹 CreateTutorial의 스포트라이트를 그대로 옮긴 값들.
+// 흰 테두리 안쪽, 파란 링 바깥쪽, 그 밖은 어둡게 — 세 겹이 한 벌이다.
+const SCRIM = 'rgba(2, 6, 23, 0.65)';
+const GLOW = 'rgba(19, 68, 255, 0.72)';
+const GLOW_WIDTH = 4;
+const HOLE_RADIUS = 16;
 const TIP_MAX_WIDTH = 300;
 const TIP_GAP = 12;
 const EDGE = 16;
@@ -22,6 +28,24 @@ const ARROW = 12;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
+
+/** 둥근 네모 한 바퀴. 반지름이 절반을 넘으면 그대로 동그라미가 된다. */
+const roundedRectPath = (
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) => {
+  const r = Math.max(0, Math.min(radius, width / 2, height / 2));
+  return (
+    `M${x + r},${y}` +
+    `H${x + width - r}A${r},${r} 0 0 1 ${x + width},${y + r}` +
+    `V${y + height - r}A${r},${r} 0 0 1 ${x + width - r},${y + height}` +
+    `H${x + r}A${r},${r} 0 0 1 ${x},${y + height - r}` +
+    `V${y + r}A${r},${r} 0 0 1 ${x + r},${y}Z`
+  );
+};
 
 interface CoachmarkOverlayProps {
   step: CoachmarkStep;
@@ -35,9 +59,10 @@ interface CoachmarkOverlayProps {
 /**
  * 화면을 어둡게 덮고 짚을 것 하나만 남긴다.
  *
- * 웹처럼 그림자를 크게 번지게 해 구멍을 뚫는 수가 없어 어두운 판 넷으로 둘러싼다.
- * 판을 하나로 두고 구멍만 투명하게 만들려면 마스크가 필요한데, 그러자고 라이브러리를
- * 하나 더 들이는 것보다 네 조각이 싸다.
+ * 어두운 판 넷으로 둘러싸던 것을 길 하나로 바꿨다. 판으로는 구멍이 네모로만
+ * 뚫려 둥근 테두리 바깥 귀퉁이가 밝게 남았고, 귀퉁이를 조각으로 메우면
+ * RN이 모서리 반지름을 제 맘대로 줄여 안쪽이 별 모양으로 파였다.
+ * 화면 전체와 구멍을 한 길에 담고 evenodd로 칠하면 구멍만 정확히 비워진다.
  */
 export default function CoachmarkOverlay({
   step,
@@ -64,12 +89,15 @@ export default function CoachmarkOverlay({
     };
   }, [rect, padding, winWidth, winHeight]);
 
+  const holeBottom = hole.y + hole.height;
+
   const radius =
-    step.shape === 'circle' ? Math.max(hole.width, hole.height) / 2 : 14;
+    step.shape === 'circle'
+      ? Math.max(hole.width, hole.height) / 2
+      : HOLE_RADIUS;
 
   const tipWidth = Math.min(TIP_MAX_WIDTH, winWidth - EDGE * 2);
   const holeCenterX = hole.x + hole.width / 2;
-  const holeBottom = hole.y + hole.height;
   const tipLeft = clamp(
     holeCenterX - tipWidth / 2,
     EDGE,
@@ -86,7 +114,9 @@ export default function CoachmarkOverlay({
     tipLeft + 14,
     tipLeft + tipWidth - 14 - ARROW,
   );
-  const arrowTop = fitsBelow ? tipTop - ARROW / 2 : tipTop + tipHeight - ARROW / 2;
+  const arrowTop = fitsBelow
+    ? tipTop - ARROW / 2
+    : tipTop + tipHeight - ARROW / 2;
 
   const isLast = index === total - 1;
 
@@ -100,45 +130,43 @@ export default function CoachmarkOverlay({
       onRequestClose={onSkip}
     >
       <View style={styles.root} accessibilityViewIsModal>
-        {/* 어두운 판 넷 */}
-        <View
-          style={[
-            styles.scrim,
-            styles.scrimTop,
-            { width: winWidth, height: hole.y },
-          ]}
-        />
-        <View
-          style={[
-            styles.scrim,
-            styles.scrimLeftEdge,
-            {
-              top: holeBottom,
-              width: winWidth,
-              height: Math.max(0, winHeight - holeBottom),
-            },
-          ]}
-        />
-        <View
-          style={[
-            styles.scrim,
-            styles.scrimLeftEdge,
-            { top: hole.y, width: hole.x, height: hole.height },
-          ]}
-        />
-        <View
-          style={[
-            styles.scrim,
-            {
-              left: hole.x + hole.width,
-              top: hole.y,
-              width: Math.max(0, winWidth - hole.x - hole.width),
-              height: hole.height,
-            },
-          ]}
-        />
+        {/* 화면 전체를 덮되 구멍만 비운다 */}
+        <Svg
+          style={StyleSheet.absoluteFill}
+          width={winWidth}
+          height={winHeight}
+          pointerEvents="none"
+        >
+          <Path
+            d={`M0,0H${winWidth}V${winHeight}H0Z ${roundedRectPath(
+              hole.x,
+              hole.y,
+              hole.width,
+              hole.height,
+              radius,
+            )}`}
+            fill={SCRIM}
+            fillRule="evenodd"
+          />
+        </Svg>
 
-        {/* 구멍 테두리 - 어디를 보라는 것인지 가장자리로 못박는다. */}
+        {/* 구멍 테두리 - 어디를 보라는 것인지 가장자리로 못박는다.
+          웹처럼 두 겹으로 두른다. 파란 링이 어두운 판 위로 번져 나가고,
+          흰 테두리가 짚은 것의 윤곽을 딴다. 흰 줄 하나만으로는 어두운 바탕에
+          묻혀 '네모 하나 쳐 놓은' 것으로 보인다. */}
+        <View
+          pointerEvents="none"
+          style={[
+            styles.glowRing,
+            {
+              left: hole.x - GLOW_WIDTH,
+              top: hole.y - GLOW_WIDTH,
+              width: hole.width + GLOW_WIDTH * 2,
+              height: hole.height + GLOW_WIDTH * 2,
+              borderRadius: radius + GLOW_WIDTH,
+            },
+          ]}
+        />
         <View
           pointerEvents="none"
           style={[
@@ -167,6 +195,12 @@ export default function CoachmarkOverlay({
         >
           <Text style={styles.tipTitle}>{step.title}</Text>
           <Text style={styles.tipBody}>{step.body}</Text>
+          {/* 안내는 이제 스스로 뜨지 않는다. 다시 보는 길을 마지막에 일러둔다. */}
+          {isLast && (
+            <Text style={styles.tipReplay}>
+              왼쪽 아래 물음표를 누르면 다시 볼 수 있어요.
+            </Text>
+          )}
           <View style={styles.tipFoot}>
             <Text style={styles.tipCount}>
               {index + 1} / {total}
@@ -211,21 +245,15 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  scrim: {
-    position: 'absolute',
-    backgroundColor: SCRIM,
-  },
-  scrimTop: {
-    left: 0,
-    top: 0,
-  },
-  scrimLeftEdge: {
-    left: 0,
-  },
   ring: {
     position: 'absolute',
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.95)',
+  },
+  glowRing: {
+    position: 'absolute',
+    borderWidth: GLOW_WIDTH,
+    borderColor: GLOW,
   },
   tip: {
     position: 'absolute',
@@ -254,6 +282,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     color: COLORS.textSecondary,
+  },
+  tipReplay: {
+    marginTop: 8,
+    fontFamily: FONTS.medium,
+    fontSize: 11.5,
+    lineHeight: 16,
+    color: COLORS.primary,
   },
   tipFoot: {
     marginTop: 12,

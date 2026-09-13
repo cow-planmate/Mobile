@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
+import { Path } from 'react-native-svg';
 import renderer, { act } from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import EditorCoachmark from '../EditorCoachmark';
@@ -107,6 +108,47 @@ describe('EditorCoachmark', () => {
     expect(texts).toContain('일정 이름');
     // 열셋 중 둘만 잴 수 있으면 '1 / 2'다. 못 잰 것을 세면 번호가 건너뛴다.
     expect(texts).toContain('1 / 2');
+  });
+
+  it('짚은 자리를 흰 테두리와 파란 링 두 겹으로 두른다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderTour(<FakeTarget id="planName" top={100} />);
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    const borderColors = tree.root
+      .findAllByType(View)
+      .flatMap(node =>
+        (Array.isArray(node.props.style)
+          ? node.props.style
+          : [node.props.style]
+        ).map(entry => entry?.borderColor),
+      )
+      .filter(Boolean);
+
+    // 웹 스포트라이트와 같은 두 겹 - 흰 줄 하나만으로는 어두운 바탕에 묻힌다.
+    expect(borderColors).toContain('rgba(255, 255, 255, 0.95)');
+    expect(borderColors).toContain('rgba(19, 68, 255, 0.72)');
+  });
+
+  it('어두운 막은 길 하나로 덮고 구멍만 비운다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      // 툴바 아이콘은 동그랗게 짚는다 - 네모로 뚫으면 귀퉁이가 흰 채로 남는다.
+      tree = renderTour(<FakeTarget id="planInfo" top={100} />);
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    const path = tree.root.findAllByType(Path)[0];
+
+    // 겉과 구멍을 한 길에 담고 evenodd로 칠해야 구멍만 비워진다.
+    expect(path.props.fillRule).toBe('evenodd');
+    expect(path.props.fill).toBe('rgba(2, 6, 23, 0.65)');
+    // 구멍 모서리는 호(A)로 돈다 - 네모로 뚫으면 이 글자가 없다.
+    expect(path.props.d).toContain('A');
   });
 
   it('다음을 누르면 그 다음 버튼으로 넘어간다', async () => {
