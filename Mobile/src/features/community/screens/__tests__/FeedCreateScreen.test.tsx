@@ -321,9 +321,27 @@ describe('웹에 맞춘 여행기 쓰기 화면', () => {
     const tree = render();
     const texts = textsOf(tree);
 
-    expect(texts).toContain('여행 기간');
     expect(texts).toContain('1박 2일');
     expect(texts).toContain('블록 메모도 함께 공개');
+
+    act(() => tree.unmount());
+  });
+
+  it('하루짜리 일정은 0박 1일 대신 당일치기로 적는다', () => {
+    mockRouteParams.postId = '42';
+    mockExistingPostData = {
+      category: 'feed',
+      title: '부산 하루',
+      contentText: '내용',
+      image: null,
+      itinerary: {
+        days: [{ day: 1, items: [] }],
+      },
+    };
+
+    const tree = render();
+
+    expect(textsOf(tree)).toContain('당일치기');
 
     act(() => tree.unmount());
   });

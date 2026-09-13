@@ -146,6 +146,12 @@ export default function FeedCreateScreen() {
   };
   const previewDays =
     snapshot?.itinerary.days ?? existingPost.data?.itinerary?.days ?? [];
+  // 고른 일정의 일수에서 그대로 나오는 값이라 사용자가 고칠 수 없다.
+  // 미리보기 카드 헤더에 알약으로 붙여 "가져온 값"임을 자리로 드러낸다.
+  const durationLabel =
+    previewDays.length > 1
+      ? `${previewDays.length - 1}박 ${previewDays.length}일`
+      : '당일치기';
 
   const handleSelectPlan = async (planId: string) => {
     setLoadingPlanId(planId);
@@ -431,9 +437,9 @@ export default function FeedCreateScreen() {
           <View style={styles.itineraryPreview}>
             <View style={styles.previewHeader}>
               <Text style={styles.previewTitle}>일정 미리보기</Text>
-              <Text style={styles.previewDaysCount}>
-                총 {previewDays.length}일 코스
-              </Text>
+              <View style={styles.durationPill}>
+                <Text style={styles.durationPillText}>{durationLabel}</Text>
+              </View>
             </View>
             {previewDays.map(day => (
               <View key={day.day} style={styles.previewDay}>
@@ -496,23 +502,6 @@ export default function FeedCreateScreen() {
                 </View>
               </View>
             ))}
-          </View>
-        )}
-
-        {previewDays.length > 0 && (
-          <>
-            <Text style={styles.label}>여행 기간</Text>
-            <View style={styles.durationRow}>
-              <Text style={styles.durationText}>
-                {`${Math.max(0, previewDays.length - 1)}박 ${
-                  previewDays.length
-                }일`}
-              </Text>
-              <Text style={styles.durationHint}>
-                고른 일정의 일수로 자동 계산돼요
-              </Text>
-            </View>
-
             <TouchableOpacity
               style={styles.memoRow}
               onPress={() => setIncludeMemo(current => !current)}
@@ -533,7 +522,7 @@ export default function FeedCreateScreen() {
                 </Text>
               </View>
             </TouchableOpacity>
-          </>
+          </View>
         )}
 
         <Text style={[styles.section, styles.sectionGap]}>기본 정보</Text>
@@ -880,28 +869,17 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   sectionGap: { marginTop: normalize(18) },
-  durationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(10),
-    minHeight: normalize(44),
-  },
-  durationText: {
-    fontSize: normalize(15),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.primary,
-  },
-  durationHint: {
-    flex: 1,
-    fontSize: normalize(11.5),
-    fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
-  },
+  // 미리보기 카드의 마지막 줄. 카드 나머지는 읽기 전용이므로
+  // surface 배경으로 "여기는 누르는 자리"를 구분한다.
   memoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: normalize(10),
-    paddingVertical: normalize(6),
+    paddingHorizontal: normalize(12),
+    paddingVertical: normalize(11),
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.borderLight,
+    backgroundColor: tokens.colors.surface,
   },
   memoBox: {
     width: normalize(20),
@@ -1088,9 +1066,15 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.textLabel,
   },
-  previewDaysCount: {
+  durationPill: {
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(3),
+    borderRadius: tokens.radius.round,
+    backgroundColor: tokens.colors.sub,
+  },
+  durationPillText: {
     fontSize: normalize(12),
-    fontFamily: tokens.fontFamily.medium,
+    fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.primary,
   },
   previewDay: {
