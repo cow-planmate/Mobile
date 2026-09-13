@@ -84,7 +84,9 @@ function EditorHarness(props: {
 
   const updateSelectedDay = (updater: (day: Day) => Day) =>
     setDays(prev =>
-      prev.map((day, index) => (index === selectedDayIndex ? updater(day) : day)),
+      prev.map((day, index) =>
+        index === selectedDayIndex ? updater(day) : day,
+      ),
     );
 
   return (
@@ -148,6 +150,7 @@ function EditorHarness(props: {
       onOpenMap={action('지도 열기')}
       onOpenShare={action('공유 열기')}
       onOpenChecklist={action('체크리스트 열기')}
+      onOpenChatbot={action('AI 도우미 열기')}
       onUndo={action('되돌리기')}
       onRedo={action('다시실행')}
       participantsCount={props.participantsCount ?? 3}
@@ -193,6 +196,7 @@ const meta = {
     onOpenMap: action('지도 열기'),
     onOpenShare: action('공유 열기'),
     onOpenChecklist: action('체크리스트 열기'),
+    onOpenChatbot: action('AI 도우미 열기'),
     onUndo: action('되돌리기'),
     onRedo: action('다시실행'),
     participantsCount: 3,

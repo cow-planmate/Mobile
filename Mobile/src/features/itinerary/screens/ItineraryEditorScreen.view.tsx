@@ -72,6 +72,7 @@ import {
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
 } from '../../../utils/timeUtils';
+import MessageCircle from 'lucide-react-native/dist/esm/icons/message-circle';
 import MapOutlineIcon from 'lucide-react-native/dist/esm/icons/map';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
@@ -1304,6 +1305,7 @@ export interface ItineraryEditorScreenViewProps {
   onOpenMap: () => void;
   onOpenShare: () => void;
   onOpenChecklist: () => void;
+  onOpenChatbot: () => void;
   onUndo: () => void;
   onRedo?: () => void;
   participantsCount: number;
@@ -1360,6 +1362,7 @@ export default function ItineraryEditorScreenView({
   onOpenMap,
   onOpenShare,
   onOpenChecklist,
+  onOpenChatbot,
   onUndo,
   onRedo,
   participantsCount,
@@ -2119,6 +2122,17 @@ export default function ItineraryEditorScreenView({
             {/* 사용법 단추도 같은 자리에 둔다 - 이 묶음만 시트 높이를 따라
               움직여서, 시트를 끝까지 올려도 가려지지 않는다. */}
             <TutorialLauncher />
+            <TouchableOpacity
+              testID="btn-chatbot"
+              style={styles.floatingChatButton}
+              onPress={onOpenChatbot}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="AI 여행 도우미"
+              hitSlop={6}
+            >
+              <MessageCircle color={COLORS.white} size={18} />
+            </TouchableOpacity>
           </Animated.View>
 
           <Animated.View

@@ -673,6 +673,16 @@ export const styles = StyleSheet.create({
     fontSize: normalize(13),
     fontFamily: FONTS.semibold,
   },
+  // 웹도 AI 도우미만 파란 원으로 세운다 - 되돌리기·사용법과 달리 새로 여는 자리다.
+  floatingChatButton: {
+    width: normalize(44),
+    height: normalize(44),
+    borderRadius: normalize(22),
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    ...tokens.shadows.sm,
+  },
   floatingHistoryButtonDisabled: {
     backgroundColor: COLORS.borderLight,
     opacity: 0.5,

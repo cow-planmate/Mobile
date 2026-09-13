@@ -393,6 +393,7 @@ describe('ItineraryEditorScreenView Component', () => {
             onOpenMap={() => {}}
             onOpenShare={() => {}}
             onOpenChecklist={() => {}}
+            onOpenChatbot={() => {}}
             onUndo={() => {}}
             onRedo={() => {}}
             participantsCount={0}
@@ -499,6 +500,7 @@ describe('ItineraryEditorScreenView Component', () => {
           onOpenMap={() => {}}
           onOpenShare={() => {}}
           onOpenChecklist={() => {}}
+          onOpenChatbot={() => {}}
           onUndo={mockUndo}
           onRedo={() => {}}
           participantsCount={0}

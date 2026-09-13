@@ -37,6 +37,7 @@ import PlaceEditModal from '../components/PlaceEditModal';
 import ParticipantsModal from '../components/ParticipantsModal';
 import PlanMapModal from '../components/PlanMapModal';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
+import ChatbotSheet from '../components/chatbot/ChatbotSheet';
 import EditAccessGate from '../components/EditAccessGate';
 import { normalizeCategoryId } from '../../../utils/placeCategory';
 import { CoachmarkProvider, EditorCoachmark } from '../coachmark';
@@ -180,6 +181,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const scheduleEditBaseRef = useRef(days);
   const [isShareModalVisible, setShareModalVisible] = useState(false);
   const [isChecklistVisible, setChecklistVisible] = useState(false);
+  const [isChatbotVisible, setChatbotVisible] = useState(false);
   const [isPlaceEditModalVisible, setPlaceEditModalVisible] = useState(false);
   const [editingPlace, setEditingPlace] = useState<any>(null);
   const [isParticipantsVisible, setParticipantsVisible] = useState(false);
@@ -849,6 +851,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         onOpenMap={handleOpenMap}
         onOpenShare={() => setShareModalVisible(true)}
         onOpenChecklist={() => setChecklistVisible(true)}
+        onOpenChatbot={() => setChatbotVisible(true)}
         onUndo={handleUndo}
         onRedo={handleRedo}
         participantsCount={onlineUsers.length}
@@ -897,6 +900,16 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           visible
           onClose={() => setChecklistVisible(false)}
           planId={planId ?? null}
+        />
+      )}
+      {isChatbotVisible && (
+        <ChatbotSheet
+          visible
+          onClose={() => setChatbotVisible(false)}
+          planId={planId ?? null}
+          // 반영은 서버에서 일정을 통째로 바꾼다. 지금 화면 것과 어긋나므로
+          // 편집 중인 방의 최신 일정을 다시 받아 온다.
+          onApplied={() => void fetchPlanDetailsRef.current()}
         />
       )}
       {editingPlace && (
