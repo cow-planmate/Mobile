@@ -349,6 +349,8 @@ export default function FeedCreateScreen() {
 
       <ScrollView contentContainerStyle={styles.body}>
         <Text style={styles.section}>여행 정보</Text>
+        {/* 수정 중에는 일정을 바꿀 수 없다. 어떤 일정인지는 아래 미리보기 카드가
+          이미 다 말하므로, 같은 말을 안내 띠로 한 번 더 하지 않는다. */}
         <Text style={styles.label}>공개할 일정</Text>
         {isEditMode && existingPost.isLoading ? (
           <ActivityIndicator color={tokens.colors.primary} />
@@ -358,19 +360,8 @@ export default function FeedCreateScreen() {
               (existingPost.data.category !== 'feed' ||
                 !existingPost.data.itinerary))) ? (
           <Text style={styles.emptyText}>여행기를 불러올 수 없어요.</Text>
-        ) : isEditMode && existingPost.data?.itinerary ? (
-          <View style={styles.snapshotInfo}>
-            <MapPin size={16} color={tokens.colors.primary} />
-            <Text style={styles.snapshotText}>
-              {existingPost.data.itinerary.plan?.destinationName ??
-                existingPost.data.location ??
-                existingPost.data.region ??
-                ''}{' '}
-              · {existingPost.data.itinerary.days.length}일 일정은 그대로
-              유지돼요.
-            </Text>
-          </View>
-        ) : isProfileLoading ? (
+        ) : isEditMode &&
+          existingPost.data?.itinerary ? null : isProfileLoading ? (
           <ActivityIndicator color={tokens.colors.primary} />
         ) : isProfileError ? (
           <Pressable onPress={() => refetchProfile()}>
@@ -464,7 +455,12 @@ export default function FeedCreateScreen() {
                           <View style={styles.timelineLine} />
                         )}
                       </View>
-                      <View style={styles.timelineContent}>
+                      <View
+                        style={[
+                          styles.timelineContent,
+                          idx < arr.length - 1 && styles.timelineContentLinked,
+                        ]}
+                      >
                         <View style={styles.timelinePlaceHeader}>
                           <Text
                             style={styles.timelinePlaceName}
@@ -1036,20 +1032,6 @@ const styles = StyleSheet.create({
     color: tokens.colors.textSecondary,
     textAlign: 'center',
   },
-  snapshotInfo: {
-    flexDirection: 'row',
-    gap: normalize(6),
-    alignItems: 'center',
-    backgroundColor: tokens.colors.primarySurface,
-    borderRadius: normalize(8),
-    padding: normalize(12),
-  },
-  snapshotText: {
-    flex: 1,
-    fontSize: normalize(13),
-    fontFamily: tokens.fontFamily.medium,
-    color: tokens.colors.primary,
-  },
   itineraryPreview: {
     borderWidth: 1,
     borderColor: tokens.colors.border,
@@ -1099,15 +1081,16 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.primary,
   },
-  previewPlaces: { flex: 1, gap: normalize(6) },
+  previewPlaces: { flex: 1 },
   previewPlace: {
     fontSize: normalize(13),
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.textLabel,
   },
+  // 줄 간격을 행 사이(gap)가 아니라 행 안쪽(timelineContent)에 둔다.
+  // 그래야 세로선이 그 간격까지 덮어 다음 번호에 닿는다.
   timelineItemRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
     gap: normalize(10),
   },
   timelineTrack: {
@@ -1130,13 +1113,19 @@ const styles = StyleSheet.create({
   timelineLine: {
     width: 2,
     flex: 1,
-    minHeight: normalize(16),
+    minHeight: normalize(10),
+    borderRadius: 1,
     backgroundColor: tokens.colors.border,
-    marginVertical: normalize(2),
+    // 위는 번호에서 살짝 떼고, 아래는 다음 번호에 그대로 닿게 둔다.
+    marginTop: normalize(3),
   },
   timelineContent: {
     flex: 1,
     paddingBottom: normalize(6),
+  },
+  // 뒤에 장소가 더 있을 때만 아래를 벌린다. 그 여백을 세로선이 채운다.
+  timelineContentLinked: {
+    paddingBottom: normalize(12),
   },
   timelinePlaceHeader: {
     flexDirection: 'row',

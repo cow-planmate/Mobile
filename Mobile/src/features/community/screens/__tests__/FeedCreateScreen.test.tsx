@@ -327,6 +327,34 @@ describe('웹에 맞춘 여행기 쓰기 화면', () => {
     act(() => tree.unmount());
   });
 
+  it('수정 중에는 일정 안내 띠 없이 미리보기 카드만 둔다', () => {
+    mockRouteParams.postId = '42';
+    mockExistingPostData = {
+      category: 'feed',
+      title: '부산 2박 3일',
+      contentText: '내용',
+      image: null,
+      location: '부산',
+      itinerary: {
+        plan: { destinationName: '부산' },
+        days: [
+          { day: 1, items: [] },
+          { day: 2, items: [] },
+        ],
+      },
+    };
+
+    const tree = render();
+    const joined = textsOf(tree).join(' ');
+
+    expect(joined).not.toContain('유지돼요');
+    // 띠를 걷었다고 일정을 고르는 단추가 대신 나오면 안 된다.
+    expect(joined).not.toContain('내 일정 불러오기');
+    expect(textsOf(tree)).toContain('일정 미리보기');
+
+    act(() => tree.unmount());
+  });
+
   it('하루짜리 일정은 0박 1일 대신 당일치기로 적는다', () => {
     mockRouteParams.postId = '42';
     mockExistingPostData = {
