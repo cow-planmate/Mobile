@@ -38,6 +38,12 @@ export const MIN_ITEM_HEIGHT = normalize(45);
 export const GRID_SNAP_HEIGHT = HOUR_HEIGHT / 4;
 
 export const GRID_TOP_OFFSET = normalize(40);
+// 워클릿은 UI 스레드에서 도는데 normalize는 JS 스레드에만 있는 함수다.
+// 타임라인 블록의 좌우 여백·모서리는 화면 폭이 정해지면 고정이므로 여기서 한 번만 재고,
+// useAnimatedStyle 안에서는 이 상수를 읽기만 한다.
+export const TIMELINE_BLOCK_LEFT = normalize(60);
+export const TIMELINE_BLOCK_RIGHT = normalize(15);
+export const TIMELINE_BLOCK_RADIUS = normalize(12);
 export const BOTTOM_TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 85 : 60;
 export const SHEET_HANDLE_HEIGHT = normalize(62);
 

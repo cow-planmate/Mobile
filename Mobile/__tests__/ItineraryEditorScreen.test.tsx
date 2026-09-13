@@ -1021,6 +1021,58 @@ describe('웹과 맞춘 일정 편집 문구', () => {
   });
 });
 
+// 워클릿은 UI 스레드에서 돈다. 거기에는 JS 스레드의 함수가 없어서
+// useAnimatedStyle 안에서 normalize를 부르면 공유 값이 바뀌는 순간
+// "[Worklets] Tried to synchronously call a non-worklet function `sf`"로 죽는다.
+// 첫 렌더는 JS 스레드에서 계산되므로 멀쩡해 보이고, 웹이 장소를 더해
+// 블록 위치가 밀릴 때처럼 공유 값이 움직여야 터진다 — 그래서 소스로 막는다.
+describe('워클릿 안에서 JS 전용 함수를 부르지 않는다', () => {
+  const source = readFileSync(
+    join(
+      __dirname,
+      '../src/features/itinerary/screens/ItineraryEditorScreen.view.tsx',
+    ),
+    'utf8',
+  );
+
+  const workletBodies = () => {
+    const bodies: string[] = [];
+    const opener =
+      /use(?:AnimatedStyle|DerivedValue|AnimatedProps|AnimatedReaction)\(/g;
+    let match: RegExpExecArray | null;
+    while ((match = opener.exec(source))) {
+      let depth = 0;
+      let index = match.index + match[0].length - 1;
+      const start = index;
+      do {
+        const char = source[index];
+        if (char === '(') depth += 1;
+        if (char === ')') depth -= 1;
+        index += 1;
+      } while (depth > 0 && index < source.length);
+      bodies.push(source.slice(start, index));
+    }
+    return bodies;
+  };
+
+  it('화면에서 워클릿을 찾아낸다', () => {
+    expect(workletBodies().length).toBeGreaterThan(4);
+  });
+
+  it('useAnimatedStyle 안에 normalize 호출이 없다', () => {
+    const offenders = workletBodies().filter(body =>
+      /\b(normalize|sf|sp)\(/.test(body),
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  it('워클릿이 쓰는 치수는 모듈 상수로 미리 잰다', () => {
+    expect(source).toContain('TIMELINE_BLOCK_LEFT');
+    expect(source).toContain('TIMELINE_BLOCK_RIGHT');
+    expect(source).toContain('TIMELINE_BLOCK_RADIUS');
+  });
+});
+
 describe('일정 편집기 제스처 및 UI 동작 개선', () => {
   const source = readFileSync(
     join(
