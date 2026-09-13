@@ -146,6 +146,17 @@ describe('정렬 알약', () => {
 
     act(() => tree.unmount());
   });
+
+  it('아래 회색 띠와 붙지 않게 흰 여백을 남긴다', () => {
+    // 트랙 바탕과 listHeaderGap이 같은 pageGround라, 여백이 0이면 두 회색이
+    // 한 덩어리로 붙어 트랙의 둥근 아래 모서리가 사라진다.
+    expect(styles.sortTrack.backgroundColor).toBe(
+      styles.listHeaderGap.backgroundColor,
+    );
+    expect(styles.sortTrack.marginBottom).toBeGreaterThanOrEqual(
+      styles.sortTrack.marginTop as number,
+    );
+  });
 });
 
 describe('글쓰기 FAB', () => {

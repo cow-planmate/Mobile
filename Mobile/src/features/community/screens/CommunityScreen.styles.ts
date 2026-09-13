@@ -133,6 +133,10 @@ export const styles = StyleSheet.create({
     gap: normalize(2),
     marginHorizontal: normalize(16),
     marginTop: normalize(12),
+    // 바로 아래 listHeaderGap이 같은 pageGround라, 여백이 없으면 두 회색이
+    // 한 덩어리로 붙어 트랙의 둥근 아래 모서리가 사라진다. 위(12)보다 조금
+    // 더 벌려 정렬이 목록이 아니라 검색창 쪽에 붙어 보이게 한다.
+    marginBottom: normalize(14),
     padding: normalize(4),
     borderRadius: tokens.radius.l,
     backgroundColor: tokens.colors.pageGround,
