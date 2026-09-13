@@ -218,6 +218,76 @@ describe('HomeScreen - Pre-save Itinerary Flow', () => {
     });
   });
 
+  it('초대를 수락하면 알림을 닫고 그 일정의 편집 화면으로 바로 넘어간다', async () => {
+    queryClient.setQueryData(PENDING_INVITATIONS_QUERY_KEY, [
+      {
+        requestId: 7,
+        senderNickname: '동료',
+        planId: '31',
+        planName: '부산 여행',
+        type: 'INVITE',
+      },
+    ]);
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <QueryClientProvider client={queryClient}>
+          <HomeScreen navigation={mockNavigation} route={mockRoute} />
+        </QueryClientProvider>,
+      );
+      mountedRenderers.push(tree);
+    });
+    const view = tree!.root.findByType(
+      require('../src/features/home/screens/HomeScreen.view').HomeScreenView,
+    );
+    await ReactTestRenderer.act(async () => {
+      await view.props.onAcceptNotification(7);
+    });
+
+    expect(mockNavigate).toHaveBeenCalledWith('ItineraryEditor', {
+      planId: '31',
+    });
+    // 곧바로 화면이 바뀌므로 '수락 완료' 알림으로 한 번 더 막지 않는다.
+    expect(mockShowAlert).not.toHaveBeenCalledWith(
+      expect.objectContaining({ title: '수락 완료' }),
+    );
+  });
+
+  it('편집 권한 요청을 수락할 때는 보던 화면에 그대로 둔다', async () => {
+    queryClient.setQueryData(PENDING_INVITATIONS_QUERY_KEY, [
+      {
+        requestId: 8,
+        senderNickname: '동료',
+        planId: '31',
+        planName: '부산 여행',
+        type: 'REQUEST',
+      },
+    ]);
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <QueryClientProvider client={queryClient}>
+          <HomeScreen navigation={mockNavigation} route={mockRoute} />
+        </QueryClientProvider>,
+      );
+      mountedRenderers.push(tree);
+    });
+    const view = tree!.root.findByType(
+      require('../src/features/home/screens/HomeScreen.view').HomeScreenView,
+    );
+    await ReactTestRenderer.act(async () => {
+      await view.props.onAcceptNotification(8);
+    });
+
+    expect(mockNavigate).not.toHaveBeenCalledWith(
+      'ItineraryEditor',
+      expect.anything(),
+    );
+    expect(mockShowAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '수락 완료' }),
+    );
+  });
+
   it.each(['accept', 'reject'])(
     '다른 기기에서 처리한 요청의 %s 응답은 재시도 대신 목록과 권한을 갱신한다',
     async action => {

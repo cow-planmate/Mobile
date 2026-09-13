@@ -24,6 +24,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { formatDateLocal, formatPeriod } from '../../../utils/timeUtils';
 import {
+  acceptedInviteTarget,
   CollaborationRequestResult,
   describeAcceptResult,
   describeRejectResult,
@@ -201,13 +202,21 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   };
 
   const handleAccept = async (requestId: number) => {
-    const type = findRequestType(requestId);
+    const request = pendingRequests.find(r => r.requestId === requestId);
+    const type = request?.type;
+    const invitedPlanId = acceptedInviteTarget(request);
     try {
       await acceptInvitation(requestId);
 
       void invalidatePlanCaches(queryClient);
-      showAlert({ title: '수락 완료', message: describeAcceptResult(type) });
       await pendingInvitations.remove(requestId);
+      // 초대를 받아들였으면 그 일정이 목적지다. 알림 창을 닫고 바로 넘긴다.
+      if (invitedPlanId) {
+        setNotificationModalVisible(false);
+        navigation.navigate('ItineraryEditor', { planId: invitedPlanId });
+        return;
+      }
+      showAlert({ title: '수락 완료', message: describeAcceptResult(type) });
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
       }

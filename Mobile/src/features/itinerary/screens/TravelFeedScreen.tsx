@@ -53,6 +53,7 @@ import { FeedFilterParams } from '../../community/types';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import {
+  acceptedInviteTarget,
   describeAcceptResult,
   describeRejectResult,
 } from '../../../utils/collaborationRequest';
@@ -295,19 +296,30 @@ export default function TravelFeedScreen() {
     pendingRequests.find(r => r.requestId === requestId)?.type;
 
   const handleAccept = async (requestId: number) => {
-    const type = findRequestType(requestId);
+    const request = pendingRequests.find(r => r.requestId === requestId);
+    const type = request?.type;
+    const invitedPlanId = acceptedInviteTarget(request);
     try {
       await acceptInvitation(requestId);
 
       void invalidatePlanCaches(queryClient);
-      showAlert({ title: '수락 완료', message: describeAcceptResult(type) });
       await pendingInvitations.remove(requestId);
+      // 초대를 받아들였으면 그 일정이 목적지다. 알림 창을 닫고 바로 넘긴다.
+      if (invitedPlanId) {
+        setNotificationModalVisible(false);
+        navigation.navigate('ItineraryEditor', { planId: invitedPlanId });
+        return;
+      }
+      showAlert({ title: '수락 완료', message: describeAcceptResult(type) });
       if (pendingRequests.length <= 1) {
         setNotificationModalVisible(false);
       }
     } catch (e) {
       if (await pendingInvitations.removeIfProcessed(requestId, e)) {
-        showAlert({ title: '이미 처리된 요청', message: '처리된 요청을 알림 목록에서 정리했어요.' });
+        showAlert({
+          title: '이미 처리된 요청',
+          message: '처리된 요청을 알림 목록에서 정리했어요.',
+        });
         return;
       }
       showAlert({ title: '오류', message: '수락하지 못했어요.' });

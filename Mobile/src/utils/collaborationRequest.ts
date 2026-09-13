@@ -1,4 +1,3 @@
-
 export type CollaborationRequestType = 'INVITE' | 'REQUEST';
 
 export function normalizeCollaborationRequestType(
@@ -18,9 +17,7 @@ export function describeCollaborationRequest(
 export function describeAcceptResult(
   type: CollaborationRequestType | undefined,
 ): string {
-  return type === 'REQUEST'
-    ? '편집자로 추가했어요.'
-    : '일정에 참여했어요.';
+  return type === 'REQUEST' ? '편집자로 추가했어요.' : '일정에 참여했어요.';
 }
 
 export function describeRejectResult(
@@ -29,6 +26,18 @@ export function describeRejectResult(
   return type === 'REQUEST'
     ? '편집 권한 요청을 거절했어요.'
     : '초대를 거절했어요.';
+}
+
+/**
+ * 수락한 뒤 바로 열어 줄 일정. 초대(INVITE)는 남의 일정에 불려 간 것이라
+ * 곧장 편집 화면으로 데려간다. 권한 요청(REQUEST) 수락은 내 일정에 편집자를
+ * 들이는 일이라 보던 화면에 그대로 둔다.
+ */
+export function acceptedInviteTarget(
+  request: { type?: CollaborationRequestType; planId?: string } | undefined,
+): string | null {
+  if (!request || request.type === 'REQUEST') return null;
+  return request.planId ? String(request.planId) : null;
 }
 
 export function collaborationRequestNoun(

@@ -4,11 +4,11 @@ import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { acceptInvitation, rejectInvitation } from '../../../api/trips';
 import {
-  acceptInvitation,
-  rejectInvitation,
-} from '../../../api/trips';
-import { collaborationRequestNoun } from '../../../utils/collaborationRequest';
+  acceptedInviteTarget,
+  collaborationRequestNoun,
+} from '../../../utils/collaborationRequest';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidatePlanCaches } from '../../../hooks/planCache';
 import {
@@ -25,8 +25,7 @@ const SEARCH_DEBOUNCE_MS = 350;
 export default function CommunityScreen() {
   const { showAlert } = useAlert();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const route =
-    useRoute<RouteProp<CommunityStackParamList, 'CommunityMain'>>();
+  const route = useRoute<RouteProp<CommunityStackParamList, 'CommunityMain'>>();
   const queryClient = useQueryClient();
   const user = useAuthStore(state => state.user);
 
@@ -79,11 +78,19 @@ export default function CommunityScreen() {
   const handleAcceptInvitation = useCallback(
     async (requestId: number) => {
       const noun = findRequestNoun(requestId);
+      const invitedPlanId = acceptedInviteTarget(
+        pendingRequests.find(r => r.requestId === requestId),
+      );
       try {
         await acceptInvitation(requestId);
 
         void invalidatePlanCaches(queryClient);
         await fetchPendingRequests();
+        // 초대를 받아들였으면 그 일정이 목적지다. 알림 창을 닫고 바로 넘긴다.
+        if (invitedPlanId) {
+          setNotificationModalVisible(false);
+          navigation.navigate('ItineraryEditor', { planId: invitedPlanId });
+        }
       } catch (error) {
         showAlert({
           title: `${noun} 수락 실패`,
@@ -92,7 +99,14 @@ export default function CommunityScreen() {
         });
       }
     },
-    [fetchPendingRequests, findRequestNoun, queryClient, showAlert],
+    [
+      fetchPendingRequests,
+      findRequestNoun,
+      navigation,
+      pendingRequests,
+      queryClient,
+      showAlert,
+    ],
   );
 
   const handleRejectInvitation = useCallback(
