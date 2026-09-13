@@ -655,11 +655,9 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 4,
+    // 시간표 위에 살짝 뜬 정도면 충분하다. 테두리가 이미 경계를 그으므로
+    // 그림자는 토큰에서 가장 옅은 단계(sm)만 쓴다.
+    ...tokens.shadows.sm,
     borderWidth: 1,
     borderColor: COLORS.border,
   },

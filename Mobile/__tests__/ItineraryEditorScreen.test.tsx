@@ -1082,6 +1082,30 @@ describe('일정 편집기 제스처 및 UI 동작 개선', () => {
     'utf8',
   );
 
+  it('장소 추가 시트는 마지막으로 잰 몸통 크기에 맞춰 처음 높이를 연다', () => {
+    // 화면이 뜨는 동안 몸통이 여러 번 재어지는데, 처음 잰 값에 굳으면
+    // 시트가 접힌 채로 열린 것처럼 보였다. 손잡이를 잡기 전까지 다시 연다.
+    expect(source).toContain('SHEET_INITIAL_RATIO');
+    expect(source).toContain('sheetTouched');
+    expect(source).not.toContain('if (!sheetInited.current &&');
+  });
+
+  it('플로팅 실행 취소 단추는 가장 옅은 그림자 토큰을 쓴다', () => {
+    const {
+      styles: editorStyles,
+    } = require('../src/features/itinerary/screens/ItineraryEditorScreen.styles');
+    const { tokens } = require('../src/theme/tokens');
+
+    expect(editorStyles.floatingHistoryButton.elevation).toBe(
+      tokens.shadows.sm.elevation,
+    );
+    expect(editorStyles.floatingHistoryButton.shadowOpacity).toBe(
+      tokens.shadows.sm.shadowOpacity,
+    );
+    // 테두리가 경계를 그으므로 그림자를 더 키울 이유가 없다.
+    expect(editorStyles.floatingHistoryButton.borderWidth).toBe(1);
+  });
+
   it('중복 라벨(movingPlace)이 제거되었다', () => {
     expect(source).not.toContain('styles.movingPlace');
     expect(source).not.toContain('movingPlaceName');

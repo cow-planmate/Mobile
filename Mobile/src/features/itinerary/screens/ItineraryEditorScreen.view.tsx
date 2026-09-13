@@ -1150,6 +1150,8 @@ export const EditorStateContext = createContext<{
 
 /** 붙는 자리 — 접힘 / 1·3 / 2·3 / 최대 확장 */
 const SHEET_SNAPS = [0, 1 / 3, 2 / 3, 1];
+/** 화면에 처음 들어왔을 때 열어 둘 높이. 스냅 자리와 같아야 첫 드래그가 안 튄다. */
+const SHEET_INITIAL_RATIO = SHEET_SNAPS[1];
 
 const nearestSnap = (value: number, points: number[]) =>
   points.reduce((a, b) => (Math.abs(b - value) < Math.abs(a - value) ? b : a));
@@ -1506,6 +1508,8 @@ export default function ItineraryEditorScreenView({
   const sheetMax = useSharedValue(0);
   const sheetStartRef = useRef(0);
   const sheetInited = useRef(false);
+  /** 손잡이를 한 번이라도 잡았는가. 잡은 뒤에는 처음 높이로 되돌리지 않는다. */
+  const sheetTouched = useRef(false);
   const bodyTop = useRef(0);
   const bodyHeight = useRef(0);
   const timelineTop = useRef(0);
@@ -1554,10 +1558,14 @@ export default function ItineraryEditorScreenView({
     (event: any) => {
       const { height } = event.nativeEvent.layout;
       bodyHeight.current = height;
-      sheetMax.value = Math.max(0, height - SHEET_HANDLE_HEIGHT - sheetTopGap);
-      if (!sheetInited.current && sheetMax.value > 0) {
+      const nextMax = Math.max(0, height - SHEET_HANDLE_HEIGHT - sheetTopGap);
+      sheetMax.value = nextMax;
+      // 화면이 뜨는 동안 몸통은 여러 번 재어진다. 그중 처음 잰 값이 실제보다
+      // 작으면 그 1/3에 굳어 시트가 접힌 채로 열린 것처럼 보였다.
+      // 손잡이를 잡기 전까지는 마지막으로 잰 크기에 맞춰 다시 연다.
+      if (!sheetTouched.current && nextMax > 0) {
         sheetInited.current = true;
-        setSheetHeight(Math.round(sheetMax.value / 3));
+        setSheetHeight(Math.round(nextMax * SHEET_INITIAL_RATIO));
       }
       measureGrid();
     },
@@ -1585,6 +1593,7 @@ export default function ItineraryEditorScreenView({
           .enabled(!isTimelineItemDragging && !draggingPlace)
           .hitSlop({ top: 16, bottom: 16, left: 30, right: 30 })
           .onBegin(() => {
+            sheetTouched.current = true;
             sheetStartRef.current = sheetHeightRef.current;
           })
           .onUpdate(e =>
@@ -1620,6 +1629,7 @@ export default function ItineraryEditorScreenView({
           .enabled(!isTimelineItemDragging && !draggingPlace)
           .hitSlop({ top: 16, bottom: 16, left: 30, right: 30 })
           .onEnd(() => {
+            sheetTouched.current = true;
             const points = snapPoints();
             const maxPoint = points[points.length - 1];
             const peekPoint = points[1] || Math.round(maxPoint / 3);
