@@ -220,19 +220,26 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
       e.preventDefault();
 
+      // 장소를 넣고 옮기고 지우는 것도, 일정 이름도 실시간 동기화로 그때그때
+      // 저장된다. 이미 저장된 일정을 두고 "저장 안 됨"이라 겁줄 이유가 없다.
+      // 아직 서버에 없는 일정(planId 없음)만 완료를 눌러야 저장된다.
+      const isSavedPlan = !!route.params.planId;
+
       showAlert({
-        title: '변경사항 저장 안 됨',
-        message: '작성 중인 내용이 저장되지 않았어요. 정말 나갈까요?',
-        type: 'warning',
+        title: isSavedPlan ? '편집 마치기' : '저장되지 않은 일정',
+        message: isSavedPlan
+          ? '바꾼 내용은 그때그때 저장되고 있어요. 편집을 마칠까요?'
+          : '아직 저장하지 않은 일정이에요. 나가면 지금까지 짠 일정이 사라져요.',
+        type: isSavedPlan ? 'confirm' : 'warning',
         buttons: [
           {
-            text: '계속 작성',
+            text: '계속 편집',
             style: 'cancel',
             onPress: () => {},
           },
           {
             text: '나가기',
-            style: 'destructive',
+            style: isSavedPlan ? 'default' : 'destructive',
             onPress: () => {
               isBackingRef.current = true;
               setIsBacking(true);
@@ -252,7 +259,15 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     return () => {
       unsubscribe();
     };
-  }, [days.length, disconnect, isAccessDenied, isSaving, navigation, showAlert]);
+  }, [
+    days.length,
+    disconnect,
+    isAccessDenied,
+    isSaving,
+    navigation,
+    route.params.planId,
+    showAlert,
+  ]);
 
   const [weatherMap, setWeatherMap] = useState<
     Record<string, SimpleWeatherInfo>

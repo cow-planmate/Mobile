@@ -819,19 +819,23 @@ describe('ItineraryEditorScreen Component', () => {
 
     expect(mockPreventDefault).toHaveBeenCalled();
 
+    // 장소도 이름도 실시간 동기화로 이미 저장돼 있다. 겁주는 문구를 쓰지 않는다.
     expect(mockShowAlert).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: '변경사항 저장 안 됨',
-        type: 'warning',
+        title: '편집 마치기',
+        type: 'confirm',
         buttons: expect.any(Array),
       }),
     );
+    expect(mockShowAlert.mock.calls[0][0].message).not.toContain('저장되지');
 
     const alertOptions = mockShowAlert.mock.calls[0][0];
     const leaveButton = alertOptions.buttons.find(
       (btn: any) => btn.text === '나가기',
     );
     expect(leaveButton).toBeDefined();
+    // 잃을 것이 없으니 빨간 단추로 세우지 않는다.
+    expect(leaveButton.style).toBe('default');
 
     await act(async () => {
       leaveButton.onPress();
@@ -844,6 +848,51 @@ describe('ItineraryEditorScreen Component', () => {
     });
 
     expect(mockDispatch).toHaveBeenCalledWith(mockAction);
+  });
+
+  it('아직 저장되지 않은 새 일정에서는 사라진다고 경고한다', async () => {
+    mockItineraryEditor.days = mockDays;
+    mockItineraryEditor.selectedDay = mockDays[0];
+
+    const mockAddListener = jest.fn<
+      () => jest.Mock,
+      [string, (...args: any[]) => void]
+    >(() => jest.fn());
+    const mockNavigation = {
+      addListener: mockAddListener,
+      goBack: jest.fn(),
+      navigate: jest.fn(),
+      dispatch: jest.fn(),
+      setParams: jest.fn(),
+    } as any;
+
+    // planId가 없으면 완료를 눌러야 서버에 만들어진다 — 이때는 경고가 맞다.
+    const mockRoute = { params: { destination: '제주도' } } as any;
+
+    await act(async () => {
+      renderer.create(
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />,
+      );
+    });
+
+    const beforeRemoveHandler = mockAddListener.mock.calls.find(
+      call => call[0] === 'beforeRemove',
+    )?.[1];
+
+    await act(async () => {
+      beforeRemoveHandler!({
+        preventDefault: jest.fn(),
+        data: { action: { type: 'GO_BACK' } },
+      });
+    });
+
+    expect(mockShowAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '저장되지 않은 일정', type: 'warning' }),
+    );
+    const leaveButton = mockShowAlert.mock.calls[0][0].buttons.find(
+      (btn: any) => btn.text === '나가기',
+    );
+    expect(leaveButton.style).toBe('destructive');
   });
 
   it('does not show warning alert when completed via onComplete', async () => {
