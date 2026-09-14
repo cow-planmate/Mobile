@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { StyleSheet, View, type GestureResponderEvent } from 'react-native';
 import type { CoachmarkTargetId } from './coachmarkSteps';
 
 /**
@@ -43,6 +44,14 @@ interface CoachmarkTour {
   isRunning: boolean;
   openTour: () => void;
   closeTour: () => void;
+  /**
+   * 손가락이 떨어질 때마다 그 손가락이 '닿기 시작한' 자리를 알려 준다.
+   * 돌려주는 함수를 부르면 그만 듣는다.
+   *
+   * 끝이 아니라 시작 자리를 준다 - 시간표 블록을 끌면 손은 멀리 가지만
+   * 짚어 준 것을 만진 자리는 처음 닿은 곳이다.
+   */
+  watchTouch: (listener: (x: number, y: number) => void) => () => void;
 }
 
 const CoachmarkTourContext = createContext<CoachmarkTour | null>(null);
@@ -54,9 +63,42 @@ export function CoachmarkProvider({ children }: { children: React.ReactNode }) {
   const openTour = useCallback(() => setIsRunning(true), []);
   const closeTour = useCallback(() => setIsRunning(false), []);
 
+  /**
+   * 짚어 준 것을 눌렀는지 알아내는 방법.
+   *
+   * 열세 개 버튼마다 '나 눌렸다'고 알리는 줄을 심을 수도 있지만, 그러면 버튼이
+   * 늘 때마다 같은 줄을 또 심어야 한다. 대신 화면 전체를 한 겹 감싸고 지나가는
+   * 손가락의 자리만 적어 둔다 - 막지 않으므로 버튼은 평소대로 눌린다.
+   */
+  const listeners = useRef(new Set<(x: number, y: number) => void>()).current;
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = useCallback((event: GestureResponderEvent) => {
+    const { pageX, pageY } = event.nativeEvent;
+    touchStart.current = { x: pageX, y: pageY };
+  }, []);
+
+  // 끌기 제스처가 손가락을 가져가면 끝 대신 취소가 온다. 둘 다 '뗐다'로 친다.
+  const handleTouchEnd = useCallback(() => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+    listeners.forEach(listen => listen(start.x, start.y));
+  }, [listeners]);
+
+  const watchTouch = useCallback(
+    (listener: (x: number, y: number) => void) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    [listeners],
+  );
+
   const tour = useMemo<CoachmarkTour>(
-    () => ({ isRunning, openTour, closeTour }),
-    [isRunning, openTour, closeTour],
+    () => ({ isRunning, openTour, closeTour, watchTouch }),
+    [isRunning, openTour, closeTour, watchTouch],
   );
 
   const registry = useMemo<CoachmarkRegistry>(
@@ -78,11 +120,24 @@ export function CoachmarkProvider({ children }: { children: React.ReactNode }) {
   return (
     <CoachmarkContext.Provider value={registry}>
       <CoachmarkTourContext.Provider value={tour}>
-        {children}
+        <View
+          style={styles.host}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
+        >
+          {children}
+        </View>
       </CoachmarkTourContext.Provider>
     </CoachmarkContext.Provider>
   );
 }
+
+const styles = StyleSheet.create({
+  host: {
+    flex: 1,
+  },
+});
 
 export function useCoachmarkRegistry(): CoachmarkRegistry | null {
   return useContext(CoachmarkContext);

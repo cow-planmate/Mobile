@@ -26,6 +26,16 @@ describe('일정 편집 코치마크 스텝', () => {
     );
   });
 
+  it('되돌릴 수 없는 셋만 눌러 보지 못하게 막는다', () => {
+    const blocked = EDITOR_COACHMARK_STEPS.filter(
+      step => step.interactive === false,
+    ).map(step => step.target);
+
+    // 완성은 화면을 떠나고, 수정·삭제는 구멍 하나에 연필과 X가 같이 들어가며,
+    // 되돌리기는 진짜로 직전 작업을 무른다. 나머지는 직접 눌러 보게 둔다.
+    expect(blocked).toEqual(['complete', 'blockActions', 'undo']);
+  });
+
   it('동그란 버튼은 테두리가 원을 따라가도록 표시해 둔다', () => {
     const circles = EDITOR_COACHMARK_STEPS.filter(
       step => step.shape === 'circle',

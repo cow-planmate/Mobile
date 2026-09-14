@@ -39,6 +39,15 @@ export interface CoachmarkStep {
   shape: CoachmarkShape;
   /** 구멍을 대상보다 얼마나 넉넉히 뚫을지(px). */
   padding?: number;
+  /**
+   * 안내 중에 이 버튼을 실제로 눌러 볼 수 있는지. 기본은 눌러 볼 수 있다 -
+   * 직접 한 번 해보고 다음 단계로 넘어가는 것이 안내의 목적이다.
+   *
+   * false로 막는 것은 눌리면 되돌릴 수 없는 셋뿐이다. 일정 완성은 저장하고
+   * 화면을 떠나 이어서 볼 안내가 없어지고, 되돌리기는 진짜로 직전 작업을
+   * 무르며, 수정·삭제는 구멍 하나에 연필과 X가 같이 들어가 삭제만 막을 수 없다.
+   */
+  interactive?: boolean;
 }
 
 export const EDITOR_COACHMARK_STEPS: readonly CoachmarkStep[] = [
@@ -84,18 +93,21 @@ export const EDITOR_COACHMARK_STEPS: readonly CoachmarkStep[] = [
     title: '일정 완성',
     body: '다 짰으면 눌러서 완성해요. 완성한 뒤에도 연필로 다시 열 수 있습니다.',
     shape: 'circle',
+    interactive: false,
   },
   {
     target: 'blockActions',
     title: '수정과 삭제',
     body: '연필은 자세히 고치기, X는 지우기예요. 지운 건 되돌리기로 살릴 수 있어요.',
     shape: 'rounded',
+    interactive: false,
   },
   {
     target: 'undo',
     title: '되돌리기',
     body: '방금 한 동작을 한 단계씩 취소해요. 잘못 옮겼을 때 바로 되돌립니다.',
     shape: 'circle',
+    interactive: false,
   },
   {
     target: 'checklist',

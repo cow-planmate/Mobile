@@ -37,14 +37,16 @@ function FakeTarget({ id, top }: { id: CoachmarkTargetId; top: number }) {
   return null;
 }
 
+const tourTree = (children: React.ReactNode, enabled: boolean = true) => (
+  <CoachmarkProvider>
+    {children}
+    <TutorialLauncher />
+    <EditorCoachmark enabled={enabled} />
+  </CoachmarkProvider>
+);
+
 function renderTour(children: React.ReactNode) {
-  return renderer.create(
-    <CoachmarkProvider>
-      {children}
-      <TutorialLauncher />
-      <EditorCoachmark enabled />
-    </CoachmarkProvider>,
-  );
+  return renderer.create(tourTree(children));
 }
 
 /** '1 / 2'처럼 조각으로 나뉘어 들어온 children도 한 줄로 이어 붙인다. */
@@ -54,10 +56,42 @@ const visibleTexts = (tree: renderer.ReactTestRenderer): string[] =>
     return Array.isArray(children) ? children.join('') : String(children ?? '');
   });
 
-const press = (tree: renderer.ReactTestRenderer, label: string) =>
-  act(() => {
+const press = async (tree: renderer.ReactTestRenderer, label: string) => {
+  await act(async () => {
     tree.root.findByProps({ accessibilityLabel: label }).props.onPress();
+    await Promise.resolve();
+    await Promise.resolve();
   });
+};
+
+/**
+ * 짚어 준 자리를 실제로 눌렀다 뗀 것처럼 만든다.
+ *
+ * 안내는 화면을 감싼 겹이 흘려보내는 좌표만 보므로, 그 겹에 직접 손가락을
+ * 얹었다 뗀다. 넘어가기까지 두는 틈만큼 시계도 함께 민다.
+ */
+const touchAt = async (
+  tree: renderer.ReactTestRenderer,
+  x: number,
+  y: number,
+) => {
+  const host = tree.root.find(
+    node => node.type === View && typeof node.props.onTouchStart === 'function',
+  );
+  await act(async () => {
+    host.props.onTouchStart({ nativeEvent: { pageX: x, pageY: y } });
+    host.props.onTouchEnd({ nativeEvent: { pageX: x, pageY: y } });
+  });
+  await act(async () => {
+    jest.advanceTimersByTime(400);
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+};
+
+/** 짚어 준 것이 덮여 있는지. 눌러 보면 안 되는 단계만 덮는다. */
+const isHoleBlocked = (tree: renderer.ReactTestRenderer) =>
+  tree.root.findAllByProps({ testID: 'coachmark-hole-block' }).length > 0;
 
 /** 저장소 확인이 끝나 말풍선 여부가 정해지도록 민다. */
 const settle = async (tree: renderer.ReactTestRenderer) => {
@@ -282,5 +316,122 @@ describe('EditorCoachmark', () => {
     expect(
       tree.root.findAllByProps({ accessibilityLabel: '사용법 보기' }).length,
     ).toBeGreaterThan(0);
+  });
+
+  it('눌러 볼 수 있는 단계는 구멍을 비우고 되돌릴 수 없는 단계는 덮는다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderTour(
+        <>
+          <FakeTarget id="planName" top={100} />
+          <FakeTarget id="complete" top={100} />
+        </>,
+      );
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    // 일정 이름은 눌러 봐도 잃을 것이 없다 - 구멍이 비어 있어야 한다.
+    expect(visibleTexts(tree)).toContain('일정 이름');
+    expect(isHoleBlocked(tree)).toBe(false);
+
+    await press(tree, '다음 안내');
+
+    // 일정 완성은 누르면 저장하고 화면을 떠난다 - 보여 주기만 한다.
+    expect(visibleTexts(tree)).toContain('일정 완성');
+    expect(isHoleBlocked(tree)).toBe(true);
+  });
+
+  it('짚어 준 것을 직접 누르면 다음으로 넘어간다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderTour(
+        <>
+          <FakeTarget id="planName" top={100} />
+          <FakeTarget id="planInfo" top={100} />
+        </>,
+      );
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    // 잰 자리가 (20, 100, 60, 40)이므로 구멍은 그보다 조금 넉넉하다.
+    await touchAt(tree, 50, 120);
+
+    const texts = visibleTexts(tree);
+    expect(texts).toContain('일정 정보');
+    expect(texts).toContain('2 / 2');
+  });
+
+  it('구멍 밖을 눌러서는 넘어가지 않는다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderTour(
+        <>
+          <FakeTarget id="planName" top={100} />
+          <FakeTarget id="planInfo" top={100} />
+        </>,
+      );
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    await touchAt(tree, 300, 400);
+
+    expect(visibleTexts(tree)).toContain('일정 이름');
+  });
+
+  it('되돌릴 수 없는 단계는 구멍을 눌러도 넘어가지 않는다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderTour(
+        <>
+          <FakeTarget id="complete" top={100} />
+          <FakeTarget id="undo" top={100} />
+        </>,
+      );
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    await touchAt(tree, 50, 120);
+
+    // 덮여 있으므로 애초에 눌리지도 않지만, 넘어가지도 않아야 한다.
+    expect(visibleTexts(tree)).toContain('일정 완성');
+  });
+
+  it('가려지는 동안 숨었다가 다시 보이면 같은 단계로 돌아온다', async () => {
+    const targets = (
+      <>
+        <FakeTarget id="planName" top={100} />
+        <FakeTarget id="planInfo" top={100} />
+      </>
+    );
+
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderTour(targets);
+    });
+    await settle(tree);
+    await openTour(tree);
+    await press(tree, '다음 안내');
+    expect(visibleTexts(tree)).toContain('일정 정보');
+
+    // 모달이 덮으면 짚을 자리가 가려진다 - 그동안은 숨는다.
+    await act(async () => {
+      tree.update(tourTree(targets, false));
+      await Promise.resolve();
+    });
+    expect(visibleTexts(tree)).not.toContain('일정 정보');
+
+    // 모달을 닫으면 그 자리를 다시 재서 보던 단계로 돌아온다.
+    await act(async () => {
+      tree.update(tourTree(targets, true));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    const texts = visibleTexts(tree);
+    expect(texts).toContain('일정 정보');
+    expect(texts).toContain('2 / 2');
   });
 });

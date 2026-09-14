@@ -1,4 +1,5 @@
 import type { MeasurableNode } from './CoachmarkContext';
+import type { CoachmarkStep } from './coachmarkSteps';
 
 export interface CoachmarkRect {
   x: number;
@@ -50,6 +51,33 @@ export function measureTarget(
       finish(null);
     }
   });
+}
+
+/**
+ * 구멍은 짚은 것보다 조금 넉넉하다. 안내가 뚫는 자리와 "여기를 눌렀는가"를
+ * 가리는 자리가 같아야 하므로, 그 여백을 한곳에서 정해 둘이 같이 쓴다.
+ */
+export function holeRect(
+  step: CoachmarkStep,
+  rect: CoachmarkRect,
+): CoachmarkRect {
+  const padding = step.padding ?? (step.shape === 'circle' ? 6 : 5);
+  return {
+    x: rect.x - padding,
+    y: rect.y - padding,
+    width: rect.width + padding * 2,
+    height: rect.height + padding * 2,
+  };
+}
+
+/** 손가락이 이 자리 안에서 떨어졌는지. */
+export function isInside(rect: CoachmarkRect, x: number, y: number): boolean {
+  return (
+    x >= rect.x &&
+    x <= rect.x + rect.width &&
+    y >= rect.y &&
+    y <= rect.y + rect.height
+  );
 }
 
 /**
