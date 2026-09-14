@@ -12,6 +12,13 @@ import { parseBackendError } from '../utils/errorHandler';
 
 export const CHATBOT_MESSAGE_MAX_LENGTH = 1000;
 
+/**
+ * 말을 거는 쪽만 따로 더 기다린다. 전역 기본값은 15초인데(axiosConfig) AI가
+ * 답을 만드는 데는 10초 안팎이 걸려 조금만 느려도 정상 요청이 실패로 떨어진다.
+ * 웹에는 전역 제한이 없어 앱에서만 나던 증상이다.
+ */
+const ASK_TIMEOUT_MS = 60000;
+
 export interface ChatbotPlace {
   contentId?: string | number | null;
   title?: string | null;
@@ -72,7 +79,7 @@ export async function askChatbot(
         : null,
       recentMessages: params.recentMessages.slice(-3),
     },
-    { signal },
+    { signal, timeout: ASK_TIMEOUT_MS },
   );
   return (data ?? {}) as ChatbotReply;
 }
