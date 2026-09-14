@@ -15,8 +15,8 @@ import { useCoachmarkTour } from './CoachmarkContext';
  * 사용법 안내를 여는 물음표 단추와, 처음 온 사람에게 한 번 권하는 말풍선.
  *
  * 웹 CreateTutorial과 같은 짜임이다 - 안내를 들이밀지 않고 "볼래요?"만 묻는다.
- * 실행 취소 단추와 한 자리에 두는 이유는 그 자리가 장소 추가 시트를 따라
- * 움직이기 때문이다. 다른 데 두면 시트를 올렸을 때 가려진다.
+ * AI 도우미 단추 바로 위, 오른쪽 아래 묶음에 둔다. 그 자리가 장소 추가 시트를
+ * 따라 움직이기 때문이다. 다른 데 두면 시트를 올렸을 때 가려진다.
  */
 export default function TutorialLauncher() {
   const tour = useCoachmarkTour();
@@ -98,7 +98,7 @@ export default function TutorialLauncher() {
 
 const styles = StyleSheet.create({
   wrap: {
-    alignItems: 'flex-start',
+    alignItems: 'flex-end',
   },
   button: {
     width: normalize(44),
@@ -112,11 +112,12 @@ const styles = StyleSheet.create({
     // 실행 취소 단추와 같은 단계만 쓴다. 시간표 위에 살짝 뜬 정도면 충분하다.
     ...tokens.shadows.sm,
   },
-  // 단추 위에 띄운다. 자리를 차지하면 실행 취소 단추가 밀려 내려간다.
+  // 단추 위에 띄운다. 자리를 차지하면 아래 단추가 밀려 내려간다.
+  // 오른쪽 끝에 맞춘다 - 왼쪽에 맞추면 말풍선이 화면 밖으로 나간다.
   nudge: {
     position: 'absolute',
     bottom: normalize(52),
-    left: 0,
+    right: 0,
     width: normalize(250),
     paddingVertical: normalize(12),
     paddingHorizontal: normalize(14),

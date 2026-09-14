@@ -198,7 +198,7 @@ export default function CoachmarkOverlay({
           {/* 안내는 이제 스스로 뜨지 않는다. 다시 보는 길을 마지막에 일러둔다. */}
           {isLast && (
             <Text style={styles.tipReplay}>
-              왼쪽 아래 물음표를 누르면 다시 볼 수 있어요.
+              오른쪽 아래 물음표를 누르면 다시 볼 수 있어요.
             </Text>
           )}
           <View style={styles.tipFoot}>

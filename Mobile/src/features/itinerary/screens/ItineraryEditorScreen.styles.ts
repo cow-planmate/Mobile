@@ -649,6 +649,15 @@ export const styles = StyleSheet.create({
     gap: normalize(10),
     zIndex: 30,
   },
+  // 사용법·AI 도우미는 오른쪽에 위아래로. 되돌리기와 바닥을 맞춘다.
+  floatingAssistContainer: {
+    position: 'absolute',
+    right: normalize(16),
+    bottom: SHEET_HANDLE_HEIGHT + 14,
+    alignItems: 'flex-end',
+    gap: normalize(10),
+    zIndex: 30,
+  },
   floatingHistoryButton: {
     width: normalize(44),
     height: normalize(44),

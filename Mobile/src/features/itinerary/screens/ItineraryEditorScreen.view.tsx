@@ -1671,6 +1671,16 @@ export default function ItineraryEditorScreenView({
     transform: [{ translateY: sheetShift.value }],
   }));
 
+  /**
+   * 시트를 70% 넘게 올리면 떠 있는 단추들이 시트에 묻힌다. 그때는 눌리지도
+   * 않게 막아야 시트 위의 것을 누른 셈이 되지 않는다.
+   */
+  const floatingPointerEvents =
+    sheetRest >
+    (bodyHeight.current - SHEET_HANDLE_HEIGHT - sheetTopGap || 400) * 0.7
+      ? ('none' as const)
+      : ('box-none' as const);
+
   const floatingAnimStyle = useAnimatedStyle(() => {
     const max = sheetMax.value || 400;
     const progress = Math.max(0, Math.min(1, sheetBody.value / max));
@@ -2105,13 +2115,7 @@ export default function ItineraryEditorScreenView({
           </View>
 
           <Animated.View
-            pointerEvents={
-              sheetRest >
-              (bodyHeight.current - SHEET_HANDLE_HEIGHT - sheetTopGap || 400) *
-                0.7
-                ? 'none'
-                : 'box-none'
-            }
+            pointerEvents={floatingPointerEvents}
             style={[styles.floatingHistoryContainer, floatingAnimStyle]}
           >
             <TouchableOpacity
@@ -2126,8 +2130,15 @@ export default function ItineraryEditorScreenView({
             >
               <Undo2 color={COLORS.text} size={18} />
             </TouchableOpacity>
-            {/* 사용법 단추도 같은 자리에 둔다 - 이 묶음만 시트 높이를 따라
-              움직여서, 시트를 끝까지 올려도 가려지지 않는다. */}
+          </Animated.View>
+
+          {/* 도움을 청하는 두 단추는 오른쪽에 위아래로 세운다 - 되돌리기는
+            방금 한 일을 무르는 손이고, 이 둘은 새로 여는 자리라 갈라 둔다.
+            둘 다 시트 높이를 따라 움직여서 시트를 올려도 가려지지 않는다. */}
+          <Animated.View
+            pointerEvents={floatingPointerEvents}
+            style={[styles.floatingAssistContainer, floatingAnimStyle]}
+          >
             <TutorialLauncher />
             {/* 웹과 같은 토글이다 - 열려 있으면 같은 자리에서 X로 바뀐다. */}
             <TouchableOpacity
