@@ -683,6 +683,18 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     ...tokens.shadows.sm,
   },
+  // AI 도우미 창이 매달리는 자리. 단추 묶음과 바닥을 맞춰 같이 움직인다.
+  chatbotAnchor: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: SHEET_HANDLE_HEIGHT + 14,
+    zIndex: 31,
+  },
+  // 열려 있을 때는 짙은 회색 - 지금 무엇을 누르는지가 색으로 먼저 읽힌다.
+  floatingChatButtonOpen: {
+    backgroundColor: COLORS.text,
+  },
   floatingHistoryButtonDisabled: {
     backgroundColor: COLORS.borderLight,
     opacity: 0.5,

@@ -49,6 +49,7 @@ import { findDropSlot } from '../utils/dropSlot';
 import { Day } from '../../../contexts/ItineraryContext';
 import { PLAN_NAME_MAX_LENGTH, SimpleWeatherInfo } from '../../../api/trips';
 import WeatherHeader from '../components/weather/WeatherHeader';
+import ChatbotWindow from '../components/chatbot/ChatbotWindow';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import {
   styles,
@@ -1306,6 +1307,9 @@ export interface ItineraryEditorScreenViewProps {
   onOpenShare: () => void;
   onOpenChecklist: () => void;
   onOpenChatbot: () => void;
+  isChatbotOpen?: boolean;
+  onCloseChatbot?: () => void;
+  onChatbotApplied?: () => void;
   onUndo: () => void;
   onRedo?: () => void;
   participantsCount: number;
@@ -1363,6 +1367,9 @@ export default function ItineraryEditorScreenView({
   onOpenShare,
   onOpenChecklist,
   onOpenChatbot,
+  isChatbotOpen = false,
+  onCloseChatbot,
+  onChatbotApplied,
   onUndo,
   onRedo,
   participantsCount,
@@ -2122,18 +2129,46 @@ export default function ItineraryEditorScreenView({
             {/* 사용법 단추도 같은 자리에 둔다 - 이 묶음만 시트 높이를 따라
               움직여서, 시트를 끝까지 올려도 가려지지 않는다. */}
             <TutorialLauncher />
+            {/* 웹과 같은 토글이다 - 열려 있으면 같은 자리에서 X로 바뀐다. */}
             <TouchableOpacity
               testID="btn-chatbot"
-              style={styles.floatingChatButton}
+              style={[
+                styles.floatingChatButton,
+                isChatbotOpen && styles.floatingChatButtonOpen,
+              ]}
               onPress={onOpenChatbot}
               activeOpacity={0.85}
               accessibilityRole="button"
-              accessibilityLabel="AI 여행 도우미"
+              accessibilityLabel={
+                isChatbotOpen ? 'AI 여행 도우미 닫기' : 'AI 여행 도우미'
+              }
+              accessibilityState={{ expanded: isChatbotOpen }}
               hitSlop={6}
             >
-              <MessageCircle color={COLORS.white} size={18} />
+              {isChatbotOpen ? (
+                <XIcon color={COLORS.white} size={18} />
+              ) : (
+                <MessageCircle color={COLORS.white} size={18} />
+              )}
             </TouchableOpacity>
           </Animated.View>
+
+          {/* 창은 진입 단추와 같은 닻에 매단다 - 단추가 추천 장소 시트를 따라
+            움직이므로, 같이 움직여야 늘 단추 한 칸 위에 선다. 화면을 덮지
+            않으니 창 옆으로 시간표를 그대로 만질 수 있다. */}
+          {isChatbotOpen && (
+            <Animated.View
+              pointerEvents="box-none"
+              style={[styles.chatbotAnchor, floatingAnimStyle]}
+            >
+              <ChatbotWindow
+                visible
+                planId={planId ?? null}
+                onClose={onCloseChatbot ?? onOpenChatbot}
+                onApplied={onChatbotApplied}
+              />
+            </Animated.View>
+          )}
 
           <Animated.View
             ref={placeSheetTarget}
