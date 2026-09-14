@@ -683,7 +683,8 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     ...tokens.shadows.sm,
   },
-  // AI 도우미 창이 매달리는 자리. 단추 묶음과 바닥을 맞춰 같이 움직인다.
+  // AI 도우미 창이 서는 자리. 단추 묶음과 바닥을 맞추되 따라 움직이지는
+  // 않는다 - 시트 위로 뜨는 창이라 자리가 고정이어야 한다.
   chatbotAnchor: {
     position: 'absolute',
     left: 0,

@@ -2153,21 +2153,20 @@ export default function ItineraryEditorScreenView({
             </TouchableOpacity>
           </Animated.View>
 
-          {/* 창은 진입 단추와 같은 닻에 매단다 - 단추가 추천 장소 시트를 따라
-            움직이므로, 같이 움직여야 늘 단추 한 칸 위에 선다. 화면을 덮지
-            않으니 창 옆으로 시간표를 그대로 만질 수 있다. */}
+          {/* 창은 제자리에 선다. 단추 묶음처럼 추천 장소 시트를 따라 올리면
+            날짜 탭 밑으로 파고들고, 시트를 끝까지 올렸을 때 같이 투명해져서
+            보이지도 않는 채로 탭을 가로챈다. 시트가 올라오면 그 위로 뜨게
+            두는 편이 창답고 예측도 된다. 화면을 덮지는 않으므로 창 옆으로
+            시간표를 그대로 만질 수 있다. */}
           {isChatbotOpen && (
-            <Animated.View
-              pointerEvents="box-none"
-              style={[styles.chatbotAnchor, floatingAnimStyle]}
-            >
+            <View pointerEvents="box-none" style={styles.chatbotAnchor}>
               <ChatbotWindow
                 visible
                 planId={planId ?? null}
                 onClose={onCloseChatbot ?? onOpenChatbot}
                 onApplied={onChatbotApplied}
               />
-            </Animated.View>
+            </View>
           )}
 
           <Animated.View
