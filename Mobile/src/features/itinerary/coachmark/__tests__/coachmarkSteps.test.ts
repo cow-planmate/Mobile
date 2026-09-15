@@ -46,6 +46,15 @@ describe('일정 편집 코치마크 스텝', () => {
     });
   });
 
+  it('손짓은 끌어야 하는 두 곳에만 붙인다', () => {
+    const demoed = EDITOR_COACHMARK_STEPS.filter(step => step.demo).map(
+      step => step.target,
+    );
+
+    // 나머지는 한 번 누르면 되는 단추라 보여 줄 손짓이 없다.
+    expect(demoed).toEqual(['placeSheet', 'timelineBlock']);
+  });
+
   it('되돌릴 수 없는 셋만 눌러 보지 못하게 막는다', () => {
     const blocked = EDITOR_COACHMARK_STEPS.filter(
       step => step.interactive === false,

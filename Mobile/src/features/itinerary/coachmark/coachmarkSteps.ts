@@ -30,6 +30,29 @@ export type CoachmarkTargetId =
  */
 export type CoachmarkShape = 'circle' | 'rounded';
 
+/**
+ * 짚어 준 자리 위에서 보여 줄 손짓.
+ *
+ * '끌어올리면'이라고 적어 두기만 하면 어디를 잡아 어느 쪽으로 끄는지가
+ * 남지 않는다. 잡는 자리와 끌려가는 거리만 정해 두면 안내가 대신 해 보인다.
+ */
+export interface CoachmarkDemo {
+  /**
+   * 무엇까지 보여 줄지.
+   *
+   * - point: 손가락만 움직인다.
+   * - carry: 카드를 들고 가서 놓이는 자리까지 보여 준다.
+   * - grow: 끈 만큼 그 자리가 옅게 늘어나는 것까지 보여 준다.
+   */
+  kind: 'point' | 'carry' | 'grow';
+  /** 손가락이 닿는 자리. 짚은 자리 안에서의 비율(0이 왼쪽·위, 1이 오른쪽·아래). */
+  fromX: number;
+  fromY: number;
+  /** 거기서 끌려가는 거리(px). */
+  dx: number;
+  dy: number;
+}
+
 export interface CoachmarkStep {
   target: CoachmarkTargetId;
   title: string;
@@ -38,6 +61,15 @@ export interface CoachmarkStep {
   shape: CoachmarkShape;
   /** 구멍을 대상보다 얼마나 넉넉히 뚫을지(px). */
   padding?: number;
+  /** 말로만으로는 손짓이 안 그려지는 두 단계에 붙인다. */
+  demo?: CoachmarkDemo;
+  /**
+   * 말풍선을 짚은 것 옆이 아니라 화면 반대쪽 끝에 둔다.
+   *
+   * 손짓이 짚은 것 밖으로 멀리 나가는 단계에서, 말풍선이 그 길 위에 앉아
+   * 카드가 뒤로 사라져 버리는 것을 막는다.
+   */
+  tipAway?: boolean;
   /**
    * 본문 아래에 따로 붙이는 한마디. 모르면 손해 보는 것만 적는다.
    *
@@ -81,12 +113,19 @@ export const EDITOR_COACHMARK_STEPS: readonly CoachmarkStep[] = [
     body: '관광지·숙소·식당 중에 고르고 패널을 위로 끌어올리면 장소 목록이 나와요.',
     shape: 'rounded',
     padding: 0,
+    // 장소 한 줄을 꾹 눌러 시간표에 놓는 데까지. 말풍선은 위로 치워 둔다 -
+    // 패널과 시간표 사이에 앉아 있으면 들고 가는 카드가 그 뒤로 사라진다.
+    demo: { kind: 'carry', fromX: 0.35, fromY: 0.45, dx: 0, dy: -330 },
+    tipAway: true,
   },
   {
     target: 'timelineBlock',
     title: '시간 조절',
     body: '위아래 회색 손잡이를 끌면 머무는 시간이 늘고, 블록째 끌면 시간대가 옮겨져요.',
     shape: 'rounded',
+    // 위쪽 손잡이를 잡고 위로. 아래쪽 손잡이는 말풍선이 바로 밑에 붙어
+    // 늘어나는 자리가 가려진다. 110px은 시간표 눈금으로 30분쯤이다.
+    demo: { kind: 'grow', fromX: 0.5, fromY: 0, dx: 0, dy: -110 },
   },
   {
     target: 'blockActions',

@@ -472,6 +472,34 @@ describe('EditorCoachmark', () => {
     expect(visibleTexts(tree)).toContain('며칠차 고르기');
   });
 
+  it('손짓을 보여 주는 단계에서만 손가락 자국이 뜬다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderTour(
+        <>
+          <FakeTarget id="placeSheet" top={100} />
+          <FakeTarget id="checklist" top={100} />
+        </>,
+      );
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    // 장소 담기는 어디를 잡아 어느 쪽으로 끄는지가 말로 안 그려진다.
+    expect(visibleTexts(tree)).toContain('장소 담기');
+    expect(
+      tree.root.findAllByProps({ testID: 'coachmark-gesture' }).length,
+    ).toBeGreaterThan(0);
+
+    await press(tree, '다음 안내');
+
+    // 그냥 누르면 되는 단추에는 손짓을 얹지 않는다.
+    expect(visibleTexts(tree)).toContain('체크리스트');
+    expect(tree.root.findAllByProps({ testID: 'coachmark-gesture' })).toEqual(
+      [],
+    );
+  });
+
   it('가려지는 동안 숨었다가 다시 보이면 같은 단계로 돌아온다', async () => {
     const targets = (
       <>

@@ -9,6 +9,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import XIcon from 'lucide-react-native/dist/esm/icons/x';
 import { tokens } from '../../../theme/tokens';
+import CoachmarkGesture from './CoachmarkGesture';
 import type { CoachmarkStep } from './coachmarkSteps';
 import { holeRect, type CoachmarkRect } from './measureTarget';
 
@@ -25,6 +26,13 @@ const TIP_MAX_WIDTH = 300;
 const TIP_GAP = 12;
 const EDGE = 16;
 const ARROW = 12;
+/**
+ * 말풍선을 화면 끝으로 치울 때 위쪽에 남기는 자리.
+ *
+ * 상단바와 일차 탭 아래로 내려 앉힌다. 화면 맨 위에 붙이면 상태바에
+ * 걸터앉고, 더 내리면 손짓이 지나갈 길을 막는다.
+ */
+const FAR_TOP = 200;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -114,8 +122,16 @@ export default function CoachmarkOverlay({
     Math.max(EDGE, winWidth - EDGE - tipWidth),
   );
 
-  const fitsBelow = holeBottom + TIP_GAP + tipHeight <= winHeight - EDGE;
-  const tipTop = fitsBelow
+  // 손짓이 짚은 것 밖으로 멀리 나가는 단계는 말풍선을 그 길에서 치운다.
+  const holeAtBottom = hole.y + hole.height / 2 > winHeight / 2;
+  const fitsBelow = step.tipAway
+    ? !holeAtBottom
+    : holeBottom + TIP_GAP + tipHeight <= winHeight - EDGE;
+  const tipTop = step.tipAway
+    ? holeAtBottom
+      ? Math.min(FAR_TOP, winHeight / 3)
+      : Math.max(FAR_TOP, winHeight - EDGE - tipHeight)
+    : fitsBelow
     ? holeBottom + TIP_GAP
     : Math.max(EDGE, hole.y - TIP_GAP - tipHeight);
 
@@ -239,6 +255,10 @@ export default function CoachmarkOverlay({
         ]}
       />
 
+      {/* 짚어 준 것 위에서 손짓을 흉내 낸다. 말풍선보다 아래에 그려 말풍선이
+          가려지지 않게 한다. */}
+      {!!step.demo && <CoachmarkGesture rect={rect} demo={step.demo} />}
+
       <View
         style={[
           styles.tip,
@@ -295,7 +315,7 @@ export default function CoachmarkOverlay({
       </View>
 
       {/* 말풍선 뒤가 아니라 위에 그려야 카드와 만나는 자리의 이음매가 가려진다. */}
-      {tipHeight > 0 && (
+      {tipHeight > 0 && !step.tipAway && (
         <View
           pointerEvents="none"
           style={[styles.arrow, { left: arrowLeft, top: arrowTop }]}
