@@ -30,6 +30,9 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 
+/** 놓일 자리를 블록보다 사방으로 얼마나 넓게 그릴지(px). */
+const PREVIEW_OUTSET = 6;
+
 const PREVIEW_SPRING_CONFIG = {
   damping: 22,
   stiffness: 220,
@@ -467,8 +470,11 @@ const DraggableTimelineItem = React.memo(
       })
       .onStart(() => {
         isDragging.value = 1;
-        dragOpacity.value = withSpring(0.76, PREVIEW_SPRING_CONFIG);
-        dragScale.value = withSpring(0.91, PREVIEW_SPRING_CONFIG);
+        // 집어도 크기는 그대로 둔다. 블록의 높이가 곧 머무는 시간이라,
+        // 줄이거나 키우면 손에 든 것과 놓일 자리의 크기가 어긋난다.
+        // 들린 것은 그림자로 알리고, 뒤에 깔린 놓일 자리가 비쳐 보이게
+        // 살짝만 투명하게 둔다.
+        dragOpacity.value = withSpring(0.88, PREVIEW_SPRING_CONFIG);
         indicatorOpacity.value = withTiming(1, { duration: 150 });
         indicatorScale.value = withSpring(1, PREVIEW_SPRING_CONFIG);
         if (onItemDragStart) runOnJS(onItemDragStart)(placeId);
@@ -725,26 +731,39 @@ const DraggableTimelineItem = React.memo(
           { translateY: exitTranslateY.value },
         ],
         shadowColor: COLORS.primary,
-        shadowOffset: { width: 0, height: isDragging.value === 1 ? 8 : 0 },
-        shadowOpacity: isDragging.value === 1 ? 0.22 : 0,
-        shadowRadius: isDragging.value === 1 ? 16 : 0,
-        elevation: isDragging.value === 1 ? 8 : 0,
+        shadowOffset: { width: 0, height: isDragging.value === 1 ? 12 : 0 },
+        shadowOpacity: isDragging.value === 1 ? 0.3 : 0,
+        shadowRadius: isDragging.value === 1 ? 22 : 0,
+        elevation: isDragging.value === 1 ? 14 : 0,
         zIndex: isDragging.value === 1 ? 100 : 1,
       };
     });
 
+    /**
+     * 놓일 자리는 블록보다 조금 크게 그린다.
+     *
+     * 블록이 제 크기 그대로 들리므로 딱 맞게 그리면 블록 밑에 완전히 가린다.
+     * 사방으로 조금 넓혀 두면 점선 테두리가 블록 둘레로 드러나, 손에 든 것과
+     * 놓일 자리가 같이 보인다.
+     */
     const indicatorStyle = useAnimatedStyle(() => {
       return {
         position: 'absolute',
-        top: withSpring(previewTop.value, PREVIEW_SPRING_CONFIG),
-        height: withSpring(previewHeight.value, PREVIEW_SPRING_CONFIG),
-        left: TIMELINE_BLOCK_LEFT,
-        right: TIMELINE_BLOCK_RIGHT,
-        borderWidth: 2,
+        top: withSpring(
+          previewTop.value - PREVIEW_OUTSET,
+          PREVIEW_SPRING_CONFIG,
+        ),
+        height: withSpring(
+          previewHeight.value + PREVIEW_OUTSET * 2,
+          PREVIEW_SPRING_CONFIG,
+        ),
+        left: TIMELINE_BLOCK_LEFT - PREVIEW_OUTSET,
+        right: TIMELINE_BLOCK_RIGHT - PREVIEW_OUTSET,
+        borderWidth: 2.5,
         borderColor: COLORS.primary,
         borderStyle: 'dashed',
-        borderRadius: TIMELINE_BLOCK_RADIUS,
-        backgroundColor: 'rgba(19, 68, 255, 0.11)',
+        borderRadius: TIMELINE_BLOCK_RADIUS + PREVIEW_OUTSET,
+        backgroundColor: 'rgba(19, 68, 255, 0.14)',
         opacity: indicatorOpacity.value,
         transform: [{ scale: indicatorScale.value }],
         zIndex: -1,

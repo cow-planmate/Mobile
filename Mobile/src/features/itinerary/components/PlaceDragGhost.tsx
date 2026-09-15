@@ -52,7 +52,6 @@ export default function PlaceDragGhost({
       { translateY: y.value - HEIGHT / 2 - LIFT_ABOVE },
       // 놓는 순간 살짝 오므라들며 사라진다.
       { scale: 0.9 + 0.1 * lift.value },
-      { rotate: `${-2 * lift.value}deg` },
     ],
   }));
 
