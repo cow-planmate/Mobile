@@ -942,6 +942,11 @@ const TimelineComponent = React.memo(
       onCancelPreview?: () => void;
       /** 눈금판 자체의 화면 좌표를 재기 위한 ref. 여백·스크롤을 추측하지 않는다 */
       gridRef?: React.RefObject<View | null>;
+      /**
+       * 지금 얼마나 굴러가 있는지. 장소를 끌 때 가장자리에서 저절로 굴리려면
+       * 바깥에서 지금 자리를 알아야 다음 자리를 시킬 수 있다.
+       */
+      onScrollY?: (offsetY: number) => void;
       /** 끌어놓는 중이면 확인·취소 버튼 없이 점선만 그린다 */
       isDragging?: boolean;
       /** 비켜설 빈자리조차 없을 때 */
@@ -967,6 +972,7 @@ const TimelineComponent = React.memo(
         onConfirmPlacement,
         onCancelPreview,
         gridRef,
+        onScrollY,
         isDragging = false,
         dropBlocked = false,
         onItemDragStart,
@@ -1044,6 +1050,8 @@ const TimelineComponent = React.memo(
           <ScrollView
             ref={ref}
             scrollEnabled={!isItemDragging && !isDragging}
+            onScroll={e => onScrollY?.(e.nativeEvent.contentOffset.y)}
+            scrollEventThrottle={16}
             contentContainerStyle={[
               styles.timelineContentContainer,
               { paddingTop: topPadding, paddingBottom: bottomPadding },
@@ -1147,6 +1155,7 @@ export const EditorStateContext = createContext<{
   isDragging: boolean;
   dropBlocked: boolean;
   gridRef: React.RefObject<View | null>;
+  onTimelineScrollY: (offsetY: number) => void;
   sheetInset: number;
   onItemDragStart?: () => void;
   onItemDragEnd?: () => void;
@@ -1220,6 +1229,7 @@ const TimelineTabScreen = React.memo(() => {
     isDragging,
     dropBlocked,
     gridRef,
+    onTimelineScrollY,
     sheetInset,
     onItemDragStart,
     onItemDragEnd,
@@ -1259,6 +1269,7 @@ const TimelineTabScreen = React.memo(() => {
         isDragging={isDragging}
         dropBlocked={dropBlocked}
         gridRef={gridRef}
+        onScrollY={onTimelineScrollY}
         onItemDragStart={onItemDragStart}
         onItemDragEnd={onItemDragEnd}
       />
@@ -1452,6 +1463,27 @@ export default function ItineraryEditorScreenView({
   /** 시간표 아래 여백에 쓰는, 손을 뗀 뒤의 시트 높이. */
   const [sheetRest, setSheetRest] = useState(0);
 
+  // ── 가장자리에서 저절로 굴리기 ──
+  /** 지금 얼마나 굴러가 있는지. 시간표가 알려 주는 값을 그대로 받아 둔다. */
+  const timelineScrollY = useRef(0);
+  /** 굴리는 동안 손끝이 머무는 자리. */
+  const dragPointY = useRef(0);
+  const autoScrollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const handleTimelineScrollY = useCallback((offsetY: number) => {
+    const moved = offsetY - timelineScrollY.current;
+    timelineScrollY.current = offsetY;
+    // 굴린 만큼 눈금판이 화면에서 밀린다. 끌고 있을 때만 따라 고치면 되고,
+    // 그 밖에는 집는 순간 다시 재므로 건드리지 않는다.
+    if (draggingRef.current && moved) gridTopRef.current -= moved;
+  }, []);
+
+  const stopAutoScroll = useCallback(() => {
+    if (autoScrollTimer.current === null) return;
+    clearInterval(autoScrollTimer.current);
+    autoScrollTimer.current = null;
+  }, []);
+
   const editorStateContextValue = useMemo(() => {
     return {
       timelineScrollRef,
@@ -1477,6 +1509,7 @@ export default function ItineraryEditorScreenView({
       isDragging: !!draggingPlace,
       dropBlocked,
       gridRef: gridViewRef,
+      onTimelineScrollY: handleTimelineScrollY,
       sheetInset: SHEET_HANDLE_HEIGHT + sheetRest,
       onItemDragStart: handleTimelineItemDragStart,
       onItemDragEnd: handleTimelineItemDragEnd,
@@ -1507,6 +1540,7 @@ export default function ItineraryEditorScreenView({
     sheetRest,
     handleTimelineItemDragStart,
     handleTimelineItemDragEnd,
+    handleTimelineScrollY,
   ]);
 
   // ── 장소 시트 ──
@@ -1717,6 +1751,19 @@ export default function ItineraryEditorScreenView({
 
   const FINGER_TARGET_OFFSET = 20;
 
+  /** 손끝이 시간표 위아래 이 안쪽에 들어오면 그쪽으로 굴린다(px). */
+  const AUTO_SCROLL_EDGE = 90;
+  /** 한 번에 굴리는 최대 거리(px). 가장자리에 붙을수록 이 값에 가까워진다. */
+  const AUTO_SCROLL_MAX_STEP = 12;
+  /**
+   * 구간에 들어오면 적어도 이만큼은 움직인다.
+   *
+   * 거리에만 비례시키면 경계 바로 안쪽에서 한 번에 1px씩 움직여, 굴러가는
+   * 중인지 멈춘 것인지 알 수 없다.
+   */
+  const AUTO_SCROLL_MIN_STEP = 4;
+  const AUTO_SCROLL_TICK_MS = 16;
+
   /**
    * 손가락의 화면 좌표를 시간표의 15분 눈금으로 옮긴다. 시간표 밖이면 null.
    *
@@ -1830,16 +1877,77 @@ export default function ItineraryEditorScreenView({
     [handleAddPlace, sheetShift, measureGrid, dragX, dragY, dragLift],
   );
 
+  /**
+   * 손끝이 시간표 위아래 가장자리에 들어오면 그쪽으로 조금씩 굴린다.
+   *
+   * 화면에 보이는 만큼만 놓을 자리로 쓸 수 있으면 붙잡은 카드를 멀리 있는
+   * 시간대로 옮길 길이 없다. 가장자리에 가까울수록 빠르게 굴려, 손을 댄 채로
+   * 시간표를 따라 내려가거나 올라갈 수 있게 한다.
+   *
+   * 끌고 있는 동안 시간표의 손가락 스크롤은 꺼 두지만, 여기서 시키는 것은
+   * 코드가 직접 옮기는 것이라 그대로 움직인다.
+   */
+  const autoScrollStep = useCallback((pointY: number) => {
+    const top = timelineTop.current;
+    const bottom = bodyTop.current + bodyHeight.current - SHEET_HANDLE_HEIGHT;
+    if (!top || !bodyHeight.current) return 0;
+
+    // 가장자리 안으로 들어온 깊이만큼 빨라진다. 경계에 걸치면 거의 멈춘 듯이,
+    // 끝까지 밀면 가장 빠르게.
+    const paced = (depth: number) =>
+      Math.max(
+        AUTO_SCROLL_MIN_STEP,
+        Math.ceil(Math.min(1, depth) * AUTO_SCROLL_MAX_STEP),
+      );
+
+    if (pointY < top + AUTO_SCROLL_EDGE) {
+      return -paced((top + AUTO_SCROLL_EDGE - pointY) / AUTO_SCROLL_EDGE);
+    }
+    if (pointY > bottom - AUTO_SCROLL_EDGE) {
+      return paced((pointY - (bottom - AUTO_SCROLL_EDGE)) / AUTO_SCROLL_EDGE);
+    }
+    return 0;
+  }, []);
+
   const handleDragPlace = useCallback(
     (absoluteY: number, absoluteX: number) => {
       dragX.value = absoluteX;
       dragY.value = absoluteY;
+      dragPointY.current = absoluteY;
       previewAt(absoluteY);
+
+      const needsScroll = autoScrollStep(absoluteY) !== 0;
+      if (!needsScroll) {
+        stopAutoScroll();
+        return;
+      }
+      if (autoScrollTimer.current !== null) return;
+
+      autoScrollTimer.current = setInterval(() => {
+        const step = autoScrollStep(dragPointY.current);
+        if (step === 0) {
+          stopAutoScroll();
+          return;
+        }
+        const next = Math.max(0, timelineScrollY.current + step);
+        // 끝까지 굴러 더 갈 곳이 없으면 그냥 둔다.
+        if (next === timelineScrollY.current) return;
+        timelineScrollRef.current?.scrollTo({ y: next, animated: false });
+        previewAt(dragPointY.current);
+      }, AUTO_SCROLL_TICK_MS);
     },
-    [previewAt, dragX, dragY],
+    [
+      previewAt,
+      dragX,
+      dragY,
+      autoScrollStep,
+      stopAutoScroll,
+      timelineScrollRef,
+    ],
   );
 
   const restoreSheet = useCallback(() => {
+    stopAutoScroll();
     draggingRef.current = null;
     // 카드는 오므라들며 사라진 뒤에 치운다. 곧바로 지우면 놓은 자리에서
     // 툭 없어져 무엇이 어디로 갔는지 남지 않는다.
@@ -1851,7 +1959,7 @@ export default function ItineraryEditorScreenView({
       duration: 260,
       easing: Easing.out(Easing.cubic),
     });
-  }, [sheetShift, dragLift]);
+  }, [sheetShift, dragLift, stopAutoScroll]);
 
   const handleDropPlace = useCallback(
     (absoluteY: number, absoluteX: number) => {
@@ -1869,6 +1977,8 @@ export default function ItineraryEditorScreenView({
     },
     [previewAt, onPlaceAt, onCancelPlacement, restoreSheet, dragX, dragY],
   );
+
+  useEffect(() => stopAutoScroll, [stopAutoScroll]);
 
   const handleCancelPickUp = useCallback(() => {
     onCancelPlacement?.();
