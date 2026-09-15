@@ -235,6 +235,19 @@ const TimeGridBackground = React.memo(
   },
 );
 
+/** 손끝이 시간표 위아래 이 안쪽에 들어오면 그쪽으로 굴린다(px). */
+const AUTO_SCROLL_EDGE = 90;
+/** 한 번에 굴리는 최대 거리(px). 가장자리에 붙을수록 이 값에 가까워진다. */
+const AUTO_SCROLL_MAX_STEP = 12;
+/**
+ * 구간에 들어오면 적어도 이만큼은 움직인다.
+ *
+ * 거리에만 비례시키면 경계 바로 안쪽에서 한 번에 1px씩 움직여, 굴러가는
+ * 중인지 멈춘 것인지 알 수 없다.
+ */
+const AUTO_SCROLL_MIN_STEP = 4;
+const AUTO_SCROLL_TICK_MS = 16;
+
 const DraggableTimelineItem = React.memo(
   ({
     place,
@@ -247,6 +260,8 @@ const DraggableTimelineItem = React.memo(
     onPress,
     onOverflow,
     scrollRef,
+    requestAutoScroll,
+    getScrollY,
     onItemDragStart,
     onItemDragEnd,
     disabled = false,
@@ -270,6 +285,10 @@ const DraggableTimelineItem = React.memo(
     onPress?: (place: Place) => void;
     onOverflow?: () => void;
     scrollRef?: React.RefObject<ScrollView | null>;
+    /** 손끝 자리를 주면 가장자리에서 시간표를 굴려 주고, 시킨 거리를 돌려준다. */
+    requestAutoScroll?: (pointY: number) => number;
+    /** 지금 얼마나 굴러가 있는지. 실제로 움직인 만큼만 블록에 반영한다. */
+    getScrollY?: () => number;
     onItemDragStart?: (placeId: string) => void;
     onItemDragEnd?: () => void;
     disabled?: boolean;
@@ -338,6 +357,63 @@ const DraggableTimelineItem = React.memo(
     const dragScale = useSharedValue(1);
 
     const placeId = place.id;
+
+    // ── 끌고 있는 블록이 가장자리에 닿으면 시간표를 굴린다 ──
+    /** 끌고 있는 손끝의 화면 좌표. 워클릿에서 건너온다. */
+    const dragPointY = useRef(0);
+    const autoScrollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+    /** 지난 번에 본 스크롤 자리. 실제로 움직인 만큼만 블록에 얹는다. */
+    const seenScrollY = useRef(0);
+
+    const stopBlockAutoScroll = useCallback(() => {
+      if (autoScrollTimer.current === null) return;
+      clearInterval(autoScrollTimer.current);
+      autoScrollTimer.current = null;
+    }, []);
+
+    /**
+     * 굴러간 만큼 블록도 같이 내려 준다.
+     *
+     * 블록의 자리는 눈금판 안에서의 거리이고, 굴리면 눈금판이 화면에서 밀린다.
+     * 그대로 두면 손가락은 가만히 있는데 블록만 위로 빠져나간다. 끌기 시작한
+     * 자리(startY)도 같이 밀어야 다음에 손이 움직일 때 되돌아가지 않는다.
+     */
+    const shiftByScroll = useCallback(
+      (moved: number) => {
+        if (!moved) return;
+        const maxTop = MAX_BOTTOM_PX - height.value;
+        const next = Math.max(MIN_TOP_PX, Math.min(top.value + moved, maxTop));
+        const applied = next - top.value;
+        if (!applied) return;
+        top.value = next;
+        startY.value += applied;
+        previewTop.value =
+          Math.round((next - GRID_TOP_OFFSET) / GRID_SNAP_HEIGHT) *
+            GRID_SNAP_HEIGHT +
+          GRID_TOP_OFFSET;
+      },
+      [MAX_BOTTOM_PX, MIN_TOP_PX, height, top, startY, previewTop],
+    );
+
+    const onDragPointMove = useCallback(
+      (pointY: number) => {
+        dragPointY.current = pointY;
+        if (!requestAutoScroll || !getScrollY) return;
+        if (autoScrollTimer.current !== null) return;
+
+        seenScrollY.current = getScrollY();
+        autoScrollTimer.current = setInterval(() => {
+          const now = getScrollY();
+          shiftByScroll(now - seenScrollY.current);
+          seenScrollY.current = now;
+          if (requestAutoScroll(dragPointY.current) === 0)
+            stopBlockAutoScroll();
+        }, AUTO_SCROLL_TICK_MS);
+      },
+      [requestAutoScroll, getScrollY, shiftByScroll, stopBlockAutoScroll],
+    );
+
+    useEffect(() => stopBlockAutoScroll, [stopBlockAutoScroll]);
     const isDeletingRef = useRef(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -398,6 +474,7 @@ const DraggableTimelineItem = React.memo(
         if (onItemDragStart) runOnJS(onItemDragStart)(placeId);
       })
       .onUpdate(event => {
+        runOnJS(onDragPointMove)(event.absoluteY);
         const newTop = startY.value + event.translationY;
         const maxTop = MAX_BOTTOM_PX - height.value;
         const clampedTop = Math.max(MIN_TOP_PX, Math.min(newTop, maxTop));
@@ -410,6 +487,7 @@ const DraggableTimelineItem = React.memo(
         previewHeight.value = height.value;
       })
       .onEnd(() => {
+        runOnJS(stopBlockAutoScroll)();
         isDragging.value = 0;
         dragOpacity.value = withSpring(1);
         dragScale.value = withSpring(1);
@@ -447,6 +525,7 @@ const DraggableTimelineItem = React.memo(
         if (onItemDragEnd) runOnJS(onItemDragEnd)();
       })
       .onFinalize((_event, success) => {
+        runOnJS(stopBlockAutoScroll)();
         if (!success) {
           isDragging.value = 0;
           dragOpacity.value = withSpring(1);
@@ -947,6 +1026,9 @@ const TimelineComponent = React.memo(
        * 바깥에서 지금 자리를 알아야 다음 자리를 시킬 수 있다.
        */
       onScrollY?: (offsetY: number) => void;
+      /** 블록을 끌 때도 가장자리에서 저절로 굴린다. 시간표와 같은 자를 쓴다. */
+      requestAutoScroll?: (pointY: number) => number;
+      getScrollY?: () => number;
       /** 끌어놓는 중이면 확인·취소 버튼 없이 점선만 그린다 */
       isDragging?: boolean;
       /** 비켜설 빈자리조차 없을 때 */
@@ -973,6 +1055,8 @@ const TimelineComponent = React.memo(
         onCancelPreview,
         gridRef,
         onScrollY,
+        requestAutoScroll,
+        getScrollY,
         isDragging = false,
         dropBlocked = false,
         onItemDragStart,
@@ -1097,6 +1181,8 @@ const TimelineComponent = React.memo(
                     onPress={onPressPlace}
                     onOverflow={showOverflowBanner}
                     scrollRef={ref as React.RefObject<ScrollView | null>}
+                    requestAutoScroll={requestAutoScroll}
+                    getScrollY={getScrollY}
                     onItemDragStart={handleItemDragStart}
                     onItemDragEnd={handleItemDragEnd}
                     disabled={
@@ -1156,6 +1242,8 @@ export const EditorStateContext = createContext<{
   dropBlocked: boolean;
   gridRef: React.RefObject<View | null>;
   onTimelineScrollY: (offsetY: number) => void;
+  requestAutoScroll: (pointY: number) => number;
+  getTimelineScrollY: () => number;
   sheetInset: number;
   onItemDragStart?: () => void;
   onItemDragEnd?: () => void;
@@ -1230,6 +1318,8 @@ const TimelineTabScreen = React.memo(() => {
     dropBlocked,
     gridRef,
     onTimelineScrollY,
+    requestAutoScroll,
+    getTimelineScrollY,
     sheetInset,
     onItemDragStart,
     onItemDragEnd,
@@ -1270,6 +1360,8 @@ const TimelineTabScreen = React.memo(() => {
         dropBlocked={dropBlocked}
         gridRef={gridRef}
         onScrollY={onTimelineScrollY}
+        requestAutoScroll={requestAutoScroll}
+        getScrollY={getTimelineScrollY}
         onItemDragStart={onItemDragStart}
         onItemDragEnd={onItemDragEnd}
       />
@@ -1451,10 +1543,12 @@ export default function ItineraryEditorScreenView({
   const dragY = useSharedValue(0);
   const dragLift = useSharedValue(0);
   const [isTimelineItemDragging, setIsTimelineItemDragging] = useState(false);
-  const handleTimelineItemDragStart = useCallback(
-    () => setIsTimelineItemDragging(true),
-    [],
-  );
+  const handleTimelineItemDragStart = useCallback(() => {
+    setIsTimelineItemDragging(true);
+    // 가장자리 판정은 시간표가 화면 어디까지인지를 알아야 한다. 블록을 집을
+    // 때도 재 둔다 - 장소를 집을 때만 재면 블록만 끌었을 때는 빈 값이다.
+    measureGridRef.current?.();
+  }, []);
   const handleTimelineItemDragEnd = useCallback(
     () => setIsTimelineItemDragging(false),
     [],
@@ -1470,6 +1564,14 @@ export default function ItineraryEditorScreenView({
   const dragPointY = useRef(0);
   const autoScrollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  /**
+   * 가장자리 판정은 재어 둔 화면 크기를 읽어야 해서 아래쪽에서 만들어진다.
+   * 위에서 먼저 쓰는 쪽은 ref를 건너 읽는다.
+   */
+  const autoScrollStepRef = useRef<((pointY: number) => number) | null>(null);
+  /** 화면 크기를 다시 재는 손. 위에서 먼저 쓰는 쪽은 ref를 건너 읽는다. */
+  const measureGridRef = useRef<(() => void) | null>(null);
+
   const handleTimelineScrollY = useCallback((offsetY: number) => {
     const moved = offsetY - timelineScrollY.current;
     timelineScrollY.current = offsetY;
@@ -1477,6 +1579,26 @@ export default function ItineraryEditorScreenView({
     // 그 밖에는 집는 순간 다시 재므로 건드리지 않는다.
     if (draggingRef.current && moved) gridTopRef.current -= moved;
   }, []);
+
+  /**
+   * 손끝 자리를 받아 시간표를 그만큼 굴리라고 시키고, 시킨 거리를 돌려준다.
+   * 0이면 더 굴릴 곳이 없거나 가장자리 밖이라는 뜻이다.
+   *
+   * 시간표 안에서 블록을 끄는 쪽도 같은 자로 굴려야 하므로 여기 하나만 둔다.
+   */
+  const requestAutoScroll = useCallback(
+    (pointY: number) => {
+      const step = autoScrollStepRef.current?.(pointY) ?? 0;
+      if (!step) return 0;
+      const next = Math.max(0, timelineScrollY.current + step);
+      if (next === timelineScrollY.current) return 0;
+      timelineScrollRef.current?.scrollTo({ y: next, animated: false });
+      return step;
+    },
+    [timelineScrollRef],
+  );
+
+  const getTimelineScrollY = useCallback(() => timelineScrollY.current, []);
 
   const stopAutoScroll = useCallback(() => {
     if (autoScrollTimer.current === null) return;
@@ -1510,6 +1632,8 @@ export default function ItineraryEditorScreenView({
       dropBlocked,
       gridRef: gridViewRef,
       onTimelineScrollY: handleTimelineScrollY,
+      requestAutoScroll,
+      getTimelineScrollY,
       sheetInset: SHEET_HANDLE_HEIGHT + sheetRest,
       onItemDragStart: handleTimelineItemDragStart,
       onItemDragEnd: handleTimelineItemDragEnd,
@@ -1541,6 +1665,8 @@ export default function ItineraryEditorScreenView({
     handleTimelineItemDragStart,
     handleTimelineItemDragEnd,
     handleTimelineScrollY,
+    requestAutoScroll,
+    getTimelineScrollY,
   ]);
 
   // ── 장소 시트 ──
@@ -1751,19 +1877,6 @@ export default function ItineraryEditorScreenView({
 
   const FINGER_TARGET_OFFSET = 20;
 
-  /** 손끝이 시간표 위아래 이 안쪽에 들어오면 그쪽으로 굴린다(px). */
-  const AUTO_SCROLL_EDGE = 90;
-  /** 한 번에 굴리는 최대 거리(px). 가장자리에 붙을수록 이 값에 가까워진다. */
-  const AUTO_SCROLL_MAX_STEP = 12;
-  /**
-   * 구간에 들어오면 적어도 이만큼은 움직인다.
-   *
-   * 거리에만 비례시키면 경계 바로 안쪽에서 한 번에 1px씩 움직여, 굴러가는
-   * 중인지 멈춘 것인지 알 수 없다.
-   */
-  const AUTO_SCROLL_MIN_STEP = 4;
-  const AUTO_SCROLL_TICK_MS = 16;
-
   /**
    * 손가락의 화면 좌표를 시간표의 15분 눈금으로 옮긴다. 시간표 밖이면 null.
    *
@@ -1909,6 +2022,9 @@ export default function ItineraryEditorScreenView({
     return 0;
   }, []);
 
+  autoScrollStepRef.current = autoScrollStep;
+  measureGridRef.current = measureGrid;
+
   const handleDragPlace = useCallback(
     (absoluteY: number, absoluteX: number) => {
       dragX.value = absoluteX;
@@ -1924,15 +2040,11 @@ export default function ItineraryEditorScreenView({
       if (autoScrollTimer.current !== null) return;
 
       autoScrollTimer.current = setInterval(() => {
-        const step = autoScrollStep(dragPointY.current);
-        if (step === 0) {
+        if (autoScrollStep(dragPointY.current) === 0) {
           stopAutoScroll();
           return;
         }
-        const next = Math.max(0, timelineScrollY.current + step);
-        // 끝까지 굴러 더 갈 곳이 없으면 그냥 둔다.
-        if (next === timelineScrollY.current) return;
-        timelineScrollRef.current?.scrollTo({ y: next, animated: false });
+        requestAutoScroll(dragPointY.current);
         previewAt(dragPointY.current);
       }, AUTO_SCROLL_TICK_MS);
     },
@@ -1942,7 +2054,7 @@ export default function ItineraryEditorScreenView({
       dragY,
       autoScrollStep,
       stopAutoScroll,
-      timelineScrollRef,
+      requestAutoScroll,
     ],
   );
 
