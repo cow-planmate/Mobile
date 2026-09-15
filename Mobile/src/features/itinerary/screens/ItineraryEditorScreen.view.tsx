@@ -1677,12 +1677,19 @@ export default function ItineraryEditorScreenView({
   }));
 
   /**
-   * 시트를 70% 넘게 올리면 떠 있는 단추들이 시트에 묻힌다. 그때는 눌리지도
-   * 않게 막아야 시트 위의 것을 누른 셈이 되지 않는다.
+   * 떠 있는 단추가 손가락을 받지 않아야 하는 두 경우.
+   *
+   * 하나는 시트를 70% 넘게 올렸을 때 - 단추가 시트에 묻히므로 눌리면 시트
+   * 위의 것을 누른 셈이 된다.
+   *
+   * 다른 하나는 장소를 집어 끌고 있을 때다. 이 단추들은 시간표 오른쪽 아래에
+   * 떠 있어 블록의 연필·X와 자리가 겹친다. 끌던 카드를 그 위에 놓으면 놓을
+   * 자리를 고른 것이 아니라 사용법이나 도우미가 열려 버린다.
    */
   const floatingPointerEvents =
+    draggingPlace ||
     sheetRest >
-    (bodyHeight.current - SHEET_HANDLE_HEIGHT - sheetTopGap || 400) * 0.7
+      (bodyHeight.current - SHEET_HANDLE_HEIGHT - sheetTopGap || 400) * 0.7
       ? ('none' as const)
       : ('box-none' as const);
 
