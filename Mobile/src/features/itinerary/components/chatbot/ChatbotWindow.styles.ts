@@ -5,13 +5,14 @@ import { normalize } from '../../../../utils/normalize';
 export const COLORS = tokens.colors;
 
 /**
- * 진입 단추 한 칸 위.
+ * 창이 자리를 두는 법.
  *
- * 단추 묶음과 같은 닻 안에 들어가므로 여기서는 단추 높이만 비우면 된다.
- * 닻이 추천 장소 시트를 따라 움직여 창도 같이 따라간다.
+ * 높이를 정해 두는 대신 위아래 여백만 두고 그 사이를 채운다. 창이 떠 있는
+ * 동안에는 뒤를 만질 수 없으니 좁게 띄울 이유가 없다 - 위로는 날씨 카드를
+ * 덮고, 아래로는 접힌 장소 시트 바로 위까지 내려간다.
  */
-export const WINDOW_BOTTOM = normalize(44) + normalize(10);
-export const WINDOW_MAX_HEIGHT = normalize(335);
+export const WINDOW_TOP = normalize(8);
+export const WINDOW_BOTTOM = normalize(10);
 
 export const styles = StyleSheet.create({
   // 창은 화면을 덮지 않는다. 바깥은 비어 있어 시간표가 그대로 눌린다.
@@ -93,19 +94,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: tokens.radius.m,
   },
-  headerAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(4),
-    paddingHorizontal: normalize(8),
-    paddingVertical: normalize(6),
-    borderRadius: tokens.radius.m,
-  },
-  headerActionText: {
-    fontSize: normalize(11.5),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.textSecondary,
-  },
 
   scroll: { flex: 1, backgroundColor: tokens.colors.surface },
   body: {
@@ -133,6 +121,8 @@ export const styles = StyleSheet.create({
     borderColor: tokens.colors.border,
     borderBottomLeftRadius: normalize(5),
   },
+  /** 카드 다음에 이어지는 글. 카드에 붙어 버리지 않게 한 칸 띄운다. */
+  bubbleTextAfterCard: { marginTop: normalize(8) },
   bubbleText: {
     fontSize: normalize(13),
     lineHeight: normalize(19),
@@ -221,62 +211,41 @@ export const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.medium,
   },
 
-  // 추천 장소 가로 줄
-  section: {
-    padding: normalize(12),
-    borderRadius: tokens.radius.xl,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.white,
-    gap: normalize(10),
-  },
-  sectionHead: {
+  /**
+   * 읊어 준 장소 한 줄.
+   *
+   * 옆으로 미는 띠가 아니라 말 아래에 쌓는다. 띠는 한 번에 둘밖에 안 보여
+   * 몇 곳을 권했는지 세어지지 않고, 이어지는 설명과도 따로 놀았다.
+   */
+  placeCard: {
+    marginTop: normalize(8),
     flexDirection: 'row',
     alignItems: 'center',
-    gap: normalize(8),
-  },
-  sectionBadge: {
-    width: normalize(26),
-    height: normalize(26),
-    borderRadius: tokens.radius.m,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFBEB',
-  },
-  sectionTitle: {
-    fontSize: normalize(12.5),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.text,
-  },
-  sectionHint: {
-    marginTop: normalize(2),
-    fontSize: normalize(10.5),
-    fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
-  },
-  placeStrip: { gap: normalize(8) },
-  placeCard: {
-    width: normalize(160),
+    gap: normalize(10),
+    padding: normalize(8),
     borderRadius: tokens.radius.l,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    overflow: 'hidden',
-    backgroundColor: tokens.colors.white,
+    backgroundColor: tokens.colors.surface,
   },
-  placeThumb: { width: '100%', height: normalize(72) },
+  placeThumb: {
+    width: normalize(52),
+    height: normalize(52),
+    borderRadius: tokens.radius.m,
+  },
   placeThumbEmpty: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.white,
   },
-  placeBody: { padding: normalize(9), gap: normalize(2) },
+  placeBody: { flex: 1, gap: normalize(2) },
   placeCategory: {
-    fontSize: normalize(10),
+    fontSize: normalize(10.5),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.primary,
   },
   placeTitle: {
-    fontSize: normalize(12),
+    fontSize: normalize(12.5),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.text,
   },

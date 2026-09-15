@@ -10,7 +10,6 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import Bot from 'lucide-react-native/dist/esm/icons/bot';
@@ -19,7 +18,6 @@ import Check from 'lucide-react-native/dist/esm/icons/check';
 import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import Clock3 from 'lucide-react-native/dist/esm/icons/clock-3';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
-import RotateCcw from 'lucide-react-native/dist/esm/icons/rotate-ccw';
 import Send from 'lucide-react-native/dist/esm/icons/send';
 import Sparkles from 'lucide-react-native/dist/esm/icons/sparkles';
 import X from 'lucide-react-native/dist/esm/icons/x';
@@ -37,7 +35,7 @@ import {
   COLORS,
   styles,
   WINDOW_BOTTOM,
-  WINDOW_MAX_HEIGHT,
+  WINDOW_TOP,
 } from './ChatbotWindow.styles';
 
 const WELCOME =
@@ -70,7 +68,72 @@ interface Message {
   text: string;
   /** 말한 시각. 첫 인사에는 붙이지 않는다. */
   at?: string;
+  /** 이 말과 함께 온 추천 장소. 글 대신 카드로 세운다. */
+  places?: ChatbotPlace[];
 }
+
+type Segment =
+  | { kind: 'text'; key: string; text: string }
+  | { kind: 'place'; key: string; place: ChatbotPlace };
+
+/**
+ * 답을 글 토막과 장소 카드로 갈라 놓는다.
+ *
+ * 서버는 '1. 진솔할머니순두부 (초당순두부)'처럼 번호를 매겨 읊어 준다. 카드를
+ * 말끝에 몰아 세우면 몇 번째로 권한 곳인지, 어떤 설명에 딸린 곳인지가 끊긴다.
+ * 이름이 나온 줄 바로 아래에 그 카드를 세워 읽던 자리에서 같이 보이게 한다.
+ *
+ * 글에서 못 찾은 장소는 맨 끝에 붙인다 - 서버가 이름을 달리 적어 보내도
+ * 카드가 통째로 사라지지는 않는다.
+ */
+const toSegments = (text: string, places?: ChatbotPlace[]): Segment[] => {
+  const list = places ?? [];
+  if (list.length === 0) return [{ kind: 'text', key: 'text-0', text }];
+
+  const keys = list.map(place => (place.title ?? '').replace(/\s+/g, ''));
+  const used = new Set<number>();
+  const segments: Segment[] = [];
+  let buffer: string[] = [];
+
+  const flush = () => {
+    const joined = buffer.join('\n').trim();
+    buffer = [];
+    if (joined)
+      segments.push({
+        kind: 'text',
+        key: `text-${segments.length}`,
+        text: joined,
+      });
+  };
+
+  text.split(/\r?\n/).forEach(line => {
+    buffer.push(line);
+    const squashed = line.replace(/\s+/g, '');
+    const hit = keys.findIndex(
+      (key, index) => !!key && !used.has(index) && squashed.includes(key),
+    );
+    if (hit < 0) return;
+    used.add(hit);
+    flush();
+    segments.push({
+      kind: 'place',
+      key: `place-${list[hit].contentId ?? hit}`,
+      place: list[hit],
+    });
+  });
+  flush();
+
+  list.forEach((place, index) => {
+    if (used.has(index)) return;
+    segments.push({
+      kind: 'place',
+      key: `place-${place.contentId ?? index}-rest`,
+      place,
+    });
+  });
+
+  return segments;
+};
 
 const NOTICE_TONE: Record<
   NoticeType,
@@ -174,8 +237,8 @@ export default function ChatbotWindow({
   const [notice, setNotice] = useState<Notice | null>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
-  const { height: screenHeight } = useWindowDimensions();
 
+  /** 다른 일정으로 옮겨 갈 때만 비운다. 손으로 비우는 자리는 두지 않는다. */
   const reset = useCallback(() => {
     setMessages([welcomeMessage()]);
     setInput('');
@@ -217,10 +280,16 @@ export default function ChatbotWindow({
     };
   }, []);
 
-  const appendBot = useCallback((text: string) => {
+  const appendBot = useCallback((text: string, places?: ChatbotPlace[]) => {
     setMessages(current => [
       ...current,
-      { id: nextMessageId(), role: 'assistant', text, at: stampNow() },
+      {
+        id: nextMessageId(),
+        role: 'assistant',
+        text,
+        at: stampNow(),
+        places: places?.length ? places : undefined,
+      },
     ]);
   }, []);
 
@@ -243,14 +312,16 @@ export default function ChatbotWindow({
           shownPlaces,
           recentMessages,
         });
+        const places = Array.isArray(reply.shownPlaces)
+          ? reply.shownPlaces
+          : [];
         appendBot(
           reply.userMessage ||
             '요청을 확인했어요. 원하는 내용을 조금 더 자세히 알려 주세요.',
+          places,
         );
         if (reply.plan) setPendingPlan(reply.plan);
-        setShownPlaces(
-          Array.isArray(reply.shownPlaces) ? reply.shownPlaces : [],
-        );
+        setShownPlaces(places);
         setRecentMessages(current =>
           [...current, message.slice(0, 500)].slice(-3),
         );
@@ -320,372 +391,336 @@ export default function ChatbotWindow({
   const isBusy = isSending || isApplying;
   const canSend = canUse && !!input.trim() && !isBusy;
   const bottom = WINDOW_BOTTOM + keyboardHeight;
-  // 위로는 날짜 탭까지만 자란다. 시간표가 조금이라도 보여야 제안과 견준다.
-  const height = Math.min(
-    WINDOW_MAX_HEIGHT,
-    Math.max(normalize(260), screenHeight - normalize(300)),
-  );
 
   return (
-    <View style={[styles.window, { bottom, height }]}>
-        <View style={styles.head}>
-          <View style={styles.identity}>
-            <View style={styles.avatar}>
-              <Bot size={normalize(19)} color={COLORS.primary} />
-              <View style={styles.avatarDot} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.headTitle}>AI 여행 도우미</Text>
-              <View style={styles.headSubtitle}>
-                <Sparkles size={normalize(11)} color={COLORS.primary} />
-                <Text style={styles.headSubtitleText}>
-                  일정 추천부터 수정까지
-                </Text>
-              </View>
-            </View>
+    <View style={[styles.window, { top: WINDOW_TOP, bottom }]}>
+      <View style={styles.head}>
+        <View style={styles.identity}>
+          <View style={styles.avatar}>
+            <Bot size={normalize(19)} color={COLORS.primary} />
+            <View style={styles.avatarDot} />
           </View>
-          <View style={styles.headActions}>
-            <TouchableOpacity
-              style={styles.headerAction}
-              onPress={reset}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="새 대화 시작"
-            >
-              <RotateCcw size={normalize(13)} color={COLORS.textSecondary} />
-              <Text style={styles.headerActionText}>새 대화</Text>
-            </TouchableOpacity>
-            {/* 웹은 진입 단추만으로 여닫지만, 앱은 그 단추가 추천 장소 시트를
-              올리면 가려진다. 닫을 자리가 사라지지 않게 여기에도 둔다. */}
-            <TouchableOpacity
-              style={styles.headClose}
-              onPress={onClose}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="AI 여행 도우미 닫기"
-              hitSlop={6}
-            >
-              <X size={normalize(17)} color={COLORS.textTertiary} />
-            </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headTitle}>AI 여행 도우미</Text>
+            <View style={styles.headSubtitle}>
+              <Sparkles size={normalize(11)} color={COLORS.primary} />
+              <Text style={styles.headSubtitleText}>
+                일정 추천부터 수정까지
+              </Text>
+            </View>
           </View>
         </View>
-
-        {!canUse ? (
-          <View style={styles.scroll}>
-            <View style={styles.empty}>
-              <View style={styles.emptyIcon}>
-                <Bot size={normalize(24)} color={COLORS.primary} />
-              </View>
-              <Text style={styles.emptyTitle}>
-                저장된 일정에서 사용할 수 있어요
-              </Text>
-              <Text style={styles.emptyBody}>
-                일정을 먼저 저장한 뒤 AI에게 장소 추천과 일정 수정을 요청해
-                보세요.
-              </Text>
-            </View>
-          </View>
-        ) : (
-          <ScrollView
-            ref={scrollRef}
-            style={styles.scroll}
-            contentContainerStyle={styles.body}
-            onContentSizeChange={() =>
-              scrollRef.current?.scrollToEnd({ animated: true })
-            }
-            keyboardShouldPersistTaps="handled"
+        <View style={styles.headActions}>
+          {/* 웹은 진입 단추만으로 여닫지만, 앱은 그 단추가 추천 장소 시트를
+              올리면 가려진다. 닫을 자리가 사라지지 않게 여기에도 둔다. */}
+          <TouchableOpacity
+            style={styles.headClose}
+            onPress={onClose}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="AI 여행 도우미 닫기"
+            hitSlop={6}
           >
-            {!!notice && (
-              <View
+            <X size={normalize(17)} color={COLORS.textTertiary} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {!canUse ? (
+        <View style={styles.scroll}>
+          <View style={styles.empty}>
+            <View style={styles.emptyIcon}>
+              <Bot size={normalize(24)} color={COLORS.primary} />
+            </View>
+            <Text style={styles.emptyTitle}>
+              저장된 일정에서 사용할 수 있어요
+            </Text>
+            <Text style={styles.emptyBody}>
+              일정을 먼저 저장한 뒤 AI에게 장소 추천과 일정 수정을 요청해
+              보세요.
+            </Text>
+          </View>
+        </View>
+      ) : (
+        <ScrollView
+          ref={scrollRef}
+          style={styles.scroll}
+          contentContainerStyle={styles.body}
+          onContentSizeChange={() =>
+            scrollRef.current?.scrollToEnd({ animated: true })
+          }
+          keyboardShouldPersistTaps="handled"
+        >
+          {!!notice && (
+            <View
+              style={[
+                styles.notice,
+                {
+                  backgroundColor: NOTICE_TONE[notice.type].bg,
+                  borderColor: NOTICE_TONE[notice.type].border,
+                },
+              ]}
+              accessibilityRole="alert"
+            >
+              {notice.type === 'success' ? (
+                <Check size={normalize(14)} color={NOTICE_TONE.success.fg} />
+              ) : (
+                <AlertCircle
+                  size={normalize(14)}
+                  color={NOTICE_TONE[notice.type].fg}
+                />
+              )}
+              <Text
                 style={[
-                  styles.notice,
-                  {
-                    backgroundColor: NOTICE_TONE[notice.type].bg,
-                    borderColor: NOTICE_TONE[notice.type].border,
-                  },
+                  styles.noticeText,
+                  { color: NOTICE_TONE[notice.type].fg },
                 ]}
-                accessibilityRole="alert"
               >
-                {notice.type === 'success' ? (
-                  <Check size={normalize(14)} color={NOTICE_TONE.success.fg} />
-                ) : (
-                  <AlertCircle
-                    size={normalize(14)}
-                    color={NOTICE_TONE[notice.type].fg}
-                  />
-                )}
-                <Text
-                  style={[
-                    styles.noticeText,
-                    { color: NOTICE_TONE[notice.type].fg },
-                  ]}
-                >
-                  {notice.text}
-                </Text>
-              </View>
-            )}
-
-            {messages.map(message => {
-              const mine = message.role === 'user';
-              return (
-                <View
-                  key={message.id}
-                  style={[styles.row, mine && styles.rowMine]}
-                >
-                  <View
-                    style={[
-                      styles.bubble,
-                      mine ? styles.bubbleMine : styles.bubbleBot,
-                    ]}
-                  >
-                    <Text
-                      style={[styles.bubbleText, mine && styles.bubbleTextMine]}
-                    >
-                      {message.text}
-                    </Text>
-                    {!!message.at && (
-                      <View style={styles.stamp}>
-                        <Clock3
-                          size={normalize(9)}
-                          color={mine ? '#C7D2FE' : COLORS.textTertiary}
-                        />
-                        <Text
-                          style={[
-                            styles.stampText,
-                            mine && styles.stampTextMine,
-                          ]}
-                        >
-                          {message.at}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              );
-            })}
-
-            {messages.length === 1 &&
-              QUICK_PROMPTS.map(prompt => (
-                <TouchableOpacity
-                  key={prompt}
-                  style={styles.prompt}
-                  onPress={() => void send(prompt)}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel={prompt}
-                >
-                  <Text style={styles.promptText} numberOfLines={1}>
-                    {prompt}
-                  </Text>
-                  <ChevronRight
-                    size={normalize(14)}
-                    color={COLORS.textTertiary}
-                  />
-                </TouchableOpacity>
-              ))}
-
-            {isSending && (
-              <View style={styles.pending}>
-                <View style={styles.pendingLine}>
-                  <ActivityIndicator size="small" color={COLORS.primary} />
-                  <Text style={styles.pendingText}>일정을 살펴보고 있어요</Text>
-                </View>
-                <Text style={styles.pendingSub}>
-                  내용에 따라 최대 40초 정도 걸릴 수 있어요.
-                </Text>
-              </View>
-            )}
-
-            {shownPlaces.length > 0 && (
-              <View style={styles.section}>
-                <View style={styles.sectionHead}>
-                  <View style={styles.sectionBadge}>
-                    <MapPin size={normalize(13)} color="#D97706" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.sectionTitle}>추천 장소</Text>
-                    <Text style={styles.sectionHint}>
-                      이어서 조건을 바꿔 물어볼 수 있어요
-                    </Text>
-                  </View>
-                </View>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.placeStrip}
-                >
-                  {shownPlaces.map((place, index) => (
-                    <View
-                      key={`${place.contentId ?? 'place'}-${index}`}
-                      style={styles.placeCard}
-                    >
-                      <PlaceThumb uri={place.thumbnailUrl} />
-                      <View style={styles.placeBody}>
-                        <Text style={styles.placeCategory}>
-                          {CATEGORY_LABELS[place.category ?? ''] ??
-                            place.category ??
-                            '여행 장소'}
-                        </Text>
-                        <Text style={styles.placeTitle} numberOfLines={1}>
-                          {place.title}
-                        </Text>
-                        <Text style={styles.placeAddr} numberOfLines={1}>
-                          {place.addr1 || '주소 정보 없음'}
-                        </Text>
-                      </View>
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {!!pendingPlan && (
-              <View style={styles.preview}>
-                <View style={styles.previewHead}>
-                  <View style={{ flex: 1 }}>
-                    <View style={styles.previewCount}>
-                      <Sparkles size={normalize(13)} color={COLORS.primary} />
-                      <Text style={styles.previewEyebrow}>변경 미리보기</Text>
-                    </View>
-                    <Text style={styles.previewTitle} numberOfLines={1}>
-                      {planName(pendingPlan)}
-                    </Text>
-                  </View>
-                  <View style={styles.previewBadge}>
-                    <Text style={styles.previewBadgeText}>아직 미반영</Text>
-                  </View>
-                </View>
-
-                <View style={styles.previewBody}>
-                  <View style={styles.previewCounts}>
-                    <View style={styles.previewCount}>
-                      <CalendarDays
-                        size={normalize(13)}
-                        color={COLORS.primary}
-                      />
-                      <Text style={styles.previewCountText}>{dayCount}일</Text>
-                    </View>
-                    <View style={styles.previewCount}>
-                      <MapPin size={normalize(13)} color={COLORS.primary} />
-                      <Text style={styles.previewCountText}>
-                        {blocks.length}개 장소
-                      </Text>
-                    </View>
-                  </View>
-
-                  {blocks.length > 0 && (
-                    <View style={styles.previewBlocks}>
-                      {blocks.slice(0, 3).map((block, index) => (
-                        <View
-                          key={`${block.blockId ?? index}-${block.date ?? ''}`}
-                          style={styles.previewBlockRow}
-                        >
-                          <Text style={styles.previewBlockTime}>
-                            {blockTime(block)}
-                          </Text>
-                          <Text
-                            style={styles.previewBlockName}
-                            numberOfLines={1}
-                          >
-                            {block.placeName}
-                          </Text>
-                        </View>
-                      ))}
-                      {blocks.length > 3 && (
-                        <Text style={styles.previewMore}>
-                          외 {blocks.length - 3}개 장소
-                        </Text>
-                      )}
-                    </View>
-                  )}
-
-                  <Text style={styles.previewHint}>
-                    내용을 더 바꾸고 싶다면 아래 입력창에서 이어서 요청하세요.
-                  </Text>
-                </View>
-
-                <View style={styles.previewFoot}>
-                  <TouchableOpacity
-                    style={styles.previewDiscard}
-                    onPress={discard}
-                    disabled={isApplying}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
-                    accessibilityLabel="제안 취소"
-                  >
-                    <Text style={styles.previewDiscardText}>제안 취소</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.previewApply,
-                      isApplying && styles.previewBusy,
-                    ]}
-                    onPress={() => void apply()}
-                    disabled={isApplying}
-                    activeOpacity={0.85}
-                    accessibilityRole="button"
-                    accessibilityLabel="이 일정에 반영"
-                    accessibilityState={{ disabled: isApplying }}
-                  >
-                    {isApplying ? (
-                      <ActivityIndicator size="small" color={COLORS.white} />
-                    ) : (
-                      <Check size={normalize(14)} color={COLORS.white} />
-                    )}
-                    <Text style={styles.previewApplyText}>
-                      {isApplying ? '반영 중...' : '이 일정에 반영'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-          </ScrollView>
-        )}
-
-        <View style={styles.foot}>
-          {!!pendingPlan && (
-            <View style={styles.carry}>
-              <Sparkles size={normalize(12)} color={COLORS.primary} />
-              <Text style={styles.carryText}>
-                {dayCount}일 · {blocks.length}개 장소 제안을 이어서 수정 중
+                {notice.text}
               </Text>
             </View>
           )}
-          <View style={styles.composer}>
-            <TextInput
-              style={styles.input}
-              value={input}
-              onChangeText={setInput}
-              placeholder={
-                canUse
-                  ? '원하는 일정이나 장소를 말해 주세요'
-                  : '일정을 저장하면 사용할 수 있어요'
-              }
-              placeholderTextColor={COLORS.textTertiary}
-              editable={canUse && !isBusy}
-              multiline
-              maxLength={CHATBOT_MESSAGE_MAX_LENGTH}
-              accessibilityLabel="AI 도우미에게 보낼 말"
-            />
-            <TouchableOpacity
-              style={[styles.send, !canSend && styles.sendOff]}
-              onPress={() => void send()}
-              disabled={!canSend}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel="메시지 보내기"
-              accessibilityState={{ disabled: !canSend }}
-            >
-              {isSending ? (
-                <ActivityIndicator size="small" color={COLORS.white} />
-              ) : (
-                <Send size={normalize(16)} color={COLORS.white} />
-              )}
-            </TouchableOpacity>
+
+          {messages.map(message => {
+            const mine = message.role === 'user';
+            const segments = toSegments(message.text, message.places);
+            return (
+              <View
+                key={message.id}
+                style={[styles.row, mine && styles.rowMine]}
+              >
+                <View
+                  style={[
+                    styles.bubble,
+                    mine ? styles.bubbleMine : styles.bubbleBot,
+                  ]}
+                >
+                  {/* 이름이 나온 줄 바로 아래에 그 카드를 세운다. 이름만
+                    늘어놓으면 어떤 곳인지 그려지지 않고, 카드를 말끝에 몰아
+                    세우면 몇 번째로 권한 곳인지가 끊긴다. */}
+                  {segments.map((segment, index) =>
+                    segment.kind === 'text' ? (
+                      <Text
+                        key={segment.key}
+                        style={[
+                          styles.bubbleText,
+                          mine && styles.bubbleTextMine,
+                          index > 0 && styles.bubbleTextAfterCard,
+                        ]}
+                      >
+                        {segment.text}
+                      </Text>
+                    ) : (
+                      <View key={segment.key} style={styles.placeCard}>
+                        <PlaceThumb uri={segment.place.thumbnailUrl} />
+                        <View style={styles.placeBody}>
+                          <Text style={styles.placeCategory}>
+                            {CATEGORY_LABELS[segment.place.category ?? ''] ??
+                              segment.place.category ??
+                              '여행 장소'}
+                          </Text>
+                          <Text style={styles.placeTitle} numberOfLines={1}>
+                            {segment.place.title}
+                          </Text>
+                          <Text style={styles.placeAddr} numberOfLines={2}>
+                            {segment.place.addr1 || '주소 정보 없음'}
+                          </Text>
+                        </View>
+                      </View>
+                    ),
+                  )}
+
+                  {!!message.at && (
+                    <View style={styles.stamp}>
+                      <Clock3
+                        size={normalize(9)}
+                        color={mine ? '#C7D2FE' : COLORS.textTertiary}
+                      />
+                      <Text
+                        style={[styles.stampText, mine && styles.stampTextMine]}
+                      >
+                        {message.at}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            );
+          })}
+
+          {messages.length === 1 &&
+            QUICK_PROMPTS.map(prompt => (
+              <TouchableOpacity
+                key={prompt}
+                style={styles.prompt}
+                onPress={() => void send(prompt)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={prompt}
+              >
+                <Text style={styles.promptText} numberOfLines={1}>
+                  {prompt}
+                </Text>
+                <ChevronRight
+                  size={normalize(14)}
+                  color={COLORS.textTertiary}
+                />
+              </TouchableOpacity>
+            ))}
+
+          {isSending && (
+            <View style={styles.pending}>
+              <View style={styles.pendingLine}>
+                <ActivityIndicator size="small" color={COLORS.primary} />
+                <Text style={styles.pendingText}>일정을 살펴보고 있어요</Text>
+              </View>
+              <Text style={styles.pendingSub}>
+                내용에 따라 최대 40초 정도 걸릴 수 있어요.
+              </Text>
+            </View>
+          )}
+
+          {!!pendingPlan && (
+            <View style={styles.preview}>
+              <View style={styles.previewHead}>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.previewCount}>
+                    <Sparkles size={normalize(13)} color={COLORS.primary} />
+                    <Text style={styles.previewEyebrow}>변경 미리보기</Text>
+                  </View>
+                  <Text style={styles.previewTitle} numberOfLines={1}>
+                    {planName(pendingPlan)}
+                  </Text>
+                </View>
+                <View style={styles.previewBadge}>
+                  <Text style={styles.previewBadgeText}>아직 미반영</Text>
+                </View>
+              </View>
+
+              <View style={styles.previewBody}>
+                <View style={styles.previewCounts}>
+                  <View style={styles.previewCount}>
+                    <CalendarDays size={normalize(13)} color={COLORS.primary} />
+                    <Text style={styles.previewCountText}>{dayCount}일</Text>
+                  </View>
+                  <View style={styles.previewCount}>
+                    <MapPin size={normalize(13)} color={COLORS.primary} />
+                    <Text style={styles.previewCountText}>
+                      {blocks.length}개 장소
+                    </Text>
+                  </View>
+                </View>
+
+                {blocks.length > 0 && (
+                  <View style={styles.previewBlocks}>
+                    {blocks.slice(0, 3).map((block, index) => (
+                      <View
+                        key={`${block.blockId ?? index}-${block.date ?? ''}`}
+                        style={styles.previewBlockRow}
+                      >
+                        <Text style={styles.previewBlockTime}>
+                          {blockTime(block)}
+                        </Text>
+                        <Text style={styles.previewBlockName} numberOfLines={1}>
+                          {block.placeName}
+                        </Text>
+                      </View>
+                    ))}
+                    {blocks.length > 3 && (
+                      <Text style={styles.previewMore}>
+                        외 {blocks.length - 3}개 장소
+                      </Text>
+                    )}
+                  </View>
+                )}
+
+                <Text style={styles.previewHint}>
+                  내용을 더 바꾸고 싶다면 아래 입력창에서 이어서 요청하세요.
+                </Text>
+              </View>
+
+              <View style={styles.previewFoot}>
+                <TouchableOpacity
+                  style={styles.previewDiscard}
+                  onPress={discard}
+                  disabled={isApplying}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="제안 취소"
+                >
+                  <Text style={styles.previewDiscardText}>제안 취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.previewApply,
+                    isApplying && styles.previewBusy,
+                  ]}
+                  onPress={() => void apply()}
+                  disabled={isApplying}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="이 일정에 반영"
+                  accessibilityState={{ disabled: isApplying }}
+                >
+                  {isApplying ? (
+                    <ActivityIndicator size="small" color={COLORS.white} />
+                  ) : (
+                    <Check size={normalize(14)} color={COLORS.white} />
+                  )}
+                  <Text style={styles.previewApplyText}>
+                    {isApplying ? '반영 중...' : '이 일정에 반영'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </ScrollView>
+      )}
+
+      <View style={styles.foot}>
+        {!!pendingPlan && (
+          <View style={styles.carry}>
+            <Sparkles size={normalize(12)} color={COLORS.primary} />
+            <Text style={styles.carryText}>
+              {dayCount}일 · {blocks.length}개 장소 제안을 이어서 수정 중
+            </Text>
           </View>
-          <Text style={styles.disclaimer}>
-            AI 제안은 반영 전 미리 확인해 주세요.
-          </Text>
+        )}
+        <View style={styles.composer}>
+          <TextInput
+            style={styles.input}
+            value={input}
+            onChangeText={setInput}
+            placeholder={
+              canUse
+                ? '원하는 일정이나 장소를 말해 주세요'
+                : '일정을 저장하면 사용할 수 있어요'
+            }
+            placeholderTextColor={COLORS.textTertiary}
+            editable={canUse && !isBusy}
+            multiline
+            maxLength={CHATBOT_MESSAGE_MAX_LENGTH}
+            accessibilityLabel="AI 도우미에게 보낼 말"
+          />
+          <TouchableOpacity
+            style={[styles.send, !canSend && styles.sendOff]}
+            onPress={() => void send()}
+            disabled={!canSend}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="메시지 보내기"
+            accessibilityState={{ disabled: !canSend }}
+          >
+            {isSending ? (
+              <ActivityIndicator size="small" color={COLORS.white} />
+            ) : (
+              <Send size={normalize(16)} color={COLORS.white} />
+            )}
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.disclaimer}>
+          AI 제안은 반영 전 미리 확인해 주세요.
+        </Text>
       </View>
     </View>
   );

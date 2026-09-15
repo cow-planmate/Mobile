@@ -30,6 +30,12 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 
+/**
+ * 덮어 둔 겹이 손가락을 먹게 한다. 그냥 얹어 두기만 하면 리액트 네이티브는
+ * 만지겠다고 나서지 않은 View를 그대로 통과시킨다.
+ */
+const claimTouch = () => true;
+
 /** 놓일 자리를 블록보다 사방으로 얼마나 넓게 그릴지(px). */
 const PREVIEW_OUTSET = 6;
 
@@ -1728,6 +1734,26 @@ export default function ItineraryEditorScreenView({
     [sheetBody],
   );
 
+  /**
+   * 창을 열면 장소 시트를 맨 밑으로 접는다.
+   *
+   * 창이 시트 자리까지 내려오므로 펼쳐 둔 목록은 어차피 가린다. 접어 두면
+   * 창이 그만큼 더 내려갈 수 있고, 닫을 때는 보고 있던 높이로 되돌린다.
+   */
+  const sheetBeforeChat = useRef<number | null>(null);
+  useEffect(() => {
+    if (isChatbotOpen) {
+      if (sheetBeforeChat.current === null) {
+        sheetBeforeChat.current = sheetHeightRef.current;
+      }
+      setSheetHeight(0);
+      return;
+    }
+    if (sheetBeforeChat.current === null) return;
+    setSheetHeight(sheetBeforeChat.current);
+    sheetBeforeChat.current = null;
+  }, [isChatbotOpen, setSheetHeight]);
+
   const snapPoints = useCallback(
     () => SHEET_SNAPS.map(ratio => Math.round(sheetMaxRef.current * ratio)),
     [],
@@ -1791,7 +1817,9 @@ export default function ItineraryEditorScreenView({
       Gesture.Exclusive(
         Gesture.Pan()
           .runOnJS(true)
-          .enabled(!isTimelineItemDragging && !draggingPlace)
+          // 창이 떠 있는 동안에는 시트도 잠근다. 시트는 창보다 위에 있어,
+          // 올리면 잠가 둔 겹을 넘어 창을 덮는다.
+          .enabled(!isTimelineItemDragging && !draggingPlace && !isChatbotOpen)
           .hitSlop({ top: 16, bottom: 16, left: 30, right: 30 })
           .onBegin(() => {
             sheetTouched.current = true;
@@ -1844,7 +1872,13 @@ export default function ItineraryEditorScreenView({
             }
           }),
       ),
-    [setSheetHeight, snapPoints, isTimelineItemDragging, draggingPlace],
+    [
+      setSheetHeight,
+      snapPoints,
+      isTimelineItemDragging,
+      draggingPlace,
+      isChatbotOpen,
+    ],
   );
 
   const sheetGesture = useMemo(createSheetGesture, [createSheetGesture]);
@@ -2383,71 +2417,80 @@ export default function ItineraryEditorScreenView({
             <TimelineTabScreen />
           </View>
 
-          <Animated.View
-            pointerEvents={floatingPointerEvents}
-            style={[styles.floatingHistoryContainer, floatingAnimStyle]}
-          >
-            <TouchableOpacity
-              ref={undoTarget}
-              testID="btn-undo"
-              style={styles.floatingHistoryButton}
-              onPress={onUndo}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="실행 취소"
-              hitSlop={6}
+          {/* 창이 떠 있는 동안에는 치운다. 뒤가 잠겨 있어 눌러도 되는 것이
+            없고, 창이 그 자리까지 내려와 서로 겹친다. */}
+          {!isChatbotOpen && (
+            <Animated.View
+              pointerEvents={floatingPointerEvents}
+              style={[styles.floatingHistoryContainer, floatingAnimStyle]}
             >
-              <Undo2 color={COLORS.text} size={18} />
-            </TouchableOpacity>
-          </Animated.View>
+              <TouchableOpacity
+                ref={undoTarget}
+                testID="btn-undo"
+                style={styles.floatingHistoryButton}
+                onPress={onUndo}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="실행 취소"
+                hitSlop={6}
+              >
+                <Undo2 color={COLORS.text} size={18} />
+              </TouchableOpacity>
+            </Animated.View>
+          )}
 
           {/* 도움을 청하는 두 단추는 오른쪽에 위아래로 세운다 - 되돌리기는
             방금 한 일을 무르는 손이고, 이 둘은 새로 여는 자리라 갈라 둔다.
-            둘 다 시트 높이를 따라 움직여서 시트를 올려도 가려지지 않는다. */}
-          <Animated.View
-            pointerEvents={floatingPointerEvents}
-            style={[styles.floatingAssistContainer, floatingAnimStyle]}
-          >
-            <TutorialLauncher />
-            {/* 웹과 같은 토글이다 - 열려 있으면 같은 자리에서 X로 바뀐다. */}
-            <TouchableOpacity
-              testID="btn-chatbot"
-              style={[
-                styles.floatingChatButton,
-                isChatbotOpen && styles.floatingChatButtonOpen,
-              ]}
-              onPress={onOpenChatbot}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel={
-                isChatbotOpen ? 'AI 여행 도우미 닫기' : 'AI 여행 도우미'
-              }
-              accessibilityState={{ expanded: isChatbotOpen }}
-              hitSlop={6}
+            둘 다 시트 높이를 따라 움직여서 시트를 올려도 가려지지 않는다.
+
+            창이 떠 있는 동안에는 이 묶음도 치운다. 창이 이 자리까지 내려와
+            겹치고, 닫기는 창 머릿줄의 X가 맡는다. */}
+          {!isChatbotOpen && (
+            <Animated.View
+              pointerEvents={floatingPointerEvents}
+              style={[styles.floatingAssistContainer, floatingAnimStyle]}
             >
-              {isChatbotOpen ? (
-                <XIcon color={COLORS.white} size={18} />
-              ) : (
+              <TutorialLauncher />
+              {/* 웹과 같은 토글이다 - 열려 있으면 같은 자리에서 X로 바뀐다. */}
+              <TouchableOpacity
+                testID="btn-chatbot"
+                style={styles.floatingChatButton}
+                onPress={onOpenChatbot}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="AI 여행 도우미"
+                hitSlop={6}
+              >
                 <MessageCircle color={COLORS.white} size={18} />
-              )}
-            </TouchableOpacity>
-          </Animated.View>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
 
           {/* 창은 제자리에 선다. 단추 묶음처럼 추천 장소 시트를 따라 올리면
             날짜 탭 밑으로 파고들고, 시트를 끝까지 올렸을 때 같이 투명해져서
             보이지도 않는 채로 탭을 가로챈다. 시트가 올라오면 그 위로 뜨게
-            두는 편이 창답고 예측도 된다. 화면을 덮지는 않으므로 창 옆으로
-            시간표를 그대로 만질 수 있다. */}
-          {isChatbotOpen && (
-            <View pointerEvents="box-none" style={styles.chatbotAnchor}>
-              <ChatbotWindow
-                visible
-                planId={planId ?? null}
-                onClose={onCloseChatbot ?? onOpenChatbot}
-                onApplied={onChatbotApplied}
+            두는 편이 창답고 예측도 된다.
+
+            뒤는 잠근다. 창에 무엇을 시켜 놓고 뒤에서 같은 것을 고치면 어느
+            쪽이 맞는지 알 수 없다. 닫기는 창 머릿줄의 X가 맡는다.
+
+            닫아도 창은 그대로 붙여 두고 그리지만 않는다. 떼어 내면 주고받던
+            이야기가 같이 사라져, 다시 열 때마다 처음부터 다시 물어야 한다.
+            닫혀 있는 동안 이 겹은 비어 있어 손가락이 그대로 지나간다. */}
+          <View pointerEvents="box-none" style={styles.chatbotAnchor}>
+            {isChatbotOpen && (
+              <View
+                style={styles.chatbotScrim}
+                onStartShouldSetResponder={claimTouch}
               />
-            </View>
-          )}
+            )}
+            <ChatbotWindow
+              visible={isChatbotOpen}
+              planId={planId ?? null}
+              onClose={onCloseChatbot ?? onOpenChatbot}
+              onApplied={onChatbotApplied}
+            />
+          </View>
 
           <Animated.View
             ref={placeSheetTarget}

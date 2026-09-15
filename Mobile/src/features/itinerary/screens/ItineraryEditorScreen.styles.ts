@@ -696,12 +696,20 @@ export const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: SHEET_HANDLE_HEIGHT + 14,
+    top: 0,
+    bottom: SHEET_HANDLE_HEIGHT,
     zIndex: 31,
   },
-  // 열려 있을 때는 짙은 회색 - 지금 무엇을 누르는지가 색으로 먼저 읽힌다.
-  floatingChatButtonOpen: {
-    backgroundColor: COLORS.text,
+  /**
+   * 창이 떠 있는 동안 뒤를 잠그는 겹.
+   *
+   * 창 옆으로 시간표를 그대로 만질 수 있게 두었더니, 창에 무엇을 시켜 놓고
+   * 뒤에서 같은 것을 고치는 일이 생긴다. 옅게 덮어 지금 만지는 곳이 창뿐임을
+   * 보이고, 손가락도 여기서 멈춘다.
+   */
+  chatbotScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(2, 6, 23, 0.16)',
   },
   floatingHistoryButtonDisabled: {
     backgroundColor: COLORS.borderLight,

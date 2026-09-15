@@ -176,6 +176,80 @@ describe('AI 여행 도우미', () => {
     act(() => tree.unmount());
   });
 
+  it('이름이 나온 줄 바로 아래에 그 장소 카드를 세운다', async () => {
+    mockAsk.mockResolvedValue({
+      userMessage:
+        '속초의 인기 맛집 2곳을 추천해 드립니다:\n' +
+        '1. 진솔할머니순두부 (초당순두부, 순두부 전골)\n' +
+        '2. 청초수물회 (사골육수 해전물회)\n' +
+        '마음에 드는 곳이 있으면 말씀해 주세요!',
+      shownPlaces: [
+        {
+          contentId: '1',
+          title: '진솔할머니순두부',
+          category: 'RESTAURANT',
+          addr1: '속초시 원암동',
+        },
+        {
+          contentId: '2',
+          title: '청초수물회',
+          category: 'RESTAURANT',
+          addr1: '속초시 조양동',
+        },
+      ],
+    });
+    const tree = render();
+
+    await pressLabel(tree, '근처 맛집을 몇 곳 추천해 줘');
+
+    const shown = texts(tree);
+    // 읊어 준 줄은 그대로 남는다 - 몇 번째로 권한 곳인지가 거기 적혀 있다.
+    expect(shown).toContain(
+      '속초의 인기 맛집 2곳을 추천해 드립니다:\n1. 진솔할머니순두부 (초당순두부, 순두부 전골)',
+    );
+    // 그 줄 다음에 그 장소의 카드가 온다.
+    const firstLine = shown.findIndex(text =>
+      text.includes('1. 진솔할머니순두부'),
+    );
+    const firstCard = shown.indexOf('속초시 원암동');
+    const secondLine = shown.findIndex(text => text.includes('2. 청초수물회'));
+    const secondCard = shown.indexOf('속초시 조양동');
+    expect(firstLine).toBeGreaterThanOrEqual(0);
+    expect(firstCard).toBeGreaterThan(firstLine);
+    expect(secondLine).toBeGreaterThan(firstCard);
+    expect(secondCard).toBeGreaterThan(secondLine);
+    // 마무리 설명은 마지막 카드 뒤에 남는다.
+    expect(
+      shown.findIndex(text => text.includes('마음에 드는 곳이 있으면')),
+    ).toBeGreaterThan(secondCard);
+    act(() => tree.unmount());
+  });
+
+  it('글에서 이름을 못 찾은 장소도 카드로는 세운다', async () => {
+    mockAsk.mockResolvedValue({
+      userMessage: '이런 곳은 어때요?',
+      shownPlaces: [
+        {
+          contentId: '9',
+          title: '토담순두부',
+          category: 'RESTAURANT',
+          addr1: '속초시 교동',
+        },
+      ],
+    });
+    const tree = render();
+
+    await pressLabel(tree, '근처 맛집을 몇 곳 추천해 줘');
+
+    const shown = texts(tree);
+    // 글은 그대로 두고, 카드만 맨 뒤에 붙는다.
+    expect(shown).toContain('이런 곳은 어때요?');
+    expect(shown.indexOf('토담순두부')).toBeGreaterThan(
+      shown.indexOf('이런 곳은 어때요?'),
+    );
+    act(() => tree.unmount());
+  });
+
   it('반영한 뒤에는 되돌리기로 취소되지 않는다고 알린다', async () => {
     mockAsk.mockResolvedValue({ userMessage: '이렇게요', plan: samplePlan });
     const tree = render();
@@ -189,19 +263,44 @@ describe('AI 여행 도우미', () => {
     act(() => tree.unmount());
   });
 
-  it('새 대화를 누르면 제안과 주고받은 말을 모두 버린다', async () => {
+  it('닫았다 다시 열어도 주고받은 말이 남아 있다', async () => {
     mockAsk.mockResolvedValue({ userMessage: '이렇게요', plan: samplePlan });
     const tree = render();
 
     await pressLabel(tree, '근처 맛집을 몇 곳 추천해 줘');
-    expect(texts(tree)).toContain('아직 미반영');
+    expect(texts(tree)).toContain('이렇게요');
 
-    await pressLabel(tree, '새 대화 시작');
+    // 닫으면 그리지 않을 뿐 창은 그대로 붙어 있다.
+    act(() => {
+      tree.update(
+        <ChatbotWindow visible={false} planId="plan-1" onClose={() => {}} />,
+      );
+    });
+    expect(texts(tree)).toEqual([]);
+
+    act(() => {
+      tree.update(<ChatbotWindow visible planId="plan-1" onClose={() => {}} />);
+    });
 
     const shown = texts(tree);
-    expect(shown).not.toContain('아직 미반영');
+    expect(shown).toContain('이렇게요');
+    expect(shown).toContain('아직 미반영');
+    act(() => tree.unmount());
+  });
+
+  it('다른 일정을 열면 앞의 대화는 비운다', async () => {
+    mockAsk.mockResolvedValue({ userMessage: '이렇게요', plan: samplePlan });
+    const tree = render();
+
+    await pressLabel(tree, '근처 맛집을 몇 곳 추천해 줘');
+    expect(texts(tree)).toContain('이렇게요');
+
+    act(() => {
+      tree.update(<ChatbotWindow visible planId="plan-2" onClose={() => {}} />);
+    });
+
+    const shown = texts(tree);
     expect(shown).not.toContain('이렇게요');
-    // 처음으로 돌아갔으므로 인사와 권하는 말이 다시 보인다.
     expect(shown).toContain(
       '일정을 어떻게 바꿔볼까요? 장소 추천부터 순서 조정까지 편하게 말해 주세요.',
     );
