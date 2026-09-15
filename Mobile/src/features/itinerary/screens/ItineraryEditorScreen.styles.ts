@@ -42,7 +42,15 @@ export const GRID_TOP_OFFSET = normalize(40);
 // 타임라인 블록의 좌우 여백·모서리는 화면 폭이 정해지면 고정이므로 여기서 한 번만 재고,
 // useAnimatedStyle 안에서는 이 상수를 읽기만 한다.
 export const TIMELINE_BLOCK_LEFT = normalize(60);
-export const TIMELINE_BLOCK_RIGHT = normalize(15);
+/**
+ * 오른쪽도 왼쪽과 같이 60을 비운다.
+ *
+ * 왼쪽 60은 시각 눈금과 되돌리기 단추가 쓰는 자리다. 오른쪽은 15만 비워
+ * 두어 사용법·AI 도우미 단추가 블록 위로 올라앉았고, 그 높이에 걸친 블록은
+ * 연필과 X가 단추에 가려 눌리지 않았다. 양쪽을 같이 비워 떠 있는 단추가
+ * 블록을 덮지 않게 한다.
+ */
+export const TIMELINE_BLOCK_RIGHT = normalize(60);
 export const TIMELINE_BLOCK_RADIUS = normalize(12);
 export const BOTTOM_TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 85 : 60;
 export const SHEET_HANDLE_HEIGHT = normalize(62);
@@ -522,11 +530,19 @@ export const styles = StyleSheet.create({
     marginTop: normalize(2),
   },
 
+  /**
+   * 크기를 잡는 자리는 손잡이 둘레만 차지한다.
+   *
+   * 가로를 다 덮으면 블록 위쪽 32 안에 들어오는 연필과 X를 통째로 가려
+   * 아이콘이 보이는데도 눌리지 않는다. 손잡이는 가운데 하나뿐이니 그
+   * 둘레만 잡으면 된다.
+   */
   resizeHandleTop: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    left: '50%',
+    width: normalize(160),
+    marginLeft: -normalize(80),
     height: normalize(32),
     zIndex: 10,
     alignItems: 'center',
@@ -536,8 +552,9 @@ export const styles = StyleSheet.create({
   resizeHandleBottom: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    left: '50%',
+    width: normalize(160),
+    marginLeft: -normalize(80),
     height: normalize(32),
     zIndex: 10,
     alignItems: 'center',

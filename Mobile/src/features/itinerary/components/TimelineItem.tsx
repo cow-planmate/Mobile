@@ -11,8 +11,8 @@ import { useCoachmarkTarget } from '../coachmark/CoachmarkContext';
 const IS_COMPACT_VIEW_THRESHOLD_MINUTES = 30;
 
 export type Place = {
-  id: string; 
-  placeRefId?: string; 
+  id: string;
+  placeRefId?: string;
   name: string;
   type: '관광지' | '숙소' | '식당' | '직접 추가' | '검색' | '기타';
   categoryId?: number;
@@ -97,6 +97,14 @@ const TimelineItem = React.memo(function TimelineItem({
   const textColorMain = categoryColor.textMain || tokens.colors.text;
   const textColorSub = categoryColor.textSub || tokens.colors.textSecondary;
 
+  // 짧은 일정은 블록이 낮아 버튼도 같이 낮아진다. 눌리는 자리는 줄지 않게
+  // 위아래로 더 벌려 둔다 - 손끝은 블록 높이를 따라 작아지지 않는다.
+  const actionSlop = isCompact
+    ? { top: 16, bottom: 16, left: 4 }
+    : { top: 12, bottom: 12, left: 4 };
+  // 지우기는 블록 오른쪽 끝에 붙어 있어 바깥쪽으로 더 내줄 수 있다.
+  const deleteSlop = { ...actionSlop, right: 12 };
+
   return (
     <Pressable style={[styles.cardContainer, style]} onPress={onPress}>
       <View
@@ -147,7 +155,7 @@ const TimelineItem = React.memo(function TimelineItem({
               onPress={() => onEditTime?.('startTime')}
               accessibilityRole="button"
               accessibilityLabel="시간 수정"
-              hitSlop={{ top: 8, bottom: 8 }}
+              hitSlop={actionSlop}
             >
               <Pencil size={16} color={textColorMain} />
             </TouchableOpacity>
@@ -159,7 +167,7 @@ const TimelineItem = React.memo(function TimelineItem({
               onPress={onDelete}
               accessibilityRole="button"
               accessibilityLabel="장소 삭제"
-              hitSlop={{ top: 8, bottom: 8, right: 8 }}
+              hitSlop={deleteSlop}
             >
               <XIcon size={18} color={textColorMain} />
             </TouchableOpacity>
