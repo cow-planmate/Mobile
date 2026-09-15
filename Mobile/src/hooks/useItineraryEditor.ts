@@ -39,6 +39,41 @@ const parseDestinationName = (destination?: string) => {
 
 const formatDate = formatMonthDayDot;
 
+/** 시각을 시 단위로 내림·올림한다. 눈금판이 정시로 끊겨 있어 그에 맞춘다. */
+const floorHour = (minutes: number) => Math.floor(minutes / 60) * 60;
+const ceilHour = (minutes: number) => Math.ceil(minutes / 60) * 60;
+
+/**
+ * 담긴 장소를 모두 품도록 하루의 시간 범위를 넓힌다.
+ *
+ * 시간표는 하루의 시작·끝 사이만 그린다. 그 밖에 놓인 블록은 그릴 자리가 없어
+ * 통째로 사라진다 - AI 도우미가 일정을 고치면 시간표 범위를 모르는 채로 시간을
+ * 정하므로 실제로 벌어진다.
+ *
+ * 좁히지는 않는다. 사람이 정해 둔 범위는 장소가 없어도 그대로 두는 것이 맞다.
+ */
+const coveringDayRange = (
+  dayStart: string,
+  dayEnd: string,
+  places: Place[],
+) => {
+  let start = timeToMinutes(dayStart);
+  let end = timeToMinutes(dayEnd);
+
+  places.forEach(place => {
+    start = Math.min(start, floorHour(timeToMinutes(place.startTime)));
+    end = Math.max(end, ceilHour(timeToMinutes(place.endTime)));
+  });
+
+  // 서버가 주던 모양(HH:MM:SS)을 그대로 돌려준다. 여기서 형식이 바뀌면
+  // 저장 payload와 화면 표시가 제각각이 된다.
+  // minutesToTime이 하루 끝(23:45)까지로 잘라 준다.
+  return {
+    startTime: `${minutesToTime(Math.max(0, start))}:00`,
+    endTime: `${minutesToTime(end)}:00`,
+  };
+};
+
 export const useItineraryEditor = (route: any, _navigation: any) => {
   const queryClient = useQueryClient();
   const {
@@ -210,15 +245,22 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
               };
             });
 
+          const sorted = dayPlaces.sort((a: Place, b: Place) =>
+            timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+          const { startTime, endTime } = coveringDayRange(
+            tt.timeTableStartTime || DEFAULT_DAY_START,
+            tt.timeTableEndTime || DEFAULT_DAY_END,
+            sorted,
+          );
+
           return {
             timetableId: ttId,
             date: date,
             dayNumber: index + 1,
 
-            startTime: tt.timeTableStartTime || DEFAULT_DAY_START,
-            endTime: tt.timeTableEndTime || DEFAULT_DAY_END,
-            places: dayPlaces.sort((a: Place, b: Place) =>
-              timeToMinutes(a.startTime) - timeToMinutes(b.startTime)),
+            startTime,
+            endTime,
+            places: sorted,
           };
         });
 
