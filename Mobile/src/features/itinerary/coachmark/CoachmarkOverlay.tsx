@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import XIcon from 'lucide-react-native/dist/esm/icons/x';
 import { tokens } from '../../../theme/tokens';
 import type { CoachmarkStep } from './coachmarkSteps';
 import { holeRect, type CoachmarkRect } from './measureTarget';
@@ -250,8 +251,24 @@ export default function CoachmarkOverlay({
         ]}
         onLayout={event => setTipHeight(event.nativeEvent.layout.height)}
       >
-        <Text style={styles.tipTitle}>{step.title}</Text>
+        <View style={styles.tipHead}>
+          <Text style={styles.tipTitle}>{step.title}</Text>
+          {/* 닫기는 글자 대신 X로 둔다 - 말풍선 어디에 있든 같은 자리에 있다. */}
+          <TouchableOpacity
+            onPress={onSkip}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="안내 건너뛰기"
+          >
+            <XIcon color={COLORS.textTertiary} size={16} />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.tipBody}>{step.body}</Text>
+        {!!step.note && (
+          <View style={styles.tipNote}>
+            <Text style={styles.tipNoteText}>{step.note}</Text>
+          </View>
+        )}
         {isInteractive && (
           <Text style={styles.tipHint}>직접 눌러 보면 다음으로 넘어가요.</Text>
         )}
@@ -265,25 +282,15 @@ export default function CoachmarkOverlay({
           <Text style={styles.tipCount}>
             {index + 1} / {total}
           </Text>
-          <View style={styles.tipButtons}>
-            <TouchableOpacity
-              onPress={onSkip}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel="안내 건너뛰기"
-            >
-              <Text style={styles.tipSkip}>건너뛰기</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={onNext}
-              style={styles.tipNext}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel={isLast ? '안내 완료' : '다음 안내'}
-            >
-              <Text style={styles.tipNextText}>{isLast ? '완료' : '다음'}</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={onNext}
+            style={styles.tipNext}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={isLast ? '안내 완료' : '다음 안내'}
+          >
+            <Text style={styles.tipNextText}>{isLast ? '완료' : '다음'}</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -342,7 +349,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     transform: [{ rotate: '45deg' }],
   },
+  tipHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
   tipTitle: {
+    flexShrink: 1,
     fontFamily: FONTS.bold,
     fontSize: 14,
     lineHeight: 20,
@@ -354,6 +368,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     color: COLORS.textSecondary,
+  },
+  /** 알아 두면 좋은 한마디. 옅은 바탕을 깔아 본문과 갈라 둔다. */
+  tipNote: {
+    marginTop: 9,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: COLORS.primaryTint,
+  },
+  tipNoteText: {
+    fontFamily: FONTS.medium,
+    fontSize: 12,
+    lineHeight: 17,
+    color: COLORS.primary,
   },
   tipHint: {
     marginTop: 7,
@@ -378,16 +406,6 @@ const styles = StyleSheet.create({
   tipCount: {
     fontFamily: FONTS.medium,
     fontSize: 11,
-    color: COLORS.textTertiary,
-  },
-  tipButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  tipSkip: {
-    fontFamily: FONTS.semibold,
-    fontSize: 12,
     color: COLORS.textTertiary,
   },
   tipNext: {

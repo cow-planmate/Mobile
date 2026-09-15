@@ -1,9 +1,9 @@
 /**
  * 일정 편집 화면에 처음 들어온 사람에게 버튼을 하나씩 짚어 주는 순서.
  *
- * 화면을 위에서 아래로 훑지 않고 일정을 실제로 짜는 순서를 따른다 - 이름을 짓고,
- * 날짜를 고르고, 장소를 담고, 시간을 맞추고, 사람을 부르고, 완성한다. 위치 순서로
- * 훑으면 버튼 이름만 나열될 뿐 무엇부터 해야 하는지가 남지 않는다.
+ * 화면을 위에서 아래로 훑지 않고 일정을 실제로 짜는 순서를 따른다 - 정보를 보고,
+ * 날짜를 고르고, 장소를 담고, 시간을 맞추고, 사람을 부르고, 맨 끝에 완성한다.
+ * 위치 순서로 훑으면 버튼 이름만 나열될 뿐 무엇부터 해야 하는지가 남지 않는다.
  *
  * 이 화면에만 넣는다. 홈은 칸마다 '여행지를 선택해 주세요'처럼 안내가 이미 적혀
  * 있고 탭에는 글자 라벨이 붙어 있으며, 여행기의 가져오기는 상세 화면 맨 아래
@@ -11,7 +11,6 @@
  */
 
 export type CoachmarkTargetId =
-  | 'planName'
   | 'planInfo'
   | 'dayTabs'
   | 'dayPeriod'
@@ -40,6 +39,13 @@ export interface CoachmarkStep {
   /** 구멍을 대상보다 얼마나 넉넉히 뚫을지(px). */
   padding?: number;
   /**
+   * 본문 아래에 따로 붙이는 한마디. 모르면 손해 보는 것만 적는다.
+   *
+   * 본문에 이어 붙이면 세 줄이 되어 읽히지 않는다. 자리를 나누고 옅은 바탕을
+   * 깔아 '읽고 넘어가는 줄'로 보이게 한다.
+   */
+  note?: string;
+  /**
    * 안내 중에 이 버튼을 실제로 눌러 볼 수 있는지. 기본은 눌러 볼 수 있다 -
    * 직접 한 번 해보고 다음 단계로 넘어가는 것이 안내의 목적이다.
    *
@@ -51,12 +57,6 @@ export interface CoachmarkStep {
 }
 
 export const EDITOR_COACHMARK_STEPS: readonly CoachmarkStep[] = [
-  {
-    target: 'planName',
-    title: '일정 이름',
-    body: '이름을 눌러 바로 고칠 수 있어요. 따로 저장하지 않아도 됩니다.',
-    shape: 'rounded',
-  },
   {
     target: 'planInfo',
     title: '일정 정보',
@@ -87,13 +87,6 @@ export const EDITOR_COACHMARK_STEPS: readonly CoachmarkStep[] = [
     title: '시간 조절',
     body: '위아래 회색 손잡이를 끌면 머무는 시간이 늘고, 블록째 끌면 시간대가 옮겨져요.',
     shape: 'rounded',
-  },
-  {
-    target: 'complete',
-    title: '일정 완성',
-    body: '다 짰으면 눌러서 완성해요. 완성한 뒤에도 연필로 다시 열 수 있습니다.',
-    shape: 'circle',
-    interactive: false,
   },
   {
     target: 'blockActions',
@@ -132,5 +125,13 @@ export const EDITOR_COACHMARK_STEPS: readonly CoachmarkStep[] = [
     title: '동선 보기',
     body: '담은 장소를 지도 위에 순서대로 펼쳐요. 동선이 꼬였는지 여기서 확인해요.',
     shape: 'circle',
+  },
+  {
+    target: 'complete',
+    title: '일정 완성',
+    body: '다 짰으면 눌러서 완성해요. 완성한 뒤에도 연필로 다시 열 수 있어요.',
+    note: '누르지 않고 나가도 괜찮아요. 고친 내용은 그때그때 저장됩니다.',
+    shape: 'circle',
+    interactive: false,
   },
 ];

@@ -163,18 +163,18 @@ describe('EditorCoachmark', () => {
     await act(async () => {
       tree = renderTour(
         <>
-          <FakeTarget id="planName" top={100} />
           <FakeTarget id="planInfo" top={100} />
+          <FakeTarget id="dayTabs" top={100} />
         </>,
       );
     });
     await settle(tree);
     // 스스로 뜨지 않는다 - 눌러야 시작한다.
-    expect(visibleTexts(tree)).not.toContain('일정 이름');
+    expect(visibleTexts(tree)).not.toContain('일정 정보');
     await openTour(tree);
 
     const texts = visibleTexts(tree);
-    expect(texts).toContain('일정 이름');
+    expect(texts).toContain('일정 정보');
     // 열셋 중 둘만 잴 수 있으면 '1 / 2'다. 못 잰 것을 세면 번호가 건너뛴다.
     expect(texts).toContain('1 / 2');
   });
@@ -182,7 +182,7 @@ describe('EditorCoachmark', () => {
   it('짚은 자리를 흰 테두리와 파란 링 두 겹으로 두른다', async () => {
     let tree!: renderer.ReactTestRenderer;
     await act(async () => {
-      tree = renderTour(<FakeTarget id="planName" top={100} />);
+      tree = renderTour(<FakeTarget id="planInfo" top={100} />);
     });
     await settle(tree);
     await openTour(tree);
@@ -206,7 +206,7 @@ describe('EditorCoachmark', () => {
     let tree!: renderer.ReactTestRenderer;
     await act(async () => {
       // 툴바 아이콘은 동그랗게 짚는다 - 네모로 뚫으면 귀퉁이가 흰 채로 남는다.
-      tree = renderTour(<FakeTarget id="planInfo" top={100} />);
+      tree = renderTour(<FakeTarget id="dayTabs" top={100} />);
     });
     await settle(tree);
     await openTour(tree);
@@ -225,8 +225,8 @@ describe('EditorCoachmark', () => {
     await act(async () => {
       tree = renderTour(
         <>
-          <FakeTarget id="planName" top={100} />
           <FakeTarget id="planInfo" top={100} />
+          <FakeTarget id="dayTabs" top={100} />
         </>,
       );
     });
@@ -236,14 +236,14 @@ describe('EditorCoachmark', () => {
     await press(tree, '다음 안내');
 
     const texts = visibleTexts(tree);
-    expect(texts).toContain('일정 정보');
+    expect(texts).toContain('며칠차 고르기');
     expect(texts).toContain('2 / 2');
   });
 
   it('마지막에서 완료하면 안내를 닫고 단추는 남긴다', async () => {
     let tree!: renderer.ReactTestRenderer;
     await act(async () => {
-      tree = renderTour(<FakeTarget id="planName" top={100} />);
+      tree = renderTour(<FakeTarget id="planInfo" top={100} />);
     });
     await settle(tree);
     await openTour(tree);
@@ -251,7 +251,7 @@ describe('EditorCoachmark', () => {
     // 자리가 하나뿐이면 첫 스텝이 곧 마지막이다.
     await press(tree, '안내 완료');
 
-    expect(visibleTexts(tree)).not.toContain('일정 이름');
+    expect(visibleTexts(tree)).not.toContain('일정 정보');
     // 다시 볼 수 있어야 하므로 '봤다'는 기록은 남기지 않는다.
     expect(storage.setItem).not.toHaveBeenCalledWith(
       'editorCoachmarkSeen',
@@ -265,14 +265,14 @@ describe('EditorCoachmark', () => {
   it('닫은 뒤에도 다시 열 수 있다', async () => {
     let tree!: renderer.ReactTestRenderer;
     await act(async () => {
-      tree = renderTour(<FakeTarget id="planName" top={100} />);
+      tree = renderTour(<FakeTarget id="planInfo" top={100} />);
     });
     await settle(tree);
     await openTour(tree);
     await press(tree, '안내 완료');
 
     await openTour(tree);
-    expect(visibleTexts(tree)).toContain('일정 이름');
+    expect(visibleTexts(tree)).toContain('일정 정보');
   });
 
   it('건너뛰면 남은 스텝을 버린다', async () => {
@@ -280,8 +280,8 @@ describe('EditorCoachmark', () => {
     await act(async () => {
       tree = renderTour(
         <>
-          <FakeTarget id="planName" top={100} />
           <FakeTarget id="planInfo" top={100} />
+          <FakeTarget id="dayTabs" top={100} />
         </>,
       );
     });
@@ -290,13 +290,13 @@ describe('EditorCoachmark', () => {
 
     await press(tree, '안내 건너뛰기');
 
-    expect(visibleTexts(tree)).not.toContain('일정 이름');
+    expect(visibleTexts(tree)).not.toContain('일정 정보');
   });
 
   it('처음 온 사람에게만 사용법을 권한다', async () => {
     let tree!: renderer.ReactTestRenderer;
     await act(async () => {
-      tree = renderTour(<FakeTarget id="planName" top={100} />);
+      tree = renderTour(<FakeTarget id="planInfo" top={100} />);
     });
     await settle(tree);
 
@@ -306,7 +306,7 @@ describe('EditorCoachmark', () => {
   it('말풍선을 닫으면 기록하고 다시 권하지 않는다', async () => {
     let tree!: renderer.ReactTestRenderer;
     await act(async () => {
-      tree = renderTour(<FakeTarget id="planName" top={100} />);
+      tree = renderTour(<FakeTarget id="planInfo" top={100} />);
     });
     await settle(tree);
 
@@ -331,7 +331,7 @@ describe('EditorCoachmark', () => {
 
     let tree!: renderer.ReactTestRenderer;
     await act(async () => {
-      tree = renderTour(<FakeTarget id="planName" top={100} />);
+      tree = renderTour(<FakeTarget id="planInfo" top={100} />);
     });
     await settle(tree);
 
@@ -358,7 +358,7 @@ describe('EditorCoachmark', () => {
     await act(async () => {
       tree = renderTour(
         <>
-          <FakeTarget id="planName" top={100} />
+          <FakeTarget id="planInfo" top={100} />
           <FakeTarget id="complete" top={100} />
         </>,
       );
@@ -367,7 +367,7 @@ describe('EditorCoachmark', () => {
     await openTour(tree);
 
     // 일정 정보는 눌러 봐도 잃을 것이 없다 - 구멍이 비어 있어야 한다.
-    expect(visibleTexts(tree)).toContain('일정 이름');
+    expect(visibleTexts(tree)).toContain('일정 정보');
     expect(isHoleBlocked(tree)).toBe(false);
 
     await press(tree, '다음 안내');
@@ -382,8 +382,8 @@ describe('EditorCoachmark', () => {
     await act(async () => {
       tree = renderTour(
         <>
-          <FakeTarget id="planName" top={100} />
           <FakeTarget id="planInfo" top={100} />
+          <FakeTarget id="dayTabs" top={100} />
         </>,
       );
     });
@@ -394,7 +394,7 @@ describe('EditorCoachmark', () => {
     await touchAt(tree, 50, 120);
 
     const texts = visibleTexts(tree);
-    expect(texts).toContain('일정 정보');
+    expect(texts).toContain('며칠차 고르기');
     expect(texts).toContain('2 / 2');
   });
 
@@ -403,8 +403,8 @@ describe('EditorCoachmark', () => {
     await act(async () => {
       tree = renderTour(
         <>
-          <FakeTarget id="planName" top={100} />
           <FakeTarget id="planInfo" top={100} />
+          <FakeTarget id="dayTabs" top={100} />
         </>,
       );
     });
@@ -413,7 +413,7 @@ describe('EditorCoachmark', () => {
 
     await touchAt(tree, 300, 400);
 
-    expect(visibleTexts(tree)).toContain('일정 이름');
+    expect(visibleTexts(tree)).toContain('일정 정보');
   });
 
   it('되돌릴 수 없는 단계는 구멍을 눌러도 넘어가지 않는다', async () => {
@@ -421,8 +421,8 @@ describe('EditorCoachmark', () => {
     await act(async () => {
       tree = renderTour(
         <>
-          <FakeTarget id="complete" top={100} />
           <FakeTarget id="undo" top={100} />
+          <FakeTarget id="complete" top={100} />
         </>,
       );
     });
@@ -432,21 +432,22 @@ describe('EditorCoachmark', () => {
     await touchAt(tree, 50, 120);
 
     // 덮여 있으므로 애초에 눌리지도 않지만, 넘어가지도 않아야 한다.
-    expect(visibleTexts(tree)).toContain('일정 완성');
+    expect(visibleTexts(tree)).toContain('되돌리기');
   });
 
   it('판이 창과 어긋나 있어도 짚은 자리를 그대로 두른다', async () => {
     let tree!: renderer.ReactTestRenderer;
     await act(async () => {
       hostTop = -48;
-      tree = renderTour(<FakeTarget id="planName" top={100} />);
+      tree = renderTour(<FakeTarget id="planInfo" top={100} />);
     });
     await settle(tree);
     await openTour(tree);
 
     // 창 기준 100은 판 기준 148이다. 판이 창보다 48만큼 위에서 시작하므로
     // 그만큼 되돌려 놓지 않으면 테두리가 실제 버튼보다 48 위에 그려진다.
-    expect(ringTop(tree)).toBe(148 - 5);
+    // 동그란 버튼은 구멍을 6만큼 넉넉히 뚫는다.
+    expect(ringTop(tree)).toBe(148 - 6);
   });
 
   it('판이 어긋나 있어도 실제 버튼 자리를 누르면 넘어간다', async () => {
@@ -455,8 +456,8 @@ describe('EditorCoachmark', () => {
       hostTop = -48;
       tree = renderTour(
         <>
-          <FakeTarget id="planName" top={100} />
           <FakeTarget id="planInfo" top={100} />
+          <FakeTarget id="dayTabs" top={100} />
         </>,
       );
     });
@@ -465,17 +466,17 @@ describe('EditorCoachmark', () => {
 
     // 손가락 자리는 판 기준으로 들어온다 - 창 기준 자리를 눌러서는 안 넘어간다.
     await touchAt(tree, 50, 120);
-    expect(visibleTexts(tree)).toContain('일정 이름');
+    expect(visibleTexts(tree)).toContain('일정 정보');
 
     await touchAt(tree, 50, 168);
-    expect(visibleTexts(tree)).toContain('일정 정보');
+    expect(visibleTexts(tree)).toContain('며칠차 고르기');
   });
 
   it('가려지는 동안 숨었다가 다시 보이면 같은 단계로 돌아온다', async () => {
     const targets = (
       <>
-        <FakeTarget id="planName" top={100} />
         <FakeTarget id="planInfo" top={100} />
+        <FakeTarget id="dayTabs" top={100} />
       </>
     );
 
@@ -486,14 +487,14 @@ describe('EditorCoachmark', () => {
     await settle(tree);
     await openTour(tree);
     await press(tree, '다음 안내');
-    expect(visibleTexts(tree)).toContain('일정 정보');
+    expect(visibleTexts(tree)).toContain('며칠차 고르기');
 
     // 모달이 덮으면 짚을 자리가 가려진다 - 그동안은 숨는다.
     await act(async () => {
       tree.update(tourTree(targets, false));
       await Promise.resolve();
     });
-    expect(visibleTexts(tree)).not.toContain('일정 정보');
+    expect(visibleTexts(tree)).not.toContain('며칠차 고르기');
 
     // 모달을 닫으면 그 자리를 다시 재서 보던 단계로 돌아온다.
     await act(async () => {
@@ -502,7 +503,7 @@ describe('EditorCoachmark', () => {
       await Promise.resolve();
     });
     const texts = visibleTexts(tree);
-    expect(texts).toContain('일정 정보');
+    expect(texts).toContain('며칠차 고르기');
     expect(texts).toContain('2 / 2');
   });
 });

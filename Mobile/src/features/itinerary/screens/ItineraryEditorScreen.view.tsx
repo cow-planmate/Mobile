@@ -1391,7 +1391,6 @@ export default function ItineraryEditorScreenView({
   const screenInsets = useScreenInsets(true);
 
   // 첫 진입 안내가 짚을 자리들. 대상 쪽에서 이름표를 달아 두면 안내가 찾아간다.
-  const planNameTarget = useCoachmarkTarget('planName');
   const planInfoTarget = useCoachmarkTarget('planInfo');
   const checklistTarget = useCoachmarkTarget('checklist');
   const participantsTarget = useCoachmarkTarget('participants');
@@ -1938,7 +1937,6 @@ export default function ItineraryEditorScreenView({
             </>
           ) : (
             <TouchableOpacity
-              ref={planNameTarget}
               onPress={() => setIsEditingTripName(true)}
               activeOpacity={0.8}
               style={styles.toolbarTitleButton}
@@ -2000,7 +1998,7 @@ export default function ItineraryEditorScreenView({
             active
             targetRef={completeTarget}
           >
-            <Text style={styles.toolbarActionText}>완료</Text>
+            <CheckIcon color={COLORS.white} size={18} />
           </ToolbarIconButton>
         </View>
       </View>
