@@ -29,6 +29,30 @@ jest.mock('@react-navigation/native', () => ({
   useRoute: () => ({ params: mockRouteParams }),
 }));
 
+// 지역 고르는 창은 서버에서 목록을 받아 온다. 이 화면 시험에서는 고른
+// 결과만 있으면 되므로, 고르고 닫는 단추 하나로 세운다.
+jest.mock('../../../../components/common/SearchLocationModal', () => {
+  const rn = require('react-native');
+  const react = require('react');
+  return {
+    __esModule: true,
+    default: ({ visible, onSelect, onDone }: any) =>
+      visible
+        ? react.createElement(
+            rn.TouchableOpacity,
+            {
+              accessibilityLabel: '지역 고르기 확인',
+              onPress: () => {
+                onSelect('속초');
+                onDone?.();
+              },
+            },
+            react.createElement(rn.Text, null, '지역 창'),
+          )
+        : null,
+  };
+});
+
 jest.mock('../../../../contexts/AlertContext', () => ({
   useAlert: () => ({ showAlert: mockShowAlert }),
 }));
@@ -237,6 +261,20 @@ describe('웹에 맞춘 여행기 쓰기 화면', () => {
     return tree!;
   };
 
+  /** 지역 창을 열어 한 곳을 고른다. */
+  const pickRegion = (tree: renderer.ReactTestRenderer) => {
+    act(() =>
+      tree.root
+        .findByProps({ accessibilityLabel: '지역 고르기' })
+        .props.onPress(),
+    );
+    act(() =>
+      tree.root
+        .findByProps({ accessibilityLabel: '지역 고르기 확인' })
+        .props.onPress(),
+    );
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     delete mockRouteParams.postId;
@@ -370,6 +408,78 @@ describe('웹에 맞춘 여행기 쓰기 화면', () => {
     const tree = render();
 
     expect(textsOf(tree)).toContain('당일치기');
+
+    act(() => tree.unmount());
+  });
+
+  it('일정을 고르지 않아도 제목과 지역만 있으면 올릴 수 있다', async () => {
+    mockCreatePostMutateAsync.mockResolvedValue({ id: 7 });
+    const tree = render();
+
+    const inputBy = (placeholder: string) =>
+      tree.root
+        .findAllByType(TextInput)
+        .find(node => node.props.placeholder === placeholder)!;
+
+    act(() =>
+      inputBy('예: 서울 3박 4일 완벽 여행 코스').props.onChangeText(
+        '혼자 걸은 속초',
+      ),
+    );
+    // 서버가 여행기에 지역을 요구하므로, 일정을 안 붙였으면 골라서 넣는다.
+    pickRegion(tree);
+
+    const submit = tree.root.findByProps({
+      accessibilityLabel: '피드 등록하기',
+    });
+    expect(submit.props.disabled).toBe(false);
+
+    await act(async () => {
+      await submit.props.onPress();
+    });
+
+    expect(mockCreatePostMutateAsync).toHaveBeenCalledTimes(1);
+    const payload = mockCreatePostMutateAsync.mock.calls[0][0];
+    expect(payload.title).toBe('혼자 걸은 속초');
+    expect(payload.region).toBe('속초');
+    // 기간은 고른 일수를 그대로 보낸다. 서버가 1일 이상을 요구한다.
+    expect(payload.durationDays).toBe(1);
+    // 일정에서만 나오는 것들은 빠진다.
+    expect(payload.itinerary).toBeUndefined();
+    expect(payload.sourcePlanId).toBeUndefined();
+
+    act(() => tree.unmount());
+  });
+
+  it('제목이나 지역이 비어 있으면 등록 단추를 잠근다', () => {
+    const tree = render();
+    const submit = () =>
+      tree.root.findByProps({ accessibilityLabel: '피드 등록하기' });
+    const inputBy = (placeholder: string) =>
+      tree.root
+        .findAllByType(TextInput)
+        .find(node => node.props.placeholder === placeholder)!;
+
+    expect(submit().props.disabled).toBe(true);
+
+    act(() =>
+      inputBy('예: 서울 3박 4일 완벽 여행 코스').props.onChangeText('제목만'),
+    );
+    // 지역이 비어 있으면 아직 잠겨 있다 - 서버가 받아 주지 않는다.
+    expect(submit().props.disabled).toBe(true);
+
+    pickRegion(tree);
+    expect(submit().props.disabled).toBe(false);
+
+    act(() => tree.unmount());
+  });
+
+  it('붙인 일정은 다시 뺄 수 있다', () => {
+    mockRouteParams.postId = undefined;
+    const tree = render();
+
+    // 일정을 붙이지 않았으면 뺄 것도 없다.
+    expect(textsOf(tree)).not.toContain('빼기');
 
     act(() => tree.unmount());
   });

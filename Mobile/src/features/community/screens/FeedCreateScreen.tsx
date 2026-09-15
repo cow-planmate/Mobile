@@ -23,6 +23,8 @@ import Search from 'lucide-react-native/dist/esm/icons/search';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+// 묶음(index)으로 들어오면 쓰지도 않는 화면들이 딸려 온다.
+import SearchLocationModal from '../../../components/common/SearchLocationModal';
 import { useAlert } from '../../../contexts/AlertContext';
 import { useUserProfile } from '../../../hooks/useUserProfile';
 import { resolveApiUrl } from '../../../utils/apiUrl';
@@ -74,6 +76,13 @@ export default function FeedCreateScreen() {
   const [snapshot, setSnapshot] = useState<FeedPlanSnapshot | null>(null);
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
+  /**
+   * 일정을 붙이지 않았을 때 직접 적는 지역.
+   *
+   * 서버는 여행기에 지역을 요구한다. 일정을 붙이면 거기서 따오지만, 안 붙이면
+   * 따올 데가 없어 사람에게 물어야 한다.
+   */
+  const [region, setRegion] = useState('');
   const [content, setContent] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const initialForm = useRef({ title: '', content: '', thumbnailUrl: '' });
@@ -84,6 +93,14 @@ export default function FeedCreateScreen() {
     useState<FeedImageUploadFile | null>(null);
 
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [isRegionModalOpen, setIsRegionModalOpen] = useState(false);
+  /**
+   * 일정을 붙이지 않았을 때의 여행 일수.
+   *
+   * 서버는 여행기에 1일 이상을 요구한다. 일정을 붙이면 날짜 수에서 나오지만,
+   * 안 붙이면 셀 것이 없어 사람에게 묻는다. 대부분 하루짜리라 1로 시작한다.
+   */
+  const [dayCount, setDayCount] = useState(1);
   const [planSearch, setPlanSearch] = useState('');
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const contentSelection = useRef({ start: 0, end: 0 });
@@ -219,21 +236,27 @@ export default function FeedCreateScreen() {
     message: '작성 중인 여행기가 사라져요. 나갈까요?',
   });
 
+  // 서버는 여행기에 지역을 요구한다. 일정을 붙였으면 거기서 따오고, 아니면
+  // 직접 적은 것을 쓴다.
+  const regionToSend = snapshot?.destinationName ?? region.trim();
+
   const handleSubmit = () =>
     runExclusive(async () => {
-      const canEdit =
-        isEditMode &&
-        existingPost.data?.category === 'feed' &&
-        !!existingPost.data.itinerary;
+      // 일정은 붙여도 되고 안 붙여도 된다. 다녀온 이야기만 적고 싶은 사람에게
+      // 일정부터 고르라고 하면 쓸 자리가 없다.
+      const canEdit = isEditMode && existingPost.data?.category === 'feed';
 
+      // 지역은 새로 쓸 때만 묻는다. 고칠 때는 서버에 이미 있는 것을 그대로 둔다.
       if (
-        (!isEditMode && !snapshot) ||
         (isEditMode && !canEdit) ||
-        !title.trim()
+        !title.trim() ||
+        (!isEditMode && !regionToSend)
       ) {
         showAlert({
           title: '입력 확인',
-          message: '공개할 일정과 여행기 제목을 입력해 주세요.',
+          message: snapshot
+            ? '여행기 제목을 입력해 주세요.'
+            : '여행기 제목과 지역을 입력해 주세요.',
           type: 'error',
         });
         return;
@@ -284,11 +307,13 @@ export default function FeedCreateScreen() {
               content: textToBlocks(contentText),
               contentText,
               thumbnailUrl: resolvedThumbnailUrl,
-              region: snapshot!.destinationName,
-              location: snapshot!.destinationName,
-              durationDays: snapshot!.itinerary.days.length,
-              itinerary: itineraryToSend!,
-              sourcePlanId: snapshot!.planId,
+              region: regionToSend,
+              location: regionToSend,
+              durationDays: snapshot?.itinerary.days.length ?? dayCount,
+              // 일정을 붙이지 않았으면 일정에서만 나오는 것들은 비운다.
+              ...(snapshot
+                ? { itinerary: itineraryToSend, sourcePlanId: snapshot.planId }
+                : {}),
             });
         allowLeave();
         setThumbnailFile(null);
@@ -315,11 +340,11 @@ export default function FeedCreateScreen() {
     });
 
   // 발행 단추가 잠기는 조건. 세 자리(모양·비활성·스크린리더)가 같은 값을 봐야 한다.
+  // 일정은 붙이지 않아도 되므로 제목과 지역만 있으면 열어 둔다.
   const isSubmitBlocked =
-    (!isEditMode && !snapshot) ||
-    (isEditMode &&
-      (!existingPost.data?.itinerary ||
-        existingPost.data.category !== 'feed')) ||
+    !title.trim() ||
+    (!isEditMode && !regionToSend) ||
+    (isEditMode && existingPost.data?.category !== 'feed') ||
     createPost.isPending ||
     updatePost.isPending ||
     isSubmitting;
@@ -351,17 +376,14 @@ export default function FeedCreateScreen() {
         <Text style={styles.section}>여행 정보</Text>
         {/* 수정 중에는 일정을 바꿀 수 없다. 어떤 일정인지는 아래 미리보기 카드가
           이미 다 말하므로, 같은 말을 안내 띠로 한 번 더 하지 않는다. */}
-        <Text style={styles.label}>공개할 일정</Text>
+        <Text style={styles.label}>공개할 일정 (선택)</Text>
         {isEditMode && existingPost.isLoading ? (
           <ActivityIndicator color={tokens.colors.primary} />
         ) : isEditMode &&
           (existingPost.isError ||
-            (existingPost.data &&
-              (existingPost.data.category !== 'feed' ||
-                !existingPost.data.itinerary))) ? (
+            (existingPost.data && existingPost.data.category !== 'feed')) ? (
           <Text style={styles.emptyText}>여행기를 불러올 수 없어요.</Text>
-        ) : isEditMode &&
-          existingPost.data?.itinerary ? null : isProfileLoading ? (
+        ) : isEditMode ? null : isProfileLoading ? (
           <ActivityIndicator color={tokens.colors.primary} />
         ) : isProfileError ? (
           <Pressable onPress={() => refetchProfile()}>
@@ -370,7 +392,9 @@ export default function FeedCreateScreen() {
             </Text>
           </Pressable>
         ) : ownedPlans.length === 0 ? (
-          <Text style={styles.emptyText}>발행할 내 일정이 없어요.</Text>
+          <Text style={styles.emptyText}>
+            발행할 내 일정이 없어요. 일정 없이 글만 올려도 돼요.
+          </Text>
         ) : !snapshot ? (
           <TouchableOpacity
             style={styles.planPickerTrigger}
@@ -389,7 +413,7 @@ export default function FeedCreateScreen() {
               <View>
                 <Text style={styles.planPickerTitle}>내 일정 불러오기</Text>
                 <Text style={styles.planPickerSubtitle}>
-                  공개할 여행 일정을 선택해 주세요
+                  붙이면 읽는 사람이 그대로 가져갈 수 있어요
                 </Text>
               </View>
             </View>
@@ -414,15 +438,27 @@ export default function FeedCreateScreen() {
                 </Text>
               </View>
             </View>
-            <TouchableOpacity
-              style={styles.changePlanButton}
-              onPress={() => setIsPlanModalOpen(true)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="일정 변경"
-            >
-              <Text style={styles.changePlanButtonText}>변경</Text>
-            </TouchableOpacity>
+            <View style={styles.planCardActions}>
+              <TouchableOpacity
+                style={styles.changePlanButton}
+                onPress={() => setIsPlanModalOpen(true)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="일정 변경"
+              >
+                <Text style={styles.changePlanButtonText}>변경</Text>
+              </TouchableOpacity>
+              {/* 붙이지 않아도 되는 것이므로 뺄 자리도 있어야 한다. */}
+              <TouchableOpacity
+                style={styles.changePlanButton}
+                onPress={() => setSnapshot(null)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="일정 빼기"
+              >
+                <Text style={styles.changePlanButtonText}>빼기</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -521,6 +557,65 @@ export default function FeedCreateScreen() {
               </View>
             </TouchableOpacity>
           </View>
+        )}
+
+        {/* 일정을 붙이면 지역과 기간은 거기서 따온다. 안 붙였을 때만 묻는다. */}
+        {!isEditMode && !snapshot && (
+          <>
+            <Text style={[styles.label, styles.labelGap]}>지역</Text>
+            <TouchableOpacity
+              style={styles.planPickerTrigger}
+              onPress={() => setIsRegionModalOpen(true)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="지역 고르기"
+            >
+              <View style={styles.planPickerLeft}>
+                <View style={styles.planPickerIconWrap}>
+                  <MapPin size={normalize(18)} color={tokens.colors.primary} />
+                </View>
+                <View>
+                  <Text style={styles.planPickerTitle}>
+                    {region || '지역 고르기'}
+                  </Text>
+                  <Text style={styles.planPickerSubtitle}>
+                    어디를 다녀왔는지 골라 주세요
+                  </Text>
+                </View>
+              </View>
+              <ChevronRight
+                size={normalize(18)}
+                color={tokens.colors.textTertiary}
+              />
+            </TouchableOpacity>
+
+            <Text style={[styles.label, styles.labelGap]}>여행 기간</Text>
+            <View style={styles.dayCountRow}>
+              <TouchableOpacity
+                style={styles.dayCountButton}
+                onPress={() => setDayCount(current => Math.max(1, current - 1))}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="기간 줄이기"
+              >
+                <Text style={styles.dayCountButtonText}>−</Text>
+              </TouchableOpacity>
+              <Text style={styles.dayCountValue}>
+                {dayCount > 1 ? `${dayCount - 1}박 ${dayCount}일` : '당일치기'}
+              </Text>
+              <TouchableOpacity
+                style={styles.dayCountButton}
+                onPress={() =>
+                  setDayCount(current => Math.min(30, current + 1))
+                }
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="기간 늘리기"
+              >
+                <Text style={styles.dayCountButtonText}>+</Text>
+              </TouchableOpacity>
+            </View>
+          </>
         )}
 
         <Text style={[styles.section, styles.sectionGap]}>기본 정보</Text>
@@ -713,6 +808,16 @@ export default function FeedCreateScreen() {
         />
       </ScrollView>
 
+      {/* 지역은 직접 적지 않고 고른다. 적어 넣으면 같은 곳이 '속초'와
+        '속초시'로 갈라져 지역으로 묶어 보는 자리가 흐트러진다. */}
+      <SearchLocationModal
+        visible={isRegionModalOpen}
+        onClose={() => setIsRegionModalOpen(false)}
+        currentValue={region}
+        onSelect={location => setRegion(location)}
+        onDone={() => setIsRegionModalOpen(false)}
+      />
+
       <Modal
         visible={isPlanModalOpen}
         animationType="slide"
@@ -816,6 +921,8 @@ export default function FeedCreateScreen() {
           }}
           disabled={isSubmitBlocked}
           accessibilityRole="button"
+          // 글자는 '등록 중…'으로 바뀌므로 이름은 따로 박아 둔다.
+          accessibilityLabel={isEditMode ? '수정 완료' : '피드 등록하기'}
           accessibilityState={{ disabled: isSubmitBlocked }}
         >
           <Text
@@ -912,6 +1019,38 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.textLabel,
   },
+  /** 앞 칸과 붙어 보이지 않게 한 칸 더 띄운다. */
+  labelGap: { marginTop: normalize(16) },
+  dayCountRow: {
+    marginTop: normalize(8),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: normalize(14),
+    paddingVertical: normalize(10),
+    borderRadius: normalize(12),
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.white,
+  },
+  dayCountButton: {
+    width: normalize(34),
+    height: normalize(34),
+    borderRadius: normalize(10),
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.surface,
+  },
+  dayCountButtonText: {
+    fontSize: normalize(18),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+  },
+  dayCountValue: {
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+  },
   planPickerTrigger: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -986,6 +1125,11 @@ const styles = StyleSheet.create({
     fontSize: normalize(12),
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.primary,
+  },
+  planCardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(6),
   },
   changePlanButton: {
     paddingHorizontal: normalize(12),
