@@ -45,6 +45,7 @@ import PlaceRecommendationList, {
   PLACE_TABS,
   type PlaceTab,
 } from '../components/PlaceRecommendationList';
+import PlaceDragGhost from '../components/PlaceDragGhost';
 import { findDropSlot } from '../utils/dropSlot';
 import { Day } from '../../../contexts/ItineraryContext';
 import { PLAN_NAME_MAX_LENGTH, SimpleWeatherInfo } from '../../../api/trips';
@@ -1433,6 +1434,11 @@ export default function ItineraryEditorScreenView({
     'startTime' | 'endTime'
   > | null>(null);
   const [dropBlocked, setDropBlocked] = useState(false);
+  // 손끝에 들린 카드가 따라갈 자리. 손이 움직일 때마다 다시 그리면 목록이
+  // 통째로 다시 그려지므로 상태 대신 공유값으로 둔다.
+  const dragX = useSharedValue(0);
+  const dragY = useSharedValue(0);
+  const dragLift = useSharedValue(0);
   const [isTimelineItemDragging, setIsTimelineItemDragging] = useState(false);
   const handleTimelineItemDragStart = useCallback(
     () => setIsTimelineItemDragging(true),
@@ -1793,9 +1799,18 @@ export default function ItineraryEditorScreenView({
   const draggingRef = useRef<Omit<Place, 'startTime' | 'endTime'> | null>(null);
 
   const handlePickUpPlace = useCallback(
-    (place: Omit<Place, 'startTime' | 'endTime'>, _absoluteY: number) => {
+    (
+      place: Omit<Place, 'startTime' | 'endTime'>,
+      absoluteY: number,
+      absoluteX: number,
+    ) => {
       draggingRef.current = place;
       setDraggingPlace(place);
+      // 카드는 집힌 자리에서 그대로 떠오른다 - 튀어 들어오면 어디서 온 것인지
+      // 알 수 없다.
+      dragX.value = absoluteX;
+      dragY.value = absoluteY;
+      dragLift.value = withTiming(1, { duration: 140 });
       handleAddPlace(place);
       measureGrid();
       // 높이를 줄이면 목록이 짜부라지며 집고 있던 손가락이 끊긴다.
@@ -1805,28 +1820,36 @@ export default function ItineraryEditorScreenView({
         easing: Easing.out(Easing.cubic),
       });
     },
-    [handleAddPlace, sheetShift, measureGrid],
+    [handleAddPlace, sheetShift, measureGrid, dragX, dragY, dragLift],
   );
 
   const handleDragPlace = useCallback(
-    (absoluteY: number) => {
+    (absoluteY: number, absoluteX: number) => {
+      dragX.value = absoluteX;
+      dragY.value = absoluteY;
       previewAt(absoluteY);
     },
-    [previewAt],
+    [previewAt, dragX, dragY],
   );
 
   const restoreSheet = useCallback(() => {
     draggingRef.current = null;
-    setDraggingPlace(null);
+    // 카드는 오므라들며 사라진 뒤에 치운다. 곧바로 지우면 놓은 자리에서
+    // 툭 없어져 무엇이 어디로 갔는지 남지 않는다.
+    dragLift.value = withTiming(0, { duration: 180 }, done => {
+      if (done) runOnJS(setDraggingPlace)(null);
+    });
     setDropBlocked(false);
     sheetShift.value = withTiming(0, {
       duration: 260,
       easing: Easing.out(Easing.cubic),
     });
-  }, [sheetShift]);
+  }, [sheetShift, dragLift]);
 
   const handleDropPlace = useCallback(
-    (absoluteY: number) => {
+    (absoluteY: number, absoluteX: number) => {
+      dragX.value = absoluteX;
+      dragY.value = absoluteY;
       const minutes = previewAt(absoluteY);
       const place = draggingRef.current;
       if (minutes === null || !place) {
@@ -1837,7 +1860,7 @@ export default function ItineraryEditorScreenView({
       }
       restoreSheet();
     },
-    [previewAt, onPlaceAt, onCancelPlacement, restoreSheet],
+    [previewAt, onPlaceAt, onCancelPlacement, restoreSheet, dragX, dragY],
   );
 
   const handleCancelPickUp = useCallback(() => {
@@ -1863,16 +1886,16 @@ export default function ItineraryEditorScreenView({
   };
 
   const onPickUpStable = useCallback(
-    (place: Omit<Place, 'startTime' | 'endTime'>, y: number) =>
-      dragCallbacks.current.pickUp(place, y),
+    (place: Omit<Place, 'startTime' | 'endTime'>, y: number, x: number) =>
+      dragCallbacks.current.pickUp(place, y, x),
     [],
   );
   const onDragStable = useCallback(
-    (y: number) => dragCallbacks.current.drag(y),
+    (y: number, x: number) => dragCallbacks.current.drag(y, x),
     [],
   );
   const onDropStable = useCallback(
-    (y: number) => dragCallbacks.current.drop(y),
+    (y: number, x: number) => dragCallbacks.current.drop(y, x),
     [],
   );
   const onCancelStable = useCallback(() => dragCallbacks.current.cancel(), []);
@@ -2229,6 +2252,15 @@ export default function ItineraryEditorScreenView({
           onConfirm={onConfirmTimePicker}
         />
       )}
+
+      {/* 집은 장소가 손끝에 들려 시간표까지 따라간다. 화면 맨 위에 얹어야
+          시트와 시간표 어느 쪽 위로도 지나갈 수 있다. */}
+      <PlaceDragGhost
+        place={draggingPlace}
+        x={dragX}
+        y={dragY}
+        lift={dragLift}
+      />
 
       <ScheduleEditModal
         visible={isScheduleEditVisible}

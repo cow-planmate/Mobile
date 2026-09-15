@@ -264,9 +264,10 @@ const PickUpPlaceRow = React.memo(function PickUpPlaceRow({
   onPickUp: (
     place: Omit<Place, 'startTime' | 'endTime'>,
     absoluteY: number,
+    absoluteX: number,
   ) => void;
-  onDrag?: (absoluteY: number) => void;
-  onDrop?: (absoluteY: number) => void;
+  onDrag?: (absoluteY: number, absoluteX: number) => void;
+  onDrop?: (absoluteY: number, absoluteX: number) => void;
   onCancel?: () => void;
 }) {
   const [held, setHeld] = useState(false);
@@ -295,13 +296,13 @@ const PickUpPlaceRow = React.memo(function PickUpPlaceRow({
         pressScale.value = withTiming(1, { duration: 120 });
         hapticTick();
         setHeld(true);
-        latest.current.onPickUp(latest.current.place, e.absoluteY);
+        latest.current.onPickUp(latest.current.place, e.absoluteY, e.absoluteX);
       })
       .onUpdate(e => {
-        latest.current.onDrag?.(e.absoluteY);
+        latest.current.onDrag?.(e.absoluteY, e.absoluteX);
       })
       .onEnd(e => {
-        latest.current.onDrop?.(e.absoluteY);
+        latest.current.onDrop?.(e.absoluteY, e.absoluteX);
       })
       .onFinalize((_e, success) => {
         pressScale.value = withTiming(1, { duration: 120 });
@@ -340,13 +341,19 @@ interface PlaceRecommendationListProps {
 
   /** 짧게 누르기 — 상세 보기 */
   onPressPlace?: (place: Omit<Place, 'startTime' | 'endTime'>) => void;
-  /** 꾹 눌러 집기 — 이후 onDragPlace/onDropPlace가 화면 좌표로 이어진다 */
+  /**
+   * 꾹 눌러 집기 — 이후 onDragPlace/onDropPlace가 화면 좌표로 이어진다.
+   *
+   * 세로가 먼저다. 놓일 자리를 정하는 건 세로뿐이고, 가로는 손끝에 들린
+   * 카드가 손을 따라가는 데에만 쓴다.
+   */
   onPickUpPlace?: (
     place: Omit<Place, 'startTime' | 'endTime'>,
     absoluteY: number,
+    absoluteX: number,
   ) => void;
-  onDragPlace?: (absoluteY: number) => void;
-  onDropPlace?: (absoluteY: number) => void;
+  onDragPlace?: (absoluteY: number, absoluteX: number) => void;
+  onDropPlace?: (absoluteY: number, absoluteX: number) => void;
   onCancelPickUp?: () => void;
 }
 
@@ -520,17 +527,21 @@ export default function PlaceRecommendationList({
   const [isDraggingPlace, setIsDraggingPlace] = useState(false);
 
   const beginDrag = useCallback(
-    (place: Omit<Place, 'startTime' | 'endTime'>, absoluteY: number) => {
+    (
+      place: Omit<Place, 'startTime' | 'endTime'>,
+      absoluteY: number,
+      absoluteX: number,
+    ) => {
       setIsDraggingPlace(true);
-      onPickUpPlace?.(place, absoluteY);
+      onPickUpPlace?.(place, absoluteY, absoluteX);
     },
     [onPickUpPlace],
   );
 
   const endDrag = useCallback(
-    (absoluteY: number) => {
+    (absoluteY: number, absoluteX: number) => {
       setIsDraggingPlace(false);
-      onDropPlace?.(absoluteY);
+      onDropPlace?.(absoluteY, absoluteX);
     },
     [onDropPlace],
   );
