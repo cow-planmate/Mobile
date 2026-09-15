@@ -54,6 +54,27 @@ export function measureTarget(
 }
 
 /**
+ * 창 기준으로 잰 자리를 안내가 그려지는 판 기준으로 옮겨 적는다.
+ *
+ * measureInWindow가 돌려주는 값은 '창' 기준인데 안내는 화면 위에 깔린 판 안에
+ * 그려지고, 손가락 자리도 그 판 기준으로 들어온다. 안드로이드에서 이 둘이
+ * 상태바 높이만큼 어긋난다 - targetSdk 36부터 화면이 상태바 아래까지 깔리는데
+ * measureInWindow는 여전히 상태바를 뺀 자리를 돌려준다. 그대로 두면 짚어 준
+ * 테두리가 실제 버튼보다 상태바 높이만큼 위에 그려지고, 눌렀는지도 그만큼
+ * 어긋난 자리에서 따진다.
+ *
+ * 판을 같은 자로 재서 빼면 두 자가 같아진다. 판이 창 왼쪽 위에 딱 붙어 있는
+ * iOS에서는 빼도 그대로다. 판을 재지 못하면 잰 값을 그냥 쓴다.
+ */
+export function toHostRect(
+  rect: CoachmarkRect | null,
+  host: CoachmarkRect | null,
+): CoachmarkRect | null {
+  if (!rect || !host) return rect;
+  return { ...rect, x: rect.x - host.x, y: rect.y - host.y };
+}
+
+/**
  * 구멍은 짚은 것보다 조금 넉넉하다. 안내가 뚫는 자리와 "여기를 눌렀는가"를
  * 가리는 자리가 같아야 하므로, 그 여백을 한곳에서 정해 둘이 같이 쓴다.
  */

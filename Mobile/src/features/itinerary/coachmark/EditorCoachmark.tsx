@@ -8,6 +8,7 @@ import {
   isInside,
   isRectVisible,
   measureTarget,
+  toHostRect,
   type CoachmarkRect,
 } from './measureTarget';
 
@@ -72,21 +73,19 @@ export default function EditorCoachmark({ enabled }: EditorCoachmarkProps) {
     if (plan || !enabled) return;
 
     let alive = true;
-    Promise.all(
-      EDITOR_COACHMARK_STEPS.map(step =>
-        measureTarget(registry?.resolve(step.target) ?? null).then(
-          measured => ({
-            step,
-            rect: measured,
-          }),
-        ),
+    // 판도 함께 잰다. 열세 자리를 모두 이 판 기준으로 옮겨 적어야 한다.
+    Promise.all([
+      measureTarget(registry?.resolveHost() ?? null),
+      ...EDITOR_COACHMARK_STEPS.map(step =>
+        measureTarget(registry?.resolve(step.target) ?? null),
       ),
-    ).then(measured => {
+    ]).then(([host, ...measured]) => {
       if (!alive) return;
 
-      const planned = measured
-        .filter(entry => entry.rect && isRectVisible(entry.rect, width, height))
-        .map(entry => entry.step);
+      const planned = EDITOR_COACHMARK_STEPS.filter((_, i) => {
+        const local = toHostRect(measured[i], host);
+        return local && isRectVisible(local, width, height);
+      });
 
       // 하나도 재지 못했으면 빈 안내를 띄우는 대신 조용히 닫는다.
       // 단추는 그대로 있으니 다시 누르면 된다.
@@ -127,10 +126,14 @@ export default function EditorCoachmark({ enabled }: EditorCoachmarkProps) {
     }
 
     let alive = true;
-    measureTarget(registry?.resolve(step.target) ?? null).then(measured => {
+    Promise.all([
+      measureTarget(registry?.resolve(step.target) ?? null),
+      measureTarget(registry?.resolveHost() ?? null),
+    ]).then(([measured, host]) => {
       if (!alive) return;
-      if (measured && isRectVisible(measured, width, height)) {
-        setRect(measured);
+      const local = toHostRect(measured, host);
+      if (local && isRectVisible(local, width, height)) {
+        setRect(local);
         return;
       }
       // 사라진 자리는 짚을 수 없다. 마지막이었으면 여기서 끝낸다.

@@ -1,5 +1,9 @@
 import React, { useEffect } from 'react';
 import { Text, View } from 'react-native';
+
+type MeasureInWindow = (
+  cb: (x: number, y: number, width: number, height: number) => void,
+) => void;
 import { Path } from 'react-native-svg';
 import renderer, { act } from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -45,9 +49,36 @@ const tourTree = (children: React.ReactNode, enabled: boolean = true) => (
   </CoachmarkProvider>
 );
 
+/**
+ * 안내가 그려지는 판이 창 어디에 놓여 있는지.
+ *
+ * 테스트용 View는 제 자리를 재지 못하므로 여기서 대신 대답하게 한다. 0이면
+ * 판과 창이 겹쳐 있는 것이고, 음수면 판이 창보다 위에서 시작한다 - 안드로이드는
+ * 화면이 상태바 아래까지 깔리는데 measureInWindow는 상태바를 뺀 자리를
+ * 돌려주어 실제로 이렇게 잡힌다.
+ */
+let hostTop = 0;
+
 function renderTour(children: React.ReactNode) {
   return renderer.create(tourTree(children));
 }
+
+/** 짚은 자리를 두르는 흰 테두리가 놓인 곳. */
+const ringTop = (tree: renderer.ReactTestRenderer) => {
+  const ring = tree.root.find(node => {
+    if (node.type !== View) return false;
+    const style = Array.isArray(node.props.style)
+      ? node.props.style
+      : [node.props.style];
+    return style.some(
+      entry => entry?.borderColor === 'rgba(255, 255, 255, 0.95)',
+    );
+  });
+  const style = Array.isArray(ring.props.style)
+    ? Object.assign({}, ...ring.props.style)
+    : ring.props.style;
+  return style.top;
+};
 
 /** '1 / 2'처럼 조각으로 나뉘어 들어온 children도 한 줄로 이어 붙인다. */
 const visibleTexts = (tree: renderer.ReactTestRenderer): string[] =>
@@ -115,6 +146,10 @@ const openTour = async (tree: renderer.ReactTestRenderer) => {
 describe('EditorCoachmark', () => {
   beforeEach(() => {
     jest.useFakeTimers();
+    hostTop = 0;
+    (
+      View.prototype as unknown as { measureInWindow: MeasureInWindow }
+    ).measureInWindow = cb => cb(0, hostTop, 360, 800);
     storage.getItem.mockReset().mockResolvedValue(null);
     storage.setItem.mockReset().mockResolvedValue(undefined);
   });
@@ -331,7 +366,7 @@ describe('EditorCoachmark', () => {
     await settle(tree);
     await openTour(tree);
 
-    // 일정 이름은 눌러 봐도 잃을 것이 없다 - 구멍이 비어 있어야 한다.
+    // 일정 정보는 눌러 봐도 잃을 것이 없다 - 구멍이 비어 있어야 한다.
     expect(visibleTexts(tree)).toContain('일정 이름');
     expect(isHoleBlocked(tree)).toBe(false);
 
@@ -398,6 +433,42 @@ describe('EditorCoachmark', () => {
 
     // 덮여 있으므로 애초에 눌리지도 않지만, 넘어가지도 않아야 한다.
     expect(visibleTexts(tree)).toContain('일정 완성');
+  });
+
+  it('판이 창과 어긋나 있어도 짚은 자리를 그대로 두른다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      hostTop = -48;
+      tree = renderTour(<FakeTarget id="planName" top={100} />);
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    // 창 기준 100은 판 기준 148이다. 판이 창보다 48만큼 위에서 시작하므로
+    // 그만큼 되돌려 놓지 않으면 테두리가 실제 버튼보다 48 위에 그려진다.
+    expect(ringTop(tree)).toBe(148 - 5);
+  });
+
+  it('판이 어긋나 있어도 실제 버튼 자리를 누르면 넘어간다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      hostTop = -48;
+      tree = renderTour(
+        <>
+          <FakeTarget id="planName" top={100} />
+          <FakeTarget id="planInfo" top={100} />
+        </>,
+      );
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    // 손가락 자리는 판 기준으로 들어온다 - 창 기준 자리를 눌러서는 안 넘어간다.
+    await touchAt(tree, 50, 120);
+    expect(visibleTexts(tree)).toContain('일정 이름');
+
+    await touchAt(tree, 50, 168);
+    expect(visibleTexts(tree)).toContain('일정 정보');
   });
 
   it('가려지는 동안 숨었다가 다시 보이면 같은 단계로 돌아온다', async () => {

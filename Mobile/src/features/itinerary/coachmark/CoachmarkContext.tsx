@@ -27,6 +27,15 @@ export interface MeasurableNode {
 interface CoachmarkRegistry {
   register: (id: CoachmarkTargetId, node: MeasurableNode | null) => void;
   resolve: (id: CoachmarkTargetId) => MeasurableNode | null;
+  /**
+   * 안내가 그려지는 판. 짚을 자리를 이 판 기준으로 옮겨 적는 데 쓴다.
+   *
+   * measureInWindow는 '창' 기준 자리를 돌려주는데 안내는 이 판 안에 그려진다.
+   * 안드로이드에서 둘이 상태바 높이만큼 어긋난다 - targetSdk 36부터 화면이
+   * 상태바 아래까지 깔리지만 measureInWindow는 여전히 상태바를 뺀 자리를
+   * 돌려주기 때문이다. 판도 같은 자로 재서 빼면 두 자가 같아진다.
+   */
+  resolveHost: () => MeasurableNode | null;
 }
 
 const CoachmarkContext = createContext<CoachmarkRegistry | null>(null);
@@ -101,6 +110,11 @@ export function CoachmarkProvider({ children }: { children: React.ReactNode }) {
     [isRunning, openTour, closeTour, watchTouch],
   );
 
+  const hostNode = useRef<MeasurableNode | null>(null);
+  const attachHost = useCallback((node: unknown) => {
+    hostNode.current = isMeasurable(node) ? node : null;
+  }, []);
+
   const registry = useMemo<CoachmarkRegistry>(
     () => ({
       register(id, node) {
@@ -113,6 +127,9 @@ export function CoachmarkProvider({ children }: { children: React.ReactNode }) {
       resolve(id) {
         return nodes.get(id) ?? null;
       },
+      resolveHost() {
+        return hostNode.current;
+      },
     }),
     [nodes],
   );
@@ -121,6 +138,7 @@ export function CoachmarkProvider({ children }: { children: React.ReactNode }) {
     <CoachmarkContext.Provider value={registry}>
       <CoachmarkTourContext.Provider value={tour}>
         <View
+          ref={attachHost}
           style={styles.host}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
