@@ -249,7 +249,8 @@ export const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.text,
   },
-  placeAddr: {
+  /** 어떤 곳인지 적는 줄. 두 줄까지만 보이고 넘치면 잘린다. */
+  placeLine: {
     fontSize: normalize(10.5),
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.textTertiary,
@@ -339,11 +340,14 @@ export const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.textLabel,
   },
-  previewMore: {
-    paddingLeft: normalize(86),
+  previewDay: {
+    gap: normalize(5),
+  },
+  /** 며칠차인지. 이틀 이상일 때만 붙어 같은 시각이 두 번 나오는 것을 가른다. */
+  previewDayLabel: {
     fontSize: normalize(10.5),
-    fontFamily: tokens.fontFamily.medium,
-    color: tokens.colors.textTertiary,
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.primary,
   },
   previewHint: {
     paddingHorizontal: normalize(11),

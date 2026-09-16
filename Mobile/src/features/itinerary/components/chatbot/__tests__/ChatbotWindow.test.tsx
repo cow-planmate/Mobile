@@ -121,6 +121,88 @@ describe('AI 여행 도우미', () => {
     act(() => tree.unmount());
   });
 
+  it('미리보기에 바뀌는 장소를 하나도 숨기지 않는다', async () => {
+    const block = (hour: number, name: string, date: string) => ({
+      blockId: `${date}-${hour}`,
+      date,
+      blockStartTime: `${String(hour).padStart(2, '0')}:00:00`,
+      blockEndTime: `${String(hour + 1).padStart(2, '0')}:00:00`,
+      placeName: name,
+    });
+    mockAsk.mockResolvedValue({
+      userMessage: '이렇게 바꿔볼까요?',
+      plan: {
+        planFrame: { planName: '제주 2박 3일' },
+        timetables: [{}, {}],
+        placeBlocks: [
+          block(9, '성산일출봉', '2026-09-20'),
+          block(11, '섭지코지', '2026-09-20'),
+          block(14, '우도', '2026-09-20'),
+          block(17, '흑돼지 거리', '2026-09-20'),
+          block(9, '한라산', '2026-09-21'),
+        ],
+      },
+    });
+    const tree = render();
+
+    await pressLabel(tree, '첫째 날 동선을 더 짧게 정리해 줘');
+
+    const shown = texts(tree);
+    // 앞의 셋만 보여 주면 미리보기가 아니다.
+    ['성산일출봉', '섭지코지', '우도', '흑돼지 거리', '한라산'].forEach(name =>
+      expect(shown).toContain(name),
+    );
+    expect(shown.some(text => text.startsWith('외 '))).toBe(false);
+    // 이틀치가 섞이면 같은 시각이 두 번 나온다 - 며칠차인지 앞에 단다.
+    expect(shown).toContain('1일차 · 09.20');
+    expect(shown).toContain('2일차 · 09.21');
+    act(() => tree.unmount());
+  });
+
+  it('추천 카드에는 주소 대신 어떤 곳인지를 적는다', async () => {
+    mockAsk.mockResolvedValue({
+      userMessage: '이런 곳은 어때요?',
+      shownPlaces: [
+        {
+          contentId: '1',
+          title: '전주콩나물해장국',
+          category: 'RESTAURANT',
+          addr1: '서울특별시 종로구 자하문로 3',
+          overview: '따뜻한 뚝배기에 담겨 나오는 콩나물 국밥 전문점이다.',
+          firstMenu: '콩나물국밥',
+          openTime: '06:00~20:30',
+        },
+        // 소개가 없으면 갈래별 대표 한 줄로 메운다.
+        {
+          contentId: '2',
+          title: '서촌계단집',
+          category: 'RESTAURANT',
+          addr1: '서울특별시 종로구 자하문로1길',
+          firstMenu: '돼지갈비',
+          openTime: '16:00~23:00',
+        },
+        // 둘 다 없을 때만 주소가 남는다.
+        {
+          contentId: '3',
+          title: '이름만 아는 집',
+          category: 'RESTAURANT',
+          addr1: '서울특별시 종로구 사직로',
+        },
+      ],
+    });
+    const tree = render();
+
+    await pressLabel(tree, '근처 맛집을 몇 곳 추천해 줘');
+
+    const shown = texts(tree);
+    expect(shown).toContain('따뜻한 뚝배기에 담겨 나오는 콩나물 국밥 전문점이다.');
+    // 소개가 있는 곳에 주소를 겹쳐 적지 않는다.
+    expect(shown).not.toContain('서울특별시 종로구 자하문로 3');
+    expect(shown).toContain('돼지갈비 · 16:00~23:00');
+    expect(shown).toContain('서울특별시 종로구 사직로');
+    act(() => tree.unmount());
+  });
+
   it('제안 취소는 서버를 부르지 않고 미리보기만 걷는다', async () => {
     mockAsk.mockResolvedValue({ userMessage: '이렇게요', plan: samplePlan });
     const tree = render();

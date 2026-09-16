@@ -194,6 +194,51 @@ function PlaceThumb({ uri }: { uri?: string | null }) {
 const planName = (plan: ChatbotPlan) =>
   plan.planFrame?.planName ?? plan.planFrame?.name ?? '일정 변경 제안';
 
+/**
+ * 미리보기를 날짜별로 묶는다.
+ *
+ * 모든 장소를 한 줄로 늘어놓으면 이틀치가 섞여 같은 시각이 두 번 나온다.
+ * 며칠차인지 앞에 달아 두면 그대로 읽힌다. 하루짜리면 묶음 이름을 달지 않는다.
+ */
+const byDate = (blocks: ChatbotPlanBlock[]) => {
+  const days = new Map<string, ChatbotPlanBlock[]>();
+  blocks.forEach(block => {
+    const date = block.date ?? '';
+    const day = days.get(date);
+    if (day) day.push(block);
+    else days.set(date, [block]);
+  });
+  return [...days].map(([date, dayBlocks]) => ({ date, blocks: dayBlocks }));
+};
+
+/** '1일차 · 09.20'. 날짜를 모르면 며칠차인지만 적는다. */
+const dayLabel = (date: string, index: number) => {
+  const monthDay = date.slice(5, 10).replace('-', '.');
+  return monthDay ? `${index + 1}일차 · ${monthDay}` : `${index + 1}일차`;
+};
+
+/**
+ * 추천 카드의 셋째 줄.
+ *
+ * 주소 대신 어떤 곳인지를 적는다 - 고를 때 필요한 것은 그것이고, 주소는 담고
+ * 나면 시간표에서 다시 보인다. 소개가 없는 곳은 갈래별 대표 한 줄(대표 메뉴와
+ * 영업시간, 이용 시간, 체크인)로, 그것도 없으면 주소로 메운다.
+ */
+const placeLine = (place: ChatbotPlace) => {
+  const overview = place.overview?.trim();
+  if (overview) return overview;
+
+  const headline = [
+    place.firstMenu,
+    place.openTime ?? place.useTime ?? place.checkInTime,
+  ]
+    .map(part => part?.trim())
+    .filter(Boolean)
+    .join(' · ');
+
+  return headline || place.addr1?.trim() || '소개 정보 없음';
+};
+
 const blockTime = (block: ChatbotPlanBlock) => {
   const start = block.blockStartTime?.slice(0, 5);
   const end = block.blockEndTime?.slice(0, 5);
@@ -387,6 +432,8 @@ export default function ChatbotWindow({
   if (!visible) return null;
 
   const blocks = pendingPlan?.placeBlocks ?? [];
+  // 앞의 몇 개만 보여 주면 미리보기가 아니다 - 무엇이 바뀌는지 다 보여 준다.
+  const previewDays = byDate(blocks);
   const dayCount = pendingPlan?.timetables?.length ?? 0;
   const isBusy = isSending || isApplying;
   const canSend = canUse && !!input.trim() && !isBusy;
@@ -522,8 +569,8 @@ export default function ChatbotWindow({
                           <Text style={styles.placeTitle} numberOfLines={1}>
                             {segment.place.title}
                           </Text>
-                          <Text style={styles.placeAddr} numberOfLines={2}>
-                            {segment.place.addr1 || '주소 정보 없음'}
+                          <Text style={styles.placeLine} numberOfLines={2}>
+                            {placeLine(segment.place)}
                           </Text>
                         </View>
                       </View>
@@ -613,24 +660,34 @@ export default function ChatbotWindow({
 
                 {blocks.length > 0 && (
                   <View style={styles.previewBlocks}>
-                    {blocks.slice(0, 3).map((block, index) => (
+                    {previewDays.map((day, dayIndex) => (
                       <View
-                        key={`${block.blockId ?? index}-${block.date ?? ''}`}
-                        style={styles.previewBlockRow}
+                        key={day.date || dayIndex}
+                        style={styles.previewDay}
                       >
-                        <Text style={styles.previewBlockTime}>
-                          {blockTime(block)}
-                        </Text>
-                        <Text style={styles.previewBlockName} numberOfLines={1}>
-                          {block.placeName}
-                        </Text>
+                        {previewDays.length > 1 && (
+                          <Text style={styles.previewDayLabel}>
+                            {dayLabel(day.date, dayIndex)}
+                          </Text>
+                        )}
+                        {day.blocks.map((block, index) => (
+                          <View
+                            key={`${block.blockId ?? index}-${day.date}`}
+                            style={styles.previewBlockRow}
+                          >
+                            <Text style={styles.previewBlockTime}>
+                              {blockTime(block)}
+                            </Text>
+                            <Text
+                              style={styles.previewBlockName}
+                              numberOfLines={1}
+                            >
+                              {block.placeName}
+                            </Text>
+                          </View>
+                        ))}
                       </View>
                     ))}
-                    {blocks.length > 3 && (
-                      <Text style={styles.previewMore}>
-                        외 {blocks.length - 3}개 장소
-                      </Text>
-                    )}
                   </View>
                 )}
 

@@ -25,6 +25,18 @@ export interface ChatbotPlace {
   category?: string | null;
   addr1?: string | null;
   thumbnailUrl?: string | null;
+  /**
+   * 어떤 곳인지 적은 소개 전문. 중계가 추천할 때마다 붙여 준다.
+   *
+   * 주소만 적어 두면 고르는 데 쓸 것이 없다 - 주소는 담고 나면 시간표에서
+   * 다시 보인다. 카드에는 이것을 먼저 쓴다.
+   */
+  overview?: string | null;
+  /** 갈래마다 오는 대표 한 줄. 있는 것만 온다 - 소개가 없을 때 대신 쓴다. */
+  firstMenu?: string | null;
+  openTime?: string | null;
+  useTime?: string | null;
+  checkInTime?: string | null;
 }
 
 export interface ChatbotPlanBlock {
