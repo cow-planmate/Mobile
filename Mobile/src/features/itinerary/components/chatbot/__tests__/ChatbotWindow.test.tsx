@@ -26,6 +26,21 @@ const texts = (tree: renderer.ReactTestRenderer): string[] =>
     .filter(child => typeof child === 'string' || typeof child === 'number')
     .map(String);
 
+/** 입력창에 적어 보낸다. 권하는 말 단추는 첫 마디에만 뜨므로 두 번째부터는 이 길이다. */
+const sendTyped = async (tree: renderer.ReactTestRenderer, text: string) => {
+  await act(async () => {
+    tree.root
+      .findByProps({ accessibilityLabel: 'AI 도우미에게 보낼 말' })
+      .props.onChangeText(text);
+  });
+  await act(async () => {
+    await tree.root
+      .findAllByType(TouchableOpacity)
+      .find(node => node.props.accessibilityLabel === '메시지 보내기')!
+      .props.onPress();
+  });
+};
+
 const pressLabel = async (tree: renderer.ReactTestRenderer, label: string) => {
   await act(async () => {
     await tree.root
@@ -251,6 +266,68 @@ describe('AI 여행 도우미', () => {
     act(() => tree.unmount());
   });
 
+  it('반영한 제안도 대화에 그대로 남는다', async () => {
+    mockAsk.mockResolvedValue({
+      userMessage: '이렇게 바꿔볼까요?',
+      plan: samplePlan,
+    });
+    const tree = render();
+
+    await pressLabel(tree, '첫째 날 동선을 더 짧게 정리해 줘');
+    await pressLabel(tree, '이 일정에 반영');
+
+    const shown = texts(tree);
+    // 무엇을 반영했는지가 대화에 남아야 나중에 일정이 왜 이렇게 됐는지 읽힌다.
+    expect(shown).toContain('성산일출봉');
+    expect(shown).toContain('일정에 반영함');
+    expect(shown).not.toContain('아직 미반영');
+    // 이미 반영한 것을 또 반영할 수는 없다.
+    expect(
+      tree.root
+        .findAllByType(TouchableOpacity)
+        .some(node => node.props.accessibilityLabel === '이 일정에 반영'),
+    ).toBe(false);
+    act(() => tree.unmount());
+  });
+
+  it('새 제안이 오면 앞의 제안은 무엇에 이어졌는지만 남는다', async () => {
+    mockAsk.mockResolvedValue({
+      userMessage: '이렇게 바꿔볼까요?',
+      plan: samplePlan,
+    });
+    const tree = render();
+
+    await pressLabel(tree, '첫째 날 동선을 더 짧게 정리해 줘');
+    mockAsk.mockResolvedValue({
+      userMessage: '다시 짜봤어요.',
+      plan: {
+        ...samplePlan,
+        placeBlocks: [
+          {
+            blockId: 2,
+            blockStartTime: '13:00:00',
+            blockEndTime: '14:00:00',
+            placeName: '우도',
+          },
+        ],
+      },
+    });
+    await sendTyped(tree, '다시 짜 줘');
+
+    const shown = texts(tree);
+    // 앞의 제안을 지우지 않는다 - 무엇을 거쳐 여기까지 왔는지가 기록이다.
+    expect(shown).toContain('성산일출봉');
+    expect(shown).toContain('우도');
+    expect(shown).toContain('다음 제안으로 이어짐');
+    // 누를 수 있는 것은 마지막 제안 하나뿐이다.
+    expect(
+      tree.root
+        .findAllByType(TouchableOpacity)
+        .filter(node => node.props.accessibilityLabel === '이 일정에 반영'),
+    ).toHaveLength(1);
+    act(() => tree.unmount());
+  });
+
   it('제안 취소는 서버를 부르지 않고 미리보기만 걷는다', async () => {
     mockAsk.mockResolvedValue({ userMessage: '이렇게요', plan: samplePlan });
     const tree = render();
@@ -260,6 +337,9 @@ describe('AI 여행 도우미', () => {
 
     expect(mockApply).not.toHaveBeenCalled();
     expect(texts(tree)).not.toContain('아직 미반영');
+    // 걷어 내는 것은 단추뿐이다 - 무엇을 받았다 취소했는지는 남는다.
+    expect(texts(tree)).toContain('취소함');
+    expect(texts(tree)).toContain('성산일출봉');
     expect(texts(tree)).toContain(
       '변경 제안을 취소했어요. 현재 저장된 일정은 그대로예요.',
     );

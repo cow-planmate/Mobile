@@ -62,6 +62,22 @@ interface Notice {
   text: string;
 }
 
+/**
+ * 받아 둔 제안이 그 뒤로 어떻게 됐는지.
+ *
+ * 반영하거나 취소하면 제안이 사라지던 것을, 처지만 바꿔 대화에 남긴다.
+ * 무엇을 받아 무엇을 반영했는지가 대화 순서 그대로 남아야 나중에 돌아봤을 때
+ * 일정이 왜 이렇게 됐는지 읽힌다.
+ */
+type PlanState = 'pending' | 'applied' | 'discarded' | 'superseded';
+
+const PLAN_BADGE: Record<PlanState, string> = {
+  pending: '아직 미반영',
+  applied: '일정에 반영함',
+  discarded: '취소함',
+  superseded: '다음 제안으로 이어짐',
+};
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -70,6 +86,9 @@ interface Message {
   at?: string;
   /** 이 말과 함께 온 추천 장소. 글 대신 카드로 세운다. */
   places?: ChatbotPlace[];
+  /** 이 말과 함께 온 제안. 말 바로 아래에 미리보기로 세운다. */
+  plan?: ChatbotPlan;
+  planState?: PlanState;
 }
 
 type Segment =
@@ -283,6 +302,142 @@ const blockTime = (block: ChatbotPlanBlock) => {
   return start ?? '시간 미정';
 };
 
+/**
+ * 받아 둔 제안 한 장.
+ *
+ * 반영하거나 취소해도 사라지지 않는다 - 단추 자리만 무엇이 됐는지 적은 띠로
+ * 바뀐다. 대화를 거슬러 올라가면 그때 무엇을 받아 무엇을 반영했는지가 그대로
+ * 남아 있어야 한다.
+ */
+function PlanCard({
+  plan,
+  state,
+  isApplying,
+  onApply,
+  onDiscard,
+}: {
+  plan: ChatbotPlan;
+  state: PlanState;
+  isApplying: boolean;
+  onApply: () => void;
+  onDiscard: () => void;
+}) {
+  const blocks = plan.placeBlocks ?? [];
+  const previewDays = byDate(blocks);
+  const dayCount = plan.timetables?.length ?? 0;
+  const isPending = state === 'pending';
+
+  return (
+    <View style={[styles.preview, !isPending && styles.previewDone]}>
+      <View style={styles.previewHead}>
+        <View style={styles.previewHeadBody}>
+          <View style={styles.previewCount}>
+            <Sparkles size={normalize(13)} color={COLORS.primary} />
+            <Text style={styles.previewEyebrow}>변경 미리보기</Text>
+          </View>
+          <Text style={styles.previewTitle} numberOfLines={1}>
+            {planName(plan)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.previewBadge,
+            state === 'applied' && styles.previewBadgeApplied,
+          ]}
+        >
+          <Text
+            style={[
+              styles.previewBadgeText,
+              state === 'applied' && styles.previewBadgeAppliedText,
+            ]}
+          >
+            {PLAN_BADGE[state]}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.previewBody}>
+        <View style={styles.previewCounts}>
+          <View style={styles.previewCount}>
+            <CalendarDays size={normalize(13)} color={COLORS.primary} />
+            <Text style={styles.previewCountText}>{dayCount}일</Text>
+          </View>
+          <View style={styles.previewCount}>
+            <MapPin size={normalize(13)} color={COLORS.primary} />
+            <Text style={styles.previewCountText}>{blocks.length}개 장소</Text>
+          </View>
+        </View>
+
+        {blocks.length > 0 && (
+          <View style={styles.previewBlocks}>
+            {previewDays.map((day, dayIndex) => (
+              <View key={day.date || dayIndex} style={styles.previewDay}>
+                {previewDays.length > 1 && (
+                  <Text style={styles.previewDayLabel}>
+                    {dayLabel(day.date, dayIndex)}
+                  </Text>
+                )}
+                {day.blocks.map((block, index) => (
+                  <View
+                    key={`${block.blockId ?? index}-${day.date}`}
+                    style={styles.previewBlockRow}
+                  >
+                    <Text style={styles.previewBlockTime}>
+                      {blockTime(block)}
+                    </Text>
+                    <Text style={styles.previewBlockName} numberOfLines={1}>
+                      {block.placeName}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {isPending && (
+          <Text style={styles.previewHint}>
+            내용을 더 바꾸고 싶다면 아래 입력창에서 이어서 요청하세요.
+          </Text>
+        )}
+      </View>
+
+      {isPending && (
+        <View style={styles.previewFoot}>
+          <TouchableOpacity
+            style={styles.previewDiscard}
+            onPress={onDiscard}
+            disabled={isApplying}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="제안 취소"
+          >
+            <Text style={styles.previewDiscardText}>제안 취소</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.previewApply, isApplying && styles.previewBusy]}
+            onPress={onApply}
+            disabled={isApplying}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="이 일정에 반영"
+            accessibilityState={{ disabled: isApplying }}
+          >
+            {isApplying ? (
+              <ActivityIndicator size="small" color={COLORS.white} />
+            ) : (
+              <Check size={normalize(14)} color={COLORS.white} />
+            )}
+            <Text style={styles.previewApplyText}>
+              {isApplying ? '반영 중...' : '이 일정에 반영'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+}
+
 interface ChatbotWindowProps {
   visible: boolean;
   onClose: () => void;
@@ -313,7 +468,6 @@ export default function ChatbotWindow({
   const [input, setInput] = useState('');
   const [isSending, setSending] = useState(false);
   const [isApplying, setApplying] = useState(false);
-  const [pendingPlan, setPendingPlan] = useState<ChatbotPlan | null>(null);
   const [shownPlaces, setShownPlaces] = useState<ChatbotPlace[]>([]);
   const [recentMessages, setRecentMessages] = useState<string[]>([]);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -324,7 +478,6 @@ export default function ChatbotWindow({
   const reset = useCallback(() => {
     setMessages([welcomeMessage()]);
     setInput('');
-    setPendingPlan(null);
     setShownPlaces([]);
     setRecentMessages([]);
     setNotice(null);
@@ -362,17 +515,43 @@ export default function ChatbotWindow({
     };
   }, []);
 
-  const appendBot = useCallback((text: string, places?: ChatbotPlace[]) => {
-    setMessages(current => [
-      ...current,
-      {
-        id: nextMessageId(),
-        role: 'assistant',
-        text,
-        at: stampNow(),
-        places: places?.length ? places : undefined,
-      },
-    ]);
+  const appendBot = useCallback(
+    (text: string, places?: ChatbotPlace[], plan?: ChatbotPlan | null) => {
+      setMessages(current => [
+        // 새 제안이 오면 앞의 제안은 더 이상 누를 것이 아니다. 지우지 않고
+        // 무엇에 이어졌는지만 적어 그대로 남긴다.
+        ...current.map(message =>
+          plan && message.planState === 'pending'
+            ? { ...message, planState: 'superseded' as PlanState }
+            : message,
+        ),
+        {
+          id: nextMessageId(),
+          role: 'assistant',
+          text,
+          at: stampNow(),
+          places: places?.length ? places : undefined,
+          plan: plan ?? undefined,
+          planState: plan ? ('pending' as PlanState) : undefined,
+        },
+      ]);
+    },
+    [],
+  );
+
+  /** 지금 누를 수 있는 제안. 대화에 남은 것 중 아직 처지가 정해지지 않은 마지막 것. */
+  const pendingEntry = [...messages]
+    .reverse()
+    .find(message => !!message.plan && message.planState === 'pending');
+  const pendingPlan = pendingEntry?.plan ?? null;
+
+  /** 그 제안의 처지를 바꿔 대화에 남긴다. */
+  const settlePlan = useCallback((id: string, state: PlanState) => {
+    setMessages(current =>
+      current.map(message =>
+        message.id === id ? { ...message, planState: state } : message,
+      ),
+    );
   }, []);
 
   const send = useCallback(
@@ -401,8 +580,8 @@ export default function ChatbotWindow({
           reply.userMessage ||
             '요청을 확인했어요. 원하는 내용을 조금 더 자세히 알려 주세요.',
           places,
+          reply.plan,
         );
-        if (reply.plan) setPendingPlan(reply.plan);
         setShownPlaces(places);
         setRecentMessages(current =>
           [...current, message.slice(0, 500)].slice(-3),
@@ -427,13 +606,13 @@ export default function ChatbotWindow({
   );
 
   const apply = useCallback(async () => {
-    if (!pendingPlan || isApplying || !canUse || !planId) return;
+    if (!pendingEntry?.plan || isApplying || !canUse || !planId) return;
 
     setNotice(null);
     setApplying(true);
     try {
-      const result = await applyChatbotPlan(planId, pendingPlan);
-      setPendingPlan(null);
+      const result = await applyChatbotPlan(planId, pendingEntry.plan);
+      settlePlan(pendingEntry.id, 'applied');
       setShownPlaces([]);
       // 반영은 REST로 일정을 통째로 바꿔 편집 방의 되돌리기 기록에 남지 않는다.
       // 되돌리기를 권하면 눌러도 아무 일이 없어 사용자가 더 헤맨다.
@@ -455,23 +634,30 @@ export default function ChatbotWindow({
     } finally {
       setApplying(false);
     }
-  }, [appendBot, canUse, isApplying, onApplied, pendingPlan, planId]);
+  }, [
+    appendBot,
+    canUse,
+    isApplying,
+    onApplied,
+    pendingEntry,
+    planId,
+    settlePlan,
+  ]);
 
   const discard = useCallback(() => {
-    setPendingPlan(null);
+    if (!pendingEntry) return;
+    settlePlan(pendingEntry.id, 'discarded');
     setShownPlaces([]);
     setNotice({
       type: 'neutral',
       text: '변경 제안을 취소했어요. 현재 저장된 일정은 그대로예요.',
     });
-  }, []);
+  }, [pendingEntry, settlePlan]);
 
   if (!visible) return null;
 
-  const blocks = pendingPlan?.placeBlocks ?? [];
-  // 앞의 몇 개만 보여 주면 미리보기가 아니다 - 무엇이 바뀌는지 다 보여 준다.
-  const previewDays = byDate(blocks);
-  const dayCount = pendingPlan?.timetables?.length ?? 0;
+  const pendingBlocks = pendingPlan?.placeBlocks ?? [];
+  const pendingDayCount = pendingPlan?.timetables?.length ?? 0;
   const isBusy = isSending || isApplying;
   const canSend = canUse && !!input.trim() && !isBusy;
   const bottom = WINDOW_BOTTOM + keyboardHeight;
@@ -569,66 +755,77 @@ export default function ChatbotWindow({
             const mine = message.role === 'user';
             const segments = toSegments(message.text, message.places);
             return (
-              <View
-                key={message.id}
-                style={[styles.row, mine && styles.rowMine]}
-              >
-                <View
-                  style={[
-                    styles.bubble,
-                    mine ? styles.bubbleMine : styles.bubbleBot,
-                  ]}
-                >
-                  {/* 이름이 나온 줄 바로 아래에 그 카드를 세운다. 이름만
+              <React.Fragment key={message.id}>
+                <View style={[styles.row, mine && styles.rowMine]}>
+                  <View
+                    style={[
+                      styles.bubble,
+                      mine ? styles.bubbleMine : styles.bubbleBot,
+                    ]}
+                  >
+                    {/* 이름이 나온 줄 바로 아래에 그 카드를 세운다. 이름만
                     늘어놓으면 어떤 곳인지 그려지지 않고, 카드를 말끝에 몰아
                     세우면 몇 번째로 권한 곳인지가 끊긴다. */}
-                  {segments.map((segment, index) =>
-                    segment.kind === 'text' ? (
-                      <Text
-                        key={segment.key}
-                        style={[
-                          styles.bubbleText,
-                          mine && styles.bubbleTextMine,
-                          index > 0 && styles.bubbleTextAfterCard,
-                        ]}
-                      >
-                        {withBold(segment.text, segment.key, mine)}
-                      </Text>
-                    ) : (
-                      <View key={segment.key} style={styles.placeCard}>
-                        <PlaceThumb uri={segment.place.thumbnailUrl} />
-                        <View style={styles.placeBody}>
-                          <Text style={styles.placeCategory}>
-                            {CATEGORY_LABELS[segment.place.category ?? ''] ??
-                              segment.place.category ??
-                              '여행 장소'}
-                          </Text>
-                          <Text style={styles.placeTitle} numberOfLines={1}>
-                            {segment.place.title}
-                          </Text>
-                          <Text style={styles.placeLine} numberOfLines={2}>
-                            {placeLine(segment.place)}
-                          </Text>
+                    {segments.map((segment, index) =>
+                      segment.kind === 'text' ? (
+                        <Text
+                          key={segment.key}
+                          style={[
+                            styles.bubbleText,
+                            mine && styles.bubbleTextMine,
+                            index > 0 && styles.bubbleTextAfterCard,
+                          ]}
+                        >
+                          {withBold(segment.text, segment.key, mine)}
+                        </Text>
+                      ) : (
+                        <View key={segment.key} style={styles.placeCard}>
+                          <PlaceThumb uri={segment.place.thumbnailUrl} />
+                          <View style={styles.placeBody}>
+                            <Text style={styles.placeCategory}>
+                              {CATEGORY_LABELS[segment.place.category ?? ''] ??
+                                segment.place.category ??
+                                '여행 장소'}
+                            </Text>
+                            <Text style={styles.placeTitle} numberOfLines={1}>
+                              {segment.place.title}
+                            </Text>
+                            <Text style={styles.placeLine} numberOfLines={2}>
+                              {placeLine(segment.place)}
+                            </Text>
+                          </View>
                         </View>
-                      </View>
-                    ),
-                  )}
+                      ),
+                    )}
 
-                  {!!message.at && (
-                    <View style={styles.stamp}>
-                      <Clock3
-                        size={normalize(9)}
-                        color={mine ? '#C7D2FE' : COLORS.textTertiary}
-                      />
-                      <Text
-                        style={[styles.stampText, mine && styles.stampTextMine]}
-                      >
-                        {message.at}
-                      </Text>
-                    </View>
-                  )}
+                    {!!message.at && (
+                      <View style={styles.stamp}>
+                        <Clock3
+                          size={normalize(9)}
+                          color={mine ? '#C7D2FE' : COLORS.textTertiary}
+                        />
+                        <Text
+                          style={[
+                            styles.stampText,
+                            mine && styles.stampTextMine,
+                          ]}
+                        >
+                          {message.at}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
-              </View>
+                {!!message.plan && (
+                  <PlanCard
+                    plan={message.plan}
+                    state={message.planState ?? 'pending'}
+                    isApplying={isApplying}
+                    onApply={() => void apply()}
+                    onDiscard={discard}
+                  />
+                )}
+              </React.Fragment>
             );
           })}
 
@@ -663,111 +860,6 @@ export default function ChatbotWindow({
               </Text>
             </View>
           )}
-
-          {!!pendingPlan && (
-            <View style={styles.preview}>
-              <View style={styles.previewHead}>
-                <View style={{ flex: 1 }}>
-                  <View style={styles.previewCount}>
-                    <Sparkles size={normalize(13)} color={COLORS.primary} />
-                    <Text style={styles.previewEyebrow}>변경 미리보기</Text>
-                  </View>
-                  <Text style={styles.previewTitle} numberOfLines={1}>
-                    {planName(pendingPlan)}
-                  </Text>
-                </View>
-                <View style={styles.previewBadge}>
-                  <Text style={styles.previewBadgeText}>아직 미반영</Text>
-                </View>
-              </View>
-
-              <View style={styles.previewBody}>
-                <View style={styles.previewCounts}>
-                  <View style={styles.previewCount}>
-                    <CalendarDays size={normalize(13)} color={COLORS.primary} />
-                    <Text style={styles.previewCountText}>{dayCount}일</Text>
-                  </View>
-                  <View style={styles.previewCount}>
-                    <MapPin size={normalize(13)} color={COLORS.primary} />
-                    <Text style={styles.previewCountText}>
-                      {blocks.length}개 장소
-                    </Text>
-                  </View>
-                </View>
-
-                {blocks.length > 0 && (
-                  <View style={styles.previewBlocks}>
-                    {previewDays.map((day, dayIndex) => (
-                      <View
-                        key={day.date || dayIndex}
-                        style={styles.previewDay}
-                      >
-                        {previewDays.length > 1 && (
-                          <Text style={styles.previewDayLabel}>
-                            {dayLabel(day.date, dayIndex)}
-                          </Text>
-                        )}
-                        {day.blocks.map((block, index) => (
-                          <View
-                            key={`${block.blockId ?? index}-${day.date}`}
-                            style={styles.previewBlockRow}
-                          >
-                            <Text style={styles.previewBlockTime}>
-                              {blockTime(block)}
-                            </Text>
-                            <Text
-                              style={styles.previewBlockName}
-                              numberOfLines={1}
-                            >
-                              {block.placeName}
-                            </Text>
-                          </View>
-                        ))}
-                      </View>
-                    ))}
-                  </View>
-                )}
-
-                <Text style={styles.previewHint}>
-                  내용을 더 바꾸고 싶다면 아래 입력창에서 이어서 요청하세요.
-                </Text>
-              </View>
-
-              <View style={styles.previewFoot}>
-                <TouchableOpacity
-                  style={styles.previewDiscard}
-                  onPress={discard}
-                  disabled={isApplying}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel="제안 취소"
-                >
-                  <Text style={styles.previewDiscardText}>제안 취소</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.previewApply,
-                    isApplying && styles.previewBusy,
-                  ]}
-                  onPress={() => void apply()}
-                  disabled={isApplying}
-                  activeOpacity={0.85}
-                  accessibilityRole="button"
-                  accessibilityLabel="이 일정에 반영"
-                  accessibilityState={{ disabled: isApplying }}
-                >
-                  {isApplying ? (
-                    <ActivityIndicator size="small" color={COLORS.white} />
-                  ) : (
-                    <Check size={normalize(14)} color={COLORS.white} />
-                  )}
-                  <Text style={styles.previewApplyText}>
-                    {isApplying ? '반영 중...' : '이 일정에 반영'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
         </ScrollView>
       )}
 
@@ -776,7 +868,8 @@ export default function ChatbotWindow({
           <View style={styles.carry}>
             <Sparkles size={normalize(12)} color={COLORS.primary} />
             <Text style={styles.carryText}>
-              {dayCount}일 · {blocks.length}개 장소 제안을 이어서 수정 중
+              {pendingDayCount}일 · {pendingBlocks.length}개 장소 제안을 이어서
+              수정 중
             </Text>
           </View>
         )}

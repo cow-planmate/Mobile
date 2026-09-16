@@ -292,6 +292,13 @@ export const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.text,
   },
+  /** 반영하거나 취소한 제안. 기록으로만 남으므로 한 걸음 물러나 보이게 둔다. */
+  previewDone: {
+    opacity: 0.75,
+  },
+  previewHeadBody: {
+    flex: 1,
+  },
   previewBadge: {
     paddingHorizontal: normalize(9),
     paddingVertical: normalize(4),
@@ -304,6 +311,14 @@ export const styles = StyleSheet.create({
     fontSize: normalize(10),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.textSecondary,
+  },
+  /** 반영한 것만 색을 준다 - 되돌릴 수 없는 일이라 눈에 띄어야 한다. */
+  previewBadgeApplied: {
+    backgroundColor: tokens.tones.success.bg,
+    borderColor: tokens.tones.success.bg,
+  },
+  previewBadgeAppliedText: {
+    color: tokens.tones.success.fg,
   },
   previewBody: {
     paddingHorizontal: normalize(13),
