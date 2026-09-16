@@ -218,6 +218,22 @@ const dayLabel = (date: string, index: number) => {
 };
 
 /**
+ * 소개가 제 이름으로 시작하면 그만큼 떼어 낸다.
+ *
+ * 서버가 주는 소개는 '봉래면옥은 지하철 5호선…'처럼 대개 이름으로 시작한다.
+ * 바로 윗줄에 같은 이름이 적혀 있어서, 두 줄만 보이는 자리에서 앞머리를
+ * 이름이 잡아먹는다. 뒤에 붙은 조사와 쉼표까지 같이 떼어야 말이 이어진다.
+ */
+const dropLeadingName = (overview: string, title?: string | null) => {
+  const name = title?.trim();
+  if (!name || !overview.startsWith(name)) return overview;
+
+  const rest = overview.slice(name.length).replace(/^[은는이가]?[,\s]+/, '');
+  // 이름만 적혀 있던 소개는 떼고 나면 남는 것이 없다.
+  return rest || overview;
+};
+
+/**
  * 추천 카드의 셋째 줄.
  *
  * 주소 대신 어떤 곳인지를 적는다 - 고를 때 필요한 것은 그것이고, 주소는 담고
@@ -226,7 +242,7 @@ const dayLabel = (date: string, index: number) => {
  */
 const placeLine = (place: ChatbotPlace) => {
   const overview = place.overview?.trim();
-  if (overview) return overview;
+  if (overview) return dropLeadingName(overview, place.title);
 
   const headline = [
     place.firstMenu,

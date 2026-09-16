@@ -168,7 +168,8 @@ describe('AI 여행 도우미', () => {
           title: '전주콩나물해장국',
           category: 'RESTAURANT',
           addr1: '서울특별시 종로구 자하문로 3',
-          overview: '따뜻한 뚝배기에 담겨 나오는 콩나물 국밥 전문점이다.',
+          overview:
+            '전주콩나물해장국은 따뜻한 뚝배기에 담겨 나오는 콩나물 국밥 전문점이다.',
           firstMenu: '콩나물국밥',
           openTime: '06:00~20:30',
         },
@@ -195,11 +196,35 @@ describe('AI 여행 도우미', () => {
     await pressLabel(tree, '근처 맛집을 몇 곳 추천해 줘');
 
     const shown = texts(tree);
+    // 바로 윗줄에 이름이 있다 - 소개가 제 이름으로 시작하면 그만큼 떼어 낸다.
     expect(shown).toContain('따뜻한 뚝배기에 담겨 나오는 콩나물 국밥 전문점이다.');
     // 소개가 있는 곳에 주소를 겹쳐 적지 않는다.
     expect(shown).not.toContain('서울특별시 종로구 자하문로 3');
     expect(shown).toContain('돼지갈비 · 16:00~23:00');
     expect(shown).toContain('서울특별시 종로구 사직로');
+    act(() => tree.unmount());
+  });
+
+  it('이름이 가운데 나오는 소개는 그대로 둔다', async () => {
+    mockAsk.mockResolvedValue({
+      userMessage: '이런 곳은 어때요?',
+      shownPlaces: [
+        {
+          contentId: '1',
+          title: '모던샤브하우스',
+          category: 'RESTAURANT',
+          overview: '종로구에 위치한 모던샤브하우스는 육수를 고를 수 있다.',
+        },
+      ],
+    });
+    const tree = render();
+
+    await pressLabel(tree, '근처 맛집을 몇 곳 추천해 줘');
+
+    // 앞에서 잘라 내면 말이 끊긴다. 맨 앞에 있을 때만 뗀다.
+    expect(texts(tree)).toContain(
+      '종로구에 위치한 모던샤브하우스는 육수를 고를 수 있다.',
+    );
     act(() => tree.unmount());
   });
 
