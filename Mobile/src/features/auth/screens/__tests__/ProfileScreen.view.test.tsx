@@ -54,7 +54,6 @@ jest.mock('../../../../api/auth', () => ({
 }));
 jest.mock('../../../../components/common/FallbackImage', () => () => null);
 jest.mock('../../components/ProfileActivitySections', () => ({
-  ProfileCalendarSection: () => null,
   ProfileCommunitySection: () => null,
   ProfileFootprintSection: () => null,
   ProfileTravelLogSection: () => null,

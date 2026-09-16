@@ -1,5 +1,5 @@
 import { formatPeriod } from '../../../utils/timeUtils';
-import { toPlanDate } from './profileCalendar';
+import { toPlanDate } from './planDate';
 
 /**
  * 마이페이지 일정 행 왼쪽 레일에 들어갈 값.

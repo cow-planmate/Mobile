@@ -59,11 +59,15 @@ export const styles = StyleSheet.create({
     fontSize: normalize(14),
     color: COLORS.textSecondary,
   },
-  // 바탕은 회색이고 덩어리만 흰색이다. 덩어리 사이 20px 띠가 이 회색을
-  // 드러내 선을 긋지 않고도 나뉜다.
+  scrollGround: {
+    backgroundColor: COLORS.white,
+  },
+  // 덩어리 사이만 회색 띠로 벌리고, 마지막 덩어리 아래로 남는 자리는 흰색이다.
+  // 바탕을 통째로 회색으로 두면 내용이 짧은 갈래에서 화면 절반이 회색으로 뜬다.
   scrollContainer: {
+    flexGrow: 1,
     paddingBottom: normalize(40),
-    backgroundColor: COLORS.pageGround,
+    backgroundColor: COLORS.white,
   },
 
   avatarImage: {
@@ -682,6 +686,7 @@ export const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: COLORS.border,
+    backgroundColor: COLORS.pageGround,
   },
   sectionBlock: {
     backgroundColor: COLORS.white,

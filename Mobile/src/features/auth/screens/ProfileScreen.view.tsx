@@ -56,7 +56,7 @@ import FallbackImage from '../../../components/common/FallbackImage';
 import { normalize } from '../../../utils/normalize';
 import ProfileTasteCard from '../components/ProfileTasteCard';
 import { allSettledWithConcurrency } from '../../../utils/concurrency';
-import { toPlanDate } from '../utils/profileCalendar';
+import { toPlanDate } from '../utils/planDate';
 import {
   getPastRail,
   getPlanPeriodText,
@@ -76,7 +76,6 @@ import {
   parseBirthdate,
 } from '../../../utils/birthdate';
 import {
-  ProfileCalendarSection,
   ProfileCommunitySection,
   ProfileTravelLogSection,
 } from '../components/ProfileActivitySections';
@@ -990,7 +989,7 @@ export default function ProfileScreenView({
 
       <ScrollView
         ref={scrollRef}
-        style={{ backgroundColor: tokens.colors.pageGround }}
+        style={styles.scrollGround}
         contentContainerStyle={[
           styles.scrollContainer,
           { paddingBottom: normalize(40) },
@@ -1255,10 +1254,6 @@ export default function ProfileScreenView({
               )}
             </View>
 
-            {/* 웹은 일정·캘린더·발자취를 한 갈래에 세로로 쌓는다. 앱도 같은 탭에
-            담고 덩어리 사이만 회색 띠로 벌린다. */}
-            <View style={styles.sectionBand} />
-            <ProfileCalendarSection plans={plans} />
           </>
         )}
       </ScrollView>
