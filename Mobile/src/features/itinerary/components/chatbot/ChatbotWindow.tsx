@@ -444,6 +444,8 @@ interface ChatbotWindowProps {
   planId: string | null;
   /** 반영이 끝나면 시간표를 다시 받아 와야 한다. */
   onApplied?: () => void;
+  /** 추천 카드를 누르면 그 장소가 어떤 곳인지 보여 준다. */
+  onShowPlace?: (place: ChatbotPlace) => void;
 }
 
 /**
@@ -461,6 +463,7 @@ export default function ChatbotWindow({
   onClose,
   planId,
   onApplied,
+  onShowPlace,
 }: ChatbotWindowProps) {
   const canUse = !!planId && planId !== '-1' && planId !== '0';
 
@@ -779,7 +782,17 @@ export default function ChatbotWindow({
                           {withBold(segment.text, segment.key, mine)}
                         </Text>
                       ) : (
-                        <View key={segment.key} style={styles.placeCard}>
+                        <TouchableOpacity
+                          key={segment.key}
+                          style={styles.placeCard}
+                          onPress={() => onShowPlace?.(segment.place)}
+                          disabled={!onShowPlace || !segment.place.contentId}
+                          activeOpacity={0.8}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${
+                            segment.place.title ?? '장소'
+                          } 상세 정보 보기`}
+                        >
                           <PlaceThumb uri={segment.place.thumbnailUrl} />
                           <View style={styles.placeBody}>
                             <Text style={styles.placeCategory}>
@@ -794,7 +807,7 @@ export default function ChatbotWindow({
                               {placeLine(segment.place)}
                             </Text>
                           </View>
-                        </View>
+                        </TouchableOpacity>
                       ),
                     )}
 

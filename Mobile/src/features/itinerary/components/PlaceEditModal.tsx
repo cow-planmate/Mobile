@@ -27,6 +27,8 @@ interface PlaceEditModalProps {
   onClose: () => void;
   onSave: (updatedPlace: any) => void;
   onDelete: (placeId: string) => void;
+  /** 장소가 어떤 곳인지 보는 길. 열쇠를 모르는 장소(직접 추가)에는 주지 않는다. */
+  onShowDetail?: () => void;
 }
 
 export default function PlaceEditModal({
@@ -37,6 +39,7 @@ export default function PlaceEditModal({
   onClose,
   onSave,
   onDelete,
+  onShowDetail,
 }: PlaceEditModalProps) {
   const { showAlert } = useAlert();
   const [memo, setMemo] = useState('');
@@ -227,6 +230,18 @@ export default function PlaceEditModal({
             )}
           </View>
         </View>
+
+        {!!onShowDetail && (
+          <TouchableOpacity
+            style={styles.mapRow}
+            onPress={onShowDetail}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="장소 정보 보기"
+          >
+            <Text style={styles.mapText}>장소 정보 보기</Text>
+          </TouchableOpacity>
+        )}
 
         {canOpenMap && (
           <TouchableOpacity

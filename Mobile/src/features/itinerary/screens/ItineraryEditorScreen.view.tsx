@@ -99,6 +99,7 @@ import {
   useCoachmarkTour,
 } from '../coachmark/CoachmarkContext';
 import TutorialLauncher from '../coachmark/TutorialLauncher';
+import type { PlaceDetailTarget } from '../components/PlaceDetailSheet';
 
 type ToolbarButtonVariant =
   | 'plain'
@@ -270,6 +271,7 @@ const DraggableTimelineItem = React.memo(
     onEditTime,
     onDragEnd,
     onPress,
+    onShowDetail,
     onOverflow,
     scrollRef,
     requestAutoScroll,
@@ -295,6 +297,8 @@ const DraggableTimelineItem = React.memo(
       newEndMinutes: number,
     ) => void;
     onPress?: (place: Place) => void;
+    /** 블록의 ⓘ. 열쇠를 모르는 장소에는 주지 않아 단추가 서지 않는다. */
+    onShowDetail?: (place: Place) => void;
     onOverflow?: () => void;
     scrollRef?: React.RefObject<ScrollView | null>;
     /** 손끝 자리를 주면 가장자리에서 시간표를 굴려 주고, 시킨 거리를 돌려준다. */
@@ -811,6 +815,9 @@ const DraggableTimelineItem = React.memo(
                 item={place}
                 onDelete={handleDeleteWithAnim}
                 onEditTime={handleEditTime}
+                onShowDetail={
+                  onShowDetail ? () => onShowDetail(place) : undefined
+                }
                 onPress={handlePress}
                 style={styles.flex1}
                 isTourAnchor={isTourAnchor}
@@ -1076,6 +1083,8 @@ const TimelineComponent = React.memo(
         newEndMinutes: number,
       ) => void;
       onPressPlace?: (place: Place) => void;
+      /** 블록의 ⓘ를 눌렀을 때. 시간표를 그리는 쪽은 열쇠만 넘긴다. */
+      onShowBlockDetail?: (place: Place) => void;
       topPadding?: number;
       /** 시트에 가려지는 만큼. 마지막 시간대도 시트 위로 올려 볼 수 있게. */
       bottomPadding?: number;
@@ -1111,6 +1120,7 @@ const TimelineComponent = React.memo(
         onEditPlaceTime,
         onUpdatePlaceTimes,
         onPressPlace,
+        onShowBlockDetail,
         topPadding = 0,
         bottomPadding = 0,
         pendingPlace,
@@ -1319,6 +1329,7 @@ const TimelineComponent = React.memo(
                     onEditTime={onEditPlaceTime}
                     onDragEnd={onUpdatePlaceTimes}
                     onPress={onPressPlace}
+                    onShowDetail={onShowBlockDetail}
                     onOverflow={showOverflowBanner}
                     scrollRef={ref as React.RefObject<ScrollView | null>}
                     requestAutoScroll={requestAutoScroll}
@@ -1364,6 +1375,8 @@ export const EditorStateContext = createContext<{
   handleEditTime: any;
   handleUpdatePlaceTimes: any;
   onOpenDetail: any;
+  /** 블록의 ⓘ. 시간표는 화면 깊숙이 있어 맥락으로 내려보낸다. */
+  onShowPlaceDetail?: (target: PlaceDetailTarget) => void;
   weatherMap: any;
   handleAddPlace: any;
   planId: any;
@@ -1444,6 +1457,7 @@ const TimelineTabScreen = React.memo(() => {
     handleEditTime,
     handleUpdatePlaceTimes,
     onOpenDetail,
+    onShowPlaceDetail,
     weatherMap,
     onUndo,
     onRedo,
@@ -1487,6 +1501,18 @@ const TimelineTabScreen = React.memo(() => {
         onEditPlaceTime={handleEditTime}
         onUpdatePlaceTimes={handleUpdatePlaceTimes}
         onPressPlace={onOpenDetail}
+        onShowBlockDetail={
+          onShowPlaceDetail
+            ? place =>
+                place.placeRefId
+                  ? onShowPlaceDetail({
+                      contentId: String(place.placeRefId),
+                      name: place.name,
+                      address: place.address,
+                    })
+                  : undefined
+            : undefined
+        }
         topPadding={selectedDay && currentWeather ? 62 : 0}
         bottomPadding={sheetInset}
         pendingPlace={pendingPlace}
@@ -1539,6 +1565,8 @@ export interface ItineraryEditorScreenViewProps {
   ) => void;
   handleDeletePlace: (placeId: string) => void;
   handleAddPlace: (place: Omit<Place, 'startTime' | 'endTime'>) => void;
+  /** 장소가 어떤 곳인지 보여 주는 시트를 연다. 화면이 들고 있다. */
+  onShowPlaceDetail?: (target: PlaceDetailTarget) => void;
   selectedDay: Day | null;
   isScheduleEditVisible: boolean;
   setScheduleEditVisible: (v: boolean) => void;
@@ -1599,6 +1627,7 @@ export default function ItineraryEditorScreenView({
   handleUpdatePlaceTimes,
   handleDeletePlace,
   handleAddPlace,
+  onShowPlaceDetail,
   selectedDay,
   isScheduleEditVisible,
   setScheduleEditVisible,
@@ -1754,6 +1783,7 @@ export default function ItineraryEditorScreenView({
       handleEditTime,
       handleUpdatePlaceTimes,
       onOpenDetail,
+      onShowPlaceDetail,
       weatherMap,
       handleAddPlace,
       planId,
@@ -1785,6 +1815,7 @@ export default function ItineraryEditorScreenView({
     handleEditTime,
     handleUpdatePlaceTimes,
     onOpenDetail,
+    onShowPlaceDetail,
     weatherMap,
     handleAddPlace,
     planId,
@@ -2600,6 +2631,18 @@ export default function ItineraryEditorScreenView({
               />
             )}
             <ChatbotWindow
+          onShowPlace={
+            onShowPlaceDetail
+              ? place =>
+                  place.contentId
+                    ? onShowPlaceDetail({
+                        contentId: String(place.contentId),
+                        name: place.title,
+                        address: place.addr1,
+                      })
+                    : undefined
+              : undefined
+          }
               visible={isChatbotOpen}
               planId={planId ?? null}
               onClose={onCloseChatbot ?? onOpenChatbot}
@@ -2634,6 +2677,7 @@ export default function ItineraryEditorScreenView({
               </GestureDetector>
               <PlaceRecommendationList
                 onAddPlace={handleAddPlace}
+                onShowDetail={onShowPlaceDetail}
                 destination={destination}
                 travelId={travelId ?? null}
                 hideTabs

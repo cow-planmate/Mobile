@@ -175,8 +175,8 @@ export const EDITOR_COACHMARK_STEPS: readonly CoachmarkStep[] = [
   },
   {
     target: 'blockActions',
-    title: '수정과 삭제',
-    body: '연필은 자세히 고치기, X는 지우기예요. 지운 건 되돌리기로 살릴 수 있어요.',
+    title: '고치기와 삭제',
+    body: '연필은 시간, ⓘ는 장소 정보, X는 지우기예요. 지운 건 되돌릴 수 있어요.',
     shape: 'rounded',
     interactive: false,
   },

@@ -39,6 +39,7 @@ import KakaoMapView from './KakaoMapView';
 import { usePlaces } from '../../../contexts/PlacesContext';
 import { useAlert } from '../../../contexts/AlertContext';
 import { PlaceVO } from '../../../api/trips';
+import type { PlaceDetailTarget } from './PlaceDetailSheet';
 import { GoogleMapsIcon } from '../../../components/common';
 import { tokens } from '../../../theme/tokens';
 import { normalizeCategoryId } from '../../../utils/placeCategory';
@@ -355,6 +356,8 @@ interface PlaceRecommendationListProps {
   onDragPlace?: (absoluteY: number, absoluteX: number) => void;
   onDropPlace?: (absoluteY: number, absoluteX: number) => void;
   onCancelPickUp?: () => void;
+  /** ⓘ를 눌렀을 때. 주지 않으면 단추 자체를 그리지 않는다. */
+  onShowDetail?: (target: PlaceDetailTarget) => void;
 }
 
 export default function PlaceRecommendationList({
@@ -369,6 +372,7 @@ export default function PlaceRecommendationList({
   onDragPlace,
   onDropPlace,
   onCancelPickUp,
+  onShowDetail,
 }: PlaceRecommendationListProps) {
   const {
     tour,
@@ -578,6 +582,29 @@ export default function PlaceRecommendationList({
         </View>
 
         <View style={plStyles.actionGroup}>
+          {!!onShowDetail && (
+            <TouchableOpacity
+              style={plStyles.mapButton}
+              onPress={e => {
+                e.stopPropagation?.();
+                onShowDetail({
+                  contentId: String(item.placeId),
+                  name: item.name,
+                  address: item.formatted_address,
+                  onOpenMap: () => void handleOpenGoogleMaps(item),
+                  onAdd: () =>
+                    onAddPlace(
+                      placeVOToPlace(item, getCategoryType(item.categoryId)),
+                    ),
+                });
+              }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.name} 상세 정보 보기`}
+            >
+              <InfoIcon size={18} color={tokens.colors.textSecondary} />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             style={plStyles.mapButton}
             onPress={e => {
@@ -593,7 +620,7 @@ export default function PlaceRecommendationList({
         </View>
       </>
     ),
-    [handleOpenGoogleMaps],
+    [handleOpenGoogleMaps, onShowDetail, onAddPlace],
   );
 
   const renderPlaceItem = useCallback(

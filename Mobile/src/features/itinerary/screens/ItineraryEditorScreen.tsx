@@ -34,6 +34,9 @@ import { SimpleWeatherInfo, fetchWeather } from '../../../api/trips';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { ShareModal, PlanInfoModal, AirplaneLoading } from '../../../components/common';
 import PlaceEditModal from '../components/PlaceEditModal';
+import PlaceDetailSheet, {
+  type PlaceDetailTarget,
+} from '../components/PlaceDetailSheet';
 import ParticipantsModal from '../components/ParticipantsModal';
 import PlanMapModal from '../components/PlanMapModal';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
@@ -188,6 +191,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   const [isChecklistVisible, setChecklistVisible] = useState(false);
   const [isChatbotVisible, setChatbotVisible] = useState(false);
   const [isPlaceEditModalVisible, setPlaceEditModalVisible] = useState(false);
+  /** 지금 열어 둔 장소 상세. 추천 목록·시간표 블록·챗봇 셋이 같은 시트를 쓴다. */
+  const [placeDetail, setPlaceDetail] = useState<PlaceDetailTarget | null>(
+    null,
+  );
   const [editingPlace, setEditingPlace] = useState<any>(null);
   const [isParticipantsVisible, setParticipantsVisible] = useState(false);
   const [isMapPreviewVisible, setMapPreviewVisible] = useState(false);
@@ -870,6 +877,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         handleUpdatePlaceTimes={handleUpdatePlaceTimes}
         handleDeletePlace={handleDeletePlace}
         handleAddPlace={handleAddPlaceOverride}
+        onShowPlaceDetail={setPlaceDetail}
         onPlaceAt={handlePlacePlaceAt}
         pendingPlace={pendingPlace}
         previewStartTime={previewStartTime}
@@ -961,6 +969,19 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           }}
           onSave={handlePlaceSave}
           onDelete={handleDeletePlace}
+          onShowDetail={
+            editingPlace?.placeRefId
+              ? () => {
+                  // 창을 겹쳐 띄우지 않는다. 연필은 다시 눌러 열 수 있다.
+                  setPlaceEditModalVisible(false);
+                  setPlaceDetail({
+                    contentId: String(editingPlace.placeRefId),
+                    name: editingPlace.name,
+                    address: editingPlace.address,
+                  });
+                }
+              : undefined
+          }
         />
       )}
       <PlanInfoModal
@@ -999,6 +1020,28 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         planId={planId ?? null}
         onGoBack={handleGoBack}
         onStaleMembership={handleRefreshMembership}
+      />
+      <PlaceDetailSheet
+        visible={!!placeDetail}
+        contentId={placeDetail?.contentId ?? null}
+        fallbackName={placeDetail?.name}
+        fallbackAddress={placeDetail?.address}
+        onClose={() => setPlaceDetail(null)}
+        onOpenMap={
+          placeDetail?.onOpenMap
+            ? () => {
+                placeDetail.onOpenMap?.();
+              }
+            : undefined
+        }
+        onAdd={
+          placeDetail?.onAdd
+            ? () => {
+                placeDetail.onAdd?.();
+                setPlaceDetail(null);
+              }
+            : undefined
+        }
       />
       <EditorCoachmark
         enabled={isCoachmarkReady}

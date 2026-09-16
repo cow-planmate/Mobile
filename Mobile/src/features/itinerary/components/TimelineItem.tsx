@@ -1,4 +1,5 @@
 import React from 'react';
+import Info from 'lucide-react-native/dist/esm/icons/info';
 import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import XIcon from 'lucide-react-native/dist/esm/icons/x';
 import { View, Text, Pressable, TouchableOpacity } from 'react-native';
@@ -35,6 +36,8 @@ type TimelineItemProps = {
   item: Place;
   onDelete?: () => void;
   onEditTime?: (type: 'startTime' | 'endTime') => void;
+  /** 어떤 곳인지 보는 길. 열쇠를 모르는 장소(직접 추가)에는 주지 않는다. */
+  onShowDetail?: () => void;
   onPress?: () => void;
   style?: object;
   isReadOnly?: boolean;
@@ -75,6 +78,7 @@ const TimelineItem = React.memo(function TimelineItem({
   item,
   onDelete,
   onEditTime,
+  onShowDetail,
   onPress,
   style,
   isReadOnly = false,
@@ -159,6 +163,20 @@ const TimelineItem = React.memo(function TimelineItem({
             >
               <Pencil size={16} color={textColorMain} />
             </TouchableOpacity>
+            {!!onShowDetail && (
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  isCompact && styles.actionButtonCompact,
+                ]}
+                onPress={onShowDetail}
+                accessibilityRole="button"
+                accessibilityLabel="장소 정보 보기"
+                hitSlop={actionSlop}
+              >
+                <Info size={16} color={textColorMain} />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={[
                 styles.actionButton,
