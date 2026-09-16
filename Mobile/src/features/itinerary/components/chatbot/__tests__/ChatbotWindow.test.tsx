@@ -205,6 +205,29 @@ describe('AI 여행 도우미', () => {
     act(() => tree.unmount());
   });
 
+  it('서버가 별표로 강조한 자리는 굵은 글씨로 그린다', async () => {
+    mockAsk.mockResolvedValue({
+      userMessage: '**봉래면옥**을 첫째 날에 넣어 두었어요.',
+    });
+    const tree = render();
+
+    await pressLabel(tree, '근처 맛집을 몇 곳 추천해 줘');
+
+    const shown = texts(tree);
+    // 별표가 글자로 보이면 안 된다.
+    expect(shown.some(text => text.includes('**'))).toBe(false);
+    expect(shown).toContain('봉래면옥');
+
+    const strong = tree.root
+      .findAllByType(Text)
+      .find(node => node.props.children === '봉래면옥')!;
+    const style = Array.isArray(strong.props.style)
+      ? Object.assign({}, ...strong.props.style)
+      : strong.props.style;
+    expect(style.fontFamily).toBe('Pretendard-Bold');
+    act(() => tree.unmount());
+  });
+
   it('이름이 가운데 나오는 소개는 그대로 둔다', async () => {
     mockAsk.mockResolvedValue({
       userMessage: '이런 곳은 어때요?',

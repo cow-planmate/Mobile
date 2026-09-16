@@ -133,6 +133,14 @@ export const styles = StyleSheet.create({
     color: tokens.colors.white,
     fontFamily: tokens.fontFamily.medium,
   },
+  /** 서버가 **로 강조한 자리. 색은 둘러싼 글에서 물려받는다. */
+  bubbleStrong: {
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+  },
+  bubbleStrongMine: {
+    fontFamily: tokens.fontFamily.bold,
+  },
   // 웹은 모든 말풍선에 "방금"을 붙이지만, 지난 대화에도 방금이라 적히면
   // 거짓이 된다. 자리는 웹과 같게 두고 값만 실제 시각으로 찍는다.
   stamp: {

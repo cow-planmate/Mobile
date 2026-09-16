@@ -218,6 +218,27 @@ const dayLabel = (date: string, index: number) => {
 };
 
 /**
+ * 서버 말에 섞여 오는 **굵게**를 진짜 굵은 글씨로 바꾼다.
+ *
+ * 모델이 장소 이름을 이렇게 강조해 보낼 때가 있는데, 그대로 그리면 별표가
+ * 글자로 보인다. 별표를 지우기만 하면 강조한 뜻이 사라지므로 굵기로 옮긴다.
+ * 짝이 맞지 않는 별표는 손대지 않는다 - 지웠다가 원래 글이 달라진다.
+ */
+const withBold = (text: string, key: string, mine: boolean) =>
+  text.split(/\*\*(.+?)\*\*/g).map((part, index) =>
+    index % 2 === 0 ? (
+      part
+    ) : (
+      <Text
+        key={`${key}-strong-${index}`}
+        style={mine ? styles.bubbleStrongMine : styles.bubbleStrong}
+      >
+        {part}
+      </Text>
+    ),
+  );
+
+/**
  * 소개가 제 이름으로 시작하면 그만큼 떼어 낸다.
  *
  * 서버가 주는 소개는 '봉래면옥은 지하철 5호선…'처럼 대개 이름으로 시작한다.
@@ -571,7 +592,7 @@ export default function ChatbotWindow({
                           index > 0 && styles.bubbleTextAfterCard,
                         ]}
                       >
-                        {segment.text}
+                        {withBold(segment.text, segment.key, mine)}
                       </Text>
                     ) : (
                       <View key={segment.key} style={styles.placeCard}>
