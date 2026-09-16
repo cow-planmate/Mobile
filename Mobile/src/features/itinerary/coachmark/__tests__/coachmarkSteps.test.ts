@@ -26,10 +26,16 @@ describe('일정 편집 코치마크 스텝', () => {
     );
   });
 
-  it('일정 완성은 맨 마지막에 짚는다', () => {
-    // 누르면 화면을 떠난다. 중간에 두면 뒤에 남은 안내를 볼 길이 없다.
+  it('일정 완성 다음에 사용법 단추로 끝맺는다', () => {
     const order = EDITOR_COACHMARK_STEPS.map(step => step.target);
-    expect(order[order.length - 1]).toBe('complete');
+
+    // 완성은 누르면 화면을 떠난다 - 뒤에 볼 것이 남으면 안 되므로 맨 끝에 가깝다.
+    // 그 뒤에 다시 보는 길만 일러 주고 끝낸다.
+    expect(order[order.length - 2]).toBe('complete');
+    expect(order[order.length - 1]).toBe('tutorial');
+    expect(EDITOR_COACHMARK_STEPS[EDITOR_COACHMARK_STEPS.length - 1].body).toBe(
+      '오른쪽 아래 사용법 버튼에서 언제든 다시 볼 수 있어요.',
+    );
   });
 
   it('이름 고치기는 일정 정보에 맡기고 따로 짚지 않는다', () => {
@@ -55,14 +61,15 @@ describe('일정 편집 코치마크 스텝', () => {
     expect(demoed).toEqual(['placeSheet', 'timelineBlock']);
   });
 
-  it('되돌릴 수 없는 셋만 눌러 보지 못하게 막는다', () => {
+  it('눌러서 얻을 것이 없는 넷만 막는다', () => {
     const blocked = EDITOR_COACHMARK_STEPS.filter(
       step => step.interactive === false,
     ).map(step => step.target);
 
     // 완성은 화면을 떠나고, 수정·삭제는 구멍 하나에 연필과 X가 같이 들어가며,
-    // 되돌리기는 진짜로 직전 작업을 무른다. 나머지는 직접 눌러 보게 둔다.
-    expect(blocked).toEqual(['blockActions', 'undo', 'complete']);
+    // 되돌리기는 진짜로 직전 작업을 무른다. 사용법 단추는 지금 보고 있는 것을
+    // 다시 여는 것뿐이다. 나머지는 직접 눌러 보게 둔다.
+    expect(blocked).toEqual(['blockActions', 'undo', 'complete', 'tutorial']);
   });
 
   it('해보기를 권하는 단계는 담기와 시간 조절 둘뿐이다', () => {

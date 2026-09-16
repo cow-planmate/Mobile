@@ -122,7 +122,7 @@ const ringTop = (tree: renderer.ReactTestRenderer) => {
   return style.top;
 };
 
-/** '1 / 2'처럼 조각으로 나뉘어 들어온 children도 한 줄로 이어 붙인다. */
+/** '1 / 3'처럼 조각으로 나뉘어 들어온 children도 한 줄로 이어 붙인다. */
 const visibleTexts = (tree: renderer.ReactTestRenderer): string[] =>
   tree.root.findAllByType(Text).map(node => {
     const children = node.props.children;
@@ -217,8 +217,8 @@ describe('EditorCoachmark', () => {
 
     const texts = visibleTexts(tree);
     expect(texts).toContain('일정 정보');
-    // 열셋 중 둘만 잴 수 있으면 '1 / 2'다. 못 잰 것을 세면 번호가 건너뛴다.
-    expect(texts).toContain('1 / 2');
+    // 둘만 잴 수 있으면 사용법 단추까지 셋이다. 못 잰 것을 세면 번호가 건너뛴다.
+    expect(texts).toContain('1 / 3');
   });
 
   it('짚은 자리를 흰 테두리와 파란 링 두 겹으로 두른다', async () => {
@@ -253,7 +253,10 @@ describe('EditorCoachmark', () => {
     await settle(tree);
     await openTour(tree);
 
-    const path = tree.root.findAllByType(Path)[0];
+    // 사용법 단추의 물음표도 Path로 그려진다 - 어두운 막을 색으로 골라 잡는다.
+    const path = tree.root
+      .findAllByType(Path)
+      .find(node => node.props.fill === 'rgba(2, 6, 23, 0.65)')!;
 
     // 겉과 구멍을 한 길에 담고 evenodd로 칠해야 구멍만 비워진다.
     expect(path.props.fillRule).toBe('evenodd');
@@ -279,7 +282,7 @@ describe('EditorCoachmark', () => {
 
     const texts = visibleTexts(tree);
     expect(texts).toContain('며칠차 고르기');
-    expect(texts).toContain('2 / 2');
+    expect(texts).toContain('2 / 3');
   });
 
   it('마지막에서 완료하면 안내를 닫고 단추는 남긴다', async () => {
@@ -290,7 +293,9 @@ describe('EditorCoachmark', () => {
     await settle(tree);
     await openTour(tree);
 
-    // 자리가 하나뿐이면 첫 스텝이 곧 마지막이다.
+    // 잴 수 있는 자리 하나에 사용법 단추까지 둘이다. 끝은 늘 사용법 단추다.
+    await press(tree, '다음 안내');
+    expect(visibleTexts(tree)).toContain('이제 직접 만들어보세요');
     await press(tree, '안내 완료');
 
     expect(visibleTexts(tree)).not.toContain('일정 정보');
@@ -311,6 +316,7 @@ describe('EditorCoachmark', () => {
     });
     await settle(tree);
     await openTour(tree);
+    await press(tree, '다음 안내');
     await press(tree, '안내 완료');
 
     await openTour(tree);
@@ -386,6 +392,10 @@ describe('EditorCoachmark', () => {
       tree = renderTour(null);
     });
     await settle(tree);
+    // 사용법 단추까지 포함해 아무것도 재지 못하는 상태 - 자리가 0으로 잡힌다.
+    (
+      View.prototype as unknown as { measureInWindow: MeasureInWindow }
+    ).measureInWindow = cb => cb(0, 0, 0, 0);
     await openTour(tree);
 
     // 빈 말풍선을 띄우지 않는다. 단추는 그대로라 다시 누르면 된다.
@@ -437,7 +447,7 @@ describe('EditorCoachmark', () => {
 
     const texts = visibleTexts(tree);
     expect(texts).toContain('며칠차 고르기');
-    expect(texts).toContain('2 / 2');
+    expect(texts).toContain('2 / 3');
   });
 
   it('구멍 밖을 눌러서는 넘어가지 않는다', async () => {
@@ -667,7 +677,7 @@ describe('EditorCoachmark', () => {
     await press(tree, '이전 안내');
     const texts = visibleTexts(tree);
     expect(texts).toContain('일정 정보');
-    expect(texts).toContain('1 / 2');
+    expect(texts).toContain('1 / 3');
   });
 
   it('같은 이름표를 단 둘째가 첫째의 등록을 지우지 않는다', async () => {
@@ -708,7 +718,7 @@ describe('EditorCoachmark', () => {
     });
     await settle(tree);
     await openTour(tree);
-    expect(visibleTexts(tree)).toContain('1 / 2');
+    expect(visibleTexts(tree)).toContain('1 / 3');
 
     // 다음 단계로 가기 직전에 그 자리가 화면 밖으로 밀려난다.
     await act(async () => {
@@ -731,7 +741,7 @@ describe('EditorCoachmark', () => {
 
     const texts = visibleTexts(tree);
     expect(texts).toContain('며칠차 고르기');
-    expect(texts).toContain('2 / 2');
+    expect(texts).toContain('2 / 3');
   });
 
   it('끌어와도 끝내 안 보이면 그 단계는 건너뛴다', async () => {
@@ -803,6 +813,6 @@ describe('EditorCoachmark', () => {
     });
     const texts = visibleTexts(tree);
     expect(texts).toContain('며칠차 고르기');
-    expect(texts).toContain('2 / 2');
+    expect(texts).toContain('2 / 3');
   });
 });

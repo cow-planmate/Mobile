@@ -395,12 +395,6 @@ export default function CoachmarkOverlay({
             {practiceHint ?? '직접 눌러 보면 다음으로 넘어가요.'}
           </Text>
         )}
-        {/* 안내는 이제 스스로 뜨지 않는다. 다시 보는 길을 마지막에 일러둔다. */}
-        {isLast && (
-          <Text style={styles.tipReplay}>
-            오른쪽 아래 물음표를 누르면 다시 볼 수 있어요.
-          </Text>
-        )}
         <View style={styles.tipFoot}>
           <Text style={styles.tipCount}>
             {index + 1} / {total}
@@ -522,13 +516,6 @@ const styles = StyleSheet.create({
   tipHint: {
     marginTop: 7,
     fontFamily: FONTS.semibold,
-    fontSize: 11.5,
-    lineHeight: 16,
-    color: COLORS.primary,
-  },
-  tipReplay: {
-    marginTop: 8,
-    fontFamily: FONTS.medium,
     fontSize: 11.5,
     lineHeight: 16,
     color: COLORS.primary,

@@ -23,7 +23,8 @@ export type CoachmarkTargetId =
   | 'participants'
   | 'invite'
   | 'map'
-  | 'timeline';
+  | 'timeline'
+  | 'tutorial';
 
 /**
  * 구멍의 모서리를 어떻게 깎을지. 동그란 아이콘 버튼은 반지름을 반으로 줘야
@@ -107,9 +108,10 @@ export interface CoachmarkStep {
    * 안내 중에 이 버튼을 실제로 눌러 볼 수 있는지. 기본은 눌러 볼 수 있다 -
    * 직접 한 번 해보고 다음 단계로 넘어가는 것이 안내의 목적이다.
    *
-   * false로 막는 것은 눌리면 되돌릴 수 없는 셋뿐이다. 일정 완성은 저장하고
+   * false로 막는 것은 눌러서 얻을 것이 없는 넷뿐이다. 일정 완성은 저장하고
    * 화면을 떠나 이어서 볼 안내가 없어지고, 되돌리기는 진짜로 직전 작업을
    * 무르며, 수정·삭제는 구멍 하나에 연필과 X가 같이 들어가 삭제만 막을 수 없다.
+   * 사용법 단추는 안내 중에는 눌리지 않는다 - 지금 보고 있는 것이 그 안내다.
    */
   interactive?: boolean;
   /**
@@ -214,6 +216,15 @@ export const EDITOR_COACHMARK_STEPS: readonly CoachmarkStep[] = [
     title: '일정 완성',
     body: '다 짰으면 눌러서 완성해요. 완성한 뒤에도 연필로 다시 열 수 있어요.',
     note: '누르지 않고 나가도 괜찮아요. 고친 내용은 그때그때 저장됩니다.',
+    shape: 'circle',
+    interactive: false,
+  },
+  // 웹 CreateTutorial의 마지막 단계를 그대로 옮긴다. 다시 보는 길을 글로만
+  // 적어 두면 어느 단추인지 찾아야 한다 - 그 단추를 짚으면서 말한다.
+  {
+    target: 'tutorial',
+    title: '이제 직접 만들어보세요',
+    body: '오른쪽 아래 사용법 버튼에서 언제든 다시 볼 수 있어요.',
     shape: 'circle',
     interactive: false,
   },

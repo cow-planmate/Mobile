@@ -9,7 +9,7 @@ import {
 } from '../../../constants/storageKeys';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
-import { useCoachmarkTour } from './CoachmarkContext';
+import { useCoachmarkTarget, useCoachmarkTour } from './CoachmarkContext';
 
 /**
  * 사용법 안내를 여는 물음표 단추와, 처음 온 사람에게 한 번 권하는 말풍선.
@@ -20,6 +20,7 @@ import { useCoachmarkTour } from './CoachmarkContext';
  */
 export default function TutorialLauncher() {
   const tour = useCoachmarkTour();
+  const buttonTarget = useCoachmarkTarget('tutorial');
   const [isNudgeVisible, setNudgeVisible] = useState(false);
 
   useEffect(() => {
@@ -51,11 +52,22 @@ export default function TutorialLauncher() {
     tour?.openTour();
   }, [dismissNudge, tour]);
 
-  if (!tour || tour.isRunning) return null;
+  if (!tour) return null;
+
+  /**
+   * 안내 중에는 숨는다. 다만 자리는 남겨 둔다 - 마지막에 이 단추를 짚어 주는데,
+   * 안내가 순서를 정할 때 잴 수 없으면 그 단계가 목록에서 빠진다.
+   * 제 차례가 오면 다시 보이고, 그때도 눌리지는 않는다.
+   */
+  const isRunning = tour.isRunning;
+  const isTourStep = tour.activeTarget === 'tutorial';
 
   return (
-    <View style={styles.wrap} pointerEvents="box-none">
-      {isNudgeVisible && (
+    <View
+      style={styles.wrap}
+      pointerEvents={isRunning ? 'none' : 'box-none'}
+    >
+      {!isRunning && isNudgeVisible && (
         <View style={styles.nudge}>
           <Text style={styles.nudgeTitle}>일정 만들기가 처음인가요?</Text>
           <TouchableOpacity
@@ -79,19 +91,24 @@ export default function TutorialLauncher() {
         </View>
       )}
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={openTour}
-        activeOpacity={0.8}
-        accessibilityRole="button"
-        accessibilityLabel="사용법 보기"
-        hitSlop={6}
+      <View
+        ref={buttonTarget}
+        style={isRunning && !isTourStep ? styles.hidden : null}
       >
-        <CircleQuestionMark
-          size={normalize(18)}
-          color={tokens.colors.primary}
-        />
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={openTour}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="사용법 보기"
+          hitSlop={6}
+        >
+          <CircleQuestionMark
+            size={normalize(18)}
+            color={tokens.colors.primary}
+          />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -99,6 +116,10 @@ export default function TutorialLauncher() {
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'flex-end',
+  },
+  /** 안내 중 제 차례가 오기 전까지. 자리는 그대로 두고 보이지만 않는다. */
+  hidden: {
+    opacity: 0,
   },
   button: {
     width: normalize(44),
