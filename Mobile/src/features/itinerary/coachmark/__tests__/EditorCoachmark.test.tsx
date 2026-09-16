@@ -29,8 +29,17 @@ const storage = AsyncStorage as unknown as {
  * 실제 화면 대신 잴 수 있는 자리만 등록해 둔다. 안내는 대상이 무엇인지 모르고
  * 위치만 알면 되므로 measureInWindow 하나면 충분하다.
  */
-function FakeTarget({ id, top }: { id: CoachmarkTargetId; top: number }) {
-  const attach = useCoachmarkTarget(id);
+function FakeTarget({
+  id,
+  top,
+  enabled = true,
+}: {
+  id: CoachmarkTargetId;
+  top: number;
+  /** 같은 이름표를 달고도 스스로 꺼져 있는 대상 - 시간표의 둘째 블록이 그렇다. */
+  enabled?: boolean;
+}) {
+  const attach = useCoachmarkTarget(id, enabled);
   useEffect(() => {
     attach({
       measureInWindow: (
@@ -41,11 +50,22 @@ function FakeTarget({ id, top }: { id: CoachmarkTargetId; top: number }) {
   return null;
 }
 
-const tourTree = (children: React.ReactNode, enabled: boolean = true) => (
+/** 시간표에 담긴 것 한 줄. 담겼는지·시간이 바뀌었는지만 보므로 이만큼이면 된다. */
+const place = (id: string, startTime = '10:00', endTime = '11:00') => ({
+  id,
+  startTime,
+  endTime,
+});
+
+const tourTree = (
+  children: React.ReactNode,
+  enabled: boolean = true,
+  places: ReturnType<typeof place>[] = [],
+) => (
   <CoachmarkProvider>
     {children}
     <TutorialLauncher />
-    <EditorCoachmark enabled={enabled} />
+    <EditorCoachmark enabled={enabled} places={places} />
   </CoachmarkProvider>
 );
 
@@ -59,9 +79,31 @@ const tourTree = (children: React.ReactNode, enabled: boolean = true) => (
  */
 let hostTop = 0;
 
-function renderTour(children: React.ReactNode) {
-  return renderer.create(tourTree(children));
+function renderTour(
+  children: React.ReactNode,
+  places: ReturnType<typeof place>[] = [],
+) {
+  return renderer.create(tourTree(children, true, places));
 }
+
+/**
+ * 시간표가 달라진 것처럼 만들고, 알아서 넘어가기까지 두는 틈만큼 시계를 민다.
+ */
+const setPlaces = async (
+  tree: renderer.ReactTestRenderer,
+  children: React.ReactNode,
+  places: ReturnType<typeof place>[],
+) => {
+  await act(async () => {
+    tree.update(tourTree(children, true, places));
+    await Promise.resolve();
+  });
+  await act(async () => {
+    jest.advanceTimersByTime(1000);
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+};
 
 /** 짚은 자리를 두르는 흰 테두리가 놓인 곳. */
 const ringTop = (tree: renderer.ReactTestRenderer) => {
@@ -473,14 +515,16 @@ describe('EditorCoachmark', () => {
   });
 
   it('손짓을 보여 주는 단계에서만 손가락 자국이 뜬다', async () => {
+    const targets = (
+      <>
+        <FakeTarget id="placeSheet" top={100} />
+        <FakeTarget id="checklist" top={100} />
+      </>
+    );
+
     let tree!: renderer.ReactTestRenderer;
     await act(async () => {
-      tree = renderTour(
-        <>
-          <FakeTarget id="placeSheet" top={100} />
-          <FakeTarget id="checklist" top={100} />
-        </>,
-      );
+      tree = renderTour(targets);
     });
     await settle(tree);
     await openTour(tree);
@@ -491,13 +535,240 @@ describe('EditorCoachmark', () => {
       tree.root.findAllByProps({ testID: 'coachmark-gesture' }).length,
     ).toBeGreaterThan(0);
 
-    await press(tree, '다음 안내');
+    // 장소 담기는 직접 담아야 넘어간다.
+    await setPlaces(tree, targets, [place('p1')]);
 
     // 그냥 누르면 되는 단추에는 손짓을 얹지 않는다.
     expect(visibleTexts(tree)).toContain('체크리스트');
     expect(tree.root.findAllByProps({ testID: 'coachmark-gesture' })).toEqual(
       [],
     );
+  });
+
+  it('장소를 담아 보라고 권하되 막지는 않는다', async () => {
+    const targets = (
+      <>
+        <FakeTarget id="placeSheet" top={100} />
+        <FakeTarget id="checklist" top={100} />
+      </>
+    );
+
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderTour(targets);
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    // 무엇을 해보면 되는지 권하고, '다음'은 언제든 열어 둔다.
+    const texts = visibleTexts(tree);
+    expect(texts).toContain('장소를 하나 담아 보세요. 담으면 바로 넘어가요.');
+    expect(texts).not.toContain('직접 눌러 보면 다음으로 넘어가요.');
+    expect(
+      tree.root.findByProps({ accessibilityLabel: '다음 안내' }).props.disabled,
+    ).toBeFalsy();
+
+    // 패널을 한 번 건드린 것은 담은 것이 아니다 - 그것으로는 넘어가지 않는다.
+    await touchAt(tree, 50, 120);
+    expect(visibleTexts(tree)).toContain('장소 담기');
+
+    await press(tree, '다음 안내');
+    expect(visibleTexts(tree)).toContain('체크리스트');
+  });
+
+  it('장소를 담으면 한 번 더 누르지 않아도 넘어간다', async () => {
+    const targets = (
+      <>
+        <FakeTarget id="placeSheet" top={100} />
+        <FakeTarget id="checklist" top={100} />
+      </>
+    );
+
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderTour(targets);
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    await setPlaces(tree, targets, [place('p1')]);
+    expect(visibleTexts(tree)).toContain('체크리스트');
+  });
+
+  it('있던 블록의 시간이 달라졌을 때만 시간 조절을 해낸 것으로 친다', async () => {
+    const targets = (
+      <>
+        <FakeTarget id="timelineBlock" top={100} />
+        <FakeTarget id="checklist" top={100} />
+      </>
+    );
+
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderTour(targets, [place('p1')]);
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    expect(visibleTexts(tree)).toContain(
+      '시간을 한 번 바꿔 보세요. 바꾸면 바로 넘어가요.',
+    );
+
+    // 장소를 하나 더 담은 것은 시간 조절이 아니다.
+    await setPlaces(tree, targets, [place('p1'), place('p2', '13:00', '14:00')]);
+    expect(visibleTexts(tree)).toContain('시간 조절');
+
+    await setPlaces(tree, targets, [
+      place('p1', '10:00', '11:30'),
+      place('p2', '13:00', '14:00'),
+    ]);
+    expect(visibleTexts(tree)).toContain('체크리스트');
+  });
+
+  it('담긴 것이 없으면 시간을 바꿔 보라고 권하지 않는다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      // 시간표가 비면 그 자리에는 눈에만 있는 예시 블록이 떠 있다.
+      // 끌 수 없는 것을 끌어 보라고 하면 안내가 거짓말이 된다.
+      tree = renderTour(<FakeTarget id="timelineBlock" top={100} />);
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    const texts = visibleTexts(tree);
+    expect(texts).toContain('시간 조절');
+    expect(texts).not.toContain(
+      '시간을 한 번 바꿔 보세요. 바꾸면 바로 넘어가요.',
+    );
+    expect(texts).not.toContain('직접 눌러 보면 다음으로 넘어가요.');
+  });
+
+  it('첫 단계에는 이전이 없고 넘어간 뒤에는 되돌아갈 수 있다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderTour(
+        <>
+          <FakeTarget id="planInfo" top={100} />
+          <FakeTarget id="dayTabs" top={100} />
+        </>,
+      );
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    // 첫 단계에서는 돌아갈 곳이 없다.
+    expect(tree.root.findAllByProps({ accessibilityLabel: '이전 안내' })).toEqual(
+      [],
+    );
+
+    await press(tree, '다음 안내');
+    expect(visibleTexts(tree)).toContain('며칠차 고르기');
+
+    await press(tree, '이전 안내');
+    const texts = visibleTexts(tree);
+    expect(texts).toContain('일정 정보');
+    expect(texts).toContain('1 / 2');
+  });
+
+  it('같은 이름표를 단 둘째가 첫째의 등록을 지우지 않는다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      // 시간표 블록은 그날 첫 블록만 짚는다 - 둘째 블록도 같은 이름표를 달고
+      // 있지만 스스로 꺼져 있다. 그 둘째가 첫째의 등록까지 지우면 안 된다.
+      tree = renderTour(
+        <>
+          <FakeTarget id="timelineBlock" top={100} />
+          <FakeTarget id="timelineBlock" top={300} enabled={false} />
+        </>,
+        [place('p1')],
+      );
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    expect(visibleTexts(tree)).toContain('시간 조절');
+  });
+
+  it('안내 도중 화면 밖으로 밀려난 자리는 건너뛰지 않고 다시 끌어온다', async () => {
+    // 화면이 끌어올 수 있다고 답하는 자리만 - 시간표 블록이 그런 자리다.
+    const reveal = jest.fn((target: CoachmarkTargetId) => target === 'dayTabs');
+    /** 시간표가 굴러가면 짚으려던 블록이 위로 밀려난다 - top으로 그것을 흉내 낸다. */
+    const tree2 = (dayTabsTop: number) => (
+      <CoachmarkProvider>
+        <FakeTarget id="planInfo" top={100} />
+        <FakeTarget id="dayTabs" top={dayTabsTop} />
+        <TutorialLauncher />
+        <EditorCoachmark enabled onRevealTarget={reveal} />
+      </CoachmarkProvider>
+    );
+
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderer.create(tree2(100));
+    });
+    await settle(tree);
+    await openTour(tree);
+    expect(visibleTexts(tree)).toContain('1 / 2');
+
+    // 다음 단계로 가기 직전에 그 자리가 화면 밖으로 밀려난다.
+    await act(async () => {
+      tree.update(tree2(-200));
+      await Promise.resolve();
+    });
+    await press(tree, '다음 안내');
+
+    // 없어진 것으로 치고 넘겨 버리지 않는다 - 끌어와 달라고 먼저 부탁한다.
+    expect(reveal).toHaveBeenCalledWith('dayTabs');
+    expect(visibleTexts(tree)).not.toContain('며칠차 고르기');
+
+    // 끌어와서 다시 보이면 그 단계를 그대로 짚는다.
+    await act(async () => {
+      tree.update(tree2(100));
+      jest.advanceTimersByTime(600);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const texts = visibleTexts(tree);
+    expect(texts).toContain('며칠차 고르기');
+    expect(texts).toContain('2 / 2');
+  });
+
+  it('끌어와도 끝내 안 보이면 그 단계는 건너뛴다', async () => {
+    // 화면이 끌어올 수 있다고 답하는 자리만 - 시간표 블록이 그런 자리다.
+    const reveal = jest.fn((target: CoachmarkTargetId) => target === 'dayTabs');
+    const tree3 = (dayTabsTop: number) => (
+      <CoachmarkProvider>
+        <FakeTarget id="planInfo" top={100} />
+        <FakeTarget id="dayTabs" top={dayTabsTop} />
+        <FakeTarget id="dayPeriod" top={100} />
+        <TutorialLauncher />
+        <EditorCoachmark enabled onRevealTarget={reveal} />
+      </CoachmarkProvider>
+    );
+
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderer.create(tree3(100));
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    await act(async () => {
+      tree.update(tree3(-200));
+      await Promise.resolve();
+    });
+    await press(tree, '다음 안내');
+
+    await act(async () => {
+      jest.advanceTimersByTime(600);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // 한 단계에 한 번만 부탁하고, 그래도 안 보이면 다음으로 넘어간다.
+    expect(reveal.mock.calls.filter(([t]) => t === 'dayTabs')).toHaveLength(1);
+    expect(visibleTexts(tree)).toContain('여행 기간 바꾸기');
   });
 
   it('가려지는 동안 숨었다가 다시 보이면 같은 단계로 돌아온다', async () => {

@@ -33,6 +33,13 @@ const ARROW = 12;
  * 걸터앉고, 더 내리면 손짓이 지나갈 길을 막는다.
  */
 const FAR_TOP = 200;
+/**
+ * 함께 밝힌 자리와 짚은 것 사이에 두는 어두운 틈.
+ *
+ * 둘이 맞닿으면 한 덩어리로 보여 어디가 놓는 곳이고 어디가 고르는 곳인지
+ * 갈리지 않는다. 두 테두리가 서로 닿지 않을 만큼은 띄운다.
+ */
+const LIGHT_GAP = 12;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -66,7 +73,16 @@ interface CoachmarkOverlayProps {
   index: number;
   total: number;
   rect: CoachmarkRect;
+  /**
+   * 짚은 것 말고 함께 밝혀 둘 자리. 어두운 막에 구멍만 하나 더 뚫는다 -
+   * 테두리도 손가락 판정도 짚은 것 하나만 쓴다.
+   */
+  extraRect?: CoachmarkRect | null;
+  /** 해보기를 권하는 한마디. 없으면 눌러 보라는 기본 안내가 들어간다. */
+  practiceHint?: string | null;
   onNext: () => void;
+  /** 앞 단계로. 첫 단계에서는 주지 않는다 - 돌아갈 곳이 없다. */
+  onPrev?: () => void;
   onSkip: () => void;
 }
 
@@ -87,7 +103,10 @@ export default function CoachmarkOverlay({
   index,
   total,
   rect,
+  extraRect = null,
+  practiceHint = null,
   onNext,
+  onPrev,
   onSkip,
 }: CoachmarkOverlayProps) {
   const { width: winWidth, height: winHeight } = useWindowDimensions();
@@ -105,6 +124,30 @@ export default function CoachmarkOverlay({
       height: Math.max(0, Math.min(winHeight - y, raw.height)),
     };
   }, [step, rect, winWidth, winHeight]);
+
+  /**
+   * 함께 밝힐 자리. 화면 밖으로 나간 만큼과 짚은 구멍에 겹치는 만큼을 잘라 둔다.
+   *
+   * 구멍 둘을 한 길에 담아 evenodd로 칠하므로, 겹친 자리는 두 번 세어져 도로
+   * 어두워진다. 시간표는 아래 패널 뒤까지 깔려 있어 그냥 두면 정작 짚어 준
+   * 패널이 어둡게 남았다.
+   */
+  const alsoHole = useMemo(() => {
+    if (!extraRect) return null;
+    const x = Math.max(0, extraRect.x);
+    const y = Math.max(0, extraRect.y);
+    const width = Math.max(0, Math.min(winWidth - x, extraRect.width));
+    let top = y;
+    let bottom = y + Math.max(0, Math.min(winHeight - y, extraRect.height));
+    const mainTop = Math.max(0, holeRect(step, rect).y);
+    const mainBottom = mainTop + holeRect(step, rect).height;
+    if (top < mainTop) {
+      bottom = Math.min(bottom, mainTop - LIGHT_GAP);
+    } else {
+      top = Math.max(top, mainBottom + LIGHT_GAP);
+    }
+    return { x, y: top, width, height: Math.max(0, bottom - top) };
+  }, [extraRect, step, rect, winWidth, winHeight]);
 
   const holeBottom = hole.y + hole.height;
   const holeRight = hole.x + hole.width;
@@ -124,12 +167,25 @@ export default function CoachmarkOverlay({
 
   // 손짓이 짚은 것 밖으로 멀리 나가는 단계는 말풍선을 그 길에서 치운다.
   const holeAtBottom = hole.y + hole.height / 2 > winHeight / 2;
+  // 아래로 뻗는 손짓을 덮지 않도록, 자리가 날 때는 위에 앉힌다.
+  const preferAbove =
+    !!step.tipAbove && hole.y - TIP_GAP - tipHeight >= EDGE && tipHeight > 0;
   const fitsBelow = step.tipAway
     ? !holeAtBottom
-    : holeBottom + TIP_GAP + tipHeight <= winHeight - EDGE;
+    : !preferAbove && holeBottom + TIP_GAP + tipHeight <= winHeight - EDGE;
+  /**
+   * 화면 끝으로 치울 때 얼마나 올릴지.
+   *
+   * 함께 밝힌 자리가 있으면 그 위에 붙인다 - 밝혀 놓고 그 위에 말풍선을
+   * 얹으면 밝힌 뜻이 없어진다. 없으면 예전처럼 상단바 아래에 둔다.
+   */
+  const tipAwayTop =
+    alsoHole && alsoHole.height > 0 && tipHeight > 0
+      ? Math.max(EDGE, alsoHole.y - TIP_GAP - tipHeight)
+      : Math.min(FAR_TOP, winHeight / 3);
   const tipTop = step.tipAway
     ? holeAtBottom
-      ? Math.min(FAR_TOP, winHeight / 3)
+      ? tipAwayTop
       : Math.max(FAR_TOP, winHeight - EDGE - tipHeight)
     : fitsBelow
     ? holeBottom + TIP_GAP
@@ -164,7 +220,17 @@ export default function CoachmarkOverlay({
             hole.width,
             hole.height,
             radius,
-          )}`}
+          )}${
+            alsoHole && alsoHole.height > 0
+              ? ` ${roundedRectPath(
+                  alsoHole.x,
+                  alsoHole.y,
+                  alsoHole.width,
+                  alsoHole.height,
+                  HOLE_RADIUS,
+                )}`
+              : ''
+          }`}
           fill={SCRIM}
           fillRule="evenodd"
         />
@@ -255,6 +321,39 @@ export default function CoachmarkOverlay({
         ]}
       />
 
+      {/* 함께 밝힌 자리도 같은 두 겹으로 두른다 - 테두리가 없으면 어디까지가
+          놓을 수 있는 곳인지 가장자리가 흐려진다. */}
+      {!!alsoHole && alsoHole.height > 0 && (
+        <>
+          <View
+            pointerEvents="none"
+            style={[
+              styles.glowRing,
+              {
+                left: alsoHole.x - GLOW_WIDTH,
+                top: alsoHole.y - GLOW_WIDTH,
+                width: alsoHole.width + GLOW_WIDTH * 2,
+                height: alsoHole.height + GLOW_WIDTH * 2,
+                borderRadius: HOLE_RADIUS + GLOW_WIDTH,
+              },
+            ]}
+          />
+          <View
+            pointerEvents="none"
+            style={[
+              styles.ring,
+              {
+                left: alsoHole.x,
+                top: alsoHole.y,
+                width: alsoHole.width,
+                height: alsoHole.height,
+                borderRadius: HOLE_RADIUS,
+              },
+            ]}
+          />
+        </>
+      )}
+
       {/* 짚어 준 것 위에서 손짓을 흉내 낸다. 말풍선보다 아래에 그려 말풍선이
           가려지지 않게 한다. */}
       {!!step.demo && <CoachmarkGesture rect={rect} demo={step.demo} />}
@@ -289,8 +388,12 @@ export default function CoachmarkOverlay({
             <Text style={styles.tipNoteText}>{step.note}</Text>
           </View>
         )}
-        {isInteractive && (
-          <Text style={styles.tipHint}>직접 눌러 보면 다음으로 넘어가요.</Text>
+        {/* 해보기를 권하는 단계는 짚은 것을 눌렀다고 넘어가지 않는다.
+            권유가 없을 때 기본 안내를 대신 넣으면 없는 길을 알려 주는 셈이다. */}
+        {(!!practiceHint || (isInteractive && !step.practice)) && (
+          <Text style={styles.tipHint}>
+            {practiceHint ?? '직접 눌러 보면 다음으로 넘어가요.'}
+          </Text>
         )}
         {/* 안내는 이제 스스로 뜨지 않는다. 다시 보는 길을 마지막에 일러둔다. */}
         {isLast && (
@@ -302,15 +405,28 @@ export default function CoachmarkOverlay({
           <Text style={styles.tipCount}>
             {index + 1} / {total}
           </Text>
-          <TouchableOpacity
-            onPress={onNext}
-            style={styles.tipNext}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel={isLast ? '안내 완료' : '다음 안내'}
-          >
-            <Text style={styles.tipNextText}>{isLast ? '완료' : '다음'}</Text>
-          </TouchableOpacity>
+          <View style={styles.tipButtons}>
+            {!!onPrev && (
+              <TouchableOpacity
+                onPress={onPrev}
+                style={styles.tipPrev}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="이전 안내"
+              >
+                <Text style={styles.tipPrevText}>이전</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={onNext}
+              style={styles.tipNext}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={isLast ? '안내 완료' : '다음 안내'}
+            >
+              <Text style={styles.tipNextText}>{isLast ? '완료' : '다음'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -435,6 +551,26 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  tipButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  /** 되돌아가는 쪽은 테두리만 둔다 - 파랑 둘이 나란히 서면 어느 쪽이 앞인지 흐려진다. */
+  tipPrev: {
+    height: 30,
+    paddingHorizontal: 13,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tipPrevText: {
+    fontFamily: FONTS.semibold,
+    fontSize: 12,
+    color: COLORS.textSecondary,
   },
   tipNextText: {
     fontFamily: FONTS.bold,

@@ -94,7 +94,10 @@ import Undo2 from 'lucide-react-native/dist/esm/icons/undo-2';
 import UserPlusIcon from 'lucide-react-native/dist/esm/icons/user-plus';
 import UsersIcon from 'lucide-react-native/dist/esm/icons/users';
 import XIcon from 'lucide-react-native/dist/esm/icons/x';
-import { useCoachmarkTarget } from '../coachmark/CoachmarkContext';
+import {
+  useCoachmarkTarget,
+  useCoachmarkTour,
+} from '../coachmark/CoachmarkContext';
 import TutorialLauncher from '../coachmark/TutorialLauncher';
 
 type ToolbarButtonVariant =
@@ -1017,6 +1020,45 @@ const AnimatedPlacementPreview: React.FC<AnimatedPlacementPreviewProps> =
   );
 AnimatedPlacementPreview.displayName = 'AnimatedPlacementPreview';
 
+/**
+ * 시간표가 빈 채로 안내를 열었을 때 대신 짚어 주는 예시 블록.
+ *
+ * 진짜 블록과 같은 카드를 쓴다 - 흉내가 달라 보이면 "이렇게 놓인다"는 말이
+ * 남지 않는다. 손가락은 먹지 않는다. 눈에만 있는 것이라 끌어도 아무 일도
+ * 일어나지 않아야 하고, 끌리는 것처럼 보이면 그게 더 나쁘다.
+ */
+const DemoTimelineBlock = React.memo(function DemoTimelineBlock({
+  place,
+  offsetMinutes,
+  visible,
+}: {
+  place: Place;
+  offsetMinutes: number;
+  visible: boolean;
+}) {
+  const blockTarget = useCoachmarkTarget('timelineBlock');
+  const top =
+    GRID_TOP_OFFSET +
+    (timeToMinutes(place.startTime) - offsetMinutes) * MINUTE_HEIGHT;
+  const height =
+    (timeToMinutes(place.endTime) - timeToMinutes(place.startTime)) *
+    MINUTE_HEIGHT;
+
+  return (
+    <View
+      ref={blockTarget}
+      pointerEvents="none"
+      style={[
+        styles.timelineDemoBlock,
+        { top, height },
+        visible ? null : styles.timelineDemoHidden,
+      ]}
+    >
+      <TimelineItem item={place} isTourAnchor style={styles.flex1} />
+    </View>
+  );
+});
+
 const TimelineComponent = React.memo(
   React.forwardRef<
     ScrollView,
@@ -1138,6 +1180,65 @@ const TimelineComponent = React.memo(
         };
       }, [selectedDay?.startTime, selectedDay?.endTime]);
 
+      const timelineTarget = useCoachmarkTarget('timeline');
+
+      const tour = useCoachmarkTour();
+      const isTourRunning = !!tour?.isRunning;
+      const activeTarget = tour?.activeTarget ?? null;
+
+      /**
+       * 시간표가 빈 채로 안내를 열면 짚을 블록이 없다. 눈에만 있는 예시 블록을
+       * 하나 놓아 시간 조절과 수정·삭제를 그 위에서 보여 준다.
+       *
+       * 안내가 열려 있는 동안 내내 달려 있다 - 순서를 정할 때 잴 수 있어야
+       * 그 두 단계가 목록에 남는다. 다만 제 차례가 오기 전에는 보이지 않는다.
+       * 담지도 않은 장소가 이미 놓인 것처럼 보이면 안내가 거짓말이 된다.
+       */
+      const hasPlaces = !!selectedDay?.places?.length;
+      const showDemoBlock = isTourRunning && !hasPlaces;
+      const isDemoBlockVisible =
+        activeTarget === 'timelineBlock' || activeTarget === 'blockActions';
+
+      /**
+       * 예시 블록을 놓을 시각. 안내를 열 때 지금 보고 있는 자리에서 정한다.
+       *
+       * 하루 시작에 못 박아 두면 시간표를 내려 둔 채로 안내를 열었을 때 화면
+       * 밖에 놓인다. 그러면 잴 수 없어 시간 조절·수정 단계가 목록에서 통째로
+       * 빠졌다 - 실제로 '5 / 10'이 되어 그 둘을 건너뛰었다.
+       *
+       * 안내 중에는 시간표를 굴릴 수 없으니 열 때 한 번만 정하면 된다.
+       */
+      const demoStartRef = useRef<number | null>(null);
+      if (!showDemoBlock) {
+        demoStartRef.current = null;
+      } else if (demoStartRef.current === null) {
+        const scrolled =
+          offsetMinutes + ((getScrollY?.() ?? 0) - GRID_TOP_OFFSET) / MINUTE_HEIGHT;
+        // 눈금에 맞춰 올림한다 - 내림하면 날씨 카드 뒤로 반쯤 숨는다.
+        const snapped = Math.ceil(scrolled / 15) * 15;
+        demoStartRef.current = Math.max(
+          minStartMinutes,
+          Math.min(snapped, maxEndMinutes - 60),
+        );
+      }
+      const demoStartMinutes = demoStartRef.current;
+
+      const demoPlace = React.useMemo<Place>(
+        () => ({
+          id: 'coachmark-demo',
+          name: '예시 장소',
+          type: '관광지',
+          categoryId: 0,
+          startTime: minutesToTime(demoStartMinutes ?? minStartMinutes),
+          endTime: minutesToTime((demoStartMinutes ?? minStartMinutes) + 60),
+          address: '',
+          imageUrl: '',
+          latitude: 0,
+          longitude: 0,
+        }),
+        [demoStartMinutes, minStartMinutes],
+      );
+
       const [draggingPlaceId, setDraggingPlaceId] = useState<string | null>(
         null,
       );
@@ -1156,6 +1257,13 @@ const TimelineComponent = React.memo(
 
       return (
         <View style={styles.tabContentContainer}>
+          {/* 안내가 '여기에 놓으라'고 밝힐 자리. 날씨 카드가 떠 있는 만큼은
+              빼고 잡는다 - 장소를 놓을 수 있는 곳이 아니라 밝혀 봐야 헷갈린다. */}
+          <View
+            ref={timelineTarget}
+            pointerEvents="none"
+            style={[styles.timelineDropArea, { top: topPadding }]}
+          />
           <ScrollView
             ref={ref}
             scrollEnabled={!isItemDragging && !isDragging}
@@ -1192,6 +1300,13 @@ const TimelineComponent = React.memo(
                 pointerEvents="box-none"
               >
                 <TimeGridBackground hours={gridHours} endHour={endHour} />
+                {showDemoBlock && (
+                  <DemoTimelineBlock
+                    place={demoPlace}
+                    offsetMinutes={offsetMinutes}
+                    visible={isDemoBlockVisible}
+                  />
+                )}
                 {selectedDay?.places.map((place, placeIndex) => (
                   <DraggableTimelineItem
                     key={place.id}

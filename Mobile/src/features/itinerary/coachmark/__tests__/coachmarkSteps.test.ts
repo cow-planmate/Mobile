@@ -65,6 +65,44 @@ describe('일정 편집 코치마크 스텝', () => {
     expect(blocked).toEqual(['blockActions', 'undo', 'complete']);
   });
 
+  it('해보기를 권하는 단계는 담기와 시간 조절 둘뿐이다', () => {
+    const asked = EDITOR_COACHMARK_STEPS.filter(step => step.practice);
+
+    // 손으로 익히는 동작은 이 둘이다 - 나머지는 눌러 보면 끝나는 단추라
+    // 권할 것이 없다.
+    expect(asked.map(step => step.target)).toEqual([
+      'placeSheet',
+      'timelineBlock',
+    ]);
+    expect(asked.map(step => step.practice)).toEqual([
+      'placeAdded',
+      'timeChanged',
+    ]);
+    // 권해 놓고 눌러 보지도 못하게 해두면 권유가 아니다.
+    asked.forEach(step => expect(step.interactive).not.toBe(false));
+  });
+
+  it('장소를 놓을 시간표도 함께 밝힌다', () => {
+    const lit = EDITOR_COACHMARK_STEPS.filter(step => step.lightAlso);
+
+    // 끌어다 놓는 단계뿐이다. 놓을 곳이 어두우면 어디에 놓으라는 것인지
+    // 알 수 없다.
+    expect(lit.map(step => step.target)).toEqual(['placeSheet']);
+    expect(lit[0].lightAlso).toBe('timeline');
+  });
+
+  it('시간 늘리는 예시는 아래로 보여 준다', () => {
+    const step = EDITOR_COACHMARK_STEPS.find(
+      one => one.target === 'timelineBlock',
+    );
+
+    // 하루가 9시에서 시작해 첫 블록이 맨 위에 놓인다. 위로 늘리면 늘어나는
+    // 자리가 날씨 카드 뒤로 숨는다.
+    expect(step?.demo?.kind).toBe('grow');
+    expect(step?.demo?.dy).toBeGreaterThan(0);
+    expect(step?.demo?.fromY).toBe(1);
+  });
+
   it('동그란 버튼은 테두리가 원을 따라가도록 표시해 둔다', () => {
     const circles = EDITOR_COACHMARK_STEPS.filter(
       step => step.shape === 'circle',

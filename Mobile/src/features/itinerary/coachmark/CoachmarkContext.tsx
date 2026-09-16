@@ -24,8 +24,22 @@ export interface MeasurableNode {
   ) => void;
 }
 
+/**
+ * 같은 이름표를 여럿이 달 수 있어서, 등록한 쪽이 누구인지 함께 적어 둔다.
+ *
+ * 시간표 블록은 그날 첫 블록 하나만 짚는데, 이름표는 블록마다 달려 있고 첫째가
+ * 아닌 블록은 '나는 아니다'라며 등록을 지운다. 누가 지우는지 보지 않으면 둘째
+ * 블록이 첫째의 등록까지 지워 버려, 장소가 둘 이상인 날에는 시간 조절·수정
+ * 단계가 통째로 사라졌다. 지금 올라와 있는 것이 제 것일 때만 지우게 한다.
+ */
+type NodeOwner = object;
+
 interface CoachmarkRegistry {
-  register: (id: CoachmarkTargetId, node: MeasurableNode | null) => void;
+  register: (
+    id: CoachmarkTargetId,
+    node: MeasurableNode | null,
+    owner: NodeOwner,
+  ) => void;
   resolve: (id: CoachmarkTargetId) => MeasurableNode | null;
   /**
    * 안내가 그려지는 판. 짚을 자리를 이 판 기준으로 옮겨 적는 데 쓴다.
@@ -54,6 +68,13 @@ interface CoachmarkTour {
   openTour: () => void;
   closeTour: () => void;
   /**
+   * 안내가 지금 짚고 있는 것. 짚히는 쪽이 제 차례를 알아야 할 때 쓴다 -
+   * 시간표는 비어 있을 때 예시 블록을 띄우는데, 시간 조절 차례가 오기 전에
+   * 띄워 두면 담지도 않은 장소가 이미 놓인 것처럼 보인다.
+   */
+  activeTarget: CoachmarkTargetId | null;
+  setActiveTarget: (target: CoachmarkTargetId | null) => void;
+  /**
    * 손가락이 떨어질 때마다 그 손가락이 '닿기 시작한' 자리를 알려 준다.
    * 돌려주는 함수를 부르면 그만 듣는다.
    *
@@ -66,8 +87,13 @@ interface CoachmarkTour {
 const CoachmarkTourContext = createContext<CoachmarkTour | null>(null);
 
 export function CoachmarkProvider({ children }: { children: React.ReactNode }) {
-  const nodes = useRef(new Map<CoachmarkTargetId, MeasurableNode>()).current;
+  const nodes = useRef(
+    new Map<CoachmarkTargetId, { node: MeasurableNode; owner: NodeOwner }>(),
+  ).current;
   const [isRunning, setIsRunning] = useState(false);
+  const [activeTarget, setActiveTarget] = useState<CoachmarkTargetId | null>(
+    null,
+  );
 
   const openTour = useCallback(() => setIsRunning(true), []);
   const closeTour = useCallback(() => setIsRunning(false), []);
@@ -106,8 +132,15 @@ export function CoachmarkProvider({ children }: { children: React.ReactNode }) {
   );
 
   const tour = useMemo<CoachmarkTour>(
-    () => ({ isRunning, openTour, closeTour, watchTouch }),
-    [isRunning, openTour, closeTour, watchTouch],
+    () => ({
+      isRunning,
+      openTour,
+      closeTour,
+      watchTouch,
+      activeTarget,
+      setActiveTarget,
+    }),
+    [isRunning, openTour, closeTour, watchTouch, activeTarget],
   );
 
   const hostNode = useRef<MeasurableNode | null>(null);
@@ -117,15 +150,16 @@ export function CoachmarkProvider({ children }: { children: React.ReactNode }) {
 
   const registry = useMemo<CoachmarkRegistry>(
     () => ({
-      register(id, node) {
+      register(id, node, owner) {
         if (node) {
-          nodes.set(id, node);
-        } else {
-          nodes.delete(id);
+          nodes.set(id, { node, owner });
+          return;
         }
+        // 남이 올려 둔 것을 대신 내려 주지 않는다.
+        if (nodes.get(id)?.owner === owner) nodes.delete(id);
       },
       resolve(id) {
-        return nodes.get(id) ?? null;
+        return nodes.get(id)?.node ?? null;
       },
       resolveHost() {
         return hostNode.current;
@@ -177,15 +211,17 @@ export function useCoachmarkTarget(
   enabled: boolean = true,
 ) {
   const registry = useContext(CoachmarkContext);
+  // 이 자리를 올린 것이 나인지 가리는 표. 내용은 필요 없고 저마다 다르기만 하면 된다.
+  const owner = useRef({}).current;
 
   // View·ScrollView·Animated.View가 저마다 다른 ref 타입을 요구한다. unknown으로
   // 받아 잴 수 있는 것인지 직접 확인해야 어디에나 그대로 매달 수 있다.
   return useCallback(
     (node: unknown) => {
       if (!registry) return;
-      registry.register(id, enabled && isMeasurable(node) ? node : null);
+      registry.register(id, enabled && isMeasurable(node) ? node : null, owner);
     },
-    [registry, id, enabled],
+    [registry, id, enabled, owner],
   );
 }
 

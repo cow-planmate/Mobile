@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Modal, AppState } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAlert } from '../../../contexts/AlertContext';
@@ -40,6 +40,7 @@ import ChecklistSheet from '../components/checklist/ChecklistSheet';
 import EditAccessGate from '../components/EditAccessGate';
 import { normalizeCategoryId } from '../../../utils/placeCategory';
 import { CoachmarkProvider, EditorCoachmark } from '../coachmark';
+import type { CoachmarkTargetId } from '../coachmark';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ItineraryEditor'>;
 
@@ -163,7 +164,12 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     }
   }, [queryClient]);
 
-  const { updatePlaceDetails, setDays, reorderPlacesInDay } = useItinerary();
+  const {
+    updatePlaceDetails,
+    setDays,
+    reorderPlacesInDay,
+    setLastAddedPlaceId,
+  } = useItinerary();
   const {
     connect,
     disconnect,
@@ -790,6 +796,43 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
    * 봐야 보이지 않고, 이름을 고치는 중이면 손을 가로막는다. 볼 권한이 없는
    * 사람에게는 편집 버튼을 설명할 이유가 없다.
    */
+  /**
+   * 안내에 넘겨 주는 시간표 한 줄씩. 장소 담기와 시간 조절 단계는 이것이
+   * 달라졌는지를 보고 '직접 해봤다'를 판정한다.
+   *
+   * 보고 있는 날만 추리지 않고 전부 넘긴다 - 안내 중에도 일차를 옮길 수 있어서
+   * 다른 날에 담은 것이 안 담은 것으로 보이면 안내가 그 자리에 갇힌다.
+   */
+  const coachmarkPlaces = useMemo(
+    () =>
+      days.flatMap(day =>
+        day.places.map(place => ({
+          id: place.id,
+          startTime: place.startTime,
+          endTime: place.endTime,
+        })),
+      ),
+    [days],
+  );
+
+  /**
+   * 안내가 짚으려는 것이 화면 밖으로 밀려났을 때 다시 끌어온다.
+   *
+   * 장소를 담으면 시간표가 담은 자리로 굴러가서, 안내가 짚는 그날 첫 블록이
+   * 위로 밀려난다. 그 자리를 다시 보이게 해야 시간 조절·수정 단계가 살아 있다.
+   * 장소를 담았을 때 그 자리로 굴러가는 길이 이미 있으니 그것을 그대로 쓴다.
+   */
+  const revealCoachmarkTarget = useCallback(
+    (target: CoachmarkTargetId) => {
+      if (target !== 'timelineBlock' && target !== 'blockActions') return false;
+      const anchor = days[selectedDayIndex]?.places?.[0];
+      if (!anchor) return false;
+      setLastAddedPlaceId(anchor.id);
+      return true;
+    },
+    [days, selectedDayIndex, setLastAddedPlaceId],
+  );
+
   const isCoachmarkReady =
     canEdit &&
     !isAccessDenied &&
@@ -957,7 +1000,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         onGoBack={handleGoBack}
         onStaleMembership={handleRefreshMembership}
       />
-      <EditorCoachmark enabled={isCoachmarkReady} />
+      <EditorCoachmark
+        enabled={isCoachmarkReady}
+        places={coachmarkPlaces}
+        onRevealTarget={revealCoachmarkTarget}
+      />
     </CoachmarkProvider>
   );
 }

@@ -378,6 +378,24 @@ export const styles = StyleSheet.create({
     paddingBottom: 0,
     backgroundColor: 'transparent',
   },
+  /** 장소를 놓을 수 있는 범위. 안내가 밝힐 자리를 재는 데만 쓴다. */
+  timelineDropArea: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  /** 안내가 쓰는 예시 블록 자리. 진짜 블록과 같은 폭으로 둔다. */
+  timelineDemoBlock: {
+    position: 'absolute',
+    left: TIMELINE_BLOCK_LEFT,
+    right: TIMELINE_BLOCK_RIGHT,
+  },
+  /** 제 차례가 오기 전에는 자리만 잡아 두고 보이지 않는다. */
+  timelineDemoHidden: {
+    opacity: 0,
+  },
+
   timelineWrapper: {
     position: 'relative',
     paddingVertical: normalize(20),
