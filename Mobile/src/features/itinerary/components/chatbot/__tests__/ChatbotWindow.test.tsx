@@ -328,6 +328,70 @@ describe('AI 여행 도우미', () => {
     act(() => tree.unmount());
   });
 
+  it('추천 카드의 ⓘ로 그 장소 상세를 연다', async () => {
+    const onShowPlace = jest.fn();
+    mockAsk.mockResolvedValue({
+      userMessage: '이런 곳은 어때요?',
+      shownPlaces: [
+        {
+          contentId: '2932888',
+          title: '전주콩나물해장국',
+          category: 'RESTAURANT',
+          addr1: '서울특별시 종로구 자하문로 3',
+        },
+      ],
+    });
+    let tree!: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <ChatbotWindow
+          visible
+          planId="plan-1"
+          onClose={() => {}}
+          onShowPlace={onShowPlace}
+        />,
+      );
+    });
+
+    await pressLabel(tree, '근처 맛집을 몇 곳 추천해 줘');
+    await pressLabel(tree, '전주콩나물해장국 상세 정보 보기');
+
+    expect(onShowPlace).toHaveBeenCalledWith(
+      expect.objectContaining({ contentId: '2932888' }),
+    );
+    act(() => tree.unmount());
+  });
+
+  it('열쇠가 없는 장소에는 ⓘ를 세우지 않는다', async () => {
+    mockAsk.mockResolvedValue({
+      userMessage: '이런 곳은 어때요?',
+      shownPlaces: [{ title: '이름만 아는 집', category: 'RESTAURANT' }],
+    });
+    let tree!: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <ChatbotWindow
+          visible
+          planId="plan-1"
+          onClose={() => {}}
+          onShowPlace={jest.fn()}
+        />,
+      );
+    });
+
+    await pressLabel(tree, '근처 맛집을 몇 곳 추천해 줘');
+
+    // 눌러도 부를 것이 없는 단추는 세우지 않는다.
+    expect(
+      tree.root
+        .findAllByType(TouchableOpacity)
+        .some(node =>
+          String(node.props.accessibilityLabel).includes('상세 정보 보기'),
+        ),
+    ).toBe(false);
+    act(() => tree.unmount());
+  });
+
   it('제안 취소는 서버를 부르지 않고 미리보기만 걷는다', async () => {
     mockAsk.mockResolvedValue({ userMessage: '이렇게요', plan: samplePlan });
     const tree = render();

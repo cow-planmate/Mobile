@@ -247,6 +247,17 @@ export const styles = StyleSheet.create({
     backgroundColor: tokens.colors.white,
   },
   placeBody: { flex: 1, gap: normalize(2) },
+  /** 상세를 여는 ⓘ. 추천 목록·시간표 블록과 같은 그림, 같은 오른쪽 끝. */
+  placeInfo: {
+    width: normalize(30),
+    height: normalize(30),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: tokens.radius.m,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.white,
+  },
   placeCategory: {
     fontSize: normalize(10.5),
     fontFamily: tokens.fontFamily.bold,

@@ -17,6 +17,7 @@ import CalendarDays from 'lucide-react-native/dist/esm/icons/calendar-days';
 import Check from 'lucide-react-native/dist/esm/icons/check';
 import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import Clock3 from 'lucide-react-native/dist/esm/icons/clock-3';
+import Info from 'lucide-react-native/dist/esm/icons/info';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import Send from 'lucide-react-native/dist/esm/icons/send';
 import Sparkles from 'lucide-react-native/dist/esm/icons/sparkles';
@@ -782,17 +783,7 @@ export default function ChatbotWindow({
                           {withBold(segment.text, segment.key, mine)}
                         </Text>
                       ) : (
-                        <TouchableOpacity
-                          key={segment.key}
-                          style={styles.placeCard}
-                          onPress={() => onShowPlace?.(segment.place)}
-                          disabled={!onShowPlace || !segment.place.contentId}
-                          activeOpacity={0.8}
-                          accessibilityRole="button"
-                          accessibilityLabel={`${
-                            segment.place.title ?? '장소'
-                          } 상세 정보 보기`}
-                        >
+                        <View key={segment.key} style={styles.placeCard}>
                           <PlaceThumb uri={segment.place.thumbnailUrl} />
                           <View style={styles.placeBody}>
                             <Text style={styles.placeCategory}>
@@ -807,7 +798,24 @@ export default function ChatbotWindow({
                               {placeLine(segment.place)}
                             </Text>
                           </View>
-                        </TouchableOpacity>
+                          {!!onShowPlace && !!segment.place.contentId && (
+                            <TouchableOpacity
+                              style={styles.placeInfo}
+                              onPress={() => onShowPlace(segment.place)}
+                              hitSlop={8}
+                              activeOpacity={0.7}
+                              accessibilityRole="button"
+                              accessibilityLabel={`${
+                                segment.place.title ?? '장소'
+                              } 상세 정보 보기`}
+                            >
+                              <Info
+                                size={normalize(17)}
+                                color={COLORS.textSecondary}
+                              />
+                            </TouchableOpacity>
+                          )}
+                        </View>
                       ),
                     )}
 
