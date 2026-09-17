@@ -20,6 +20,8 @@ import Check from 'lucide-react-native/dist/esm/icons/check';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import CalendarIcon from 'lucide-react-native/dist/esm/icons/calendar';
 import Search from 'lucide-react-native/dist/esm/icons/search';
+import Copy from 'lucide-react-native/dist/esm/icons/copy';
+import Clock from 'lucide-react-native/dist/esm/icons/clock';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -169,6 +171,12 @@ export default function FeedCreateScreen() {
     previewDays.length > 1
       ? `${previewDays.length - 1}박 ${previewDays.length}일`
       : '당일치기';
+
+  // 웹처럼 여행지와 기간을 늘 보여 준다. 일정을 붙였으면 거기서 따온 값을
+  // 그대로 비추고, 안 붙였으면 사람이 고른 값을 쓴다.
+  const destinationLabel = snapshot?.destinationName ?? region;
+  const travelDays = previewDays.length > 0 ? previewDays.length : dayCount;
+  const travelNights = Math.max(0, travelDays - 1);
 
   const handleSelectPlan = async (planId: string) => {
     setLoadingPlanId(planId);
@@ -373,439 +381,475 @@ export default function FeedCreateScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
-        <Text style={styles.section}>여행 정보</Text>
-        {/* 수정 중에는 일정을 바꿀 수 없다. 어떤 일정인지는 아래 미리보기 카드가
-          이미 다 말하므로, 같은 말을 안내 띠로 한 번 더 하지 않는다. */}
-        <Text style={styles.label}>공개할 일정 (선택)</Text>
-        {isEditMode && existingPost.isLoading ? (
-          <ActivityIndicator color={tokens.colors.primary} />
-        ) : isEditMode &&
-          (existingPost.isError ||
-            (existingPost.data && existingPost.data.category !== 'feed')) ? (
-          <Text style={styles.emptyText}>여행기를 불러올 수 없어요.</Text>
-        ) : isEditMode ? null : isProfileLoading ? (
-          <ActivityIndicator color={tokens.colors.primary} />
-        ) : isProfileError ? (
-          <Pressable onPress={() => refetchProfile()}>
-            <Text style={styles.emptyText}>
-              일정을 불러오지 못했어요. 다시 시도하려면 눌러 주세요.
+        <View style={styles.card}>
+          <Text style={styles.section}>기본 정보</Text>
+          <Text style={styles.label}>제목</Text>
+          <TextInput
+            value={title}
+            onChangeText={setTitle}
+            style={styles.input}
+            placeholder={
+              isHydrating
+                ? '기존 내용을 불러오는 중…'
+                : '예: 서울 3박 4일 완벽 여행 코스'
+            }
+            editable={!isHydrating}
+            maxLength={POST_TITLE_MAX_LENGTH}
+            returnKeyType="next"
+            onSubmitEditing={() => contentRef.current?.focus()}
+            accessibilityLabel="여행기 제목"
+          />
+
+          <Text style={styles.label}>썸네일</Text>
+          <TouchableOpacity
+            style={styles.imageSelectButton}
+            onPress={handleSelectThumbnail}
+            disabled={isHydrating || isSubmitting}
+            accessibilityRole="button"
+            accessibilityLabel="썸네일 이미지 선택"
+          >
+            <Text style={styles.imageSelectText}>
+              {thumbnailFile ? '사진 다시 선택' : '기기에서 사진 선택'}
             </Text>
-          </Pressable>
-        ) : ownedPlans.length === 0 ? (
-          <Text style={styles.emptyText}>
-            발행할 내 일정이 없어요. 일정 없이 글만 올려도 돼요.
-          </Text>
-        ) : !snapshot ? (
-          <TouchableOpacity
-            style={styles.planPickerTrigger}
-            onPress={() => setIsPlanModalOpen(true)}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="내 일정 불러오기"
-          >
-            <View style={styles.planPickerLeft}>
-              <View style={styles.planPickerIconWrap}>
-                <CalendarIcon
-                  size={normalize(18)}
-                  color={tokens.colors.primary}
-                />
-              </View>
-              <View>
-                <Text style={styles.planPickerTitle}>내 일정 불러오기</Text>
-                <Text style={styles.planPickerSubtitle}>
-                  붙이면 읽는 사람이 그대로 가져갈 수 있어요
-                </Text>
-              </View>
-            </View>
-            <ChevronRight
-              size={normalize(18)}
-              color={tokens.colors.textTertiary}
-            />
           </TouchableOpacity>
-        ) : (
-          <View style={styles.selectedPlanCard}>
-            <View style={styles.selectedPlanLeft}>
-              <View style={styles.selectedPlanIconWrap}>
-                <MapPin size={normalize(18)} color={tokens.colors.primary} />
-              </View>
-              <View style={styles.selectedPlanInfo}>
-                <Text style={styles.selectedPlanName} numberOfLines={1}>
-                  {snapshot.planName}
-                </Text>
-                <Text style={styles.selectedPlanMeta}>
-                  {snapshot.destinationName} · {snapshot.itinerary.days.length}
-                  일 일정
-                </Text>
-              </View>
-            </View>
-            <View style={styles.planCardActions}>
-              <TouchableOpacity
-                style={styles.changePlanButton}
-                onPress={() => setIsPlanModalOpen(true)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="일정 변경"
-              >
-                <Text style={styles.changePlanButtonText}>변경</Text>
-              </TouchableOpacity>
-              {/* 붙이지 않아도 되는 것이므로 뺄 자리도 있어야 한다. */}
-              <TouchableOpacity
-                style={styles.changePlanButton}
-                onPress={() => setSnapshot(null)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="일정 빼기"
-              >
-                <Text style={styles.changePlanButtonText}>빼기</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {previewDays.length > 0 && (
-          <View style={styles.itineraryPreview}>
-            <View style={styles.previewHeader}>
-              <Text style={styles.previewTitle}>일정 미리보기</Text>
-              <View style={styles.durationPill}>
-                <Text style={styles.durationPillText}>{durationLabel}</Text>
-              </View>
-            </View>
-            {previewDays.map(day => (
-              <View key={day.day} style={styles.previewDay}>
-                <View style={styles.previewDayLabel}>
-                  <Text style={styles.previewDayText}>DAY {day.day}</Text>
-                </View>
-                <View style={styles.previewPlaces}>
-                  {day.items.slice(0, 3).map((item, idx, arr) => (
-                    <View
-                      key={`${day.day}-${item.time}-${item.place}-${idx}`}
-                      style={styles.timelineItemRow}
-                    >
-                      <View style={styles.timelineTrack}>
-                        <View style={styles.timelineBadge}>
-                          <Text style={styles.timelineBadgeText}>
-                            {idx + 1}
-                          </Text>
-                        </View>
-                        {idx < arr.length - 1 && (
-                          <View style={styles.timelineLine} />
-                        )}
-                      </View>
-                      <View
-                        style={[
-                          styles.timelineContent,
-                          idx < arr.length - 1 && styles.timelineContentLinked,
-                        ]}
-                      >
-                        <View style={styles.timelinePlaceHeader}>
-                          <Text
-                            style={styles.timelinePlaceName}
-                            numberOfLines={1}
-                          >
-                            {item.place}
-                          </Text>
-                          {item.time ? (
-                            <View style={styles.timelineTimeChip}>
-                              <Text style={styles.timelineTimeText}>
-                                {item.time}
-                              </Text>
-                            </View>
-                          ) : null}
-                        </View>
-                        {item.description ? (
-                          <Text
-                            style={styles.timelinePlaceDesc}
-                            numberOfLines={1}
-                          >
-                            {item.description}
-                          </Text>
-                        ) : null}
-                      </View>
-                    </View>
-                  ))}
-                  {day.items.length > 3 && (
-                    <Text style={styles.previewMore}>
-                      외 {day.items.length - 3}곳
-                    </Text>
-                  )}
-                  {day.items.length === 0 && (
-                    <Text style={styles.previewMore}>
-                      등록한 장소가 없어요.
-                    </Text>
-                  )}
-                </View>
-              </View>
-            ))}
-            <TouchableOpacity
-              style={styles.memoRow}
-              onPress={() => setIncludeMemo(current => !current)}
-              activeOpacity={0.7}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: includeMemo }}
-              accessibilityLabel="블록 메모도 함께 공개"
-            >
-              <View style={[styles.memoBox, includeMemo && styles.memoBoxOn]}>
-                {includeMemo && (
-                  <Check size={normalize(12)} color={tokens.colors.white} />
-                )}
-              </View>
-              <View style={styles.memoTextWrap}>
-                <Text style={styles.memoLabel}>블록 메모도 함께 공개</Text>
-                <Text style={styles.memoHint}>
-                  가져갈 때 메모까지 복사됩니다
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* 일정을 붙이면 지역과 기간은 거기서 따온다. 안 붙였을 때만 묻는다. */}
-        {!isEditMode && !snapshot && (
-          <>
-            <Text style={[styles.label, styles.labelGap]}>지역</Text>
-            <TouchableOpacity
-              style={styles.planPickerTrigger}
-              onPress={() => setIsRegionModalOpen(true)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="지역 고르기"
-            >
-              <View style={styles.planPickerLeft}>
-                <View style={styles.planPickerIconWrap}>
-                  <MapPin size={normalize(18)} color={tokens.colors.primary} />
-                </View>
-                <View>
-                  <Text style={styles.planPickerTitle}>
-                    {region || '지역 고르기'}
-                  </Text>
-                  <Text style={styles.planPickerSubtitle}>
-                    어디를 다녀왔는지 골라 주세요
-                  </Text>
-                </View>
-              </View>
-              <ChevronRight
-                size={normalize(18)}
-                color={tokens.colors.textTertiary}
-              />
-            </TouchableOpacity>
-
-            <Text style={[styles.label, styles.labelGap]}>여행 기간</Text>
-            <View style={styles.dayCountRow}>
-              <TouchableOpacity
-                style={styles.dayCountButton}
-                onPress={() => setDayCount(current => Math.max(1, current - 1))}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="기간 줄이기"
-              >
-                <Text style={styles.dayCountButtonText}>−</Text>
-              </TouchableOpacity>
-              <Text style={styles.dayCountValue}>
-                {dayCount > 1 ? `${dayCount - 1}박 ${dayCount}일` : '당일치기'}
-              </Text>
-              <TouchableOpacity
-                style={styles.dayCountButton}
-                onPress={() =>
-                  setDayCount(current => Math.min(30, current + 1))
-                }
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="기간 늘리기"
-              >
-                <Text style={styles.dayCountButtonText}>+</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-
-        <Text style={[styles.section, styles.sectionGap]}>기본 정보</Text>
-        <Text style={styles.label}>제목</Text>
-        <TextInput
-          value={title}
-          onChangeText={setTitle}
-          style={styles.input}
-          placeholder={
-            isHydrating
-              ? '기존 내용을 불러오는 중…'
-              : '예: 서울 3박 4일 완벽 여행 코스'
-          }
-          editable={!isHydrating}
-          maxLength={POST_TITLE_MAX_LENGTH}
-          returnKeyType="next"
-          onSubmitEditing={() => contentRef.current?.focus()}
-          accessibilityLabel="여행기 제목"
-        />
-
-        <View style={styles.editorLabelRow}>
-          <Text style={styles.label}>여행 후기</Text>
-          <TouchableOpacity
-            style={styles.slashBadge}
-            onPress={() => setShowSlashMenu(prev => !prev)}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="서식 메뉴 열기"
-          >
-            <Text style={styles.slashBadgeText}>서식 메뉴</Text>
-            <View style={styles.slashKeyBox}>
-              <Text style={styles.slashKeyChar}>/</Text>
-            </View>
-          </TouchableOpacity>
+          {thumbnailFile && (
+            <Text style={styles.selectedImageName}>{thumbnailFile.name}</Text>
+          )}
+          <TextInput
+            value={thumbnailUrl}
+            onChangeText={value => {
+              setThumbnailUrl(value);
+              setThumbnailFile(null);
+            }}
+            style={styles.input}
+            editable={!isHydrating}
+            placeholder="사진을 선택하거나 이미지 URL을 입력하세요"
+            autoCapitalize="none"
+          />
         </View>
 
-        {showSlashMenu && (
-          <View style={styles.slashDropdown}>
-            <TouchableOpacity
-              style={styles.slashItem}
-              onPress={() => handleInsertFormat('# ')}
-            >
-              <Text style={styles.slashItemIcon}>H1</Text>
-              <Text style={styles.slashItemLabel}>제목 1 (큰 제목)</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.slashItem}
-              onPress={() => handleInsertFormat('## ')}
-            >
-              <Text style={styles.slashItemIcon}>H2</Text>
-              <Text style={styles.slashItemLabel}>제목 2 (중간 제목)</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.slashItem}
-              onPress={() => handleInsertFormat('- ')}
-            >
-              <Text style={styles.slashItemIcon}>•</Text>
-              <Text style={styles.slashItemLabel}>글머리 기호 목록</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.slashItem}
-              onPress={() => handleInsertFormat('1. ')}
-            >
-              <Text style={styles.slashItemIcon}>1.</Text>
-              <Text style={styles.slashItemLabel}>번호 매기기 목록</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.slashItem}
-              onPress={() => handleInsertFormat('> ')}
-            >
-              <Text style={styles.slashItemIcon}>❝</Text>
-              <Text style={styles.slashItemLabel}>인용구</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.slashItem}
-              onPress={() => handleInsertFormat('\n---\n')}
-            >
-              <Text style={styles.slashItemIcon}>―</Text>
-              <Text style={styles.slashItemLabel}>구분선</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.slashItem}
-              onPress={() => handleInsertFormat('**', '**')}
-            >
-              <Text style={[styles.slashItemIcon, { fontWeight: 'bold' }]}>
-                B
+        <View style={styles.card}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.section}>여행 정보</Text>
+            {!isEditMode && ownedPlans.length > 0 && (
+              <TouchableOpacity
+                style={styles.importPlanButton}
+                onPress={() => setIsPlanModalOpen(true)}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="내 플랜 가져오기"
+              >
+                <Copy size={normalize(14)} color={tokens.colors.white} />
+                <Text style={styles.importPlanButtonText}>내 플랜 가져오기</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {isEditMode && existingPost.isLoading ? (
+            <ActivityIndicator color={tokens.colors.primary} />
+          ) : isEditMode &&
+            (existingPost.isError ||
+              (existingPost.data && existingPost.data.category !== 'feed')) ? (
+            <Text style={styles.emptyText}>여행기를 불러올 수 없어요.</Text>
+          ) : isEditMode ? null : isProfileLoading ? (
+            <ActivityIndicator color={tokens.colors.primary} />
+          ) : isProfileError ? (
+            <Pressable onPress={() => refetchProfile()}>
+              <Text style={styles.emptyText}>
+                일정을 불러오지 못했어요. 다시 시도하려면 눌러 주세요.
               </Text>
-              <Text style={styles.slashItemLabel}>굵게 (**텍스트**)</Text>
+            </Pressable>
+          ) : ownedPlans.length === 0 ? (
+            <Text style={styles.emptyText}>
+              발행할 내 일정이 없어요. 일정 없이 글만 올려도 돼요.
+            </Text>
+          ) : null}
+
+          {/* 일정을 붙이면 여행지와 기간은 거기서 따온다. 그때는 읽기만 한다. */}
+          {!isEditMode && (
+            <>
+              <View style={styles.fieldLabelRow}>
+                <MapPin size={normalize(15)} color={tokens.colors.primary} />
+                <Text style={styles.fieldLabel}>여행지 선택</Text>
+                <Text style={styles.requiredMark}>*</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.underlineField}
+                onPress={() => setIsRegionModalOpen(true)}
+                disabled={!!snapshot}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="여행지 선택"
+                accessibilityState={{ disabled: !!snapshot }}
+              >
+                <Text
+                  style={[
+                    styles.underlineValue,
+                    !destinationLabel && styles.underlinePlaceholder,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {destinationLabel || '어디로 여행을 다녀오셨나요?'}
+                </Text>
+                {!snapshot && (
+                  <Search
+                    size={normalize(20)}
+                    color={tokens.colors.textTertiary}
+                  />
+                )}
+              </TouchableOpacity>
+
+              <View style={[styles.fieldLabelRow, styles.fieldLabelGap]}>
+                <CalendarIcon
+                  size={normalize(15)}
+                  color={tokens.colors.primary}
+                />
+                <Text style={styles.fieldLabel}>여행 기간</Text>
+                <Text style={styles.requiredMark}>*</Text>
+              </View>
+              <View style={styles.durationRow}>
+                <View style={styles.dayCountRow}>
+                  <TouchableOpacity
+                    style={styles.dayCountButton}
+                    onPress={() =>
+                      setDayCount(current => Math.max(1, current - 1))
+                    }
+                    disabled={!!snapshot}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="기간 줄이기"
+                    accessibilityState={{ disabled: !!snapshot }}
+                  >
+                    <Text style={styles.dayCountButtonText}>−</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.dayCountValue}>{travelDays}일</Text>
+                  <TouchableOpacity
+                    style={styles.dayCountButton}
+                    onPress={() =>
+                      setDayCount(current => Math.min(30, current + 1))
+                    }
+                    disabled={!!snapshot}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="기간 늘리기"
+                    accessibilityState={{ disabled: !!snapshot }}
+                  >
+                    <Text style={styles.dayCountButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+                <ChevronRight
+                  size={normalize(18)}
+                  color={tokens.colors.borderStrong}
+                />
+                <View style={styles.durationBadge}>
+                  <Text style={styles.durationBadgeText}>
+                    {travelNights}박 {travelDays}일
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.fieldHint}>
+                * 일자만 입력하면 숙박 일수가 자동으로 계산됩니다.
+              </Text>
+            </>
+          )}
+
+          <View style={styles.divider} />
+          <Text style={styles.subSection}>상세 일정</Text>
+          <TouchableOpacity
+            style={styles.memoRow}
+            onPress={() => setIncludeMemo(current => !current)}
+            activeOpacity={0.7}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: includeMemo }}
+            accessibilityLabel="블록 메모도 함께 공개"
+          >
+            <View style={[styles.memoBox, includeMemo && styles.memoBoxOn]}>
+              {includeMemo && (
+                <Check size={normalize(12)} color={tokens.colors.white} />
+              )}
+            </View>
+            <View style={styles.memoTextWrap}>
+              <Text style={styles.memoLabel}>블록 메모도 함께 공개</Text>
+              <Text style={styles.memoHint}>
+                가져갈 때 메모까지 복사됩니다
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {snapshot && (
+            <View style={styles.selectedPlanCard}>
+              <View style={styles.selectedPlanLeft}>
+                <View style={styles.selectedPlanIconWrap}>
+                  <MapPin size={normalize(18)} color={tokens.colors.primary} />
+                </View>
+                <View style={styles.selectedPlanInfo}>
+                  <Text style={styles.selectedPlanName} numberOfLines={1}>
+                    {snapshot.planName}
+                  </Text>
+                  <Text style={styles.selectedPlanMeta}>
+                    {snapshot.destinationName} · {snapshot.itinerary.days.length}
+                    일 일정
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.planCardActions}>
+                <TouchableOpacity
+                  style={styles.changePlanButton}
+                  onPress={() => setIsPlanModalOpen(true)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="일정 변경"
+                >
+                  <Text style={styles.changePlanButtonText}>변경</Text>
+                </TouchableOpacity>
+                {/* 붙이지 않아도 되는 것이므로 뺄 자리도 있어야 한다. */}
+                <TouchableOpacity
+                  style={styles.changePlanButton}
+                  onPress={() => setSnapshot(null)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="일정 빼기"
+                >
+                  <Text style={styles.changePlanButtonText}>빼기</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {previewDays.length > 0 ? (
+            <View style={styles.itineraryPreview}>
+              <View style={styles.previewHeader}>
+                <Text style={styles.previewTitle}>일정 미리보기</Text>
+                <View style={styles.durationPill}>
+                  <Text style={styles.durationPillText}>{durationLabel}</Text>
+                </View>
+              </View>
+              {previewDays.map(day => (
+                <View key={day.day} style={styles.previewDay}>
+                  <View style={styles.previewDayLabel}>
+                    <Text style={styles.previewDayText}>DAY {day.day}</Text>
+                  </View>
+                  <View style={styles.previewPlaces}>
+                    {day.items.slice(0, 3).map((item, idx, arr) => (
+                      <View
+                        key={`${day.day}-${item.time}-${item.place}-${idx}`}
+                        style={styles.timelineItemRow}
+                      >
+                        <View style={styles.timelineTrack}>
+                          <View style={styles.timelineBadge}>
+                            <Text style={styles.timelineBadgeText}>
+                              {idx + 1}
+                            </Text>
+                          </View>
+                          {idx < arr.length - 1 && (
+                            <View style={styles.timelineLine} />
+                          )}
+                        </View>
+                        <View
+                          style={[
+                            styles.timelineContent,
+                            idx < arr.length - 1 && styles.timelineContentLinked,
+                          ]}
+                        >
+                          <View style={styles.timelinePlaceHeader}>
+                            <Text
+                              style={styles.timelinePlaceName}
+                              numberOfLines={1}
+                            >
+                              {item.place}
+                            </Text>
+                            {item.time ? (
+                              <View style={styles.timelineTimeChip}>
+                                <Text style={styles.timelineTimeText}>
+                                  {item.time}
+                                </Text>
+                              </View>
+                            ) : null}
+                          </View>
+                          {item.description ? (
+                            <Text
+                              style={styles.timelinePlaceDesc}
+                              numberOfLines={1}
+                            >
+                              {item.description}
+                            </Text>
+                          ) : null}
+                        </View>
+                      </View>
+                    ))}
+                    {day.items.length > 3 && (
+                      <Text style={styles.previewMore}>
+                        외 {day.items.length - 3}곳
+                      </Text>
+                    )}
+                    {day.items.length === 0 && (
+                      <Text style={styles.previewMore}>
+                        등록한 장소가 없어요.
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.scheduleEmpty}>
+              <Clock size={normalize(36)} color={tokens.colors.textSecondary} />
+              <Text style={styles.scheduleEmptyTitle}>아직 일정이 없습니다</Text>
+              <Text style={styles.scheduleEmptySub}>
+                위의 "내 플랜 가져오기" 버튼을 누르면 여행지·기간과 함께 채워집니다
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.editorLabelRow}>
+            <View style={styles.fieldLabelRow}>
+              <Text style={styles.section}>여행 후기</Text>
+              <Text style={styles.requiredMark}>*</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.slashBadge}
+              onPress={() => setShowSlashMenu(prev => !prev)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="서식 메뉴 열기"
+            >
+              <Text style={styles.slashBadgeText}>서식 메뉴</Text>
+              <View style={styles.slashKeyBox}>
+                <Text style={styles.slashKeyChar}>/</Text>
+              </View>
             </TouchableOpacity>
           </View>
-        )}
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.toolbarScroll}
-          style={styles.formatToolbar}
-        >
-          <TouchableOpacity
-            style={styles.toolBtn}
-            onPress={() => handleInsertFormat('# ')}
-          >
-            <Text style={styles.toolBtnText}>H1</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.toolBtn}
-            onPress={() => handleInsertFormat('## ')}
-          >
-            <Text style={styles.toolBtnText}>H2</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.toolBtn}
-            onPress={() => handleInsertFormat('- ')}
-          >
-            <Text style={styles.toolBtnText}>• 목록</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.toolBtn}
-            onPress={() => handleInsertFormat('1. ')}
-          >
-            <Text style={styles.toolBtnText}>1. 번호</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.toolBtn}
-            onPress={() => handleInsertFormat('> ')}
-          >
-            <Text style={styles.toolBtnText}>❝ 인용</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.toolBtn}
-            onPress={() => handleInsertFormat('\n---\n')}
-          >
-            <Text style={styles.toolBtnText}>― 선</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.toolBtn}
-            onPress={() => handleInsertFormat('**', '**')}
-          >
-            <Text style={[styles.toolBtnText, { fontWeight: 'bold' }]}>
-              B 굵게
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
+          {showSlashMenu && (
+            <View style={styles.slashDropdown}>
+              <TouchableOpacity
+                style={styles.slashItem}
+                onPress={() => handleInsertFormat('# ')}
+              >
+                <Text style={styles.slashItemIcon}>H1</Text>
+                <Text style={styles.slashItemLabel}>제목 1 (큰 제목)</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.slashItem}
+                onPress={() => handleInsertFormat('## ')}
+              >
+                <Text style={styles.slashItemIcon}>H2</Text>
+                <Text style={styles.slashItemLabel}>제목 2 (중간 제목)</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.slashItem}
+                onPress={() => handleInsertFormat('- ')}
+              >
+                <Text style={styles.slashItemIcon}>•</Text>
+                <Text style={styles.slashItemLabel}>글머리 기호 목록</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.slashItem}
+                onPress={() => handleInsertFormat('1. ')}
+              >
+                <Text style={styles.slashItemIcon}>1.</Text>
+                <Text style={styles.slashItemLabel}>번호 매기기 목록</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.slashItem}
+                onPress={() => handleInsertFormat('> ')}
+              >
+                <Text style={styles.slashItemIcon}>❝</Text>
+                <Text style={styles.slashItemLabel}>인용구</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.slashItem}
+                onPress={() => handleInsertFormat('\n---\n')}
+              >
+                <Text style={styles.slashItemIcon}>―</Text>
+                <Text style={styles.slashItemLabel}>구분선</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.slashItem}
+                onPress={() => handleInsertFormat('**', '**')}
+              >
+                <Text style={[styles.slashItemIcon, { fontWeight: 'bold' }]}>
+                  B
+                </Text>
+                <Text style={styles.slashItemLabel}>굵게 (**텍스트**)</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
-        <TextInput
-          ref={contentRef}
-          value={content}
-          onChangeText={value => {
-            setContent(value);
-            if (value.endsWith('\n/') || value === '/') {
-              setShowSlashMenu(true);
-            }
-          }}
-          onSelectionChange={e => {
-            contentSelection.current = e.nativeEvent.selection;
-          }}
-          style={[styles.input, styles.contentInput]}
-          placeholder="여행을 소개해 주세요 ('/' 입력 시 서식 메뉴)"
-          editable={!isHydrating}
-          multiline
-          textAlignVertical="top"
-          accessibilityLabel="여행기 설명"
-        />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.toolbarScroll}
+            style={styles.formatToolbar}
+          >
+            <TouchableOpacity
+              style={styles.toolBtn}
+              onPress={() => handleInsertFormat('# ')}
+            >
+              <Text style={styles.toolBtnText}>H1</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.toolBtn}
+              onPress={() => handleInsertFormat('## ')}
+            >
+              <Text style={styles.toolBtnText}>H2</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.toolBtn}
+              onPress={() => handleInsertFormat('- ')}
+            >
+              <Text style={styles.toolBtnText}>• 목록</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.toolBtn}
+              onPress={() => handleInsertFormat('1. ')}
+            >
+              <Text style={styles.toolBtnText}>1. 번호</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.toolBtn}
+              onPress={() => handleInsertFormat('> ')}
+            >
+              <Text style={styles.toolBtnText}>❝ 인용</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.toolBtn}
+              onPress={() => handleInsertFormat('\n---\n')}
+            >
+              <Text style={styles.toolBtnText}>― 선</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.toolBtn}
+              onPress={() => handleInsertFormat('**', '**')}
+            >
+              <Text style={[styles.toolBtnText, { fontWeight: 'bold' }]}>
+                B 굵게
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
 
-        <Text style={styles.label}>썸네일</Text>
-        <TouchableOpacity
-          style={styles.imageSelectButton}
-          onPress={handleSelectThumbnail}
-          disabled={isHydrating || isSubmitting}
-          accessibilityRole="button"
-          accessibilityLabel="썸네일 이미지 선택"
-        >
-          <Text style={styles.imageSelectText}>
-            {thumbnailFile ? '사진 다시 선택' : '기기에서 사진 선택'}
-          </Text>
-        </TouchableOpacity>
-        {thumbnailFile && (
-          <Text style={styles.selectedImageName}>{thumbnailFile.name}</Text>
-        )}
-        <TextInput
-          value={thumbnailUrl}
-          onChangeText={value => {
-            setThumbnailUrl(value);
-            setThumbnailFile(null);
-          }}
-          style={styles.input}
-          editable={!isHydrating}
-          placeholder="사진을 선택하거나 이미지 URL을 입력하세요"
-          autoCapitalize="none"
-        />
+          <TextInput
+            ref={contentRef}
+            value={content}
+            onChangeText={value => {
+              setContent(value);
+              if (value.endsWith('\n/') || value === '/') {
+                setShowSlashMenu(true);
+              }
+            }}
+            onSelectionChange={e => {
+              contentSelection.current = e.nativeEvent.selection;
+            }}
+            style={[styles.input, styles.contentInput]}
+            placeholder="여행을 소개해 주세요 ('/' 입력 시 서식 메뉴)"
+            editable={!isHydrating}
+            multiline
+            textAlignVertical="top"
+            accessibilityLabel="여행기 설명"
+          />
+        </View>
       </ScrollView>
 
       {/* 지역은 직접 적지 않고 고른다. 적어 넣으면 같은 곳이 '속초'와
@@ -943,8 +987,10 @@ export default function FeedCreateScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: tokens.colors.white },
+  // 웹처럼 회색 바탕에 흰 카드를 얹는다. 머리말만 흰색으로 남긴다.
+  container: { flex: 1, backgroundColor: tokens.colors.surface },
   header: {
+    backgroundColor: tokens.colors.white,
     height: normalize(56),
     paddingHorizontal: normalize(16),
     flexDirection: 'row',
@@ -969,23 +1015,137 @@ const styles = StyleSheet.create({
   },
   // 웹은 카드 두 장으로 나누지만 앱은 제목만 놓는다. 라벨(14)보다 한 단계 위다.
   section: {
-    fontSize: normalize(15),
+    fontSize: normalize(17),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.text,
     letterSpacing: -0.3,
   },
   sectionGap: { marginTop: normalize(18) },
-  // 미리보기 카드의 마지막 줄. 카드 나머지는 읽기 전용이므로
-  // surface 배경으로 "여기는 누르는 자리"를 구분한다.
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: normalize(10),
+    marginBottom: normalize(8),
+  },
+  importPlanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(6),
+    paddingHorizontal: normalize(14),
+    paddingVertical: normalize(10),
+    borderRadius: normalize(12),
+    backgroundColor: tokens.colors.primary,
+  },
+  importPlanButtonText: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
+  },
+  fieldLabelRow: {
+    marginTop: normalize(8),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(6),
+  },
+  fieldLabelGap: { marginTop: normalize(18) },
+  fieldLabel: {
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.textLabel,
+  },
+  requiredMark: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.tones.danger.fg,
+  },
+  // 웹은 여행지와 기간 앞칸을 테두리 상자가 아니라 밑줄로 둔다. 그래야 바로
+  // 옆 파란 알약이 먼저 눈에 든다.
+  underlineField: {
+    marginTop: normalize(2),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(10),
+    minHeight: normalize(46),
+    paddingBottom: normalize(8),
+    borderBottomWidth: 2,
+    borderBottomColor: tokens.colors.border,
+  },
+  underlineValue: {
+    flex: 1,
+    fontSize: normalize(16),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.text,
+  },
+  underlinePlaceholder: {
+    fontFamily: tokens.fontFamily.regular,
+    color: '#CCCCCC',
+  },
+  durationRow: {
+    marginTop: normalize(2),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(12),
+  },
+  durationBadge: {
+    flex: 1,
+    minHeight: normalize(46),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: normalize(16),
+    backgroundColor: tokens.colors.primary,
+  },
+  durationBadgeText: {
+    fontSize: normalize(16),
+    letterSpacing: -0.4,
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.white,
+  },
+  fieldHint: {
+    marginTop: normalize(10),
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textTertiary,
+  },
+  divider: {
+    marginTop: normalize(12),
+    marginBottom: normalize(4),
+    height: 1,
+    backgroundColor: tokens.colors.borderLight,
+  },
+  subSection: {
+    fontSize: normalize(15),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+  },
+  // 일정을 아직 안 붙였을 때. 점선으로 "여기 채워진다"를 알린다.
+  scheduleEmpty: {
+    alignItems: 'center',
+    gap: normalize(8),
+    paddingVertical: normalize(32),
+    paddingHorizontal: normalize(16),
+    borderRadius: normalize(12),
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: tokens.colors.border,
+  },
+  scheduleEmptyTitle: {
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textSecondary,
+  },
+  scheduleEmptySub: {
+    textAlign: 'center',
+    fontSize: normalize(12),
+    lineHeight: normalize(18),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textTertiary,
+  },
   memoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: normalize(10),
-    paddingHorizontal: normalize(12),
-    paddingVertical: normalize(11),
-    borderTopWidth: 1,
-    borderTopColor: tokens.colors.borderLight,
-    backgroundColor: tokens.colors.surface,
+    paddingVertical: normalize(4),
   },
   memoBox: {
     width: normalize(20),
@@ -1012,7 +1172,17 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.textTertiary,
   },
-  body: { padding: normalize(20), gap: normalize(10) },
+  body: { padding: normalize(16), gap: normalize(14) },
+  // 웹은 절마다 흰 카드를 얹고 24px씩 띄운다. 이 앱은 그림자 대신 바탕 대비와
+  // 1px 테두리로 카드를 가른다(tokens.ts 규칙).
+  card: {
+    padding: normalize(16),
+    gap: normalize(8),
+    borderRadius: normalize(14),
+    borderWidth: 1,
+    borderColor: tokens.colors.borderLight,
+    backgroundColor: tokens.colors.white,
+  },
   label: {
     marginTop: normalize(8),
     fontSize: normalize(14),
@@ -1022,7 +1192,7 @@ const styles = StyleSheet.create({
   /** 앞 칸과 붙어 보이지 않게 한 칸 더 띄운다. */
   labelGap: { marginTop: normalize(16) },
   dayCountRow: {
-    marginTop: normalize(8),
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

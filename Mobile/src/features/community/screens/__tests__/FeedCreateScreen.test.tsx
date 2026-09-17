@@ -265,7 +265,7 @@ describe('웹에 맞춘 여행기 쓰기 화면', () => {
   const pickRegion = (tree: renderer.ReactTestRenderer) => {
     act(() =>
       tree.root
-        .findByProps({ accessibilityLabel: '지역 고르기' })
+        .findByProps({ accessibilityLabel: '여행지 선택' })
         .props.onPress(),
     );
     act(() =>
@@ -302,22 +302,40 @@ describe('웹에 맞춘 여행기 쓰기 화면', () => {
     act(() => tree.unmount());
   });
 
-  it('일정 선택 버튼과 서식 메뉴 트리거가 노출된다', () => {
+  it('일정 가져오기 버튼과 서식 메뉴 트리거가 노출된다', () => {
     const tree = render();
     const texts = textsOf(tree);
 
-    expect(texts).toContain('내 일정 불러오기');
+    expect(texts).toContain('내 플랜 가져오기');
     expect(texts).toContain('서식 메뉴');
 
     act(() => tree.unmount());
   });
 
-  it('여행 정보와 기본 정보로 나눈다', () => {
+  it('기본 정보, 여행 정보, 여행 후기 순으로 절을 놓는다', () => {
     const tree = render();
     const texts = textsOf(tree);
 
-    expect(texts).toContain('여행 정보');
-    expect(texts).toContain('기본 정보');
+    const order = ['기본 정보', '여행 정보', '여행 후기'].map(section =>
+      texts.indexOf(section),
+    );
+
+    expect(order.every(index => index >= 0)).toBe(true);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+
+    act(() => tree.unmount());
+  });
+
+  it('여행 정보를 웹과 같은 칸으로 채운다', () => {
+    const tree = render();
+    const texts = textsOf(tree);
+
+    expect(texts).toContain('여행지 선택');
+    expect(texts).toContain('여행 기간');
+    expect(texts).toContain('상세 일정');
+    expect(texts).toContain('* 일자만 입력하면 숙박 일수가 자동으로 계산됩니다.');
+    expect(texts).toContain('아직 일정이 없습니다');
+    expect(placeholders(tree)).toBeDefined();
 
     act(() => tree.unmount());
   });
