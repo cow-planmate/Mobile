@@ -2,13 +2,10 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import {
   ActivityIndicator,
-  GestureResponderEvent,
-  Pressable,
   Text,
   TextInput,
   TouchableOpacity,
@@ -17,7 +14,6 @@ import {
 import Toast from 'react-native-toast-message';
 import Check from 'lucide-react-native/dist/esm/icons/check';
 import Plus from 'lucide-react-native/dist/esm/icons/plus';
-import Ellipsis from 'lucide-react-native/dist/esm/icons/ellipsis';
 import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import Trash2 from 'lucide-react-native/dist/esm/icons/trash-2';
 import X from 'lucide-react-native/dist/esm/icons/x';
@@ -39,7 +35,7 @@ import ChecklistPopup from './ChecklistPopup';
 import ChecklistDragList from './ChecklistDragList';
 import { normalize } from '../../../../utils/normalize';
 import { useAlert } from '../../../../contexts/AlertContext';
-import { styles, COLORS } from './ChecklistSheet.styles';
+import { styles, COLORS, DANGER } from './ChecklistSheet.styles';
 
 const SCOPE_TABS: { scope: ChecklistScope; label: string; hint: string }[] = [
   {
@@ -74,54 +70,10 @@ export default function ChecklistSheet({
   const [draft, setDraft] = useState('');
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState('');
-  const popupRef = useRef<View>(null);
-  const [menu, setMenu] = useState<{
-    item: ChecklistItem;
-    x: number;
-    y: number;
-  } | null>(null);
-  const closeMenu = useCallback(() => setMenu(null), []);
-  const openMenu = useCallback(
-    (item: ChecklistItem, event: GestureResponderEvent) => {
-      event.currentTarget.measureInWindow((x, y, width, height) => {
-        popupRef.current?.measureInWindow(
-          (popupX, popupY, popupWidth, popupHeight) => {
-            const menuWidth = normalize(164);
-            const menuHeight = normalize(104);
-            const inset = normalize(8);
-            const above = y - popupY - menuHeight - inset;
-            setMenu(current =>
-              current?.item.itemId === item.itemId
-                ? null
-                : {
-                    item,
-                    x: Math.max(
-                      inset,
-                      Math.min(
-                        popupWidth - menuWidth - inset,
-                        x - popupX + width - menuWidth,
-                      ),
-                    ),
-                    y: Math.max(
-                      inset,
-                      Math.min(
-                        popupHeight - menuHeight - inset,
-                        above >= inset ? above : y - popupY + height + inset,
-                      ),
-                    ),
-                  },
-            );
-          },
-        );
-      });
-    },
-    [],
-  );
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (!visible) {
-      setMenu(null);
       setEditingItemId(null);
       setEditingText('');
     }
@@ -160,10 +112,14 @@ export default function ChecklistSheet({
     setEditingText('');
   }, []);
 
+  const startEditing = useCallback((item: ChecklistItem) => {
+    setEditingItemId(item.itemId);
+    setEditingText(item.content);
+  }, []);
+
   const handleChangeScope = useCallback(
     (next: ChecklistScope) => {
       cancelEditing();
-      setMenu(null);
       setScope(next);
     },
     [cancelEditing],
@@ -235,7 +191,6 @@ export default function ChecklistSheet({
   const handleReorder = useCallback(
     (itemIds: number[]) => {
       if (isMutating) return;
-      setMenu(null);
       reorderItems.mutate(itemIds, { onError: showError });
     },
     [isMutating, reorderItems, showError],
@@ -294,8 +249,6 @@ export default function ChecklistSheet({
         refreshing={isRefreshing}
         onRefresh={handleRefresh}
         onReorder={handleReorder}
-        onDragStart={closeMenu}
-        onScrollStart={closeMenu}
         renderItem={(item, handle, active) => {
           const isEditing = editingItemId === item.itemId;
 
@@ -376,20 +329,25 @@ export default function ChecklistSheet({
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.itemAction}
-                    onPress={event => openMenu(item, event)}
+                    onPress={() => startEditing(item)}
                     disabled={isMutating}
                     activeOpacity={0.7}
                     accessibilityRole="button"
-                    accessibilityLabel={`${item.content} 관리`}
-                    accessibilityState={{
-                      expanded: menu?.item.itemId === item.itemId,
-                      disabled: isMutating,
-                    }}
+                    accessibilityLabel={`${item.content} 수정`}
+                    accessibilityState={{ disabled: isMutating }}
                   >
-                    <Ellipsis
-                      size={normalize(20)}
-                      color={COLORS.textSecondary}
-                    />
+                    <Pencil size={normalize(17)} color={COLORS.textSecondary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.itemAction}
+                    onPress={() => handleDelete(item.itemId, item.content)}
+                    disabled={isMutating}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${item.content} 삭제`}
+                    accessibilityState={{ disabled: isMutating }}
+                  >
+                    <Trash2 size={normalize(17)} color={DANGER} />
                   </TouchableOpacity>
                 </>
               )}
@@ -403,9 +361,8 @@ export default function ChecklistSheet({
     editContent.isPending,
     editingItemId,
     editingText,
-    menu,
-    openMenu,
-    closeMenu,
+    startEditing,
+    handleDelete,
     handleReorder,
     scope,
     visible,
@@ -423,52 +380,7 @@ export default function ChecklistSheet({
   return (
     <ChecklistPopup
       visible={visible}
-      onClose={menu ? closeMenu : onClose}
-      containerRef={popupRef}
-      overlay={
-        menu && (
-          <View style={styles.menuOverlay}>
-            <Pressable
-              style={styles.menuDismiss}
-              onPress={closeMenu}
-              accessibilityRole="button"
-              accessibilityLabel="준비물 메뉴 닫기"
-            />
-            <View
-              style={[styles.itemMenu, { left: menu.x, top: menu.y }]}
-              accessibilityViewIsModal
-            >
-              <TouchableOpacity
-                style={styles.menuAction}
-                disabled={isMutating}
-                accessibilityRole="button"
-                accessibilityLabel={`${menu.item.content} 수정`}
-                onPress={() => {
-                  setEditingItemId(menu.item.itemId);
-                  setEditingText(menu.item.content);
-                  closeMenu();
-                }}
-              >
-                <Pencil size={normalize(16)} color={COLORS.textSecondary} />
-                <Text style={styles.menuLabel}>수정</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.menuAction, styles.menuDeleteAction]}
-                disabled={isMutating}
-                accessibilityRole="button"
-                accessibilityLabel={`${menu.item.content} 삭제`}
-                onPress={() => {
-                  handleDelete(menu.item.itemId, menu.item.content);
-                  closeMenu();
-                }}
-              >
-                <Trash2 size={normalize(16)} color={COLORS.textSecondary} />
-                <Text style={styles.menuLabel}>삭제</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )
-      }
+      onClose={onClose}
       footer={
         <View style={styles.inputRow}>
           <TextInput

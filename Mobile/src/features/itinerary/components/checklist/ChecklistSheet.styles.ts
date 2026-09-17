@@ -3,6 +3,7 @@ import { tokens } from '../../../../theme/tokens';
 import { normalize } from '../../../../utils/normalize';
 
 export const COLORS = tokens.colors;
+export const DANGER = tokens.tones.danger.fg;
 
 export const styles = StyleSheet.create({
   overlay: { flex: 1 },
@@ -178,40 +179,6 @@ export const styles = StyleSheet.create({
   // 바깥 껍데기는 쌓임 순서만 맡는다. itemRow의 marginBottom이 이 껍데기 높이에
   // 들어가서, 여기에 배경을 주면 파란 면이 카드보다 6px 아래로 삐져나온다.
   draggedItem: { zIndex: 2 },
-  menuOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 10,
-  },
-  menuDismiss: { ...StyleSheet.absoluteFillObject },
-  itemMenu: {
-    position: 'absolute',
-    width: normalize(164),
-    backgroundColor: COLORS.white,
-    borderRadius: normalize(14),
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    elevation: 8,
-    shadowColor: COLORS.text,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.14,
-    shadowRadius: 10,
-  },
-  menuAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: normalize(52),
-    paddingHorizontal: normalize(16),
-    gap: normalize(12),
-  },
-  menuDeleteAction: {
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-  },
-  menuLabel: {
-    fontSize: normalize(14),
-    fontFamily: tokens.fontFamily.medium,
-    color: COLORS.text,
-  },
   itemEditInput: {
     flex: 1,
     minHeight: normalize(44),

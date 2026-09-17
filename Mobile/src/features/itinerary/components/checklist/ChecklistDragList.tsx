@@ -23,8 +23,6 @@ interface Props {
   refreshing: boolean;
   onRefresh: () => void;
   onReorder: (ids: number[]) => void;
-  onDragStart: () => void;
-  onScrollStart: () => void;
   renderItem: (
     item: ChecklistItem,
     handle: React.ReactNode,
@@ -207,7 +205,6 @@ export default function ChecklistDragList(props: Props) {
         keyboardShouldPersistTaps="handled"
         scrollEnabled={!position}
         scrollEventThrottle={16}
-        onScrollBeginDrag={props.onScrollStart}
         onScroll={event => {
           bounds.current.offset = event.nativeEvent.contentOffset.y;
         }}
@@ -241,7 +238,6 @@ export default function ChecklistDragList(props: Props) {
                   layouts.current.get(entry.itemId),
                 );
                 if (rows.some(row => !row)) return;
-                props.onDragStart();
                 drag.current = {
                   id: item.itemId,
                   from: index,

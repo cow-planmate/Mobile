@@ -24,8 +24,6 @@ interface Props {
   onClose: () => void;
   footer: React.ReactNode;
   children: React.ReactNode;
-  overlay?: React.ReactNode;
-  containerRef?: React.Ref<View>;
 }
 
 export default function ChecklistPopup({
@@ -33,8 +31,6 @@ export default function ChecklistPopup({
   onClose,
   footer,
   children,
-  overlay,
-  containerRef,
 }: Props) {
   const insets = useSafeAreaInsets();
   const [mounted, setMounted] = useState(visible);
@@ -93,7 +89,7 @@ export default function ChecklistPopup({
               },
             ]}
           >
-            <Animated.View ref={containerRef} style={[styles.popup, cardStyle]}>
+            <Animated.View style={[styles.popup, cardStyle]}>
               <View style={styles.header}>
                 <View style={styles.heading}>
                   <Text style={styles.eyebrow}>TRAVEL CHECKLIST</Text>
@@ -117,7 +113,6 @@ export default function ChecklistPopup({
               </View>
               {children}
               <View style={styles.footer}>{footer}</View>
-              {overlay}
             </Animated.View>
           </View>
         </View>
