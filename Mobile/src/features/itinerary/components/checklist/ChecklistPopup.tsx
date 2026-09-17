@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -80,11 +78,11 @@ export default function ChecklistPopup({
             importantForAccessibility="no"
           />
         </Animated.View>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardRoot}
-          pointerEvents="box-none"
-        >
+        {/*
+          키보드를 피해 카드를 밀어 올리지 않는다. 카드는 제자리에 그대로 두고
+          아래쪽이 키보드에 가려지게 둔다. 담기는 입력칸의 완료 키로 끝낸다.
+        */}
+        <View style={styles.popupLayer} pointerEvents="box-none">
           <View
             pointerEvents="box-none"
             style={[
@@ -122,7 +120,7 @@ export default function ChecklistPopup({
               {overlay}
             </Animated.View>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </View>
     </Modal>
   );

@@ -476,6 +476,8 @@ export default function ChecklistSheet({
             value={draft}
             onChangeText={setDraft}
             onSubmitEditing={handleAdd}
+            // 완료를 눌러도 키보드를 닫지 않아 연달아 담을 수 있게 한다.
+            submitBehavior="submit"
             accessibilityLabel={`${
               SCOPE_TABS.find(tab => tab.scope === scope)?.label
             } 항목 추가`}

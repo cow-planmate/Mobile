@@ -10,18 +10,21 @@ export const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(20, 27, 40, 0.36)',
   },
-  keyboardRoot: { flex: 1 },
+  popupLayer: { flex: 1 },
   popupRoot: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: normalize(20),
   },
+  // maxHeight: '100%'는 부모의 패딩까지 포함한 높이를 기준으로 풀려서, 카드가
+  // 안전 영역 여백 밖으로 넘쳐 위가 잘렸다. flexShrink는 패딩을 뺀 자리에
+  // 맞춰 줄어드므로 상태바를 침범하지 않는다.
   popup: {
     width: '100%',
     maxWidth: normalize(420),
     height: normalize(560),
-    maxHeight: '100%',
+    flexShrink: 1,
     borderRadius: normalize(24),
     padding: normalize(18),
     backgroundColor: COLORS.white,
@@ -72,11 +75,14 @@ export const styles = StyleSheet.create({
     borderRadius: normalize(14),
     backgroundColor: COLORS.borderLight,
   },
+  // flexWrap이 걸리면 줄 자체의 세로 위치는 alignItems가 아니라 alignContent가
+  // 정하고, 기본값 flex-start가 라벨을 알약 위쪽에 붙여 버린다.
   tabButton: {
     flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
+    alignContent: 'center',
     justifyContent: 'center',
     minHeight: normalize(45),
     paddingVertical: normalize(8),
