@@ -38,6 +38,11 @@ const CommunityStackNavigator =
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
+// 3버튼 내비게이션 바는 48dp를 차지한다. 인셋만큼만 비우면 탭 내용이 들어갈
+// 자리의 밑선이 시스템 바 윗선과 정확히 겹쳐, 라벨이 회색 띠에 닿아 두 바가
+// 붙어 보인다. 라벨이 숨 쉴 자리를 그만큼 더 둔다.
+const TAB_BAR_BOTTOM_GAP = 8;
+
 const baseTabBarStyle = {
   backgroundColor: '#FFFFFF',
   borderTopWidth: 1,
@@ -227,6 +232,7 @@ const CommunityTabIcon = ({
 
 function MainTabs() {
   const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 8) + TAB_BAR_BOTTOM_GAP;
   return (
     <Tab.Navigator
       initialRouteName={INITIAL_TAB}
@@ -244,8 +250,8 @@ function MainTabs() {
         },
         tabBarStyle: {
           ...baseTabBarStyle,
-          paddingBottom: Math.max(insets.bottom, 8),
-          height: 54 + Math.max(insets.bottom, 8),
+          paddingBottom: bottomInset,
+          height: 54 + bottomInset,
         },
         tabBarIconStyle: {
           marginBottom: 0,
