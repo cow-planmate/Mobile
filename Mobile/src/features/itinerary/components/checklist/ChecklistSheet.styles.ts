@@ -2,121 +2,213 @@ import { StyleSheet } from 'react-native';
 import { tokens } from '../../../../theme/tokens';
 import { normalize } from '../../../../utils/normalize';
 
-const RADIUS = {
-  xs: 6,
-  sm: 10,
-  md: 14,
-  lg: 20,
-};
-
 export const COLORS = tokens.colors;
 
 export const styles = StyleSheet.create({
-
-  tabRow: {
-    flexDirection: 'row',
-    marginHorizontal: normalize(16),
-    padding: normalize(4),
-    borderRadius: normalize(RADIUS.sm),
-    backgroundColor: COLORS.surface,
+  overlay: { flex: 1 },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(20, 27, 40, 0.36)',
   },
-  tabButton: {
+  keyboardRoot: { flex: 1 },
+  popupRoot: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: normalize(8),
-    borderRadius: normalize(RADIUS.xs),
+    justifyContent: 'center',
+    paddingHorizontal: normalize(20),
   },
-  tabButtonActive: {
+  popup: {
+    width: '100%',
+    maxWidth: normalize(420),
+    height: normalize(560),
+    maxHeight: '100%',
+    borderRadius: normalize(24),
+    padding: normalize(18),
     backgroundColor: COLORS.white,
-  },
-  tabLabel: {
-    fontSize: normalize(13),
-    fontFamily: tokens.fontFamily.medium,
-    color: COLORS.textTertiary,
-  },
-  tabLabelActive: {
-    fontFamily: tokens.fontFamily.semibold,
-    color: COLORS.text,
-  },
-
-  progressBox: {
-    paddingHorizontal: normalize(16),
-    paddingTop: normalize(14),
-    paddingBottom: normalize(10),
-  },
-  syncHint: {
-    paddingHorizontal: normalize(16),
-    paddingTop: normalize(8),
-    fontSize: normalize(11),
-    fontFamily: tokens.fontFamily.regular,
-    color: COLORS.textTertiary,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: normalize(8),
-  },
-  progressCaption: {
-    fontSize: normalize(12),
-    fontFamily: tokens.fontFamily.medium,
-    color: COLORS.textSecondary,
-  },
-  progressCount: {
-    fontSize: normalize(12),
-    fontFamily: tokens.fontFamily.semibold,
-    color: COLORS.primary,
-  },
-  progressTrack: {
-    height: normalize(4),
-    borderRadius: normalize(2),
-    backgroundColor: COLORS.borderLight,
     overflow: 'hidden',
   },
-  progressFill: {
-    height: '100%',
-    borderRadius: normalize(2),
-    backgroundColor: COLORS.primary,
-  },
-
-  // 껍데기의 몸통이 줄어들 때 같이 줄어야 밑줄의 입력칸이 밀려나지 않는다.
-  listScroll: {
-    flexShrink: 1,
-  },
-  list: {
-    paddingHorizontal: normalize(16),
-    paddingBottom: normalize(12),
-  },
-  itemRow: {
+  header: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: normalize(10),
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingTop: normalize(4),
+    paddingBottom: normalize(18),
+    marginBottom: normalize(18),
     borderBottomWidth: 1,
     borderBottomColor: COLORS.borderLight,
   },
+  heading: { flex: 1 },
+  eyebrow: {
+    fontSize: normalize(10),
+    fontFamily: tokens.fontFamily.bold,
+    letterSpacing: 1.3,
+    color: COLORS.primary,
+    marginBottom: normalize(6),
+  },
+  title: {
+    fontSize: normalize(23),
+    fontFamily: tokens.fontFamily.bold,
+    letterSpacing: -0.7,
+    color: COLORS.text,
+  },
+  closeButton: {
+    width: normalize(44),
+    height: normalize(44),
+    marginTop: normalize(-7),
+    marginRight: normalize(-9),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footer: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderLight,
+    paddingTop: normalize(16),
+    marginTop: normalize(14),
+  },
+  tabRow: {
+    flexDirection: 'row',
+    padding: normalize(5),
+    gap: normalize(4),
+    borderRadius: normalize(14),
+    backgroundColor: COLORS.borderLight,
+  },
+  tabButton: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: normalize(45),
+    paddingVertical: normalize(8),
+    borderRadius: normalize(10),
+  },
+  tabButtonActive: { backgroundColor: COLORS.white },
+  tabLabel: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.semibold,
+    color: COLORS.textSecondary,
+  },
+  tabLabelActive: { color: COLORS.primary },
+  tabCount: {
+    fontSize: normalize(11),
+    fontFamily: tokens.fontFamily.regular,
+    marginLeft: normalize(5),
+    color: COLORS.textSecondary,
+  },
+  scopeHint: {
+    paddingHorizontal: normalize(2),
+    paddingTop: normalize(15),
+    paddingBottom: normalize(13),
+    fontSize: normalize(11),
+    lineHeight: normalize(18),
+    fontFamily: tokens.fontFamily.regular,
+    color: COLORS.textSecondary,
+  },
+  listScroll: { flex: 1 },
+  list: { paddingBottom: normalize(2) },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: normalize(52),
+    paddingVertical: normalize(4),
+    paddingLeft: normalize(2),
+    backgroundColor: COLORS.white,
+    paddingRight: normalize(4),
+    marginBottom: normalize(6),
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    borderRadius: normalize(12),
+  },
+  // 웹은 끌고 있는 줄을 파란 면(#EFF6FF)과 반투명 파란 테두리로 알린다.
+  // 안드로이드는 elevation만 읽으므로 짙은 그림자 대신 sm 한 단계만 얹는다.
+  itemRowActive: {
+    ...tokens.shadows.sm,
+    backgroundColor: COLORS.primarySurface,
+    borderColor: 'rgba(19, 68, 255, 0.3)',
+  },
   itemToggle: {
     flex: 1,
+    minHeight: normalize(44),
     flexDirection: 'row',
     alignItems: 'center',
   },
+  checkbox: {
+    width: normalize(20),
+    height: normalize(20),
+    borderWidth: 2,
+    borderRadius: normalize(6),
+    borderColor: COLORS.borderStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
   itemText: {
     flex: 1,
-    marginLeft: normalize(10),
+    marginLeft: normalize(11),
     fontSize: normalize(14),
+    lineHeight: normalize(21),
     fontFamily: tokens.fontFamily.regular,
     color: COLORS.text,
   },
   itemTextChecked: {
-    color: COLORS.textTertiary,
+    color: COLORS.textSecondary,
     textDecorationLine: 'line-through',
   },
   itemAction: {
-    padding: normalize(6),
-    marginLeft: normalize(2),
+    width: normalize(44),
+    height: normalize(44),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dragHandle: {
+    width: normalize(32),
+    minHeight: normalize(48),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // 바깥 껍데기는 쌓임 순서만 맡는다. itemRow의 marginBottom이 이 껍데기 높이에
+  // 들어가서, 여기에 배경을 주면 파란 면이 카드보다 6px 아래로 삐져나온다.
+  draggedItem: { zIndex: 2 },
+  menuOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
+  },
+  menuDismiss: { ...StyleSheet.absoluteFillObject },
+  itemMenu: {
+    position: 'absolute',
+    width: normalize(164),
+    backgroundColor: COLORS.white,
+    borderRadius: normalize(14),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    elevation: 8,
+    shadowColor: COLORS.text,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 10,
+  },
+  menuAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: normalize(52),
+    paddingHorizontal: normalize(16),
+    gap: normalize(12),
+  },
+  menuDeleteAction: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderLight,
+  },
+  menuLabel: {
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.medium,
+    color: COLORS.text,
   },
   itemEditInput: {
     flex: 1,
-    marginLeft: normalize(10),
+    minHeight: normalize(44),
     paddingVertical: normalize(4),
     fontSize: normalize(14),
     fontFamily: tokens.fontFamily.regular,
@@ -124,28 +216,17 @@ export const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.primary,
   },
-
   stateBox: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: normalize(36),
-    paddingHorizontal: normalize(16),
+    paddingVertical: normalize(12),
   },
-  /** 비었을 때 굵게 한 줄. 그 아래 설명은 stateText가 받는다. */
   emptyTitle: {
     fontSize: normalize(14),
     lineHeight: normalize(20),
     fontFamily: tokens.fontFamily.bold,
     color: COLORS.text,
-  },
-  /** 탭 밑 한 줄. 무엇을 적는 자리인지 여기서 갈린다. */
-  scopeHint: {
-    paddingHorizontal: normalize(16),
-    paddingBottom: normalize(10),
-    fontSize: normalize(12),
-    lineHeight: normalize(18),
-    fontFamily: tokens.fontFamily.regular,
-    color: COLORS.textTertiary,
   },
   stateText: {
     marginTop: normalize(10),
@@ -158,8 +239,8 @@ export const styles = StyleSheet.create({
   retryButton: {
     marginTop: normalize(14),
     paddingHorizontal: normalize(16),
-    paddingVertical: normalize(8),
-    borderRadius: normalize(RADIUS.sm),
+    paddingVertical: normalize(12),
+    borderRadius: normalize(12),
     borderWidth: 1,
     borderColor: COLORS.border,
   },
@@ -168,33 +249,26 @@ export const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.medium,
     color: COLORS.text,
   },
-
-  // 껍데기의 밑줄 자리에 들어간다 — 실선과 좌우 여백은 껍데기가 이미 그린다.
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  inputRow: { flexDirection: 'row', alignItems: 'center' },
   input: {
     flex: 1,
-    height: normalize(44),
-    paddingHorizontal: normalize(14),
-    borderRadius: normalize(RADIUS.sm),
+    height: normalize(48),
+    paddingHorizontal: normalize(13),
+    borderRadius: normalize(12),
     borderWidth: 1,
-    borderColor: COLORS.borderStrong,
-    fontSize: normalize(14),
+    borderColor: COLORS.border,
+    fontSize: normalize(13),
     fontFamily: tokens.fontFamily.regular,
     color: COLORS.text,
   },
   addButton: {
     marginLeft: normalize(8),
-    width: normalize(44),
-    height: normalize(44),
+    width: normalize(48),
+    height: normalize(48),
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: normalize(RADIUS.sm),
+    borderRadius: normalize(12),
     backgroundColor: COLORS.primary,
   },
-  addButtonDisabled: {
-    backgroundColor: COLORS.disabled,
-  },
+  addButtonDisabled: { backgroundColor: COLORS.disabled },
 });

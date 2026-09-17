@@ -1,12 +1,31 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 import Toast from 'react-native-toast-message';
+import { RefreshControl, TouchableOpacity, View } from 'react-native';
 import ChecklistSheet from '../ChecklistSheet';
 
 const mockRefetch = jest.fn(() => Promise.resolve([]));
 const mockReorderMutate = jest.fn();
 const mockDeleteMutate = jest.fn();
+const mockCreateMutate = jest.fn();
+const mockEditMutate = jest.fn();
 const mockShowAlert = jest.fn();
+
+// reanimated의 Animated.View는 ref로 클래스 인스턴스를 넘기고 measureInWindow가
+// 테스트에서 아무 일도 하지 않는다. 메뉴 위치 계산이 막히므로 평범한 View로 바꾼다.
+jest.mock('react-native-reanimated', () => {
+  const RN = require('react-native');
+
+  return {
+    __esModule: true,
+    default: { View: RN.View },
+    Easing: { out: () => undefined, cubic: undefined },
+    useSharedValue: (value: number) => ({ value }),
+    useAnimatedStyle: () => ({}),
+    withTiming: (value: number) => value,
+    runOnJS: (fn: (...args: unknown[]) => unknown) => fn,
+  };
+});
 
 jest.mock('../../../../../contexts/AlertContext', () => ({
   useAlert: () => ({ showAlert: mockShowAlert }),
@@ -14,8 +33,8 @@ jest.mock('../../../../../contexts/AlertContext', () => ({
 
 jest.mock('lucide-react-native', () => {
   const ReactModule = require('react');
-  const { View } = require('react-native');
-  const Icon = () => ReactModule.createElement(View);
+  const { View: IconView } = require('react-native');
+  const Icon = () => ReactModule.createElement(IconView);
 
   return {
     Check: Icon,
@@ -32,9 +51,18 @@ jest.mock('lucide-react-native', () => {
 
 jest.mock('../../../hooks/useChecklistQueries', () => ({
   getChecklistErrorMessage: () => '순서 변경에 실패했습니다.',
-  useCreateChecklistItem: () => ({ isPending: false, mutate: jest.fn() }),
-  useDeleteChecklistItem: () => ({ isPending: false, mutate: mockDeleteMutate }),
-  useEditChecklistItemContent: () => ({ isPending: false, mutate: jest.fn() }),
+  useCreateChecklistItem: () => ({
+    isPending: false,
+    mutate: mockCreateMutate,
+  }),
+  useDeleteChecklistItem: () => ({
+    isPending: false,
+    mutate: mockDeleteMutate,
+  }),
+  useEditChecklistItemContent: () => ({
+    isPending: false,
+    mutate: mockEditMutate,
+  }),
   usePlanChecklists: () => ({
     sharedItems: [
       { itemId: 1, content: '여권', isChecked: false, sortOrder: 0 },
@@ -58,9 +86,22 @@ jest.mock('../../../hooks/useChecklistQueries', () => ({
   useToggleChecklistItem: () => ({ isPending: false, mutate: jest.fn() }),
 }));
 
+// openMenu는 누른 버튼과 팝업의 화면 좌표를 재서 메뉴 위치를 잡는다.
+// react-native의 jest 목은 measureInWindow를 빈 함수로 두어 콜백이 오지 않으므로
+// 둘 다 화면 좌표를 대신 채워 준다.
+type Measure = (x: number, y: number, width: number, height: number) => void;
+const menuPress = {
+  currentTarget: {
+    measureInWindow: (callback: Measure) => callback(240, 200, 44, 44),
+  },
+} as unknown as import('react-native').GestureResponderEvent;
+
 describe('ChecklistSheet', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest
+      .spyOn(View.prototype as any, 'measureInWindow')
+      .mockImplementation((callback: any) => callback(0, 0, 320, 560));
   });
 
   it('항목을 위로 이동할 때 전체 ID 순서를 전송한다', () => {
@@ -74,8 +115,10 @@ describe('ChecklistSheet', () => {
 
     act(() => {
       component!.root
-        .findByProps({ accessibilityLabel: '충전기 위로 이동' })
-        .props.onPress();
+        .findByProps({ accessibilityLabel: '충전기 순서 변경' })
+        .props.onAccessibilityAction({
+          nativeEvent: { actionName: 'decrement' },
+        });
     });
 
     expect(mockReorderMutate).toHaveBeenCalledWith(
@@ -84,7 +127,7 @@ describe('ChecklistSheet', () => {
     );
   });
 
-  it('새로고침 버튼으로 두 범위 목록을 다시 조회한다', () => {
+  it('목록을 당겨 두 범위 목록을 다시 조회한다', async () => {
     let component: renderer.ReactTestRenderer;
 
     act(() => {
@@ -93,10 +136,8 @@ describe('ChecklistSheet', () => {
       );
     });
 
-    act(() => {
-      component!.root
-        .findByProps({ accessibilityLabel: '준비 목록 새로고침' })
-        .props.onPress();
+    await act(async () => {
+      component!.root.findByType(RefreshControl).props.onRefresh();
     });
 
     expect(mockRefetch).toHaveBeenCalledTimes(1);
@@ -113,8 +154,10 @@ describe('ChecklistSheet', () => {
 
     act(() => {
       component!.root
-        .findByProps({ accessibilityLabel: '충전기 위로 이동' })
-        .props.onPress();
+        .findByProps({ accessibilityLabel: '충전기 순서 변경' })
+        .props.onAccessibilityAction({
+          nativeEvent: { actionName: 'decrement' },
+        });
     });
 
     const options = mockReorderMutate.mock.calls[0][1];
@@ -138,6 +181,12 @@ describe('ChecklistSheet', () => {
 
     act(() => {
       component!.root
+        .findByProps({ accessibilityLabel: '충전기 관리' })
+        .props.onPress(menuPress);
+    });
+
+    act(() => {
+      component!.root
         .findByProps({ accessibilityLabel: '충전기 삭제' })
         .props.onPress();
     });
@@ -154,5 +203,100 @@ describe('ChecklistSheet', () => {
       2,
       expect.objectContaining({ onError: expect.any(Function) }),
     );
+  });
+  it('더보기에서 수정하고 저장하며 탭 전환 시 메뉴를 닫는다', () => {
+    let component: renderer.ReactTestRenderer;
+    act(() => {
+      component = renderer.create(
+        <ChecklistSheet visible onClose={jest.fn()} planId="plan-id" />,
+      );
+    });
+    expect(
+      component!.root.findAllByProps({ accessibilityLabel: '충전기 수정' }),
+    ).toHaveLength(0);
+    act(() => {
+      component!.root
+        .findByProps({ accessibilityLabel: '충전기 관리' })
+        .props.onPress(menuPress);
+    });
+    act(() => {
+      component!.root
+        .findByProps({ accessibilityLabel: '충전기 수정' })
+        .props.onPress();
+    });
+    act(() => {
+      component!.root
+        .findByProps({ accessibilityLabel: '준비물 내용 수정' })
+        .props.onChangeText('충전 케이블');
+    });
+    act(() => {
+      component!.root
+        .findByProps({ accessibilityLabel: '수정 저장' })
+        .props.onPress();
+    });
+    expect(mockEditMutate).toHaveBeenCalledWith(
+      { itemId: 2, content: '충전 케이블' },
+      expect.any(Object),
+    );
+    act(() => {
+      mockEditMutate.mock.calls[0][1].onSuccess();
+    });
+    act(() => {
+      component!.root
+        .findByProps({ accessibilityLabel: '충전기 관리' })
+        .props.onPress(menuPress);
+    });
+    act(() => {
+      component!.root
+        .findAllByType(TouchableOpacity)
+        .filter(node => node.props.accessibilityRole === 'tab')[1]
+        .props.onPress();
+    });
+    expect(
+      component!.root.findAllByProps({ accessibilityLabel: '충전기 삭제' }),
+    ).toHaveLength(0);
+    expect(
+      component!.root.findByProps({
+        accessibilityLabel: '개인 준비물 항목 추가',
+      }),
+    ).toBeTruthy();
+  });
+
+  it('빈 입력은 전송하지 않고 추가 실패 시 입력을 유지한다', () => {
+    let component: renderer.ReactTestRenderer;
+    act(() => {
+      component = renderer.create(
+        <ChecklistSheet visible onClose={jest.fn()} planId="plan-id" />,
+      );
+    });
+    const input = () =>
+      component!.root.findByProps({
+        accessibilityLabel: '공동 준비물 항목 추가',
+      });
+    act(() => {
+      input().props.onChangeText('   ');
+    });
+    act(() => {
+      input().props.onSubmitEditing();
+    });
+    expect(mockCreateMutate).not.toHaveBeenCalled();
+    act(() => {
+      input().props.onChangeText(' 보조배터리 ');
+    });
+    act(() => {
+      input().props.onSubmitEditing();
+    });
+    expect(mockCreateMutate).toHaveBeenCalledWith(
+      '보조배터리',
+      expect.any(Object),
+    );
+    act(() => {
+      mockCreateMutate.mock.calls[0][1].onError(new Error('offline'));
+    });
+    expect(input().props.value).toBe(' 보조배터리 ');
+    act(() => {
+      mockCreateMutate.mock.calls[0][1].onSuccess();
+    });
+    expect(input().props.value).toBe('');
   });
 });

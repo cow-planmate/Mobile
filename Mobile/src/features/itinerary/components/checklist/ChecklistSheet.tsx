@@ -1,7 +1,14 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
-  ScrollView,
+  GestureResponderEvent,
+  Pressable,
   Text,
   TextInput,
   TouchableOpacity,
@@ -9,12 +16,9 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import Check from 'lucide-react-native/dist/esm/icons/check';
-import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
-import ChevronDown from 'lucide-react-native/dist/esm/icons/chevron-down';
-import ChevronUp from 'lucide-react-native/dist/esm/icons/chevron-up';
-import Circle from 'lucide-react-native/dist/esm/icons/circle';
+import Plus from 'lucide-react-native/dist/esm/icons/plus';
+import Ellipsis from 'lucide-react-native/dist/esm/icons/ellipsis';
 import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
-import RefreshCw from 'lucide-react-native/dist/esm/icons/refresh-cw';
 import Trash2 from 'lucide-react-native/dist/esm/icons/trash-2';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import {
@@ -31,33 +35,29 @@ import {
   useReorderChecklistItems,
   useToggleChecklistItem,
 } from '../../hooks/useChecklistQueries';
-import SheetModal from '../../../../components/common/SheetModal';
+import ChecklistPopup from './ChecklistPopup';
+import ChecklistDragList from './ChecklistDragList';
 import { normalize } from '../../../../utils/normalize';
 import { useAlert } from '../../../../contexts/AlertContext';
 import { styles, COLORS } from './ChecklistSheet.styles';
 
-/**
- * 이름은 웹을 따른다. 웹은 이 기능 전체를 '여행 준비'라 부르고 체크리스트는
- * 그 안의 한 요소인데, 앱만 화면 이름부터 체크리스트라 같은 것을 두 이름으로
- * 부르고 있었다.
- */
 const SCOPE_TABS: { scope: ChecklistScope; label: string; hint: string }[] = [
   {
     scope: 'shared',
-    label: '공동 준비',
+    label: '공동 준비물',
     hint: '여행 멤버 모두가 함께 관리해요.',
   },
   {
     scope: 'personal',
-    label: '개인 준비',
+    label: '개인 준비물',
     hint: '나에게만 보이는 개인 목록이에요.',
   },
 ];
 
 // 무엇이 공동이고 무엇이 개인인지는 탭 밑 한 줄이 이미 말한다. 비었을 때는
 // 다음에 할 일만 남긴다.
-const EMPTY_TITLE = '아직 준비 항목이 없어요';
-const EMPTY_HINT = '첫 번째 여행 준비를 추가해 보세요.';
+const EMPTY_TITLE = '아직 준비물 항목이 없어요';
+const EMPTY_HINT = '첫 번째 여행 준비물을 추가해 보세요.';
 
 interface ChecklistSheetProps {
   visible: boolean;
@@ -74,16 +74,61 @@ export default function ChecklistSheet({
   const [draft, setDraft] = useState('');
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState('');
+  const popupRef = useRef<View>(null);
+  const [menu, setMenu] = useState<{
+    item: ChecklistItem;
+    x: number;
+    y: number;
+  } | null>(null);
+  const closeMenu = useCallback(() => setMenu(null), []);
+  const openMenu = useCallback(
+    (item: ChecklistItem, event: GestureResponderEvent) => {
+      event.currentTarget.measureInWindow((x, y, width, height) => {
+        popupRef.current?.measureInWindow(
+          (popupX, popupY, popupWidth, popupHeight) => {
+            const menuWidth = normalize(164);
+            const menuHeight = normalize(104);
+            const inset = normalize(8);
+            const above = y - popupY - menuHeight - inset;
+            setMenu(current =>
+              current?.item.itemId === item.itemId
+                ? null
+                : {
+                    item,
+                    x: Math.max(
+                      inset,
+                      Math.min(
+                        popupWidth - menuWidth - inset,
+                        x - popupX + width - menuWidth,
+                      ),
+                    ),
+                    y: Math.max(
+                      inset,
+                      Math.min(
+                        popupHeight - menuHeight - inset,
+                        above >= inset ? above : y - popupY + height + inset,
+                      ),
+                    ),
+                  },
+            );
+          },
+        );
+      });
+    },
+    [],
+  );
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const {
-    sharedItems,
-    personalItems,
-    counts,
-    isLoading,
-    isFetching,
-    isError,
-    refetch,
-  } = usePlanChecklists(planId, visible);
+  useEffect(() => {
+    if (!visible) {
+      setMenu(null);
+      setEditingItemId(null);
+      setEditingText('');
+    }
+  }, [visible]);
+
+  const { sharedItems, personalItems, counts, isLoading, isError, refetch } =
+    usePlanChecklists(planId, visible);
 
   const createItem = useCreateChecklistItem(planId, scope);
   const editContent = useEditChecklistItemContent(planId, scope);
@@ -118,6 +163,7 @@ export default function ChecklistSheet({
   const handleChangeScope = useCallback(
     (next: ChecklistScope) => {
       cancelEditing();
+      setMenu(null);
       setScope(next);
     },
     [cancelEditing],
@@ -162,8 +208,6 @@ export default function ChecklistSheet({
     );
   }, [cancelEditing, editContent, editingItemId, editingText, showError]);
 
-  // 삭제 버튼이 이동 화살표와 같은 모양으로 붙어 있어 오탭이 나기 쉽고,
-  // 공유 체크리스트는 되돌리기 없이 협업자 화면에서도 즉시 사라진다.
   const handleDelete = useCallback(
     (itemId: number, content: string) => {
       showAlert({
@@ -188,31 +232,20 @@ export default function ChecklistSheet({
     [cancelEditing, deleteItem, editingItemId, showAlert, showError],
   );
 
-  const handleMove = useCallback(
-    (itemId: number, direction: -1 | 1) => {
-      if (reorderItems.isPending) {
-        return;
-      }
-
-      const currentIndex = items.findIndex(item => item.itemId === itemId);
-      const nextIndex = currentIndex + direction;
-
-      if (currentIndex < 0 || nextIndex < 0 || nextIndex >= items.length) {
-        return;
-      }
-
-      const itemIds = items.map(item => item.itemId);
-      [itemIds[currentIndex], itemIds[nextIndex]] = [
-        itemIds[nextIndex],
-        itemIds[currentIndex],
-      ];
+  const handleReorder = useCallback(
+    (itemIds: number[]) => {
+      if (isMutating) return;
+      setMenu(null);
       reorderItems.mutate(itemIds, { onError: showError });
     },
-    [items, reorderItems, showError],
+    [isMutating, reorderItems, showError],
   );
 
   const handleRefresh = useCallback(() => {
-    refetch().catch(() => undefined);
+    setIsRefreshing(true);
+    refetch()
+      .catch(() => undefined)
+      .finally(() => setIsRefreshing(false));
   }, [refetch]);
 
   const canSubmitDraft = draft.trim().length > 0 && !createItem.isPending;
@@ -222,7 +255,7 @@ export default function ChecklistSheet({
       return (
         <View style={styles.stateBox}>
           <ActivityIndicator color={COLORS.primary} />
-          <Text style={styles.stateText}>준비 목록을 불러오는 중…</Text>
+          <Text style={styles.stateText}>준비물 목록을 불러오는 중…</Text>
         </View>
       );
     }
@@ -230,7 +263,7 @@ export default function ChecklistSheet({
     if (isError) {
       return (
         <View style={styles.stateBox}>
-          <Text style={styles.stateText}>준비 목록을 불러오지 못했어요.</Text>
+          <Text style={styles.stateText}>준비물 목록을 불러오지 못했어요.</Text>
           <TouchableOpacity
             style={styles.retryButton}
             onPress={() => {
@@ -254,16 +287,21 @@ export default function ChecklistSheet({
     }
 
     return (
-      <ScrollView
-        style={styles.listScroll}
-        contentContainerStyle={styles.list}
-        keyboardShouldPersistTaps="handled"
-      >
-        {items.map((item, index) => {
+      <ChecklistDragList
+        key={scope}
+        items={items}
+        disabled={isMutating || editingItemId !== null || !visible}
+        refreshing={isRefreshing}
+        onRefresh={handleRefresh}
+        onReorder={handleReorder}
+        onDragStart={closeMenu}
+        onScrollStart={closeMenu}
+        renderItem={(item, handle, active) => {
           const isEditing = editingItemId === item.itemId;
 
           return (
-            <View key={item.itemId} style={styles.itemRow}>
+            <View style={[styles.itemRow, active && styles.itemRowActive]}>
+              {!isEditing && handle}
               {isEditing ? (
                 <>
                   <TextInput
@@ -271,6 +309,7 @@ export default function ChecklistSheet({
                     value={editingText}
                     onChangeText={setEditingText}
                     onSubmitEditing={handleSubmitEdit}
+                    accessibilityLabel="준비물 내용 수정"
                     maxLength={CHECKLIST_CONTENT_MAX_LENGTH}
                     returnKeyType="done"
                     autoFocus
@@ -305,19 +344,27 @@ export default function ChecklistSheet({
                     onPress={() => handleToggle(item)}
                     disabled={isMutating}
                     activeOpacity={0.7}
-                    accessibilityState={{ disabled: isMutating }}
+                    accessibilityRole="checkbox"
+                    accessibilityLabel={item.content}
+                    accessibilityState={{
+                      disabled: isMutating,
+                      checked: item.isChecked,
+                    }}
                   >
-                    {item.isChecked ? (
-                      <CheckCircle2
-                        size={normalize(18)}
-                        color={COLORS.primary}
-                      />
-                    ) : (
-                      <Circle
-                        size={normalize(18)}
-                        color={COLORS.borderStrong}
-                      />
-                    )}
+                    <View
+                      style={[
+                        styles.checkbox,
+                        item.isChecked && styles.checkboxChecked,
+                      ]}
+                    >
+                      {item.isChecked && (
+                        <Check
+                          size={normalize(13)}
+                          color={COLORS.white}
+                          strokeWidth={3}
+                        />
+                      )}
+                    </View>
                     <Text
                       style={[
                         styles.itemText,
@@ -329,88 +376,99 @@ export default function ChecklistSheet({
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.itemAction}
-                    onPress={() => {
-                      setEditingItemId(item.itemId);
-                      setEditingText(item.content);
-                    }}
-                    hitSlop={6}
+                    onPress={event => openMenu(item, event)}
+                    disabled={isMutating}
                     activeOpacity={0.7}
                     accessibilityRole="button"
-                    accessibilityLabel={`${item.content} 수정`}
-                  >
-                    <Pencil size={normalize(16)} color={COLORS.textTertiary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.itemAction}
-                    onPress={() => handleMove(item.itemId, -1)}
-                    disabled={isMutating || index === 0}
-                    accessibilityLabel={`${item.content} 위로 이동`}
-                    hitSlop={6}
-                    activeOpacity={0.7}
-                    accessibilityState={{ disabled: isMutating || index === 0 }}
-                  >
-                    <ChevronUp
-                      size={normalize(16)}
-                      color={COLORS.textTertiary}
-                    />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.itemAction}
-                    onPress={() => handleMove(item.itemId, 1)}
-                    disabled={isMutating || index === items.length - 1}
-                    accessibilityLabel={`${item.content} 아래로 이동`}
-                    hitSlop={6}
-                    activeOpacity={0.7}
+                    accessibilityLabel={`${item.content} 관리`}
                     accessibilityState={{
-                      disabled: isMutating || index === items.length - 1,
+                      expanded: menu?.item.itemId === item.itemId,
+                      disabled: isMutating,
                     }}
                   >
-                    <ChevronDown
-                      size={normalize(16)}
-                      color={COLORS.textTertiary}
+                    <Ellipsis
+                      size={normalize(20)}
+                      color={COLORS.textSecondary}
                     />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.itemAction}
-                    onPress={() => handleDelete(item.itemId, item.content)}
-                    disabled={isMutating}
-                    accessibilityLabel={`${item.content} 삭제`}
-                    hitSlop={6}
-                    activeOpacity={0.7}
-                    accessibilityState={{ disabled: isMutating }}
-                  >
-                    <Trash2 size={normalize(16)} color={COLORS.textTertiary} />
                   </TouchableOpacity>
                 </>
               )}
             </View>
           );
-        })}
-      </ScrollView>
+        }}
+      />
     );
   }, [
     cancelEditing,
     editContent.isPending,
     editingItemId,
     editingText,
-    handleDelete,
-    handleMove,
+    menu,
+    openMenu,
+    closeMenu,
+    handleReorder,
+    scope,
+    visible,
+    handleRefresh,
     handleSubmitEdit,
     handleToggle,
     isError,
+    isRefreshing,
     isLoading,
     isMutating,
     items,
     refetch,
-    scope,
   ]);
 
   return (
-    <SheetModal
+    <ChecklistPopup
       visible={visible}
-      title="여행 준비"
-      onClose={onClose}
-      avoidKeyboard
+      onClose={menu ? closeMenu : onClose}
+      containerRef={popupRef}
+      overlay={
+        menu && (
+          <View style={styles.menuOverlay}>
+            <Pressable
+              style={styles.menuDismiss}
+              onPress={closeMenu}
+              accessibilityRole="button"
+              accessibilityLabel="준비물 메뉴 닫기"
+            />
+            <View
+              style={[styles.itemMenu, { left: menu.x, top: menu.y }]}
+              accessibilityViewIsModal
+            >
+              <TouchableOpacity
+                style={styles.menuAction}
+                disabled={isMutating}
+                accessibilityRole="button"
+                accessibilityLabel={`${menu.item.content} 수정`}
+                onPress={() => {
+                  setEditingItemId(menu.item.itemId);
+                  setEditingText(menu.item.content);
+                  closeMenu();
+                }}
+              >
+                <Pencil size={normalize(16)} color={COLORS.textSecondary} />
+                <Text style={styles.menuLabel}>수정</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.menuAction, styles.menuDeleteAction]}
+                disabled={isMutating}
+                accessibilityRole="button"
+                accessibilityLabel={`${menu.item.content} 삭제`}
+                onPress={() => {
+                  handleDelete(menu.item.itemId, menu.item.content);
+                  closeMenu();
+                }}
+              >
+                <Trash2 size={normalize(16)} color={COLORS.textSecondary} />
+                <Text style={styles.menuLabel}>삭제</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )
+      }
       footer={
         <View style={styles.inputRow}>
           <TextInput
@@ -418,10 +476,13 @@ export default function ChecklistSheet({
             value={draft}
             onChangeText={setDraft}
             onSubmitEditing={handleAdd}
+            accessibilityLabel={`${
+              SCOPE_TABS.find(tab => tab.scope === scope)?.label
+            } 항목 추가`}
             placeholder={`${
               SCOPE_TABS.find(tab => tab.scope === scope)?.label
             } 항목 추가`}
-            placeholderTextColor={COLORS.textTertiary}
+            placeholderTextColor={COLORS.textSecondary}
             maxLength={CHECKLIST_CONTENT_MAX_LENGTH}
             returnKeyType="done"
           />
@@ -440,31 +501,13 @@ export default function ChecklistSheet({
             {createItem.isPending ? (
               <ActivityIndicator size="small" color={COLORS.white} />
             ) : (
-              <Check size={normalize(20)} color={COLORS.white} />
+              <Plus
+                size={normalize(22)}
+                color={canSubmitDraft ? COLORS.white : COLORS.textTertiary}
+              />
             )}
           </TouchableOpacity>
         </View>
-      }
-      headerAction={
-        <TouchableOpacity
-          onPress={handleRefresh}
-          disabled={isFetching || isMutating}
-          accessibilityRole="button"
-          accessibilityLabel="준비 목록 새로고침"
-          activeOpacity={0.7}
-          hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
-          accessibilityState={{ disabled: isFetching || isMutating }}
-        >
-          {isFetching ? (
-            <ActivityIndicator size="small" color={COLORS.textTertiary} />
-          ) : (
-            <RefreshCw
-              size={normalize(18)}
-              color={COLORS.textTertiary}
-              strokeWidth={1.8}
-            />
-          )}
-        </TouchableOpacity>
       }
     >
       <View style={styles.tabRow}>
@@ -477,11 +520,16 @@ export default function ChecklistSheet({
               style={[styles.tabButton, isActive && styles.tabButtonActive]}
               onPress={() => handleChangeScope(tab.scope)}
               activeOpacity={0.8}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
             >
               <Text
                 style={[styles.tabLabel, isActive && styles.tabLabelActive]}
               >
-                {tab.label} {counts[tab.scope].done}/{counts[tab.scope].total}
+                {tab.label}
+              </Text>
+              <Text style={styles.tabCount}>
+                {counts[tab.scope].done}/{counts[tab.scope].total}
               </Text>
             </TouchableOpacity>
           );
@@ -493,6 +541,6 @@ export default function ChecklistSheet({
       </Text>
 
       {body}
-    </SheetModal>
+    </ChecklistPopup>
   );
 }
