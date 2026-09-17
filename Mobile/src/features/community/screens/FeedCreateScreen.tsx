@@ -55,6 +55,27 @@ import {
   FeedImageUploadFile,
 } from '../utils/feedImage';
 
+// 줄바꿈 문자. 서식은 줄 단위로 붙이므로 줄 경계를 자주 찾는다.
+const NEWLINE = String.fromCharCode(10);
+
+type FormatButton = {
+  label: string;
+  a11y: string;
+  prefix?: string;
+  action?: 'divider' | 'bold';
+  bold?: boolean;
+};
+
+const FORMAT_BUTTONS: FormatButton[] = [
+  { label: 'H1', a11y: '큰 제목', prefix: '# ' },
+  { label: 'H2', a11y: '중간 제목', prefix: '## ' },
+  { label: '• 목록', a11y: '글머리 목록', prefix: '- ' },
+  { label: '1. 번호', a11y: '번호 목록', prefix: '1. ' },
+  { label: '❝ 인용', a11y: '인용', prefix: '> ' },
+  { label: '― 선', a11y: '구분선', action: 'divider' },
+  { label: 'B 굵게', a11y: '굵게', action: 'bold', bold: true },
+];
+
 type FeedCreateRoute = RouteProp<FeedStackParamList, 'FeedCreate'>;
 
 export default function FeedCreateScreen() {
@@ -104,7 +125,10 @@ export default function FeedCreateScreen() {
    */
   const [dayCount, setDayCount] = useState(1);
   const [planSearch, setPlanSearch] = useState('');
-  const [showSlashMenu, setShowSlashMenu] = useState(false);
+  // 서식을 넣은 직후 한 번만 커서를 옮긴다. 그 뒤에는 입력에 맡긴다.
+  const [selection, setSelection] = useState<
+    { start: number; end: number } | undefined
+  >();
   const contentSelection = useRef({ start: 0, end: 0 });
 
   const contentRef = useRef<TextInput>(null);
@@ -150,18 +174,46 @@ export default function FeedCreateScreen() {
     );
   }, [ownedPlans, planSearch]);
 
-  const handleInsertFormat = (prefix: string, suffix = '') => {
-    const text = content;
+  /**
+   * 제목·목록·인용은 줄 맨 앞에 표시가 있어야 서식으로 읽힌다(blocks.ts).
+   * 커서 자리에 그냥 끼워 넣으면 "오늘은 좋았다# "가 되어 아무 일도 안 일어난다.
+   */
+  const applyLinePrefix = (prefix: string) => {
     const { start, end } = contentSelection.current;
-    const selected = text.slice(start, end);
-    const newText =
-      text.slice(0, start) +
-      prefix +
-      (selected || '') +
-      suffix +
-      text.slice(end);
-    setContent(newText);
-    setShowSlashMenu(false);
+    const lineStart =
+      start === 0 ? 0 : content.lastIndexOf(NEWLINE, start - 1) + 1;
+    const lineBreak = content.indexOf(NEWLINE, end);
+    const lineEnd = lineBreak === -1 ? content.length : lineBreak;
+    const line = content.slice(lineStart, lineEnd);
+    const bare = line.replace(/^(#{1,3} |- |\d+\. |> )/, '');
+    // 같은 단추를 다시 누르면 뗀다.
+    const next = line.startsWith(prefix) ? bare : prefix + bare;
+    const caret = lineStart + next.length;
+
+    setContent(content.slice(0, lineStart) + next + content.slice(lineEnd));
+    setSelection({ start: caret, end: caret });
+  };
+
+  const applyBold = () => {
+    const { start, end } = contentSelection.current;
+    const selected = content.slice(start, end);
+    const marked = `**${selected}**`;
+    // 고른 글자가 없으면 별표 사이에 커서를 두어 바로 이어 적게 한다.
+    const caret = selected ? start + marked.length : start + 2;
+
+    setContent(content.slice(0, start) + marked + content.slice(end));
+    setSelection({ start: caret, end: caret });
+  };
+
+  const insertDivider = () => {
+    const { end } = contentSelection.current;
+    const lineBreak = content.indexOf(NEWLINE, end);
+    const lineEnd = lineBreak === -1 ? content.length : lineBreak;
+    const block = (lineEnd === 0 ? '' : NEWLINE) + '---' + NEWLINE;
+    const caret = lineEnd + block.length;
+
+    setContent(content.slice(0, lineEnd) + block + content.slice(lineEnd));
+    setSelection({ start: caret, end: caret });
   };
   const previewDays =
     snapshot?.itinerary.days ?? existingPost.data?.itinerary?.days ?? [];
@@ -380,7 +432,10 @@ export default function FeedCreateScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.body}>
+      <ScrollView
+        contentContainerStyle={styles.body}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.card}>
           <Text style={styles.section}>기본 정보</Text>
           <Text style={styles.label}>제목</Text>
@@ -703,147 +758,55 @@ export default function FeedCreateScreen() {
         </View>
 
         <View style={styles.card}>
-          <View style={styles.editorLabelRow}>
-            <View style={styles.fieldLabelRow}>
-              <Text style={styles.section}>여행 후기</Text>
-              <Text style={styles.requiredMark}>*</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.slashBadge}
-              onPress={() => setShowSlashMenu(prev => !prev)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="서식 메뉴 열기"
-            >
-              <Text style={styles.slashBadgeText}>서식 메뉴</Text>
-              <View style={styles.slashKeyBox}>
-                <Text style={styles.slashKeyChar}>/</Text>
-              </View>
-            </TouchableOpacity>
+          <View style={styles.fieldLabelRow}>
+            <Text style={styles.section}>여행 후기</Text>
+            <Text style={styles.requiredMark}>*</Text>
           </View>
-
-          {showSlashMenu && (
-            <View style={styles.slashDropdown}>
-              <TouchableOpacity
-                style={styles.slashItem}
-                onPress={() => handleInsertFormat('# ')}
-              >
-                <Text style={styles.slashItemIcon}>H1</Text>
-                <Text style={styles.slashItemLabel}>제목 1 (큰 제목)</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.slashItem}
-                onPress={() => handleInsertFormat('## ')}
-              >
-                <Text style={styles.slashItemIcon}>H2</Text>
-                <Text style={styles.slashItemLabel}>제목 2 (중간 제목)</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.slashItem}
-                onPress={() => handleInsertFormat('- ')}
-              >
-                <Text style={styles.slashItemIcon}>•</Text>
-                <Text style={styles.slashItemLabel}>글머리 기호 목록</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.slashItem}
-                onPress={() => handleInsertFormat('1. ')}
-              >
-                <Text style={styles.slashItemIcon}>1.</Text>
-                <Text style={styles.slashItemLabel}>번호 매기기 목록</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.slashItem}
-                onPress={() => handleInsertFormat('> ')}
-              >
-                <Text style={styles.slashItemIcon}>❝</Text>
-                <Text style={styles.slashItemLabel}>인용구</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.slashItem}
-                onPress={() => handleInsertFormat('\n---\n')}
-              >
-                <Text style={styles.slashItemIcon}>―</Text>
-                <Text style={styles.slashItemLabel}>구분선</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.slashItem}
-                onPress={() => handleInsertFormat('**', '**')}
-              >
-                <Text style={[styles.slashItemIcon, { fontWeight: 'bold' }]}>
-                  B
-                </Text>
-                <Text style={styles.slashItemLabel}>굵게 (**텍스트**)</Text>
-              </TouchableOpacity>
-            </View>
-          )}
 
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.toolbarScroll}
             style={styles.formatToolbar}
           >
-            <TouchableOpacity
-              style={styles.toolBtn}
-              onPress={() => handleInsertFormat('# ')}
-            >
-              <Text style={styles.toolBtnText}>H1</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.toolBtn}
-              onPress={() => handleInsertFormat('## ')}
-            >
-              <Text style={styles.toolBtnText}>H2</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.toolBtn}
-              onPress={() => handleInsertFormat('- ')}
-            >
-              <Text style={styles.toolBtnText}>• 목록</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.toolBtn}
-              onPress={() => handleInsertFormat('1. ')}
-            >
-              <Text style={styles.toolBtnText}>1. 번호</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.toolBtn}
-              onPress={() => handleInsertFormat('> ')}
-            >
-              <Text style={styles.toolBtnText}>❝ 인용</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.toolBtn}
-              onPress={() => handleInsertFormat('\n---\n')}
-            >
-              <Text style={styles.toolBtnText}>― 선</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.toolBtn}
-              onPress={() => handleInsertFormat('**', '**')}
-            >
-              <Text style={[styles.toolBtnText, { fontWeight: 'bold' }]}>
-                B 굵게
-              </Text>
-            </TouchableOpacity>
+            {FORMAT_BUTTONS.map(button => (
+              <TouchableOpacity
+                key={button.label}
+                style={styles.toolBtn}
+                onPress={() => {
+                  if (button.prefix) applyLinePrefix(button.prefix);
+                  else if (button.action === 'bold') applyBold();
+                  else insertDivider();
+                }}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={button.a11y}
+              >
+                <Text
+                  style={[
+                    styles.toolBtnText,
+                    button.bold && styles.toolBtnTextBold,
+                  ]}
+                >
+                  {button.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </ScrollView>
 
           <TextInput
             ref={contentRef}
             value={content}
-            onChangeText={value => {
-              setContent(value);
-              if (value.endsWith('\n/') || value === '/') {
-                setShowSlashMenu(true);
-              }
-            }}
-            onSelectionChange={e => {
-              contentSelection.current = e.nativeEvent.selection;
+            onChangeText={setContent}
+            selection={selection}
+            onSelectionChange={event => {
+              contentSelection.current = event.nativeEvent.selection;
+              // 서식 때문에 옮겨 둔 커서는 한 번 쓰고 놓아 준다.
+              if (selection) setSelection(undefined);
             }}
             style={[styles.input, styles.contentInput]}
-            placeholder="여행을 소개해 주세요 ('/' 입력 시 서식 메뉴)"
+            placeholder="여행을 소개해 주세요"
             editable={!isHydrating}
             multiline
             textAlignVertical="top"
@@ -1476,72 +1439,6 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.textTertiary,
   },
-  editorLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: normalize(8),
-  },
-  slashBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(4),
-    paddingHorizontal: normalize(8),
-    paddingVertical: normalize(3),
-    borderRadius: normalize(6),
-    backgroundColor: tokens.colors.primarySurface,
-  },
-  slashBadgeText: {
-    fontSize: normalize(11),
-    fontFamily: tokens.fontFamily.medium,
-    color: tokens.colors.primary,
-  },
-  slashKeyBox: {
-    width: normalize(16),
-    height: normalize(16),
-    borderRadius: normalize(3),
-    backgroundColor: tokens.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  slashKeyChar: {
-    fontSize: normalize(11),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.white,
-    lineHeight: normalize(13),
-  },
-  slashDropdown: {
-    backgroundColor: tokens.colors.white,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderStrong,
-    borderRadius: normalize(10),
-    paddingVertical: normalize(4),
-    marginTop: normalize(4),
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  slashItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: normalize(12),
-    paddingVertical: normalize(8),
-    gap: normalize(10),
-  },
-  slashItemIcon: {
-    width: normalize(24),
-    fontSize: normalize(13),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.primary,
-    textAlign: 'center',
-  },
-  slashItemLabel: {
-    fontSize: normalize(13),
-    fontFamily: tokens.fontFamily.medium,
-    color: tokens.colors.text,
-  },
   formatToolbar: {
     marginTop: normalize(6),
   },
@@ -1558,6 +1455,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: tokens.colors.border,
   },
+  toolBtnTextBold: { fontFamily: tokens.fontFamily.bold },
   toolBtnText: {
     fontSize: normalize(12),
     fontFamily: tokens.fontFamily.medium,
