@@ -33,7 +33,9 @@ import { resolveApiUrl } from '../../../utils/apiUrl';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { FeedStackParamList } from '../../../navigation/types';
 import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
-import { textToBlocks } from '../utils/blocks';
+import { asBlocks, blocksToText, textToBlocks } from '../utils/blocks';
+import { blocksToHtml, htmlToBlocks } from '../utils/richText';
+import FeedEditor from '../components/FeedEditor';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { useUnsavedChangesPrompt } from '../../../hooks/useUnsavedChangesPrompt';
 import { POST_TITLE_MAX_LENGTH } from '../constants/board';
@@ -54,27 +56,6 @@ import {
   buildFeedImageUploadFile,
   FeedImageUploadFile,
 } from '../utils/feedImage';
-
-// 줄바꿈 문자. 서식은 줄 단위로 붙이므로 줄 경계를 자주 찾는다.
-const NEWLINE = String.fromCharCode(10);
-
-type FormatButton = {
-  label: string;
-  a11y: string;
-  prefix?: string;
-  action?: 'divider' | 'bold';
-  bold?: boolean;
-};
-
-const FORMAT_BUTTONS: FormatButton[] = [
-  { label: 'H1', a11y: '큰 제목', prefix: '# ' },
-  { label: 'H2', a11y: '중간 제목', prefix: '## ' },
-  { label: '• 목록', a11y: '글머리 목록', prefix: '- ' },
-  { label: '1. 번호', a11y: '번호 목록', prefix: '1. ' },
-  { label: '❝ 인용', a11y: '인용', prefix: '> ' },
-  { label: '― 선', a11y: '구분선', action: 'divider' },
-  { label: 'B 굵게', a11y: '굵게', action: 'bold', bold: true },
-];
 
 type FeedCreateRoute = RouteProp<FeedStackParamList, 'FeedCreate'>;
 
@@ -106,7 +87,12 @@ export default function FeedCreateScreen() {
    * 따올 데가 없어 사람에게 물어야 한다.
    */
   const [region, setRegion] = useState('');
-  const [content, setContent] = useState('');
+  // 편집기는 HTML로 주고받는다. 서버에 보낼 때 richText.ts로 블록으로 옮긴다.
+  const [contentHtml, setContentHtml] = useState('');
+  // 수정 모드는 기존 글을 다 읽은 뒤에야 편집기를 띄운다. 그래야 initialContent가 맞다.
+  const [initialHtml, setInitialHtml] = useState<string | null>(
+    isEditMode ? null : '',
+  );
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const initialForm = useRef({ title: '', content: '', thumbnailUrl: '' });
   // 지금 앱은 메모를 늘 함께 보낸다. 기본값을 true로 두어 그 동작을 지키고,
@@ -126,12 +112,7 @@ export default function FeedCreateScreen() {
   const [dayCount, setDayCount] = useState(1);
   const [planSearch, setPlanSearch] = useState('');
   // 서식을 넣은 직후 한 번만 커서를 옮긴다. 그 뒤에는 입력에 맡긴다.
-  const [selection, setSelection] = useState<
-    { start: number; end: number } | undefined
-  >();
-  const contentSelection = useRef({ start: 0, end: 0 });
 
-  const contentRef = useRef<TextInput>(null);
   const hydratedPostId = useRef<string | undefined>(undefined);
   const isMountedRef = useRef(true);
   useEffect(() => {
@@ -147,13 +128,17 @@ export default function FeedCreateScreen() {
     if (hydratedPostId.current === postId) return;
 
     hydratedPostId.current = postId;
+    const html = blocksToHtml(
+      asBlocks(post.content) ?? textToBlocks(post.contentText),
+    );
     initialForm.current = {
       title: post.title,
-      content: post.contentText,
+      content: html,
       thumbnailUrl: post.image ?? '',
     };
     setTitle(post.title);
-    setContent(post.contentText);
+    setContentHtml(html);
+    setInitialHtml(html);
     setThumbnailUrl(post.image ?? '');
   }, [existingPost.data, postId]);
 
@@ -174,47 +159,6 @@ export default function FeedCreateScreen() {
     );
   }, [ownedPlans, planSearch]);
 
-  /**
-   * 제목·목록·인용은 줄 맨 앞에 표시가 있어야 서식으로 읽힌다(blocks.ts).
-   * 커서 자리에 그냥 끼워 넣으면 "오늘은 좋았다# "가 되어 아무 일도 안 일어난다.
-   */
-  const applyLinePrefix = (prefix: string) => {
-    const { start, end } = contentSelection.current;
-    const lineStart =
-      start === 0 ? 0 : content.lastIndexOf(NEWLINE, start - 1) + 1;
-    const lineBreak = content.indexOf(NEWLINE, end);
-    const lineEnd = lineBreak === -1 ? content.length : lineBreak;
-    const line = content.slice(lineStart, lineEnd);
-    const bare = line.replace(/^(#{1,3} |- |\d+\. |> )/, '');
-    // 같은 단추를 다시 누르면 뗀다.
-    const next = line.startsWith(prefix) ? bare : prefix + bare;
-    const caret = lineStart + next.length;
-
-    setContent(content.slice(0, lineStart) + next + content.slice(lineEnd));
-    setSelection({ start: caret, end: caret });
-  };
-
-  const applyBold = () => {
-    const { start, end } = contentSelection.current;
-    const selected = content.slice(start, end);
-    const marked = `**${selected}**`;
-    // 고른 글자가 없으면 별표 사이에 커서를 두어 바로 이어 적게 한다.
-    const caret = selected ? start + marked.length : start + 2;
-
-    setContent(content.slice(0, start) + marked + content.slice(end));
-    setSelection({ start: caret, end: caret });
-  };
-
-  const insertDivider = () => {
-    const { end } = contentSelection.current;
-    const lineBreak = content.indexOf(NEWLINE, end);
-    const lineEnd = lineBreak === -1 ? content.length : lineBreak;
-    const block = (lineEnd === 0 ? '' : NEWLINE) + '---' + NEWLINE;
-    const caret = lineEnd + block.length;
-
-    setContent(content.slice(0, lineEnd) + block + content.slice(lineEnd));
-    setSelection({ start: caret, end: caret });
-  };
   const previewDays =
     snapshot?.itinerary.days ?? existingPost.data?.itinerary?.days ?? [];
   // 고른 일정의 일수에서 그대로 나오는 값이라 사용자가 고칠 수 없다.
@@ -287,7 +231,7 @@ export default function FeedCreateScreen() {
   const { allowLeave } = useUnsavedChangesPrompt({
     hasUnsavedChanges:
       title !== initialForm.current.title ||
-      content !== initialForm.current.content ||
+      contentHtml !== initialForm.current.content ||
       thumbnailUrl !== initialForm.current.thumbnailUrl ||
       thumbnailFile !== null ||
       snapshot !== null ||
@@ -322,7 +266,8 @@ export default function FeedCreateScreen() {
         return;
       }
 
-      const contentText = content.trim() || title.trim();
+      const contentBlocks = htmlToBlocks(contentHtml);
+      const contentText = blocksToText(contentBlocks).trim() || title.trim();
       // 메모를 안 내보내기로 했으면 스냅샷에서 털어낸다. 서버가 받은 대로 저장하므로
       // 여기서 빼지 않으면 가져가는 사람에게 그대로 복사된다.
       const itineraryToSend = snapshot
@@ -357,14 +302,15 @@ export default function FeedCreateScreen() {
           ? await updatePost.mutateAsync(
               buildFeedUpdatePayload({
                 title,
-                content,
+                contentBlocks,
+                contentText,
                 thumbnailUrl: resolvedThumbnailUrl ?? '',
               }),
             )
           : await createPost.mutateAsync({
               category: 'feed',
               title: title.trim(),
-              content: textToBlocks(contentText),
+              content: contentBlocks,
               contentText,
               thumbnailUrl: resolvedThumbnailUrl,
               region: regionToSend,
@@ -451,7 +397,6 @@ export default function FeedCreateScreen() {
             editable={!isHydrating}
             maxLength={POST_TITLE_MAX_LENGTH}
             returnKeyType="next"
-            onSubmitEditing={() => contentRef.current?.focus()}
             accessibilityLabel="여행기 제목"
           />
 
@@ -763,55 +708,16 @@ export default function FeedCreateScreen() {
             <Text style={styles.requiredMark}>*</Text>
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.toolbarScroll}
-            style={styles.formatToolbar}
-          >
-            {FORMAT_BUTTONS.map(button => (
-              <TouchableOpacity
-                key={button.label}
-                style={styles.toolBtn}
-                onPress={() => {
-                  if (button.prefix) applyLinePrefix(button.prefix);
-                  else if (button.action === 'bold') applyBold();
-                  else insertDivider();
-                }}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel={button.a11y}
-              >
-                <Text
-                  style={[
-                    styles.toolBtnText,
-                    button.bold && styles.toolBtnTextBold,
-                  ]}
-                >
-                  {button.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          <TextInput
-            ref={contentRef}
-            value={content}
-            onChangeText={setContent}
-            selection={selection}
-            onSelectionChange={event => {
-              contentSelection.current = event.nativeEvent.selection;
-              // 서식 때문에 옮겨 둔 커서는 한 번 쓰고 놓아 준다.
-              if (selection) setSelection(undefined);
-            }}
-            style={[styles.input, styles.contentInput]}
-            placeholder="여행을 소개해 주세요"
-            editable={!isHydrating}
-            multiline
-            textAlignVertical="top"
-            accessibilityLabel="여행기 설명"
-          />
+          {initialHtml === null ? (
+            <ActivityIndicator color={tokens.colors.primary} />
+          ) : (
+            <FeedEditor
+              initialHtml={initialHtml}
+              editable={!isHydrating}
+              placeholder="여행을 소개해 주세요"
+              onChangeHtml={setContentHtml}
+            />
+          )}
         </View>
       </ScrollView>
 

@@ -1,15 +1,23 @@
 import { buildFeedUpdatePayload } from '../feedPostPayload';
+import { ContentBlock } from '../../types';
+
+const blocksOf = (text: string): ContentBlock[] => [
+  { type: 'paragraph', content: [{ type: 'text', text }] },
+];
 
 describe('buildFeedUpdatePayload', () => {
   it('제목과 본문의 앞뒤 공백을 털어내고 썸네일을 함께 보낸다', () => {
+    const contentBlocks = blocksOf('뚜벅이로 다녀왔어요');
     const payload = buildFeedUpdatePayload({
       title: '  제주 3박 4일  ',
-      content: '  뚜벅이로 다녀왔어요  ',
+      contentBlocks,
+      contentText: '  뚜벅이로 다녀왔어요  ',
       thumbnailUrl: '  https://cdn.example.com/a.jpg  ',
     });
 
     expect(payload).toMatchObject({
       title: '제주 3박 4일',
+      content: contentBlocks,
       contentText: '뚜벅이로 다녀왔어요',
       thumbnailUrl: 'https://cdn.example.com/a.jpg',
     });
@@ -19,7 +27,8 @@ describe('buildFeedUpdatePayload', () => {
     expect(
       buildFeedUpdatePayload({
         title: '제주 3박 4일',
-        content: '   ',
+        contentBlocks: blocksOf(''),
+        contentText: '   ',
         thumbnailUrl: '',
       }).contentText,
     ).toBe('제주 3박 4일');
@@ -29,7 +38,8 @@ describe('buildFeedUpdatePayload', () => {
     expect(
       buildFeedUpdatePayload({
         title: '제목',
-        content: '본문',
+        contentBlocks: blocksOf('본문'),
+        contentText: '본문',
         thumbnailUrl: '   ',
       }).thumbnailUrl,
     ).toBeNull();
@@ -40,7 +50,8 @@ describe('buildFeedUpdatePayload', () => {
     expect(
       buildFeedUpdatePayload({
         title: '제목',
-        content: '본문',
+        contentBlocks: blocksOf('본문'),
+        contentText: '본문',
         thumbnailUrl: '',
       }),
     ).not.toHaveProperty('tags');

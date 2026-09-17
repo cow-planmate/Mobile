@@ -1,21 +1,20 @@
-import { CreatePostPayload } from '../types';
-import { textToBlocks } from './blocks';
+import { ContentBlock, CreatePostPayload } from '../types';
 
 export function buildFeedUpdatePayload({
   title,
-  content,
+  contentBlocks,
+  contentText,
   thumbnailUrl,
 }: {
   title: string;
-  content: string;
+  contentBlocks: ContentBlock[];
+  contentText: string;
   thumbnailUrl: string;
 }): Partial<CreatePostPayload> {
-  const contentText = content.trim() || title.trim();
-
   return {
     title: title.trim(),
-    content: textToBlocks(contentText),
-    contentText,
+    content: contentBlocks,
+    contentText: contentText.trim() || title.trim(),
     thumbnailUrl: thumbnailUrl.trim() || null,
   };
 }

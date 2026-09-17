@@ -68,3 +68,16 @@ jest.mock('@react-native-cookies/cookies', () => ({
   flush: jest.fn(() => Promise.resolve()),
 }));
 
+
+// tentap 편집기는 WebView 위에서 도는 웹 번들이라 jest 환경에서는 그대로 뜨지 않는다.
+// 편집기 속을 보는 테스트는 없고, HTML↔블록 변환은 richText 테스트가 따로 본다.
+jest.mock('@10play/tentap-editor', () => ({
+  Images: {},
+  RichText: () => null,
+  Toolbar: () => null,
+  useEditorBridge: () => ({
+    setPlaceholder: jest.fn(),
+    getHTML: jest.fn(() => Promise.resolve('')),
+  }),
+  useEditorContent: () => undefined,
+}));

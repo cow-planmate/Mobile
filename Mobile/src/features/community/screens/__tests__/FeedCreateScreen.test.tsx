@@ -53,6 +53,24 @@ jest.mock('../../../../components/common/SearchLocationModal', () => {
   };
 });
 
+// tentap은 WebView 기반이라 jest가 그대로 읽지 못한다. 화면 테스트는 편집기
+// 속을 보지 않으므로 입력칸 하나로 세운다. HTML↔블록 변환은 richText 테스트가 본다.
+jest.mock('../../components/FeedEditor', () => {
+  const ReactModule = require('react');
+  const { TextInput } = require('react-native');
+
+  return {
+    __esModule: true,
+    default: ({ initialHtml, placeholder, onChangeHtml }: any) =>
+      ReactModule.createElement(TextInput, {
+        accessibilityLabel: '여행기 설명',
+        placeholder,
+        defaultValue: initialHtml,
+        onChangeText: onChangeHtml,
+      }),
+  };
+});
+
 jest.mock('../../../../contexts/AlertContext', () => ({
   useAlert: () => ({ showAlert: mockShowAlert }),
 }));
@@ -302,61 +320,10 @@ describe('웹에 맞춘 여행기 쓰기 화면', () => {
     act(() => tree.unmount());
   });
 
-  it('일정 가져오기 버튼과 서식 단추가 노출된다', () => {
+  it('일정 가져오기 버튼이 노출된다', () => {
     const tree = render();
-    const texts = textsOf(tree);
 
-    expect(texts).toContain('내 플랜 가져오기');
-    expect(texts).toContain('H1');
-    expect(texts).toContain('B 굵게');
-
-    act(() => tree.unmount());
-  });
-
-  // 서식 표시는 줄 맨 앞에 있어야 blocks.ts가 제목·목록으로 읽는다.
-  it('커서가 줄 가운데 있어도 서식 표시를 줄 맨 앞에 붙인다', () => {
-    const tree = render();
-    const editor = () =>
-      tree.root.findByProps({ accessibilityLabel: '여행기 설명' });
-    const press = (label: string) =>
-      act(() =>
-        tree.root.findByProps({ accessibilityLabel: label }).props.onPress(),
-      );
-
-    act(() => editor().props.onChangeText('오늘은 좋았다'));
-    act(() =>
-      editor().props.onSelectionChange({
-        nativeEvent: { selection: { start: 3, end: 3 } },
-      }),
-    );
-
-    press('큰 제목');
-    expect(editor().props.value).toBe('# 오늘은 좋았다');
-
-    // 같은 단추를 다시 누르면 뗀다.
-    press('큰 제목');
-    expect(editor().props.value).toBe('오늘은 좋았다');
-
-    // 다른 서식으로 바꾸면 앞 표시를 갈아 끼운다.
-    press('글머리 목록');
-    expect(editor().props.value).toBe('- 오늘은 좋았다');
-    press('인용');
-    expect(editor().props.value).toBe('> 오늘은 좋았다');
-
-    act(() => tree.unmount());
-  });
-
-  it('고른 글자가 없으면 굵게 표시 사이에 커서를 둔다', () => {
-    const tree = render();
-    const editor = () =>
-      tree.root.findByProps({ accessibilityLabel: '여행기 설명' });
-
-    act(() =>
-      tree.root.findByProps({ accessibilityLabel: '굵게' }).props.onPress(),
-    );
-
-    expect(editor().props.value).toBe('****');
-    expect(editor().props.selection).toEqual({ start: 2, end: 2 });
+    expect(textsOf(tree)).toContain('내 플랜 가져오기');
 
     act(() => tree.unmount());
   });
