@@ -96,7 +96,7 @@ describe('profile editing modals', () => {
     });
     act(() => {
       tree!.root
-        .findByProps({ accessibilityLabel: '이름 편집' })
+        .findByProps({ accessibilityLabel: '일정 제목 편집' })
         .props.onPress();
       tree!.root
         .findByProps({ accessibilityLabel: '기간 편집' })

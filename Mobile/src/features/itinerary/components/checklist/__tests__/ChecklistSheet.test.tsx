@@ -95,7 +95,7 @@ describe('ChecklistSheet', () => {
 
     act(() => {
       component!.root
-        .findByProps({ accessibilityLabel: '체크리스트 새로고침' })
+        .findByProps({ accessibilityLabel: '준비 목록 새로고침' })
         .props.onPress();
     });
 

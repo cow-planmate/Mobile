@@ -52,7 +52,7 @@ export default function PlanMapModal({
           <TouchableOpacity
             onPress={onClose}
             accessibilityRole="button"
-            accessibilityLabel="닫기"
+            accessibilityLabel="여행 동선 지도 닫기"
             hitSlop={12}
           >
             <XIcon color={tokens.colors.textTertiary} size={normalize(20)} />

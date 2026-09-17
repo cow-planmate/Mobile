@@ -131,6 +131,22 @@ export const styles = StyleSheet.create({
     paddingVertical: normalize(36),
     paddingHorizontal: normalize(16),
   },
+  /** 비었을 때 굵게 한 줄. 그 아래 설명은 stateText가 받는다. */
+  emptyTitle: {
+    fontSize: normalize(14),
+    lineHeight: normalize(20),
+    fontFamily: tokens.fontFamily.bold,
+    color: COLORS.text,
+  },
+  /** 탭 밑 한 줄. 무엇을 적는 자리인지 여기서 갈린다. */
+  scopeHint: {
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(10),
+    fontSize: normalize(12),
+    lineHeight: normalize(18),
+    fontFamily: tokens.fontFamily.regular,
+    color: COLORS.textTertiary,
+  },
   stateText: {
     marginTop: normalize(10),
     textAlign: 'center',

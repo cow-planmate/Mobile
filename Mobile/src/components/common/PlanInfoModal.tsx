@@ -68,8 +68,15 @@ export default function PlanInfoModal({
       onClose={onClose}
       doneLabel="확인"
     >
+      {/* 어느 줄이 눌리는지 보이지 않아 편집할 수 있다는 걸 모르고 닫는다.
+          웹이 같은 자리에 둔 안내를 그대로 옮겼다 - 손으로 만지는 화면이라
+          '클릭'만 '누르면'으로 바꿨다. */}
+      <Text style={styles.guide}>
+        각 영역을 누르면 정보를 수정할 수 있어요.
+      </Text>
+
       <View style={styles.list}>
-        <Row label="이름" value={planName} onEdit={onEditName} />
+        <Row label="일정 제목" value={planName} onEdit={onEditName} />
         <Row label="여행지" value={destination} />
         <Row label="기간" value={period} onEdit={onEditPeriod} />
         <Row label="인원" value={pax} />
@@ -92,6 +99,14 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.semibold,
     color: tokens.colors.primary,
   },
+  guide: {
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(10),
+    fontSize: normalize(12),
+    lineHeight: normalize(18),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textTertiary,
+  },
   list: {
     paddingHorizontal: normalize(16),
     paddingBottom: normalize(4),
@@ -105,7 +120,7 @@ const styles = StyleSheet.create({
     borderTopColor: tokens.colors.borderLight,
   },
   label: {
-    width: normalize(64),
+    width: normalize(74),
     fontSize: normalize(13),
     fontFamily: tokens.fontFamily.medium,
     color: tokens.colors.textTertiary,
