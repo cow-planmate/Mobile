@@ -1,8 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import {
   Images,
+  PlaceholderBridge,
   RichText,
+  TenTapStartKit,
   Toolbar,
   useEditorBridge,
   useEditorContent,
@@ -102,18 +104,28 @@ export default function FeedEditor({
   placeholder,
   onChangeHtml,
 }: Props) {
+  /**
+   * setPlaceholder는 WebView가 뜬 뒤에야 먹어서 그전까지 기본 문구가 보인다.
+   * 확장 설정으로 넘기면 본문이 실리기 전에 박히므로 처음부터 우리 문구가 나온다.
+   * 같은 이름이 뒤에 오면 앞 설정을 덮어쓴다(RichText/utils.js).
+   */
+  const bridgeExtensions = useMemo(
+    () => [
+      ...TenTapStartKit,
+      PlaceholderBridge.configureExtension({ placeholder }),
+    ],
+    [placeholder],
+  );
+
   const editor = useEditorBridge({
     avoidIosKeyboard: true,
     // 본문이 늘어나는 만큼 WebView도 늘어나야 바깥 스크롤 하나로 읽힌다.
     dynamicHeight: true,
     editable,
     initialContent: initialHtml,
+    bridgeExtensions,
   });
   const html = useEditorContent(editor, { type: 'html' });
-
-  useEffect(() => {
-    editor.setPlaceholder(placeholder);
-  }, [editor, placeholder]);
 
   useEffect(() => {
     if (typeof html === 'string') onChangeHtml(html);

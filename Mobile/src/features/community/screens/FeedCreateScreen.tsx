@@ -382,7 +382,7 @@ export default function FeedCreateScreen() {
         contentContainerStyle={styles.body}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.card}>
+        <View style={styles.group}>
           <Text style={styles.section}>기본 정보</Text>
           <Text style={styles.label}>제목</Text>
           <TextInput
@@ -428,7 +428,7 @@ export default function FeedCreateScreen() {
           />
         </View>
 
-        <View style={styles.card}>
+        <View style={[styles.group, styles.groupDivider]}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.section}>여행 정보</Text>
             {!isEditMode && ownedPlans.length > 0 && (
@@ -702,7 +702,7 @@ export default function FeedCreateScreen() {
           )}
         </View>
 
-        <View style={styles.card}>
+        <View style={[styles.group, styles.groupDivider]}>
           <View style={styles.fieldLabelRow}>
             <Text style={styles.section}>여행 후기</Text>
             <Text style={styles.requiredMark}>*</Text>
@@ -856,8 +856,9 @@ export default function FeedCreateScreen() {
 }
 
 const styles = StyleSheet.create({
-  // 웹처럼 회색 바탕에 흰 카드를 얹는다. 머리말만 흰색으로 남긴다.
-  container: { flex: 1, backgroundColor: tokens.colors.surface },
+  // 좁은 화면에서 카드 테두리까지 겹치면 글 쓸 자리가 그만큼 줄어든다.
+  // 웹의 회색 바탕 + 흰 카드 대신 앱 글쓰기 화면처럼 흰 바탕 한 장으로 둔다.
+  container: { flex: 1, backgroundColor: tokens.colors.white },
   header: {
     backgroundColor: tokens.colors.white,
     height: normalize(56),
@@ -1041,16 +1042,15 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.textTertiary,
   },
-  body: { padding: normalize(16), gap: normalize(14) },
-  // 웹은 절마다 흰 카드를 얹고 24px씩 띄운다. 이 앱은 그림자 대신 바탕 대비와
-  // 1px 테두리로 카드를 가른다(tokens.ts 규칙).
-  card: {
-    padding: normalize(16),
-    gap: normalize(8),
-    borderRadius: normalize(14),
-    borderWidth: 1,
-    borderColor: tokens.colors.borderLight,
-    backgroundColor: tokens.colors.white,
+  body: { padding: normalize(16), gap: normalize(20) },
+  // 절을 묶기만 하고 테두리는 두지 않는다. 화면 양옆 여백은 body의 16 하나뿐이라
+  // 입력칸과 편집기가 카드 안에 있을 때보다 양쪽으로 16씩 더 넓어진다.
+  group: { gap: normalize(8) },
+  /** 테두리가 없어진 자리를 대신해 절 경계를 알린다. 첫 절에는 붙이지 않는다. */
+  groupDivider: {
+    paddingTop: normalize(20),
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.borderLight,
   },
   label: {
     marginTop: normalize(8),

@@ -73,6 +73,8 @@ jest.mock('@react-native-cookies/cookies', () => ({
 // 편집기 속을 보는 테스트는 없고, HTML↔블록 변환은 richText 테스트가 따로 본다.
 jest.mock('@10play/tentap-editor', () => ({
   Images: {},
+  TenTapStartKit: [],
+  PlaceholderBridge: { configureExtension: jest.fn(() => ({})) },
   RichText: () => null,
   Toolbar: () => null,
   useEditorBridge: () => ({
