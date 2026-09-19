@@ -1,5 +1,4 @@
-
-export type CommunityCategory = 'free' | 'qna' | 'recommend' | 'feed';
+export type CommunityCategory = 'free' | 'qna' | 'feed';
 
 export type ReactionType = 'like' | 'dislike';
 
@@ -50,7 +49,6 @@ export interface CommunityPostSummary {
 }
 
 export interface CommunityPostDetail extends CommunityPostSummary {
-
   content: unknown;
 
   contentText: string;
@@ -70,7 +68,6 @@ export interface ItineraryPlanSnapshot {
 }
 
 export interface ItineraryItem {
-
   time: string;
   place: string;
   description?: string | null;

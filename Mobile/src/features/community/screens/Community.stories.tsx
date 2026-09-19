@@ -104,25 +104,6 @@ export const QnA: Story = {
   },
 };
 
-export const PlaceRecommend: Story = {
-  name: '장소 추천',
-  args: {
-    selectedCategory: 'recommend',
-    posts: [
-      post(31, {
-        category: 'recommend',
-        title: '경주 벚꽃길 걷기 좋은 구간',
-        location: '보문호수',
-      }),
-      post(32, {
-        category: 'recommend',
-        title: '통영 케이블카 타는 시간대',
-        location: '미륵산',
-      }),
-    ],
-  },
-};
-
 export const Loading: Story = {
   name: '로딩',
   args: { posts: [], isLoading: true },
@@ -150,9 +131,7 @@ function InteractiveCommunity() {
       if (sort === 'views') return b.views - a.views;
       return b.id - a.id;
     });
-    return query
-      ? sorted.filter(item => item.title.includes(query))
-      : sorted;
+    return query ? sorted.filter(item => item.title.includes(query)) : sorted;
   }, [sort, query]);
 
   return (

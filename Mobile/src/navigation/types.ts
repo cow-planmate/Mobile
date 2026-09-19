@@ -20,7 +20,6 @@ export type FeedStackParamList = {
       }
     | undefined;
   FeedDetail: {
-
     postId: string;
   };
 };
@@ -48,7 +47,6 @@ export type ScheduleStackParamList = {
     createdFromHome?: boolean;
   };
   ItineraryView: {
-
     days?: Day[];
     tripName?: string;
     planId?: string;
@@ -68,14 +66,13 @@ export type AppStackParamList = ScheduleStackParamList;
 
 export type CommunityStackParamList = {
   /** 글 상세에서 '전체 보기'로 나올 때는 보던 게시판을 그대로 편다. */
-  CommunityMain: { category?: 'free' | 'qna' | 'recommend' } | undefined;
+  CommunityMain: { category?: 'free' | 'qna' } | undefined;
   CommunityDetail: {
     postId: string;
   };
   CommunityCreate:
     | {
-
-        category?: 'free' | 'qna' | 'recommend';
+        category?: 'free' | 'qna';
         postId?: string;
       }
     | undefined;

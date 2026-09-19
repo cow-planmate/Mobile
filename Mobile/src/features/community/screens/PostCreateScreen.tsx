@@ -11,9 +11,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useQuery } from '@tanstack/react-query';
 import Lightbulb from 'lucide-react-native/dist/esm/icons/lightbulb';
-import Star from 'lucide-react-native/dist/esm/icons/star';
 import { normalize } from '../../../utils/normalize';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAlert } from '../../../contexts/AlertContext';
@@ -29,8 +27,7 @@ import { useCreatePost, usePost, useUpdatePost } from '../hooks/queries';
 import { buildPostPayload } from '../utils/postPayload';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { useUnsavedChangesPrompt } from '../../../hooks/useUnsavedChangesPrompt';
-import { searchPlacesByKeyword } from '../../../api/trips';
-import { styles, COLORS, STAR_ON, STAR_OFF } from './PostCreateScreen.styles';
+import { styles, COLORS } from './PostCreateScreen.styles';
 import { tokens } from '../../../theme/tokens';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import BackTopBar from '../../../components/common/BackTopBar';
@@ -51,25 +48,9 @@ export default function PostCreateScreen() {
   );
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [location, setLocation] = useState('');
-  const [locationQuery, setLocationQuery] = useState('');
-  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
-  // 0이면 고르지 않은 것. 웹은 장소마다 평점을 매기지만 앱은 장소가 하나라 글에 하나만 붙인다.
-  const [rating, setRating] = useState(0);
-  const initialForm = useRef({ title: '', content: '', location: '', rating: 0, category });
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLocationQuery(location.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [location]);
+  const initialForm = useRef({ title: '', content: '', category });
 
   const screenInsets = useScreenInsets(false);
-  const locationSuggestions = useQuery({
-    queryKey: ['place-search', locationQuery],
-    queryFn: ({ signal }) => searchPlacesByKeyword(locationQuery, 8, signal),
-    enabled: category === 'recommend' && showLocationSuggestions && locationQuery.length > 1,
-    staleTime: 30_000,
-  });
 
   const createPost = useCreatePost();
   const postId = route.params?.postId;
@@ -88,23 +69,19 @@ export default function PostCreateScreen() {
     initialForm.current = {
       title: post.title,
       content: post.contentText,
-      location: post.location ?? '',
-      rating: Number(post.rating ?? 0) || 0,
       category: post.category as BoardKey,
     };
     setCategory(post.category as BoardKey);
     setTitle(post.title);
     setContent(post.contentText);
-    setLocation(post.location ?? '');
-    setRating(Number(post.rating ?? 0) || 0);
   }, [existingPost.data, postId]);
 
   const { isSubmitting, runExclusive } = useSubmitLock();
 
   const { allowLeave } = useUnsavedChangesPrompt({
     hasUnsavedChanges:
-      title !== initialForm.current.title || content !== initialForm.current.content ||
-      location !== initialForm.current.location || rating !== initialForm.current.rating ||
+      title !== initialForm.current.title ||
+      content !== initialForm.current.content ||
       category !== initialForm.current.category,
   });
 
@@ -125,8 +102,6 @@ export default function PostCreateScreen() {
         category,
         title,
         content,
-        location,
-        rating,
       });
 
       try {
@@ -158,7 +133,10 @@ export default function PostCreateScreen() {
       style={[styles.container, screenInsets]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={tokens.colors.white}
+      />
 
       <BackTopBar
         title={isEditMode ? '게시글 수정' : '글쓰기'}
@@ -181,8 +159,8 @@ export default function PostCreateScreen() {
                   ? '수정 중'
                   : '등록 중'
                 : isEditMode
-                  ? '수정'
-                  : '등록'}
+                ? '수정'
+                : '등록'}
             </Text>
           </TouchableOpacity>
         }
@@ -200,10 +178,7 @@ export default function PostCreateScreen() {
               return (
                 <TouchableOpacity
                   key={board.key}
-                  style={[
-                    styles.boardChip,
-                    isActive && styles.boardChipActive,
-                  ]}
+                  style={[styles.boardChip, isActive && styles.boardChipActive]}
                   onPress={() => {
                     if (!isEditMode) setCategory(board.key);
                   }}
@@ -240,76 +215,6 @@ export default function PostCreateScreen() {
           />
         </View>
 
-        {category === 'recommend' && (
-          <View>
-            <Text style={styles.fieldLabel}>장소 (선택)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="장소 검색 (예: 카페 델문도)"
-              placeholderTextColor={COLORS.textTertiary}
-              value={location}
-              onChangeText={text => {
-                setLocation(text);
-                setShowLocationSuggestions(true);
-              }}
-              onFocus={() => setShowLocationSuggestions(true)}
-            />
-            {showLocationSuggestions && (locationSuggestions.data?.length ?? 0) > 0 && (
-              <View style={styles.suggestionList}>
-                {locationSuggestions.data!.map(place => (
-                  <TouchableOpacity
-                    key={place.id}
-                    style={styles.suggestionItem}
-                    onPress={() => {
-                      setLocation(place.name);
-                      setShowLocationSuggestions(false);
-                    }}
-                  >
-                    <Text style={styles.suggestionName} numberOfLines={1}>{place.name}</Text>
-                    <Text style={styles.suggestionAddress} numberOfLines={1}>
-                      {place.address || place.jibunAddress}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-        )}
-
-        {category === 'recommend' && (
-          <View>
-            <Text style={styles.fieldLabel}>평점 (선택)</Text>
-            <View style={styles.ratingRow}>
-              {[1, 2, 3, 4, 5].map(score => {
-                const filled = score <= rating;
-                return (
-                  <TouchableOpacity
-                    key={score}
-                    // 같은 별을 다시 누르면 지운다 — 그래야 '선택'이라는 말이 참이 된다.
-                    onPress={() => setRating(rating === score ? 0 : score)}
-                    hitSlop={4}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
-                    accessibilityLabel={`평점 ${score}점`}
-                    accessibilityState={{ selected: filled }}
-                  >
-                    <Star
-                      size={normalize(24)}
-                      color={filled ? STAR_ON : STAR_OFF}
-                      fill={filled ? STAR_ON : 'transparent'}
-                    />
-                  </TouchableOpacity>
-                );
-              })}
-              {rating > 0 && (
-                <View style={styles.ratingPill}>
-                  <Text style={styles.ratingPillText}>{rating.toFixed(1)}</Text>
-                </View>
-              )}
-            </View>
-          </View>
-        )}
-
         <View>
           <Text style={styles.fieldLabel}>내용</Text>
           <TextInput
@@ -323,8 +228,8 @@ export default function PostCreateScreen() {
             accessibilityLabel="내용"
           />
           <Text style={styles.hint}>
-            앱에서는 글자 서식 없이 작성해요. 줄바꿈은 그대로 유지되고,
-            웹에서도 같은 문단으로 보여요.
+            앱에서는 글자 서식 없이 작성해요. 줄바꿈은 그대로 유지되고, 웹에서도
+            같은 문단으로 보여요.
           </Text>
         </View>
 

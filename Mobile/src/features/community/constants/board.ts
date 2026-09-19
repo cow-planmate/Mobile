@@ -3,7 +3,6 @@ export const POST_TITLE_MAX_LENGTH = 100;
 export const BOARDS = [
   { key: 'free', label: '자유게시판' },
   { key: 'qna', label: '질문게시판' },
-  { key: 'recommend', label: '장소 추천' },
 ] as const;
 
 export type BoardKey = (typeof BOARDS)[number]['key'];
@@ -32,9 +31,5 @@ export const BOARD_TIPS: Record<BoardKey, string[]> = {
     '질문 제목에 핵심 키워드를 넣으면 답변을 더 빨리 받을 수 있어요.',
     '현재 상황(누구와, 언제, 예산 등)을 상세히 적어주세요.',
     '도움이 된 답변에는 꼭 감사의 인사를 전해주세요!',
-  ],
-  recommend: [
-    '장소의 특징, 분위기, 방문 꿀팁을 자세히 공유해주세요.',
-    '정확한 위치와 주차, 영업시간 정보를 함께 적어주세요.',
   ],
 };

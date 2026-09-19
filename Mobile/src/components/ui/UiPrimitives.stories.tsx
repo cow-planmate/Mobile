@@ -22,7 +22,6 @@ const SORTS = ['최신순', '추천순', '조회순'];
 const BOARDS = [
   { key: 'free', label: '자유게시판' },
   { key: 'qna', label: 'Q&A' },
-  { key: 'recommend', label: '장소 추천' },
 ];
 
 function Group({
@@ -114,7 +113,9 @@ function PrimitivesPreview() {
               icon={
                 <ThumbsUp
                   size={13}
-                  color={liked ? tokens.colors.primary : tokens.colors.textSecondary}
+                  color={
+                    liked ? tokens.colors.primary : tokens.colors.textSecondary
+                  }
                 />
               }
               value={128}
@@ -123,7 +124,9 @@ function PrimitivesPreview() {
               onPress={() => setLiked(prev => !prev)}
             />
             <StatItem
-              icon={<MessageCircle size={13} color={tokens.colors.textSecondary} />}
+              icon={
+                <MessageCircle size={13} color={tokens.colors.textSecondary} />
+              }
               value={24}
               label="댓글"
             />
