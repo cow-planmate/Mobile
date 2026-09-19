@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -463,6 +463,11 @@ export default function ProfileScreenView({
   const [isBirthdatePickerOpen, setBirthdatePickerOpen] = useState(false);
   const [tempGender, setTempGender] = useState('');
   const [isNicknameChecking, setIsNicknameChecking] = useState(false);
+  const [nicknameFeedback, setNicknameFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+  const nicknameCheckRequest = React.useRef(0);
   const isNicknameUnchanged = tempNickname.trim() === user.name;
   const [plans, setPlans] = useState<any[]>([]);
 
@@ -830,6 +835,9 @@ export default function ProfileScreenView({
       gender: user.gender,
     };
     setTempNickname(user.name);
+    nicknameCheckRequest.current += 1;
+    setNicknameFeedback(null);
+    setIsNicknameChecking(false);
     setTempBirthdate(user.birthdate || '');
     setTempGender(user.gender);
     setEditModalVisible(true);
@@ -865,39 +873,48 @@ export default function ProfileScreenView({
     const nickname = tempNickname.trim();
     const lengthError = getNicknameLengthError(nickname);
     if (lengthError) {
-      Toast.show({ type: 'error', text1: lengthError, position: 'top' });
+      setNicknameFeedback({ type: 'error', message: lengthError });
       return;
     }
 
+    const requestId = ++nicknameCheckRequest.current;
     setIsNicknameChecking(true);
+    setNicknameFeedback(null);
     try {
       const available = await verifyNicknameAvailable(nickname);
-      Toast.show({
+      if (
+        requestId !== nicknameCheckRequest.current ||
+        nickname !== tempNickname.trim()
+      )
+        return;
+      setNicknameFeedback({
         type: available ? 'success' : 'error',
-        text1: available
+        message: available
           ? '사용할 수 있는 닉네임이에요.'
           : '이미 사용 중인 닉네임이에요.',
-        position: 'top',
       });
     } catch (e) {
-      Toast.show({
+      if (requestId !== nicknameCheckRequest.current) return;
+      setNicknameFeedback({
         type: 'error',
-        text1: getDisplayErrorMessage(e, '닉네임을 확인하지 못했어요.'),
-        position: 'top',
+        message: getDisplayErrorMessage(e, '닉네임을 확인하지 못했어요.'),
       });
     } finally {
-      setIsNicknameChecking(false);
+      if (requestId === nicknameCheckRequest.current) {
+        setIsNicknameChecking(false);
+      }
     }
   };
 
   const handleSaveProfile = () =>
     profileSaveLock.runExclusive(async () => {
       const savedFields: string[] = [];
+      let savingField: 'nickname' | 'birthdate' | 'gender' | null = null;
       try {
         const nickname = tempNickname.trim();
         const nicknameError = getNicknameLengthError(nickname);
         if (nicknameError) {
-          Toast.show({ type: 'error', text1: nicknameError, position: 'top' });
+          setNicknameFeedback({ type: 'error', message: nicknameError });
           return;
         }
 
@@ -911,16 +928,19 @@ export default function ProfileScreenView({
         }
 
         if (nickname !== savedProfile.current.nickname) {
+          savingField = 'nickname';
           await handleUpdateNickname(nickname);
           savedProfile.current.nickname = nickname;
           savedFields.push('닉네임');
         }
         if (tempBirthdate && tempBirthdate !== savedProfile.current.birthdate) {
+          savingField = 'birthdate';
           await handleUpdateBirthdate(tempBirthdate);
           savedProfile.current.birthdate = tempBirthdate;
           savedFields.push('생년월일');
         }
         if (tempGender !== savedProfile.current.gender) {
+          savingField = 'gender';
           await handleUpdateGender(tempGender);
           savedProfile.current.gender = tempGender;
           savedFields.push('성별');
@@ -942,6 +962,23 @@ export default function ProfileScreenView({
               ', ',
             )} 항목은 저장됐어요. 나머지 변경사항은 유지했으니 다시 저장해 주세요.`,
             type: 'warning',
+          });
+        } else if (savingField === 'nickname') {
+          setNicknameFeedback({
+            type: 'error',
+            message: getDisplayErrorMessage(
+              err,
+              '닉네임을 저장하지 못했어요. 다시 시도해 주세요.',
+            ),
+          });
+        } else {
+          Toast.show({
+            type: 'error',
+            text1: getDisplayErrorMessage(
+              err,
+              '프로필 정보를 저장하지 못했어요. 다시 시도해 주세요.',
+            ),
+            position: 'top',
           });
         }
       }
@@ -1253,7 +1290,6 @@ export default function ProfileScreenView({
                 </View>
               )}
             </View>
-
           </>
         )}
       </ScrollView>
@@ -1349,13 +1385,23 @@ export default function ProfileScreenView({
             <Text style={styles.inputLabel}>닉네임</Text>
             <View style={styles.rowInputWrap}>
               <TextInput
-                style={[styles.textInput, styles.flex1]}
+                style={[
+                  styles.textInput,
+                  styles.flex1,
+                  nicknameFeedback?.type === 'error' && styles.inputError,
+                ]}
                 value={tempNickname}
                 editable={!profileSaveLock.isSubmitting}
-                onChangeText={setTempNickname}
+                onChangeText={value => {
+                  nicknameCheckRequest.current += 1;
+                  setIsNicknameChecking(false);
+                  setNicknameFeedback(null);
+                  setTempNickname(value);
+                }}
                 placeholder="닉네임을 입력하세요"
                 placeholderTextColor={tokens.colors.textTertiary}
                 maxLength={NICKNAME_MAX_LENGTH}
+                accessibilityLabel="닉네임"
               />
               <TouchableOpacity
                 style={styles.checkButton}
@@ -1363,6 +1409,7 @@ export default function ProfileScreenView({
                 disabled={isNicknameUnchanged || isNicknameChecking}
                 activeOpacity={0.7}
                 accessibilityRole="button"
+                accessibilityLabel="닉네임 중복 확인"
                 accessibilityState={{
                   disabled: isNicknameUnchanged || isNicknameChecking,
                 }}
@@ -1378,6 +1425,19 @@ export default function ProfileScreenView({
                 </Text>
               </TouchableOpacity>
             </View>
+            {nicknameFeedback && (
+              <Text
+                style={[
+                  styles.inputFeedback,
+                  nicknameFeedback.type === 'error'
+                    ? styles.inputFeedbackError
+                    : styles.inputFeedbackSuccess,
+                ]}
+                accessibilityLiveRegion="polite"
+              >
+                {nicknameFeedback.message}
+              </Text>
+            )}
           </View>
 
           <View style={styles.twoColumnRow}>

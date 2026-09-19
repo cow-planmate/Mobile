@@ -257,6 +257,20 @@ export const styles = StyleSheet.create({
     fontSize: normalize(13.5),
     color: COLORS.text,
   },
+  inputError: {
+    borderColor: tokens.tones.danger.fg,
+  },
+  inputFeedback: {
+    marginTop: normalize(6),
+    fontSize: normalize(11.5),
+    fontFamily: FONTS.medium,
+  },
+  inputFeedbackError: {
+    color: tokens.tones.danger.fg,
+  },
+  inputFeedbackSuccess: {
+    color: tokens.tones.success.fg,
+  },
 
   pickerField: {
     flexDirection: 'row',

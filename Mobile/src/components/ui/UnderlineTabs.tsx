@@ -151,6 +151,6 @@ const styles = StyleSheet.create({
   count: {
     fontSize: normalize(tokens.fontSize.xs),
     fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textMuted,
   },
 });

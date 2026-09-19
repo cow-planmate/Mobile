@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   description: {
     fontSize: normalize(tokens.fontSize.xs),
     fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textMuted,
     textAlign: 'center',
   },
   action: {

@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: normalize(11.5),
     fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textMuted,
     marginTop: normalize(2),
   },
   editButton: {
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   rowHint: {
     fontSize: normalize(10.5),
     fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textMuted,
     marginTop: normalize(1),
   },
   rowRight: {

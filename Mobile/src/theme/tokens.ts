@@ -17,6 +17,8 @@ export const colors = {
 
   text: '#1A1A1A',
   textSecondary: '#666666',
+  /** 날짜·설명·보조 문구처럼 작아도 읽혀야 하는 글자. */
+  textMuted: '#6B7280',
   textTertiary: '#9CA3AF',
   textLabel: '#4B5563',
 

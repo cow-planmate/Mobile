@@ -1,5 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Heart from 'lucide-react-native/dist/esm/icons/heart';
 import MessageCircle from 'lucide-react-native/dist/esm/icons/message-circle';
@@ -40,8 +46,20 @@ const ACTIVITY_TABS = [
   { key: 'comments', label: '작성 댓글' },
 ];
 
-const PostRow = ({ post }: { post: CommunityPostSummary }) => (
-  <View style={styles.activityRow}>
+const PostRow = ({
+  post,
+  onPress,
+}: {
+  post: CommunityPostSummary;
+  onPress: () => void;
+}) => (
+  <TouchableOpacity
+    style={styles.activityRow}
+    onPress={onPress}
+    activeOpacity={0.7}
+    accessibilityRole="button"
+    accessibilityLabel={`${post.title} 상세 보기`}
+  >
     <View style={styles.rowMeta}>
       <Text style={styles.category}>
         {CATEGORY_LABEL[post.category] ?? '커뮤니티'}
@@ -57,11 +75,23 @@ const PostRow = ({ post }: { post: CommunityPostSummary }) => (
       <MessageCircle size={12} color={tokens.colors.textSecondary} />
       <Text style={styles.countText}>{post.comments.toLocaleString()}</Text>
     </View>
-  </View>
+  </TouchableOpacity>
 );
 
-const CommentRow = ({ comment }: { comment: CommunityComment }) => (
-  <View style={styles.activityRow}>
+const CommentRow = ({
+  comment,
+  onPress,
+}: {
+  comment: CommunityComment;
+  onPress: () => void;
+}) => (
+  <TouchableOpacity
+    style={styles.activityRow}
+    onPress={onPress}
+    activeOpacity={0.7}
+    accessibilityRole="button"
+    accessibilityLabel={`${comment.postTitle ?? '게시글'} 상세 보기`}
+  >
     <Text style={styles.rowTitle} numberOfLines={2}>
       {comment.postTitle ?? '게시글'}
     </Text>
@@ -69,7 +99,19 @@ const CommentRow = ({ comment }: { comment: CommunityComment }) => (
       {comment.content}
     </Text>
     <Text style={styles.date}>{comment.createdAt}</Text>
-  </View>
+  </TouchableOpacity>
+);
+
+const LoadMoreButton = ({ onPress }: { onPress: () => void }) => (
+  <TouchableOpacity
+    style={styles.loadMoreButton}
+    onPress={onPress}
+    activeOpacity={0.7}
+    accessibilityRole="button"
+    accessibilityLabel="활동 더 보기"
+  >
+    <Text style={styles.loadMoreText}>더 보기</Text>
+  </TouchableOpacity>
 );
 
 export function ProfileFootprintSection({ plans }: { plans: ProfilePlan[] }) {
@@ -110,12 +152,15 @@ export function ProfileFootprintSection({ plans }: { plans: ProfilePlan[] }) {
 export function ProfileTravelLogSection() {
   const navigation = useNavigation<any>();
   const [tab, setTab] = useState<'logs' | 'comments'>('logs');
-  const { data, isLoading, isError } = useMyPosts('feed', 6);
+  const [logSize, setLogSize] = useState(6);
+  const [commentSize, setCommentSize] = useState(6);
+  const { data, isLoading, isError, refetch } = useMyPosts('feed', logSize);
   const {
     data: commentData,
     isLoading: isCommentLoading,
     isError: isCommentError,
-  } = useMyComments(6, true);
+    refetch: refetchComments,
+  } = useMyComments(commentSize, true);
   const travelLogs = data?.items ?? [];
   const comments = commentData?.items ?? [];
 
@@ -128,6 +173,8 @@ export function ProfileTravelLogSection() {
         return (
           <EmptyState
             title="여행기 댓글을 불러오지 못했어요"
+            actionLabel="다시 시도"
+            onAction={() => void refetchComments()}
             style={styles.innerEmpty}
           />
         );
@@ -145,9 +192,28 @@ export function ProfileTravelLogSection() {
           />
         );
       }
-      return comments.map(comment => (
-        <CommentRow key={comment.id} comment={comment} />
-      ));
+      return (
+        <>
+          {comments.map(comment => (
+            <CommentRow
+              key={comment.id}
+              comment={comment}
+              onPress={() =>
+                navigation.navigate('MainTabs', {
+                  screen: 'FeedTab',
+                  params: {
+                    screen: 'FeedDetail',
+                    params: { postId: String(comment.postId) },
+                  },
+                })
+              }
+            />
+          ))}
+          {(commentData?.totalElements ?? 0) > comments.length && (
+            <LoadMoreButton onPress={() => setCommentSize(size => size + 6)} />
+          )}
+        </>
+      );
     }
 
     if (isLoading) {
@@ -157,6 +223,8 @@ export function ProfileTravelLogSection() {
       return (
         <EmptyState
           title="여행기를 불러오지 못했어요"
+          actionLabel="다시 시도"
+          onAction={() => void refetch()}
           style={styles.innerEmpty}
         />
       );
@@ -174,7 +242,28 @@ export function ProfileTravelLogSection() {
         />
       );
     }
-    return travelLogs.map(post => <PostRow key={post.id} post={post} />);
+    return (
+      <>
+        {travelLogs.map(post => (
+          <PostRow
+            key={post.id}
+            post={post}
+            onPress={() =>
+              navigation.navigate('MainTabs', {
+                screen: 'FeedTab',
+                params: {
+                  screen: 'FeedDetail',
+                  params: { postId: String(post.id) },
+                },
+              })
+            }
+          />
+        ))}
+        {(data?.totalElements ?? 0) > travelLogs.length && (
+          <LoadMoreButton onPress={() => setLogSize(size => size + 6)} />
+        )}
+      </>
+    );
   };
 
   return (
@@ -198,21 +287,26 @@ export function ProfileTravelLogSection() {
 export function ProfileCommunitySection() {
   const navigation = useNavigation<any>();
   const [activityTab, setActivityTab] = useState<ActivityTab>('posts');
+  const [activitySize, setActivitySize] = useState(8);
+  const [commentSize, setCommentSize] = useState(8);
   const {
     data: postData,
     isLoading: isPostLoading,
     isError: isPostError,
-  } = useMyPosts(undefined, 8);
+    refetch: refetchPosts,
+  } = useMyPosts(undefined, activitySize);
   const {
     data: likedData,
     isLoading: isLikedLoading,
     isError: isLikedError,
-  } = useLikedPosts(undefined, 8);
+    refetch: refetchLikes,
+  } = useLikedPosts(undefined, activitySize);
   const {
     data: commentData,
     isLoading: isCommentLoading,
     isError: isCommentError,
-  } = useMyComments(8);
+    refetch: refetchComments,
+  } = useMyComments(commentSize);
 
   const communityPosts = useMemo(
     () => (postData?.items ?? []).filter(post => post.category !== 'feed'),
@@ -237,6 +331,8 @@ export function ProfileCommunitySection() {
         return (
           <EmptyState
             title="댓글 활동을 불러오지 못했어요"
+            actionLabel="다시 시도"
+            onAction={() => void refetchComments()}
             style={styles.innerEmpty}
           />
         );
@@ -254,9 +350,28 @@ export function ProfileCommunitySection() {
           />
         );
       }
-      return comments.map(comment => (
-        <CommentRow key={comment.id} comment={comment} />
-      ));
+      return (
+        <>
+          {comments.map(comment => (
+            <CommentRow
+              key={comment.id}
+              comment={comment}
+              onPress={() =>
+                navigation.navigate('MainTabs', {
+                  screen: 'CommunityTab',
+                  params: {
+                    screen: 'CommunityDetail',
+                    params: { postId: String(comment.postId) },
+                  },
+                })
+              }
+            />
+          ))}
+          {(commentData?.totalElements ?? 0) > comments.length && (
+            <LoadMoreButton onPress={() => setCommentSize(size => size + 8)} />
+          )}
+        </>
+      );
     }
 
     if (isActivityLoading) {
@@ -266,6 +381,10 @@ export function ProfileCommunitySection() {
       return (
         <EmptyState
           title="커뮤니티 활동을 불러오지 못했어요"
+          actionLabel="다시 시도"
+          onAction={() =>
+            void (activityTab === 'posts' ? refetchPosts() : refetchLikes())
+          }
           style={styles.innerEmpty}
         />
       );
@@ -286,7 +405,32 @@ export function ProfileCommunitySection() {
         />
       );
     }
-    return activeItems.map(post => <PostRow key={post.id} post={post} />);
+    const totalElements =
+      activityTab === 'posts'
+        ? postData?.totalElements
+        : likedData?.totalElements;
+    return (
+      <>
+        {activeItems.map(post => (
+          <PostRow
+            key={post.id}
+            post={post}
+            onPress={() =>
+              navigation.navigate('MainTabs', {
+                screen: 'CommunityTab',
+                params: {
+                  screen: 'CommunityDetail',
+                  params: { postId: String(post.id) },
+                },
+              })
+            }
+          />
+        ))}
+        {(totalElements ?? 0) > activeItems.length && (
+          <LoadMoreButton onPress={() => setActivitySize(size => size + 8)} />
+        )}
+      </>
+    );
   };
 
   return (
@@ -328,6 +472,19 @@ const styles = StyleSheet.create({
   innerEmpty: {
     borderWidth: 0,
     paddingVertical: normalize(24),
+  },
+  loadMoreButton: {
+    minHeight: normalize(44),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: normalize(8),
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.border,
+  },
+  loadMoreText: {
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.primary,
   },
 
   planBarHidden: {
@@ -385,7 +542,7 @@ const styles = StyleSheet.create({
   date: {
     fontSize: normalize(tokens.fontSize.xxs),
     fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textMuted,
   },
   rowTitle: {
     fontSize: normalize(tokens.fontSize.s),

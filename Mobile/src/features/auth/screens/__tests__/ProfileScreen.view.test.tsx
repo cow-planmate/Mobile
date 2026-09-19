@@ -4,9 +4,14 @@ import { TextInput, TouchableOpacity } from 'react-native';
 import ProfileScreenView from '../ProfileScreen.view';
 import { styles } from '../ProfileScreen.styles';
 import PopupModal from '../../../../components/common/PopupModal';
+import { verifyNicknameAvailable } from '../../../../api/auth';
 
 const mockSetQueryData = jest.fn();
 const mockShowAlert = jest.fn();
+const mockVerifyNicknameAvailable =
+  verifyNicknameAvailable as jest.MockedFunction<
+    typeof verifyNicknameAvailable
+  >;
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
@@ -165,6 +170,70 @@ describe('ProfileScreenView 탭', () => {
 });
 
 describe('ProfileScreenView profile save', () => {
+  beforeEach(() => {
+    mockVerifyNicknameAvailable.mockReset();
+  });
+
+  it('닉네임 확인 결과를 입력칸 바로 아래에 보여 준다', async () => {
+    mockVerifyNicknameAvailable.mockResolvedValue(true);
+    let tree!: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(<ProfileScreenView {...(BASE_PROPS as any)} />);
+    });
+    act(() =>
+      tree.root
+        .findAllByType(TouchableOpacity)
+        .find(node => node.props.style === styles.editButton)!
+        .props.onPress(),
+    );
+    const nickname = tree.root.findByProps({ accessibilityLabel: '닉네임' });
+    act(() => nickname.props.onChangeText('Trip'));
+    await act(async () => {
+      await tree.root
+        .findByProps({
+          accessibilityLabel: '닉네임 중복 확인',
+        })
+        .props.onPress();
+    });
+
+    expect(textOf(tree)).toContain('사용할 수 있는 닉네임이에요.');
+    act(() => tree.unmount());
+  });
+
+  it('확인 중 닉네임이 바뀌면 이전 확인 결과를 표시하지 않는다', async () => {
+    let resolveCheck!: (available: boolean) => void;
+    mockVerifyNicknameAvailable.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveCheck = resolve;
+        }),
+    );
+    let tree!: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(<ProfileScreenView {...(BASE_PROPS as any)} />);
+    });
+    act(() =>
+      tree.root
+        .findAllByType(TouchableOpacity)
+        .find(node => node.props.style === styles.editButton)!
+        .props.onPress(),
+    );
+    const nickname = tree.root.findByProps({ accessibilityLabel: '닉네임' });
+    act(() => nickname.props.onChangeText('Trip'));
+    act(() => {
+      tree.root
+        .findByProps({
+          accessibilityLabel: '닉네임 중복 확인',
+        })
+        .props.onPress();
+    });
+    act(() => nickname.props.onChangeText('NewTrip'));
+    await act(async () => resolveCheck(true));
+
+    expect(textOf(tree)).not.toContain('사용할 수 있는 닉네임이에요.');
+    act(() => tree.unmount());
+  });
+
   it('asks before discarding edits but allows closing restored values', () => {
     mockShowAlert.mockClear();
     let tree: renderer.ReactTestRenderer;
