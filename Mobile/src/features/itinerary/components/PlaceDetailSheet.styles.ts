@@ -45,6 +45,20 @@ export const styles = StyleSheet.create({
     fontSize: normalize(11),
     color: COLORS.white,
   },
+  photoCopyright: {
+    position: 'absolute',
+    left: normalize(12),
+    bottom: normalize(12),
+    paddingHorizontal: normalize(8),
+    paddingVertical: normalize(3),
+    borderRadius: tokens.radius.round,
+    backgroundColor: 'rgba(2, 6, 23, 0.6)',
+  },
+  photoCopyrightText: {
+    fontFamily: tokens.fontFamily.medium,
+    fontSize: normalize(10.5),
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
 
   head: {
     paddingHorizontal: normalize(16),
@@ -259,5 +273,16 @@ export const styles = StyleSheet.create({
   },
   footPrimaryText: {
     color: COLORS.white,
+  },
+  sourceNotice: {
+    paddingHorizontal: normalize(16),
+    paddingTop: normalize(14),
+    paddingBottom: normalize(6),
+  },
+  sourceNoticeText: {
+    fontFamily: tokens.fontFamily.regular,
+    fontSize: normalize(11),
+    lineHeight: normalize(16),
+    color: COLORS.textTertiary,
   },
 });

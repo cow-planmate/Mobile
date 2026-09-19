@@ -23,6 +23,7 @@ import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import SheetModal from '../../../components/common/SheetModal';
 import {
   fetchPlaceDetail,
+  formatCopyrightLabel,
   getPlaceDetailErrorMessage,
   type PlaceDetail,
 } from '../../../api/place';
@@ -329,6 +330,11 @@ export default function PlaceDetailSheet({
                   />
                 ))}
               </ScrollView>
+              <View style={styles.photoCopyright}>
+                <Text style={styles.photoCopyrightText}>
+                  출처: 한국관광공사
+                </Text>
+              </View>
               {photos.length > 1 && (
                 <View style={styles.photoCount}>
                   <Text style={styles.photoCountText}>
@@ -497,6 +503,16 @@ export default function PlaceDetailSheet({
               <ExternalLink size={normalize(14)} color={COLORS.white} />
             </TouchableOpacity>
           )}
+
+          <View style={styles.sourceNotice}>
+            <Text style={styles.sourceNoticeText}>
+              {`사진 및 장소 정보 제공: 한국관광공사 TourAPI${
+                detail?.copyrightDivCd
+                  ? ` (${formatCopyrightLabel(detail.copyrightDivCd)})`
+                  : ''
+              }`}
+            </Text>
+          </View>
         </ScrollView>
       )}
     </SheetModal>

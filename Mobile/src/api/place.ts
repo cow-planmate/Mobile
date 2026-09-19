@@ -33,6 +33,7 @@ export interface PlaceDetail {
   homepage?: string | null;
   imageUrl?: string | null;
   thumbnailUrl?: string | null;
+  copyrightDivCd?: string | null;
   images?: PlaceDetailImage[] | null;
   attraction?: {
     useTime?: string | null;
@@ -82,7 +83,25 @@ export async function fetchPlaceDetail(
  * 넘어가지만, 실패라고만 하면 몇 번이고 다시 누른다.
  */
 export function getPlaceDetailErrorMessage(error: unknown): string {
-  const status = (error as { response?: { status?: number } })?.response?.status;
+  const status = (error as { response?: { status?: number } })?.response
+    ?.status;
   if (status === 404) return '이 장소의 상세 정보는 아직 제공되지 않아요.';
   return '상세 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';
+}
+
+/**
+ * 한국관광공사 TourAPI 공공누리(KOGL) 저작권 구분 코드를 사람이 읽을 수 있는 문구로 변환한다.
+ */
+export function formatCopyrightLabel(code?: string | null): string {
+  if (!code) return '';
+  const trimmed = code.trim().toLowerCase();
+  if (trimmed === '1' || trimmed === 'type1')
+    return '공공누리 제1유형: 출처표시';
+  if (trimmed === '2' || trimmed === 'type2')
+    return '공공누리 제2유형: 출처표시+상업적이용금지';
+  if (trimmed === '3' || trimmed === 'type3')
+    return '공공누리 제3유형: 출처표시+변경금지';
+  if (trimmed === '4' || trimmed === 'type4')
+    return '공공누리 제4유형: 출처표시+상업적이용금지+변경금지';
+  return code;
 }

@@ -63,7 +63,9 @@ describe('PlaceDetailSheet', () => {
 
     const shown = texts(tree);
     expect(shown).toContain('전주콩나물해장국');
-    expect(shown).toContain('따뜻한 뚝배기에 담겨 나오는 콩나물 국밥 전문점이다.');
+    expect(shown).toContain(
+      '따뜻한 뚝배기에 담겨 나오는 콩나물 국밥 전문점이다.',
+    );
     expect(shown).toContain('콩나물국밥');
     // 식당은 영업 시간을 보여 준다 - 관광지의 이용 시간과 다른 줄이다.
     expect(shown).toContain('영업 시간');
@@ -125,5 +127,34 @@ describe('PlaceDetailSheet', () => {
         .some(node => node.props.accessibilityLabel === '시간표에 담기'),
     ).toBe(false);
     act(() => readOnly.unmount());
+  });
+
+  it('사진이 있으면 한국관광공사 출처 캡션을 표시한다', async () => {
+    mockFetch.mockResolvedValue({
+      ...restaurant,
+      images: [{ originUrl: 'https://example.com/food.jpg' }],
+    });
+    const tree = await open();
+
+    expect(texts(tree)).toContain('출처: 한국관광공사');
+    act(() => tree.unmount());
+  });
+
+  it('공공데이터 및 공공누리 저작권 출처 고지 문구를 하단에 명시한다', async () => {
+    mockFetch.mockResolvedValue({
+      ...restaurant,
+      copyrightDivCd: 'Type1',
+    });
+    const tree = await open();
+
+    const shown = texts(tree);
+    expect(
+      shown.some(text =>
+        text.includes(
+          '사진 및 장소 정보 제공: 한국관광공사 TourAPI (공공누리 제1유형: 출처표시)',
+        ),
+      ),
+    ).toBe(true);
+    act(() => tree.unmount());
   });
 });
