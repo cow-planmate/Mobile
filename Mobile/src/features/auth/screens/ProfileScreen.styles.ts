@@ -974,6 +974,16 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     color: tokens.tones.danger.fg,
   },
+  appVersionContainer: {
+    alignItems: 'center',
+    paddingTop: normalize(18),
+    paddingBottom: normalize(6),
+  },
+  appVersionText: {
+    fontSize: normalize(12),
+    fontFamily: FONTS.medium,
+    color: tokens.colors.textTertiary,
+  },
 
   // ── 프로필 수정 팝업: 비밀번호 설정 행 ──
   passwordSettingRow: {

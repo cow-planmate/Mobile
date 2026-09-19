@@ -90,8 +90,10 @@ import {
   getNicknameLengthError,
 } from '../../../utils/nickname';
 import { styles, COLORS } from './ProfileScreen.styles';
+import appPackage from '../../../../package.json';
 
 const LEAVE_EDITOR_CONCURRENCY = 4;
+const APP_VERSION = appPackage.version;
 
 type ProfileSection = 'profile' | 'travel' | 'stories';
 type TripTab = 'upcoming' | 'past';
@@ -1094,6 +1096,10 @@ export default function ProfileScreenView({
               >
                 <Text style={styles.accountResignText}>회원탈퇴</Text>
               </TouchableOpacity>
+            </View>
+
+            <View style={styles.appVersionContainer}>
+              <Text style={styles.appVersionText}>버전 {APP_VERSION}</Text>
             </View>
           </>
         )}
