@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { WebView } from 'react-native-webview';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import Eye from 'lucide-react-native/dist/esm/icons/eye';
 import EyeOff from 'lucide-react-native/dist/esm/icons/eye-off';
@@ -357,7 +358,7 @@ export const LoginScreenView = ({
           animationType="slide"
           onRequestClose={onSnsClose}
         >
-          <View style={styles.snsContainer}>
+          <SafeAreaView style={styles.snsContainer} edges={['top']}>
             <View style={styles.snsHeader}>
               <TouchableOpacity
                 onPress={onSnsClose}
@@ -371,6 +372,7 @@ export const LoginScreenView = ({
             </View>
             <WebView
               source={{ uri: snsAuthUrl }}
+              style={styles.snsWebView}
               onNavigationStateChange={onSnsNavigationStateChange}
               startInLoadingState={true}
               renderLoading={() => (
@@ -379,7 +381,7 @@ export const LoginScreenView = ({
                 </View>
               )}
             />
-          </View>
+          </SafeAreaView>
         </Modal>
       )}
     </View>

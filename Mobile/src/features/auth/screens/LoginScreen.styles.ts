@@ -245,4 +245,8 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  snsWebView: {
+    flex: 1,
+    width: '100%',
+  },
 });
