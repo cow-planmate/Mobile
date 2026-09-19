@@ -50,6 +50,7 @@ import {
   ScheduleEditModal,
   TimePickerModal,
 } from '../../../components/common';
+import BackTopBar from '../../../components/common/BackTopBar';
 import PlaceRecommendationList, {
   PLACE_TABS,
   type PlaceTab,
@@ -85,7 +86,6 @@ import {
 } from '../../../utils/timeUtils';
 import MessageCircle from 'lucide-react-native/dist/esm/icons/message-circle';
 import MapOutlineIcon from 'lucide-react-native/dist/esm/icons/map';
-import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
 import CalendarDaysIcon from 'lucide-react-native/dist/esm/icons/calendar-days';
 import CheckIcon from 'lucide-react-native/dist/esm/icons/check';
@@ -2339,20 +2339,7 @@ export default function ItineraryEditorScreenView({
 
   return (
     <View style={[styles.container, screenInsets]}>
-      <View style={styles.topBarHeader}>
-        <TouchableOpacity
-          style={styles.topBarBackButton}
-          onPress={onGoBack}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="뒤로 가기"
-          hitSlop={8}
-        >
-          <ChevronLeft size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.topBarHeaderTitle}>일정 편집</Text>
-        <View style={styles.topBarSpacer} />
-      </View>
+      <BackTopBar title="일정 편집" onBack={() => onGoBack?.()} />
 
       <View style={styles.topToolbar}>
         <View style={styles.toolbarLeftGroup}>

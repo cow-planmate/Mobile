@@ -2,13 +2,16 @@ import React, { useMemo, useState } from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import { View, Text, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import MapOutlineIcon from 'lucide-react-native/dist/esm/icons/map';
-import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
 import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import Share2 from 'lucide-react-native/dist/esm/icons/share-2';
 import PlanMapModal from '../components/PlanMapModal';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
-import { ShareModal, AirplaneLoading } from '../../../components/common';
+import {
+  ShareModal,
+  AirplaneLoading,
+} from '../../../components/common';
+import BackTopBar from '../../../components/common/BackTopBar';
 import PlanScheduleList, {
   formatFullDate,
 } from '../components/PlanScheduleList';
@@ -148,20 +151,7 @@ export default function ItineraryViewScreenView({
   );
   return (
     <View style={[styles.container, screenInsets]}>
-      <View style={styles.topBarHeader}>
-        <TouchableOpacity
-          style={styles.topBarBackButton}
-          onPress={goBack}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="뒤로 가기"
-          hitSlop={8}
-        >
-          <ChevronLeft size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.topBarHeaderTitle}>완성된 일정</Text>
-        <View style={styles.topBarSpacer} />
-      </View>
+      <BackTopBar title="완성된 일정" onBack={goBack} />
 
       <View style={styles.topToolbar}>
         <View style={styles.toolbarLeftGroup}>

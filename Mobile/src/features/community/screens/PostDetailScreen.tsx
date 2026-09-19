@@ -10,7 +10,6 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
-import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import Eye from 'lucide-react-native/dist/esm/icons/eye';
 import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
@@ -40,6 +39,7 @@ import { styles, COLORS } from './PostDetailScreen.styles';
 import { tokens } from '../../../theme/tokens';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
+import BackTopBar from '../../../components/common/BackTopBar';
 
 type DetailRoute = RouteProp<CommunityStackParamList, 'CommunityDetail'>;
 
@@ -134,20 +134,7 @@ export default function PostDetailScreen() {
   };
 
   const renderTopBar = () => (
-    <View style={styles.topBar}>
-      <TouchableOpacity
-        style={styles.topBarButton}
-        onPress={() => navigation.goBack()}
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityLabel="뒤로 가기"
-        hitSlop={8}
-      >
-        <ChevronLeft size={normalize(24)} color={COLORS.text} />
-      </TouchableOpacity>
-      <Text style={styles.topBarTitle}>게시글</Text>
-      <View style={styles.topBarButton} />
-    </View>
+    <BackTopBar title="게시글" onBack={() => navigation.goBack()} />
   );
 
   if (isLoading) {

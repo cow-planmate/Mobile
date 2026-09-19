@@ -12,7 +12,6 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import CalendarIcon from 'lucide-react-native/dist/esm/icons/calendar';
 import ChevronDown from 'lucide-react-native/dist/esm/icons/chevron-down';
-import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ChevronUp from 'lucide-react-native/dist/esm/icons/chevron-up';
 import Copy from 'lucide-react-native/dist/esm/icons/copy';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
@@ -30,6 +29,7 @@ import {
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CalendarModal } from '../../../components/common';
+import BackTopBar from '../../../components/common/BackTopBar';
 import { FeedStackParamList } from '../../../navigation/types';
 import {
   usePost,
@@ -217,23 +217,8 @@ ${WEB_URL}/travel/${post.id}`,
     }
   };
 
-  // 수정·삭제는 본문 머리의 칩으로 내렸다(웹·게시글 상세와 같은 자리).
-  // 상단바 오른쪽을 비워 두어야 가운데 제목이 실제로 가운데에 선다.
   const renderTopBar = () => (
-    <View style={styles.topBar}>
-      <TouchableOpacity
-        style={styles.topBarButton}
-        onPress={() => navigation.goBack()}
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityLabel="뒤로 가기"
-        hitSlop={8}
-      >
-        <ChevronLeft size={normalize(24)} color={COLORS.text} />
-      </TouchableOpacity>
-      <Text style={styles.topBarTitle}>여행기</Text>
-      <View style={styles.topBarButton} />
-    </View>
+    <BackTopBar title="여행기" onBack={() => navigation.goBack()} />
   );
 
   if (isLoading) {

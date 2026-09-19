@@ -1,7 +1,6 @@
 import React, { useRef } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
-import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import Eye from 'lucide-react-native/dist/esm/icons/eye';
 import EyeOff from 'lucide-react-native/dist/esm/icons/eye-off';
 import Check from 'lucide-react-native/dist/esm/icons/check';
@@ -14,6 +13,7 @@ import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import { PASSWORD_MAX_LENGTH } from '../../../utils/passwordPolicy';
 import AuthSubmitButton from '../components/AuthSubmitButton';
 import AuthFieldBox, { FieldState } from '../components/AuthFieldBox';
+import BackTopBar from '../../../components/common/BackTopBar';
 
 export interface ChangePasswordErrors {
   currentPassword?: string;
@@ -110,20 +110,11 @@ export const ChangePasswordScreenView = ({
   return (
     <View style={[styles.container, screenInsets]}>
 
-      <View style={styles.header}>
-        <Pressable
-          style={styles.headerBackButton}
-          onPress={onBack}
-          disabled={isSubmitting}
-          accessibilityRole="button"
-          accessibilityLabel="뒤로 가기"
-          accessibilityState={{ disabled: isSubmitting }}
-        >
-          <ChevronLeft size={24} color={COLORS.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>비밀번호 변경</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <BackTopBar
+        title="비밀번호 변경"
+        onBack={onBack}
+        backDisabled={isSubmitting}
+      />
 
       <ScrollView
         style={styles.flex1}

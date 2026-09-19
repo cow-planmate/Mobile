@@ -5,6 +5,8 @@ export { default as FloatingActionButton } from './FloatingActionButton';
 export { default as GoogleMapsIcon } from './GoogleMapsIcon';
 export { default as Header } from './Header';
 export * from './Header';
+export { default as BackTopBar } from './BackTopBar';
+export * from './BackTopBar';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as MenuModal } from './MenuModal';
 export * from './MenuModal';

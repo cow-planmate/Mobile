@@ -12,7 +12,6 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
-import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import Lightbulb from 'lucide-react-native/dist/esm/icons/lightbulb';
 import Star from 'lucide-react-native/dist/esm/icons/star';
 import { normalize } from '../../../utils/normalize';
@@ -34,6 +33,7 @@ import { searchPlacesByKeyword } from '../../../api/trips';
 import { styles, COLORS, STAR_ON, STAR_OFF } from './PostCreateScreen.styles';
 import { tokens } from '../../../theme/tokens';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
+import BackTopBar from '../../../components/common/BackTopBar';
 
 type CreateRoute = RouteProp<CommunityStackParamList, 'CommunityCreate'>;
 
@@ -160,41 +160,33 @@ export default function PostCreateScreen() {
     >
       <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
 
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          style={styles.topBarButton}
-          onPress={handleBack}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="뒤로 가기"
-          hitSlop={8}
-        >
-          <ChevronLeft size={normalize(24)} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.topBarTitle}>
-          {isEditMode ? '게시글 수정' : '글쓰기'}
-        </Text>
-        <TouchableOpacity
-          style={[
-            styles.submitButton,
-            !canSubmit && styles.submitButtonDisabled,
-          ]}
-          onPress={handleSubmit}
-          disabled={!canSubmit}
-          activeOpacity={0.85}
-          accessibilityState={{ disabled: !canSubmit }}
-        >
-          <Text style={styles.submitButtonText}>
-            {createPost.isPending || updatePost.isPending
-              ? isEditMode
-                ? '수정 중'
-                : '등록 중'
-              : isEditMode
-                ? '수정'
-                : '등록'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <BackTopBar
+        title={isEditMode ? '게시글 수정' : '글쓰기'}
+        onBack={handleBack}
+        right={
+          <TouchableOpacity
+            style={[
+              styles.submitButton,
+              !canSubmit && styles.submitButtonDisabled,
+            ]}
+            onPress={handleSubmit}
+            disabled={!canSubmit}
+            activeOpacity={0.85}
+            accessibilityLabel={isEditMode ? '게시글 수정' : '게시글 등록'}
+            accessibilityState={{ disabled: !canSubmit }}
+          >
+            <Text style={styles.submitButtonText}>
+              {createPost.isPending || updatePost.isPending
+                ? isEditMode
+                  ? '수정 중'
+                  : '등록 중'
+                : isEditMode
+                  ? '수정'
+                  : '등록'}
+            </Text>
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView
         contentContainerStyle={styles.body}

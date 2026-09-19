@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { launchImageLibrary } from 'react-native-image-picker';
-import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import Check from 'lucide-react-native/dist/esm/icons/check';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
@@ -42,6 +41,7 @@ import { POST_TITLE_MAX_LENGTH } from '../constants/board';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
+import BackTopBar from '../../../components/common/BackTopBar';
 import { buildFeedUpdatePayload } from '../utils/feedPostPayload';
 import {
   buildFeedPlanSnapshot,
@@ -358,23 +358,10 @@ export default function FeedCreateScreen() {
       style={[styles.container, screenInsets]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="뒤로 가기"
-        >
-          <ChevronLeft size={24} color={tokens.colors.text} />
-        </TouchableOpacity>
-        <View style={styles.headerText}>
-          <Text style={styles.headerTitle}>
-            {isEditMode ? '여행기 수정' : '여행기 쓰기'}
-          </Text>
-        </View>
-        {/* 뒤로 가기와 같은 너비의 빈 칸. 이게 없으면 제목이 왼쪽으로 쏠린다. */}
-        <View style={styles.headerSpacer} />
-      </View>
+      <BackTopBar
+        title={isEditMode ? '여행기 수정' : '여행기 쓰기'}
+        onBack={() => navigation.goBack()}
+      />
 
       <ScrollView
         contentContainerStyle={styles.body}

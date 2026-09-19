@@ -23,6 +23,7 @@ import { normalize } from '../../utils/normalize';
 import gravatarUrl from '../../utils/gravatarUrl';
 import FallbackImage from './FallbackImage';
 import Logo from './Logo';
+import { TOP_BAR_METRICS } from './BackTopBar';
 import { tokens } from '../../theme/tokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -145,8 +146,17 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <View style={[styles.topBar, { paddingTop: normalize(4) + insets.top }]}>
+    <View
+      style={[
+        styles.topBar,
+        {
+          height: TOP_BAR_METRICS.height + insets.top,
+          paddingTop: insets.top,
+        },
+      ]}
+    >
       <TouchableOpacity
+        style={styles.logoButton}
         onPress={handleLogoPress}
         activeOpacity={0.7}
         hitSlop={{ top: 10, bottom: 10, left: 8, right: 16 }}
@@ -166,7 +176,7 @@ const Header: React.FC<HeaderProps> = ({
           }
         >
           <Bell
-            size={normalize(22)}
+            size={24}
             color={tokens.colors.text}
             strokeWidth={1.6}
           />
@@ -309,24 +319,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: normalize(16),
-    paddingTop: normalize(4),
-    paddingBottom: normalize(4),
+    paddingHorizontal: TOP_BAR_METRICS.horizontalPadding,
     backgroundColor: tokens.colors.white,
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.border,
     zIndex: 10,
   },
+  logoButton: {
+    minHeight: TOP_BAR_METRICS.actionSize,
+    justifyContent: 'center',
+  },
   topIcons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: normalize(6),
+    gap: 8,
   },
   profileButton: {
-    minHeight: normalize(44),
+    width: TOP_BAR_METRICS.actionSize,
+    height: TOP_BAR_METRICS.actionSize,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingLeft: normalize(4),
   },
   userAvatar: {
     width: normalize(28),
@@ -347,8 +359,8 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   bellButton: {
-    minWidth: normalize(44),
-    minHeight: normalize(44),
+    width: TOP_BAR_METRICS.actionSize,
+    height: TOP_BAR_METRICS.actionSize,
     justifyContent: 'center',
     alignItems: 'center',
   },

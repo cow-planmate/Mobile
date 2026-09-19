@@ -22,6 +22,7 @@ import {
   UpdateThemeModal,
   UpdateValueModal,
 } from '../../../components/common';
+import BackTopBar from '../../../components/common/BackTopBar';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 import { resolveApiUrl } from '../../../utils/apiUrl';
@@ -40,7 +41,6 @@ import CalendarPlus from 'lucide-react-native/dist/esm/icons/calendar-plus';
 import Plus from 'lucide-react-native/dist/esm/icons/plus';
 import Trash2 from 'lucide-react-native/dist/esm/icons/trash-2';
 import Check from 'lucide-react-native/dist/esm/icons/check';
-import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import MoreVertical from 'lucide-react-native/dist/esm/icons/ellipsis-vertical';
 import PenLine from 'lucide-react-native/dist/esm/icons/pen-line';
@@ -995,20 +995,7 @@ export default function ProfileScreenView({
   return (
     <View style={[styles.container, screenInsets]}>
       <StatusBar barStyle="dark-content" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBackPress}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="뒤로 가기"
-          hitSlop={8}
-        >
-          <ChevronLeft size={24} color={tokens.colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>마이페이지</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <BackTopBar title="마이페이지" onBack={handleBackPress} />
 
       {/* 프로필이 탭 하나로 내려오면서 탭줄이 머리에 붙는다. 굴려도 따라오지
           않고 제자리에 있어야 최상단 전환기로 읽힌다. */}
