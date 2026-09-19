@@ -174,7 +174,7 @@ describe('AI 여행 도우미', () => {
     act(() => tree.unmount());
   });
 
-  it('추천 카드에는 주소 대신 어떤 곳인지를 적는다', async () => {
+  it('추천 카드에는 방문 판단 정보를 한 줄로 적는다', async () => {
     mockAsk.mockResolvedValue({
       userMessage: '이런 곳은 어때요?',
       shownPlaces: [
@@ -211,11 +211,11 @@ describe('AI 여행 도우미', () => {
     await pressLabel(tree, '근처 맛집을 몇 곳 추천해 줘');
 
     const shown = texts(tree);
-    // 바로 윗줄에 이름이 있다 - 소개가 제 이름으로 시작하면 그만큼 떼어 낸다.
-    expect(shown).toContain('따뜻한 뚝배기에 담겨 나오는 콩나물 국밥 전문점이다.');
-    // 소개가 있는 곳에 주소를 겹쳐 적지 않는다.
+    // 소개와 대표 메뉴보다 영업 시간을 먼저 보여 준다.
+    expect(shown).toContain('06:00~20:30');
+    // 방문 정보가 있으면 주소를 겹쳐 적지 않는다.
     expect(shown).not.toContain('서울특별시 종로구 자하문로 3');
-    expect(shown).toContain('돼지갈비 · 16:00~23:00');
+    expect(shown).toContain('16:00~23:00');
     expect(shown).toContain('서울특별시 종로구 사직로');
     act(() => tree.unmount());
   });
@@ -243,7 +243,7 @@ describe('AI 여행 도우미', () => {
     act(() => tree.unmount());
   });
 
-  it('이름이 가운데 나오는 소개는 그대로 둔다', async () => {
+  it('방문 정보가 없으면 소개 대신 빈 상태를 적는다', async () => {
     mockAsk.mockResolvedValue({
       userMessage: '이런 곳은 어때요?',
       shownPlaces: [
@@ -259,9 +259,9 @@ describe('AI 여행 도우미', () => {
 
     await pressLabel(tree, '근처 맛집을 몇 곳 추천해 줘');
 
-    // 앞에서 잘라 내면 말이 끊긴다. 맨 앞에 있을 때만 뗀다.
+    // 소개문은 상세 화면에서 보며, 카드에는 한 줄짜리 빈 상태만 남긴다.
     expect(texts(tree)).toContain(
-      '종로구에 위치한 모던샤브하우스는 육수를 고를 수 있다.',
+      '방문 정보 없음',
     );
     act(() => tree.unmount());
   });

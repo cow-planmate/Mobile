@@ -268,7 +268,7 @@ export const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.text,
   },
-  /** 어떤 곳인지 적는 줄. 두 줄까지만 보이고 넘치면 잘린다. */
+  /** 방문 판단 정보 한 줄. */
   placeLine: {
     fontSize: normalize(10.5),
     fontFamily: tokens.fontFamily.regular,

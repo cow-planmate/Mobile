@@ -259,41 +259,36 @@ const withBold = (text: string, key: string, mine: boolean) =>
   );
 
 /**
- * 소개가 제 이름으로 시작하면 그만큼 떼어 낸다.
+ * 추천 카드의 방문 판단 정보.
  *
- * 서버가 주는 소개는 '봉래면옥은 지하철 5호선…'처럼 대개 이름으로 시작한다.
- * 바로 윗줄에 같은 이름이 적혀 있어서, 두 줄만 보이는 자리에서 앞머리를
- * 이름이 잡아먹는다. 뒤에 붙은 조사와 쉼표까지 같이 떼어야 말이 이어진다.
+ * 좁은 대화 카드에서는 소개문보다 지금 방문할 수 있는지 판단하는 정보가 더
+ * 빠르게 읽힌다. 소개와 대표 메뉴는 상세 정보 화면에 두고, 갈래마다 영업 시간,
+ * 이용 시간, 체크인을 한 줄로 보여 준다.
  */
-const dropLeadingName = (overview: string, title?: string | null) => {
-  const name = title?.trim();
-  if (!name || !overview.startsWith(name)) return overview;
-
-  const rest = overview.slice(name.length).replace(/^[은는이가]?[,\s]+/, '');
-  // 이름만 적혀 있던 소개는 떼고 나면 남는 것이 없다.
-  return rest || overview;
-};
-
-/**
- * 추천 카드의 셋째 줄.
- *
- * 주소 대신 어떤 곳인지를 적는다 - 고를 때 필요한 것은 그것이고, 주소는 담고
- * 나면 시간표에서 다시 보인다. 소개가 없는 곳은 갈래별 대표 한 줄(대표 메뉴와
- * 영업시간, 이용 시간, 체크인)로, 그것도 없으면 주소로 메운다.
- */
-const placeLine = (place: ChatbotPlace) => {
-  const overview = place.overview?.trim();
-  if (overview) return dropLeadingName(overview, place.title);
-
-  const headline = [
-    place.firstMenu,
-    place.openTime ?? place.useTime ?? place.checkInTime,
-  ]
+const placeVisitInfo = (place: ChatbotPlace) => {
+  const category = place.category?.trim().toUpperCase();
+  const headline = (parts: Array<string | null | undefined>) =>
+    parts
     .map(part => part?.trim())
     .filter(Boolean)
     .join(' · ');
 
-  return headline || place.addr1?.trim() || '소개 정보 없음';
+  if (category === 'RESTAURANT') {
+    return headline([place.openTime]);
+  }
+
+  if (category === 'ATTRACTION') {
+    return headline([place.useTime && `이용 ${place.useTime}`]);
+  }
+
+  if (category === 'ACCOMMODATION') {
+    return headline([place.checkInTime && `체크인 ${place.checkInTime}`]);
+  }
+
+  return headline([
+    place.firstMenu,
+    place.openTime ?? place.useTime ?? place.checkInTime,
+  ]);
 };
 
 const blockTime = (block: ChatbotPlanBlock) => {
@@ -794,8 +789,10 @@ export default function ChatbotWindow({
                             <Text style={styles.placeTitle} numberOfLines={1}>
                               {segment.place.title}
                             </Text>
-                            <Text style={styles.placeLine} numberOfLines={2}>
-                              {placeLine(segment.place)}
+                            <Text style={styles.placeLine} numberOfLines={1}>
+                              {placeVisitInfo(segment.place) ||
+                                segment.place.addr1?.trim() ||
+                                '방문 정보 없음'}
                             </Text>
                           </View>
                           {!!onShowPlace && !!segment.place.contentId && (
