@@ -13,6 +13,7 @@ import { MapPlace } from './KakaoMapView';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface PlanMapModalProps {
   visible: boolean;
@@ -20,6 +21,7 @@ export interface PlanMapModalProps {
   places: MapPlace[];
   onApplyOptimizedOrder?: (orderedPlaceIds: string[]) => void;
   dayLabel?: string;
+  inlineSegments?: boolean;
 }
 
 export default function PlanMapModal({
@@ -28,10 +30,12 @@ export default function PlanMapModal({
   places,
   onApplyOptimizedOrder,
   dayLabel,
+  inlineSegments = false,
 }: PlanMapModalProps) {
   // 안드로이드가 edge-to-edge를 강제해 상단바를 직접 그리는 화면은
   // 이 여백을 얹지 않으면 제목이 상태바 아래로 깔린다.
   const screenInsets = useScreenInsets();
+  const insets = useSafeAreaInsets();
   if (!visible) return null;
 
   return (
@@ -39,47 +43,85 @@ export default function PlanMapModal({
       visible={visible}
       transparent={false}
       animationType="slide"
+      statusBarTranslucent={inlineSegments}
+      navigationBarTranslucent={inlineSegments}
       onRequestClose={onClose}
     >
-      <View style={[styles.container, screenInsets]}>
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Text style={styles.title}>여행 동선</Text>
-            <Text style={styles.subtitle}>
-              {dayLabel ?? '선택한 일차'} · {places.length}곳
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="여행 동선 지도 닫기"
-            hitSlop={12}
-          >
-            <XIcon color={tokens.colors.textTertiary} size={normalize(20)} />
-          </TouchableOpacity>
-        </View>
+      <View style={[styles.container, !inlineSegments && screenInsets]}>
+        {inlineSegments ? (
+          <>
+            <RouteMapSection
+              places={places}
+              onApplyOptimizedOrder={onApplyOptimizedOrder}
+              inlineSegments
+              dayLabel={dayLabel}
+            />
 
-        <View style={styles.body}>
-          <RouteMapSection
-            places={places}
-            onApplyOptimizedOrder={onApplyOptimizedOrder}
-          />
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.placeStrip}
-          contentContainerStyle={styles.placeStripContent}
-        >
-          {places.map((place, index) => (
-            <View key={place.id} style={styles.placeLabel}>
-              <Text style={styles.placeNumber}>{index + 1}</Text>
-              <Text style={styles.placeName} numberOfLines={1}>
-                {place.name}
-              </Text>
+            <View
+              style={[
+                styles.floatingHeader,
+                { top: insets.top + normalize(12) },
+              ]}
+            >
+              <View style={styles.headerText}>
+                <Text style={styles.floatingTitle}>여행 동선</Text>
+                <Text style={styles.floatingSubtitle} numberOfLines={1}>
+                  {dayLabel ?? '선택한 일차'} · {places.length}곳
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={onClose}
+                style={styles.closeButton}
+                accessibilityRole="button"
+                accessibilityLabel="여행 동선 지도 닫기"
+              >
+                <XIcon color={tokens.colors.textMuted} size={normalize(20)} />
+              </TouchableOpacity>
             </View>
-          ))}
-        </ScrollView>
+          </>
+        ) : (
+          <>
+            <View style={styles.header}>
+              <View style={styles.headerText}>
+                <Text style={styles.title}>여행 동선</Text>
+                <Text style={styles.subtitle}>
+                  {dayLabel ?? '선택한 일차'} · {places.length}곳
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={onClose}
+                accessibilityRole="button"
+                accessibilityLabel="여행 동선 지도 닫기"
+                hitSlop={12}
+              >
+                <XIcon color={tokens.colors.textMuted} size={normalize(20)} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.body}>
+              <RouteMapSection
+                places={places}
+                onApplyOptimizedOrder={onApplyOptimizedOrder}
+              />
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.placeStrip}
+              contentContainerStyle={styles.placeStripContent}
+            >
+              {places.map((place, index) => (
+                <View key={place.id} style={styles.placeLabel}>
+                  <Text style={styles.placeNumber}>{index + 1}</Text>
+                  <Text style={styles.placeName} numberOfLines={1}>
+                    {place.name}
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          </>
+        )}
       </View>
     </Modal>
   );
@@ -104,6 +146,38 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  floatingHeader: {
+    position: 'absolute',
+    left: normalize(12),
+    right: normalize(12),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(4),
+    minHeight: normalize(56),
+    paddingLeft: normalize(16),
+    paddingRight: normalize(4),
+    borderRadius: normalize(16),
+    backgroundColor: tokens.colors.white,
+    ...tokens.shadows.md,
+  },
+  floatingTitle: {
+    fontSize: normalize(14.5),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
+    letterSpacing: -0.3,
+  },
+  floatingSubtitle: {
+    marginTop: normalize(2),
+    fontSize: normalize(tokens.fontSize.xs),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textMuted,
+  },
+  closeButton: {
+    width: normalize(48),
+    height: normalize(48),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
     fontSize: normalize(tokens.fontSize.ml),
     fontFamily: tokens.fontFamily.bold,
@@ -114,7 +188,7 @@ const styles = StyleSheet.create({
     marginTop: normalize(3),
     fontSize: normalize(tokens.fontSize.xs),
     fontFamily: tokens.fontFamily.medium,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textMuted,
   },
   body: {
     flex: 1,

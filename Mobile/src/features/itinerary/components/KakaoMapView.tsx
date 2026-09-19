@@ -1,6 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from 'react';
 import { StyleSheet, View, Text } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import { KAKAO_APP_KEY } from '@env';
 import { RoutePoint } from '../../../api/route';
@@ -31,6 +38,13 @@ interface KakaoMapViewProps {
 
   transitLanes?: MapTransitLane[];
   style?: object;
+  fitOnResize?: boolean;
+  /** 내 위치 이동 결과 — 성공하면 true, 권한 거부나 조회 실패면 false */
+  onLocateResult?: (ok: boolean) => void;
+}
+
+export interface KakaoMapViewHandle {
+  moveToCurrentLocation: () => void;
 }
 
 const hasKakaoAppKey = !!(KAKAO_APP_KEY ?? '').trim();
@@ -41,12 +55,17 @@ const toScriptSafeJson = (value: unknown): string =>
     .replace(/\u2028/g, '\\u2028')
     .replace(/\u2029/g, '\\u2029');
 
-export default function KakaoMapView({
-  places,
-  routePath,
-  transitLanes,
-  style,
-}: KakaoMapViewProps) {
+function KakaoMapView(
+  {
+    places,
+    routePath,
+    transitLanes,
+    style,
+    fitOnResize = false,
+    onLocateResult,
+  }: KakaoMapViewProps,
+  ref: React.Ref<KakaoMapViewHandle>,
+) {
   const webViewRef = useRef<WebView>(null);
 
   const isLoadedRef = useRef(false);
@@ -95,6 +114,42 @@ export default function KakaoMapView({
     isLoadedRef.current = true;
     pushMapState();
   }, [pushMapState]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      moveToCurrentLocation: () => {
+        if (!webViewRef.current) {
+          onLocateResult?.(false);
+          return;
+        }
+        webViewRef.current.injectJavaScript(`
+          if (window.__locate) { window.__locate(); }
+          else if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(
+              JSON.stringify({ type: 'locate', ok: false }),
+            );
+          }
+          true;
+        `);
+      },
+    }),
+    [onLocateResult],
+  );
+
+  const handleMessage = useCallback(
+    (event: WebViewMessageEvent) => {
+      try {
+        const payload = JSON.parse(event.nativeEvent.data);
+        if (payload?.type === 'locate') {
+          onLocateResult?.(payload.ok === true);
+        }
+      } catch {
+        // 지도에서 온 메시지가 아니면 무시한다
+      }
+    },
+    [onLocateResult],
+  );
 
   const html = useMemo(() => {
     return `
@@ -209,6 +264,15 @@ export default function KakaoMapView({
       color: #1344FF;
       text-decoration: none;
       font-weight: 500;
+    }
+
+    .me-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: ${tokens.colors.primary};
+      border: 3px solid ${tokens.colors.white};
+      box-shadow: 0 0 0 4px rgba(19, 68, 255, 0.22);
     }
 
     .empty-msg {
@@ -382,12 +446,19 @@ export default function KakaoMapView({
         }
         showStraight(!roadPolyline);
 
-        if (places.length > 1) {
-          map.setBounds(bounds);
-        } else {
-          map.setCenter(new kakao.maps.LatLng(places[0].lat, places[0].lng));
-          map.setLevel(3);
-        }
+        window.__fitPlaces = function() {
+          if (places.length > 1) {
+            if (${fitOnResize}) {
+              map.setBounds(bounds, 56, 32, 40, 32);
+            } else {
+              map.setBounds(bounds);
+            }
+          } else {
+            map.setCenter(new kakao.maps.LatLng(places[0].lat, places[0].lng));
+            map.setLevel(3);
+          }
+        };
+        window.__fitPlaces();
       };
 
       window.__setRoute = function(path) {
@@ -438,6 +509,49 @@ export default function KakaoMapView({
         });
       };
 
+      var __meOverlay = null;
+      function __postLocate(ok) {
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(
+            JSON.stringify({ type: 'locate', ok: ok })
+          );
+        }
+      }
+
+      window.__locate = function() {
+        if (!navigator.geolocation) {
+          __postLocate(false);
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(function(pos) {
+          var here = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
+          if (__meOverlay) {
+            __meOverlay.setPosition(here);
+          } else {
+            var dot = document.createElement('div');
+            dot.className = 'me-dot';
+            __meOverlay = new kakao.maps.CustomOverlay({
+              position: here,
+              content: dot,
+              zIndex: 9,
+            });
+            __meOverlay.setMap(map);
+          }
+          map.panTo(here);
+          map.setLevel(3);
+          __postLocate(true);
+        }, function() {
+          __postLocate(false);
+        }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+      };
+
+      if (${fitOnResize}) {
+        window.addEventListener('resize', function() {
+          map.relayout();
+          if (window.__fitPlaces) window.__fitPlaces();
+        });
+      }
+
       if (__pending.places) window.__setPlaces(__pending.places);
       if (__pending.route) window.__setRoute(__pending.route);
       if (__pending.lanes) window.__setLanes(__pending.lanes);
@@ -447,7 +561,7 @@ export default function KakaoMapView({
 </body>
 </html>`;
 
-  }, []);
+  }, [fitOnResize]);
 
   if (!hasKakaoAppKey) {
     return (
@@ -487,12 +601,16 @@ export default function KakaoMapView({
         bounces={false}
         mixedContentMode="always"
         allowsInlineMediaPlayback={true}
+        geolocationEnabled={true}
+        onMessage={handleMessage}
         onLoadStart={handleLoadStart}
         onLoadEnd={handleLoadEnd}
       />
     </View>
   );
 }
+
+export default forwardRef<KakaoMapViewHandle, KakaoMapViewProps>(KakaoMapView);
 
 const mapStyles = StyleSheet.create({
   container: {

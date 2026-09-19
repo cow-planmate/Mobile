@@ -931,6 +931,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       />
 
       <PlanMapModal
+        inlineSegments
         dayLabel={selectedDay ? `${selectedDay.dayNumber}일차` : undefined}
         visible={isMapPreviewVisible}
         onClose={handleCloseMap}
