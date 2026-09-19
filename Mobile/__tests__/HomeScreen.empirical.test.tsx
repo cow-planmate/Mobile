@@ -82,6 +82,10 @@ const createBaseProps = (
 });
 
 describe('HomeScreen.view Empirical Edge Case Testing', () => {
+  beforeAll(() => jest.useFakeTimers());
+  afterEach(() => jest.clearAllTimers());
+  afterAll(() => jest.useRealTimers());
+
   const variants: Array<'option1' | 'option2' | 'option3' | 'option4'> = [
     'option1',
     'option2',
@@ -121,6 +125,7 @@ describe('HomeScreen.view Empirical Edge Case Testing', () => {
       expect(texts).toContain('여행지를 선택해 주세요');
       expect(texts).toContain('날짜를 선택해 주세요');
       expect(texts).toContain('인원을 선택해 주세요');
+      ReactTestRenderer.act(() => renderer.unmount());
     });
 
     it('renders valid filled state and enables CTA interaction', () => {

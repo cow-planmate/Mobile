@@ -852,6 +852,61 @@ describe('ItineraryEditorScreen Component', () => {
     expect(mockDispatch).toHaveBeenCalledWith(mockAction);
   });
 
+  it('생성 직후 편집 화면에서 나가면 마이페이지 일정 영역으로 이동한다', async () => {
+    mockItineraryEditor.days = mockDays;
+    mockItineraryEditor.selectedDay = mockDays[0];
+
+    const mockAddListener = jest.fn<
+      () => jest.Mock,
+      [string, (...args: any[]) => void]
+    >(() => jest.fn());
+    const mockReplace = jest.fn();
+    const mockDispatch = jest.fn();
+    const mockNavigation = {
+      addListener: mockAddListener,
+      goBack: jest.fn(),
+      navigate: jest.fn(),
+      replace: mockReplace,
+      dispatch: mockDispatch,
+      setParams: jest.fn(),
+    } as any;
+    const mockRoute = {
+      params: {
+        planId: 'plan-created',
+        destination: '제주도',
+        createdFromHome: true,
+      },
+    } as any;
+
+    await act(async () => {
+      renderer.create(
+        <ItineraryEditorScreen route={mockRoute} navigation={mockNavigation} />,
+      );
+    });
+
+    const beforeRemoveHandler = mockAddListener.mock.calls.find(
+      call => call[0] === 'beforeRemove',
+    )?.[1];
+    await act(async () => {
+      beforeRemoveHandler!({
+        preventDefault: jest.fn(),
+        data: { action: { type: 'GO_BACK' } },
+      });
+    });
+    const leaveButton = mockShowAlert.mock.calls[0][0].buttons.find(
+      (button: any) => button.text === '나가기',
+    );
+    await act(async () => {
+      leaveButton.onPress();
+      jest.advanceTimersByTime(1200);
+    });
+
+    expect(mockReplace).toHaveBeenCalledWith('Profile', {
+      scrollToItinerary: true,
+    });
+    expect(mockDispatch).not.toHaveBeenCalled();
+  });
+
   it('아직 저장되지 않은 새 일정에서는 사라진다고 경고한다', async () => {
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];

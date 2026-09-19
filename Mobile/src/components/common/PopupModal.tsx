@@ -37,6 +37,8 @@ type Props = {
   doneAction?: 'next' | 'last';
   /** 기본 단추 문구를 바꾸고 싶을 때만. */
   doneLabel?: string;
+  /** 아직 확정할 값이 없을 때 기본 단추를 잠근다. */
+  doneDisabled?: boolean;
   /**
    * 밑줄을 통째로 갈아끼운다.
    *
@@ -65,6 +67,7 @@ export default function PopupModal({
   onDone,
   doneAction = 'last',
   doneLabel,
+  doneDisabled = false,
   footer,
   children,
 }: Props) {
@@ -102,6 +105,7 @@ export default function PopupModal({
   const isNext = doneAction === 'next';
 
   const handleDone = () => {
+    if (doneDisabled) return;
     onDone?.();
     onClose();
   };
@@ -151,19 +155,33 @@ export default function PopupModal({
                 footer
               ) : (
                 <TouchableOpacity
-                  style={styles.doneButton}
+                  style={[
+                    styles.doneButton,
+                    doneDisabled && styles.doneButtonDisabled,
+                  ]}
                   onPress={handleDone}
+                  disabled={doneDisabled}
                   activeOpacity={0.85}
                   accessibilityRole="button"
                   accessibilityLabel={isNext ? '다음 단계로' : '선택 완료'}
+                  accessibilityState={{ disabled: doneDisabled }}
                 >
-                  <Text style={styles.doneButtonText}>
+                  <Text
+                    style={[
+                      styles.doneButtonText,
+                      doneDisabled && styles.doneButtonTextDisabled,
+                    ]}
+                  >
                     {doneLabel ?? (isNext ? '다음' : '완료')}
                   </Text>
                   {isNext ? (
                     <ArrowRight
                       size={normalize(15)}
-                      color={tokens.colors.white}
+                      color={
+                        doneDisabled
+                          ? tokens.colors.textSecondary
+                          : tokens.colors.white
+                      }
                       strokeWidth={2.2}
                     />
                   ) : null}
@@ -235,6 +253,12 @@ const styles = StyleSheet.create({
     fontSize: normalize(15),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.white,
+  },
+  doneButtonDisabled: {
+    backgroundColor: tokens.colors.disabled,
+  },
+  doneButtonTextDisabled: {
+    color: tokens.colors.textSecondary,
   },
   title: {
     fontSize: normalize(14.5),

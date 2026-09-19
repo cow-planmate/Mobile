@@ -261,7 +261,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
               setTimeout(() => {
                 setIsBacking(false);
-                navigation.dispatch(e.data.action);
+                if (route.params.createdFromHome) {
+                  navigation.replace('Profile', { scrollToItinerary: true });
+                } else {
+                  navigation.dispatch(e.data.action);
+                }
                 isBackingRef.current = false;
               }, 100);
             },
@@ -279,6 +283,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     isAccessDenied,
     isSaving,
     navigation,
+    route.params.createdFromHome,
     route.params.planId,
     showAlert,
   ]);

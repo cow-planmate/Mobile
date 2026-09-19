@@ -388,6 +388,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
         navigation.navigate('ItineraryEditor', {
           planId: newPlanId,
+          createdFromHome: true,
           departure: 'SEOUL',
           destination,
           travelId: travelId || 0,
@@ -472,12 +473,16 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         onNavigateProfile={() => navigation.navigate('Profile')}
         onOpenSearchModal={openSearchModal}
         onCloseSearchModal={() => setSearchModalVisible(false)}
-        onDoneSearchModal={() => handOff(() => setCalendarVisible(true))}
+        onDoneSearchModal={() => {
+          if (!startDate || !endDate) handOff(() => setCalendarVisible(true));
+        }}
         onSelectLocation={onSelectLocation}
         onSelectSpot={handleSelectSpot}
         onOpenCalendar={() => setCalendarVisible(true)}
         onCloseCalendar={() => setCalendarVisible(false)}
-        onDoneCalendar={() => handOff(() => setPaxModalVisible(true))}
+        onDoneCalendar={() => {
+          if (adults === null) handOff(() => setPaxModalVisible(true));
+        }}
         onConfirmCalendar={({
           startDate: newStartDate,
           endDate: newEndDate,

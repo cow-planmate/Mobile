@@ -223,6 +223,7 @@ export default function CalendarModal({
       // 일정 생성 흐름(select)에서는 다음 팝업이 이어지고, 피드에서 일정을 가져올
       // 때(done)는 여기서 끝난다. 버튼 문구도 그에 맞춘다.
       doneAction={applyOn === 'select' ? 'next' : 'last'}
+      doneDisabled={!startDate}
     >
       <Text
         style={[

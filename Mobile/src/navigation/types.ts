@@ -45,6 +45,7 @@ export type ScheduleStackParamList = {
     adults?: number;
     children?: number;
     pendingPlace?: any;
+    createdFromHome?: boolean;
   };
   ItineraryView: {
 
@@ -59,7 +60,7 @@ export type ScheduleStackParamList = {
     startDate?: string;
     endDate?: string;
   };
-  Profile: undefined;
+  Profile: { scrollToItinerary?: boolean } | undefined;
   ChangePassword: undefined;
 };
 

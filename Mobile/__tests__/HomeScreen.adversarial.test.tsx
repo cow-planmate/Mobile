@@ -69,6 +69,9 @@ import {
 describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
   let queryClient: QueryClient;
 
+  beforeAll(() => jest.useFakeTimers());
+  afterAll(() => jest.useRealTimers());
+
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: {
@@ -77,6 +80,8 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
     });
     jest.clearAllMocks();
   });
+
+  afterEach(() => jest.clearAllTimers());
 
   const renderWithQuery = (props: HomeScreenViewProps) => {
     let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
@@ -248,6 +253,7 @@ describe('Adversarial & Contract Stress Test: HomeScreenView Variants', () => {
         expect(submitBtn!.props.accessibilityState).toEqual({
           disabled: false,
         });
+        ReactTestRenderer.act(() => renderer.unmount());
       });
 
       it('disables submit button and displays loading text when isCreating is true', () => {

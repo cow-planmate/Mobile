@@ -126,6 +126,7 @@ export default function SearchLocationModal({
       onClose={onClose}
       onDone={handleDone}
       doneAction="next"
+      doneDisabled={!selectedDestination}
     >
       {isLoading ? (
         <View style={styles.inlineLoaderContainer}>
