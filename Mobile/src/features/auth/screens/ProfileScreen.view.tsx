@@ -55,6 +55,7 @@ import { resolveAvatarUrl } from '../../community/utils/avatar';
 import FallbackImage from '../../../components/common/FallbackImage';
 import { normalize } from '../../../utils/normalize';
 import ProfileTasteCard from '../components/ProfileTasteCard';
+import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
 import { allSettledWithConcurrency } from '../../../utils/concurrency';
 import { toPlanDate } from '../utils/planDate';
 import {
@@ -452,6 +453,7 @@ export default function ProfileScreenView({
   const queryClient = useQueryClient();
   const { showAlert } = useAlert();
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [isPrivacyPolicyVisible, setPrivacyPolicyVisible] = useState(false);
   const [themeModalCategory, setThemeModalCategory] = useState<
     '관광지' | '숙소' | '식당' | undefined
   >(undefined);
@@ -996,7 +998,10 @@ export default function ProfileScreenView({
 
   return (
     <View style={[styles.container, screenInsets]}>
-      <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={tokens.colors.white}
+      />
       <BackTopBar title="마이페이지" onBack={handleBackPress} />
 
       {/* 프로필이 탭 하나로 내려오면서 탭줄이 머리에 붙는다. 굴려도 따라오지
@@ -1075,6 +1080,18 @@ export default function ProfileScreenView({
             <View style={styles.sectionBand} />
 
             <View style={styles.accountSection}>
+              <TouchableOpacity
+                style={styles.accountItem}
+                onPress={() => setPrivacyPolicyVisible(true)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="개인정보 처리방침"
+              >
+                <Text style={styles.accountItemText}>개인정보 처리방침</Text>
+              </TouchableOpacity>
+
+              <View style={styles.accountItemDivider} />
+
               <TouchableOpacity
                 style={styles.accountItem}
                 onPress={handleLogout}
@@ -1523,6 +1540,11 @@ export default function ProfileScreenView({
         visible={isPasswordModalVisible}
         onClose={() => setPasswordModalVisible(false)}
         onConfirm={handleUpdatePassword}
+      />
+      <PrivacyPolicyModal
+        visible={isPrivacyPolicyVisible}
+        onClose={() => setPrivacyPolicyVisible(false)}
+        variant="policy"
       />
 
       <MenuModal

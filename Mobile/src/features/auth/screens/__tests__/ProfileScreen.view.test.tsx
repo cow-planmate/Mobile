@@ -63,6 +63,12 @@ jest.mock('../../components/ProfileActivitySections', () => ({
   ProfileFootprintSection: () => null,
   ProfileTravelLogSection: () => null,
 }));
+jest.mock('../../components/PrivacyPolicyModal', () => {
+  const react = require('react');
+  return function MockPrivacyPolicyModal(props: any) {
+    return react.createElement('PrivacyPolicyModal', props);
+  };
+});
 
 jest.mock('react-native-linear-gradient', () => () => null);
 jest.mock('react-native-date-picker', () => () => null);
@@ -391,5 +397,52 @@ describe('ProfileScreenView profile save', () => {
     });
     act(() => tree!.unmount());
     expect(handleUpdateNickname).toHaveBeenCalledTimes(1);
+  });
+
+  it('개인정보 처리방침 버튼을 누르면 개인정보 처리방침 모달이 열린다', () => {
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <ProfileScreenView
+          {...BASE_PROPS}
+          user={{
+            id: '1',
+            email: 'test@example.com',
+            name: '김여행',
+            socialLogin: false,
+          }}
+          isThemeModalVisible={false}
+          setThemeModalVisible={jest.fn()}
+          isPasswordModalVisible={false}
+          setPasswordModalVisible={jest.fn()}
+          handleUpdateNickname={jest.fn()}
+          handleUpdateBirthdate={jest.fn()}
+          handleUpdateGender={jest.fn()}
+          handleUpdateTheme={jest.fn()}
+          handleUpdatePassword={jest.fn()}
+          handleResign={jest.fn()}
+          handleLogout={jest.fn()}
+          onRenamePlan={jest.fn()}
+          onChangeProfileImage={jest.fn()}
+          onDeleteProfileImage={jest.fn()}
+          isProfileImageUpdating={false}
+        />,
+      );
+    });
+
+    const privacyButton = tree!.root
+      .findAllByType(TouchableOpacity)
+      .find(node => node.props.accessibilityLabel === '개인정보 처리방침')!;
+    expect(privacyButton).toBeDefined();
+
+    act(() => {
+      privacyButton.props.onPress();
+    });
+
+    const modal = tree!.root.findByType('PrivacyPolicyModal' as any);
+    expect(modal.props.visible).toBe(true);
+    expect(modal.props.variant).toBe('policy');
+
+    act(() => tree!.unmount());
   });
 });
