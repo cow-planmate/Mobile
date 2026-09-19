@@ -261,6 +261,7 @@ export default function ItineraryViewScreenView({
       </View>
 
       <PlanMapModal
+        inlineSegments
         visible={isMapVisible}
         onClose={() => setMapVisible(false)}
         places={mapPlaces}

@@ -14,6 +14,7 @@ import { toSecureImageUrl } from '../../../utils/imageUrl';
 import { buildKakaoMapUrl } from '../../../utils/kakaoMapLink';
 import { openExternalUrl } from '../../../utils/externalLink';
 import { Place, resolveCategoryId } from './TimelineItem';
+import { CATEGORY_COLORS } from './TimelineItem.styles';
 
 /** 웹의 완성 화면과 같은 표기. 2026년 9월 5일 (금) */
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -26,21 +27,24 @@ export const formatFullDate = (date?: Date | null): string => {
 };
 
 /**
- * 다 짠 일정을 읽는 목록의 갈래 색·이름. 웹과 같은 값이다.
+ * 다 짜은 일정을 읽는 목록의 갈래 색. 편집 화면 카드와 같은 값이다.
  *
- * 웹의 완성 화면(Complete/ScheduledItem)과 여행기 상세(FeedDetailPage)가 쓰는
- * 색을 그대로 옮겼다. 지하철 노선 색처럼 두 플랫폼이 같아야 하는 값이라 여기에
- * 직접 적는다 — 앱 tones로 대신하면 웹과 미세하게 어긋난다.
+ * 원래는 웹의 완성 화면(Complete/ScheduledItem) 색을 그대로 옮겨 두었다.
+ * 그런데 그 색은 웹 편집 화면(Create2/Place/Sidebar)과 서로 어긋난다 —
+ * 관광은 편집에서 연두인데 완성에서는 파랑이고, 식당은 그 반대로
+ * 뒤집힌다. 같은 장소가 화면을 옮길 때마다 색이 바뀌면 색으로는 갈래를
+ * 읽을 수 없다. 웹과 맞추는 것보다 앱 안에서 한결같은 편을 택했다.
  *
- * '직접 추가'는 웹에 짝이 없다. 웹은 모르는 갈래를 회색 기본값으로 떨어뜨리므로
- * 여기서도 '기타'와 같은 회색을 준다 — 숙소와 같은 보라를 주면 둘이 구별되지 않는다.
+ * 값을 다시 적지 않고 CATEGORY_COLORS에서 끌어온다 — 한쪽만 고쳐 두면
+ * 다음에 또 벌어진다. 칩 바탕은 카드 바탕, 글자는 카드의 보조 글자색이다 —
+ * 테두리 색은 연한 바탕 위에서 대비가 모자라 글자로 쓰지 않는다.
  */
 const CATEGORY_TONE: Record<number, { bg: string; fg: string }> = {
-  0: { bg: '#EFF6FF', fg: '#1344FF' },
-  1: { bg: '#F5F3FF', fg: '#7C3AED' },
-  2: { bg: '#FFF7ED', fg: '#EA580C' },
-  3: { bg: '#F3F4F6', fg: '#4B5563' },
-  4: { bg: '#F3F4F6', fg: '#4B5563' },
+  0: { bg: CATEGORY_COLORS[0].bg, fg: CATEGORY_COLORS[0].textSub },
+  1: { bg: CATEGORY_COLORS[1].bg, fg: CATEGORY_COLORS[1].textSub },
+  2: { bg: CATEGORY_COLORS[2].bg, fg: CATEGORY_COLORS[2].textSub },
+  3: { bg: CATEGORY_COLORS[3].bg, fg: CATEGORY_COLORS[3].textSub },
+  4: { bg: CATEGORY_COLORS[4].bg, fg: CATEGORY_COLORS[4].textSub },
 };
 
 /** 웹과 같은 이름. 편집 화면의 CATEGORY_NAMES는 그쪽 그대로 둔다. */

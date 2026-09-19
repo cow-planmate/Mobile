@@ -66,7 +66,7 @@ export default function PlanInfoModal({
       visible={visible}
       title="일정 정보"
       onClose={onClose}
-      doneLabel="확인"
+      footer={null}
     >
       {/* 어느 줄이 눌리는지 보이지 않아 편집할 수 있다는 걸 모르고 닫는다.
           웹이 같은 자리에 둔 안내를 그대로 옮겼다 - 손으로 만지는 화면이라

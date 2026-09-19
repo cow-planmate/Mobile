@@ -75,3 +75,6 @@ ios/Podfile.lock
 # 스킬 스크립트 실행 부산물
 __pycache__/
 *.pyc
+
+# 디자인 시안 작업물 — 저장소에 넣지 않는다
+design-previews/

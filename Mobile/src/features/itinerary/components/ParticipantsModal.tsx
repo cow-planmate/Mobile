@@ -33,7 +33,7 @@ export default function ParticipantsModal({
       visible={visible}
       title={`현재 접속자 ${users.length}명`}
       onClose={onClose}
-      doneLabel="확인"
+      footer={null}
     >
       <ScrollView
         contentContainerStyle={styles.list}
