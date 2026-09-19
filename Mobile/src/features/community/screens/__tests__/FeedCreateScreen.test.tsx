@@ -394,7 +394,7 @@ describe('웹에 맞춘 여행기 쓰기 화면', () => {
     const texts = textsOf(tree);
 
     expect(texts).toContain('1박 2일');
-    expect(texts).toContain('블록 메모도 함께 공개');
+    expect(texts).toContain('일정의 개인 메모도 함께 공개');
 
     act(() => tree.unmount());
   });
@@ -518,7 +518,7 @@ describe('웹에 맞춘 여행기 쓰기 화면', () => {
     act(() => tree.unmount());
   });
 
-  it('메모 공개는 켠 채로 시작한다 — 지금 동작을 그대로 지킨다', () => {
+  it('개인 메모는 사용자가 직접 켜야 공개된다', () => {
     mockRouteParams.postId = '42';
     mockExistingPostData = {
       category: 'feed',
@@ -530,15 +530,16 @@ describe('웹에 맞춘 여행기 쓰기 화면', () => {
 
     const tree = render();
     const box = tree.root.findByProps({
-      accessibilityLabel: '블록 메모도 함께 공개',
+      accessibilityLabel: '일정의 개인 메모도 함께 공개',
     });
-    expect(box.props.accessibilityState.checked).toBe(true);
+    expect(box.props.accessibilityState.checked).toBe(false);
 
     act(() => box.props.onPress());
     expect(
-      tree.root.findByProps({ accessibilityLabel: '블록 메모도 함께 공개' })
-        .props.accessibilityState.checked,
-    ).toBe(false);
+      tree.root.findByProps({
+        accessibilityLabel: '일정의 개인 메모도 함께 공개',
+      }).props.accessibilityState.checked,
+    ).toBe(true);
 
     act(() => tree.unmount());
   });

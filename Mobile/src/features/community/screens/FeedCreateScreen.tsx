@@ -95,9 +95,7 @@ export default function FeedCreateScreen() {
   );
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const initialForm = useRef({ title: '', content: '', thumbnailUrl: '' });
-  // 지금 앱은 메모를 늘 함께 보낸다. 기본값을 true로 두어 그 동작을 지키고,
-  // 끄고 싶을 때만 끌 수 있게 한다 (웹 기본값은 false다).
-  const [includeMemo, setIncludeMemo] = useState(true);
+  const [includeMemo, setIncludeMemo] = useState(false);
   const [thumbnailFile, setThumbnailFile] =
     useState<FeedImageUploadFile | null>(null);
 
@@ -235,7 +233,7 @@ export default function FeedCreateScreen() {
       thumbnailUrl !== initialForm.current.thumbnailUrl ||
       thumbnailFile !== null ||
       snapshot !== null ||
-      !includeMemo,
+      includeMemo,
     title: '작성 취소',
     message: '작성 중인 여행기가 사라져요. 나갈까요?',
   });
@@ -415,17 +413,11 @@ export default function FeedCreateScreen() {
           {thumbnailFile && (
             <Text style={styles.selectedImageName}>{thumbnailFile.name}</Text>
           )}
-          <TextInput
-            value={thumbnailUrl}
-            onChangeText={value => {
-              setThumbnailUrl(value);
-              setThumbnailFile(null);
-            }}
-            style={styles.input}
-            editable={!isHydrating}
-            placeholder="사진을 선택하거나 이미지 URL을 입력하세요"
-            autoCapitalize="none"
-          />
+          {!thumbnailFile && !!thumbnailUrl && (
+            <Text style={styles.selectedImageName}>
+              현재 대표 사진을 사용합니다
+            </Text>
+          )}
         </View>
 
         <View style={[styles.group, styles.groupDivider]}>
@@ -440,7 +432,9 @@ export default function FeedCreateScreen() {
                 accessibilityLabel="내 플랜 가져오기"
               >
                 <Copy size={normalize(14)} color={tokens.colors.white} />
-                <Text style={styles.importPlanButtonText}>내 플랜 가져오기</Text>
+                <Text style={styles.importPlanButtonText}>
+                  내 플랜 가져오기
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -561,7 +555,7 @@ export default function FeedCreateScreen() {
             activeOpacity={0.7}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: includeMemo }}
-            accessibilityLabel="블록 메모도 함께 공개"
+            accessibilityLabel="일정의 개인 메모도 함께 공개"
           >
             <View style={[styles.memoBox, includeMemo && styles.memoBoxOn]}>
               {includeMemo && (
@@ -569,9 +563,9 @@ export default function FeedCreateScreen() {
               )}
             </View>
             <View style={styles.memoTextWrap}>
-              <Text style={styles.memoLabel}>블록 메모도 함께 공개</Text>
+              <Text style={styles.memoLabel}>일정의 개인 메모도 함께 공개</Text>
               <Text style={styles.memoHint}>
-                가져갈 때 메모까지 복사됩니다
+                켜면 일정에 적은 메모가 여행기에 표시됩니다
               </Text>
             </View>
           </TouchableOpacity>
@@ -587,8 +581,8 @@ export default function FeedCreateScreen() {
                     {snapshot.planName}
                   </Text>
                   <Text style={styles.selectedPlanMeta}>
-                    {snapshot.destinationName} · {snapshot.itinerary.days.length}
-                    일 일정
+                    {snapshot.destinationName} ·{' '}
+                    {snapshot.itinerary.days.length}일 일정
                   </Text>
                 </View>
               </View>
@@ -648,7 +642,8 @@ export default function FeedCreateScreen() {
                         <View
                           style={[
                             styles.timelineContent,
-                            idx < arr.length - 1 && styles.timelineContentLinked,
+                            idx < arr.length - 1 &&
+                              styles.timelineContentLinked,
                           ]}
                         >
                           <View style={styles.timelinePlaceHeader}>
@@ -694,9 +689,12 @@ export default function FeedCreateScreen() {
           ) : (
             <View style={styles.scheduleEmpty}>
               <Clock size={normalize(36)} color={tokens.colors.textSecondary} />
-              <Text style={styles.scheduleEmptyTitle}>아직 일정이 없습니다</Text>
+              <Text style={styles.scheduleEmptyTitle}>
+                아직 일정이 없습니다
+              </Text>
               <Text style={styles.scheduleEmptySub}>
-                위의 "내 플랜 가져오기" 버튼을 누르면 여행지·기간과 함께 채워집니다
+                위의 "내 플랜 가져오기" 버튼을 누르면 여행지·기간과 함께
+                채워집니다
               </Text>
             </View>
           )}
@@ -975,7 +973,7 @@ const styles = StyleSheet.create({
     marginTop: normalize(10),
     fontSize: normalize(11),
     fontFamily: tokens.fontFamily.medium,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textMuted,
   },
   divider: {
     marginTop: normalize(12),
@@ -1009,7 +1007,7 @@ const styles = StyleSheet.create({
     fontSize: normalize(12),
     lineHeight: normalize(18),
     fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textMuted,
   },
   memoRow: {
     flexDirection: 'row',
@@ -1040,7 +1038,7 @@ const styles = StyleSheet.create({
     marginTop: normalize(2),
     fontSize: normalize(11),
     fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textMuted,
   },
   body: { padding: normalize(16), gap: normalize(20) },
   // 절을 묶기만 하고 테두리는 두지 않는다. 화면 양옆 여백은 body의 16 하나뿐이라
@@ -1332,7 +1330,7 @@ const styles = StyleSheet.create({
   timelineTimeText: {
     fontSize: normalize(10),
     fontFamily: tokens.fontFamily.medium,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textMuted,
   },
   timelinePlaceDesc: {
     marginTop: normalize(2),
@@ -1343,7 +1341,7 @@ const styles = StyleSheet.create({
   previewMore: {
     fontSize: normalize(12),
     fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
+    color: tokens.colors.textMuted,
   },
   formatToolbar: {
     marginTop: normalize(6),

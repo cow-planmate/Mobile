@@ -67,11 +67,12 @@ const FEED_FALLBACK_IMAGE =
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
-const DURATION_RANGES: Record<string, { minDays?: number; maxDays?: number }> = {
-  '1일': { minDays: 1, maxDays: 1 },
-  '2-3일': { minDays: 2, maxDays: 3 },
-  '4일 이상': { minDays: 4 },
-};
+const DURATION_RANGES: Record<string, { minDays?: number; maxDays?: number }> =
+  {
+    '1일': { minDays: 1, maxDays: 1 },
+    '2-3일': { minDays: 2, maxDays: 3 },
+    '4일 이상': { minDays: 4 },
+  };
 
 const SORT_PARAMS: Record<string, string> = {
   최신순: 'latest',
@@ -79,7 +80,6 @@ const SORT_PARAMS: Record<string, string> = {
   좋아요순: 'likes',
   가져가기순: 'forks',
 };
-
 
 const ALL = '전체';
 
@@ -91,8 +91,23 @@ const ALL = '전체';
  * 같아야 지도 좌표가 붙는다.
  */
 const FEED_REGIONS = [
-  '서울', '부산', '인천', '대구', '대전', '광주', '울산', '세종',
-  '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주',
+  '서울',
+  '부산',
+  '인천',
+  '대구',
+  '대전',
+  '광주',
+  '울산',
+  '세종',
+  '경기',
+  '강원',
+  '충북',
+  '충남',
+  '전북',
+  '전남',
+  '경북',
+  '경남',
+  '제주',
 ];
 const TAGS = ['#뚜벅이최적화', '#극한의J', '#여유로운P', '#동선낭비없는'];
 const DURATIONS = [ALL, '1일', '2-3일', '4일 이상'];
@@ -270,7 +285,8 @@ export default function TravelFeedScreen() {
           description: post.description ?? '',
           author: post.author,
           authorAvatar:
-            resolveAvatarUrl(post.authorImage, post.authorAvatarHash, 100) ?? '',
+            resolveAvatarUrl(post.authorImage, post.authorAvatarHash, 100) ??
+            '',
           thumbnailUrl: post.image || FEED_FALLBACK_IMAGE,
           createdAt: post.createdAt,
           likes: post.likes,
@@ -337,7 +353,10 @@ export default function TravelFeedScreen() {
       }
     } catch (e) {
       if (await pendingInvitations.removeIfProcessed(requestId, e)) {
-        showAlert({ title: '이미 처리된 요청', message: '처리된 요청을 알림 목록에서 정리했어요.' });
+        showAlert({
+          title: '이미 처리된 요청',
+          message: '처리된 요청을 알림 목록에서 정리했어요.',
+        });
         return;
       }
       showAlert({ title: '오류', message: '거절하지 못했어요.' });
@@ -426,7 +445,10 @@ export default function TravelFeedScreen() {
             />
           </View>
           <TouchableOpacity
-            style={[styles.filterButton, isFilterApplied && styles.filterButtonActive]}
+            style={[
+              styles.filterButton,
+              isFilterApplied && styles.filterButtonActive,
+            ]}
             onPress={openFilterModal}
             activeOpacity={0.8}
             accessibilityRole="button"
@@ -438,9 +460,7 @@ export default function TravelFeedScreen() {
           >
             <SlidersHorizontal
               size={normalize(15)}
-              color={
-                isFilterApplied ? tokens.colors.white : tokens.colors.text
-              }
+              color={isFilterApplied ? tokens.colors.white : tokens.colors.text}
               strokeWidth={1.8}
             />
             <Text
@@ -508,7 +528,6 @@ export default function TravelFeedScreen() {
             )}
           </TouchableOpacity>
         </View>
-
 
         <View style={styles.content}>
           <TravelFeedList
@@ -618,100 +637,100 @@ export default function TravelFeedScreen() {
           </TouchableOpacity>
         }
       >
-            <ScrollView
-              style={styles.bottomSheetBody}
-              contentContainerStyle={styles.bottomSheetBodyContent}
-              showsVerticalScrollIndicator={false}
-            >
-              <View style={styles.filterSection}>
-                <Text style={styles.filterSectionLabel}>지역</Text>
-                <View style={styles.optionsRow}>
-                  {regions.map(region => (
-                    <FilterOption
-                      key={region}
-                      label={region}
-                      selected={tempRegion === region}
-                      onPress={() => setTempRegion(region)}
-                    />
-                  ))}
-                </View>
-              </View>
+        <ScrollView
+          style={styles.bottomSheetBody}
+          contentContainerStyle={styles.bottomSheetBodyContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionLabel}>지역</Text>
+            <View style={styles.optionsRow}>
+              {regions.map(region => (
+                <FilterOption
+                  key={region}
+                  label={region}
+                  selected={tempRegion === region}
+                  onPress={() => setTempRegion(region)}
+                />
+              ))}
+            </View>
+          </View>
 
-              <View style={styles.filterSection}>
-                <Text style={styles.filterSectionLabel}>여행 기간</Text>
-                <View style={styles.optionsRow}>
-                  {DURATIONS.map(duration => (
-                    <FilterOption
-                      key={duration}
-                      label={duration}
-                      selected={tempDuration === duration}
-                      onPress={() => setTempDuration(duration)}
-                    />
-                  ))}
-                </View>
-              </View>
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionLabel}>여행 기간</Text>
+            <View style={styles.optionsRow}>
+              {DURATIONS.map(duration => (
+                <FilterOption
+                  key={duration}
+                  label={duration}
+                  selected={tempDuration === duration}
+                  onPress={() => setTempDuration(duration)}
+                />
+              ))}
+            </View>
+          </View>
 
-              <View style={styles.filterSection}>
-                <Text style={styles.filterSectionLabel}>여행 스타일</Text>
-                <View style={styles.optionsRow}>
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionLabel}>여행 스타일</Text>
+            <View style={styles.optionsRow}>
+              <FilterOption
+                label={ALL}
+                selected={tempTag === null}
+                onPress={() => setTempTag(null)}
+              />
+              {TAGS.map(tag => (
+                <FilterOption
+                  key={tag}
+                  label={tag}
+                  selected={tempTag === tag}
+                  onPress={() => setTempTag(tag)}
+                />
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionLabel}>정렬 기준</Text>
+            <View style={styles.optionsRow}>
+              {SORT_OPTIONS.map(option => (
+                <FilterOption
+                  key={option}
+                  label={option === '최신순' ? '등록일' : option}
+                  selected={tempSortBy === option}
+                  onPress={() => setTempSortBy(option)}
+                />
+              ))}
+            </View>
+
+            <View style={styles.orderRow}>
+              {(['desc', 'asc'] as const).map(order => {
+                const labels = orderLabelsFor(tempSortBy);
+                const selected = tempSortOrder === order;
+                const Icon =
+                  order === 'desc' ? ArrowDownWideNarrow : ArrowUpNarrowWide;
+                return (
                   <FilterOption
-                    label={ALL}
-                    selected={tempTag === null}
-                    onPress={() => setTempTag(null)}
-                  />
-                  {TAGS.map(tag => (
-                    <FilterOption
-                      key={tag}
-                      label={tag}
-                      selected={tempTag === tag}
-                      onPress={() => setTempTag(tag)}
-                    />
-                  ))}
-                </View>
-              </View>
-
-              <View style={styles.filterSection}>
-                <Text style={styles.filterSectionLabel}>정렬 기준</Text>
-                <View style={styles.optionsRow}>
-                  {SORT_OPTIONS.map(option => (
-                    <FilterOption
-                      key={option}
-                      label={option === '최신순' ? '등록일' : option}
-                      selected={tempSortBy === option}
-                      onPress={() => setTempSortBy(option)}
-                    />
-                  ))}
-                </View>
-
-                <View style={styles.orderRow}>
-                  {(['desc', 'asc'] as const).map(order => {
-                    const labels = orderLabelsFor(tempSortBy);
-                    const selected = tempSortOrder === order;
-                    const Icon =
-                      order === 'desc' ? ArrowDownWideNarrow : ArrowUpNarrowWide;
-                    return (
-                      <FilterOption
-                        key={order}
-                        label={labels[order]}
-                        selected={selected}
-                        onPress={() => setTempSortOrder(order)}
-                        icon={
-                          <Icon
-                            size={normalize(14)}
-                            color={
-                              selected
-                                ? tokens.colors.white
-                                : tokens.colors.textSecondary
-                            }
-                            strokeWidth={1.8}
-                          />
+                    key={order}
+                    label={labels[order]}
+                    selected={selected}
+                    onPress={() => setTempSortOrder(order)}
+                    icon={
+                      <Icon
+                        size={normalize(14)}
+                        color={
+                          selected
+                            ? tokens.colors.white
+                            : tokens.colors.textSecondary
                         }
+                        strokeWidth={1.8}
                       />
-                    );
-                  })}
-                </View>
-              </View>
-            </ScrollView>
+                    }
+                  />
+                );
+              })}
+            </View>
+          </View>
+        </ScrollView>
       </SheetModal>
 
       <NotificationModal
@@ -768,8 +787,8 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.white,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    borderRadius: normalize(8),
-    paddingHorizontal: normalize(11),
+    borderRadius: tokens.radius.l,
+    paddingHorizontal: normalize(14),
   },
 
   // 아이콘만 있는 상자 대신 웹처럼 글자를 붙인 버튼으로 둔다.
@@ -777,9 +796,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: normalize(5),
-    height: normalize(40),
+    height: normalize(48),
     paddingHorizontal: normalize(11),
-    borderRadius: normalize(8),
+    borderRadius: tokens.radius.l,
     borderWidth: 1,
     borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.white,
@@ -797,35 +816,40 @@ const styles = StyleSheet.create({
     color: tokens.colors.white,
   },
 
-  // 지역은 알약 대신 밑줄 탭이다. 밑줄 2px이 아래 구분선 1px을 덮도록 겹친다.
   sortTab: {
-    paddingBottom: normalize(9),
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-    marginBottom: -1,
+    flex: 1,
+    height: normalize(36),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: tokens.radius.m,
   },
   sortTabOn: {
-    borderBottomColor: tokens.colors.text,
+    backgroundColor: tokens.colors.white,
+    ...tokens.shadows.sm,
   },
   sortTabText: {
-    fontSize: normalize(13.5),
-    fontFamily: tokens.fontFamily.medium,
-    color: tokens.colors.textTertiary,
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.textSecondary,
   },
   sortTabTextOn: {
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.text,
+    color: tokens.colors.primary,
   },
   viewToggle: {
-    paddingBottom: normalize(9),
-    paddingLeft: normalize(10),
+    width: normalize(44),
+    height: normalize(44),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    borderRadius: tokens.radius.l,
   },
   searchIcon: {
     marginRight: normalize(8),
   },
   searchInput: {
     flex: 1,
-    height: normalize(40),
+    height: normalize(48),
     fontSize: normalize(tokens.fontSize.s),
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.text,
@@ -833,17 +857,19 @@ const styles = StyleSheet.create({
   },
   sortBarContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     backgroundColor: tokens.colors.white,
     paddingHorizontal: normalize(16),
-    borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.border,
+    paddingBottom: normalize(12),
     gap: normalize(12),
   },
   sortTabs: {
     flex: 1,
     flexDirection: 'row',
-    gap: normalize(18),
+    gap: normalize(2),
+    padding: normalize(4),
+    borderRadius: tokens.radius.l,
+    backgroundColor: tokens.colors.pageGround,
   },
   bottomSheetBody: {
     flexShrink: 1,
@@ -914,5 +940,4 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.white,
   },
-
 });

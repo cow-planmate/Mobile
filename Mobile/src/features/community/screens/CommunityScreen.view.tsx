@@ -15,10 +15,7 @@ import Plus from 'lucide-react-native/dist/esm/icons/plus';
 import Search from 'lucide-react-native/dist/esm/icons/search';
 import { styles } from './CommunityScreen.styles';
 import { Header, NotificationModal } from '../../../components/common';
-import {
-  EmptyState,
-  UnderlineTabs,
-} from '../../../components/ui';
+import { EmptyState, UnderlineTabs } from '../../../components/ui';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import { CommunityPostSummary } from '../types';
@@ -125,7 +122,8 @@ export default function CommunityScreenView({
   onNavigateProfile,
   onAcceptInvitation,
   onRejectInvitation,
-}: CommunityScreenViewProps) {  const selectedLabel =
+}: CommunityScreenViewProps) {
+  const selectedLabel =
     boards.find(board => board.key === selectedCategory)?.label ?? '';
 
   const tabItems = useMemo(
@@ -153,7 +151,7 @@ export default function CommunityScreenView({
           onSelect={key => onSelectCategory(key as BoardKey)}
         />
 
-        {hotPosts.length > 0 ? (
+        {!searchQuery.trim() && hotPosts.length > 0 ? (
           <View style={styles.hotSection}>
             <View style={styles.hotHead}>
               <Text style={styles.hotHeadTitle}>지금 뜨는 글</Text>
@@ -272,14 +270,26 @@ export default function CommunityScreenView({
       <EmptyState
         title={searchQuery ? '검색 결과가 없습니다.' : '아직 게시글이 없어요'}
         description={searchQuery ? undefined : '첫 글을 작성해보세요!'}
+        actionLabel={searchQuery ? '검색어 지우기' : undefined}
+        onAction={searchQuery ? () => onSearchChange('') : undefined}
         style={styles.listStateBox}
       />
     );
-  }, [isLoading, isError, searchQuery, isRefreshing, onRefresh]);
+  }, [
+    isLoading,
+    isError,
+    searchQuery,
+    isRefreshing,
+    onRefresh,
+    onSearchChange,
+  ]);
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={tokens.colors.white}
+      />
 
       <Header
         nickname={user?.nickname}
