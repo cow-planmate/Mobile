@@ -270,7 +270,7 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
 
       <Header
         nickname={nickname}

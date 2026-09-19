@@ -996,7 +996,7 @@ export default function ProfileScreenView({
 
   return (
     <View style={[styles.container, screenInsets]}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
       <BackTopBar title="마이페이지" onBack={handleBackPress} />
 
       {/* 프로필이 탭 하나로 내려오면서 탭줄이 머리에 붙는다. 굴려도 따라오지

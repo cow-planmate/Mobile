@@ -8,6 +8,7 @@ import {
   Modal,
   ScrollView,
   Pressable,
+  StatusBar,
 } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { WebView } from 'react-native-webview';
@@ -359,6 +360,10 @@ export const LoginScreenView = ({
           onRequestClose={onSnsClose}
         >
           <SafeAreaView style={styles.snsContainer} edges={['top']}>
+            <StatusBar
+              barStyle="dark-content"
+              backgroundColor={COLORS.surfaceRaised}
+            />
             <View style={styles.snsHeader}>
               <TouchableOpacity
                 onPress={onSnsClose}
