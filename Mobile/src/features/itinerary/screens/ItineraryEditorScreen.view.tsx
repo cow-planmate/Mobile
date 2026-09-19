@@ -1223,7 +1223,8 @@ const TimelineComponent = React.memo(
         demoStartRef.current = null;
       } else if (demoStartRef.current === null) {
         const scrolled =
-          offsetMinutes + ((getScrollY?.() ?? 0) - GRID_TOP_OFFSET) / MINUTE_HEIGHT;
+          offsetMinutes +
+          ((getScrollY?.() ?? 0) - GRID_TOP_OFFSET) / MINUTE_HEIGHT;
         // 눈금에 맞춰 올림한다 - 내림하면 날씨 카드 뒤로 반쯤 숨는다.
         const snapped = Math.ceil(scrolled / 15) * 15;
         demoStartRef.current = Math.max(
@@ -2303,14 +2304,12 @@ export default function ItineraryEditorScreenView({
     drag: handleDragPlace,
     drop: handleDropPlace,
     cancel: handleCancelPickUp,
-    press: onOpenDetail,
   });
   dragCallbacks.current = {
     pickUp: handlePickUpPlace,
     drag: handleDragPlace,
     drop: handleDropPlace,
     cancel: handleCancelPickUp,
-    press: onOpenDetail,
   };
 
   const onPickUpStable = useCallback(
@@ -2327,11 +2326,6 @@ export default function ItineraryEditorScreenView({
     [],
   );
   const onCancelStable = useCallback(() => dragCallbacks.current.cancel(), []);
-  const onPressPlaceStable = useCallback(
-    (place: Omit<Place, 'startTime' | 'endTime'>) =>
-      dragCallbacks.current.press(place as Place),
-    [],
-  );
 
   if (!selectedDay) {
     return <AirplaneLoading />;
@@ -2618,18 +2612,18 @@ export default function ItineraryEditorScreenView({
               />
             )}
             <ChatbotWindow
-          onShowPlace={
-            onShowPlaceDetail
-              ? place =>
-                  place.contentId
-                    ? onShowPlaceDetail({
-                        contentId: String(place.contentId),
-                        name: place.title,
-                        address: place.addr1,
-                      })
-                    : undefined
-              : undefined
-          }
+              onShowPlace={
+                onShowPlaceDetail
+                  ? place =>
+                      place.contentId
+                        ? onShowPlaceDetail({
+                            contentId: String(place.contentId),
+                            name: place.title,
+                            address: place.addr1,
+                          })
+                        : undefined
+                  : undefined
+              }
               visible={isChatbotOpen}
               planId={planId ?? null}
               onClose={onCloseChatbot ?? onOpenChatbot}
@@ -2670,7 +2664,6 @@ export default function ItineraryEditorScreenView({
                 hideTabs
                 selectedTab={placeTab}
                 onSelectTab={setPlaceTab}
-                onPressPlace={onPressPlaceStable}
                 onPickUpPlace={onPickUpStable}
                 onDragPlace={onDragStable}
                 onDropPlace={onDropStable}

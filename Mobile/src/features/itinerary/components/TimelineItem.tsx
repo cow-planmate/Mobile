@@ -110,7 +110,7 @@ const TimelineItem = React.memo(function TimelineItem({
   const deleteSlop = { ...actionSlop, right: 12 };
 
   return (
-    <Pressable style={[styles.cardContainer, style]} onPress={onPress}>
+    <View style={[styles.cardContainer, style]}>
       <View
         style={[
           styles.card,
@@ -121,7 +121,12 @@ const TimelineItem = React.memo(function TimelineItem({
           isCompact && styles.cardCompact,
         ]}
       >
-        <View style={styles.infoContainer}>
+        <Pressable
+          style={styles.infoContainer}
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={`${item.name} 일정 수정`}
+        >
           <Text
             style={[styles.nameText, { color: textColorMain }]}
             numberOfLines={1}
@@ -147,7 +152,7 @@ const TimelineItem = React.memo(function TimelineItem({
               {item.memo.trim()}
             </Text>
           )}
-        </View>
+        </Pressable>
 
         {!isReadOnly && (
           <View ref={actionsTarget} style={styles.actionContainer}>
@@ -192,7 +197,7 @@ const TimelineItem = React.memo(function TimelineItem({
           </View>
         )}
       </View>
-    </Pressable>
+    </View>
   );
 });
 
