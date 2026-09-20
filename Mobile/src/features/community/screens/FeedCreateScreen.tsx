@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -25,6 +24,7 @@ import X from 'lucide-react-native/dist/esm/icons/x';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 // 묶음(index)으로 들어오면 쓰지도 않는 화면들이 딸려 온다.
+import PopupModal from '../../../components/common/PopupModal';
 import SearchLocationModal from '../../../components/common/SearchLocationModal';
 import { useAlert } from '../../../contexts/AlertContext';
 import { useUserProfile } from '../../../hooks/useUserProfile';
@@ -716,97 +716,78 @@ export default function FeedCreateScreen() {
         onDone={() => setIsRegionModalOpen(false)}
       />
 
-      <Modal
+      <PopupModal
         visible={isPlanModalOpen}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setIsPlanModalOpen(false)}
+        title="내 플랜 선택"
+        onClose={() => setIsPlanModalOpen(false)}
+        footer={null}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.modalOverlay}
+        <View style={styles.searchBar}>
+          <Search size={normalize(16)} color={tokens.colors.textTertiary} />
+          <TextInput
+            value={planSearch}
+            onChangeText={setPlanSearch}
+            placeholder="플랜 이름 검색..."
+            placeholderTextColor={tokens.colors.textTertiary}
+            style={styles.searchInput}
+          />
+          {planSearch.length > 0 && (
+            <TouchableOpacity onPress={() => setPlanSearch('')} hitSlop={6}>
+              <X size={normalize(14)} color={tokens.colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <ScrollView
+          style={styles.modalList}
+          contentContainerStyle={styles.modalListContent}
         >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>내 플랜 선택</Text>
-              <TouchableOpacity
-                onPress={() => setIsPlanModalOpen(false)}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="닫기"
-              >
-                <X size={normalize(20)} color={tokens.colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.searchBar}>
-              <Search size={normalize(16)} color={tokens.colors.textTertiary} />
-              <TextInput
-                value={planSearch}
-                onChangeText={setPlanSearch}
-                placeholder="플랜 이름 검색..."
-                placeholderTextColor={tokens.colors.textTertiary}
-                style={styles.searchInput}
-              />
-              {planSearch.length > 0 && (
-                <TouchableOpacity onPress={() => setPlanSearch('')} hitSlop={6}>
-                  <X size={normalize(14)} color={tokens.colors.textTertiary} />
+          {isProfileLoading ? (
+            <ActivityIndicator
+              color={tokens.colors.primary}
+              style={{ marginVertical: normalize(24) }}
+            />
+          ) : filteredPlans.length === 0 ? (
+            <Text style={styles.emptyText}>
+              {planSearch
+                ? '검색 결과가 없어요.'
+                : '가져올 수 있는 일정이 없어요.'}
+            </Text>
+          ) : (
+            filteredPlans.map(plan => {
+              const selected = snapshot?.planId === plan.planId;
+              const isLoading = loadingPlanId === plan.planId;
+              return (
+                <TouchableOpacity
+                  key={plan.planId}
+                  style={[
+                    styles.planCard,
+                    selected && styles.planCardSelected,
+                  ]}
+                  onPress={async () => {
+                    await handleSelectPlan(plan.planId);
+                    setIsPlanModalOpen(false);
+                  }}
+                  disabled={loadingPlanId !== null}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.planName}>{plan.planName}</Text>
+                    <Text style={styles.planDate}>
+                      {plan.startDate ?? '일정 날짜 없음'}
+                    </Text>
+                  </View>
+                  {isLoading ? (
+                    <ActivityIndicator color={tokens.colors.primary} />
+                  ) : selected ? (
+                    <Check size={20} color={tokens.colors.primary} />
+                  ) : null}
                 </TouchableOpacity>
-              )}
-            </View>
-
-            <ScrollView
-              style={styles.modalList}
-              contentContainerStyle={styles.modalListContent}
-            >
-              {isProfileLoading ? (
-                <ActivityIndicator
-                  color={tokens.colors.primary}
-                  style={{ marginVertical: normalize(24) }}
-                />
-              ) : filteredPlans.length === 0 ? (
-                <Text style={styles.emptyText}>
-                  {planSearch
-                    ? '검색 결과가 없어요.'
-                    : '가져올 수 있는 일정이 없어요.'}
-                </Text>
-              ) : (
-                filteredPlans.map(plan => {
-                  const selected = snapshot?.planId === plan.planId;
-                  const isLoading = loadingPlanId === plan.planId;
-                  return (
-                    <TouchableOpacity
-                      key={plan.planId}
-                      style={[
-                        styles.planCard,
-                        selected && styles.planCardSelected,
-                      ]}
-                      onPress={async () => {
-                        await handleSelectPlan(plan.planId);
-                        setIsPlanModalOpen(false);
-                      }}
-                      disabled={loadingPlanId !== null}
-                      activeOpacity={0.7}
-                    >
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.planName}>{plan.planName}</Text>
-                        <Text style={styles.planDate}>
-                          {plan.startDate ?? '일정 날짜 없음'}
-                        </Text>
-                      </View>
-                      {isLoading ? (
-                        <ActivityIndicator color={tokens.colors.primary} />
-                      ) : selected ? (
-                        <Check size={20} color={tokens.colors.primary} />
-                      ) : null}
-                    </TouchableOpacity>
-                  );
-                })
-              )}
-            </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+              );
+            })
+          )}
+        </ScrollView>
+      </PopupModal>
 
       <View style={styles.footer}>
         <TouchableOpacity
@@ -1351,32 +1332,6 @@ const styles = StyleSheet.create({
     fontSize: normalize(12),
     fontFamily: tokens.fontFamily.medium,
     color: tokens.colors.textSecondary,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: tokens.colors.white,
-    borderTopLeftRadius: normalize(20),
-    borderTopRightRadius: normalize(20),
-    maxHeight: '80%',
-    paddingBottom: normalize(24),
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: normalize(20),
-    paddingVertical: normalize(16),
-    borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.borderLight,
-  },
-  modalTitle: {
-    fontSize: normalize(16),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.text,
   },
   searchBar: {
     flexDirection: 'row',

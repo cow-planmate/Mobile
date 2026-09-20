@@ -49,6 +49,9 @@ import FallbackImage from '../../../components/common/FallbackImage';
 import PublicProfileModal from '../components/PublicProfileModal';
 import { ReactionType } from '../types';
 import { ScheduleTimeline } from '../../itinerary/components/PlanScheduleList';
+import PlaceDetailSheet, {
+  type PlaceDetailTarget,
+} from '../../itinerary/components/PlaceDetailSheet';
 import {
   ALL_DAYS,
   countPlaces,
@@ -74,6 +77,9 @@ export default function FeedDetailScreen() {
   const [selectedDay, setSelectedDay] = useState(0);
   const [isScheduleOpen, setScheduleOpen] = useState(true);
   const [isDateModalVisible, setDateModalVisible] = useState(false);
+  const [placeDetail, setPlaceDetail] = useState<PlaceDetailTarget | null>(
+    null,
+  );
 
   const {
     data: post,
@@ -563,6 +569,14 @@ ${WEB_URL}/travel/${post.id}`,
                     entries={entries}
                     emptyText="이 날에는 등록된 장소가 없어요"
                     showMapLink
+                    onShowDetail={entry => {
+                      if (!entry.contentId) return;
+                      setPlaceDetail({
+                        contentId: entry.contentId,
+                        name: entry.name,
+                        address: entry.subtitle,
+                      });
+                    }}
                     // 전체를 고르면 마지막 줄이 마지막 날의 끝이라 '하루'로 닫을 수 없다.
                     endLabel={
                       selectedDay === ALL_DAYS ? undefined : '하루 마무리'
@@ -695,6 +709,14 @@ ${WEB_URL}/travel/${post.id}`,
         onClose={() => setAuthorProfileVisible(false)}
         userId={post.userId ?? null}
         fallbackName={post.author}
+      />
+
+      <PlaceDetailSheet
+        visible={!!placeDetail}
+        contentId={placeDetail?.contentId ?? null}
+        fallbackName={placeDetail?.name}
+        fallbackAddress={placeDetail?.address}
+        onClose={() => setPlaceDetail(null)}
       />
 
       <CalendarModal

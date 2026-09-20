@@ -78,6 +78,11 @@ describe('itineraryEntries', () => {
     expect(only[0].subtitle).toBe('설명');
   });
 
+  it('장소명과 주소로 네이버 지도 검색 링크를 만든다', () => {
+    const entry = itineraryEntries(days, 0)[1];
+    expect(entry.mapUrl).toMatch(/^https:\/\/map\.naver\.com\/p\/search\//);
+  });
+
   it('전체를 고르면 모든 날을 잇고 며칠차인지 붙인다', () => {
     const entries = itineraryEntries(days, ALL_DAYS);
     expect(entries).toHaveLength(3);

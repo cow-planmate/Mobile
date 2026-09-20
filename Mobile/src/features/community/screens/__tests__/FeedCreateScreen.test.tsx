@@ -543,4 +543,21 @@ describe('웹에 맞춘 여행기 쓰기 화면', () => {
 
     act(() => tree.unmount());
   });
+
+  it('내 플랜 가져오기를 누르면 내 플랜 선택 팝업 모달이 열린다', () => {
+    mockRouteParams.postId = undefined;
+    const tree = render();
+
+    const importButton = tree.root.findByProps({
+      accessibilityLabel: '내 플랜 가져오기',
+    });
+    act(() => importButton.props.onPress());
+
+    expect(textsOf(tree)).toContain('내 플랜 선택');
+    expect(
+      tree.root.findByProps({ title: '내 플랜 선택' }).props.visible,
+    ).toBe(true);
+
+    act(() => tree.unmount());
+  });
 });

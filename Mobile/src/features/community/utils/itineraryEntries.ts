@@ -3,7 +3,7 @@ import {
   categoryLabel,
   ScheduleEntry,
 } from '../../itinerary/components/PlanScheduleList';
-import { buildKakaoMapUrl } from '../../../utils/kakaoMapLink';
+import { buildNaverMapUrl } from '../../../utils/naverMapLink';
 import { ItineraryDay } from '../types';
 
 /** \ud558\ub8e8\uac00 \uc544\ub2c8\ub77c \uc804\uccb4\ub97c \uace0\ub978 \uc0c1\ud0dc. */
@@ -34,16 +34,11 @@ export const itineraryEntries = (
         subtitle: item.placeAddress ?? item.description ?? undefined,
         memo: item.memo ?? undefined,
         photoUrl: item.photoUrl ?? undefined,
+        contentId: item.placeId ?? undefined,
         badge: showAll ? `Day ${day.day ?? dayIndex + 1}` : undefined,
-        mapUrl: buildKakaoMapUrl({
+        mapUrl: buildNaverMapUrl({
           name: item.place,
-          coords:
-            item.lat != null && item.lng != null
-              ? { lat: item.lat, lng: item.lng }
-              : null,
-          searchQuery: [item.place, item.placeAddress]
-            .filter(Boolean)
-            .join(' '),
+          address: item.placeAddress ?? item.description,
         }),
       };
     }),
