@@ -14,6 +14,7 @@ import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export interface PlanMapModalProps {
   visible: boolean;
@@ -47,7 +48,9 @@ export default function PlanMapModal({
       navigationBarTranslucent={inlineSegments}
       onRequestClose={onClose}
     >
-      <View style={[styles.container, !inlineSegments && screenInsets]}>
+      <GestureHandlerRootView
+        style={[styles.container, !inlineSegments && screenInsets]}
+      >
         {inlineSegments ? (
           <>
             <RouteMapSection
@@ -122,7 +125,7 @@ export default function PlanMapModal({
             </ScrollView>
           </>
         )}
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

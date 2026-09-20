@@ -29,7 +29,7 @@ describe('route API requests', () => {
     expect(mockedAxios.post).toHaveBeenNthCalledWith(
       1,
       expect.stringContaining('/api/route/directions'),
-      { waypoints },
+      { waypoints, profile: 'driving' },
       { signal: undefined },
     );
     expect(mockedAxios.post).toHaveBeenNthCalledWith(
@@ -66,7 +66,7 @@ describe('route API requests', () => {
       { lat: 37.5704, lng: 126.9922 },
     ];
 
-    await fetchDirections(waypoints, controller.signal);
+    await fetchDirections(waypoints, 'driving', controller.signal);
     await fetchRouteTable(waypoints, 'driving', controller.signal);
     await fetchTransit(waypoints[0], waypoints[1], controller.signal);
 

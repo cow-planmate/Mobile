@@ -3,7 +3,8 @@ import renderer, { act } from 'react-test-renderer';
 import RouteMapSection from '../RouteMapSection';
 import RouteSegmentSheet from '../RouteSegmentSheet';
 import { PermissionsAndroid, Platform, TouchableOpacity } from 'react-native';
-import { useSegmentInfo } from '../../hooks/useRouteQueries';
+import Geolocation from '@react-native-community/geolocation';
+import { useDirections, useSegmentInfo } from '../../hooks/useRouteQueries';
 import { fetchRouteTrip, RouteTripResponse } from '../../../../api/route';
 
 jest.mock('../KakaoMapView', () => {
@@ -15,7 +16,7 @@ jest.mock('../KakaoMapView', () => {
     default: ReactLib.forwardRef((props: Record<string, any>, ref: any) => {
       captured.props = props;
       ReactLib.useImperativeHandle(ref, () => ({
-        moveToCurrentLocation: move,
+        moveToLocation: move,
       }));
       return null;
     }),
@@ -32,14 +33,23 @@ jest.mock('../RouteSegmentSheet', () => ({
 jest.mock('../../hooks/useRouteQueries', () => ({
   pointsKey: (points: Array<{ lat: number; lng: number }>) =>
     points.map(point => `${point.lat},${point.lng}`).join('|'),
-  useDirections: () => ({ data: undefined }),
+  useDirections: jest.fn(() => ({ data: undefined })),
   useSegmentInfo: jest.fn(() => ({ data: undefined })),
   useTransitLane: () => ({ data: undefined }),
 }));
 
 jest.mock('../../../../api/route', () => ({
   fetchRouteTrip: jest.fn(),
-  isRouteFallback: () => true,
+  isRouteFallback: () => false,
+}));
+
+jest.mock('@react-native-community/geolocation', () => ({
+  __esModule: true,
+  default: {
+    getCurrentPosition: jest.fn(),
+    requestAuthorization: jest.fn(),
+    setRNConfiguration: jest.fn(),
+  },
 }));
 
 const mockShowAlert = jest.fn();
@@ -56,6 +66,18 @@ const mapMock = jest.requireMock('../KakaoMapView') as {
   __move: jest.Mock;
   __captured: { props?: Record<string, any> };
 };
+const mockUseDirections = useDirections as jest.MockedFunction<
+  typeof useDirections
+>;
+const mockGetCurrentPosition = Geolocation.getCurrentPosition as jest.Mock;
+const mockSetRNConfiguration = Geolocation.setRNConfiguration as jest.Mock;
+const locationPermissionResult = (fine: string, coarse: string) =>
+  ({
+    [PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION]: fine,
+    [PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION]: coarse,
+  } as unknown as Awaited<
+    ReturnType<typeof PermissionsAndroid.requestMultiple>
+  >);
 
 const places = [
   { id: '1', name: 'A', address: '', latitude: 37.1, longitude: 127.1 },
@@ -64,6 +86,82 @@ const places = [
 ];
 
 describe('RouteMapSection', () => {
+  it('현재 위치는 GPS만 기다리지 않고 fused 위치 제공자를 우선한다', () => {
+    expect(mockSetRNConfiguration).toHaveBeenCalledWith({
+      skipPermissionRequests: true,
+      locationProvider: 'playServices',
+    });
+  });
+
+  it('도보 탭을 선택하면 도보 프로필 경로를 지도에 적용한다', () => {
+    mockUseDirections.mockImplementation(
+      (_points, profile = 'driving') =>
+        ({
+          data: {
+            path:
+              profile === 'foot'
+                ? [
+                    { lat: 37.1, lng: 127.1 },
+                    { lat: 37.15, lng: 127.15 },
+                  ]
+                : [
+                    { lat: 37.1, lng: 127.1 },
+                    { lat: 37.2, lng: 127.2 },
+                  ],
+            distance: 100,
+            duration: 60,
+          },
+        } as ReturnType<typeof useDirections>),
+    );
+
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <RouteMapSection places={places} inlineSegments />,
+      );
+    });
+    expect(mockUseDirections).toHaveBeenLastCalledWith(
+      expect.any(Array),
+      'driving',
+    );
+    expect(mapMock.__captured.props?.routePath?.[1]).toEqual({
+      lat: 37.2,
+      lng: 127.2,
+    });
+
+    act(() =>
+      tree!.root
+        .findByType(RouteSegmentSheet)
+        .props.onSelectRouteProfile('foot'),
+    );
+
+    expect(mockUseDirections).toHaveBeenLastCalledWith(
+      expect.any(Array),
+      'foot',
+    );
+    expect(mapMock.__captured.props?.routePath?.[1]).toEqual({
+      lat: 37.15,
+      lng: 127.15,
+    });
+
+    const alternative = {
+      duration: 90,
+      distance: 120,
+      path: [
+        { lat: 37.1, lng: 127.1 },
+        { lat: 37.18, lng: 127.18 },
+      ],
+    };
+    act(() =>
+      tree!.root
+        .findByType(RouteSegmentSheet)
+        .props.onSelectRoadAlternative('driving', alternative),
+    );
+
+    expect(mapMock.__captured.props?.routePath).toEqual(alternative.path);
+    act(() => tree!.unmount());
+  });
+
   it('편집 지도는 구간 정보를 기본 조회하고 닫은 뒤에도 펼칠 수 있다', () => {
     let tree: renderer.ReactTestRenderer;
     act(() => {
@@ -152,14 +250,21 @@ describe('RouteMapSection', () => {
     const originalOS = Platform.OS;
     Platform.OS = 'android';
     const requestSpy = jest
-      .spyOn(PermissionsAndroid, 'request')
-      .mockResolvedValue(PermissionsAndroid.RESULTS.GRANTED);
+      .spyOn(PermissionsAndroid, 'requestMultiple')
+      .mockResolvedValue(
+        locationPermissionResult(
+          PermissionsAndroid.RESULTS.DENIED,
+          PermissionsAndroid.RESULTS.GRANTED,
+        ),
+      );
     mapMock.__move.mockClear();
     mockShowAlert.mockClear();
 
     let tree: renderer.ReactTestRenderer;
     act(() => {
-      tree = renderer.create(<RouteMapSection places={places} inlineSegments />);
+      tree = renderer.create(
+        <RouteMapSection places={places} inlineSegments />,
+      );
     });
     // 지도 조작 단추는 구간 정보를 펼쳐도 그대로 남는다
     const locateButton = tree!.root
@@ -170,9 +275,22 @@ describe('RouteMapSection', () => {
       await locateButton.props.onPress();
     });
     expect(requestSpy).toHaveBeenCalledWith(
-      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      expect.arrayContaining([
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+      ]),
     );
-    expect(mapMock.__move).toHaveBeenCalledTimes(1);
+    expect(mockGetCurrentPosition).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.any(Function),
+      expect.objectContaining({ enableHighAccuracy: false }),
+    );
+    act(() => {
+      mockGetCurrentPosition.mock.calls[0][0]({
+        coords: { latitude: 37.5665, longitude: 126.978 },
+      });
+    });
+    expect(mapMock.__move).toHaveBeenCalledWith(37.5665, 126.978);
     expect(mockShowAlert).not.toHaveBeenCalled();
 
     act(() => mapMock.__captured.props!.onLocateResult(false));
@@ -180,12 +298,17 @@ describe('RouteMapSection', () => {
       expect.objectContaining({ type: 'error' }),
     );
 
-    requestSpy.mockResolvedValue(PermissionsAndroid.RESULTS.DENIED);
+    requestSpy.mockResolvedValue(
+      locationPermissionResult(
+        PermissionsAndroid.RESULTS.DENIED,
+        PermissionsAndroid.RESULTS.DENIED,
+      ),
+    );
     mockShowAlert.mockClear();
     await act(async () => {
       await locateButton.props.onPress();
     });
-    expect(mapMock.__move).toHaveBeenCalledTimes(1);
+    expect(mockGetCurrentPosition).toHaveBeenCalledTimes(1);
     expect(mockShowAlert).toHaveBeenCalledTimes(1);
 
     act(() => tree!.unmount());

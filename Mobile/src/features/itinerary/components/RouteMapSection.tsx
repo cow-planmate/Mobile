@@ -13,7 +13,9 @@ import {
   ActivityIndicator,
   PermissionsAndroid,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
+import Geolocation from '@react-native-community/geolocation';
 import RouteIcon from 'lucide-react-native/dist/esm/icons/route';
 import Wand2 from 'lucide-react-native/dist/esm/icons/wand-sparkles';
 import ChevronUp from 'lucide-react-native/dist/esm/icons/chevron-up';
@@ -33,7 +35,9 @@ import {
 import {
   fetchRouteTrip,
   isRouteFallback,
+  RouteAlternative,
   RoutePoint,
+  RouteProfile,
 } from '../../../api/route';
 import { laneColor } from '../constants/transit';
 import { tokens } from '../../../theme/tokens';
@@ -46,6 +50,11 @@ import {
 } from '../../../utils/routeOptimization';
 import { useAlert } from '../../../contexts/AlertContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+Geolocation.setRNConfiguration({
+  skipPermissionRequests: true,
+  locationProvider: 'playServices',
+});
 
 interface RouteMapSectionProps {
   places: MapPlace[];
@@ -65,6 +74,7 @@ export default function RouteMapSection({
 }: RouteMapSectionProps) {
   const { showAlert } = useAlert();
   const insets = useSafeAreaInsets();
+  const { height: winHeight } = useWindowDimensions();
   const mapRef = useRef<KakaoMapViewHandle>(null);
   // 지도 조작 단추는 아래쪽 패널(펼침) 또는 요약 바(접힘) 바로 위에 뜬다.
   // 둘 다 높이가 상황에 따라 달라지므로 실제로 잡힌 높이를 받아서 쓴다.
@@ -106,24 +116,34 @@ export default function RouteMapSection({
     key: string;
     mapObj: string;
   } | null>(null);
+  const [routeProfile, setRouteProfile] = useState<RouteProfile>('driving');
+  const [activeRoadAlternative, setActiveRoadAlternative] = useState<{
+    profile: RouteProfile;
+    path: RoutePoint[];
+  } | null>(null);
 
   useEffect(() => {
     optimizeControllerRef.current?.abort();
     optimizeControllerRef.current = null;
     setOptimizing(false);
     setActiveLane(null);
+    setActiveRoadAlternative(null);
+    setRouteProfile('driving');
   }, [key]);
 
-  const directionsQuery = useDirections(points);
+  const directionsQuery = useDirections(points, routeProfile);
   const segmentQuery = useSegmentInfo(points, isSegmentEnabled);
   const laneQuery = useTransitLane(activeLane?.mapObj ?? null);
 
   const routePath = useMemo(() => {
+    if (activeRoadAlternative?.profile === routeProfile) {
+      return activeRoadAlternative.path;
+    }
     if (isRouteFallback(directionsQuery.data)) {
       return undefined;
     }
     return directionsQuery.data?.path;
-  }, [directionsQuery.data]);
+  }, [activeRoadAlternative, directionsQuery.data, routeProfile]);
 
   const transitLanes: MapTransitLane[] = useMemo(() => {
     const lanes = laneQuery.data?.lanes ?? [];
@@ -132,6 +152,28 @@ export default function RouteMapSection({
       path: lane.path ?? [],
     }));
   }, [laneQuery.data]);
+
+  const activeLaneStatus = useMemo(() => {
+    if (!activeLane) {
+      return null;
+    }
+    if (laneQuery.isFetching) {
+      return 'loading' as const;
+    }
+    if (
+      laneQuery.isError ||
+      (laneQuery.isSuccess && transitLanes.length === 0)
+    ) {
+      return 'unavailable' as const;
+    }
+    return 'visible' as const;
+  }, [
+    activeLane,
+    laneQuery.isError,
+    laneQuery.isFetching,
+    laneQuery.isSuccess,
+    transitLanes.length,
+  ]);
 
   const handleOpenSheet = useCallback(() => {
     setSegmentEnabled(true);
@@ -143,6 +185,23 @@ export default function RouteMapSection({
       prev?.key === laneKey ? null : { key: laneKey, mapObj },
     );
   }, []);
+
+  const handleSelectRouteProfile = useCallback((profile: RouteProfile) => {
+    setActiveLane(null);
+    setActiveRoadAlternative(null);
+    setRouteProfile(profile);
+  }, []);
+
+  const handleSelectRoadAlternative = useCallback(
+    (profile: RouteProfile, alternative: RouteAlternative | null) => {
+      setActiveLane(null);
+      setRouteProfile(profile);
+      setActiveRoadAlternative(
+        alternative ? { profile, path: alternative.path } : null,
+      );
+    },
+    [],
+  );
 
   const placeNames = useMemo(() => validPlaces.map(p => p.name), [validPlaces]);
   const collapsedSummary = useMemo(() => {
@@ -165,7 +224,8 @@ export default function RouteMapSection({
       if (!ok) {
         showAlert({
           title: '현재 위치를 가져오지 못했어요',
-          message: '위치 권한을 확인해 주세요.',
+          message:
+            '위치 권한과 기기 위치 서비스를 확인한 뒤 다시 시도해 주세요.',
           type: 'error',
         });
       }
@@ -179,17 +239,54 @@ export default function RouteMapSection({
     }
     setLocating(true);
 
-    if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-      );
-      if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-        handleLocateResult(false);
+    try {
+      if (Platform.OS === 'android') {
+        const permissions = await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+        ]);
+        const granted = [
+          permissions[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION],
+          permissions[PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION],
+        ].includes(PermissionsAndroid.RESULTS.GRANTED);
+        if (!granted) {
+          handleLocateResult(false);
+          return;
+        }
+      }
+
+      const moveToCurrentLocation = () => {
+        Geolocation.getCurrentPosition(
+          position => {
+            if (!isMountedRef.current || !mapRef.current) {
+              handleLocateResult(false);
+              return;
+            }
+            mapRef.current.moveToLocation(
+              position.coords.latitude,
+              position.coords.longitude,
+            );
+          },
+          () => handleLocateResult(false),
+          {
+            enableHighAccuracy: false,
+            timeout: 15_000,
+            maximumAge: 30_000,
+          },
+        );
+      };
+
+      if (Platform.OS === 'ios') {
+        Geolocation.requestAuthorization(moveToCurrentLocation, () =>
+          handleLocateResult(false),
+        );
         return;
       }
-    }
 
-    mapRef.current?.moveToCurrentLocation();
+      moveToCurrentLocation();
+    } catch {
+      handleLocateResult(false);
+    }
   }, [isLocating, handleLocateResult]);
 
   const handleOptimizeOrder = useCallback(async () => {
@@ -245,6 +342,15 @@ export default function RouteMapSection({
     }
   }, [onApplyOptimizedOrder, places, points, isOptimizing, showAlert]);
 
+  const controlsHeight = normalize(
+    onApplyOptimizedOrder && points.length >= 3 ? 98 : 44,
+  );
+  const topBarBottom = insets.top + normalize(76);
+  // 컨트롤 박스가 상단 여행 동선 바와 겹칠 정도로 카드가 올라오면 숨김
+  const showMapControls =
+    dockHeight + normalize(16) + controlsHeight + normalize(16) <
+    winHeight - topBarBottom;
+
   return (
     <View style={[sectionStyles.container, style]}>
       <View style={sectionStyles.mapStage}>
@@ -272,7 +378,7 @@ export default function RouteMapSection({
           </TouchableOpacity>
         )}
 
-        {inlineSegments && (
+        {inlineSegments && showMapControls && (
           <View
             style={[
               sectionStyles.mapControls,
@@ -383,7 +489,11 @@ export default function RouteMapSection({
         isError={segmentQuery.isError}
         onRetry={() => segmentQuery.refetch()}
         activeLaneKey={activeLane?.key ?? null}
+        activeLaneStatus={activeLaneStatus}
         onToggleLane={handleToggleLane}
+        onSelectRouteProfile={handleSelectRouteProfile}
+        activeRoadAlternative={activeRoadAlternative}
+        onSelectRoadAlternative={handleSelectRoadAlternative}
       />
     </View>
   );

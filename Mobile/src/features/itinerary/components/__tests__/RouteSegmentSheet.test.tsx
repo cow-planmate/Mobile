@@ -1,7 +1,8 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
-import { Modal, Text, TouchableOpacity } from 'react-native';
+import { Modal, Text, TouchableOpacity, View } from 'react-native';
 import RouteSegmentSheet from '../RouteSegmentSheet';
+import { styles } from '../RouteSegmentSheet.styles';
 
 describe('RouteSegmentSheet', () => {
   it('인라인 패널은 대중교통을 기본 선택하고 구간별 탭과 닫기를 연결한다', () => {
@@ -176,6 +177,91 @@ describe('RouteSegmentSheet', () => {
     ).toEqual(['서울역', '경복궁', '북촌 한옥마을']);
     expect(labels).toContain('10분 · 2.5km');
     expect(labels).toContain('정보 없음');
+    act(() => tree!.unmount());
+  });
+
+  it('인라인 패널은 높이 조절 손잡이를 단일 제공하고 제스처 접근성을 갖춘다', () => {
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <RouteSegmentSheet
+          inline
+          visible
+          onClose={jest.fn()}
+          placeNames={['A', 'B']}
+          isLoading={false}
+          isError={false}
+          activeLaneKey={null}
+          onToggleLane={jest.fn()}
+        />,
+      );
+    });
+
+    const grabAreas = tree!.root
+      .findAllByType(View)
+      .filter(
+        node => node.props.accessibilityLabel === '구간 정보 카드 높이 조절',
+      );
+    expect(grabAreas).toHaveLength(1);
+    expect(grabAreas[0].props.accessibilityRole).toBe('adjustable');
+
+    const grabbers = tree!.root
+      .findAllByType(View)
+      .filter(node => node.props.style === styles.inlineGrabber);
+    expect(grabbers).toHaveLength(1);
+
+    act(() => tree!.unmount());
+  });
+
+  it('자동차 대안 경로를 카드로 보여 주고 선택을 지도에 전달한다', () => {
+    const onSelectRoadAlternative = jest.fn();
+    let tree: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <RouteSegmentSheet
+          inline
+          visible
+          onClose={jest.fn()}
+          placeNames={['A', 'B']}
+          data={{
+            driving: {
+              profile: 'driving',
+              durations: [[0, 600]],
+              distances: [[0, 2500]],
+              legs: [{
+                fromIndex: 0,
+                toIndex: 1,
+                duration: 600,
+                distance: 2500,
+                alternatives: [{
+                  duration: 720,
+                  distance: 2800,
+                  path: [{ lat: 37.1, lng: 127.1 }, { lat: 37.2, lng: 127.2 }],
+                }],
+              }],
+            },
+            foot: null,
+            transit: [null],
+          }}
+          isLoading={false}
+          isError={false}
+          activeLaneKey={null}
+          onToggleLane={jest.fn()}
+          onSelectRoadAlternative={onSelectRoadAlternative}
+        />,
+      );
+    });
+    const button = (label: string) => tree!.root
+      .findAllByType(TouchableOpacity)
+      .find(node => node.props.accessibilityLabel === label)!;
+
+    act(() => button('1구간 자동차').props.onPress());
+    expect(button('추천 경로').props.accessibilityState.selected).toBe(true);
+    act(() => button('대안 경로 1').props.onPress());
+    expect(onSelectRoadAlternative).toHaveBeenCalledWith(
+      'driving',
+      expect.objectContaining({ duration: 720, distance: 2800 }),
+    );
     act(() => tree!.unmount());
   });
 });

@@ -5,12 +5,17 @@ import {
   fetchTransit,
   fetchTransitLane,
   RoutePoint,
+  RouteProfile,
   RouteResponse,
   RouteTableResponse,
   TransitLaneResponse,
   TransitRouteResponse,
 } from '../../../api/route';
 import { allSettledWithConcurrency } from '../../../utils/concurrency';
+import {
+  isTransitApiLimitError,
+  TRANSIT_API_LIMIT_MESSAGE,
+} from '../constants/transit';
 
 const SEGMENT_REQUEST_CONCURRENCY = 4;
 
@@ -25,12 +30,15 @@ export interface SegmentInfo {
   failures?: { driving: boolean; foot: boolean; transit: boolean[] };
 }
 
-export function useDirections(points: RoutePoint[]) {
+export function useDirections(
+  points: RoutePoint[],
+  profile: RouteProfile = 'driving',
+) {
   const key = pointsKey(points);
 
   return useQuery<RouteResponse>({
-    queryKey: ['route', 'directions', key],
-    queryFn: ({ signal }) => fetchDirections(points, signal),
+    queryKey: ['route', 'directions', key, profile],
+    queryFn: ({ signal }) => fetchDirections(points, profile, signal),
     enabled: points.length >= 2,
 
     staleTime: 1000 * 60 * 30,
@@ -68,13 +76,25 @@ export function useSegmentInfo(points: RoutePoint[], enabled: boolean) {
       if (results.every(result => result.status === 'rejected')) {
         throw (results[0] as PromiseRejectedResult).reason;
       }
-      const hasFailure = results.some(result => result.status === 'rejected');
+      // 호출 한도 초과는 조회 실패가 아니라 안내 문구로 보여주므로 실패에서 제외한다.
+      const transitLimited = transitResults.map(
+        result =>
+          result.status === 'rejected' &&
+          isTransitApiLimitError((result as PromiseRejectedResult).reason),
+      );
+      const transitFailures = transitResults.map(
+        (result, i) => result.status === 'rejected' && !transitLimited[i],
+      );
+      const hasFailure =
+        drivingResult.status === 'rejected' ||
+        footResult.status === 'rejected' ||
+        transitFailures.some(Boolean);
 
       return {
         failures: hasFailure ? {
           driving: drivingResult.status === 'rejected',
           foot: footResult.status === 'rejected',
-          transit: transitResults.map(result => result.status === 'rejected'),
+          transit: transitFailures,
         } : undefined,
         driving:
           drivingResult.status === 'fulfilled'
@@ -84,11 +104,21 @@ export function useSegmentInfo(points: RoutePoint[], enabled: boolean) {
           footResult.status === 'fulfilled'
             ? (footResult.value as RouteTableResponse)
             : null,
-        transit: transitResults.map(result =>
-          result.status === 'fulfilled'
-            ? (result.value as TransitRouteResponse)
-            : null,
-        ),
+        transit: transitResults.map((result, i) => {
+          if (result.status === 'fulfilled') {
+            return result.value as TransitRouteResponse;
+          }
+          return transitLimited[i]
+            ? {
+                available: false,
+                message: TRANSIT_API_LIMIT_MESSAGE,
+                routes: [],
+                busCount: null,
+                subwayCount: null,
+                subwayBusCount: null,
+              }
+            : null;
+        }),
       };
     },
     enabled: enabled && points.length >= 2,

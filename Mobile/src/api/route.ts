@@ -14,6 +14,9 @@ export interface RouteResponse {
   distance: number;
 
   duration: number;
+
+  profile?: RouteProfile;
+  legs?: RouteLeg[];
 }
 
 export type RouteProfile = 'driving' | 'foot';
@@ -41,6 +44,21 @@ export interface RouteTableResponse {
 
   distances: (number | null)[][];
   profile: string;
+  legs?: RouteLeg[];
+}
+
+export interface RouteAlternative {
+  path: RoutePoint[];
+  distance: number;
+  duration: number;
+}
+
+export interface RouteLeg {
+  fromIndex: number;
+  toIndex: number;
+  distance: number;
+  duration: number;
+  alternatives: RouteAlternative[];
 }
 
 export interface TransitStop {
@@ -126,11 +144,12 @@ export interface TransitLaneResponse {
 
 export async function fetchDirections(
   waypoints: RoutePoint[],
+  profile: RouteProfile = 'driving',
   signal?: AbortSignal,
 ): Promise<RouteResponse> {
   const response = await axios.post(
     resolveApiUrl('/api/route/directions'),
-    { waypoints },
+    { waypoints, profile },
     { signal },
   );
   return response.data;

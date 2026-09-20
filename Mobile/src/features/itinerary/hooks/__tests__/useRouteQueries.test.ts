@@ -1,5 +1,6 @@
 import { useSegmentInfo } from '../useRouteQueries';
 import { fetchRouteTable, fetchTransit } from '../../../../api/route';
+import { TRANSIT_API_LIMIT_MESSAGE } from '../../constants/transit';
 
 jest.mock('@tanstack/react-query', () => ({ useQuery: (options: unknown) => options }));
 jest.mock('../../../../api/route', () => ({ fetchRouteTable: jest.fn(), fetchTransit: jest.fn() }));
@@ -37,4 +38,17 @@ it('서버가 응답한 경로 없음 메시지는 보존하고 재조회 가능
   expect(data.failures).toBeUndefined();
   expect(data.transit[0].message).toBe('경로가 없습니다');
   expect(options().staleTime({ state: { data } })).toBe(0);
+});
+
+it('대중교통 호출 한도 초과는 실패가 아니라 한도 안내 문구로 바꾼다', async () => {
+  (fetchRouteTable as jest.Mock).mockResolvedValue({ durations: [], distances: [] });
+  (fetchTransit as jest.Mock).mockRejectedValue({
+    response: { data: { code: 'apiKeyAuthFailed' } },
+  });
+  const data = await load();
+  expect(data.failures).toBeUndefined();
+  expect(data.transit[0]).toMatchObject({
+    available: false,
+    message: TRANSIT_API_LIMIT_MESSAGE,
+  });
 });

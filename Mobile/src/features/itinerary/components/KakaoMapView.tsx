@@ -44,7 +44,7 @@ interface KakaoMapViewProps {
 }
 
 export interface KakaoMapViewHandle {
-  moveToCurrentLocation: () => void;
+  moveToLocation: (latitude: number, longitude: number) => void;
 }
 
 const hasKakaoAppKey = !!(KAKAO_APP_KEY ?? '').trim();
@@ -118,13 +118,15 @@ function KakaoMapView(
   useImperativeHandle(
     ref,
     () => ({
-      moveToCurrentLocation: () => {
-        if (!webViewRef.current) {
+      moveToLocation: (latitude: number, longitude: number) => {
+        if (!isLoadedRef.current || !webViewRef.current) {
           onLocateResult?.(false);
           return;
         }
         webViewRef.current.injectJavaScript(`
-          if (window.__locate) { window.__locate(); }
+          if (window.__setCurrentLocation) {
+            window.__setCurrentLocation(${latitude}, ${longitude});
+          }
           else if (window.ReactNativeWebView) {
             window.ReactNativeWebView.postMessage(
               JSON.stringify({ type: 'locate', ok: false }),
@@ -518,13 +520,8 @@ function KakaoMapView(
         }
       }
 
-      window.__locate = function() {
-        if (!navigator.geolocation) {
-          __postLocate(false);
-          return;
-        }
-        navigator.geolocation.getCurrentPosition(function(pos) {
-          var here = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
+      window.__setCurrentLocation = function(latitude, longitude) {
+          var here = new kakao.maps.LatLng(latitude, longitude);
           if (__meOverlay) {
             __meOverlay.setPosition(here);
           } else {
@@ -540,9 +537,6 @@ function KakaoMapView(
           map.panTo(here);
           map.setLevel(3);
           __postLocate(true);
-        }, function() {
-          __postLocate(false);
-        }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
       };
 
       if (${fitOnResize}) {
@@ -560,7 +554,6 @@ function KakaoMapView(
   </script>
 </body>
 </html>`;
-
   }, [fitOnResize]);
 
   if (!hasKakaoAppKey) {
@@ -601,7 +594,6 @@ function KakaoMapView(
         bounces={false}
         mixedContentMode="always"
         allowsInlineMediaPlayback={true}
-        geolocationEnabled={true}
         onMessage={handleMessage}
         onLoadStart={handleLoadStart}
         onLoadEnd={handleLoadEnd}

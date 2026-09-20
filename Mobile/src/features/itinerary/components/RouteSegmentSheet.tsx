@@ -1,25 +1,36 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Bus from 'lucide-react-native/dist/esm/icons/bus';
 import Car from 'lucide-react-native/dist/esm/icons/car';
 import ChevronDown from 'lucide-react-native/dist/esm/icons/chevron-down';
 import ChevronUp from 'lucide-react-native/dist/esm/icons/chevron-up';
 import Footprints from 'lucide-react-native/dist/esm/icons/footprints';
 import SheetModal from '../../../components/common/SheetModal';
-import { TransitRouteOption, TransitStep } from '../../../api/route';
+import {
+  RouteProfile,
+  RouteAlternative,
+  RouteTableResponse,
+  TransitRouteOption,
+  TransitStep,
+} from '../../../api/route';
 import { SegmentInfo } from '../hooks/useRouteQueries';
 import {
   BUS_TYPE_LABELS,
   DEFAULT_SUBWAY_COLOR,
   PATH_TYPE,
   TRAFFIC_TYPE,
+  TRANSIT_API_LIMIT_MESSAGE,
+  TRANSIT_API_LIMIT_SUMMARY,
   WALK_COLOR,
+  isTransitApiLimitError,
   stepColor,
 } from '../constants/transit';
 import Animated, {
@@ -33,7 +44,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styles, COLORS } from './RouteSegmentSheet.styles';
 import { normalize } from '../../../utils/normalize';
 import { formatMinutes } from '../utils/formatDuration';
-
 
 const formatSeconds = (seconds?: number | null): string | null => {
   if (seconds == null || Number.isNaN(seconds)) return null;
@@ -112,6 +122,70 @@ const ModeSummary = ({
     ) : null}
   </View>
 );
+
+const RoadRouteOptions = ({
+  profile,
+  segmentIndex,
+  table,
+  activeAlternative,
+  onSelect,
+}: {
+  profile: RouteProfile;
+  segmentIndex: number;
+  table: RouteTableResponse | null | undefined;
+  activeAlternative: { profile: RouteProfile; path: RouteAlternative['path'] } | null;
+  onSelect: (profile: RouteProfile, alternative: RouteAlternative | null) => void;
+}) => {
+  const leg = table?.legs?.find(item => item.fromIndex === segmentIndex);
+  const alternatives = leg?.alternatives ?? [];
+  const recommendedSelected = !activeAlternative || activeAlternative.profile !== profile;
+
+  return (
+    <View style={styles.roadOptions}>
+      <Text style={styles.roadOptionsTitle}>경로 선택</Text>
+      <TouchableOpacity
+        style={[styles.roadOption, recommendedSelected && styles.roadOptionSelected]}
+        onPress={() => onSelect(profile, null)}
+        accessibilityRole="radio"
+        accessibilityLabel="추천 경로"
+        accessibilityState={{ selected: recommendedSelected }}
+        activeOpacity={0.75}
+      >
+        <View style={styles.roadOptionHeader}>
+          <Text style={styles.roadOptionTitle}>추천 경로</Text>
+          <Text style={styles.roadOptionBadge}>기본</Text>
+        </View>
+        <Text style={styles.roadOptionMeta}>
+          {joinParts(formatSeconds(leg?.duration), formatMeters(leg?.distance)) ?? '정보 없음'}
+        </Text>
+      </TouchableOpacity>
+      {alternatives.map((alternative, index) => {
+        const selected =
+          activeAlternative?.profile === profile &&
+          activeAlternative.path === alternative.path;
+        return (
+          <TouchableOpacity
+            key={`${profile}-${segmentIndex}-${index}`}
+            style={[styles.roadOption, selected && styles.roadOptionSelected]}
+            onPress={() => onSelect(profile, alternative)}
+            accessibilityRole="radio"
+            accessibilityLabel={`대안 경로 ${index + 1}`}
+            accessibilityState={{ selected }}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.roadOptionTitle}>대안 경로 {index + 1}</Text>
+            <Text style={styles.roadOptionMeta}>
+              {joinParts(
+                formatSeconds(alternative.duration),
+                formatMeters(alternative.distance),
+              )}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+};
 
 const RouteBar = ({ steps }: { steps: TransitStep[] }) => (
   <View style={styles.bar}>
@@ -238,11 +312,13 @@ const TransitRouteCard = ({
   route,
   laneKey,
   isLaneActive,
+  laneStatus,
   onToggleLane,
 }: {
   route: TransitRouteOption;
   laneKey: string;
   isLaneActive: boolean;
+  laneStatus: 'loading' | 'unavailable' | 'visible' | null;
   onToggleLane: (mapObj: string, key: string) => void;
 }) => {
   const transferCount =
@@ -275,20 +351,31 @@ const TransitRouteCard = ({
       )}
 
       {!!route.mapObj && (
-        <TouchableOpacity
-          style={[styles.mapToggle, isLaneActive && styles.mapToggleActive]}
-          onPress={() => onToggleLane(route.mapObj as string, laneKey)}
-          activeOpacity={0.8}
-        >
-          <Text
-            style={[
-              styles.mapToggleText,
-              isLaneActive && styles.mapToggleTextActive,
-            ]}
+        <>
+          <TouchableOpacity
+            style={[styles.mapToggle, isLaneActive && styles.mapToggleActive]}
+            onPress={() => onToggleLane(route.mapObj as string, laneKey)}
+            activeOpacity={0.8}
           >
-            {isLaneActive ? '지도에서 숨기기' : '지도에서 보기'}
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.mapToggleText,
+                isLaneActive && styles.mapToggleTextActive,
+              ]}
+            >
+              {laneStatus === 'loading'
+                ? '경로 불러오는 중'
+                : isLaneActive
+                  ? '지도에서 숨기기'
+                  : '지도에서 보기'}
+            </Text>
+          </TouchableOpacity>
+          {isLaneActive && laneStatus === 'unavailable' && (
+            <Text style={styles.mapUnavailable}>
+              대중교통 경로선을 불러오지 못했어요
+            </Text>
+          )}
+        </>
       )}
     </View>
   );
@@ -300,6 +387,7 @@ const TransitInfo = ({
   failed,
   segmentIndex,
   activeLaneKey,
+  activeLaneStatus,
   onToggleLane,
   compact = false,
 }: {
@@ -308,6 +396,7 @@ const TransitInfo = ({
   failed?: boolean;
   segmentIndex: number;
   activeLaneKey: string | null;
+  activeLaneStatus?: 'loading' | 'unavailable' | 'visible' | null;
   onToggleLane: (mapObj: string, key: string) => void;
   compact?: boolean;
 }) => {
@@ -316,6 +405,7 @@ const TransitInfo = ({
 
   const routes = transit?.routes ?? [];
   const available = !!transit?.available && routes.length > 0;
+  const limited = !available && isTransitApiLimitError(transit);
   const best = available ? routes[0] : null;
   const transferCount = best
     ? (best.busTransitCount ?? 0) + (best.subwayTransitCount ?? 0)
@@ -340,10 +430,14 @@ const TransitInfo = ({
         !isLoading && !failed && !available ? (
           <View style={styles.transitEmpty}>
             <Text style={styles.transitEmptyTitle}>
-              이 구간은 대중교통 경로가 없어요
+              {limited
+                ? '대중교통 정보를 표시할 수 없어요'
+                : '이 구간은 대중교통 경로가 없어요'}
             </Text>
             <Text style={styles.transitEmptyHint}>
-              자동차 또는 도보 탭에서 다른 이동 방법을 확인해 보세요.
+              {limited
+                ? TRANSIT_API_LIMIT_MESSAGE
+                : '자동차 또는 도보 탭에서 다른 이동 방법을 확인해 보세요.'}
             </Text>
           </View>
         ) : (
@@ -374,7 +468,9 @@ const TransitInfo = ({
                   formatPayment(best.payment),
                   transferCount > 0 ? `환승 ${transferCount}회` : null,
                 )
-              : transit?.message ?? null
+              : limited
+                ? TRANSIT_API_LIMIT_SUMMARY
+                : transit?.message ?? null
           }
         />
       )}
@@ -432,6 +528,9 @@ const TransitInfo = ({
                     route={route}
                     laneKey={laneKey}
                     isLaneActive={activeLaneKey === laneKey}
+                    laneStatus={
+                      activeLaneKey === laneKey ? activeLaneStatus ?? null : null
+                    }
                     onToggleLane={onToggleLane}
                   />
                 );
@@ -459,7 +558,14 @@ export interface RouteSegmentSheetProps {
   onRetry?: () => void;
 
   activeLaneKey: string | null;
+  activeLaneStatus?: 'loading' | 'unavailable' | 'visible' | null;
   onToggleLane: (mapObj: string, key: string) => void;
+  onSelectRouteProfile?: (profile: RouteProfile) => void;
+  activeRoadAlternative?: { profile: RouteProfile; path: RouteAlternative['path'] } | null;
+  onSelectRoadAlternative?: (
+    profile: RouteProfile,
+    alternative: RouteAlternative | null,
+  ) => void;
 }
 
 export default function RouteSegmentSheet({
@@ -471,7 +577,11 @@ export default function RouteSegmentSheet({
   isError,
   onRetry,
   activeLaneKey,
+  activeLaneStatus,
   onToggleLane,
+  onSelectRouteProfile,
+  activeRoadAlternative = null,
+  onSelectRoadAlternative,
   inline = false,
   dayLabel,
   onPanelLayout,
@@ -483,6 +593,76 @@ export default function RouteSegmentSheet({
   const [isMounted, setMounted] = useState(visible);
   const progress = useSharedValue(visible ? 1 : 0);
   const panelHeight = useSharedValue(normalize(340));
+  const { height: winHeight } = useWindowDimensions();
+  const MIN_HEIGHT = normalize(160);
+  const MID_HEIGHT = normalize(340);
+  // 상단 '여행 동선' 플로팅 바(insets.top + normalize(12), minHeight: normalize(56)) 하단 기준
+  const topBarBottom = insets.top + normalize(76);
+  const MAX_HEIGHT = Math.max(MID_HEIGHT, winHeight - topBarBottom);
+  const SNAP_TOP_THRESHOLD = normalize(32);
+  const SNAP_BOTTOM_THRESHOLD = normalize(24);
+
+  const currentHeight = useSharedValue(MID_HEIGHT);
+  const startHeight = useSharedValue(MID_HEIGHT);
+
+  const panGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .onStart(() => {
+          startHeight.value = currentHeight.value;
+        })
+        .onUpdate(event => {
+          const next = startHeight.value - event.translationY;
+          currentHeight.value = Math.max(
+            MIN_HEIGHT,
+            Math.min(MAX_HEIGHT, next),
+          );
+        })
+        .onEnd(event => {
+          let target = currentHeight.value;
+          if (event.velocityY < -500) {
+            target = MAX_HEIGHT;
+          } else if (event.velocityY > 500) {
+            target = currentHeight.value > MID_HEIGHT ? MID_HEIGHT : MIN_HEIGHT;
+          } else {
+            if (currentHeight.value > MAX_HEIGHT - SNAP_TOP_THRESHOLD) {
+              target = MAX_HEIGHT;
+            } else if (currentHeight.value < MIN_HEIGHT + SNAP_BOTTOM_THRESHOLD) {
+              target = MIN_HEIGHT;
+            } else {
+              target = Math.max(
+                MIN_HEIGHT,
+                Math.min(MAX_HEIGHT, currentHeight.value),
+              );
+            }
+          }
+          currentHeight.value = withTiming(
+            target,
+            { duration: 180, easing: Easing.out(Easing.cubic) },
+            () => {
+              if (onPanelLayout) {
+                runOnJS(onPanelLayout)(target);
+              }
+            },
+          );
+        }),
+    [
+      MIN_HEIGHT,
+      MID_HEIGHT,
+      MAX_HEIGHT,
+      SNAP_TOP_THRESHOLD,
+      SNAP_BOTTOM_THRESHOLD,
+      onPanelLayout,
+      startHeight,
+      currentHeight,
+    ],
+  );
+
+  useEffect(() => {
+    if (inline && visible && onPanelLayout) {
+      onPanelLayout(currentHeight.value);
+    }
+  }, [inline, visible, onPanelLayout, currentHeight]);
 
   useEffect(() => {
     if (!inline) {
@@ -507,7 +687,8 @@ export default function RouteSegmentSheet({
 
   const panelStyle = useAnimatedStyle(() => ({
     opacity: progress.value,
-    transform: [{ translateY: (1 - progress.value) * panelHeight.value }],
+    height: currentHeight.value,
+    transform: [{ translateY: (1 - progress.value) * currentHeight.value }],
   }));
 
   const [modes, setModes] = useState<
@@ -605,9 +786,12 @@ export default function RouteSegmentSheet({
                           <TouchableOpacity
                             key={key}
                             style={styles.modeTab}
-                            onPress={() =>
-                              setModes(current => ({ ...current, [i]: key }))
-                            }
+                            onPress={() => {
+                              setModes(current => ({ ...current, [i]: key }));
+                              if (key !== 'transit') {
+                                onSelectRouteProfile?.(key);
+                              }
+                            }}
                             accessibilityRole="tab"
                             accessibilityLabel={`${i + 1}구간 ${label}`}
                             accessibilityState={{ selected }}
@@ -634,22 +818,33 @@ export default function RouteSegmentSheet({
                   )}
                   {inline &&
                     (modes[i] === 'driving' || modes[i] === 'foot') && (
-                      <ModeSummary
-                        value={formatSeconds(
-                          data?.[modes[i] as 'driving' | 'foot']?.durations?.[
-                            i
-                          ]?.[i + 1],
+                      <>
+                        <ModeSummary
+                          value={formatSeconds(
+                            data?.[modes[i] as 'driving' | 'foot']?.durations?.[
+                              i
+                            ]?.[i + 1],
+                          )}
+                          secondary={formatMeters(
+                            data?.[modes[i] as 'driving' | 'foot']?.distances?.[
+                              i
+                            ]?.[i + 1],
+                          )}
+                          failed={
+                            data?.failures?.[modes[i] as 'driving' | 'foot']
+                          }
+                          isLoading={showRowLoading}
+                        />
+                        {!showRowLoading && onSelectRoadAlternative && (
+                          <RoadRouteOptions
+                            profile={modes[i] as RouteProfile}
+                            segmentIndex={i}
+                            table={data?.[modes[i] as 'driving' | 'foot']}
+                            activeAlternative={activeRoadAlternative}
+                            onSelect={onSelectRoadAlternative}
+                          />
                         )}
-                        secondary={formatMeters(
-                          data?.[modes[i] as 'driving' | 'foot']?.distances?.[
-                            i
-                          ]?.[i + 1],
-                        )}
-                        failed={
-                          data?.failures?.[modes[i] as 'driving' | 'foot']
-                        }
-                        isLoading={showRowLoading}
-                      />
+                      </>
                     )}
                   {!inline && (
                     <>
@@ -690,6 +885,7 @@ export default function RouteSegmentSheet({
                       isLoading={showRowLoading}
                       segmentIndex={i}
                       activeLaneKey={activeLaneKey}
+                      activeLaneStatus={activeLaneStatus}
                       onToggleLane={onToggleLane}
                     />
                   )}
@@ -725,12 +921,22 @@ export default function RouteSegmentSheet({
           onPanelLayout?.(height);
         }}
       >
-        <View style={styles.inlineGrabber} />
-        <View style={styles.inlineHeader}>
-          <View style={styles.inlineHeading}>
-            <Text style={styles.inlineTitle}>구간별 이동</Text>
-            <Text style={styles.inlineCount}>{segmentCount}구간</Text>
+        <GestureDetector gesture={panGesture}>
+          <View
+            style={styles.inlineGrabArea}
+            accessibilityRole="adjustable"
+            accessibilityLabel="구간 정보 카드 높이 조절"
+          >
+            <View style={styles.inlineGrabber} />
           </View>
+        </GestureDetector>
+        <View style={styles.inlineHeader}>
+          <GestureDetector gesture={panGesture}>
+            <View style={styles.inlineHeading}>
+              <Text style={styles.inlineTitle}>구간별 이동</Text>
+              <Text style={styles.inlineCount}>{segmentCount}구간</Text>
+            </View>
+          </GestureDetector>
           <TouchableOpacity
             style={styles.inlineClose}
             onPress={onClose}
