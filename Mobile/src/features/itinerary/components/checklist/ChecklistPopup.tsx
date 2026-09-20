@@ -94,14 +94,14 @@ export default function ChecklistPopup({
                 <View style={styles.heading}>
                   <Text style={styles.eyebrow}>TRAVEL CHECKLIST</Text>
                   <Text style={styles.title} accessibilityRole="header">
-                    여행 준비물
+                    여행 준비
                   </Text>
                 </View>
                 <TouchableOpacity
                   style={styles.closeButton}
                   onPress={onClose}
                   accessibilityRole="button"
-                  accessibilityLabel="여행 준비물 닫기"
+                  accessibilityLabel="여행 준비 닫기"
                   activeOpacity={0.7}
                 >
                   <X

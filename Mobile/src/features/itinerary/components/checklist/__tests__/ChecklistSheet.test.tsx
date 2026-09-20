@@ -192,7 +192,7 @@ describe('ChecklistSheet', () => {
     });
     act(() => {
       component!.root
-        .findByProps({ accessibilityLabel: '준비물 내용 수정' })
+        .findByProps({ accessibilityLabel: '준비 내용 수정' })
         .props.onChangeText('충전 케이블');
     });
     act(() => {
@@ -224,11 +224,11 @@ describe('ChecklistSheet', () => {
     });
 
     expect(
-      component!.root.findAllByProps({ accessibilityLabel: '준비물 내용 수정' }),
+      component!.root.findAllByProps({ accessibilityLabel: '준비 내용 수정' }),
     ).toHaveLength(0);
     expect(
       component!.root.findByProps({
-        accessibilityLabel: '개인 준비물 항목 추가',
+        accessibilityLabel: '개인 준비 항목 추가',
       }),
     ).toBeTruthy();
   });
@@ -242,7 +242,7 @@ describe('ChecklistSheet', () => {
     });
     const input = () =>
       component!.root.findByProps({
-        accessibilityLabel: '공동 준비물 항목 추가',
+        accessibilityLabel: '공동 준비 항목 추가',
       });
     act(() => {
       input().props.onChangeText('   ');

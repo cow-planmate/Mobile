@@ -1,9 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Text,
@@ -40,20 +35,20 @@ import { styles, COLORS, DANGER } from './ChecklistSheet.styles';
 const SCOPE_TABS: { scope: ChecklistScope; label: string; hint: string }[] = [
   {
     scope: 'shared',
-    label: '공동 준비물',
+    label: '공동 준비',
     hint: '여행 멤버 모두가 함께 관리해요.',
   },
   {
     scope: 'personal',
-    label: '개인 준비물',
+    label: '개인 준비',
     hint: '나에게만 보이는 개인 목록이에요.',
   },
 ];
 
 // 무엇이 공동이고 무엇이 개인인지는 탭 밑 한 줄이 이미 말한다. 비었을 때는
 // 다음에 할 일만 남긴다.
-const EMPTY_TITLE = '아직 준비물 항목이 없어요';
-const EMPTY_HINT = '첫 번째 여행 준비물을 추가해 보세요.';
+const EMPTY_TITLE = '아직 준비 항목이 없어요';
+const EMPTY_HINT = '첫 번째 여행 준비를 추가해 보세요.';
 
 interface ChecklistSheetProps {
   visible: boolean;
@@ -210,7 +205,7 @@ export default function ChecklistSheet({
       return (
         <View style={styles.stateBox}>
           <ActivityIndicator color={COLORS.primary} />
-          <Text style={styles.stateText}>준비물 목록을 불러오는 중…</Text>
+          <Text style={styles.stateText}>준비 목록을 불러오는 중…</Text>
         </View>
       );
     }
@@ -218,7 +213,7 @@ export default function ChecklistSheet({
     if (isError) {
       return (
         <View style={styles.stateBox}>
-          <Text style={styles.stateText}>준비물 목록을 불러오지 못했어요.</Text>
+          <Text style={styles.stateText}>준비 목록을 불러오지 못했어요.</Text>
           <TouchableOpacity
             style={styles.retryButton}
             onPress={() => {
@@ -262,7 +257,7 @@ export default function ChecklistSheet({
                     value={editingText}
                     onChangeText={setEditingText}
                     onSubmitEditing={handleSubmitEdit}
-                    accessibilityLabel="준비물 내용 수정"
+                    accessibilityLabel="준비 내용 수정"
                     maxLength={CHECKLIST_CONTENT_MAX_LENGTH}
                     returnKeyType="done"
                     autoFocus
