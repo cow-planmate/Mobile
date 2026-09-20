@@ -65,6 +65,15 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
+jest.mock('@react-native-community/geolocation', () => ({
+  __esModule: true,
+  default: {
+    setRNConfiguration: jest.fn(),
+    getCurrentPosition: jest.fn(),
+    requestAuthorization: jest.fn(),
+  },
+}));
+
 jest.mock('@fortawesome/react-native-fontawesome', () => {
   const React = require('react');
   const { View } = require('react-native');
@@ -1216,8 +1225,8 @@ describe('일정 편집기 제스처 및 UI 동작 개선', () => {
     // 공유값에 쓴 값을 JS에서 곧바로 되읽으면 아직 반영되지 않은 0이 나온다.
     // 그 0이 setSheetHeight의 상한이 되어 처음 높이가 통째로 잘렸다.
     const reads = source.match(/sheetMax\.value(?!\s*=)/g) ?? [];
-    // 되읽는 곳은 워클릿(floatingAnimStyle) 한 군데뿐이어야 한다.
-    expect(reads).toHaveLength(1);
+    // 되읽는 곳은 두 플로팅 묶음의 워클릿에서만 허용한다.
+    expect(reads).toHaveLength(2);
     expect(source).toContain('Math.min(sheetMaxRef.current, height)');
     expect(source).toContain('Math.round(sheetMaxRef.current * ratio)');
   });
