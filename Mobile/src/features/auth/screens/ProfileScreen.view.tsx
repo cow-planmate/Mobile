@@ -1082,18 +1082,6 @@ export default function ProfileScreenView({
             <View style={styles.accountSection}>
               <TouchableOpacity
                 style={styles.accountItem}
-                onPress={() => setPrivacyPolicyVisible(true)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="개인정보 처리방침"
-              >
-                <Text style={styles.accountItemText}>개인정보 처리방침</Text>
-              </TouchableOpacity>
-
-              <View style={styles.accountItemDivider} />
-
-              <TouchableOpacity
-                style={styles.accountItem}
                 onPress={handleLogout}
                 activeOpacity={0.7}
                 accessibilityRole="button"
@@ -1116,6 +1104,16 @@ export default function ProfileScreenView({
             </View>
 
             <View style={styles.appVersionContainer}>
+              <TouchableOpacity
+                onPress={() => setPrivacyPolicyVisible(true)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="개인정보 처리방침"
+              >
+                <Text style={[styles.appVersionText, styles.privacyPolicyLink]}>
+                  개인정보 처리방침
+                </Text>
+              </TouchableOpacity>
               <Text style={styles.appVersionText}>버전 {APP_VERSION}</Text>
             </View>
           </>

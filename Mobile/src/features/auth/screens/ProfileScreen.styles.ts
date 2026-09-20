@@ -984,6 +984,11 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     color: tokens.colors.textTertiary,
   },
+  // 버전 표시와 같은 톤을 유지하되 밑줄로만 누를 수 있음을 알린다.
+  privacyPolicyLink: {
+    textDecorationLine: 'underline',
+    marginBottom: normalize(6),
+  },
 
   // ── 프로필 수정 팝업: 비밀번호 설정 행 ──
   passwordSettingRow: {
