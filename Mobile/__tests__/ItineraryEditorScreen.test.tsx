@@ -466,6 +466,7 @@ describe('ItineraryEditorScreenView Component', () => {
 
   it('renders undo button integrated with place sheet', async () => {
     const mockUndo = jest.fn();
+    const mockRedo = jest.fn();
 
     let rendererInstance: renderer.ReactTestRenderer | undefined;
 
@@ -502,7 +503,7 @@ describe('ItineraryEditorScreenView Component', () => {
           onOpenChecklist={() => {}}
           onOpenChatbot={() => {}}
           onUndo={mockUndo}
-          onRedo={() => {}}
+          onRedo={mockRedo}
           participantsCount={0}
           planId={null}
           onOpenDetail={() => {}}
@@ -538,6 +539,21 @@ describe('ItineraryEditorScreenView Component', () => {
     });
 
     expect(mockUndo).toHaveBeenCalledTimes(1);
+
+    const redoButton = rendererInstance!.root.findByProps({
+      testID: 'btn-redo',
+    });
+    expect(redoButton).toBeDefined();
+
+    expect(
+      React.Children.count(redoButton?.props.children),
+    ).toBeGreaterThanOrEqual(1);
+
+    await act(async () => {
+      redoButton?.props.onPress();
+    });
+
+    expect(mockRedo).toHaveBeenCalledTimes(1);
   });
 });
 

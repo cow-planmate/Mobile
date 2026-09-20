@@ -24,31 +24,31 @@ export const CATEGORY_COLORS = {
     bg: '#f7fee7',
     textMain: '#064e3b',
     textSub: '#4d7c0f',
-  }, 
+  },
   1: {
     border: '#f97316',
     bg: '#fff7ed',
     textMain: '#7c2d12',
     textSub: '#c2410c',
-  }, 
+  },
   2: {
     border: '#3b82f6',
     bg: '#eff6ff',
     textMain: '#1e3a8a',
     textSub: '#1d4ed8',
-  }, 
+  },
   3: {
     border: '#8b5cf6',
     bg: '#f5f3ff',
     textMain: '#4c1d95',
     textSub: '#6d28d9',
-  }, 
+  },
   4: {
     border: tokens.colors.textSecondary,
     bg: tokens.colors.surface,
     textMain: tokens.colors.text,
     textSub: tokens.colors.textSecondary,
-  }, 
+  },
 };
 
 export const styles = StyleSheet.create({
@@ -81,7 +81,7 @@ export const styles = StyleSheet.create({
   nameText: {
     fontSize: 15,
     fontFamily: FONTS.semibold,
-    color: '#064e3b', 
+    color: '#064e3b',
   },
   metaRow: {
     flexDirection: 'row',
@@ -90,7 +90,7 @@ export const styles = StyleSheet.create({
   metaText: {
     fontSize: 12,
     fontFamily: FONTS.regular,
-    color: '#4d7c0f', 
+    color: '#4d7c0f',
   },
   memoText: {
     fontSize: 12,
@@ -115,5 +115,8 @@ export const styles = StyleSheet.create({
   },
   actionButtonCompact: {
     height: 28,
+  },
+  actionButtonDisabled: {
+    opacity: 0.35,
   },
 });

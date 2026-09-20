@@ -26,7 +26,12 @@ type DayConfig = {
 
 type ScheduleEditModalProps = {
   visible: boolean;
-  initialDays: { date: Date; startTime?: string; endTime?: string; places?: any[] }[];
+  initialDays: {
+    date: Date;
+    startTime?: string;
+    endTime?: string;
+    places?: any[];
+  }[];
   onClose: () => void;
   onConfirm: (days: DayConfig[]) => void;
 };
@@ -65,9 +70,48 @@ export default function ScheduleEditModal({
     );
   }, [visible]);
 
+  const validateAndApply = (candidateDays: DayConfig[]): boolean => {
+    const invalidIndex = findInvalidDateOrder(candidateDays);
+    if (invalidIndex !== null) {
+      showAlert({
+        title: '날짜 설정 오류',
+        message: `${candidateDays[invalidIndex].dayNumber}일차 날짜가 이전 일차와 같거나 앞서요. 날짜를 순서대로 지정해 주세요.`,
+      });
+      return false;
+    }
+
+    for (const day of candidateDays) {
+      const startMinutes = timeToMinutes(day.startTime);
+      const endMinutes = timeToMinutes(day.endTime);
+
+      if (startMinutes >= endMinutes) {
+        showAlert({
+          title: '시간 설정 오류',
+          message: `${day.dayNumber}일차의 시작 시간이 종료 시간보다 늦거나 같아요.`,
+        });
+        return false;
+      }
+
+      if (endMinutes - startMinutes < 60) {
+        showAlert({
+          title: '시간 범위 오류',
+          message: `${day.dayNumber}일차의 일정 운영 시간은 최소 1시간 이상이어야 해요.`,
+        });
+        return false;
+      }
+    }
+
+    setDays(candidateDays);
+    onConfirm(candidateDays);
+    return true;
+  };
+
   const handleAddDay = () => {
     if (days.length >= 14) {
-      showAlert({ title: '알림', message: '일정은 최대 14일까지 추가할 수 있어요.' });
+      showAlert({
+        title: '알림',
+        message: '일정은 최대 14일까지 추가할 수 있어요.',
+      });
       return;
     }
 
@@ -77,7 +121,7 @@ export default function ScheduleEditModal({
       newDate.setDate(newDate.getDate() + 1);
     }
 
-    setDays([
+    validateAndApply([
       ...days,
       {
         dayNumber: days.length + 1,
@@ -105,12 +149,14 @@ export default function ScheduleEditModal({
             style: 'destructive',
             onPress: () => {
               setDays(days.slice(0, -1));
+              validateAndApply(days.slice(0, -1));
             },
           },
         ],
       });
     } else {
       setDays(days.slice(0, -1));
+      validateAndApply(days.slice(0, -1));
     }
   };
 
@@ -164,40 +210,7 @@ export default function ScheduleEditModal({
     setDays(newDays);
     setDatePickerOpen(false);
     setTimePickerOpen(false);
-  };
-
-  const handleFinalConfirm = () => {
-
-    const invalidIndex = findInvalidDateOrder(days);
-    if (invalidIndex !== null) {
-      showAlert({
-        title: '날짜 설정 오류',
-        message: `${days[invalidIndex].dayNumber}일차 날짜가 이전 일차와 같거나 앞서요. 날짜를 순서대로 지정해 주세요.`,
-      });
-      return;
-    }
-
-    for (const day of days) {
-      const startMinutes = timeToMinutes(day.startTime);
-      const endMinutes = timeToMinutes(day.endTime);
-
-      if (startMinutes >= endMinutes) {
-        showAlert({
-          title: '시간 설정 오류',
-          message: `${day.dayNumber}일차의 시작 시간이 종료 시간보다 늦거나 같아요.`,
-        });
-        return;
-      }
-
-      if (endMinutes - startMinutes < 60) {
-        showAlert({
-          title: '시간 범위 오류',
-          message: `${day.dayNumber}일차의 일정 운영 시간은 최소 1시간 이상이어야 해요.`,
-        });
-        return;
-      }
-    }
-    onConfirm(days);
+    validateAndApply(newDays);
   };
 
   const formatCompactDate = (date: Date) =>
@@ -208,17 +221,7 @@ export default function ScheduleEditModal({
       visible={visible}
       title="일정 변경"
       onClose={onClose}
-      footer={
-        <TouchableOpacity
-          style={styles.confirmButton}
-          onPress={handleFinalConfirm}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="변경 확인"
-        >
-          <Text style={styles.confirmText}>확인</Text>
-        </TouchableOpacity>
-      }
+      footer={null}
     >
       <View style={styles.counterRow}>
         <Text style={styles.counterLabel}>여행 일수</Text>
@@ -277,7 +280,9 @@ export default function ScheduleEditModal({
                 onPress={() => openDatePicker(index)}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel={`${day.dayNumber}일차 날짜 ${formatCompactDate(day.date)}`}
+                accessibilityLabel={`${
+                  day.dayNumber
+                }일차 날짜 ${formatCompactDate(day.date)}`}
               >
                 <Text style={styles.dateText}>
                   {formatCompactDate(day.date)}

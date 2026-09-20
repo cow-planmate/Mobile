@@ -2,7 +2,7 @@ import React from 'react';
 import Info from 'lucide-react-native/dist/esm/icons/info';
 import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import XIcon from 'lucide-react-native/dist/esm/icons/x';
-import { View, Text, Pressable, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 
 import { styles, CATEGORY_COLORS } from './TimelineItem.styles';
 import { tokens } from '../../../theme/tokens';
@@ -36,6 +36,8 @@ type TimelineItemProps = {
   item: Place;
   onDelete?: () => void;
   onEditTime?: (type: 'startTime' | 'endTime') => void;
+  /** 장소 메모 및 시간 수정 모달을 여는 핸들러 */
+  onEditPlace?: () => void;
   /** 어떤 곳인지 보는 길. 열쇠를 모르는 장소(직접 추가)에는 주지 않는다. */
   onShowDetail?: () => void;
   onPress?: () => void;
@@ -43,6 +45,8 @@ type TimelineItemProps = {
   isReadOnly?: boolean;
   /** 첫 진입 안내가 수정·삭제를 짚을 블록 하나에만 켠다. */
   isTourAnchor?: boolean;
+  /** 안내 투어가 실제로 실행 중인지 여부. 안내 중에만 앵커 블록의 삭제가 제한된다. */
+  isTourRunning?: boolean;
 };
 
 /** 카드와 완성 화면이 같은 기준으로 갈래를 정하도록 한곳에 둔다. */
@@ -78,12 +82,15 @@ const TimelineItem = React.memo(function TimelineItem({
   item,
   onDelete,
   onEditTime,
+  onEditPlace,
   onShowDetail,
   onPress,
   style,
   isReadOnly = false,
   isTourAnchor = false,
+  isTourRunning = false,
 }: TimelineItemProps) {
+  const isDeleteDisabled = isTourAnchor && isTourRunning;
   const actionsTarget = useCoachmarkTarget(
     'blockActions',
     isTourAnchor && !isReadOnly,
@@ -121,12 +128,7 @@ const TimelineItem = React.memo(function TimelineItem({
           isCompact && styles.cardCompact,
         ]}
       >
-        <Pressable
-          style={styles.infoContainer}
-          onPress={onPress}
-          accessibilityRole="button"
-          accessibilityLabel={`${item.name} 일정 수정`}
-        >
+        <View style={styles.infoContainer}>
           <Text
             style={[styles.nameText, { color: textColorMain }]}
             numberOfLines={1}
@@ -152,7 +154,7 @@ const TimelineItem = React.memo(function TimelineItem({
               {item.memo.trim()}
             </Text>
           )}
-        </Pressable>
+        </View>
 
         {!isReadOnly && (
           <View ref={actionsTarget} style={styles.actionContainer}>
@@ -161,9 +163,9 @@ const TimelineItem = React.memo(function TimelineItem({
                 styles.actionButton,
                 isCompact && styles.actionButtonCompact,
               ]}
-              onPress={() => onEditTime?.('startTime')}
+              onPress={onEditPlace ?? (() => onEditTime?.('startTime'))}
               accessibilityRole="button"
-              accessibilityLabel="시간 수정"
+              accessibilityLabel="일정 수정"
               hitSlop={actionSlop}
             >
               <Pencil size={16} color={textColorMain} />
@@ -186,10 +188,13 @@ const TimelineItem = React.memo(function TimelineItem({
               style={[
                 styles.actionButton,
                 isCompact && styles.actionButtonCompact,
+                isDeleteDisabled && styles.actionButtonDisabled,
               ]}
-              onPress={onDelete}
+              onPress={isDeleteDisabled ? undefined : onDelete}
+              disabled={isDeleteDisabled}
               accessibilityRole="button"
               accessibilityLabel="장소 삭제"
+              accessibilityState={{ disabled: isDeleteDisabled }}
               hitSlop={deleteSlop}
             >
               <XIcon size={18} color={textColorMain} />

@@ -24,6 +24,7 @@ describe('일정 편집 코치마크 스텝', () => {
     expect(order.indexOf('placeSheet')).toBeLessThan(
       order.indexOf('timelineBlock'),
     );
+    expect(order.indexOf('undo')).toBeLessThan(order.indexOf('redo'));
   });
 
   it('일정 완성 다음에 사용법 단추로 끝맺는다', () => {
@@ -61,15 +62,15 @@ describe('일정 편집 코치마크 스텝', () => {
     expect(demoed).toEqual(['placeSheet', 'timelineBlock']);
   });
 
-  it('눌러서 얻을 것이 없는 넷만 막는다', () => {
+  it('눌러서 얻을 것이 없는 셋만 막는다', () => {
     const blocked = EDITOR_COACHMARK_STEPS.filter(
       step => step.interactive === false,
     ).map(step => step.target);
 
-    // 완성은 화면을 떠나고, 수정·삭제는 구멍 하나에 연필과 X가 같이 들어가며,
-    // 되돌리기는 진짜로 직전 작업을 무른다. 사용법 단추는 지금 보고 있는 것을
-    // 다시 여는 것뿐이다. 나머지는 직접 눌러 보게 둔다.
-    expect(blocked).toEqual(['blockActions', 'undo', 'complete', 'tutorial']);
+    // 완성은 화면을 떠나고, 되돌리기는 진짜로 직전 작업을 무른다.
+    // 사용법 단추는 지금 보고 있는 것을 다시 여는 것뿐이다.
+    // 수정·삭제는 삭제 버튼이 비활성화되어 시간·장소 정보를 눌러볼 수 있다.
+    expect(blocked).toEqual(['undo', 'redo', 'complete', 'tutorial']);
   });
 
   it('해보기를 권하는 단계는 담기와 시간 조절 둘뿐이다', () => {
@@ -122,6 +123,7 @@ describe('일정 편집 코치마크 스텝', () => {
         'dayPeriod',
         'complete',
         'undo',
+        'redo',
         'checklist',
         'participants',
         'invite',

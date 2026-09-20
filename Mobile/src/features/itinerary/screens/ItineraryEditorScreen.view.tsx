@@ -44,12 +44,11 @@ const PREVIEW_SPRING_CONFIG = {
   stiffness: 220,
   mass: 0.6,
 };
+const FLOATING_BUTTON_SIZE = normalize(44);
+const FLOATING_BUTTON_GAP = normalize(10);
+const FLOATING_BUTTON_BOTTOM_OFFSET = 14;
 import TimelineItem, { Place } from '../components/TimelineItem';
-import {
-  AirplaneLoading,
-  ScheduleEditModal,
-  TimePickerModal,
-} from '../../../components/common';
+import { AirplaneLoading, ScheduleEditModal } from '../../../components/common';
 import BackTopBar from '../../../components/common/BackTopBar';
 import PlaceRecommendationList, {
   PLACE_TABS,
@@ -91,6 +90,7 @@ import CalendarDaysIcon from 'lucide-react-native/dist/esm/icons/calendar-days';
 import CheckIcon from 'lucide-react-native/dist/esm/icons/check';
 import InfoIcon from 'lucide-react-native/dist/esm/icons/info';
 import Undo2 from 'lucide-react-native/dist/esm/icons/undo-2';
+import Redo2 from 'lucide-react-native/dist/esm/icons/redo-2';
 import UserPlusIcon from 'lucide-react-native/dist/esm/icons/user-plus';
 import UsersIcon from 'lucide-react-native/dist/esm/icons/users';
 import XIcon from 'lucide-react-native/dist/esm/icons/x';
@@ -269,28 +269,31 @@ const DraggableTimelineItem = React.memo(
     minStartMinutes,
     onDelete,
     onEditTime,
+    onEditPlace,
     onDragEnd,
     onPress,
     onShowDetail,
     onOverflow,
-    scrollRef,
+    scrollRef: _scrollRef,
     requestAutoScroll,
     getScrollY,
     onItemDragStart,
     onItemDragEnd,
     disabled = false,
     isTourAnchor = false,
+    isTourRunning = false,
   }: {
     place: Place;
     offsetMinutes: number;
     maxEndMinutes: number;
     minStartMinutes: number;
     onDelete: (placeId: string) => void;
-    onEditTime: (
+    onEditTime?: (
       placeId: string,
       type: 'startTime' | 'endTime',
       time: string,
     ) => void;
+    onEditPlace?: (place: Place) => void;
     onDragEnd: (
       placeId: string,
       newStartMinutes: number,
@@ -310,6 +313,7 @@ const DraggableTimelineItem = React.memo(
     disabled?: boolean;
     /** 첫 진입 안내는 그날 첫 블록 하나만 짚는다. */
     isTourAnchor?: boolean;
+    isTourRunning?: boolean;
   }) => {
     const blockTarget = useCoachmarkTarget('timelineBlock', isTourAnchor);
     const MIN_TOP_PX =
@@ -458,7 +462,7 @@ const DraggableTimelineItem = React.memo(
     const handleEditTime = React.useCallback(
       (type: 'startTime' | 'endTime') => {
         if (isDeletingRef.current) return;
-        onEditTime(
+        onEditTime?.(
           placeId,
           type,
           type === 'startTime' ? place.startTime : place.endTime,
@@ -467,10 +471,10 @@ const DraggableTimelineItem = React.memo(
       [onEditTime, placeId, place.startTime, place.endTime],
     );
 
-    const handlePress = React.useCallback(() => {
+    const handleEditPlace = React.useCallback(() => {
       if (isDeletingRef.current) return;
-      onPress?.(place);
-    }, [onPress, place]);
+      onEditPlace ? onEditPlace(place) : onPress?.(place);
+    }, [onEditPlace, onPress, place]);
 
     const panGestureMove = Gesture.Pan()
       .enabled(!disabled)
@@ -815,12 +819,13 @@ const DraggableTimelineItem = React.memo(
                 item={place}
                 onDelete={handleDeleteWithAnim}
                 onEditTime={handleEditTime}
+                onEditPlace={handleEditPlace}
                 onShowDetail={
                   onShowDetail ? () => onShowDetail(place) : undefined
                 }
-                onPress={handlePress}
                 style={styles.flex1}
                 isTourAnchor={isTourAnchor}
+                isTourRunning={isTourRunning}
               />
             </Animated.View>
           </GestureDetector>
@@ -1038,10 +1043,18 @@ const DemoTimelineBlock = React.memo(function DemoTimelineBlock({
   place,
   offsetMinutes,
   visible,
+  onEditTime,
+  onEditPlace,
+  onShowDetail,
+  isTourRunning = true,
 }: {
   place: Place;
   offsetMinutes: number;
   visible: boolean;
+  onEditTime?: (type: 'startTime' | 'endTime') => void;
+  onEditPlace?: () => void;
+  onShowDetail?: () => void;
+  isTourRunning?: boolean;
 }) {
   const blockTarget = useCoachmarkTarget('timelineBlock');
   const top =
@@ -1054,14 +1067,22 @@ const DemoTimelineBlock = React.memo(function DemoTimelineBlock({
   return (
     <View
       ref={blockTarget}
-      pointerEvents="none"
+      pointerEvents={visible ? 'box-none' : 'none'}
       style={[
         styles.timelineDemoBlock,
         { top, height },
         visible ? null : styles.timelineDemoHidden,
       ]}
     >
-      <TimelineItem item={place} isTourAnchor style={styles.flex1} />
+      <TimelineItem
+        item={place}
+        isTourAnchor
+        isTourRunning={isTourRunning}
+        onEditTime={onEditTime}
+        onEditPlace={onEditPlace}
+        onShowDetail={onShowDetail}
+        style={styles.flex1}
+      />
     </View>
   );
 });
@@ -1316,6 +1337,17 @@ const TimelineComponent = React.memo(
                     place={demoPlace}
                     offsetMinutes={offsetMinutes}
                     visible={isDemoBlockVisible}
+                    onEditTime={type =>
+                      onEditPlaceTime(demoPlace.id, type, demoPlace[type])
+                    }
+                    onEditPlace={
+                      onPressPlace ? () => onPressPlace(demoPlace) : undefined
+                    }
+                    onShowDetail={
+                      onShowBlockDetail
+                        ? () => onShowBlockDetail(demoPlace)
+                        : undefined
+                    }
                   />
                 )}
                 {selectedDay?.places.map((place, placeIndex) => (
@@ -1323,11 +1355,13 @@ const TimelineComponent = React.memo(
                     key={place.id}
                     place={place}
                     isTourAnchor={placeIndex === 0}
+                    isTourRunning={isTourRunning}
                     offsetMinutes={offsetMinutes}
                     maxEndMinutes={maxEndMinutes}
                     minStartMinutes={minStartMinutes}
                     onDelete={onDeletePlace}
                     onEditTime={onEditPlaceTime}
+                    onEditPlace={onPressPlace}
                     onDragEnd={onUpdatePlaceTimes}
                     onPress={onPressPlace}
                     onShowDetail={onShowBlockDetail}
@@ -1460,8 +1494,6 @@ const TimelineTabScreen = React.memo(() => {
     onOpenDetail,
     onShowPlaceDetail,
     weatherMap,
-    onUndo,
-    onRedo,
     pendingPlace,
     previewStartTime,
     previewEndTime,
@@ -1505,13 +1537,11 @@ const TimelineTabScreen = React.memo(() => {
         onShowBlockDetail={
           onShowPlaceDetail
             ? place =>
-                place.placeRefId
-                  ? onShowPlaceDetail({
-                      contentId: String(place.placeRefId),
-                      name: place.name,
-                      address: place.address,
-                    })
-                  : undefined
+                onShowPlaceDetail({
+                  contentId: place.placeRefId ? String(place.placeRefId) : '',
+                  name: place.name,
+                  address: place.address,
+                })
             : undefined
         }
         topPadding={selectedDay && currentWeather ? 62 : 0}
@@ -1675,6 +1705,7 @@ export default function ItineraryEditorScreenView({
   const dayPeriodTarget = useCoachmarkTarget('dayPeriod');
   const placeSheetTarget = useCoachmarkTarget('placeSheet');
   const undoTarget = useCoachmarkTarget('undo');
+  const redoTarget = useCoachmarkTarget('redo');
 
   const [inputWidth, setInputWidth] = useState(120);
   const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
@@ -2053,18 +2084,29 @@ export default function ItineraryEditorScreenView({
       ? ('none' as const)
       : ('box-none' as const);
 
-  const floatingAnimStyle = useAnimatedStyle(() => {
-    const max = sheetMax.value || 400;
-    const progress = Math.max(0, Math.min(1, sheetBody.value / max));
-    const opacity =
-      progress < 0.5 ? 1 : Math.max(0, 1 - (progress - 0.5) / 0.25);
+  const floatingHistoryAnimStyle = useAnimatedStyle(() => {
+    const hideAt = Math.max(
+      0,
+      sheetMax.value - FLOATING_BUTTON_BOTTOM_OFFSET - FLOATING_BUTTON_SIZE,
+    );
+
     return {
-      opacity,
-      transform: [
-        {
-          translateY: -sheetBody.value + sheetShift.value,
-        },
-      ],
+      opacity: sheetBody.value >= hideAt ? 0 : 1,
+      transform: [{ translateY: -sheetBody.value + sheetShift.value }],
+    };
+  });
+
+  const floatingAssistAnimStyle = useAnimatedStyle(() => {
+    const hideAt = Math.max(
+      0,
+      sheetMax.value -
+        FLOATING_BUTTON_BOTTOM_OFFSET -
+        (FLOATING_BUTTON_SIZE * 2 + FLOATING_BUTTON_GAP),
+    );
+
+    return {
+      opacity: sheetBody.value >= hideAt ? 0 : 1,
+      transform: [{ translateY: -sheetBody.value + sheetShift.value }],
     };
   });
 
@@ -2549,7 +2591,10 @@ export default function ItineraryEditorScreenView({
           {!isChatbotOpen && (
             <Animated.View
               pointerEvents={floatingPointerEvents}
-              style={[styles.floatingHistoryContainer, floatingAnimStyle]}
+              style={[
+                styles.floatingHistoryContainer,
+                floatingHistoryAnimStyle,
+              ]}
             >
               <TouchableOpacity
                 ref={undoTarget}
@@ -2563,6 +2608,20 @@ export default function ItineraryEditorScreenView({
               >
                 <Undo2 color={COLORS.text} size={18} />
               </TouchableOpacity>
+              {!!onRedo && (
+                <TouchableOpacity
+                  ref={redoTarget}
+                  testID="btn-redo"
+                  style={styles.floatingHistoryButton}
+                  onPress={onRedo}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="다시 실행"
+                  hitSlop={6}
+                >
+                  <Redo2 color={COLORS.text} size={18} />
+                </TouchableOpacity>
+              )}
             </Animated.View>
           )}
 
@@ -2575,7 +2634,7 @@ export default function ItineraryEditorScreenView({
           {!isChatbotOpen && (
             <Animated.View
               pointerEvents={floatingPointerEvents}
-              style={[styles.floatingAssistContainer, floatingAnimStyle]}
+              style={[styles.floatingAssistContainer, floatingAssistAnimStyle]}
             >
               <TutorialLauncher />
               {/* 웹과 같은 토글이다 - 열려 있으면 같은 자리에서 X로 바뀐다. */}
@@ -2673,15 +2732,6 @@ export default function ItineraryEditorScreenView({
           </Animated.View>
         </View>
       </EditorStateContext.Provider>
-
-      {editingTime && (
-        <TimePickerModal
-          visible={isTimePickerVisible}
-          onClose={() => setTimePickerVisible(false)}
-          initialDate={timeToDate(editingTime.time)}
-          onConfirm={onConfirmTimePicker}
-        />
-      )}
 
       {/* 집은 장소가 손끝에 들려 시간표까지 따라간다. 화면 맨 위에 얹어야
           시트와 시간표 어느 쪽 위로도 지나갈 수 있다. */}

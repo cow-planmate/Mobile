@@ -1,4 +1,3 @@
-
 import React from 'react';
 import DatePicker from 'react-native-date-picker';
 
@@ -29,6 +28,8 @@ export default function TimePickerModal({
       title="시간 선택"
       confirmText="확인"
       cancelText="취소"
+      locale="ko"
+      is24hourSource="locale"
     />
   );
 }

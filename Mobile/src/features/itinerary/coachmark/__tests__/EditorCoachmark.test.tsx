@@ -471,12 +471,7 @@ describe('EditorCoachmark', () => {
   it('되돌릴 수 없는 단계는 구멍을 눌러도 넘어가지 않는다', async () => {
     let tree!: renderer.ReactTestRenderer;
     await act(async () => {
-      tree = renderTour(
-        <>
-          <FakeTarget id="undo" top={100} />
-          <FakeTarget id="complete" top={100} />
-        </>,
-      );
+      tree = renderTour(<FakeTarget id="complete" top={100} />);
     });
     await settle(tree);
     await openTour(tree);
@@ -484,7 +479,7 @@ describe('EditorCoachmark', () => {
     await touchAt(tree, 50, 120);
 
     // 덮여 있으므로 애초에 눌리지도 않지만, 넘어가지도 않아야 한다.
-    expect(visibleTexts(tree)).toContain('되돌리기');
+    expect(visibleTexts(tree)).toContain('일정 완성');
   });
 
   it('판이 창과 어긋나 있어도 짚은 자리를 그대로 두른다', async () => {
@@ -625,7 +620,10 @@ describe('EditorCoachmark', () => {
     );
 
     // 장소를 하나 더 담은 것은 시간 조절이 아니다.
-    await setPlaces(tree, targets, [place('p1'), place('p2', '13:00', '14:00')]);
+    await setPlaces(tree, targets, [
+      place('p1'),
+      place('p2', '13:00', '14:00'),
+    ]);
     expect(visibleTexts(tree)).toContain('시간 조절');
 
     await setPlaces(tree, targets, [
@@ -667,9 +665,9 @@ describe('EditorCoachmark', () => {
     await openTour(tree);
 
     // 첫 단계에서는 돌아갈 곳이 없다.
-    expect(tree.root.findAllByProps({ accessibilityLabel: '이전 안내' })).toEqual(
-      [],
-    );
+    expect(
+      tree.root.findAllByProps({ accessibilityLabel: '이전 안내' }),
+    ).toEqual([]);
 
     await press(tree, '다음 안내');
     expect(visibleTexts(tree)).toContain('며칠차 고르기');

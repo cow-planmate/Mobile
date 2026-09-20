@@ -19,6 +19,7 @@ export type CoachmarkTargetId =
   | 'complete'
   | 'blockActions'
   | 'undo'
+  | 'redo'
   | 'checklist'
   | 'participants'
   | 'invite'
@@ -108,10 +109,9 @@ export interface CoachmarkStep {
    * 안내 중에 이 버튼을 실제로 눌러 볼 수 있는지. 기본은 눌러 볼 수 있다 -
    * 직접 한 번 해보고 다음 단계로 넘어가는 것이 안내의 목적이다.
    *
-   * false로 막는 것은 눌러서 얻을 것이 없는 넷뿐이다. 일정 완성은 저장하고
+   * false로 막는 것은 눌러서 얻을 것이 없는 셋뿐이다. 일정 완성은 저장하고
    * 화면을 떠나 이어서 볼 안내가 없어지고, 되돌리기는 진짜로 직전 작업을
-   * 무르며, 수정·삭제는 구멍 하나에 연필과 X가 같이 들어가 삭제만 막을 수 없다.
-   * 사용법 단추는 안내 중에는 눌리지 않는다 - 지금 보고 있는 것이 그 안내다.
+   * 무른다. 사용법 단추는 안내 중에는 눌리지 않는다 - 지금 보고 있는 것이 그 안내다.
    */
   interactive?: boolean;
   /**
@@ -178,12 +178,18 @@ export const EDITOR_COACHMARK_STEPS: readonly CoachmarkStep[] = [
     title: '고치기와 삭제',
     body: '연필은 시간, ⓘ는 장소 정보, X는 지우기예요. 지운 건 되돌릴 수 있어요.',
     shape: 'rounded',
-    interactive: false,
   },
   {
     target: 'undo',
     title: '되돌리기',
     body: '방금 한 동작을 한 단계씩 취소해요. 잘못 옮겼을 때 바로 되돌립니다.',
+    shape: 'circle',
+    interactive: false,
+  },
+  {
+    target: 'redo',
+    title: '다시 실행',
+    body: '되돌린 동작을 다시 적용해요. 취소한 내용을 복구할 수 있어요.',
     shape: 'circle',
     interactive: false,
   },

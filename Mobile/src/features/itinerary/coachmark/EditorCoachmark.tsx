@@ -76,7 +76,9 @@ interface EditorCoachmarkProps {
 const EMPTY_PLACES: readonly CoachmarkPlaceTime[] = [];
 
 const timeMap = (places: readonly CoachmarkPlaceTime[]) =>
-  new Map(places.map(place => [place.id, `${place.startTime}-${place.endTime}`]));
+  new Map(
+    places.map(place => [place.id, `${place.startTime}-${place.endTime}`]),
+  );
 
 /**
  * 일정 편집 화면의 버튼을 하나씩 짚어 준다.
@@ -343,6 +345,8 @@ export default function EditorCoachmark({
     // 해보기를 권한 단계는 짚은 자리를 눌렀다고 넘어가지 않는다 - 패널을
     // 한 번 건드린 것과 장소를 담은 것은 다르다. 넘어가려면 '다음'을 쓴다.
     if (practice) return;
+    // 시간·장소 정보 버튼을 자유롭게 눌러볼 수 있도록 수동 다음으로 넘긴다.
+    if (step.target === 'blockActions') return;
 
     const hole = holeRect(step, rect);
     return watchTouch((x, y) => {

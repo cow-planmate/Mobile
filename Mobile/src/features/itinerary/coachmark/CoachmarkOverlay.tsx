@@ -388,12 +388,17 @@ export default function CoachmarkOverlay({
             <Text style={styles.tipNoteText}>{step.note}</Text>
           </View>
         )}
-        {/* 해보기를 권하는 단계는 짚은 것을 눌렀다고 넘어가지 않는다.
-            권유가 없을 때 기본 안내를 대신 넣으면 없는 길을 알려 주는 셈이다. */}
-        {(!!practiceHint || (isInteractive && !step.practice)) && (
+        {/* 해보기를 권하는 단계나 여러 버튼을 눌러보는 단계는 짚은 것을 눌렀다고 바로 넘어가지 않는다. */}
+        {step.target === 'blockActions' ? (
           <Text style={styles.tipHint}>
-            {practiceHint ?? '직접 눌러 보면 다음으로 넘어가요.'}
+            버튼을 눌러 확인해 보고 다음을 누르세요.
           </Text>
+        ) : (
+          (!!practiceHint || (isInteractive && !step.practice)) && (
+            <Text style={styles.tipHint}>
+              {practiceHint ?? '직접 눌러 보면 다음으로 넘어가요.'}
+            </Text>
+          )
         )}
         <View style={styles.tipFoot}>
           <Text style={styles.tipCount}>
@@ -499,19 +504,15 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: COLORS.textSecondary,
   },
-  /** 알아 두면 좋은 한마디. 옅은 바탕을 깔아 본문과 갈라 둔다. */
+  /** 본문에 이어지는 보조 설명. 본문과 같은 시작선에서 읽히도록 둔다. */
   tipNote: {
-    marginTop: 9,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: COLORS.primaryTint,
+    marginTop: 8,
   },
   tipNoteText: {
-    fontFamily: FONTS.medium,
-    fontSize: 12,
-    lineHeight: 17,
-    color: COLORS.primary,
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    lineHeight: 20,
+    color: COLORS.textTertiary,
   },
   tipHint: {
     marginTop: 7,

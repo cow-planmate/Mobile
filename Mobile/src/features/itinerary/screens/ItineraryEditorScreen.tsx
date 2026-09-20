@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
 import { Modal, AppState } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAlert } from '../../../contexts/AlertContext';
@@ -32,7 +38,11 @@ import {
 } from '../../../utils/scheduleEditSync';
 import { SimpleWeatherInfo, fetchWeather } from '../../../api/trips';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
-import { ShareModal, PlanInfoModal, AirplaneLoading } from '../../../components/common';
+import {
+  ShareModal,
+  PlanInfoModal,
+  AirplaneLoading,
+} from '../../../components/common';
 import PlaceEditModal from '../components/PlaceEditModal';
 import PlaceDetailSheet, {
   type PlaceDetailTarget,
@@ -96,11 +106,14 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     }
   }, [route.params?.pendingPlace, navigation]);
 
-  const handleAddPlaceOverride = useCallback((place: Omit<Place, 'startTime' | 'endTime'>) => {
-    setPendingPlace(place);
-    setPreviewStartTime(null);
-    setPreviewEndTime(null);
-  }, []);
+  const handleAddPlaceOverride = useCallback(
+    (place: Omit<Place, 'startTime' | 'endTime'>) => {
+      setPendingPlace(place);
+      setPreviewStartTime(null);
+      setPreviewEndTime(null);
+    },
+    [],
+  );
 
   /**
    * 끌어놓기로 자리를 정해 바로 담는다.
@@ -202,14 +215,15 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   // 완료로 화면을 벗어났다가 되돌아오면 저장 확인을 다시 살린다.
   // 복구하지 않으면 남은 변경분이 다음 이탈 때 조용히 사라진다.
   useEffect(
-    () => navigation.addListener('focus', () => {
-      isCompletingRef.current = false;
-    }),
+    () =>
+      navigation.addListener('focus', () => {
+        isCompletingRef.current = false;
+      }),
     [navigation],
   );
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+    const unsubscribe = navigation.addListener('beforeRemove', e => {
       if (isCompletingRef.current) {
         return;
       }
@@ -292,7 +306,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     Record<string, SimpleWeatherInfo>
   >({});
 
-  const weatherRangeStart = days.length > 0 ? formatDateLocal(days[0].date) : '';
+  const weatherRangeStart =
+    days.length > 0 ? formatDateLocal(days[0].date) : '';
   const weatherRangeEnd =
     days.length > 0 ? formatDateLocal(days[days.length - 1].date) : '';
 
@@ -388,24 +403,24 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active') {
-
         if (!navigation.isFocused()) return;
         connect(planId);
         resyncIfDisconnected();
       } else if (nextAppState === 'background') {
-
         disconnect();
       }
     };
 
-    const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
+    const appStateSubscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange,
+    );
 
     return () => {
       unsubscribeFocus();
       appStateSubscription.remove();
       disconnect();
     };
-
   }, [planId, connect, disconnect, isAccessDenied, navigation]);
 
   useEffect(() => {
@@ -435,9 +450,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       if (!remoteName || isEditingTripNameRef.current) return;
 
       syncedTripNameRef.current = remoteName;
-      setTripName((prev: string) =>
-        prev === remoteName ? prev : remoteName,
-      );
+      setTripName((prev: string) => (prev === remoteName ? prev : remoteName));
     };
 
     subscribeToMessages(handlePlanMessage);
@@ -476,7 +489,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   const handlePlaceSave = useCallback(
     (updatedPlace: any) => {
-
       const values = {
         startTime: normalizeTime(updatedPlace.startTime),
         endTime: normalizeTime(updatedPlace.endTime),
@@ -484,11 +496,15 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         name: updatedPlace.name,
         address: updatedPlace.address,
       };
-      const changes = Object.fromEntries(Object.entries(values).filter(([key, value]) => {
-        const original = key === 'startTime' || key === 'endTime'
-          ? normalizeTime(editingPlace?.[key]) : editingPlace?.[key];
-        return value !== original;
-      }));
+      const changes = Object.fromEntries(
+        Object.entries(values).filter(([key, value]) => {
+          const original =
+            key === 'startTime' || key === 'endTime'
+              ? normalizeTime(editingPlace?.[key])
+              : editingPlace?.[key];
+          return value !== original;
+        }),
+      );
       if (Object.keys(changes).length > 0) {
         updatePlaceDetails(selectedDayIndex, updatedPlace.id, changes);
       }
@@ -510,10 +526,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
     if (isPlanOwner && !isConnected) {
       try {
-        await axios.patch(
-          resolveApiUrl(`/api/plan/${planId}/name`),
-          { planName: tripName },
-        );
+        await axios.patch(resolveApiUrl(`/api/plan/${planId}/name`), {
+          planName: tripName,
+        });
       } catch (err) {
         // 저장에 실패했는데 동기화 표시를 남겨두면 완료 시에도 건너뛰어
         // 이름이 영영 저장되지 않는다. 되돌려 다시 시도되게 한다.
@@ -570,7 +585,10 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     sendMessage('undo', 'history', null);
   }, [planId, sendMessage]);
 
-  const handleRedo = undefined;
+  const handleRedo = useCallback(() => {
+    if (!planId) return;
+    sendMessage('redo', 'history', null);
+  }, [planId, sendMessage]);
 
   const onConfirmScheduleEdit = (updatedDays: any[]) => {
     if (updatedDays.length === 0) return;
@@ -590,10 +608,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       if (deletes.length > 0) sendMessage('delete', 'timetable', deletes);
     }
 
-    setDays(prevDays => mergeScheduleEditDays(prevDays, updatedDays, originalDays));
+    setDays(prevDays =>
+      mergeScheduleEditDays(prevDays, updatedDays, originalDays),
+    );
 
     setScheduleEditVisible(false);
-
   };
 
   const onConfirmTimePicker = (date: Date) => {
@@ -637,17 +656,13 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   };
 
   const onComplete = async () => {
-
     if (isSavingRef.current) return;
     isSavingRef.current = true;
     setIsSaving(true);
     isCompletingRef.current = true;
     const nameChanged = tripName && tripName !== syncedTripNameRef.current;
 
-    if (
-      route.params.planId &&
-      nameChanged
-    ) {
+    if (route.params.planId && nameChanged) {
       sendMessage(
         'update',
         'plan',
@@ -657,11 +672,9 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     }
 
     if (route.params.planId) {
-
       disconnect();
 
       try {
-
         if (isPlanOwner && nameChanged && !isConnected) {
           await axios.patch(
             resolveApiUrl(`/api/plan/${route.params.planId}/name`),
@@ -763,17 +776,17 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         isCompletingRef.current = false;
         showAlert({
           title: '일정을 확인할 수 없어요',
-          message: '일정 생성 응답에 식별자가 없어요. 내 일정에서 생성됐는지 확인해 주세요.',
+          message:
+            '일정 생성 응답에 식별자가 없어요. 내 일정에서 생성됐는지 확인해 주세요.',
         });
         return;
       }
 
       if (newPlanId && tripName) {
         try {
-          await axios.patch(
-            resolveApiUrl(`/api/plan/${newPlanId}/name`),
-            { planName: tripName },
-          );
+          await axios.patch(resolveApiUrl(`/api/plan/${newPlanId}/name`), {
+            planName: tripName,
+          });
         } catch (patchErr) {
           console.error('Failed to patch plan name after creation:', patchErr);
         }
@@ -860,7 +873,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     !isChecklistVisible &&
     !isPlaceEditModalVisible &&
     !isScheduleEditVisible &&
-    !isTimePickerVisible;
+    !isTimePickerVisible &&
+    !placeDetail;
 
   return (
     <CoachmarkProvider>
@@ -991,21 +1005,39 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         />
       )}
       <PlanInfoModal
-        onEditName={canEdit ? () => {
-          setPlanInfoVisible(false);
-          setIsEditingTripName(true);
-        } : undefined}
-        onEditPeriod={canEdit ? () => {
-          setPlanInfoVisible(false);
-          scheduleEditBaseRef.current = days;
-          setScheduleEditVisible(true);
-        } : undefined}
+        onEditName={
+          canEdit
+            ? () => {
+                setPlanInfoVisible(false);
+                setIsEditingTripName(true);
+              }
+            : undefined
+        }
+        onEditPeriod={
+          canEdit
+            ? () => {
+                setPlanInfoVisible(false);
+                scheduleEditBaseRef.current = days;
+                setScheduleEditVisible(true);
+              }
+            : undefined
+        }
         visible={isPlanInfoVisible}
         onClose={() => setPlanInfoVisible(false)}
         planName={tripName}
-        destination={planMetadata?.destinationName || route.params.destination || '미정'}
-        startDate={days.length > 0 ? formatDateLocal(days[0].date) : route.params.startDate}
-        endDate={days.length > 0 ? formatDateLocal(days[days.length - 1].date) : route.params.endDate}
+        destination={
+          planMetadata?.destinationName || route.params.destination || '미정'
+        }
+        startDate={
+          days.length > 0
+            ? formatDateLocal(days[0].date)
+            : route.params.startDate
+        }
+        endDate={
+          days.length > 0
+            ? formatDateLocal(days[days.length - 1].date)
+            : route.params.endDate
+        }
         adultCount={planMetadata?.adultCount ?? route.params.adults ?? 1}
         childCount={planMetadata?.childCount ?? route.params.children ?? 0}
       />
@@ -1033,21 +1065,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         fallbackName={placeDetail?.name}
         fallbackAddress={placeDetail?.address}
         onClose={() => setPlaceDetail(null)}
-        onOpenMap={
-          placeDetail?.onOpenMap
-            ? () => {
-                placeDetail.onOpenMap?.();
-              }
-            : undefined
-        }
-        onAdd={
-          placeDetail?.onAdd
-            ? () => {
-                placeDetail.onAdd?.();
-                setPlaceDetail(null);
-              }
-            : undefined
-        }
       />
       <EditorCoachmark
         enabled={isCoachmarkReady}
