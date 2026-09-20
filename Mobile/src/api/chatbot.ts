@@ -42,9 +42,11 @@ export interface ChatbotPlace {
 export interface ChatbotPlanBlock {
   blockId?: number | string | null;
   date?: string | null;
+  placeId?: string | number | null;
   blockStartTime?: string | null;
   blockEndTime?: string | null;
   placeName?: string | null;
+  placeAddress?: string | null;
 }
 
 export interface ChatbotPlan {

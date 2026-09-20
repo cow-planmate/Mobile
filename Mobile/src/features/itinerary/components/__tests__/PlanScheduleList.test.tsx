@@ -83,6 +83,12 @@ describe('PlanScheduleList', () => {
     ).toContain('표 예매함');
   });
 
+  it('장소가 있으면 네이버 지도 링크를 함께 보여준다', () => {
+    expect(textOf(<PlanScheduleList places={[place()]} />)).toContain(
+      '지도에서 보기',
+    );
+  });
+
   it('갈래 이름을 장소 위에 적는다', () => {
     const text = textOf(
       <PlanScheduleList places={[place({ type: '숙소', categoryId: 1 })]} />,

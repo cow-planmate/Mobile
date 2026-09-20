@@ -25,10 +25,10 @@ import {
   StyleSheet,
   Modal,
   RefreshControl,
-  Linking,
 } from 'react-native';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import Bed from 'lucide-react-native/dist/esm/icons/bed';
+import ExternalLink from 'lucide-react-native/dist/esm/icons/external-link';
 import InfoIcon from 'lucide-react-native/dist/esm/icons/info';
 import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import SearchIcon from 'lucide-react-native/dist/esm/icons/search';
@@ -37,12 +37,12 @@ import Utensils from 'lucide-react-native/dist/esm/icons/utensils';
 import { Place } from './TimelineItem';
 import KakaoMapView from './KakaoMapView';
 import { usePlaces } from '../../../contexts/PlacesContext';
-import { useAlert } from '../../../contexts/AlertContext';
-import { PlaceVO } from '../../../api/trips';
+import { PlaceVO, searchPlacesByKeyword } from '../../../api/trips';
 import type { PlaceDetailTarget } from './PlaceDetailSheet';
-import { GoogleMapsIcon } from '../../../components/common';
 import { tokens } from '../../../theme/tokens';
 import { normalizeCategoryId } from '../../../utils/placeCategory';
+import { buildNaverMapUrl } from '../../../utils/naverMapLink';
+import { openExternalUrl } from '../../../utils/externalLink';
 const FONTS = {
   regular: 'Pretendard-Regular',
   medium: 'Pretendard-Medium',
@@ -388,7 +388,6 @@ export default function PlaceRecommendationList({
     setPetFriendly,
   } = usePlaces();
 
-  const { showAlert } = useAlert();
   const [innerTab, setInnerTab] = useState<PlaceTab>('관광지');
   // 시트 손잡이가 탭을 그릴 때는 바깥이 값을 쥔다. 아니면 예전처럼 스스로 쥔다.
   const selectedTab = controlledTab ?? innerTab;
@@ -397,6 +396,10 @@ export default function PlaceRecommendationList({
     [onSelectTab],
   );
   const [customPlaceName, setCustomPlaceName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<PlaceVO[]>([]);
+  const [isSearchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
@@ -436,6 +439,23 @@ export default function PlaceRecommendationList({
     setCustomPlaceName('');
   }, [customPlaceName, destination, onAddPlace]);
 
+  const handleKeywordSearch = useCallback(async () => {
+    const query = searchQuery.trim();
+    if (query.length < 2 || isSearchLoading) return;
+
+    setSearchLoading(true);
+    setSearchError('');
+    try {
+      const response = await searchPlacesByKeyword(query);
+      setSearchResults(response.places);
+    } catch {
+      setSearchResults([]);
+      setSearchError('장소를 찾지 못했어요. 잠시 후 다시 검색해 주세요.');
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [isSearchLoading, searchQuery]);
+
   const getTabData = (): PlaceVO[] => {
     let rawData: PlaceVO[] = [];
     switch (selectedTab) {
@@ -447,6 +467,9 @@ export default function PlaceRecommendationList({
         break;
       case '식당':
         rawData = restaurant;
+        break;
+      case '검색':
+        rawData = searchResults;
         break;
       default:
         rawData = [];
@@ -494,37 +517,13 @@ export default function PlaceRecommendationList({
     setMapPlace(null);
   }, []);
 
-  const handleOpenGoogleMaps = useCallback(async (item: PlaceVO) => {
-    const lat = item.yLocation ?? item.ylocation;
-    const lng = item.xLocation ?? item.xlocation;
-
-    if (!lat || !lng) {
-      showAlert({
-        title: '지도를 열 수 없음',
-        message: '이 장소의 위치 정보가 없어요.',
-        type: 'error',
-      });
-      return;
-    }
-
-    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${item.placeId}`;
-
-    try {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-
-        showAlert({
-          title: '지도를 열 수 없음',
-          message: '이 기기에서 구글 지도를 열 수 없어요.',
-          type: 'error',
-        });
-      }
-    } catch (error) {
-      console.error('Failed to open Google Maps:', error);
-    }
-  }, [showAlert]);
+  const handleOpenNaverMap = useCallback((item: PlaceVO) => {
+    const url = buildNaverMapUrl({
+      name: item.name,
+      address: item.formatted_address,
+    });
+    if (url) openExternalUrl(url);
+  }, []);
 
   // 집힌 뒤 손가락을 움직이면 목록의 스크롤이 제스처를 가로채 끌기가 끝나버린다.
   // 집는 순간에는 아직 움직이기 전이라, 그때 스크롤을 잠그면 뺏기지 않는다.
@@ -591,11 +590,6 @@ export default function PlaceRecommendationList({
                   contentId: String(item.placeId),
                   name: item.name,
                   address: item.formatted_address,
-                  onOpenMap: () => void handleOpenGoogleMaps(item),
-                  onAdd: () =>
-                    onAddPlace(
-                      placeVOToPlace(item, getCategoryType(item.categoryId)),
-                    ),
                 });
               }}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -609,18 +603,18 @@ export default function PlaceRecommendationList({
             style={plStyles.mapButton}
             onPress={e => {
               e.stopPropagation?.();
-              handleOpenGoogleMaps(item);
+              handleOpenNaverMap(item);
             }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="지도에서 보기"
           >
-            <GoogleMapsIcon size={20} />
+            <ExternalLink size={18} color={tokens.colors.textSecondary} />
           </TouchableOpacity>
         </View>
       </>
     ),
-    [handleOpenGoogleMaps, onShowDetail, onAddPlace],
+    [handleOpenNaverMap, onShowDetail],
   );
 
   const renderPlaceItem = useCallback(
@@ -687,7 +681,7 @@ export default function PlaceRecommendationList({
   }, [isLoading, hasMoreData, handleLoadMore]);
 
   const renderEmpty = useCallback(() => {
-    if (isLoading) return null;
+    if (isLoading || isSearchLoading) return null;
 
     if (selectedTab === '검색') {
       return (
@@ -695,12 +689,18 @@ export default function PlaceRecommendationList({
           <View style={[plStyles.emptyIconWrapper, plStyles.emptyIconSearch]}>
             <SearchIcon size={28} color={tokens.colors.textTertiary} />
           </View>
-          <Text style={plStyles.emptyTitle}>장소 검색은 준비 중이에요.</Text>
-          <Text style={plStyles.emptySubtitle}>
-            지금은 관광지·숙소·식당 탭에서 추천 장소를 담을 수 있어요.
+          <Text style={plStyles.emptyTitle}>
+            {searchError
+              ? '검색 결과를 불러오지 못했어요.'
+              : searchQuery.trim().length >= 2
+                ? '찾는 장소가 없어요.'
+                : '장소 이름을 검색해 보세요.'}
           </Text>
           <Text style={plStyles.emptySubtitle}>
-            찾는 장소가 없다면 '직접 추가' 탭을 이용해보세요.
+            {searchError ||
+              (searchQuery.trim().length >= 2
+                ? '다른 검색어로 다시 찾아보세요.'
+                : '두 글자 이상 입력하면 장소를 찾을 수 있어요.')}
           </Text>
         </View>
       );
@@ -728,12 +728,48 @@ export default function PlaceRecommendationList({
         )}
       </View>
     );
-  }, [isLoading, selectedTab]);
+  }, [isLoading, isSearchLoading, searchError, searchQuery, selectedTab]);
 
   const renderHeader = useCallback(() => {
 
     if (selectedTab === '검색') {
-      return null;
+      const isSearchDisabled = searchQuery.trim().length < 2 || isSearchLoading;
+      return (
+        <View style={plStyles.searchContainer}>
+          <View style={plStyles.searchField}>
+            <SearchIcon size={16} color={tokens.colors.primary} />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={() => void handleKeywordSearch()}
+              placeholder="장소 이름을 입력하세요"
+              placeholderTextColor={tokens.colors.textTertiary}
+              returnKeyType="search"
+              style={plStyles.searchInput}
+              autoCorrect={false}
+              accessibilityLabel="장소 검색어"
+            />
+          </View>
+          <TouchableOpacity
+            style={[
+              plStyles.searchActionButton,
+              isSearchDisabled
+                ? plStyles.searchActionButtonDisabled
+                : plStyles.searchActionButtonPurple,
+            ]}
+            onPress={() => void handleKeywordSearch()}
+            disabled={isSearchDisabled}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="장소 검색"
+            accessibilityState={{ disabled: isSearchDisabled }}
+          >
+            <Text style={plStyles.searchActionButtonText}>
+              {isSearchLoading ? '검색 중' : '검색'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      );
     }
 
     if (selectedTab === '직접 추가') {
@@ -771,7 +807,14 @@ export default function PlaceRecommendationList({
     }
 
     return null;
-  }, [selectedTab, customPlaceName, handleDirectAdd]);
+  }, [
+    selectedTab,
+    customPlaceName,
+    handleDirectAdd,
+    handleKeywordSearch,
+    isSearchLoading,
+    searchQuery,
+  ]);
 
   return (
     <View style={plStyles.container}>

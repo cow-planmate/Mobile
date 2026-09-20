@@ -214,30 +214,28 @@ export const fetchRestaurantPlaces = (
   signal?: AbortSignal,
 ) => fetchCategoryPlaces(destinationId, 'restaurant', page, size, signal);
 
-export interface KeywordPlace {
-  id: string;
-  name: string;
-  address: string;
-  jibunAddress: string;
-  phone: string;
-  category: string;
-  url: string;
-  lat: number;
-  lng: number;
-}
-
 export async function searchPlacesByKeyword(
   query: string,
-  size: number = 8,
+  page: number = 1,
+  size: number = 20,
   signal?: AbortSignal,
-): Promise<KeywordPlace[]> {
+): Promise<PlacesResponse> {
   const trimmed = query.trim();
-  if (!trimmed) return [];
+  if (trimmed.length < 2) {
+    return { places: [], totalCount: 0, page, size, hasNext: false };
+  }
   const response = await axios.get('/api/place/search', {
-    params: { query: trimmed, size },
+    params: { query: trimmed, page, size },
     signal,
   });
-  return response.data?.places || [];
+  const data = response.data;
+  return {
+    places: (data?.places || []).map((place: any) => mapSummaryToVO(place)),
+    totalCount: data?.totalCount ?? 0,
+    page: data?.page ?? page,
+    size: data?.size ?? size,
+    hasNext: data?.hasNext ?? false,
+  };
 }
 
 export type WeatherDataSource =

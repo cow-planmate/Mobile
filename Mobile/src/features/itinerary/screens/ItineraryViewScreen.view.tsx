@@ -15,6 +15,9 @@ import BackTopBar from '../../../components/common/BackTopBar';
 import PlanScheduleList, {
   formatFullDate,
 } from '../components/PlanScheduleList';
+import PlaceDetailSheet, {
+  type PlaceDetailTarget,
+} from '../components/PlaceDetailSheet';
 import { Day } from '../../../contexts/ItineraryContext';
 import { SimpleWeatherInfo } from '../../../api/trips';
 import { formatDateLocal, formatMonthDayDot } from '../../../utils/timeUtils';
@@ -127,6 +130,9 @@ export default function ItineraryViewScreenView({
   onRetryLoad,
 }: ItineraryViewScreenViewProps) {
   const selectedDay = days[selectedDayIndex];
+  const [placeDetail, setPlaceDetail] = useState<PlaceDetailTarget | null>(
+    null,
+  );
   const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
   const [dayScrollLayoutWidth, setDayScrollLayoutWidth] = useState(0);
   const [dayScrollX, setDayScrollX] = useState(0);
@@ -297,6 +303,14 @@ export default function ItineraryViewScreenView({
                 <PlanScheduleList
                   places={selectedDay.places}
                   dateLabel={formatFullDate(selectedDay.date)}
+                  onShowDetail={place => {
+                    if (!place.placeRefId) return;
+                    setPlaceDetail({
+                      contentId: place.placeRefId,
+                      name: place.name,
+                      address: place.address,
+                    });
+                  }}
                 />
               </ScrollView>
             </View>
@@ -318,6 +332,13 @@ export default function ItineraryViewScreenView({
           planId={planId}
         />
       )}
+      <PlaceDetailSheet
+        visible={!!placeDetail}
+        contentId={placeDetail?.contentId ?? null}
+        fallbackName={placeDetail?.name}
+        fallbackAddress={placeDetail?.address}
+        onClose={() => setPlaceDetail(null)}
+      />
       {/* 로딩이 끝나지 않으면 이 모달이 화면 전체를 덮는다 —
           안드로이드 뒤로가기로 빠져나갈 수 있어야 갇히지 않는다 */}
       <Modal

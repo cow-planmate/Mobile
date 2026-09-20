@@ -94,8 +94,6 @@ export interface PlaceDetailTarget {
   contentId: string;
   name?: string | null;
   address?: string | null;
-  onOpenMap?: () => void;
-  onAdd?: () => void;
 }
 
 interface PlaceDetailSheetProps {
@@ -106,10 +104,6 @@ interface PlaceDetailSheetProps {
   fallbackName?: string | null;
   fallbackAddress?: string | null;
   onClose: () => void;
-  /** 지도에서 보기. 위치를 모르는 자리에서는 주지 않는다. */
-  onOpenMap?: () => void;
-  /** 읽다가 그 자리에서 담는 길. 이미 시간표에 있는 장소에는 주지 않는다. */
-  onAdd?: () => void;
 }
 
 interface InfoRow {
@@ -144,8 +138,6 @@ export default function PlaceDetailSheet({
   fallbackName,
   fallbackAddress,
   onClose,
-  onOpenMap,
-  onAdd,
 }: PlaceDetailSheetProps) {
   const [detail, setDetail] = useState<PlaceDetail | null>(null);
   const [isLoading, setLoading] = useState(false);
@@ -260,36 +252,6 @@ export default function PlaceDetailSheet({
       title="장소 정보"
       onClose={onClose}
       maxHeightRatio={0.9}
-      footer={
-        onOpenMap || onAdd ? (
-          <View style={styles.foot}>
-            {!!onOpenMap && (
-              <TouchableOpacity
-                style={styles.footButton}
-                onPress={onOpenMap}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="지도에서 보기"
-              >
-                <Text style={styles.footButtonText}>지도에서 보기</Text>
-              </TouchableOpacity>
-            )}
-            {!!onAdd && (
-              <TouchableOpacity
-                style={[styles.footButton, styles.footPrimary]}
-                onPress={onAdd}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel="시간표에 담기"
-              >
-                <Text style={[styles.footButtonText, styles.footPrimaryText]}>
-                  시간표에 담기
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        ) : undefined
-      }
     >
       {isLoading ? (
         <View style={styles.state}>

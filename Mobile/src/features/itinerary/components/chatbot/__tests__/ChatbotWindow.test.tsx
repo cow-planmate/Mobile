@@ -171,10 +171,82 @@ describe('AI 여행 도우미', () => {
     // 이틀치가 섞이면 같은 시각이 두 번 나온다 - 며칠차인지 앞에 단다.
     expect(shown).toContain('1일차 · 09.20');
     expect(shown).toContain('2일차 · 09.21');
+    expect(shown).not.toContain('2일');
+    expect(shown).not.toContain('5개 장소');
     act(() => tree.unmount());
   });
 
-  it('추천 카드에는 방문 판단 정보를 한 줄로 적는다', async () => {
+  it('단일 일차 미리보기에도 일차를 표시한다', async () => {
+    mockAsk.mockResolvedValue({
+      userMessage: '이렇게 바꿔볼까요?',
+      plan: {
+        planFrame: { planName: '서울 하루 여행' },
+        timetables: [{}],
+        placeBlocks: [
+          {
+            blockId: 1,
+            date: '2026-09-20',
+            blockStartTime: '10:00:00',
+            blockEndTime: '11:00:00',
+            placeName: '북촌 한옥마을',
+          },
+        ],
+      },
+    });
+    const tree = render();
+
+    await pressLabel(tree, '첫째 날 동선을 더 짧게 정리해 줘');
+
+    expect(texts(tree)).toContain('1일차 · 09.20');
+    act(() => tree.unmount());
+  });
+
+  it('미리보기 일정 카드는 장소 상세를 여는 정보 버튼을 제공한다', async () => {
+    const onShowPlace = jest.fn();
+    mockAsk.mockResolvedValue({
+      userMessage: '이렇게 바꿔볼까요?',
+      plan: {
+        planFrame: { planName: '제주 2박 3일' },
+        timetables: [{}],
+        placeBlocks: [
+          {
+            blockId: 1,
+            placeId: '2932888',
+            placeName: '전주콩나물해장국',
+            placeAddress: '서울특별시 종로구 자하문로 3',
+            blockStartTime: '09:00:00',
+            blockEndTime: '10:30:00',
+          },
+        ],
+      },
+    });
+    let tree!: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <ChatbotWindow
+          visible
+          planId="plan-1"
+          onClose={() => {}}
+          onShowPlace={onShowPlace}
+        />,
+      );
+    });
+
+    await pressLabel(tree, '첫째 날 동선을 더 짧게 정리해 줘');
+
+    expect(
+      tree.root.findAllByProps({ testID: 'chatbot-preview-block' }),
+    ).not.toHaveLength(0);
+    await pressLabel(tree, '전주콩나물해장국 상세 정보 보기');
+    expect(onShowPlace).toHaveBeenCalledWith({
+      contentId: '2932888',
+      title: '전주콩나물해장국',
+      addr1: '서울특별시 종로구 자하문로 3',
+    });
+    act(() => tree.unmount());
+  });
+
+  it('추천 카드에는 주소만 표시하고 영업·방문 정보는 제외한다', async () => {
     mockAsk.mockResolvedValue({
       userMessage: '이런 곳은 어때요?',
       shownPlaces: [
@@ -211,12 +283,16 @@ describe('AI 여행 도우미', () => {
     await pressLabel(tree, '근처 맛집을 몇 곳 추천해 줘');
 
     const shown = texts(tree);
-    // 소개와 대표 메뉴보다 영업 시간을 먼저 보여 준다.
-    expect(shown).toContain('06:00~20:30');
-    // 방문 정보가 있으면 주소를 겹쳐 적지 않는다.
-    expect(shown).not.toContain('서울특별시 종로구 자하문로 3');
-    expect(shown).toContain('16:00~23:00');
+    // 추천 카드 안에 주소가 항상 표시된다.
+    expect(shown).toContain('서울특별시 종로구 자하문로 3');
     expect(shown).toContain('서울특별시 종로구 사직로');
+    expect(
+      tree.root.findAllByProps({
+        accessibilityLabel: '전주콩나물해장국 지도에서 보기',
+      }),
+    ).not.toHaveLength(0);
+    expect(shown).not.toContain('06:00~20:30');
+    expect(shown).not.toContain('16:00~23:00');
     act(() => tree.unmount());
   });
 
@@ -243,7 +319,7 @@ describe('AI 여행 도우미', () => {
     act(() => tree.unmount());
   });
 
-  it('방문 정보가 없으면 소개 대신 빈 상태를 적는다', async () => {
+  it('방문 정보가 없어도 빈 상태 문구를 표시하지 않는다', async () => {
     mockAsk.mockResolvedValue({
       userMessage: '이런 곳은 어때요?',
       shownPlaces: [
@@ -260,9 +336,7 @@ describe('AI 여행 도우미', () => {
     await pressLabel(tree, '근처 맛집을 몇 곳 추천해 줘');
 
     // 소개문은 상세 화면에서 보며, 카드에는 한 줄짜리 빈 상태만 남긴다.
-    expect(texts(tree)).toContain(
-      '방문 정보 없음',
-    );
+    expect(texts(tree)).not.toContain('방문 정보 없음');
     act(() => tree.unmount());
   });
 
@@ -328,7 +402,7 @@ describe('AI 여행 도우미', () => {
     act(() => tree.unmount());
   });
 
-  it('추천 카드의 ⓘ로 그 장소 상세를 연다', async () => {
+  it('추천 카드의 정보 버튼으로 그 장소 상세를 연다', async () => {
     const onShowPlace = jest.fn();
     mockAsk.mockResolvedValue({
       userMessage: '이런 곳은 어때요?',
@@ -354,6 +428,20 @@ describe('AI 여행 도우미', () => {
     });
 
     await pressLabel(tree, '근처 맛집을 몇 곳 추천해 줘');
+
+    const actions = tree.root.findByProps({
+      testID: 'chatbot-place-actions',
+    });
+    expect(
+      actions
+        .findAllByType(TouchableOpacity)
+        .map(node => node.props.accessibilityLabel),
+    ).toEqual(
+      expect.arrayContaining([
+        '전주콩나물해장국 지도에서 보기',
+        '전주콩나물해장국 상세 정보 보기',
+      ]),
+    );
     await pressLabel(tree, '전주콩나물해장국 상세 정보 보기');
 
     expect(onShowPlace).toHaveBeenCalledWith(

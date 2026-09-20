@@ -226,29 +226,53 @@ export const styles = StyleSheet.create({
    * 몇 곳을 권했는지 세어지지 않고, 이어지는 설명과도 따로 놀았다.
    */
   placeCard: {
-    marginTop: normalize(8),
+    marginVertical: normalize(5),
     flexDirection: 'row',
     alignItems: 'center',
     gap: normalize(10),
-    padding: normalize(8),
+    padding: normalize(10),
     borderRadius: tokens.radius.l,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.white,
   },
   placeThumb: {
-    width: normalize(52),
-    height: normalize(52),
+    width: normalize(54),
+    height: normalize(54),
     borderRadius: tokens.radius.m,
   },
   placeThumbEmpty: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: tokens.colors.white,
+    backgroundColor: tokens.colors.surface,
   },
   placeBody: { flex: 1, gap: normalize(2) },
-  /** 상세를 여는 ⓘ. 추천 목록·시간표 블록과 같은 그림, 같은 오른쪽 끝. */
-  placeInfo: {
+  placeTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(6),
+  },
+  placeActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(4),
+  },
+  placeAddressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(3),
+    marginTop: normalize(1),
+  },
+  placeAddressIcon: {
+    flexShrink: 0,
+  },
+  placeAddressText: {
+    fontSize: normalize(10.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textSecondary,
+    flex: 1,
+  },
+  placeAction: {
     width: normalize(30),
     height: normalize(30),
     alignItems: 'center',
@@ -264,15 +288,10 @@ export const styles = StyleSheet.create({
     color: tokens.colors.primary,
   },
   placeTitle: {
+    flex: 1,
     fontSize: normalize(12.5),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.text,
-  },
-  /** 방문 판단 정보 한 줄. */
-  placeLine: {
-    fontSize: normalize(10.5),
-    fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textTertiary,
   },
 
   // 아직 반영하지 않은 제안
@@ -336,20 +355,10 @@ export const styles = StyleSheet.create({
     paddingVertical: normalize(11),
     gap: normalize(9),
   },
-  previewCounts: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(14),
-  },
   previewCount: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: normalize(5),
-  },
-  previewCountText: {
-    fontSize: normalize(12),
-    fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.textSecondary,
   },
   previewBlocks: {
     gap: normalize(5),
@@ -357,10 +366,18 @@ export const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: tokens.colors.borderLight,
   },
-  previewBlockRow: {
+  previewBlockCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: normalize(8),
+    minHeight: normalize(44),
+    paddingLeft: normalize(10),
+    paddingRight: normalize(6),
+    paddingVertical: normalize(6),
+    borderRadius: tokens.radius.m,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderLight,
+    backgroundColor: tokens.colors.surface,
   },
   previewBlockTime: {
     width: normalize(78),
@@ -373,6 +390,22 @@ export const styles = StyleSheet.create({
     fontSize: normalize(11.5),
     fontFamily: tokens.fontFamily.bold,
     color: tokens.colors.textLabel,
+  },
+  previewBlockInfo: {
+    width: normalize(32),
+    height: normalize(32),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: tokens.radius.m,
+    backgroundColor: tokens.colors.primarySurface,
+  },
+  previewBlockMap: {
+    width: normalize(32),
+    height: normalize(32),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: tokens.radius.m,
+    backgroundColor: tokens.colors.surface,
   },
   previewDay: {
     gap: normalize(5),

@@ -13,16 +13,19 @@ import {
 } from 'react-native';
 import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import Bot from 'lucide-react-native/dist/esm/icons/bot';
-import CalendarDays from 'lucide-react-native/dist/esm/icons/calendar-days';
 import Check from 'lucide-react-native/dist/esm/icons/check';
 import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import Clock3 from 'lucide-react-native/dist/esm/icons/clock-3';
+import ExternalLink from 'lucide-react-native/dist/esm/icons/external-link';
 import Info from 'lucide-react-native/dist/esm/icons/info';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import Send from 'lucide-react-native/dist/esm/icons/send';
 import Sparkles from 'lucide-react-native/dist/esm/icons/sparkles';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import { normalize } from '../../../../utils/normalize';
+import { tokens } from '../../../../theme/tokens';
+import { buildNaverMapUrl } from '../../../../utils/naverMapLink';
+import { openExternalUrl } from '../../../../utils/externalLink';
 import {
   applyChatbotPlan,
   askChatbot,
@@ -258,44 +261,16 @@ const withBold = (text: string, key: string, mine: boolean) =>
     ),
   );
 
-/**
- * 추천 카드의 방문 판단 정보.
- *
- * 좁은 대화 카드에서는 소개문보다 지금 방문할 수 있는지 판단하는 정보가 더
- * 빠르게 읽힌다. 소개와 대표 메뉴는 상세 정보 화면에 두고, 갈래마다 영업 시간,
- * 이용 시간, 체크인을 한 줄로 보여 준다.
- */
-const placeVisitInfo = (place: ChatbotPlace) => {
-  const category = place.category?.trim().toUpperCase();
-  const headline = (parts: Array<string | null | undefined>) =>
-    parts
-    .map(part => part?.trim())
-    .filter(Boolean)
-    .join(' · ');
-
-  if (category === 'RESTAURANT') {
-    return headline([place.openTime]);
-  }
-
-  if (category === 'ATTRACTION') {
-    return headline([place.useTime && `이용 ${place.useTime}`]);
-  }
-
-  if (category === 'ACCOMMODATION') {
-    return headline([place.checkInTime && `체크인 ${place.checkInTime}`]);
-  }
-
-  return headline([
-    place.firstMenu,
-    place.openTime ?? place.useTime ?? place.checkInTime,
-  ]);
-};
-
 const blockTime = (block: ChatbotPlanBlock) => {
   const start = block.blockStartTime?.slice(0, 5);
   const end = block.blockEndTime?.slice(0, 5);
   if (start && end) return `${start}–${end}`;
   return start ?? '시간 미정';
+};
+
+const openNaverMap = (name?: string | null, address?: string | null) => {
+  const url = buildNaverMapUrl({ name, address });
+  if (url) openExternalUrl(url);
 };
 
 /**
@@ -311,16 +286,17 @@ function PlanCard({
   isApplying,
   onApply,
   onDiscard,
+  onShowPlace,
 }: {
   plan: ChatbotPlan;
   state: PlanState;
   isApplying: boolean;
   onApply: () => void;
   onDiscard: () => void;
+  onShowPlace?: (place: ChatbotPlace) => void;
 }) {
   const blocks = plan.placeBlocks ?? [];
   const previewDays = byDate(blocks);
-  const dayCount = plan.timetables?.length ?? 0;
   const isPending = state === 'pending';
 
   return (
@@ -353,30 +329,18 @@ function PlanCard({
       </View>
 
       <View style={styles.previewBody}>
-        <View style={styles.previewCounts}>
-          <View style={styles.previewCount}>
-            <CalendarDays size={normalize(13)} color={COLORS.primary} />
-            <Text style={styles.previewCountText}>{dayCount}일</Text>
-          </View>
-          <View style={styles.previewCount}>
-            <MapPin size={normalize(13)} color={COLORS.primary} />
-            <Text style={styles.previewCountText}>{blocks.length}개 장소</Text>
-          </View>
-        </View>
-
         {blocks.length > 0 && (
           <View style={styles.previewBlocks}>
             {previewDays.map((day, dayIndex) => (
               <View key={day.date || dayIndex} style={styles.previewDay}>
-                {previewDays.length > 1 && (
-                  <Text style={styles.previewDayLabel}>
-                    {dayLabel(day.date, dayIndex)}
-                  </Text>
-                )}
+                <Text style={styles.previewDayLabel}>
+                  {dayLabel(day.date, dayIndex)}
+                </Text>
                 {day.blocks.map((block, index) => (
                   <View
                     key={`${block.blockId ?? index}-${day.date}`}
-                    style={styles.previewBlockRow}
+                    style={styles.previewBlockCard}
+                    testID="chatbot-preview-block"
                   >
                     <Text style={styles.previewBlockTime}>
                       {blockTime(block)}
@@ -384,6 +348,43 @@ function PlanCard({
                     <Text style={styles.previewBlockName} numberOfLines={1}>
                       {block.placeName}
                     </Text>
+                    {!!block.placeName && (
+                      <TouchableOpacity
+                        style={styles.previewBlockMap}
+                        onPress={() =>
+                          openNaverMap(block.placeName, block.placeAddress)
+                        }
+                        hitSlop={6}
+                        activeOpacity={0.7}
+                        accessibilityRole="link"
+                        accessibilityLabel={`${block.placeName} 지도에서 보기`}
+                      >
+                        <ExternalLink
+                          size={normalize(16)}
+                          color={COLORS.textSecondary}
+                        />
+                      </TouchableOpacity>
+                    )}
+                    {!!onShowPlace && !!block.placeId && (
+                      <TouchableOpacity
+                        style={styles.previewBlockInfo}
+                        onPress={() =>
+                          onShowPlace({
+                            contentId: block.placeId,
+                            title: block.placeName,
+                            addr1: block.placeAddress,
+                          })
+                        }
+                        hitSlop={6}
+                        activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${
+                          block.placeName ?? '장소'
+                        } 상세 정보 보기`}
+                      >
+                        <Info size={normalize(16)} color={COLORS.primary} />
+                      </TouchableOpacity>
+                    )}
                   </View>
                 ))}
               </View>
@@ -786,32 +787,68 @@ export default function ChatbotWindow({
                                 segment.place.category ??
                                 '여행 장소'}
                             </Text>
-                            <Text style={styles.placeTitle} numberOfLines={1}>
-                              {segment.place.title}
-                            </Text>
-                            <Text style={styles.placeLine} numberOfLines={1}>
-                              {placeVisitInfo(segment.place) ||
-                                segment.place.addr1?.trim() ||
-                                '방문 정보 없음'}
-                            </Text>
-                          </View>
-                          {!!onShowPlace && !!segment.place.contentId && (
-                            <TouchableOpacity
-                              style={styles.placeInfo}
-                              onPress={() => onShowPlace(segment.place)}
-                              hitSlop={8}
-                              activeOpacity={0.7}
-                              accessibilityRole="button"
-                              accessibilityLabel={`${
-                                segment.place.title ?? '장소'
-                              } 상세 정보 보기`}
-                            >
-                              <Info
-                                size={normalize(17)}
-                                color={COLORS.textSecondary}
+                            <View style={styles.placeTitleRow}>
+                              <Text style={styles.placeTitle} numberOfLines={1}>
+                                {segment.place.title}
+                              </Text>
+                              <View
+                                style={styles.placeActions}
+                                testID="chatbot-place-actions"
+                              >
+                                {!!segment.place.title && (
+                                  <TouchableOpacity
+                                    style={styles.placeAction}
+                                    onPress={() =>
+                                      openNaverMap(
+                                        segment.place.title,
+                                        segment.place.addr1,
+                                      )
+                                    }
+                                    activeOpacity={0.7}
+                                    hitSlop={6}
+                                    accessibilityRole="link"
+                                    accessibilityLabel={`${segment.place.title} 지도에서 보기`}
+                                  >
+                                    <ExternalLink
+                                      size={normalize(15)}
+                                      color={COLORS.primary}
+                                    />
+                                  </TouchableOpacity>
+                                )}
+                                {!!onShowPlace && !!segment.place.contentId && (
+                                  <TouchableOpacity
+                                    style={styles.placeAction}
+                                    onPress={() => onShowPlace(segment.place)}
+                                    hitSlop={6}
+                                    activeOpacity={0.7}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`${
+                                      segment.place.title ?? '장소'
+                                    } 상세 정보 보기`}
+                                  >
+                                    <Info
+                                      size={normalize(16)}
+                                      color={COLORS.textSecondary}
+                                    />
+                                  </TouchableOpacity>
+                                )}
+                              </View>
+                            </View>
+                            <View style={styles.placeAddressRow}>
+                              <MapPin
+                                size={normalize(11)}
+                                color={tokens.colors.textTertiary}
+                                style={styles.placeAddressIcon}
                               />
-                            </TouchableOpacity>
-                          )}
+                              <Text
+                                style={styles.placeAddressText}
+                                numberOfLines={1}
+                              >
+                                {segment.place.addr1?.trim() ||
+                                  '주소 정보 없음'}
+                              </Text>
+                            </View>
+                          </View>
                         </View>
                       ),
                     )}
@@ -841,6 +878,7 @@ export default function ChatbotWindow({
                     isApplying={isApplying}
                     onApply={() => void apply()}
                     onDiscard={discard}
+                    onShowPlace={onShowPlace}
                   />
                 )}
               </React.Fragment>

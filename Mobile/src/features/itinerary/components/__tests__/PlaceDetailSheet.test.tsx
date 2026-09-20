@@ -109,24 +109,19 @@ describe('PlaceDetailSheet', () => {
     act(() => tree.unmount());
   });
 
-  it('담기를 주지 않은 자리에는 담기 단추를 세우지 않는다', async () => {
+  it('장소 정보에는 지도와 시간표 동작을 노출하지 않는다', async () => {
     mockFetch.mockResolvedValue(restaurant);
-    const withAdd = await open({ onAdd: jest.fn() });
+    const tree = await open({ onAdd: jest.fn(), onOpenMap: jest.fn() });
     expect(
-      withAdd.root
+      tree.root
         .findAllByType(TouchableOpacity)
-        .some(node => node.props.accessibilityLabel === '시간표에 담기'),
-    ).toBe(true);
-    act(() => withAdd.unmount());
-
-    // 이미 시간표에 있는 장소를 또 담을 수는 없다.
-    const readOnly = await open();
-    expect(
-      readOnly.root
-        .findAllByType(TouchableOpacity)
-        .some(node => node.props.accessibilityLabel === '시간표에 담기'),
+        .some(node =>
+          ['지도에서 보기', '시간표에 담기'].includes(
+            node.props.accessibilityLabel,
+          ),
+        ),
     ).toBe(false);
-    act(() => readOnly.unmount());
+    act(() => tree.unmount());
   });
 
   it('사진이 있으면 한국관광공사 출처 캡션을 표시한다', async () => {

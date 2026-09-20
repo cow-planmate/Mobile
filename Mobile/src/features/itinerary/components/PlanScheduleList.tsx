@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import BedDouble from 'lucide-react-native/dist/esm/icons/bed-double';
 import ExternalLink from 'lucide-react-native/dist/esm/icons/external-link';
+import Info from 'lucide-react-native/dist/esm/icons/info';
 import Landmark from 'lucide-react-native/dist/esm/icons/landmark';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
 import MessageSquareText from 'lucide-react-native/dist/esm/icons/message-square-text';
@@ -11,7 +12,7 @@ import FallbackImage from '../../../components/common/FallbackImage';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import { toSecureImageUrl } from '../../../utils/imageUrl';
-import { buildKakaoMapUrl } from '../../../utils/kakaoMapLink';
+import { buildNaverMapUrl } from '../../../utils/naverMapLink';
 import { openExternalUrl } from '../../../utils/externalLink';
 import { Place, resolveCategoryId } from './TimelineItem';
 import { CATEGORY_COLORS } from './TimelineItem.styles';
@@ -84,6 +85,7 @@ export type ScheduleEntry = {
   subtitle?: string;
   memo?: string;
   photoUrl?: string;
+  contentId?: string;
   /** 여러 날을 한 번에 볼 때 며칠차인지 짚어 주는 짧은 꼬리표. */
   badge?: string;
   /** 카카오맵으로 넘길 주소. 없으면 넘길 길이 없는 곳이다. */
@@ -102,11 +104,10 @@ export const placeToEntry = (place: Place): ScheduleEntry => {
     subtitle: place.address,
     memo: place.memo ?? undefined,
     photoUrl: place.imageUrl,
-    mapUrl: buildKakaoMapUrl({
-      placeUrl: place.place_url,
+    contentId: place.placeRefId,
+    mapUrl: buildNaverMapUrl({
       name: place.name,
-      coords: { lat: place.latitude, lng: place.longitude },
-      searchQuery: [place.name, place.address].filter(Boolean).join(' '),
+      address: place.address,
     }),
   };
 };
@@ -131,6 +132,7 @@ const ScheduleRow = React.memo(
     continueRail,
     showMapLink,
     onPress,
+    onShowDetail,
   }: {
     entry: ScheduleEntry;
     isFirst: boolean;
@@ -138,10 +140,12 @@ const ScheduleRow = React.memo(
     continueRail: boolean;
     showMapLink?: boolean;
     onPress?: () => void;
+    onShowDetail?: () => void;
   }) => {
     const memo = entry.memo?.trim();
     const photo = toSecureImageUrl(entry.photoUrl);
     const canOpenMap = !!showMapLink && !!entry.mapUrl;
+    const canShowDetail = !!entry.contentId && !!onShowDetail;
 
     return (
       <TouchableOpacity
@@ -185,9 +189,26 @@ const ScheduleRow = React.memo(
         <View style={styles.card}>
           <View style={styles.body}>
             <CategoryChip entry={entry} />
-            <Text style={styles.name} numberOfLines={2}>
-              {entry.name}
-            </Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.name} numberOfLines={2}>
+                {entry.name}
+              </Text>
+              {canShowDetail && (
+                <TouchableOpacity
+                  style={styles.infoButton}
+                  onPress={onShowDetail}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${entry.name} 장소 상세 정보 보기`}
+                >
+                  <Info
+                    size={normalize(16)}
+                    color={tokens.colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
             {!!entry.subtitle && (
               <Text style={styles.address} numberOfLines={2}>
                 {entry.subtitle}
@@ -248,10 +269,12 @@ export default function PlanScheduleList({
   places,
   dateLabel,
   onPressPlace,
+  onShowDetail,
 }: {
   places: Place[];
   dateLabel?: string;
   onPressPlace?: (place: Place) => void;
+  onShowDetail?: (place: Place) => void;
 }) {
   return (
     <View style={styles.container}>
@@ -269,9 +292,15 @@ export default function PlanScheduleList({
         entries={places.map(placeToEntry)}
         emptyText="이 날에는 아직 일정이 없어요"
         endLabel="하루 마무리"
+        showMapLink
         onPressEntry={
           onPressPlace
             ? (_entry, index) => onPressPlace(places[index])
+            : undefined
+        }
+        onShowDetail={
+          onShowDetail
+            ? (_entry, index) => onShowDetail(places[index])
             : undefined
         }
       />
@@ -286,14 +315,16 @@ export function ScheduleTimeline({
   endLabel,
   showMapLink,
   onPressEntry,
+  onShowDetail,
 }: {
   entries: ScheduleEntry[];
   emptyText?: string;
   /** 마지막 줄 아래를 닫는 표시. 하루를 고른 목록에서만 뜻이 통한다. */
   endLabel?: string;
-  /** 남의 일정처럼 앱 안에서 더 볼 것이 없는 곳에 카카오맵으로 넘길 길을 낸다. */
+  /** 앱 밖 네이버 지도 검색으로 넘길 길을 낸다. */
   showMapLink?: boolean;
   onPressEntry?: (entry: ScheduleEntry, index: number) => void;
+  onShowDetail?: (entry: ScheduleEntry, index: number) => void;
 }) {
   if (entries.length === 0) {
     return emptyText ? <Text style={styles.empty}>{emptyText}</Text> : null;
@@ -313,6 +344,9 @@ export function ScheduleTimeline({
           continueRail={index < entries.length - 1 || !!endLabel}
           showMapLink={showMapLink}
           onPress={onPressEntry ? () => onPressEntry(entry, index) : undefined}
+          onShowDetail={
+            onShowDetail ? () => onShowDetail(entry, index) : undefined
+          }
         />
       ))}
 
@@ -447,6 +481,11 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: normalize(6),
+  },
   chip: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
@@ -461,6 +500,7 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.bold,
   },
   name: {
+    flex: 1,
     marginTop: normalize(6),
     fontSize: normalize(15),
     lineHeight: normalize(20),
@@ -469,6 +509,12 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   // 주소는 한 단 물러난다 — 눈이 이름과 메모에 먼저 가야 한다.
+  infoButton: {
+    width: normalize(24),
+    height: normalize(24),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   address: {
     marginTop: normalize(3),
     fontSize: normalize(12),

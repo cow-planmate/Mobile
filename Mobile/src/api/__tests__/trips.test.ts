@@ -44,21 +44,47 @@ describe('searchPlacesByKeyword', () => {
     jest.clearAllMocks();
   });
 
-  it('공백만 있는 검색어는 요청 없이 빈 배열을 반환한다', async () => {
-    await expect(searchPlacesByKeyword('   ')).resolves.toEqual([]);
+  it('두 글자 미만 검색어는 요청 없이 빈 결과를 반환한다', async () => {
+    await expect(searchPlacesByKeyword(' ')).resolves.toMatchObject({
+      places: [],
+      totalCount: 0,
+      hasNext: false,
+    });
     expect(mockedAxios.get).not.toHaveBeenCalled();
   });
 
   it('검색어를 다듬어 키워드 검색 API를 호출하고 결과를 반환한다', async () => {
-    const places = [{ id: '1', name: '카페 델문도', address: '', jibunAddress: '', phone: '', category: '', url: '', lat: 0, lng: 0 }];
+    const places = [
+      {
+        contentId: '1',
+        contentTypeId: '39',
+        category: 'RESTAURANT',
+        title: '카페 델문도',
+        addr1: '제주특별자치도 제주시',
+        latitude: 33.5,
+        longitude: 126.5,
+      },
+    ];
     const controller = new AbortController();
-    mockedAxios.get.mockResolvedValue({ data: { places } });
+    mockedAxios.get.mockResolvedValue({
+      data: { places, totalCount: 1, page: 1, size: 5, hasNext: false },
+    });
 
     await expect(
-      searchPlacesByKeyword('  델문도  ', 5, controller.signal),
-    ).resolves.toEqual(places);
+      searchPlacesByKeyword('  델문도  ', 1, 5, controller.signal),
+    ).resolves.toMatchObject({
+      totalCount: 1,
+      places: [
+        {
+          placeId: '1',
+          name: '카페 델문도',
+          formatted_address: '제주특별자치도 제주시',
+          categoryId: 2,
+        },
+      ],
+    });
     expect(mockedAxios.get).toHaveBeenCalledWith('/api/place/search', {
-      params: { query: '델문도', size: 5 },
+      params: { query: '델문도', page: 1, size: 5 },
       signal: controller.signal,
     });
   });
