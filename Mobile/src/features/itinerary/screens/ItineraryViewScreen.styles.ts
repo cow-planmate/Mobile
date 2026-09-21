@@ -193,6 +193,8 @@ export const styles = StyleSheet.create({
   },
   dayTabsScroll: {
     flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
   },
   mapToggleButton: {
     flexDirection: 'row',

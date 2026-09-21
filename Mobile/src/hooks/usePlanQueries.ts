@@ -6,8 +6,6 @@ export function useCreateFullPlan() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: FullPlanPayload) => createFullPlan(payload),
-    onSuccess: () => {
-      void invalidatePlanCaches(queryClient);
-    },
+    onSuccess: () => invalidatePlanCaches(queryClient),
   });
 }

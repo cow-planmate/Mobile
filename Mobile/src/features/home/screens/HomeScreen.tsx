@@ -24,6 +24,10 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { formatDateLocal, formatPeriod } from '../../../utils/timeUtils';
 import {
+  USER_PROFILE_QUERY_KEY,
+  UserProfile,
+} from '../../../hooks/useUserProfile';
+import {
   acceptedInviteTarget,
   CollaborationRequestResult,
   describeAcceptResult,
@@ -385,6 +389,32 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           });
           return;
         }
+
+        queryClient.setQueryData<UserProfile>(
+          USER_PROFILE_QUERY_KEY,
+          previous => {
+            if (
+              !previous ||
+              previous.myPlans.some(plan => plan.planId === newPlanId)
+            ) {
+              return previous;
+            }
+
+            return {
+              ...previous,
+              myPlans: [
+                {
+                  planId: newPlanId,
+                  planName: destination || '여행 일정',
+                  isShared: false,
+                  startDate: formatDateLocal(start),
+                  endDate: formatDateLocal(end),
+                },
+                ...previous.myPlans,
+              ],
+            };
+          },
+        );
 
         navigation.navigate('ItineraryEditor', {
           planId: newPlanId,

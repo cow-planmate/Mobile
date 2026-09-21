@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import { View, Text, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import MapOutlineIcon from 'lucide-react-native/dist/esm/icons/map';
@@ -136,11 +136,50 @@ export default function ItineraryViewScreenView({
   const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
   const [dayScrollLayoutWidth, setDayScrollLayoutWidth] = useState(0);
   const [dayScrollX, setDayScrollX] = useState(0);
+  const dayTabsScrollRef = useRef<ScrollView>(null);
+  const dayTabLayoutsRef = useRef<
+    Record<number, { x: number; width: number }>
+  >({});
   const isDayScrollable = dayScrollContentWidth > dayScrollLayoutWidth;
   const showLeftFade = isDayScrollable && dayScrollX > 5;
   const showRightFade =
     isDayScrollable &&
     dayScrollX < dayScrollContentWidth - dayScrollLayoutWidth - 5;
+  const handleDaySelect = useCallback(
+    (index: number) => {
+      setSelectedDayIndex(index);
+
+      const layout = dayTabLayoutsRef.current[index];
+      if (!layout || dayScrollLayoutWidth <= 0) return;
+
+      const edgePadding = 8;
+      const visibleStart = dayScrollX;
+      const visibleEnd = visibleStart + dayScrollLayoutWidth;
+      let nextX = dayScrollX;
+
+      if (layout.x < visibleStart + edgePadding) {
+        nextX = layout.x - edgePadding;
+      } else if (layout.x + layout.width > visibleEnd - edgePadding) {
+        nextX = layout.x + layout.width - dayScrollLayoutWidth + edgePadding;
+      }
+
+      const maxScrollX = Math.max(
+        0,
+        dayScrollContentWidth - dayScrollLayoutWidth,
+      );
+      nextX = Math.max(0, Math.min(nextX, maxScrollX));
+
+      if (Math.abs(nextX - dayScrollX) > 1) {
+        dayTabsScrollRef.current?.scrollTo({ x: nextX, animated: true });
+      }
+    },
+    [
+      dayScrollContentWidth,
+      dayScrollLayoutWidth,
+      dayScrollX,
+      setSelectedDayIndex,
+    ],
+  );
   const screenInsets = useScreenInsets(true);
   const mapPlaces = useMemo(
     () =>
@@ -202,6 +241,7 @@ export default function ItineraryViewScreenView({
 
       <View style={styles.dayTabsWrapper}>
         <ScrollView
+          ref={dayTabsScrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.dayTabsContainer}
@@ -221,8 +261,17 @@ export default function ItineraryViewScreenView({
                   isSelected && styles.dayTabSelected,
                   !isSelected && styles.dayTabUnselected,
                 ]}
-                onPress={() => setSelectedDayIndex(index)}
+                onPress={() => handleDaySelect(index)}
+                onLayout={event => {
+                  const { x, width } = event.nativeEvent.layout;
+                  dayTabLayoutsRef.current[index] = { x, width };
+                }}
                 activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={`${day.dayNumber}일차 ${formatDate(
+                  day.date,
+                )}`}
+                accessibilityState={{ selected: isSelected }}
               >
                 <Text
                   style={[

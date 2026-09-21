@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import FastImage, { ImageStyle } from 'react-native-fast-image';
 import {
   View,
@@ -79,13 +79,37 @@ const FeedThumbnail = ({
 }: {
   uri: string;
   style: StyleProp<ImageStyle>;
-}) => (
-  <FallbackImage
-    uri={uri}
-    style={style}
-    fallback={<View style={[style, styles.thumbnailFallback]} />}
-  />
-);
+}) => {
+  const [isLoading, setIsLoading] = useState(Boolean(uri));
+
+  useEffect(() => {
+    setIsLoading(Boolean(uri));
+  }, [uri]);
+
+  return (
+    <View style={[style, styles.thumbnailFrame]}>
+      <FallbackImage
+        uri={uri}
+        style={StyleSheet.absoluteFillObject}
+        onLoad={() => setIsLoading(false)}
+        onError={() => setIsLoading(false)}
+        fallback={
+          <View
+            style={[StyleSheet.absoluteFillObject, styles.thumbnailFallback]}
+          />
+        }
+      />
+      {isLoading && (
+        <View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFillObject, styles.thumbnailLoading]}
+        >
+          <ActivityIndicator size="small" color={tokens.colors.primary} />
+        </View>
+      )}
+    </View>
+  );
+};
 
 /** 지역과 기간. 제목 위에 작게 올린다. */
 const FeedKicker = ({ item }: { item: TravelFeedItem }) => {
@@ -453,6 +477,14 @@ const styles = StyleSheet.create({
     color: tokens.colors.textSecondary,
   },
   thumbnailFallback: {
+    backgroundColor: tokens.colors.surface,
+  },
+  thumbnailFrame: {
+    overflow: 'hidden',
+  },
+  thumbnailLoading: {
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: tokens.colors.surface,
   },
 

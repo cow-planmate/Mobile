@@ -17,6 +17,8 @@ interface FallbackImageProps {
   resizeMode?: ResizeMode;
   accessible?: boolean;
   accessibilityLabel?: string;
+  onLoad?: () => void;
+  onError?: () => void;
 }
 
 /**
@@ -33,6 +35,8 @@ export default function FallbackImage({
   resizeMode = FastImage.resizeMode.cover,
   accessible,
   accessibilityLabel,
+  onLoad,
+  onError,
 }: FallbackImageProps) {
   const [failed, setFailed] = useState(false);
 
@@ -49,7 +53,11 @@ export default function FallbackImage({
       source={{ uri, priority }}
       style={style}
       resizeMode={resizeMode}
-      onError={() => setFailed(true)}
+      onLoad={onLoad}
+      onError={() => {
+        setFailed(true);
+        onError?.();
+      }}
       accessible={accessible}
       accessibilityLabel={accessibilityLabel}
     />
