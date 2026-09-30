@@ -208,9 +208,20 @@ jest.mock('react-native-date-picker', () => {
 
 import ItineraryEditorScreenView from '../ItineraryEditorScreen.view';
 import { TAB_FILL } from '../ItineraryEditorScreen.styles';
-import { readFileSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import ItineraryEditorScreenComponent from '../ItineraryEditorScreen';
+
+// 화면 뷰는 여러 파일로 나뉘어 있어서, 소스 검사는 뷰와 editor 폴더 전체를 합쳐서 본다.
+const readEditorViewSource = () =>
+  [
+    join(__dirname, '../ItineraryEditorScreen.view.tsx'),
+    ...readdirSync(join(__dirname, '../../components/editor')).map(name =>
+      join(__dirname, '../../components/editor', name),
+    ),
+  ]
+    .map(file => readFileSync(file, 'utf8'))
+    .join('\n');
 
 function ItineraryEditorScreen(
   props: React.ComponentProps<typeof ItineraryEditorScreenComponent>,
@@ -1137,13 +1148,7 @@ describe('웹과 맞춘 일정 편집 문구', () => {
   });
 
   it('놓을 자리 안내가 이름 뒤에 조사를 붙이지 않는다', () => {
-    const source = readFileSync(
-      join(
-        __dirname,
-        '../ItineraryEditorScreen.view.tsx',
-      ),
-      'utf8',
-    );
+    const source = readEditorViewSource();
 
     expect(source).toContain("'{pendingPlace.name}' 놓을 자리를 눌러 주세요");
     // 폰에는 클릭이 없고, '우도'을처럼 받침을 안 보는 조사도 쓰지 않는다.
@@ -1158,13 +1163,7 @@ describe('웹과 맞춘 일정 편집 문구', () => {
 // 첫 렌더는 JS 스레드에서 계산되므로 멀쩡해 보이고, 웹이 장소를 더해
 // 블록 위치가 밀릴 때처럼 공유 값이 움직여야 터진다 — 그래서 소스로 막는다.
 describe('워클릿 안에서 JS 전용 함수를 부르지 않는다', () => {
-  const source = readFileSync(
-    join(
-      __dirname,
-      '../ItineraryEditorScreen.view.tsx',
-    ),
-    'utf8',
-  );
+  const source = readEditorViewSource();
 
   const workletBodies = () => {
     const bodies: string[] = [];
@@ -1205,13 +1204,7 @@ describe('워클릿 안에서 JS 전용 함수를 부르지 않는다', () => {
 });
 
 describe('일정 편집기 제스처 및 UI 동작 개선', () => {
-  const source = readFileSync(
-    join(
-      __dirname,
-      '../ItineraryEditorScreen.view.tsx',
-    ),
-    'utf8',
-  );
+  const source = readEditorViewSource();
 
   it('장소 추가 시트는 마지막으로 잰 몸통 크기에 맞춰 처음 높이를 연다', () => {
     // 화면이 뜨는 동안 몸통이 여러 번 재어지는데, 처음 잰 값에 굳으면
