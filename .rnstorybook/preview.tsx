@@ -5,7 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Toast from 'react-native-toast-message';
 import { AlertProvider } from '../src/contexts/AlertContext';
-import { PlacesProvider } from '../src/contexts/PlacesContext';
+import { PlacesProvider } from '../src/features/itinerary/contexts/PlacesContext';
 import { toastConfig } from '../src/components/common/toastConfig';
 import type { Preview } from '@storybook/react-native';
 

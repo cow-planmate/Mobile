@@ -3,7 +3,7 @@ import { Modal } from 'react-native';
 import renderer, { act } from 'react-test-renderer';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AlertProvider } from '../src/contexts/AlertContext';
-import { PlacesProvider } from '../src/contexts/PlacesContext';
+import { PlacesProvider } from '../src/features/itinerary/contexts/PlacesContext';
 
 // 실기기 스토리북은 NavigationContainer 안에서 돌지만, 테스트에서는 훅만 대체한다
 jest.mock('@react-navigation/native', () => {

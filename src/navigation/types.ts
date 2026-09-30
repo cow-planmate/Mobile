@@ -1,4 +1,4 @@
-import { Day } from '../contexts/ItineraryContext';
+import { Day } from '../features/itinerary/contexts/ItineraryContext';
 
 export type TabParamList = {
   FeedTab: undefined;

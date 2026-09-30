@@ -14,10 +14,10 @@ import { resolveApiUrl } from '../../../utils/apiUrl';
 import { AppStackParamList } from '../../../navigation/types';
 import { Place } from '../components/TimelineItem';
 import { useWebSocket } from '../../../contexts/WebSocketContext';
-import { useItinerary } from '../../../contexts/ItineraryContext';
-import { usePlaces } from '../../../contexts/PlacesContext';
+import { useItinerary } from '../contexts/ItineraryContext';
+import { usePlaces } from '../contexts/PlacesContext';
 import { useAuthStore } from '../../../store/useAuthStore';
-import { useItineraryEditor } from '../../../hooks/useItineraryEditor';
+import { useItineraryEditor } from '../hooks/useItineraryEditor';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
 import { usePlanOwnership } from '../../../hooks/usePlanOwnership';
@@ -30,7 +30,7 @@ import {
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
 } from '../../../utils/timeUtils';
-import { toLocalTime } from '../../../utils/planSyncPayload';
+import { toLocalTime } from '../utils/planSyncPayload';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 import {
   buildScheduleEditSync,
@@ -51,7 +51,7 @@ import ParticipantsModal from '../components/ParticipantsModal';
 import PlanMapModal from '../components/PlanMapModal';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
 import EditAccessGate from '../components/EditAccessGate';
-import { normalizeCategoryId } from '../../../utils/placeCategory';
+import { normalizeCategoryId } from '../utils/placeCategory';
 import { CoachmarkProvider, EditorCoachmark } from '../coachmark';
 import type { CoachmarkTargetId } from '../coachmark';
 

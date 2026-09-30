@@ -1,0 +1,419 @@
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+} from 'react';
+import { ScrollView } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
+import { resolveApiUrl } from '../../../utils/apiUrl';
+import { toSecureImageUrl } from '../../../utils/imageUrl';
+import {
+  useItinerary,
+  Day,
+  Place,
+} from '../contexts/ItineraryContext';
+import {
+  timeToMinutes,
+  minutesToTime,
+  parseLocalDate,
+  formatMonthDayDot,
+  normalizeTime,
+  DEFAULT_DAY_START,
+  DEFAULT_DAY_END,
+} from '../../../utils/timeUtils';
+import { createTempPlaceId } from '../utils/planSyncPayload';
+import { mergeItinerarySnapshot } from '../utils/mergeItinerarySnapshot';
+import { dropPlanComplete } from '../../../hooks/planCompleteCache';
+import { MINUTE_HEIGHT } from '../screens/ItineraryEditorScreen.styles';
+import Toast from 'react-native-toast-message';
+
+const parseDestinationName = (destination?: string) => {
+  const normalized = destination?.trim() || '';
+  if (!normalized) return '';
+  const parts = normalized.split(/\s+/).filter(Boolean);
+  return parts.length <= 1 ? normalized : parts.slice(1).join(' ');
+};
+
+const formatDate = formatMonthDayDot;
+
+/** 시각을 시 단위로 내림·올림한다. 눈금판이 정시로 끊겨 있어 그에 맞춘다. */
+const floorHour = (minutes: number) => Math.floor(minutes / 60) * 60;
+const ceilHour = (minutes: number) => Math.ceil(minutes / 60) * 60;
+
+/**
+ * 담긴 장소를 모두 품도록 하루의 시간 범위를 넓힌다.
+ *
+ * 시간표는 하루의 시작·끝 사이만 그린다. 그 밖에 놓인 블록은 그릴 자리가 없어
+ * 통째로 사라진다 - AI 도우미가 일정을 고치면 시간표 범위를 모르는 채로 시간을
+ * 정하므로 실제로 벌어진다.
+ *
+ * 좁히지는 않는다. 사람이 정해 둔 범위는 장소가 없어도 그대로 두는 것이 맞다.
+ */
+const coveringDayRange = (
+  dayStart: string,
+  dayEnd: string,
+  places: Place[],
+) => {
+  let start = timeToMinutes(dayStart);
+  let end = timeToMinutes(dayEnd);
+
+  places.forEach(place => {
+    start = Math.min(start, floorHour(timeToMinutes(place.startTime)));
+    end = Math.max(end, ceilHour(timeToMinutes(place.endTime)));
+  });
+
+  // 서버가 주던 모양(HH:MM:SS)을 그대로 돌려준다. 여기서 형식이 바뀌면
+  // 저장 payload와 화면 표시가 제각각이 된다.
+  // minutesToTime이 하루 끝(23:45)까지로 잘라 준다.
+  return {
+    startTime: `${minutesToTime(Math.max(0, start))}:00`,
+    endTime: `${minutesToTime(end)}:00`,
+  };
+};
+
+export const useItineraryEditor = (route: any, _navigation: any) => {
+  const queryClient = useQueryClient();
+  const {
+    days,
+    setDays,
+    resetItinerary,
+    deletePlaceFromDay,
+    addPlaceToDay,
+    updatePlaceTimes,
+    lastAddedPlaceId,
+    setLastAddedPlaceId,
+  } = useItinerary();
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [tripName, setTripName] = useState(
+    route.params?.tripName || parseDestinationName(route.params?.destination) || '',
+  );
+  const [isEditingTripName, setIsEditingTripName] = useState(false);
+  const [planMetadata, setPlanMetadata] = useState<any>(null);
+
+  const [isTimePickerVisible, setTimePickerVisible] = useState(false);
+  const [editingTime, setEditingTime] = useState<{
+    placeId: string;
+    type: 'startTime' | 'endTime';
+    time: string;
+  } | null>(null);
+
+  const timelineScrollRef = useRef<ScrollView>(null);
+
+  const loadedPlanIdRef = useRef<string | null>(null);
+  const daysRef = useRef(days);
+  daysRef.current = days;
+  const fetchRequestRef = useRef(0);
+
+  const [isInitialPlanLoading, setIsInitialPlanLoading] = useState(true);
+
+  const initDaysFromDates = useCallback(() => {
+    if (!route.params?.startDate || !route.params?.endDate) return;
+    const start = new Date(route.params.startDate);
+    const end = new Date(route.params.endDate);
+
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    const tripDays: Day[] = [];
+    let currentDate = new Date(start);
+    let dayCounter = 1;
+
+    while (currentDate.getTime() <= end.getTime()) {
+      tripDays.push({
+        date: new Date(currentDate),
+        dayNumber: dayCounter,
+        startTime: DEFAULT_DAY_START,
+        endTime: DEFAULT_DAY_END,
+        places: [],
+      });
+
+      currentDate.setDate(currentDate.getDate() + 1);
+      dayCounter++;
+    }
+    setDays(tripDays);
+  }, [route.params?.startDate, route.params?.endDate, setDays]);
+
+  const fetchPlanDetails = useCallback(async (signal?: AbortSignal) => {
+    if (!route.params?.planId) {
+      initDaysFromDates();
+      return;
+    }
+
+    const targetPlanId = String(route.params.planId);
+
+    const isSamePlan = loadedPlanIdRef.current === targetPlanId;
+    const daysAtRequest = daysRef.current;
+    const requestId = ++fetchRequestRef.current;
+
+    try {
+
+      const response = await axios.get(
+        resolveApiUrl(`/api/plan/${route.params.planId}/complete`),
+        { signal },
+      );
+      if (signal?.aborted || requestId !== fetchRequestRef.current) return;
+      const { planFrame, placeBlocks, timetables } = response.data;
+
+      if (planFrame?.planName) {
+        setTripName(planFrame.planName);
+      }
+      setPlanMetadata(planFrame);
+
+      if (Array.isArray(timetables)) {
+        const newDays: Day[] = timetables.map((tt: any, index: number) => {
+          const ttId = tt.timetableId ?? tt.timeTableId;
+          const ttDateStr = tt.date ? String(tt.date).substring(0, 10) : '';
+          const date = parseLocalDate(ttDateStr);
+
+          const dayPlaces = (placeBlocks || [])
+            .filter((pb: any) => {
+              const pbTtId = pb.timeTableId ?? pb.timetableId ?? pb.time_table_id;
+              if (pbTtId !== undefined && pbTtId !== null && ttId !== undefined && ttId !== null) {
+                return String(pbTtId) === String(ttId);
+              }
+              const pbDateStr = pb.date ? String(pb.date).substring(0, 10) : '';
+              if (pbDateStr && ttDateStr && pbDateStr === ttDateStr) return true;
+              return false;
+            })
+            .map((pb: any) => {
+              const parseTime = (time: any) => {
+                if (typeof time === 'string') return normalizeTime(time);
+                if (time && typeof time.hour === 'number') {
+                  return `${String(time.hour).padStart(2, '0')}:${String(
+                    time.minute,
+                  ).padStart(2, '0')}`;
+                }
+                return '12:00';
+              };
+
+              const blockCat = (pb as any).blockCategory;
+              const contentTypeIdStr = String(pb.placeContentTypeId || '');
+              const rawCategoryId = (pb.placeCategoryId ?? pb.placeCategory) as number;
+
+              const normalizedCategoryId = (() => {
+                if (blockCat === 'ATTRACTION' || contentTypeIdStr === '12' || [0, 12, 14, 15, 28].includes(rawCategoryId)) return 0;
+                if (blockCat === 'ACCOMMODATION' || contentTypeIdStr === '32' || rawCategoryId === 1 || rawCategoryId === 32) return 1;
+                if (blockCat === 'RESTAURANT' || contentTypeIdStr === '39' || rawCategoryId === 2 || rawCategoryId === 39) return 2;
+                if (blockCat === 'FREE' || rawCategoryId === 3) return 3;
+                if (blockCat === 'SEARCH' || rawCategoryId === 4) return 4;
+                return [0, 1, 2, 3, 4].includes(rawCategoryId) ? rawCategoryId : 4;
+              })();
+
+              const categoryMapping = (
+                id: number,
+              ):
+                | '관광지'
+                | '숙소'
+                | '식당'
+                | '직접 추가'
+                | '검색'
+                | '기타' => {
+                if (id === 0) return '관광지';
+                if (id === 1) return '숙소';
+                if (id === 2) return '식당';
+                if (id === 3) return '직접 추가';
+                if (id === 4) return '검색';
+                return '기타';
+              };
+
+              const realBlockId = pb.blockId ?? pb.timetablePlaceBlockId ?? pb.id;
+
+              return {
+
+                id:
+                  realBlockId !== undefined && realBlockId !== null
+                    ? String(realBlockId)
+                    : createTempPlaceId(),
+                placeRefId: pb.placeId || '',
+                name: pb.placeName || '장소',
+                type: categoryMapping(normalizedCategoryId),
+                startTime: parseTime(pb.startTime ?? pb.blockStartTime),
+                endTime: parseTime(pb.endTime ?? pb.blockEndTime),
+                address: pb.placeAddress || '',
+                memo: pb.memo || '',
+                latitude: pb.latitude ?? pb.yLocation ?? pb.ylocation ?? 0,
+                longitude: pb.longitude ?? pb.xLocation ?? pb.xlocation ?? 0,
+                imageUrl: toSecureImageUrl(
+                  pb.photoUrl || pb.placeThumbnailUrl || pb.placeLink,
+                ),
+                categoryId: normalizedCategoryId,
+                contentTypeId: pb.placeContentTypeId || '',
+                copyrightDivCd: pb.placeCopyrightDivCd || '',
+              };
+            });
+
+          const sorted = dayPlaces.sort((a: Place, b: Place) =>
+            timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+          const { startTime, endTime } = coveringDayRange(
+            tt.timeTableStartTime || DEFAULT_DAY_START,
+            tt.timeTableEndTime || DEFAULT_DAY_END,
+            sorted,
+          );
+
+          return {
+            timetableId: ttId,
+            date: date,
+            dayNumber: index + 1,
+
+            startTime,
+            endTime,
+            places: sorted,
+          };
+        });
+
+        setDays(prevDays => mergeItinerarySnapshot(newDays, prevDays, daysAtRequest));
+        loadedPlanIdRef.current = targetPlanId;
+      } else {
+        initDaysFromDates();
+        loadedPlanIdRef.current = targetPlanId;
+      }
+    } catch (error) {
+      if (signal?.aborted || requestId !== fetchRequestRef.current || axios.isCancel(error)) return;
+      console.error('일정 정보 조회 실패:', error);
+      if (!isSamePlan && daysRef.current.length === 0) initDaysFromDates();
+    }
+  }, [route.params?.planId, initDaysFromDates, setDays]);
+
+  useEffect(() => {
+    const editingPlanId = route.params?.planId;
+    return () => {
+      if (editingPlanId) {
+        dropPlanComplete(queryClient, String(editingPlanId));
+      }
+    };
+  }, [route.params?.planId, queryClient]);
+
+  const scopedPlanIdRef = useRef<string | null | undefined>(undefined);
+  useLayoutEffect(() => {
+    const nextPlanId =
+      route.params?.planId != null ? String(route.params.planId) : null;
+    if (scopedPlanIdRef.current === nextPlanId) return;
+    scopedPlanIdRef.current = nextPlanId;
+    setIsInitialPlanLoading(true);
+    resetItinerary();
+  }, [route.params?.planId, resetItinerary]);
+
+  const fetchPlanDetailsRef = useRef(fetchPlanDetails);
+  fetchPlanDetailsRef.current = fetchPlanDetails;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setIsInitialPlanLoading(true);
+    fetchPlanDetailsRef.current(controller.signal).finally(() => {
+      if (!controller.signal.aborted) {
+        setIsInitialPlanLoading(false);
+      }
+    });
+    return () => controller.abort();
+  }, [
+    route.params?.planId,
+    route.params?.startDate,
+    route.params?.endDate,
+  ]);
+
+  const selectedDay = days[selectedDayIndex];
+
+  useEffect(() => {
+    if (days.length === 0) return;
+    if (selectedDayIndex > days.length - 1) {
+      setSelectedDayIndex(days.length - 1);
+    }
+  }, [days.length, selectedDayIndex, setSelectedDayIndex]);
+
+  useEffect(() => {
+    if (timelineScrollRef.current) {
+      timelineScrollRef.current.scrollTo({ y: 0, animated: false });
+    }
+  }, [selectedDayIndex]);
+
+  useEffect(() => {
+    if (lastAddedPlaceId && selectedDay && timelineScrollRef.current) {
+      const newPlace = selectedDay.places.find(p => p.id === lastAddedPlaceId);
+      if (newPlace) {
+        const dayStartTimeStr = selectedDay.startTime || '09:00:00';
+        const minHour = Math.floor(timeToMinutes(dayStartTimeStr) / 60);
+        const offsetMinutes = minHour * 60;
+
+        const yOffset = Math.max(0, (timeToMinutes(newPlace.startTime) - offsetMinutes) * MINUTE_HEIGHT);
+        timelineScrollRef.current.scrollTo({ y: yOffset, animated: true });
+        setLastAddedPlaceId(null);
+      }
+    }
+  }, [lastAddedPlaceId, selectedDay, setLastAddedPlaceId]);
+
+  const handleEditTime = useCallback(
+    (placeId: string, type: 'startTime' | 'endTime', time: string) => {
+      setEditingTime({ placeId, type, time });
+      setTimePickerVisible(true);
+    },
+    [],
+  );
+
+  const handleUpdatePlaceTimes = useCallback(
+    (placeId: string, newStartMinutes: number, newEndMinutes: number) => {
+      const newStartTime = minutesToTime(newStartMinutes);
+      const newEndTime = minutesToTime(newEndMinutes);
+      updatePlaceTimes(selectedDayIndex, placeId, newStartTime, newEndTime);
+      Toast.show({
+        type: 'success',
+        text1: '일정 시간을 수정했어요.',
+        position: 'top',
+        visibilityTime: 2000,
+      });
+    },
+    [selectedDayIndex, updatePlaceTimes],
+  );
+
+  const handleDeletePlace = useCallback(
+    (placeId: string) => {
+      deletePlaceFromDay(selectedDayIndex, placeId);
+      Toast.show({
+        type: 'success',
+        text1: '일정을 삭제했어요.',
+        position: 'top',
+        visibilityTime: 2000,
+      });
+    },
+    [selectedDayIndex, deletePlaceFromDay],
+  );
+
+  const handleAddPlace = useCallback(
+    (place: Omit<Place, 'startTime' | 'endTime'>) => {
+      addPlaceToDay(selectedDayIndex, place);
+      Toast.show({
+        type: 'success',
+        text1: '일정을 추가했어요.',
+        position: 'top',
+        visibilityTime: 2000,
+      });
+    },
+    [selectedDayIndex, addPlaceToDay],
+  );
+
+  return {
+    days,
+    selectedDayIndex,
+    setSelectedDayIndex,
+    tripName,
+    setTripName,
+    isEditingTripName,
+    setIsEditingTripName,
+    isTimePickerVisible,
+    setTimePickerVisible,
+    editingTime,
+    setEditingTime,
+    timelineScrollRef,
+    formatDate,
+    handleEditTime,
+    handleUpdatePlaceTimes,
+    handleDeletePlace,
+    handleAddPlace,
+    selectedDay,
+    planMetadata,
+    fetchPlanDetails,
+    isInitialPlanLoading,
+  };
+};

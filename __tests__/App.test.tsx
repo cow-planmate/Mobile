@@ -57,7 +57,7 @@ jest.mock('../src/contexts/WebSocketContext', () => {
   };
 });
 
-jest.mock('../src/contexts/PlacesContext', () => {
+jest.mock('../src/features/itinerary/contexts/PlacesContext', () => {
   const React = require('react');
 
   return {
@@ -66,7 +66,7 @@ jest.mock('../src/contexts/PlacesContext', () => {
   };
 });
 
-jest.mock('../src/contexts/ItineraryContext', () => {
+jest.mock('../src/features/itinerary/contexts/ItineraryContext', () => {
   const React = require('react');
 
   return {

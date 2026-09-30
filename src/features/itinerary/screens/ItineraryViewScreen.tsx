@@ -18,7 +18,7 @@ import {
 import {
   Day,
   isFetchAtLeastAsComplete,
-} from '../../../contexts/ItineraryContext';
+} from '../contexts/ItineraryContext';
 import {
   PlaceBlockVO,
   SimpleWeatherInfo,

@@ -1,0 +1,921 @@
+import React, {
+  createContext,
+  useState,
+  useContext,
+  PropsWithChildren,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
+import { Place } from '../components/TimelineItem';
+export type { Place };
+import { useWebSocket } from '../../../contexts/WebSocketContext';
+import { normalizeCategoryId } from '../utils/placeCategory';
+import { toSecureImageUrl } from '../../../utils/imageUrl';
+
+export interface Day {
+  timetableId?: number;
+  date: Date;
+  dayNumber: number;
+  startTime?: string;
+  endTime?: string;
+  places: Place[];
+}
+
+interface PendingBlockSync {
+  action: 'update' | 'delete';
+  place: Place;
+  timetableId: number;
+  fields: string[];
+}
+
+interface PendingPlaceCreate {
+  place: Place;
+  dateString: string;
+}
+
+export const countPlaces = (days: Day[]): number =>
+  days.reduce((sum, d) => sum + d.places.length, 0);
+
+const dayKey = (day: Day): string => {
+  const date = day.date;
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+};
+
+const normalizeTimeForComparison = normalizeTime;
+
+const isSamePlaceForFetch = (current: Place, fetched: Place): boolean =>
+  current.id === fetched.id &&
+  current.name === fetched.name &&
+  current.address === fetched.address &&
+  (current.memo || '') === (fetched.memo || '') &&
+  current.categoryId === fetched.categoryId &&
+  normalizeTimeForComparison(current.startTime) ===
+    normalizeTimeForComparison(fetched.startTime) &&
+  normalizeTimeForComparison(current.endTime) ===
+    normalizeTimeForComparison(fetched.endTime);
+
+export const isFetchAtLeastAsComplete = (
+  fetched: Day[],
+  current: Day[],
+): boolean => {
+  if (current.length === 0) return true;
+  if (countPlaces(fetched) < countPlaces(current)) return false;
+
+  return current.every(currentDay => {
+    const fetchedDay = fetched.find(day =>
+      currentDay.timetableId !== undefined && day.timetableId !== undefined
+        ? String(day.timetableId) === String(currentDay.timetableId)
+        : dayKey(day) === dayKey(currentDay),
+    );
+    if (!fetchedDay) return false;
+
+    const hasSameDayRange =
+      formatDateLocal(currentDay.date) === formatDateLocal(fetchedDay.date) &&
+      normalizeTimeForComparison(currentDay.startTime) ===
+        normalizeTimeForComparison(fetchedDay.startTime) &&
+      normalizeTimeForComparison(currentDay.endTime) ===
+        normalizeTimeForComparison(fetchedDay.endTime);
+    if (!hasSameDayRange) return false;
+
+    return currentDay.places.every(currentPlace => {
+      const fetchedPlace = fetchedDay.places.find(
+        place => place.id === currentPlace.id,
+      );
+      return !!fetchedPlace && isSamePlaceForFetch(currentPlace, fetchedPlace);
+    });
+  });
+};
+
+// timetableId가 0이어도 유효한 식별자이므로 truthiness로 판정하지 않는다.
+const hasTimetableId = (id: number | undefined): id is number =>
+  id !== undefined && id !== null;
+
+const MIN_BLOCK_MINUTES = 15;
+
+const ensureValidRange = (
+  startTime: string,
+  endTime: string,
+): { startTime: string; endTime: string } => {
+  const start = timeToMinutes(startTime);
+  const end = timeToMinutes(endTime);
+  if (end > start) return { startTime, endTime };
+  return { startTime, endTime: minutesToTime(start + MIN_BLOCK_MINUTES) };
+};
+
+const pickTimeChanged = (before: Place[], after: Place[]): Place[] => {
+  const prevById = new Map(before.map(p => [p.id, p]));
+  return after.filter(p => {
+    const prev = prevById.get(p.id);
+    return (
+      !prev || prev.startTime !== p.startTime || prev.endTime !== p.endTime
+    );
+  });
+};
+
+import {
+  timeToMinutes,
+  minutesToTime,
+  resolveConflictsAndSort,
+  formatDateLocal,
+  normalizeTime,
+  DEFAULT_DAY_END,
+} from '../../../utils/timeUtils';
+import {
+  createTempPlaceId,
+  isTempPlaceId,
+  resolveBlockId,
+} from '../utils/planSyncPayload';
+import { applyTimetableBroadcast } from '../utils/timetableBroadcast';
+
+interface ItineraryContextType {
+  days: Day[];
+  setDays: React.Dispatch<React.SetStateAction<Day[]>>;
+  lastAddedPlaceId: string | null;
+  setLastAddedPlaceId: React.Dispatch<React.SetStateAction<string | null>>;
+  resetItinerary: () => void;
+  addPlaceToDay: (
+    dayIndex: number,
+    place: Omit<Place, 'startTime' | 'endTime'> & { startTime?: string; endTime?: string },
+  ) => void;
+  deletePlaceFromDay: (dayIndex: number, placeId: string) => void;
+  updatePlaceTimes: (
+    dayIndex: number,
+    placeId: string,
+    newStartTime: string,
+    newEndTime: string,
+  ) => void;
+  updatePlaceMemo: (dayIndex: number, placeId: string, memo: string) => void;
+  updatePlaceDetails: (
+    dayIndex: number,
+    placeId: string,
+    updates: Partial<
+      Pick<Place, 'startTime' | 'endTime' | 'memo' | 'name' | 'address'>
+    >,
+  ) => void;
+
+  reorderPlacesInDay: (dayIndex: number, orderedPlaceIds: string[]) => void;
+}
+
+const ItineraryContext = createContext<ItineraryContextType | undefined>(
+  undefined,
+);
+
+export const categoryMapping = (
+  id: number,
+): '관광지' | '숙소' | '식당' | '직접 추가' | '검색' | '기타' => {
+  if ([0, 12, 14, 15, 28].includes(id)) return '관광지';
+  if (id === 1 || id === 32) return '숙소';
+  if (id === 2 || id === 39) return '식당';
+  if (id === 3) return '직접 추가';
+  if (id === 4) return '검색';
+  return '기타';
+};
+
+const categoryToBlockCategory = (categoryId: number): string => {
+  switch (categoryId) {
+    case 0: return 'ATTRACTION';
+    case 1: return 'ACCOMMODATION';
+    case 2: return 'RESTAURANT';
+    case 3: return 'FREE';
+    case 4: return 'SEARCH';
+    default: return 'SEARCH';
+  }
+};
+
+const blockCategoryToCategoryId = (blockCategory?: string, rawCategoryId?: any): number => {
+  if (typeof rawCategoryId === 'number' && [0, 1, 2, 3, 4].includes(rawCategoryId)) {
+    return rawCategoryId;
+  }
+  if (blockCategory) {
+    switch (blockCategory.toUpperCase()) {
+      case 'ATTRACTION': return 0;
+      case 'ACCOMMODATION': return 1;
+      case 'RESTAURANT': return 2;
+      case 'FREE': return 3;
+      case 'SEARCH': return 4;
+    }
+  }
+  return 4;
+};
+
+const mapToTimetablePlaceBlockDto = (place: Place, timetableId?: number) => {
+  const categoryId = normalizeCategoryId(place.categoryId, place.type);
+
+  const startTime =
+    place.startTime.length === 5 ? place.startTime + ':00' : place.startTime;
+  const endTime =
+    place.endTime.length === 5 ? place.endTime + ':00' : place.endTime;
+
+  const blockId = resolveBlockId(place.id);
+
+  return {
+    blockId,
+    timeTableId: timetableId,
+    placeId: place.placeRefId,
+    placeName: place.name,
+    placeContentTypeId: place.contentTypeId || null,
+    placeAddress: place.address,
+    placeThumbnailUrl: place.imageUrl || null,
+    placeCopyrightDivCd: place.copyrightDivCd || null,
+    latitude: place.latitude,
+    longitude: place.longitude,
+    blockStartTime: startTime,
+    blockEndTime: endTime,
+    blockCategory: categoryToBlockCategory(categoryId),
+    memo: place.memo || '',
+  };
+};
+
+export function ItineraryProvider({ children }: PropsWithChildren) {
+  const [days, setDays] = useState<Day[]>([]);
+  const [lastAddedPlaceId, setLastAddedPlaceId] = useState<string | null>(null);
+  const { sendMessage, subscribeToMessages, unsubscribeFromMessages } =
+    useWebSocket();
+
+  const pendingBlockSyncRef = useRef<Map<string, PendingBlockSync>>(new Map());
+  const pendingPlaceCreateRef = useRef<PendingPlaceCreate[]>([]);
+
+  const resetItinerary = useCallback(() => {
+    setDays([]);
+    setLastAddedPlaceId(null);
+    pendingBlockSyncRef.current.clear();
+    pendingPlaceCreateRef.current = [];
+  }, []);
+
+  const flushPendingPlaceCreates = useCallback(
+    (dateString: string, timetableId: number) => {
+      const pending = pendingPlaceCreateRef.current.filter(
+        item => item.dateString === dateString,
+      );
+      if (pending.length === 0) return;
+
+      pendingPlaceCreateRef.current = pendingPlaceCreateRef.current.filter(
+        item => item.dateString !== dateString,
+      );
+      pending.forEach(({ place }) => {
+        sendMessage(
+          'create',
+          'timetableplaceblock',
+          mapToTimetablePlaceBlockDto(place, timetableId),
+          place.id,
+        );
+      });
+    },
+    [sendMessage],
+  );
+
+  const sendBlockSync = useCallback(
+    (action: 'update' | 'delete', place: Place, timetableId: number,
+      fields = ['blockStartTime', 'blockEndTime']) => {
+      if (isTempPlaceId(place.id)) {
+        const prev = pendingBlockSyncRef.current.get(place.id);
+        if (prev?.action === 'delete') return; 
+        pendingBlockSyncRef.current.set(place.id, {
+          action,
+          place,
+          timetableId,
+          fields: [...new Set([...(prev?.fields || []), ...fields])],
+        });
+        return;
+      }
+
+      const dto = mapToTimetablePlaceBlockDto(place, timetableId);
+      sendMessage(
+        action,
+        'timetableplaceblock',
+        {
+          blockId: dto.blockId,
+          timeTableId: timetableId,
+          ...(action === 'update' ? Object.fromEntries(
+            fields.map(field => [field, dto[field as keyof typeof dto]]),
+          ) : {}),
+        },
+      );
+    },
+    [sendMessage],
+  );
+
+  const flushPendingBlockSync = useCallback(
+    (tempId: string, realId: string): PendingBlockSync['action'] | undefined => {
+      const pending = pendingBlockSyncRef.current.get(tempId);
+      if (!pending) return undefined;
+      pendingBlockSyncRef.current.delete(tempId);
+
+      sendBlockSync(
+        pending.action,
+        { ...pending.place, id: realId },
+        pending.timetableId,
+        pending.fields,
+      );
+      return pending.action;
+    },
+    [sendBlockSync],
+  );
+
+  const handleWebSocketMessage = useCallback(
+    (msg: any) => {
+      if (!msg) return;
+
+      const action = msg.action || msg.type;
+      const entity = msg.entity || msg.target;
+      const eventId = msg.eventId;
+
+      if (entity === 'timetableplaceblock') {
+        const rawDataList =
+          msg.timeTablePlaceBlockDtos ||
+          msg.timetableplaceblocks ||
+          (msg.data ? (msg.data.timeTablePlaceBlockDtos || msg.data.timetableplaceblocks || msg.data) : null);
+
+        const dataList = Array.isArray(rawDataList)
+          ? rawDataList
+          : rawDataList
+          ? [rawDataList]
+          : [];
+        if (dataList.length === 0) return;
+
+        dataList.forEach((respVO: any) => {
+          const timetableId = respVO.timeTableId || respVO.timetableId;
+          const realId =
+            respVO.blockId || respVO.timetablePlaceBlockId
+              ? String(respVO.blockId || respVO.timetablePlaceBlockId)
+              : null;
+
+          const flushedAction =
+            action === 'create' && realId && isTempPlaceId(eventId)
+              ? flushPendingBlockSync(eventId, realId)
+              : undefined;
+
+          setDays(prevDays => {
+            let dayIndex = -1;
+
+            if (timetableId !== undefined && timetableId !== null) {
+              dayIndex = prevDays.findIndex(
+                d => String(d.timetableId) === String(timetableId),
+              );
+            }
+
+            if (dayIndex === -1 && respVO.date) {
+              const targetDateStr = String(respVO.date).split('T')[0];
+              dayIndex = prevDays.findIndex(
+                d => formatDateLocal(d.date) === targetDateStr,
+              );
+            }
+
+            if (dayIndex === -1) return prevDays;
+
+            const updatedDays = [...prevDays];
+            const dayToUpdate = { ...updatedDays[dayIndex] };
+
+            if (!dayToUpdate.timetableId && timetableId) {
+              dayToUpdate.timetableId = timetableId;
+            }
+
+            const targetId = realId || eventId;
+
+            if (action === 'create') {
+
+              if (flushedAction === 'delete') {
+                return prevDays;
+              }
+
+              const tempIndex = eventId
+                ? dayToUpdate.places.findIndex(p => p.id === eventId)
+                : -1;
+
+              if (tempIndex !== -1) {
+                const existingPlaces = [...dayToUpdate.places];
+                if (realId) {
+                  existingPlaces[tempIndex] = {
+                    ...existingPlaces[tempIndex],
+                    id: realId,
+                  };
+                  setLastAddedPlaceId(prev => (prev === eventId ? realId : prev));
+                }
+                dayToUpdate.places = existingPlaces.filter((place, index) =>
+                  !realId || place.id !== realId || index === tempIndex);
+              } else {
+                const parseTime = (time: any) => {
+                  if (typeof time === 'string') return normalizeTime(time);
+                  if (time && typeof time.hour === 'number') {
+                    return `${String(time.hour).padStart(2, '0')}:${String(
+                      time.minute,
+                    ).padStart(2, '0')}`;
+                  }
+                  return '12:00';
+                };
+
+                const placeIdToUse = targetId || `place_${Date.now()}_${Math.random()}`;
+
+                if (!dayToUpdate.places.some(p => p.id === placeIdToUse || (realId && p.id === realId))) {
+                  const rawCategoryId = blockCategoryToCategoryId(
+                    respVO.blockCategory,
+                    respVO.placeCategoryId ?? respVO.placeCategory,
+                  );
+                  const newPlace: Place = {
+                    id: placeIdToUse,
+                    placeRefId: respVO.placeId || '',
+                    name: respVO.placeName || '장소',
+                    type: categoryMapping(rawCategoryId),
+                    startTime: parseTime(
+                      respVO.startTime ?? respVO.blockStartTime,
+                    ),
+                    endTime: parseTime(respVO.endTime ?? respVO.blockEndTime),
+                    address: respVO.placeAddress || '',
+                    memo: respVO.memo || '',
+                    latitude: respVO.latitude ?? respVO.yLocation ?? respVO.ylocation ?? 0,
+                    longitude: respVO.longitude ?? respVO.xLocation ?? respVO.xlocation ?? 0,
+                    imageUrl: toSecureImageUrl(
+                      respVO.photoUrl || respVO.placeThumbnailUrl || respVO.placeLink,
+                    ),
+                    categoryId: normalizeCategoryId(rawCategoryId),
+                    contentTypeId: respVO.placeContentTypeId || '',
+                    copyrightDivCd: respVO.placeCopyrightDivCd || '',
+                  };
+
+                  dayToUpdate.places = [...dayToUpdate.places, newPlace].sort(
+                    (a, b) =>
+                      timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
+                  );
+                }
+              }
+            } else if (action === 'update') {
+              const lookupId = realId || eventId;
+              if (lookupId) {
+                const placeIndex = dayToUpdate.places.findIndex(
+                  p => p.id === lookupId,
+                );
+                if (placeIndex !== -1) {
+                  const parseTime = (time: any) => {
+                    if (typeof time === 'string') return normalizeTime(time);
+                    if (time && typeof time.hour === 'number') {
+                      return `${String(time.hour).padStart(2, '0')}:${String(
+                        time.minute,
+                      ).padStart(2, '0')}`;
+                    }
+                    return '12:00';
+                  };
+
+                  const existingPlaces = [...dayToUpdate.places];
+                  const newStartTime =
+                    respVO.startTime ?? respVO.blockStartTime;
+                  const newEndTime = respVO.endTime ?? respVO.blockEndTime;
+
+                  existingPlaces[placeIndex] = {
+                    ...existingPlaces[placeIndex],
+
+                    name: respVO.placeName || existingPlaces[placeIndex].name,
+                    address:
+                      respVO.placeAddress ?? existingPlaces[placeIndex].address,
+                    startTime: newStartTime
+                      ? parseTime(newStartTime)
+                      : existingPlaces[placeIndex].startTime,
+                    endTime: newEndTime
+                      ? parseTime(newEndTime)
+                      : existingPlaces[placeIndex].endTime,
+                    memo:
+                      respVO.memo !== undefined
+                        ? respVO.memo
+                        : existingPlaces[placeIndex].memo,
+                  };
+
+                  dayToUpdate.places = existingPlaces.sort(
+                    (a, b) =>
+                      timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
+                  );
+                }
+              }
+            } else if (action === 'delete') {
+              const lookupId = realId || eventId;
+              if (lookupId) {
+                dayToUpdate.places = dayToUpdate.places.filter(
+                  p => p.id !== lookupId,
+                );
+              }
+            }
+
+            updatedDays[dayIndex] = dayToUpdate;
+            return updatedDays;
+          });
+        });
+      } else if (entity === 'timetable') {
+
+        const rawDataList =
+          msg.timeTableDtos ||
+          (msg.data
+            ? msg.data.timeTableDtos || msg.data.timetables || msg.data
+            : null);
+
+        const dataList = Array.isArray(rawDataList)
+          ? rawDataList
+          : rawDataList
+          ? [rawDataList]
+          : [];
+        if (dataList.length === 0) return;
+
+        setDays(prevDays => {
+          const result = applyTimetableBroadcast(prevDays, action, dataList);
+          return result.changed ? result.days : prevDays;
+        });
+      }
+    },
+    [setDays, flushPendingBlockSync],
+  );
+
+  useEffect(() => {
+    if (subscribeToMessages) {
+      subscribeToMessages(handleWebSocketMessage);
+    }
+    return () => {
+      if (unsubscribeFromMessages) {
+        unsubscribeFromMessages(handleWebSocketMessage);
+      }
+    };
+  }, [subscribeToMessages, unsubscribeFromMessages, handleWebSocketMessage]);
+
+  useEffect(() => {
+    days.forEach(day => {
+      if (day.timetableId !== undefined && day.timetableId !== null) {
+        flushPendingPlaceCreates(formatDateLocal(day.date), day.timetableId);
+      }
+    });
+  }, [days, flushPendingPlaceCreates]);
+
+  const addPlaceToDay = useCallback((
+    dayIndex: number,
+    placeData: Omit<Place, 'startTime' | 'endTime'> & { startTime?: string; endTime?: string },
+  ) => {
+    const newId = createTempPlaceId();
+
+    let finalPlace: Place | undefined;
+    let dayTimetableId: number | undefined;
+    let dayDateString: string | undefined;
+    let otherPlacesToSync: Place[] = [];
+
+    setDays(prevDays => {
+      if (prevDays.length === 0 || !prevDays[dayIndex]) {
+        return prevDays;
+      }
+
+      const placeToAdd: Place = {
+        ...placeData,
+        id: newId,
+        placeRefId: placeData.id,
+        categoryId: normalizeCategoryId(placeData.categoryId, placeData.type),
+        latitude: placeData.latitude ?? 0,
+        longitude: placeData.longitude ?? 0,
+        ...ensureValidRange(
+          placeData.startTime || '12:00',
+          placeData.endTime || '13:00',
+        ),
+      };
+
+      const updatedDays = [...prevDays];
+      const dayToUpdate = { ...updatedDays[dayIndex] };
+
+      const newPlacesList = [...dayToUpdate.places, placeToAdd];
+
+      dayToUpdate.places = resolveConflictsAndSort(
+        newPlacesList,
+        placeToAdd.id,
+        timeToMinutes(dayToUpdate.endTime || DEFAULT_DAY_END),
+      );
+      updatedDays[dayIndex] = dayToUpdate;
+
+      finalPlace = dayToUpdate.places.find(p => p.id === newId);
+      dayTimetableId = dayToUpdate.timetableId;
+      dayDateString = formatDateLocal(dayToUpdate.date);
+
+      otherPlacesToSync = pickTimeChanged(
+        prevDays[dayIndex].places,
+        dayToUpdate.places,
+      ).filter(p => p.id !== newId);
+
+      return updatedDays;
+    });
+
+    setLastAddedPlaceId(newId);
+
+    setTimeout(() => {
+      if (finalPlace && hasTimetableId(dayTimetableId) && dayDateString) {
+        sendMessage(
+          'create',
+          'timetableplaceblock',
+          mapToTimetablePlaceBlockDto(finalPlace, dayTimetableId),
+          newId,
+        );
+
+        otherPlacesToSync.forEach(p => {
+          sendBlockSync('update', p, dayTimetableId!);
+        });
+      } else if (finalPlace && dayDateString) {
+        pendingPlaceCreateRef.current.push({
+          place: finalPlace,
+          dateString: dayDateString,
+        });
+      }
+    }, 0);
+  }, [sendMessage, sendBlockSync]);
+
+  const deletePlaceFromDay = useCallback((dayIndex: number, placeId: string) => {
+    let placeToDelete: Place | undefined;
+    let dayTimetableId: number | undefined;
+    let dayDateString: string | undefined;
+
+    setDays(prevDays => {
+      if (prevDays.length === 0 || !prevDays[dayIndex]) {
+        return prevDays;
+      }
+      const updatedDays = [...prevDays];
+      const dayToUpdate = { ...updatedDays[dayIndex] };
+
+      placeToDelete = dayToUpdate.places.find(p => p.id === placeId);
+      dayToUpdate.places = dayToUpdate.places.filter(
+        place => place.id !== placeId,
+      );
+      updatedDays[dayIndex] = dayToUpdate;
+
+      dayTimetableId = dayToUpdate.timetableId;
+      dayDateString = formatDateLocal(dayToUpdate.date);
+
+      return updatedDays;
+    });
+
+    setLastAddedPlaceId(null);
+
+    setTimeout(() => {
+      pendingPlaceCreateRef.current = pendingPlaceCreateRef.current.filter(
+        item => item.place.id !== placeId,
+      );
+      if (placeToDelete && hasTimetableId(dayTimetableId) && dayDateString) {
+        sendBlockSync('delete', placeToDelete, dayTimetableId);
+      }
+    }, 0);
+  }, [sendBlockSync]);
+
+  const updatePlaceTimes = useCallback((
+    dayIndex: number,
+    placeId: string,
+    newStartTime: string,
+    newEndTime: string,
+  ) => {
+    let placesToSync: Place[] = [];
+    let dayTimetableId: number | undefined;
+    let dayDateString: string | undefined;
+
+    setDays(prevDays => {
+      if (prevDays.length === 0 || !prevDays[dayIndex]) {
+        return prevDays;
+      }
+      const updatedDays = [...prevDays];
+      const dayToUpdate = { ...updatedDays[dayIndex] };
+
+      const safeRange = ensureValidRange(newStartTime, newEndTime);
+
+      const newPlacesList = dayToUpdate.places.map(p =>
+        p.id === placeId ? { ...p, ...safeRange } : p,
+      );
+
+      dayToUpdate.places = resolveConflictsAndSort(
+        newPlacesList,
+        placeId,
+        timeToMinutes(dayToUpdate.endTime || DEFAULT_DAY_END),
+      );
+      updatedDays[dayIndex] = dayToUpdate;
+
+      placesToSync = pickTimeChanged(
+        prevDays[dayIndex].places,
+        dayToUpdate.places,
+      );
+      dayTimetableId = dayToUpdate.timetableId;
+      dayDateString = formatDateLocal(dayToUpdate.date);
+
+      return updatedDays;
+    });
+
+    setLastAddedPlaceId(null);
+
+    setTimeout(() => {
+      if (hasTimetableId(dayTimetableId) && dayDateString) {
+        placesToSync.forEach(p => {
+          sendBlockSync('update', p, dayTimetableId!);
+        });
+      }
+    }, 0);
+  }, [sendBlockSync]);
+
+  const updatePlaceMemo = useCallback((dayIndex: number, placeId: string, memo: string) => {
+    let finalPlace: Place | undefined;
+    let dayTimetableId: number | undefined;
+    let dayDateString: string | undefined;
+
+    setDays(prevDays => {
+      if (prevDays.length === 0 || !prevDays[dayIndex]) {
+        return prevDays;
+      }
+      const updatedDays = [...prevDays];
+      const dayToUpdate = { ...updatedDays[dayIndex] };
+
+      dayToUpdate.places = dayToUpdate.places.map(p =>
+        p.id === placeId ? { ...p, memo } : p,
+      );
+      updatedDays[dayIndex] = dayToUpdate;
+
+      finalPlace = dayToUpdate.places.find(p => p.id === placeId);
+      dayTimetableId = dayToUpdate.timetableId;
+      dayDateString = formatDateLocal(dayToUpdate.date);
+
+      return updatedDays;
+    });
+
+    setTimeout(() => {
+      if (finalPlace && hasTimetableId(dayTimetableId) && dayDateString) {
+        sendBlockSync('update', finalPlace, dayTimetableId, ['memo']);
+      }
+    }, 0);
+  }, [sendBlockSync]);
+
+  const updatePlaceDetails = useCallback((
+    dayIndex: number,
+    placeId: string,
+    updates: Partial<
+      Pick<Place, 'startTime' | 'endTime' | 'memo' | 'name' | 'address'>
+    >,
+  ) => {
+    let placesToSync: Place[] = [];
+    let singlePlaceToSync: Place | undefined;
+    let dayTimetableId: number | undefined;
+    let dayDateString: string | undefined;
+    let isTimeChanged = updates.startTime !== undefined || updates.endTime !== undefined;
+
+    setDays(prevDays => {
+      if (prevDays.length === 0 || !prevDays[dayIndex]) {
+        return prevDays;
+      }
+      const updatedDays = [...prevDays];
+      const dayToUpdate = { ...updatedDays[dayIndex] };
+
+      const newPlacesList = dayToUpdate.places.map(p => {
+        if (p.id !== placeId) return p;
+        const merged = { ...p, ...updates };
+        return {
+          ...merged,
+          ...ensureValidRange(merged.startTime, merged.endTime),
+        };
+      });
+
+      if (isTimeChanged) {
+        dayToUpdate.places = resolveConflictsAndSort(
+          newPlacesList,
+          placeId,
+          timeToMinutes(dayToUpdate.endTime || DEFAULT_DAY_END),
+        );
+      } else {
+        dayToUpdate.places = newPlacesList;
+      }
+
+      updatedDays[dayIndex] = dayToUpdate;
+
+      singlePlaceToSync = dayToUpdate.places.find(p => p.id === placeId);
+
+      if (isTimeChanged) {
+
+        const shifted = pickTimeChanged(
+          prevDays[dayIndex].places,
+          dayToUpdate.places,
+        );
+        placesToSync = shifted.some(p => p.id === placeId)
+          ? shifted
+          : [...shifted, ...(singlePlaceToSync ? [singlePlaceToSync] : [])];
+      } else {
+        placesToSync = singlePlaceToSync ? [singlePlaceToSync] : [];
+      }
+
+      dayTimetableId = dayToUpdate.timetableId;
+      dayDateString = formatDateLocal(dayToUpdate.date);
+
+      return updatedDays;
+    });
+
+    setLastAddedPlaceId(null);
+
+    setTimeout(() => {
+      if (hasTimetableId(dayTimetableId) && dayDateString) {
+        placesToSync.forEach(p => {
+          const fields = p.id === placeId
+            ? [
+                ...(isTimeChanged ? ['blockStartTime', 'blockEndTime'] : []),
+                ...Object.keys(updates).flatMap(key =>
+                  ({ name: 'placeName', address: 'placeAddress', memo: 'memo' }[key]) || [],
+                ),
+              ]
+            : ['blockStartTime', 'blockEndTime'];
+          sendBlockSync('update', p, dayTimetableId!, fields);
+        });
+      }
+    }, 0);
+  }, [sendBlockSync]);
+
+  const reorderPlacesInDay = useCallback(
+    (dayIndex: number, orderedPlaceIds: string[]) => {
+      let placesToSync: Place[] = [];
+      let dayTimetableId: number | undefined;
+      let dayDateString: string | undefined;
+
+      setDays(prevDays => {
+        const day = prevDays[dayIndex];
+        if (!day || orderedPlaceIds.length === 0) {
+          return prevDays;
+        }
+
+        const byId = new Map(day.places.map(p => [p.id, p]));
+        const reordered = orderedPlaceIds
+          .map(id => byId.get(id))
+          .filter((p): p is Place => !!p);
+
+        if (reordered.length !== day.places.length) {
+
+          console.warn(
+            `[Itinerary] 재정렬 무시: 요청 ${orderedPlaceIds.length}건 중 ` +
+              `${reordered.length}건만 일치(그날 블록 ${day.places.length}건)`,
+          );
+          return prevDays;
+        }
+
+        const slots = day.places
+          .map(p => ({ startTime: p.startTime, endTime: p.endTime }))
+          .sort(
+            (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
+          );
+
+        const nextPlaces = reordered.map((place, i) => {
+          const slot = slots[i];
+          if (place.startTime === slot.startTime && place.endTime === slot.endTime) {
+            return place;
+          }
+          return { ...place, ...slot };
+        });
+
+        const updatedDays = [...prevDays];
+        const dayToUpdate = { ...day, places: nextPlaces };
+        updatedDays[dayIndex] = dayToUpdate;
+
+        placesToSync = pickTimeChanged(day.places, nextPlaces);
+        dayTimetableId = dayToUpdate.timetableId;
+        dayDateString = formatDateLocal(dayToUpdate.date);
+
+        return updatedDays;
+      });
+
+      setLastAddedPlaceId(null);
+
+      setTimeout(() => {
+        if (hasTimetableId(dayTimetableId) && dayDateString) {
+          placesToSync.forEach(p => {
+            sendBlockSync('update', p, dayTimetableId!);
+          });
+        }
+      }, 0);
+    },
+    [sendBlockSync],
+  );
+
+  const contextValue = useMemo(() => ({
+    days,
+    setDays,
+    lastAddedPlaceId,
+    setLastAddedPlaceId,
+    resetItinerary,
+    addPlaceToDay,
+    deletePlaceFromDay,
+    updatePlaceTimes,
+    updatePlaceMemo,
+    updatePlaceDetails,
+    reorderPlacesInDay,
+  }), [
+    days,
+    lastAddedPlaceId,
+    resetItinerary,
+    addPlaceToDay,
+    deletePlaceFromDay,
+    updatePlaceTimes,
+    updatePlaceMemo,
+    updatePlaceDetails,
+    reorderPlacesInDay,
+  ]);
+
+  return (
+    <ItineraryContext.Provider value={contextValue}>
+      {children}
+    </ItineraryContext.Provider>
+  );
+}
+
+export function useItinerary() {
+  const context = useContext(ItineraryContext);
+  if (!context) {
+    throw new Error('useItinerary must be used within an ItineraryProvider');
+  }
+  return context;
+}

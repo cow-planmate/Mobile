@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { ScrollView } from 'react-native';
 import { action } from 'storybook/actions';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
-import { Day } from '../../../contexts/ItineraryContext';
+import { Day } from '../contexts/ItineraryContext';
 import { Place } from '../components/TimelineItem';
 
 const noop = () => {};

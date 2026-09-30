@@ -18,7 +18,7 @@ import PlanScheduleList, {
 import PlaceDetailSheet, {
   type PlaceDetailTarget,
 } from '../components/PlaceDetailSheet';
-import { Day } from '../../../contexts/ItineraryContext';
+import { Day } from '../contexts/ItineraryContext';
 import { SimpleWeatherInfo } from '../../../api/trips';
 import { formatDateLocal, formatMonthDayDot } from '../../../utils/timeUtils';
 import WeatherHeader from '../components/weather/WeatherHeader';

@@ -36,11 +36,11 @@ import Umbrella from 'lucide-react-native/dist/esm/icons/umbrella';
 import Utensils from 'lucide-react-native/dist/esm/icons/utensils';
 import { Place } from './TimelineItem';
 import KakaoMapView from './KakaoMapView';
-import { usePlaces } from '../../../contexts/PlacesContext';
+import { usePlaces } from '../contexts/PlacesContext';
 import { PlaceVO, searchPlacesByKeyword } from '../../../api/trips';
 import type { PlaceDetailTarget } from './PlaceDetailSheet';
 import { tokens } from '../../../theme/tokens';
-import { normalizeCategoryId } from '../../../utils/placeCategory';
+import { normalizeCategoryId } from '../utils/placeCategory';
 import { buildNaverMapUrl } from '../../../utils/naverMapLink';
 import { openExternalUrl } from '../../../utils/externalLink';
 const FONTS = {

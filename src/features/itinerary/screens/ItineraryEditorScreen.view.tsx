@@ -56,7 +56,7 @@ import PlaceRecommendationList, {
 } from '../components/PlaceRecommendationList';
 import PlaceDragGhost from '../components/PlaceDragGhost';
 import { findDropSlot } from '../utils/dropSlot';
-import { Day } from '../../../contexts/ItineraryContext';
+import { Day } from '../contexts/ItineraryContext';
 import { PLAN_NAME_MAX_LENGTH, SimpleWeatherInfo } from '../../../api/trips';
 import WeatherHeader from '../components/weather/WeatherHeader';
 import ChatbotWindow from '../components/chatbot/ChatbotWindow';

@@ -12,7 +12,7 @@ jest.mock('../../../../api/trips', () => {
   return { ...actual, searchPlacesByKeyword: jest.fn() };
 });
 
-jest.mock('../../../../contexts/PlacesContext', () => ({
+jest.mock('../../contexts/PlacesContext', () => ({
   usePlaces: () => ({
     tour: [
       {

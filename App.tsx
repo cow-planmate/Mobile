@@ -3,9 +3,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { useAuthStore } from './src/store/useAuthStore';
 import { AlertProvider } from './src/contexts/AlertContext';
 import AppNavigator from './src/navigation/AppNavigator';
-import { ItineraryProvider } from './src/contexts/ItineraryContext';
+import { ItineraryProvider } from './src/features/itinerary/contexts/ItineraryContext';
 import { WebSocketProvider } from './src/contexts/WebSocketContext';
-import { PlacesProvider } from './src/contexts/PlacesContext';
+import { PlacesProvider } from './src/features/itinerary/contexts/PlacesContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   SafeAreaProvider,

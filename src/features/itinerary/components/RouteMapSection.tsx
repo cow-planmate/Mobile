@@ -47,7 +47,7 @@ import {
   buildOptimizedOrder,
   hasMapPosition,
   isSameOrder,
-} from '../../../utils/routeOptimization';
+} from '../utils/routeOptimization';
 import { useAlert } from '../../../contexts/AlertContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
