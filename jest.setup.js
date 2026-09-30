@@ -68,6 +68,15 @@ jest.mock('@react-native-cookies/cookies', () => ({
   flush: jest.fn(() => Promise.resolve()),
 }));
 
+// 위치 모듈은 네이티브 모듈이 없으면 import 시점에 터진다.
+jest.mock('@react-native-community/geolocation', () => ({
+  __esModule: true,
+  default: {
+    getCurrentPosition: jest.fn(),
+    requestAuthorization: jest.fn(),
+    setRNConfiguration: jest.fn(),
+  },
+}));
 
 // tentap 편집기는 WebView 위에서 도는 웹 번들이라 jest 환경에서는 그대로 뜨지 않는다.
 // 편집기 속을 보는 테스트는 없고, HTML↔블록 변환은 richText 테스트가 따로 본다.
