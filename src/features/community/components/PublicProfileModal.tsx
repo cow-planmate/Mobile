@@ -6,7 +6,7 @@ import { normalize } from '../../../utils/normalize';
 import { parseBackendError, getResourceLoadError } from '../../../utils/errorHandler';
 import { fetchPublicProfile } from '../../../api/user';
 import PopupModal from '../../../components/common/PopupModal';
-import UserAvatar from '../../../components/common/UserAvatar';
+import UserAvatar from './UserAvatar';
 import { tokens } from '../../../theme/tokens';
 
 interface PublicProfileModalProps {

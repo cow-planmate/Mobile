@@ -42,14 +42,14 @@ import {
 import {
   useFeedPosts,
   useFeedRegionCounts,
-} from '../../community/hooks/queries';
+} from '../hooks/queries';
 import {
   formatDuration,
   orderLabelsFor,
-} from '../../community/services/communityApi';
-import { resolveAvatarUrl } from '../../community/utils/avatar';
-import { buildFeedRegionOptions } from '../../community/utils/feedRegions';
-import { FeedFilterParams } from '../../community/types';
+} from '../services/communityApi';
+import { resolveAvatarUrl } from '../utils/avatar';
+import { buildFeedRegionOptions } from '../utils/feedRegions';
+import { FeedFilterParams } from '../types';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import {
@@ -60,7 +60,7 @@ import {
 import {
   CREATE_BUTTON_COLLAPSED,
   shouldOpenCreateButton,
-} from '../utils/createButtonCollapse';
+} from '../../itinerary/utils/createButtonCollapse';
 
 const FEED_FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=800';

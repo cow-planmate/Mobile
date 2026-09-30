@@ -69,7 +69,7 @@ jest.mock('../../hooks/queries', () => ({
 jest.mock('../../components/PostContentView', () => () => null);
 jest.mock('../../components/CommentSection', () => () => null);
 jest.mock('../../components/PublicProfileModal', () => () => null);
-jest.mock('../../../../components/common/UserAvatar', () => () => null);
+jest.mock('../../components/UserAvatar', () => () => null);
 jest.mock('../../../../components/common/FallbackImage', () => () => null);
 jest.mock('../../../../components/common', () => ({
   CalendarModal: () => null,

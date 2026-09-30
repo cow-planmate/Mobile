@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import ItineraryEditorScreen from '../features/itinerary/screens/ItineraryEditorScreen';
 import ItineraryViewScreen from '../features/itinerary/screens/ItineraryViewScreen';
-import TravelFeedScreen from '../features/itinerary/screens/TravelFeedScreen';
+import TravelFeedScreen from '../features/community/screens/TravelFeedScreen';
 import ProfileScreen from '../features/auth/screens/ProfileScreen';
 import ChangePasswordScreen from '../features/auth/screens/ChangePasswordScreen';
 import {

@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
-import { normalize } from '../../utils/normalize';
-import { tokens } from '../../theme/tokens';
+import { normalize } from '../../../utils/normalize';
+import { tokens } from '../../../theme/tokens';
 
 export const COLORS = {
   text: tokens.colors.text,

@@ -14,14 +14,11 @@ import PopupModal from '../../../components/common/PopupModal';
 import { useNavigation } from '@react-navigation/native';
 import { INITIAL_TAB } from '../../../navigation/types';
 import { useAlert } from '../../../contexts/AlertContext';
-import {
-  LoadingSpinner,
-  MenuModal,
-  ShareModal,
-  UpdatePasswordModal,
-  UpdateThemeModal,
-  UpdateValueModal,
-} from '../../../components/common';
+import { LoadingSpinner, ShareModal } from '../../../components/common';
+import MenuModal from '../components/MenuModal';
+import UpdatePasswordModal from '../components/UpdatePasswordModal';
+import UpdateThemeModal from '../components/UpdateThemeModal';
+import UpdateValueModal from '../components/UpdateValueModal';
 import BackTopBar from '../../../components/common/BackTopBar';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';

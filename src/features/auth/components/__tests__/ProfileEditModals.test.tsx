@@ -3,17 +3,17 @@ import renderer, { act } from 'react-test-renderer';
 import { TextInput } from 'react-native';
 import UpdatePasswordModal from '../UpdatePasswordModal';
 import UpdateThemeModal from '../UpdateThemeModal';
-import PlanInfoModal from '../PlanInfoModal';
-import ThemeSelector from '../ThemeSelector';
+import PlanInfoModal from '../../../itinerary/components/PlanInfoModal';
+import ThemeSelector from '../../../../components/common/ThemeSelector';
 
-jest.mock('../../../contexts/AlertContext', () => ({
+jest.mock('../../../../contexts/AlertContext', () => ({
   useAlert: () => ({ showAlert: jest.fn() }),
 }));
 const mockQueryClient = { getQueryData: () => ({ preferredThemes: [] }) };
 jest.mock('@tanstack/react-query', () => ({
   useQueryClient: () => mockQueryClient,
 }));
-jest.mock('../ThemeSelector', () => ({
+jest.mock('../../../../components/common/ThemeSelector', () => ({
   __esModule: true,
   default: () => null,
   CATEGORY_MAP: {

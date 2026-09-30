@@ -9,15 +9,15 @@ import {
 } from 'react-native';
 import Eye from 'lucide-react-native/dist/esm/icons/eye';
 import EyeOff from 'lucide-react-native/dist/esm/icons/eye-off';
-import PopupModal from './PopupModal';
-import { normalize } from '../../utils/normalize';
-import { useAlert } from '../../contexts/AlertContext';
-import { tokens } from '../../theme/tokens';
+import PopupModal from '../../../components/common/PopupModal';
+import { normalize } from '../../../utils/normalize';
+import { useAlert } from '../../../contexts/AlertContext';
+import { tokens } from '../../../theme/tokens';
 import {
   PASSWORD_MAX_LENGTH,
   getPasswordRequirements,
-} from '../../utils/passwordPolicy';
-import { useSubmitLock } from '../../hooks/useSubmitLock';
+} from '../../../utils/passwordPolicy';
+import { useSubmitLock } from '../../../hooks/useSubmitLock';
 
 type UpdatePasswordModalProps = {
   visible: boolean;

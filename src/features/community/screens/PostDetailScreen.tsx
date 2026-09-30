@@ -31,7 +31,7 @@ import {
 import PostContentView from '../components/PostContentView';
 import PostListItem from '../components/PostListItem';
 import CommentSection from '../components/CommentSection';
-import UserAvatar from '../../../components/common/UserAvatar';
+import UserAvatar from '../components/UserAvatar';
 import PublicProfileModal from '../components/PublicProfileModal';
 import { ReactionType } from '../types';
 import { BoardKey, boardLabel } from '../constants/board';

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 
-import PopupModal from './PopupModal';
+import PopupModal from '../../../components/common/PopupModal';
 import { styles } from './PaxModal.styles';
 
 type PaxModalProps = {

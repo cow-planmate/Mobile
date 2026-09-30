@@ -22,7 +22,7 @@ import { CommunityPostSummary } from '../types';
 import { BoardKey, SortKey, SORT_OPTIONS } from '../constants/board';
 import PostListItem from '../components/PostListItem';
 import PostTypeBadges from '../components/PostTypeBadges';
-import UserAvatar from '../../../components/common/UserAvatar';
+import UserAvatar from '../components/UserAvatar';
 
 /**
  * 지금 뜨는 글 카드 — 웹 HotPostCard와 같은 순서로 쌓는다.

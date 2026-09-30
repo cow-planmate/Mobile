@@ -8,22 +8,22 @@ import {
   StyleSheet,
 } from 'react-native';
 import axios from 'axios';
-import { PreferredThemeVO, changePreferredThemes } from '../../api/themes';
+import { PreferredThemeVO, changePreferredThemes } from '../../../api/themes';
 import ThemeSelector, {
   ThemeSelectorResult,
   CATEGORY_MAP,
-} from './ThemeSelector';
-import PopupModal from './PopupModal';
-import { normalize } from '../../utils/normalize';
-import { useAlert } from '../../contexts/AlertContext';
-import { resolveApiUrl } from '../../utils/apiUrl';
+} from '../../../components/common/ThemeSelector';
+import PopupModal from '../../../components/common/PopupModal';
+import { normalize } from '../../../utils/normalize';
+import { useAlert } from '../../../contexts/AlertContext';
+import { resolveApiUrl } from '../../../utils/apiUrl';
 import { useQueryClient } from '@tanstack/react-query';
-import { tokens } from '../../theme/tokens';
+import { tokens } from '../../../theme/tokens';
 import {
   USER_PROFILE_QUERY_KEY,
   UserProfile,
-} from '../../hooks/useUserProfile';
-import { useSubmitLock } from '../../hooks/useSubmitLock';
+} from '../../../hooks/useUserProfile';
+import { useSubmitLock } from '../../../hooks/useSubmitLock';
 
 const CATEGORY_NAMES: Record<number, string> = {
   0: '관광지',

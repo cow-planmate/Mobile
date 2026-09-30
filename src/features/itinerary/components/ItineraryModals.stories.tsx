@@ -2,12 +2,9 @@ import React, { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { action } from 'storybook/actions';
-import {
-  PlanInfoModal,
-  ScheduleEditModal,
-  ShareModal,
-  TimePickerModal,
-} from '../../../components/common';
+import { ShareModal, TimePickerModal } from '../../../components/common';
+import PlanInfoModal from './PlanInfoModal';
+import ScheduleEditModal from './ScheduleEditModal';
 import ChecklistSheet from './checklist/ChecklistSheet';
 import EditAccessGate from './EditAccessGate';
 import ParticipantsModal from './ParticipantsModal';

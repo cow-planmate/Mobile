@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import PopupModal from './PopupModal';
-import { normalize } from '../../utils/normalize';
-import { tokens } from '../../theme/tokens';
+import PopupModal from '../../../components/common/PopupModal';
+import { normalize } from '../../../utils/normalize';
+import { tokens } from '../../../theme/tokens';
 
 type UpdateValueModalProps = {
   visible: boolean;

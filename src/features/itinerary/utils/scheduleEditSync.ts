@@ -1,15 +1,15 @@
 
-import type { Day } from '../features/itinerary/contexts/ItineraryContext';
+import type { Day } from '../contexts/ItineraryContext';
 import {
   formatDateLocal,
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
-} from './timeUtils';
+} from '../../../utils/timeUtils';
 import {
   buildTimeTableDto,
   toLocalTime,
   TimeTableDtoPayload,
-} from '../features/itinerary/utils/planSyncPayload';
+} from './planSyncPayload';
 
 export interface ScheduleEditDay {
   timetableId?: number | null;

@@ -44,7 +44,7 @@ import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { resolveAvatarUrl } from '../utils/avatar';
 import PostContentView from '../components/PostContentView';
 import CommentSection from '../components/CommentSection';
-import UserAvatar from '../../../components/common/UserAvatar';
+import UserAvatar from '../components/UserAvatar';
 import FallbackImage from '../../../components/common/FallbackImage';
 import PublicProfileModal from '../components/PublicProfileModal';
 import { ReactionType } from '../types';

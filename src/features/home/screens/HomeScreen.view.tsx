@@ -26,14 +26,8 @@ import LinearGradient from 'react-native-linear-gradient';
 const AnimatedFastImage = Animated.createAnimatedComponent(FastImage);
 const AnimatedTouchableOpacity =
   Animated.createAnimatedComponent(TouchableOpacity);
-import {
-  CalendarModal,
-  Header,
-  Invitation,
-  NotificationModal,
-  PaxModal,
-  SearchLocationModal,
-} from '../../../components/common';
+import { CalendarModal, Header, Invitation, NotificationModal, SearchLocationModal } from '../../../components/common';
+import PaxModal from '../components/PaxModal';
 import { normalize } from '../../../utils/normalize';
 import { tokens } from '../../../theme/tokens';
 import { styles } from './HomeScreen.styles';

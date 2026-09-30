@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import FallbackImage from '../../../components/common/FallbackImage';
-import UserAvatar from '../../../components/common/UserAvatar';
+import UserAvatar from './UserAvatar';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 import { BoardKey } from '../constants/board';

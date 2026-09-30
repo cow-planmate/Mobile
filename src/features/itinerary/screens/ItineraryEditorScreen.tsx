@@ -35,14 +35,11 @@ import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 import {
   buildScheduleEditSync,
   mergeScheduleEditDays,
-} from '../../../utils/scheduleEditSync';
+} from '../utils/scheduleEditSync';
 import { SimpleWeatherInfo, fetchWeather } from '../../../api/trips';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
-import {
-  ShareModal,
-  PlanInfoModal,
-  AirplaneLoading,
-} from '../../../components/common';
+import { ShareModal, AirplaneLoading } from '../../../components/common';
+import PlanInfoModal from '../components/PlanInfoModal';
 import PlaceEditModal from '../components/PlaceEditModal';
 import PlaceDetailSheet, {
   type PlaceDetailTarget,

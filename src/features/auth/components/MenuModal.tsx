@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, Pressable, TouchableOpacity } from 'react-native';
 import { styles } from './MenuModal.styles';
-import { tokens } from '../../theme/tokens';
+import { tokens } from '../../../theme/tokens';
 
 export type MenuIcon = React.ComponentType<{ size?: number; color?: string }>;
 

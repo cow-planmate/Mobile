@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import { tokens } from '../../theme/tokens';
-import { resolveAvatarUrl } from '../../features/community/utils/avatar';
-import FallbackImage from './FallbackImage';
+import { tokens } from '../../../theme/tokens';
+import { resolveAvatarUrl } from '../utils/avatar';
+import FallbackImage from '../../../components/common/FallbackImage';
 
 interface UserAvatarProps {
 

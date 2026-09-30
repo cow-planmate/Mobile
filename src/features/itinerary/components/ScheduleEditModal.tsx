@@ -9,12 +9,12 @@ import {
 import DatePicker from 'react-native-date-picker';
 import Plus from 'lucide-react-native/dist/esm/icons/plus';
 import Minus from 'lucide-react-native/dist/esm/icons/minus';
-import PopupModal from './PopupModal';
-import { normalize } from '../../utils/normalize';
-import { tokens } from '../../theme/tokens';
-import { useAlert } from '../../contexts/AlertContext';
-import { timeToMinutes, normalizeTime } from '../../utils/timeUtils';
-import { findInvalidDateOrder } from '../../utils/scheduleEditSync';
+import PopupModal from '../../../components/common/PopupModal';
+import { normalize } from '../../../utils/normalize';
+import { tokens } from '../../../theme/tokens';
+import { useAlert } from '../../../contexts/AlertContext';
+import { timeToMinutes, normalizeTime } from '../../../utils/timeUtils';
+import { findInvalidDateOrder } from '../utils/scheduleEditSync';
 
 type DayConfig = {
   dayNumber: number;

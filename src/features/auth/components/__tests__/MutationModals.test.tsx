@@ -3,14 +3,14 @@ import renderer, { act } from 'react-test-renderer';
 import { TextInput, TouchableOpacity } from 'react-native';
 import UpdatePasswordModal from '../UpdatePasswordModal';
 import UpdateThemeModal from '../UpdateThemeModal';
-import ThemeSelector from '../ThemeSelector';
-import { changePreferredThemes } from '../../../api/themes';
+import ThemeSelector from '../../../../components/common/ThemeSelector';
+import { changePreferredThemes } from '../../../../api/themes';
 
 const mockShowAlert = jest.fn();
 const mockGetQueryData = jest.fn();
 const mockQueryClient = { getQueryData: mockGetQueryData };
 
-jest.mock('../../../contexts/AlertContext', () => ({
+jest.mock('../../../../contexts/AlertContext', () => ({
   useAlert: () => ({ showAlert: mockShowAlert }),
 }));
 
@@ -18,11 +18,11 @@ jest.mock('@tanstack/react-query', () => ({
   useQueryClient: () => mockQueryClient,
 }));
 
-jest.mock('../../../api/themes', () => ({
+jest.mock('../../../../api/themes', () => ({
   changePreferredThemes: jest.fn(),
 }));
 
-jest.mock('../ThemeSelector', () => ({
+jest.mock('../../../../components/common/ThemeSelector', () => ({
   __esModule: true,
   CATEGORY_MAP: {
     ATTRACTION: { id: 0 },

@@ -48,7 +48,8 @@ const FLOATING_BUTTON_SIZE = normalize(44);
 const FLOATING_BUTTON_GAP = normalize(10);
 const FLOATING_BUTTON_BOTTOM_OFFSET = 14;
 import TimelineItem, { Place } from '../components/TimelineItem';
-import { AirplaneLoading, ScheduleEditModal } from '../../../components/common';
+import { AirplaneLoading } from '../../../components/common';
+import ScheduleEditModal from '../components/ScheduleEditModal';
 import BackTopBar from '../../../components/common/BackTopBar';
 import PlaceRecommendationList, {
   PLACE_TABS,

@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import PopupModal from './PopupModal';
-import { normalize } from '../../utils/normalize';
-import { tokens } from '../../theme/tokens';
-import { formatPeriod } from '../../utils/timeUtils';
+import PopupModal from '../../../components/common/PopupModal';
+import { normalize } from '../../../utils/normalize';
+import { tokens } from '../../../theme/tokens';
+import { formatPeriod } from '../../../utils/timeUtils';
 
 type PlanInfoModalProps = {
   visible: boolean;

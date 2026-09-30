@@ -6,7 +6,7 @@ import PublicProfileModal from '../PublicProfileModal';
 const mockQuery = jest.fn();
 jest.mock('@tanstack/react-query', () => ({ useQuery: () => mockQuery() }));
 jest.mock('../../../../components/common/PopupModal', () => ({ children }: any) => children);
-jest.mock('../../../../components/common/UserAvatar', () => () => null);
+jest.mock('../UserAvatar', () => () => null);
 jest.mock('../../../../api/user', () => ({ fetchPublicProfile: jest.fn() }));
 
 it.each([
