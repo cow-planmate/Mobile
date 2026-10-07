@@ -82,3 +82,6 @@ design-previews/
 
 # 서브에이전트가 만드는 임시 작업 폴더 — node_modules까지 들어 있다
 .claude/worktrees/
+
+# AI 에이전트 로컬 커스텀 설정 (스킬, 규칙)
+.agents/
