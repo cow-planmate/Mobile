@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -10,7 +10,8 @@ import Animated, {
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
-import TimelineItem, { Place } from '../TimelineItem';
+import TimelineItem, { Place, resolveCategoryId } from '../TimelineItem';
+import { CATEGORY_COLORS } from '../TimelineItem.styles';
 import {
   styles,
   COLORS,
@@ -93,6 +94,12 @@ const DraggableTimelineItem = React.memo(
     const startMinutes = timeToMinutes(place.startTime);
     const endMinutes = timeToMinutes(place.endTime);
     const durationMinutes = endMinutes - startMinutes;
+    const isCompact = durationMinutes < 30;
+
+    const categoryId = resolveCategoryId(place);
+    const categoryColor =
+      CATEGORY_COLORS[categoryId as keyof typeof CATEGORY_COLORS] ||
+      CATEGORY_COLORS[4];
 
     const initialTop =
       (startMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
@@ -328,8 +335,9 @@ const DraggableTimelineItem = React.memo(
         }
       });
 
+    const isTopResizeDisabled = disabled || isCompact;
     const panGestureResizeTop = Gesture.Pan()
-      .enabled(!disabled)
+      .enabled(!isTopResizeDisabled)
       .minDistance(4)
       .onBegin(() => {
         if (isDeletingRef.current) return;
@@ -599,19 +607,37 @@ const DraggableTimelineItem = React.memo(
             </Animated.View>
           </GestureDetector>
 
-          <GestureDetector gesture={panGestureResizeTop}>
-            <Animated.View style={styles.resizeHandleTop}>
-              <Animated.View
-                style={[styles.resizeHandleIndicator, topHandleStyle]}
-              />
-            </Animated.View>
-          </GestureDetector>
+          {/* 1칸(15분) 카드는 상단 핸들을 숨겨 카드 전체 이동 및 텍스트 시인성 확보 */}
+          {!isCompact && (
+            <GestureDetector gesture={panGestureResizeTop}>
+              <Animated.View style={styles.resizeHandleTop}>
+                <Animated.View style={topHandleStyle}>
+                  <View
+                    style={[
+                      styles.resizeHandleIndicator,
+                      { backgroundColor: categoryColor.border },
+                    ]}
+                  />
+                </Animated.View>
+              </Animated.View>
+            </GestureDetector>
+          )}
 
           <GestureDetector gesture={panGestureResizeBottom}>
-            <Animated.View style={styles.resizeHandleBottom}>
-              <Animated.View
-                style={[styles.resizeHandleIndicator, bottomHandleStyle]}
-              />
+            <Animated.View
+              style={[
+                styles.resizeHandleBottom,
+                isCompact && styles.resizeHandleBottomCompact,
+              ]}
+            >
+              <Animated.View style={bottomHandleStyle}>
+                <View
+                  style={[
+                    styles.resizeHandleIndicator,
+                    { backgroundColor: categoryColor.border },
+                  ]}
+                />
+              </Animated.View>
             </Animated.View>
           </GestureDetector>
         </Animated.View>

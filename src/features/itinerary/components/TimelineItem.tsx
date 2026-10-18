@@ -90,7 +90,6 @@ const TimelineItem = React.memo(function TimelineItem({
   onEditPlace,
   onShowDetail,
   onOpenMap,
-  onPress,
   style,
   isReadOnly = false,
   isTourAnchor = false,
@@ -111,8 +110,11 @@ const TimelineItem = React.memo(function TimelineItem({
     CATEGORY_COLORS[4];
   const categoryName = CATEGORY_NAMES[categoryId] || item.type || '기타';
 
-  const textColorMain = categoryColor.textMain || tokens.colors.text;
-  const textColorSub = categoryColor.textSub || tokens.colors.textSecondary;
+  const textColorMain = '#0F172A';
+  const textColorSub = '#64748B';
+  const badgeTextColor = categoryColor.badgeText || categoryColor.textMain;
+  const borderTintColor = categoryColor.borderTint || categoryColor.border;
+  const actionIconColor = '#64748B';
 
   const handleOpenMap = () => {
     if (onOpenMap) {
@@ -128,51 +130,85 @@ const TimelineItem = React.memo(function TimelineItem({
     }
   };
 
-  // 짧은 일정은 블록이 낮아 버튼도 같이 낮아진다. 눌리는 자리는 줄지 않게
-  // 위아래로 더 벌려 둔다 - 손끝은 블록 높이를 따라 작아지지 않는다.
+  // 짧은 일정은 블록이 낮아 버튼도 같이 낮아진다.
   const actionSlop = isCompact
-    ? { top: 16, bottom: 16, left: 4 }
-    : { top: 12, bottom: 12, left: 4 };
-  // 지우기는 블록 오른쪽 끝에 붙어 있어 바깥쪽으로 더 내줄 수 있다.
-  const deleteSlop = { ...actionSlop, right: 12 };
+    ? { top: 14, bottom: 14, left: 3, right: 3 }
+    : { top: 10, bottom: 10, left: 3, right: 3 };
+  const deleteSlop = { ...actionSlop, right: 10 };
+
+  const iconSize = 14;
+  const xSize = 15;
 
   return (
     <View style={[styles.cardContainer, style]}>
+      {/* 화이트 카드 & 플로팅 인디케이터 디자인 */}
       <View
         style={[
           styles.card,
           {
-            borderLeftColor: categoryColor.border,
-            backgroundColor: categoryColor.bg,
+            backgroundColor: '#FFFFFF',
+            borderColor: borderTintColor,
           },
           isCompact && styles.cardCompact,
         ]}
       >
+        {/* 안쪽에 떠 있는 둥근 캡슐형 컬러 바 */}
+        <View
+          style={[
+            styles.floatingAccentBar,
+            { backgroundColor: categoryColor.border },
+          ]}
+        />
+
         <View style={styles.infoContainer}>
-          <Text
-            style={[styles.nameText, { color: textColorMain }]}
-            numberOfLines={1}
-          >
-            {item.name}
-          </Text>
+          {isCompact ? (
+            <View style={styles.compactSingleRow}>
+              <Text
+                style={[styles.nameTextCompact, { color: textColorMain }]}
+                numberOfLines={1}
+              >
+                {item.name}
+              </Text>
+            </View>
+          ) : (
+            <>
+              <Text
+                style={[styles.nameText, { color: textColorMain }]}
+                numberOfLines={1}
+              >
+                {item.name}
+              </Text>
 
-          <View style={styles.metaRow}>
-            <Text
-              style={[styles.metaText, { color: textColorSub }]}
-              numberOfLines={1}
-            >
-              {categoryName} | {item.startTime} - {item.endTime}
-            </Text>
-          </View>
+              <View style={styles.metaRow}>
+                <View
+                  style={[
+                    styles.miniTag,
+                    {
+                      backgroundColor: categoryColor.badgeBg,
+                      borderColor: borderTintColor,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[styles.miniTagText, { color: badgeTextColor }]}
+                  >
+                    {categoryName}
+                  </Text>
+                </View>
+                <Text style={[styles.metaText, { color: textColorSub }]}>
+                  {item.startTime} - {item.endTime}
+                </Text>
+              </View>
 
-          {/* 짧은 일정은 카드가 낮아 메모까지 넣으면 잘린다. */}
-          {!isCompact && !!item.memo?.trim() && (
-            <Text
-              style={[styles.memoText, { color: textColorSub }]}
-              numberOfLines={2}
-            >
-              {item.memo.trim()}
-            </Text>
+              {!isCompact && !!item.memo?.trim() && (
+                <Text
+                  style={[styles.memoText, { color: textColorSub }]}
+                  numberOfLines={2}
+                >
+                  {item.memo.trim()}
+                </Text>
+              )}
+            </>
           )}
         </View>
 
@@ -192,8 +228,9 @@ const TimelineItem = React.memo(function TimelineItem({
                 accessibilityRole="button"
                 accessibilityLabel="장소 정보 보기"
                 hitSlop={actionSlop}
+                activeOpacity={0.65}
               >
-                <Info size={isCompact ? 13 : 15} color={textColorMain} />
+                <Info size={iconSize} color={actionIconColor} strokeWidth={2.1} />
               </TouchableOpacity>
             )}
             <TouchableOpacity
@@ -205,8 +242,13 @@ const TimelineItem = React.memo(function TimelineItem({
               accessibilityRole="button"
               accessibilityLabel="지도에서 보기"
               hitSlop={actionSlop}
+              activeOpacity={0.65}
             >
-              <MapPinned size={isCompact ? 13 : 15} color={textColorMain} />
+              <MapPinned
+                size={iconSize}
+                color={actionIconColor}
+                strokeWidth={2.1}
+              />
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -217,8 +259,9 @@ const TimelineItem = React.memo(function TimelineItem({
               accessibilityRole="button"
               accessibilityLabel="일정 수정"
               hitSlop={actionSlop}
+              activeOpacity={0.65}
             >
-              <Pencil size={isCompact ? 13 : 15} color={textColorMain} />
+              <Pencil size={iconSize} color={actionIconColor} strokeWidth={2.1} />
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -232,8 +275,9 @@ const TimelineItem = React.memo(function TimelineItem({
               accessibilityLabel="장소 삭제"
               accessibilityState={{ disabled: isDeleteDisabled }}
               hitSlop={deleteSlop}
+              activeOpacity={0.65}
             >
-              <XIcon size={isCompact ? 14 : 16} color={textColorMain} />
+              <XIcon size={xSize} color={actionIconColor} strokeWidth={2.2} />
             </TouchableOpacity>
           </View>
         )}
