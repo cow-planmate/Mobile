@@ -862,7 +862,6 @@ export const styles = StyleSheet.create({
     borderTopColor: COLORS.border,
     overflow: 'hidden',
     zIndex: 40,
-    elevation: 16,
   },
   // 잡는 자리는 막대만. 갈래 줄까지 여기 넣으면 갈래를 누를 때 시트가 여닫힌다.
   sheetGrabArea: {
