@@ -1,6 +1,11 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 import TimelineItem, { Place } from '../TimelineItem';
+import { openExternalUrl } from '../../../../utils/externalLink';
+
+jest.mock('../../../../utils/externalLink', () => ({
+  openExternalUrl: jest.fn(),
+}));
 
 const basePlace: Place = {
   id: '1',
@@ -161,5 +166,89 @@ describe('TimelineItem 튜토리얼 앵커 버튼 동작', () => {
       deleteBtn.props.onPress();
     });
     expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('TimelineItem 웹 맞춤 4개 액션 버튼', () => {
+  it('웹과 동일하게 상세 정보 → 지도 → 일정 수정 → 장소 삭제 순서로 4개의 버튼이 렌더된다', () => {
+    let tree!: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <TimelineItem
+          item={basePlace}
+          onShowDetail={jest.fn()}
+          onEditPlace={jest.fn()}
+          onDelete={jest.fn()}
+        />,
+      );
+    });
+
+    const actionContainer = tree.root.findByProps({
+      testID: 'timeline-item-actions',
+    });
+    const labels = React.Children.toArray(actionContainer.props.children)
+      .filter(React.isValidElement)
+      .map((c: any) => c.props.accessibilityLabel);
+
+    expect(labels).toEqual([
+      '장소 정보 보기',
+      '지도에서 보기',
+      '일정 수정',
+      '장소 삭제',
+    ]);
+  });
+
+  it('지도 버튼을 누르면 기본적으로 네이버 지도 검색 URL을 openExternalUrl로 연다', () => {
+    (openExternalUrl as jest.Mock).mockClear();
+    let tree!: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <TimelineItem
+          item={basePlace}
+          onShowDetail={jest.fn()}
+          onEditPlace={jest.fn()}
+          onDelete={jest.fn()}
+        />,
+      );
+    });
+
+    const mapBtn = tree.root.findByProps({
+      accessibilityLabel: '지도에서 보기',
+    });
+    act(() => {
+      mapBtn.props.onPress();
+    });
+
+    expect(openExternalUrl).toHaveBeenCalledWith(
+      expect.stringContaining('https://map.naver.com/p/search/'),
+    );
+  });
+
+  it('onOpenMap이 주어지면 기본 링크 대신 onOpenMap 콜백을 호출한다', () => {
+    const onOpenMap = jest.fn();
+    (openExternalUrl as jest.Mock).mockClear();
+
+    let tree!: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <TimelineItem
+          item={basePlace}
+          onShowDetail={jest.fn()}
+          onOpenMap={onOpenMap}
+          onEditPlace={jest.fn()}
+          onDelete={jest.fn()}
+        />,
+      );
+    });
+
+    const mapBtn = tree.root.findByProps({
+      accessibilityLabel: '지도에서 보기',
+    });
+    act(() => {
+      mapBtn.props.onPress();
+    });
+
+    expect(onOpenMap).toHaveBeenCalledTimes(1);
+    expect(openExternalUrl).not.toHaveBeenCalled();
   });
 });

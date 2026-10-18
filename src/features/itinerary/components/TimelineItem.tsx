@@ -1,5 +1,6 @@
 import React from 'react';
 import Info from 'lucide-react-native/dist/esm/icons/info';
+import MapPinned from 'lucide-react-native/dist/esm/icons/map-pinned';
 import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import XIcon from 'lucide-react-native/dist/esm/icons/x';
 import { View, Text, TouchableOpacity } from 'react-native';
@@ -8,6 +9,8 @@ import { styles, CATEGORY_COLORS } from './TimelineItem.styles';
 import { tokens } from '../../../theme/tokens';
 import { timeToMinutes } from '../../../utils/timeUtils';
 import { useCoachmarkTarget } from '../coachmark/CoachmarkContext';
+import { buildNaverMapUrl } from '../../../utils/naverMapLink';
+import { openExternalUrl } from '../../../utils/externalLink';
 
 const IS_COMPACT_VIEW_THRESHOLD_MINUTES = 30;
 
@@ -40,6 +43,8 @@ type TimelineItemProps = {
   onEditPlace?: () => void;
   /** 어떤 곳인지 보는 길. 열쇠를 모르는 장소(직접 추가)에는 주지 않는다. */
   onShowDetail?: () => void;
+  /** 지도 열기 핸들러 (지정하지 않으면 기본 네이버 지도 검색 URL 사용) */
+  onOpenMap?: () => void;
   onPress?: () => void;
   style?: object;
   isReadOnly?: boolean;
@@ -84,6 +89,7 @@ const TimelineItem = React.memo(function TimelineItem({
   onEditTime,
   onEditPlace,
   onShowDetail,
+  onOpenMap,
   onPress,
   style,
   isReadOnly = false,
@@ -107,6 +113,20 @@ const TimelineItem = React.memo(function TimelineItem({
 
   const textColorMain = categoryColor.textMain || tokens.colors.text;
   const textColorSub = categoryColor.textSub || tokens.colors.textSecondary;
+
+  const handleOpenMap = () => {
+    if (onOpenMap) {
+      onOpenMap();
+      return;
+    }
+    const mapUrl =
+      item.place_url && /^https:\/\/map\.naver\.com\//i.test(item.place_url)
+        ? item.place_url
+        : buildNaverMapUrl({ name: item.name, address: item.address });
+    if (mapUrl) {
+      openExternalUrl(mapUrl);
+    }
+  };
 
   // 짧은 일정은 블록이 낮아 버튼도 같이 낮아진다. 눌리는 자리는 줄지 않게
   // 위아래로 더 벌려 둔다 - 손끝은 블록 높이를 따라 작아지지 않는다.
@@ -157,19 +177,11 @@ const TimelineItem = React.memo(function TimelineItem({
         </View>
 
         {!isReadOnly && (
-          <View ref={actionsTarget} style={styles.actionContainer}>
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                isCompact && styles.actionButtonCompact,
-              ]}
-              onPress={onEditPlace ?? (() => onEditTime?.('startTime'))}
-              accessibilityRole="button"
-              accessibilityLabel="일정 수정"
-              hitSlop={actionSlop}
-            >
-              <Pencil size={16} color={textColorMain} />
-            </TouchableOpacity>
+          <View
+            ref={actionsTarget}
+            style={styles.actionContainer}
+            testID="timeline-item-actions"
+          >
             {!!onShowDetail && (
               <TouchableOpacity
                 style={[
@@ -181,9 +193,33 @@ const TimelineItem = React.memo(function TimelineItem({
                 accessibilityLabel="장소 정보 보기"
                 hitSlop={actionSlop}
               >
-                <Info size={16} color={textColorMain} />
+                <Info size={isCompact ? 13 : 15} color={textColorMain} />
               </TouchableOpacity>
             )}
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                isCompact && styles.actionButtonCompact,
+              ]}
+              onPress={handleOpenMap}
+              accessibilityRole="button"
+              accessibilityLabel="지도에서 보기"
+              hitSlop={actionSlop}
+            >
+              <MapPinned size={isCompact ? 13 : 15} color={textColorMain} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                isCompact && styles.actionButtonCompact,
+              ]}
+              onPress={onEditPlace ?? (() => onEditTime?.('startTime'))}
+              accessibilityRole="button"
+              accessibilityLabel="일정 수정"
+              hitSlop={actionSlop}
+            >
+              <Pencil size={isCompact ? 13 : 15} color={textColorMain} />
+            </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.actionButton,
@@ -197,7 +233,7 @@ const TimelineItem = React.memo(function TimelineItem({
               accessibilityState={{ disabled: isDeleteDisabled }}
               hitSlop={deleteSlop}
             >
-              <XIcon size={18} color={textColorMain} />
+              <XIcon size={isCompact ? 14 : 16} color={textColorMain} />
             </TouchableOpacity>
           </View>
         )}

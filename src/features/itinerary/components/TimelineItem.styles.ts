@@ -63,14 +63,17 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: COLORS.card,
     borderRadius: 4,
-    padding: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     alignItems: 'flex-start',
     overflow: 'hidden',
     borderLeftWidth: 4,
     borderWidth: 0,
   },
   cardCompact: {
-    paddingVertical: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    alignItems: 'center',
   },
   infoContainer: {
     flex: 1,
@@ -102,19 +105,22 @@ export const styles = StyleSheet.create({
   actionContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
+    marginLeft: 6,
   },
   // 누르는 자리를 넓히되 좌우로는 넘기지 않는다. 서로 겹치면 어느 쪽이
   // 눌렸는지 알 수 없어, 지우려다 시간 수정이 열린다.
   actionButton: {
-    width: 46,
-    height: 40,
-    borderRadius: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
   actionButtonCompact: {
-    height: 28,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
   },
   actionButtonDisabled: {
     opacity: 0.35,
