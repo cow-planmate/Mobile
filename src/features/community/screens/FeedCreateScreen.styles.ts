@@ -554,6 +554,8 @@ export const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.text,
   },
+  // 여러 줄로 자라는 입력이라 위아래 여백이 있어야 첫 줄이 테두리에 붙지 않는다.
+  titleInput: { paddingVertical: normalize(12), textAlignVertical: 'center' },
   contentInput: { minHeight: normalize(120), paddingTop: normalize(12) },
   imageSelectButton: {
     minHeight: normalize(46),

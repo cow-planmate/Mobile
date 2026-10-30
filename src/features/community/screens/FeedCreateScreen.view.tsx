@@ -144,8 +144,10 @@ export function FeedCreateScreenView({
           <Text style={styles.label}>제목</Text>
           <TextInput
             value={title}
-            onChangeText={onChangeTitle}
-            style={styles.input}
+            // 길면 옆으로 밀리지 않고 줄이 바뀌어야 끝까지 읽힌다. 제목은 한 줄 글이라
+            // 엔터는 줄바꿈 대신 입력을 마치는 키로 쓰고, 붙여넣은 줄바꿈도 공백으로 바꾼다.
+            onChangeText={text => onChangeTitle(text.replace(/\s*[\r\n]+\s*/g, ' '))}
+            style={[styles.input, styles.titleInput]}
             placeholder={
               isHydrating
                 ? '기존 내용을 불러오는 중…'
@@ -153,7 +155,9 @@ export function FeedCreateScreenView({
             }
             editable={!isHydrating}
             maxLength={POST_TITLE_MAX_LENGTH}
-            returnKeyType="next"
+            multiline
+            submitBehavior="blurAndSubmit"
+            returnKeyType="done"
             accessibilityLabel="여행기 제목"
           />
 
@@ -465,7 +469,7 @@ export function FeedCreateScreenView({
             <FeedEditor
               initialHtml={initialHtml}
               editable={!isHydrating}
-              placeholder="여행을 소개해 주세요"
+              placeholder="여행에서 만난 풍경과 이야기를 적어보세요…"
               onChangeHtml={onChangeContentHtml}
             />
           )}

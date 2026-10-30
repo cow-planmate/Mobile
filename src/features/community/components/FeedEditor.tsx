@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
   Images,
@@ -12,6 +12,7 @@ import {
 } from '@10play/tentap-editor';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
+import FeedLinkSheet from './FeedLinkSheet';
 
 /**
  * 여행기 본문 편집기.
@@ -59,6 +60,9 @@ const PRIMARY_TOOLBAR_ITEMS: ToolbarItem[] = [
     disabled: ({ editorState }) => !editorState.canToggleBulletList,
     image: () => Images.bulletList,
   },
+];
+
+const HISTORY_TOOLBAR_ITEMS: ToolbarItem[] = [
   {
     onPress:
       ({ editor }) =>
@@ -78,6 +82,29 @@ const PRIMARY_TOOLBAR_ITEMS: ToolbarItem[] = [
     image: () => Images.redo,
   },
 ];
+
+interface LinkTarget {
+  url: string;
+  active: boolean;
+}
+
+/**
+ * 편집기 쪽에서 글자를 새로 끼워 넣는 길이 없어 '선택한 글자에 링크 걸기'만 한다.
+ * 그래서 글자를 고르지 않았고 링크 위도 아니면 누를 수 없게 둔다.
+ */
+const createLinkItem = (onOpen: (target: LinkTarget) => void): ToolbarItem => ({
+  onPress:
+    ({ editorState }) =>
+    () =>
+      onOpen({
+        url: editorState.activeLink ?? '',
+        active: editorState.isLinkActive,
+      }),
+  active: ({ editorState }) => editorState.isLinkActive,
+  disabled: ({ editorState }) =>
+    !editorState.canSetLink && !editorState.isLinkActive,
+  image: () => Images.link,
+});
 
 const MORE_TOOLBAR_ITEMS: ToolbarItem[] = [
   {
@@ -163,13 +190,24 @@ export default function FeedEditor({
     bridgeExtensions,
   });
   const html = useEditorContent(editor, { type: 'html' });
-  const toolbarItems = useMemo(
-    () =>
-      showMoreTools
-        ? [...PRIMARY_TOOLBAR_ITEMS, ...MORE_TOOLBAR_ITEMS]
-        : PRIMARY_TOOLBAR_ITEMS,
-    [showMoreTools],
+  const [linkSheet, setLinkSheet] = useState({
+    visible: false,
+    url: '',
+    active: false,
+  });
+  const openLink = useCallback(
+    (target: LinkTarget) => setLinkSheet({ visible: true, ...target }),
+    [],
   );
+  const closeLink = () => setLinkSheet(prev => ({ ...prev, visible: false }));
+  const toolbarItems = useMemo(() => {
+    const primary = [
+      ...PRIMARY_TOOLBAR_ITEMS,
+      createLinkItem(openLink),
+      ...HISTORY_TOOLBAR_ITEMS,
+    ];
+    return showMoreTools ? [...primary, ...MORE_TOOLBAR_ITEMS] : primary;
+  }, [showMoreTools, openLink]);
 
   useEffect(() => {
     if (typeof html === 'string') onChangeHtml(html);
@@ -196,6 +234,23 @@ export default function FeedEditor({
       <View style={styles.surface} accessibilityLabel="여행기 본문 편집기">
         <RichText editor={editor} />
       </View>
+      <FeedLinkSheet
+        visible={linkSheet.visible}
+        initialUrl={linkSheet.url}
+        onApply={url => {
+          editor.setLink(url);
+          closeLink();
+        }}
+        onRemove={
+          linkSheet.active
+            ? () => {
+                editor.setLink('');
+                closeLink();
+              }
+            : undefined
+        }
+        onClose={closeLink}
+      />
     </View>
   );
 }
