@@ -374,6 +374,8 @@ const styles = StyleSheet.create({
   },
   surface: {
     marginTop: normalize(8),
+    // 글자가 테두리에 붙지 않게 다른 입력칸과 같은 좌우 여백을 둔다.
+    paddingHorizontal: normalize(12),
     minHeight: normalize(180),
     borderRadius: normalize(10),
     borderWidth: 1,
