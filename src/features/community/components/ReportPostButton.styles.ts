@@ -5,7 +5,8 @@ import { tokens } from '../../../theme/tokens';
 const COLORS = tokens.colors;
 
 export const styles = StyleSheet.create({
-  // 상세 화면의 수정·삭제 단추와 같은 규격이다.
+  // 상세 화면의 삭제 단추와 같은 규격·같은 색이다. 삭제는 작성자에게만, 신고는
+  // 작성자가 아닌 사람에게만 보여서 한 화면에 같이 나오지 않는다.
   trigger: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -13,12 +14,12 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(10),
     paddingVertical: normalize(6),
     borderRadius: tokens.radius.m,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: tokens.tones.danger.bg,
   },
   triggerText: {
     fontSize: normalize(11),
     fontFamily: tokens.fontFamily.semibold,
-    color: COLORS.textSecondary,
+    color: tokens.tones.danger.fg,
   },
 
   form: {

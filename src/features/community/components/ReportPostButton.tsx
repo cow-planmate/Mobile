@@ -126,7 +126,7 @@ export default function ReportPostButton({ postId, feed = false }: ReportPostBut
         accessibilityRole="button"
         accessibilityLabel="게시글 신고"
       >
-        <Flag size={normalize(12)} color={tokens.colors.textSecondary} />
+        <Flag size={normalize(12)} color={tokens.tones.danger.fg} />
         <Text style={styles.triggerText}>신고하기</Text>
       </TouchableOpacity>
 
