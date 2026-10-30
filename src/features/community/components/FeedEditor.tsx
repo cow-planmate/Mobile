@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
   Images,
@@ -10,8 +10,13 @@ import {
   useEditorContent,
   type ToolbarItem,
 } from '@10play/tentap-editor';
+import { launchImageLibrary } from 'react-native-image-picker';
+import ImagePlus from 'lucide-react-native/dist/esm/icons/image-plus';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
+import { getBackendErrorMessage } from '../../../utils/errorHandler';
+import { uploadCommunityImage } from '../services/communityApi';
+import { MAX_BODY_IMAGES, uploadBodyImages } from '../utils/bodyImages';
 import FeedLinkSheet from './FeedLinkSheet';
 
 /**
@@ -159,6 +164,8 @@ interface Props {
   editable: boolean;
   placeholder: string;
   onChangeHtml: (html: string) => void;
+  /** 본문에 넣으려고 서버에 올린 사진 하나마다 불린다. 안 쓰이게 된 사진을 지울 때 쓴다. */
+  onImageUploaded: (url: string) => void;
 }
 
 export default function FeedEditor({
@@ -166,6 +173,7 @@ export default function FeedEditor({
   editable,
   placeholder,
   onChangeHtml,
+  onImageUploaded,
 }: Props) {
   const [showMoreTools, setShowMoreTools] = useState(false);
   /**
@@ -213,23 +221,89 @@ export default function FeedEditor({
     if (typeof html === 'string') onChangeHtml(html);
   }, [html, onChangeHtml]);
 
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [imageError, setImageError] = useState('');
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const handlePickImages = async () => {
+    if (uploadingImages) return;
+    setImageError('');
+    try {
+      const picked = await launchImageLibrary({
+        mediaType: 'photo',
+        selectionLimit: MAX_BODY_IMAGES,
+      });
+      if (picked.didCancel) return;
+      if (picked.errorCode) {
+        throw new Error(picked.errorMessage || '이미지를 선택하지 못했어요.');
+      }
+      const assets = picked.assets ?? [];
+      if (assets.length === 0 || !isMountedRef.current) return;
+
+      setUploadingImages(true);
+      const { urls, error } = await uploadBodyImages(
+        assets,
+        uploadCommunityImage,
+      );
+      // 올라간 사진은 화면을 떠났더라도 장부에 알려야 서버에서 지울 수 있다.
+      urls.forEach(url => onImageUploaded(url));
+      if (!isMountedRef.current) return;
+      urls.forEach(url => editor.setImage(url));
+      if (error) setImageError(error);
+    } catch (e) {
+      if (isMountedRef.current) setImageError(getBackendErrorMessage(e));
+    } finally {
+      if (isMountedRef.current) setUploadingImages(false);
+    }
+  };
+
   return (
     <View>
       <View style={styles.toolbarHeading}>
         <Text style={styles.toolbarLabel}>본문 서식</Text>
-        <TouchableOpacity
-          onPress={() => setShowMoreTools(value => !value)}
-          accessibilityRole="button"
-          accessibilityLabel={
-            showMoreTools ? '서식 도구 접기' : '서식 도구 더보기'
-          }
-          hitSlop={8}
-        >
-          <Text style={styles.moreButtonText}>
-            {showMoreTools ? '접기' : '더보기'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.headingActions}>
+          <TouchableOpacity
+            onPress={handlePickImages}
+            disabled={!editable || uploadingImages}
+            style={[
+              styles.photoButton,
+              (!editable || uploadingImages) && styles.photoButtonDisabled,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="사진 삽입"
+            accessibilityState={{ disabled: !editable || uploadingImages }}
+            hitSlop={8}
+          >
+            <ImagePlus size={normalize(15)} color={tokens.colors.textLabel} />
+            <Text style={styles.photoButtonText}>
+              {uploadingImages ? '불러오는 중' : '사진'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowMoreTools(value => !value)}
+            accessibilityRole="button"
+            accessibilityLabel={
+              showMoreTools ? '서식 도구 접기' : '서식 도구 더보기'
+            }
+            hitSlop={8}
+          >
+            <Text style={styles.moreButtonText}>
+              {showMoreTools ? '접기' : '더보기'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
+      {!!imageError && (
+        <Text style={styles.imageError} accessibilityRole="alert">
+          {imageError}
+        </Text>
+      )}
       <Toolbar editor={editor} items={toolbarItems} hidden={false} />
       <View style={styles.surface} accessibilityLabel="여행기 본문 편집기">
         <RichText editor={editor} />
@@ -267,6 +341,31 @@ const styles = StyleSheet.create({
     fontSize: normalize(12),
     fontFamily: tokens.fontFamily.semibold,
     color: tokens.colors.textMuted,
+  },
+  headingActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(16),
+  },
+  photoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(4),
+  },
+  photoButtonDisabled: {
+    opacity: 0.4,
+  },
+  photoButtonText: {
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.textLabel,
+  },
+  imageError: {
+    paddingHorizontal: normalize(4),
+    paddingBottom: normalize(6),
+    fontSize: normalize(12),
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.tones.danger.fg,
   },
   moreButtonText: {
     fontSize: normalize(12),

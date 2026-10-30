@@ -5,6 +5,9 @@ import FeedEditor from '../FeedEditor';
 
 const mockToolbar = jest.fn((_props: { items: any[] }) => null);
 const mockSetLink = jest.fn();
+const mockSetImage = jest.fn();
+const mockLaunchImageLibrary = jest.fn();
+const mockUploadImage = jest.fn();
 const mockLinkSheet = jest.fn((_props: any) => null);
 
 jest.mock('@10play/tentap-editor', () => ({
@@ -13,11 +16,17 @@ jest.mock('@10play/tentap-editor', () => ({
   PlaceholderBridge: { configureExtension: jest.fn(() => ({})) },
   RichText: () => null,
   Toolbar: (props: { items: any[] }) => mockToolbar(props),
-  useEditorBridge: () => ({ setLink: mockSetLink }),
+  useEditorBridge: () => ({ setLink: mockSetLink, setImage: mockSetImage }),
   useEditorContent: () => undefined,
 }));
 
 jest.mock('../FeedLinkSheet', () => (props: any) => mockLinkSheet(props));
+jest.mock('react-native-image-picker', () => ({
+  launchImageLibrary: (...args: unknown[]) => mockLaunchImageLibrary(...args),
+}));
+jest.mock('../../services/communityApi', () => ({
+  uploadCommunityImage: (...args: unknown[]) => mockUploadImage(...args),
+}));
 
 const lastItems = () =>
   mockToolbar.mock.calls[mockToolbar.mock.calls.length - 1][0].items;
@@ -29,6 +38,9 @@ describe('FeedEditor', () => {
     mockToolbar.mockClear();
     mockSetLink.mockClear();
     mockLinkSheet.mockClear();
+    mockSetImage.mockClear();
+    mockLaunchImageLibrary.mockReset();
+    mockUploadImage.mockReset();
   });
 
   it('자주 쓰는 서식만 먼저 보이고 나머지는 사용자가 펼친다', () => {
@@ -40,6 +52,7 @@ describe('FeedEditor', () => {
           editable
           placeholder="여행기를 적어 주세요"
           onChangeHtml={jest.fn()}
+          onImageUploaded={jest.fn()}
         />,
       );
     });
@@ -75,6 +88,7 @@ describe('FeedEditor', () => {
             editable
             placeholder="여행기를 적어 주세요"
             onChangeHtml={jest.fn()}
+          onImageUploaded={jest.fn()}
           />,
         );
       });
@@ -125,6 +139,138 @@ describe('FeedEditor', () => {
       expect(mockSetLink).toHaveBeenCalledWith('');
       expect(lastLinkSheet().visible).toBe(false);
       act(() => tree.unmount());
+    });
+  });
+  describe('본문 사진', () => {
+    const photo = (name: string, overrides: object = {}) => ({
+      uri: `file:///${name}`,
+      type: 'image/jpeg',
+      fileName: name,
+      fileSize: 1000,
+      ...overrides,
+    });
+    const renderEditor = (onImageUploaded = jest.fn()) => {
+      let tree!: renderer.ReactTestRenderer;
+      act(() => {
+        tree = renderer.create(
+          <FeedEditor
+            initialHtml=""
+            editable
+            placeholder="여행기를 적어 주세요"
+            onChangeHtml={jest.fn()}
+            onImageUploaded={onImageUploaded}
+          />,
+        );
+      });
+      return { tree, onImageUploaded };
+    };
+    const photoButton = (tree: renderer.ReactTestRenderer) =>
+      tree.root.findByProps({ accessibilityLabel: '사진 삽입' });
+    const press = async (tree: renderer.ReactTestRenderer) => {
+      await act(async () => {
+        await photoButton(tree).props.onPress();
+      });
+    };
+
+    it('고른 사진을 올리고 고른 순서대로 본문에 넣는다', async () => {
+      mockLaunchImageLibrary.mockResolvedValue({
+        assets: [photo('a.jpg'), photo('b.jpg')],
+      });
+      mockUploadImage.mockImplementation(
+        async (file: { name: string }) => `https://cdn/${file.name}`,
+      );
+      const { tree, onImageUploaded } = renderEditor();
+
+      await press(tree);
+
+      expect(mockSetImage.mock.calls).toEqual([
+        ['https://cdn/a.jpg'],
+        ['https://cdn/b.jpg'],
+      ]);
+      expect(onImageUploaded.mock.calls).toEqual([
+        ['https://cdn/a.jpg'],
+        ['https://cdn/b.jpg'],
+      ]);
+      act(() => tree.unmount());
+    });
+
+    it('선택을 취소하면 아무것도 올리지 않는다', async () => {
+      mockLaunchImageLibrary.mockResolvedValue({ didCancel: true });
+      const { tree } = renderEditor();
+
+      await press(tree);
+
+      expect(mockUploadImage).not.toHaveBeenCalled();
+      expect(mockSetImage).not.toHaveBeenCalled();
+      act(() => tree.unmount());
+    });
+
+    it('맞지 않는 사진이면 올리지 않고 이유를 보여 준다', async () => {
+      mockLaunchImageLibrary.mockResolvedValue({
+        assets: [photo('a.bmp', { type: 'image/bmp' })],
+      });
+      const { tree } = renderEditor();
+
+      await press(tree);
+
+      expect(mockUploadImage).not.toHaveBeenCalled();
+      expect(JSON.stringify(tree.toJSON())).toContain('JPG, PNG, GIF, WebP');
+      act(() => tree.unmount());
+    });
+
+    it('올리는 동안은 불러오는 중으로 바뀌고 다시 누를 수 없다', async () => {
+      let finish!: (url: string) => void;
+      mockLaunchImageLibrary.mockResolvedValue({ assets: [photo('a.jpg')] });
+      mockUploadImage.mockReturnValue(
+        new Promise<string>(resolve => {
+          finish = resolve;
+        }),
+      );
+      const { tree } = renderEditor();
+
+      let first!: Promise<void>;
+      await act(async () => {
+        first = photoButton(tree).props.onPress();
+      });
+      expect(JSON.stringify(tree.toJSON())).toContain('불러오는 중');
+      expect(photoButton(tree).props.disabled).toBe(true);
+
+      await act(async () => {
+        await photoButton(tree).props.onPress();
+      });
+      expect(mockLaunchImageLibrary).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        finish('https://cdn/a.jpg');
+        await first;
+      });
+      expect(JSON.stringify(tree.toJSON())).not.toContain('불러오는 중');
+      expect(mockSetImage).toHaveBeenCalledWith('https://cdn/a.jpg');
+      act(() => tree.unmount());
+    });
+
+    it('올리는 사이 화면을 떠나도 올라간 사진은 장부에 알린다', async () => {
+      let finish!: (url: string) => void;
+      mockLaunchImageLibrary.mockResolvedValue({ assets: [photo('a.jpg')] });
+      mockUploadImage.mockReturnValue(
+        new Promise<string>(resolve => {
+          finish = resolve;
+        }),
+      );
+      const { tree, onImageUploaded } = renderEditor();
+
+      let pending!: Promise<void>;
+      await act(async () => {
+        pending = photoButton(tree).props.onPress();
+      });
+      act(() => tree.unmount());
+      await act(async () => {
+        finish('https://cdn/late.jpg');
+        await pending;
+      });
+
+      expect(onImageUploaded).toHaveBeenCalledWith('https://cdn/late.jpg');
+      expect(mockSetImage).not.toHaveBeenCalled();
     });
   });
 });

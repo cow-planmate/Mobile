@@ -15,6 +15,7 @@ import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import { useUnsavedChangesPrompt } from '../../../hooks/useUnsavedChangesPrompt';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import { buildFeedUpdatePayload } from '../utils/feedPostPayload';
+import { collectImageUrls, createBodyImageTracker } from '../utils/bodyImages';
 import {
   buildFeedPlanSnapshot,
   CompletePlanResponse,
@@ -91,6 +92,21 @@ export default function FeedCreateScreen() {
       isMountedRef.current = false;
     };
   }, []);
+
+  // 본문 사진은 넣는 순간 서버에 올라간다. 등록하지 않고 나가면 여기서 지운다.
+  const bodyImages = useMemo(
+    () => createBodyImageTracker(deleteCommunityImage),
+    [],
+  );
+  useEffect(() => () => bodyImages.discardAll(), [bodyImages]);
+  const handleBodyImageUploaded = (url: string) => {
+    if (isMountedRef.current) {
+      bodyImages.track(url);
+    } else {
+      // 올리는 사이 화면을 떠났다면 장부를 비운 뒤라 바로 지운다.
+      void deleteCommunityImage(url).catch(() => undefined);
+    }
+  };
 
   useEffect(() => {
     const post = existingPost.data;
@@ -301,6 +317,7 @@ export default function FeedCreateScreen() {
                 : {}),
             });
         allowLeave();
+        bodyImages.commit(collectImageUrls(contentBlocks));
         setThumbnailFile(null);
         // 수정은 상세 화면에서 진입하므로 되돌아가면 된다. replace 하면
         // 같은 여행기 상세가 스택에 두 번 쌓여 뒤로가기가 한 번 헛돈다.
@@ -376,6 +393,7 @@ export default function FeedCreateScreen() {
       previewDays={previewDays}
       initialHtml={initialHtml}
       onChangeContentHtml={setContentHtml}
+      onBodyImageUploaded={handleBodyImageUploaded}
       planSearch={planSearch}
       onChangePlanSearch={setPlanSearch}
       filteredPlans={filteredPlans}

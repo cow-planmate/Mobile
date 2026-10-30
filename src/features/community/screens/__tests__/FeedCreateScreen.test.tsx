@@ -23,6 +23,7 @@ let mockUserProfileData: any = {
   ],
 };
 const mockUnsavedChanges = jest.fn();
+const mockEditorProps: { onImageUploaded?: (url: string) => void } = {};
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => mockNavigation,
@@ -61,13 +62,15 @@ jest.mock('../../components/FeedEditor', () => {
 
   return {
     __esModule: true,
-    default: ({ initialHtml, placeholder, onChangeHtml }: any) =>
-      ReactModule.createElement(TextInput, {
+    default: ({ initialHtml, placeholder, onChangeHtml, onImageUploaded }: any) => {
+      mockEditorProps.onImageUploaded = onImageUploaded;
+      return ReactModule.createElement(TextInput, {
         accessibilityLabel: '여행기 설명',
         placeholder,
         defaultValue: initialHtml,
         onChangeText: onChangeHtml,
-      }),
+      });
+    },
   };
 });
 
@@ -559,5 +562,98 @@ describe('웹에 맞춘 여행기 쓰기 화면', () => {
     ).toBe(true);
 
     act(() => tree.unmount());
+  });
+  describe('본문 사진 정리', () => {
+    const flush = () => new Promise(resolve => setImmediate(resolve));
+    const KEPT = 'https://cdn/kept.jpg';
+    const REMOVED = 'https://cdn/removed.jpg';
+
+    const fillAndGetSubmit = (tree: renderer.ReactTestRenderer) => {
+      const byPlaceholder = (placeholder: string) =>
+        tree.root
+          .findAllByType(TextInput)
+          .find(node => node.props.placeholder === placeholder)!;
+      act(() =>
+        byPlaceholder('예: 서울 3박 4일 완벽 여행 코스').props.onChangeText('속초'),
+      );
+      pickRegion(tree);
+      act(() =>
+        tree.root
+          .findByProps({ accessibilityLabel: '여행기 설명' })
+          .props.onChangeText(`<p>본문</p><img src="${KEPT}">`),
+      );
+      return tree.root.findByProps({ accessibilityLabel: '피드 등록하기' });
+    };
+
+    beforeEach(() => {
+      mockDeleteCommunityImage.mockResolvedValue(undefined);
+      mockCreatePostMutateAsync.mockResolvedValue({ id: 7 });
+    });
+
+    it('등록하면 본문에서 뺀 사진만 서버에서 지운다', async () => {
+      const tree = render();
+      const submit = fillAndGetSubmit(tree);
+      act(() => {
+        mockEditorProps.onImageUploaded?.(KEPT);
+        mockEditorProps.onImageUploaded?.(REMOVED);
+      });
+
+      await act(async () => {
+        await submit.props.onPress();
+      });
+      await flush();
+
+      expect(mockDeleteCommunityImage).toHaveBeenCalledTimes(1);
+      expect(mockDeleteCommunityImage).toHaveBeenCalledWith(REMOVED);
+      expect(mockCreatePostMutateAsync.mock.calls[0][0].content).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: 'image',
+            props: expect.objectContaining({ url: KEPT }),
+          }),
+        ]),
+      );
+      act(() => tree.unmount());
+    });
+
+    it('등록한 뒤 화면을 닫아도 글에 실린 사진은 지우지 않는다', async () => {
+      const tree = render();
+      const submit = fillAndGetSubmit(tree);
+      act(() => mockEditorProps.onImageUploaded?.(KEPT));
+
+      await act(async () => {
+        await submit.props.onPress();
+      });
+      act(() => tree.unmount());
+      await flush();
+
+      expect(mockDeleteCommunityImage).not.toHaveBeenCalled();
+    });
+
+    it('등록하지 않고 나가면 올린 사진을 모두 지운다', async () => {
+      const tree = render();
+      act(() => {
+        mockEditorProps.onImageUploaded?.(KEPT);
+        mockEditorProps.onImageUploaded?.(REMOVED);
+      });
+
+      act(() => tree.unmount());
+      await flush();
+
+      expect(
+        mockDeleteCommunityImage.mock.calls.map(call => call[0]).sort(),
+      ).toEqual([KEPT, REMOVED].sort());
+    });
+
+    it('올리는 사이 화면을 떠났다면 올라온 사진을 바로 지운다', async () => {
+      const tree = render();
+      const upload = mockEditorProps.onImageUploaded!;
+
+      act(() => tree.unmount());
+      upload(KEPT);
+      await flush();
+
+      expect(mockDeleteCommunityImage).toHaveBeenCalledWith(KEPT);
+    });
   });
 });

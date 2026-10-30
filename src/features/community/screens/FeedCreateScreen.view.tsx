@@ -68,6 +68,7 @@ export interface FeedCreateScreenViewProps {
   previewDays: any[];
   initialHtml: string | null;
   onChangeContentHtml: (html: string) => void;
+  onBodyImageUploaded: (url: string) => void;
   planSearch: string;
   onChangePlanSearch: (search: string) => void;
   filteredPlans: ProfilePlan[];
@@ -116,6 +117,7 @@ export function FeedCreateScreenView({
   previewDays,
   initialHtml,
   onChangeContentHtml,
+  onBodyImageUploaded,
   planSearch,
   onChangePlanSearch,
   filteredPlans,
@@ -471,6 +473,7 @@ export function FeedCreateScreenView({
               editable={!isHydrating}
               placeholder="여행에서 만난 풍경과 이야기를 적어보세요…"
               onChangeHtml={onChangeContentHtml}
+              onImageUploaded={onBodyImageUploaded}
             />
           )}
         </View>
