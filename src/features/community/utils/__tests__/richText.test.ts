@@ -77,6 +77,35 @@ describe('richText', () => {
       expect(textOf(blocks[0])).toBe('a < b && c > d');
     });
 
+    it('사진은 웹이 저장하는 사진 블록으로 읽고 앞뒤 글은 그대로 둔다', () => {
+      const blocks = htmlToBlocks(
+        '<p>앞</p><img src="https://cdn.example.com/a.jpg" alt="해변.jpg" title="일출"><p>뒤</p>',
+      );
+
+      expect(blocks.map(block => block.type)).toEqual([
+        'paragraph',
+        'image',
+        'paragraph',
+      ]);
+      expect(blocks[1].props).toMatchObject({
+        url: 'https://cdn.example.com/a.jpg',
+        name: '해변.jpg',
+        caption: '일출',
+        showPreview: true,
+      });
+      expect(blocks[1].content).toBeUndefined();
+      expect(textOf(blocks[0])).toBe('앞');
+      expect(textOf(blocks[2])).toBe('뒤');
+    });
+
+    it('서버에 올라가지 않은 사진 주소는 저장하지 않는다', () => {
+      const blocks = htmlToBlocks(
+        '<img src="data:image/png;base64,AAAA"><img src="file:///a.jpg"><img>',
+      );
+
+      expect(blocks.map(block => block.type)).toEqual(['paragraph']);
+    });
+
     it('빈 본문에도 문단 하나는 남긴다', () => {
       expect(htmlToBlocks('')).toHaveLength(1);
       expect(htmlToBlocks('')[0].type).toBe('paragraph');
@@ -117,6 +146,33 @@ describe('richText', () => {
         '<p>정말 <strong>좋았다</strong></p>';
 
       expect(blocksToHtml(htmlToBlocks(original))).toBe(original);
+    });
+
+    it('사진은 이름과 설명까지 담아 돌려주고 다시 읽어도 그대로다', () => {
+      const original: ContentBlock[] = [
+        {
+          type: 'image',
+          props: {
+            url: 'https://cdn.example.com/a.jpg',
+            name: '"해변".jpg',
+            caption: '일출 <새벽>',
+          },
+        },
+      ];
+
+      const html = blocksToHtml(original);
+      expect(html).toBe(
+        '<img src="https://cdn.example.com/a.jpg" alt="&quot;해변&quot;.jpg" title="일출 &lt;새벽&gt;">',
+      );
+      expect(htmlToBlocks(html)[0].props).toMatchObject({
+        url: 'https://cdn.example.com/a.jpg',
+        name: '"해변".jpg',
+        caption: '일출 <새벽>',
+      });
+    });
+
+    it('주소 없는 사진 블록은 빈 문단으로 둔다', () => {
+      expect(blocksToHtml([{ type: 'image', props: { url: '' } }])).toBe('<p></p>');
     });
 
     it('빈 블록은 빈 문자열로 돌려준다', () => {

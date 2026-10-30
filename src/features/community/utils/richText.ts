@@ -58,6 +58,29 @@ const escapeHtml = (text: string): string =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
+const readAttr = (attrs: string, name: string): string => {
+  const match = new RegExp(`(?:^|\\s)${name}="([^"]*)"`, 'i').exec(attrs);
+  return match ? decodeEntities(match[1]) : '';
+};
+
+/**
+ * 사진은 웹(BlockNote)이 저장하는 모양 그대로 만든다. 본문 글자가 없는 블록이라
+ * content는 두지 않는다. 설명과 이름은 편집기 안에서 alt·title로 들고 다닌다.
+ */
+const imageBlock = (url: string, name: string, caption: string): ContentBlock => ({
+  id: createBlockId(),
+  type: 'image',
+  props: {
+    backgroundColor: 'default',
+    textAlignment: 'left',
+    name,
+    url,
+    caption,
+    showPreview: true,
+  },
+  children: [],
+});
+
 interface Element {
   name: string;
   attrs: string;
@@ -259,6 +282,20 @@ const parseBlocks = (html: string): ContentBlock[] => {
       case 'hr':
         blocks.push(block('divider', []));
         break;
+      case 'img': {
+        // 서버에 올라간 사진만 받는다. data: 주소를 그대로 저장하면 글이 통째로 무거워진다.
+        const url = readAttr(element.attrs, 'src');
+        if (/^https?:\/\//i.test(url)) {
+          blocks.push(
+            imageBlock(
+              url,
+              readAttr(element.attrs, 'alt'),
+              readAttr(element.attrs, 'title'),
+            ),
+          );
+        }
+        break;
+      }
       default:
         blocks.push(block('paragraph', parseInline(element.inner)));
     }
@@ -357,7 +394,17 @@ export const blocksToHtml = (blocks: ContentBlock[] | null | undefined) => {
         break;
       case 'image': {
         const src = escapeHtml(String(item.props?.url ?? ''));
-        out.push(src ? `<img src="${src}">` : '<p></p>');
+        if (!src) {
+          out.push('<p></p>');
+          break;
+        }
+        const alt = escapeHtml(String(item.props?.name ?? ''));
+        const title = escapeHtml(String(item.props?.caption ?? ''));
+        out.push(
+          `<img src="${src}"${alt ? ` alt="${alt}"` : ''}${
+            title ? ` title="${title}"` : ''
+          }>`,
+        );
         break;
       }
       default:
