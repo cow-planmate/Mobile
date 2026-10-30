@@ -33,6 +33,7 @@ import PostListItem from '../components/PostListItem';
 import CommentSection from '../components/CommentSection';
 import UserAvatar from '../components/UserAvatar';
 import PublicProfileModal from '../components/PublicProfileModal';
+import ReportPostButton from '../components/ReportPostButton';
 import { ReactionType } from '../types';
 import { BoardKey, boardLabel } from '../constants/board';
 import { styles, COLORS } from './PostDetailScreen.styles';
@@ -295,6 +296,12 @@ export default function PostDetailScreen() {
                   삭제
                 </Text>
               </TouchableOpacity>
+            </View>
+          )}
+
+          {!isAuthor && (
+            <View style={styles.authorActions}>
+              <ReportPostButton postId={post.id} />
             </View>
           )}
 

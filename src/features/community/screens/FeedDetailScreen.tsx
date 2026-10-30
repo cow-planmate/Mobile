@@ -47,6 +47,7 @@ import CommentSection from '../components/CommentSection';
 import UserAvatar from '../components/UserAvatar';
 import FallbackImage from '../../../components/common/FallbackImage';
 import PublicProfileModal from '../components/PublicProfileModal';
+import ReportPostButton from '../components/ReportPostButton';
 import { ReactionType } from '../types';
 import { ScheduleTimeline } from '../../itinerary/components/PlanScheduleList';
 import PlaceDetailSheet, {
@@ -466,6 +467,12 @@ ${WEB_URL}/travel/${post.id}`,
                     삭제
                   </Text>
                 </TouchableOpacity>
+              </View>
+            )}
+
+            {!isAuthor && (
+              <View style={styles.authorActions}>
+                <ReportPostButton postId={post.id} feed />
               </View>
             )}
           </View>

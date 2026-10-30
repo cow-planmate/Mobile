@@ -13,6 +13,7 @@ import {
   ReactionResult,
   ReactionType,
   RegionCount,
+  ReportReason,
 } from '../types';
 import type { FeedImageUploadFile } from '../utils/feedImage';
 
@@ -181,6 +182,19 @@ export async function reactToPost(
   feed = false,
 ): Promise<ReactionResult> {
   const response = await axios.put((feed ? feedUrl : url)(`/posts/${postId}/reaction`), { type });
+  return response.data;
+}
+
+export async function reportPost(
+  postId: number | string,
+  reason: ReportReason,
+  details: string,
+  feed = false,
+): Promise<{ message: string }> {
+  const response = await axios.post((feed ? feedUrl : url)(`/posts/${postId}/reports`), {
+    reason,
+    details: details.trim(),
+  });
   return response.data;
 }
 

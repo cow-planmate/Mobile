@@ -20,6 +20,7 @@ import {
   fetchPost,
   fetchPosts,
   reactToPost,
+  reportPost,
   updateAnswered,
   updateComment,
   updatePost,
@@ -34,6 +35,7 @@ import {
   PageData,
   ReactionResult,
   ReactionType,
+  ReportReason,
 } from '../types';
 
 const PAGE_SIZE = 20;
@@ -352,6 +354,13 @@ export const useDeleteComment = (postId: number | string, feed = false) => {
     },
   });
 };
+
+// 신고는 글·목록 화면에 보이는 값을 바꾸지 않으므로 캐시를 건드리지 않는다.
+export const useReportPost = (postId: number | string, feed = false) =>
+  useMutation({
+    mutationFn: ({ reason, details }: { reason: ReportReason; details: string }) =>
+      reportPost(postId, reason, details, feed),
+  });
 
 export const useUpdateAnswered = (postId: number | string) => {
   const invalidate = useInvalidate();

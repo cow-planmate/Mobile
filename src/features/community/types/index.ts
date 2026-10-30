@@ -2,6 +2,8 @@ export type CommunityCategory = 'free' | 'qna' | 'feed';
 
 export type ReactionType = 'like' | 'dislike';
 
+export type ReportReason = 'SPAM' | 'ABUSE' | 'INAPPROPRIATE' | 'PRIVACY' | 'OTHER';
+
 export interface PageData<T> {
   items: T[];
   page: number;

@@ -7,6 +7,7 @@ import {
   fetchMyPosts,
   fetchMyStats,
   deleteCommunityImage,
+  reportPost,
   uploadCommunityImage,
 } from '../communityApi';
 
@@ -97,6 +98,31 @@ describe('communityApi 이미지', () => {
       expect.stringContaining(
         '/api/community/images?url=https%3A%2F%2Fcdn.example.com%2Ffeed.jpg',
       ),
+    );
+  });
+});
+
+describe('communityApi 신고', () => {
+  it('커뮤니티 글은 community 주소로 사유와 다듬은 상세 내용을 보낸다', async () => {
+    mockedAxios.post.mockResolvedValueOnce({ data: { message: 'ok' } } as never);
+
+    const result = await reportPost(7, 'SPAM', '  광고 글이에요  ');
+
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      expect.stringContaining('/api/community/posts/7/reports'),
+      { reason: 'SPAM', details: '광고 글이에요' },
+    );
+    expect(result).toEqual({ message: 'ok' });
+  });
+
+  it('여행기 글은 feed 주소로 보낸다', async () => {
+    mockedAxios.post.mockResolvedValueOnce({ data: { message: 'ok' } } as never);
+
+    await reportPost('12', 'OTHER', '기타 사유', true);
+
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      expect.stringContaining('/api/feed/posts/12/reports'),
+      { reason: 'OTHER', details: '기타 사유' },
     );
   });
 });
