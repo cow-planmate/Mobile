@@ -51,6 +51,11 @@ export interface ProtoSyncClient {
 interface ProtoSyncOptions {
   baseUrl: string;
   token: string;
+  /**
+   * 연결을 시도할 때마다 부른다. 액세스 토큰은 15분이면 만료되므로, 처음 받은
+   * token만 들고 재연결하면 서버가 계속 거절해 편집 화면을 다시 열기 전까지 복구되지 않는다.
+   */
+  getToken?: () => Promise<string | null>;
   roomId: string;
   onSync?: (body: any) => void;
   onPresence?: (body: any) => void;
@@ -124,6 +129,7 @@ async function loadSchema(baseUrl: string): Promise<LoadedSchema> {
 export function createProtoSyncClient({
   baseUrl: rawBaseUrl,
   token,
+  getToken,
   roomId,
   onSync,
   onPresence,
@@ -159,19 +165,21 @@ export function createProtoSyncClient({
       if (!schema) {
         schema = await loadSchema(baseUrl);
       }
-      connect();
+      const currentToken = getToken ? (await getToken()) ?? token : token;
+      if (disposed) return;
+      connect(currentToken);
     } catch (error) {
       console.warn('[proto] 스키마 로드 실패:', error);
       scheduleReconnect();
     }
   }
 
-  function connect() {
+  function connect(currentToken: string) {
     if (disposed || !schema) return;
 
     const url = `${baseUrl.replace(/^http/, 'ws')}/ws/v2`;
     // 토큰을 쿼리스트링이 아니라 서브프로토콜로 보낸다. URL은 액세스 로그에 그대로 남는다.
-    ws = new WebSocket(url, ['sharedsync.v1', `bearer.${token}`]);
+    ws = new WebSocket(url, ['sharedsync.v1', `bearer.${currentToken}`]);
     ws.binaryType = 'arraybuffer';
 
     ws.onmessage = event => {

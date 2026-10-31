@@ -25,7 +25,8 @@ describe('Protobuf 일정 편집 연결', () => {
       send = jest.fn();
       onclose?: () => void;
       close = jest.fn(() => this.onclose?.());
-      constructor() { socket = this; }
+      protocols?: string[];
+      constructor(_url: string, protocols?: string[]) { socket = this; this.protocols = protocols; }
     } as any;
     client = createProtoSyncClient({ baseUrl: 'http://localhost/', token: 'token', roomId: 'room', onConnect, onSync });
     await Promise.resolve();
@@ -99,5 +100,25 @@ describe('Protobuf 일정 편집 연결', () => {
     ] }) });
     const frame = legacyRoot.lookupType('sync.ClientFrame').decode(socket.send.mock.calls[1][0]) as any;
     expect(frame.sync.plans.items[0]).toMatchObject({ planId: 'room', planName: '새 이름', adultCount: 3, childCount: 0 });
+  });
+
+  it('재연결할 때마다 토큰을 새로 받아 만료된 토큰으로 붙지 않는다', async () => {
+    client.deactivate();
+    const getToken = jest.fn().mockResolvedValueOnce('first').mockResolvedValueOnce('second');
+    client = createProtoSyncClient({ baseUrl: 'http://localhost', token: 'stale', getToken, roomId: 'room' });
+    await jest.advanceTimersByTimeAsync(0);
+    expect(socket.protocols).toEqual(['sharedsync.v1', 'bearer.first']);
+
+    socket.onclose();
+    await jest.advanceTimersByTimeAsync(3000);
+    expect(getToken).toHaveBeenCalledTimes(2);
+    expect(socket.protocols).toEqual(['sharedsync.v1', 'bearer.second']);
+  });
+
+  it('토큰을 받지 못하면 처음 받은 토큰으로 시도한다', async () => {
+    client.deactivate();
+    client = createProtoSyncClient({ baseUrl: 'http://localhost', token: 'initial', getToken: jest.fn().mockResolvedValue(null), roomId: 'room' });
+    await jest.advanceTimersByTimeAsync(0);
+    expect(socket.protocols).toEqual(['sharedsync.v1', 'bearer.initial']);
   });
 });
