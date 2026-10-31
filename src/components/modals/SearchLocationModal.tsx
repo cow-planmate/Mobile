@@ -6,14 +6,17 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  TextInput,
 } from 'react-native';
 import axios from 'axios';
+import Search from 'lucide-react-native/dist/esm/icons/search';
 
 import PopupModal from './PopupModal';
 import { styles, COLORS } from './SearchLocationModal.styles';
-import { DESTINATIONS_28 } from '../../constants/regions';
+import { DESTINATIONS_28, REGION_GROUPS } from '../../constants/regions';
 import { isRegionMatch } from '../../utils/regionMatcher';
 import { resolveApiUrl } from '../../utils/apiUrl';
+import { normalize } from '../../utils/normalize';
 
 interface DestinationDto {
   destinationId: number;
@@ -90,13 +93,25 @@ export default function SearchLocationModal({
   onDone,
 }: Props) {
   const [selectedDestination, setSelectedDestination] = useState<TravelVO | null>(null);
+  const [query, setQuery] = useState('');
+  const [region, setRegion] = useState(REGION_GROUPS[0]);
 
   const { data, isLoading } = useDestinations(visible);
   const destinations = data ?? [];
 
+  // 고른 지역 안에서 이름에 검색어가 들어 있는 곳만 보여준다.
+  const keyword = query.trim();
+  const filtered = destinations.filter(
+    d =>
+      (region === REGION_GROUPS[0] || d.region === region) &&
+      d.travelName.includes(keyword),
+  );
+
   useEffect(() => {
     if (visible) {
       setSelectedDestination(null);
+      setQuery('');
+      setRegion(REGION_GROUPS[0]);
     }
   }, [visible]);
 
@@ -134,38 +149,89 @@ export default function SearchLocationModal({
           <Text style={styles.loaderText}>불러오는 중...</Text>
         </View>
       ) : (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.gridScroll}
-        >
-          <View style={styles.grid}>
-            {destinations.map(item => {
-              const isSelected = selectedDestination?.travelId === item.travelId;
+        <>
+          <View style={styles.searchBox}>
+            <Search
+              size={normalize(16)}
+              color={COLORS.placeholder}
+              strokeWidth={2}
+            />
+            <TextInput
+              style={styles.searchInput}
+              value={query}
+              onChangeText={setQuery}
+              placeholder="여행지를 검색해 보세요"
+              placeholderTextColor={COLORS.placeholder}
+              returnKeyType="search"
+              autoCorrect={false}
+              accessibilityLabel="여행지 검색"
+            />
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            style={styles.chipScroll}
+            contentContainerStyle={styles.chipRow}
+          >
+            {REGION_GROUPS.map(group => {
+              const isActive = region === group;
               return (
                 <TouchableOpacity
-                  key={item.travelId > 0 ? item.travelId : item.travelName}
-                  style={styles.gridCell}
-                  onPress={() => handleDestinationSelect(item)}
+                  key={group}
+                  style={[styles.chip, isActive && styles.chipActive]}
+                  onPress={() => setRegion(group)}
                   activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isSelected }}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: isActive }}
                 >
-                  <View style={[styles.cell, isSelected && styles.cellSelected]}>
-                    <Text
-                      style={[
-                        styles.cellText,
-                        isSelected && styles.cellTextSelected,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {item.travelName}
-                    </Text>
-                  </View>
+                  <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                    {group}
+                  </Text>
                 </TouchableOpacity>
               );
             })}
-          </View>
-        </ScrollView>
+          </ScrollView>
+          {filtered.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.loaderText}>검색 결과가 없어요</Text>
+            </View>
+          ) : (
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.gridScroll}
+            >
+              <View style={styles.grid}>
+                {filtered.map(item => {
+                  const isSelected = selectedDestination?.travelId === item.travelId;
+                  return (
+                    <TouchableOpacity
+                      key={item.travelId > 0 ? item.travelId : item.travelName}
+                      style={styles.gridCell}
+                      onPress={() => handleDestinationSelect(item)}
+                      activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                    >
+                      <View style={[styles.cell, isSelected && styles.cellSelected]}>
+                        <Text
+                          style={[
+                            styles.cellText,
+                            isSelected && styles.cellTextSelected,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {item.travelName}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          )}
+        </>
       )}
     </PopupModal>
   );

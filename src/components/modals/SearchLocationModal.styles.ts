@@ -20,6 +20,54 @@ export const FONTS = {
 };
 
 export const styles = StyleSheet.create({
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(8),
+    marginHorizontal: normalize(16),
+    marginBottom: normalize(10),
+    paddingHorizontal: normalize(12),
+    height: normalize(42),
+    borderRadius: tokens.radius.m,
+    backgroundColor: COLORS.cell,
+  },
+  searchInput: {
+    flex: 1,
+    padding: 0,
+    fontSize: normalize(13.5),
+    fontFamily: FONTS.medium,
+    color: COLORS.text,
+  },
+  chipScroll: {
+    flexGrow: 0,
+    marginBottom: normalize(8),
+  },
+  chipRow: {
+    paddingHorizontal: normalize(16),
+    gap: normalize(6),
+  },
+  chip: {
+    paddingVertical: normalize(6),
+    paddingHorizontal: normalize(12),
+    borderRadius: tokens.radius.round,
+    backgroundColor: COLORS.cell,
+  },
+  chipActive: {
+    backgroundColor: tokens.colors.primaryTint,
+  },
+  chipText: {
+    fontSize: normalize(12.5),
+    fontFamily: FONTS.medium,
+    color: COLORS.subtext,
+  },
+  chipTextActive: {
+    fontFamily: FONTS.semibold,
+    color: COLORS.primary,
+  },
+  emptyContainer: {
+    paddingVertical: normalize(32),
+    alignItems: 'center',
+  },
   gridScroll: {
     paddingHorizontal: normalize(13),
     paddingBottom: normalize(4),
