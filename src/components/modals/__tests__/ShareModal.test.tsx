@@ -106,7 +106,7 @@ describe('ShareModal', () => {
       );
     });
     expect(tree!.root.findByProps({ accessibilityLabel: '공유 링크' }).props.children).toBe(
-      `${WEB_URL}/create?id=plan-1`,
+      `${WEB_URL}/complete?id=plan-1`,
     );
     act(() => tree!.unmount());
   });
@@ -137,10 +137,10 @@ describe('ShareModal', () => {
     });
 
     expect(
-      tree!.root.findAllByProps({ children: `${WEB_URL}/create?id=plan-1` }),
+      tree!.root.findAllByProps({ children: `${WEB_URL}/complete?id=plan-1` }),
     ).toHaveLength(0);
     expect(tree!.root.findByProps({ accessibilityLabel: '공유 링크' }).props.children).toBe(
-      `${WEB_URL}/create?id=plan-2`,
+      `${WEB_URL}/complete?id=plan-2`,
     );
     expect(
       tree!.root.findAllByProps({ children: '이전 편집자' }),
@@ -289,6 +289,33 @@ describe('ShareModal', () => {
     expect(
       tree!.root.findAllByProps({ children: '새 일정 편집자' }).length,
     ).toBeGreaterThan(0);
+    act(() => tree!.unmount());
+  });
+
+  it('공유가 꺼진 일정은 링크와 복사·공유 버튼을 숨긴다', async () => {
+    mockGetShareUrl.mockResolvedValueOnce({
+      shareUrl: `${WEB_URL}/complete?id=plan-1`,
+      isShared: false,
+    });
+    let tree: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderer.create(
+        <ShareModal visible onClose={jest.fn()} planId="plan-1" isOwner />,
+      );
+      await Promise.resolve();
+    });
+
+    expect(tree!.root.findAllByProps({ accessibilityLabel: '공유 링크' })).toHaveLength(0);
+    expect(tree!.root.findAllByProps({ accessibilityLabel: '공유 링크 복사' })).toHaveLength(0);
+    expect(tree!.root.findAllByProps({ accessibilityLabel: '공유 링크 보내기' })).toHaveLength(0);
+
+    mockUpdateShareStatus.mockResolvedValueOnce(undefined);
+    await act(async () => {
+      tree!.root.findByType(Switch).props.onValueChange(true);
+    });
+    expect(tree!.root.findByProps({ accessibilityLabel: '공유 링크' }).props.children).toBe(
+      `${WEB_URL}/complete?id=plan-1`,
+    );
     act(() => tree!.unmount());
   });
 });

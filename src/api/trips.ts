@@ -288,8 +288,10 @@ export async function updateShareStatus(planId: string, isShared: boolean): Prom
   await axios.patch(resolveApiUrl(`/api/plan/${planId}/share`), { isShared });
 }
 
+// 웹 ShareModal과 같은 보기 페이지로 보낸다. 편집 페이지(/create)는 멤버가 아니면
+// 일정 대신 '편집 권한이 없습니다'만 보여 줘서, 공유를 켜도 받은 사람이 볼 수 없다.
 export function buildShareUrl(planId: string): string {
-  return `${WEB_URL}/create?id=${planId}`;
+  return `${WEB_URL}/complete?id=${encodeURIComponent(planId)}`;
 }
 
 export async function getShareUrl(

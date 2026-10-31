@@ -114,7 +114,7 @@ export default function ShareModal({
     });
 
   const handleCopyLink = () => {
-    if (!shareLink) return;
+    if (!shareLink || !isShared) return;
 
     const hasNativeClipboard = !!NativeModules.RNCClipboard;
     if (hasNativeClipboard) {
@@ -140,7 +140,7 @@ export default function ShareModal({
   };
 
   const handleShareLink = async () => {
-    if (!shareLink) return;
+    if (!shareLink || !isShared) return;
     try {
       await Share.share({
         message: `[PlanMate] 완성된 여행 일정 링크예요!\n${shareLink}`,
@@ -381,39 +381,44 @@ export default function ShareModal({
             )}
           </View>
 
-          <View style={styles.linkRow}>
-            <Text
-              style={styles.linkInput}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              accessibilityLabel="공유 링크"
-            >
-              {shareLink}
-            </Text>
-            <TouchableOpacity
-              style={styles.copyButton}
-              onPress={handleCopyLink}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel="공유 링크 복사"
-            >
-              <Copy size={normalize(14)} color={tokens.colors.primary} />
-              <Text style={styles.copyText}>링크 복사</Text>
-            </TouchableOpacity>
-          </View>
+          {/* 공유가 꺼지면 받은 사람이 열어도 볼 수 없으므로 웹처럼 링크를 감춘다. */}
+          {isShared && (
+            <>
+              <View style={styles.linkRow}>
+                <Text
+                  style={styles.linkInput}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  accessibilityLabel="공유 링크"
+                >
+                  {shareLink}
+                </Text>
+                <TouchableOpacity
+                  style={styles.copyButton}
+                  onPress={handleCopyLink}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="공유 링크 복사"
+                >
+                  <Copy size={normalize(14)} color={tokens.colors.primary} />
+                  <Text style={styles.copyText}>링크 복사</Text>
+                </TouchableOpacity>
+              </View>
 
-          <TouchableOpacity
-            style={styles.shareButton}
-            onPress={handleShareLink}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel="공유 링크 보내기"
-          >
-            <Text style={styles.shareText}>링크 공유하기</Text>
-          </TouchableOpacity>
-          <Text style={styles.helper}>
-            링크를 복사하거나 공유하여 친구들에게 보내세요.
-          </Text>
+              <TouchableOpacity
+                style={styles.shareButton}
+                onPress={handleShareLink}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="공유 링크 보내기"
+              >
+                <Text style={styles.shareText}>링크 공유하기</Text>
+              </TouchableOpacity>
+              <Text style={styles.helper}>
+                링크를 복사하거나 공유하여 친구들에게 보내세요.
+              </Text>
+            </>
+          )}
         </View>
 
         <Text style={styles.sectionLabel}>일정 편집 초대</Text>
