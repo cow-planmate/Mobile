@@ -19,6 +19,7 @@ import Copy from 'lucide-react-native/dist/esm/icons/copy';
 import Clock from 'lucide-react-native/dist/esm/icons/clock';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import BackTopBar from '../../../components/common/BackTopBar';
+import BottomInsetFiller from '../../../components/common/BottomInsetFiller';
 import PopupModal from '../../../components/common/PopupModal';
 import SearchLocationModal from '../../../components/common/SearchLocationModal';
 import FeedEditor from '../components/FeedEditor';
@@ -478,6 +479,7 @@ export function FeedCreateScreenView({
           )}
         </View>
       </ScrollView>
+      <BottomInsetFiller />
 
       {/* 지역 선택 모달 */}
       <SearchLocationModal

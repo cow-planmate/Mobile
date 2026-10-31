@@ -20,6 +20,7 @@ import UpdatePasswordModal from '../components/UpdatePasswordModal';
 import UpdateThemeModal from '../components/UpdateThemeModal';
 import UpdateValueModal from '../components/UpdateValueModal';
 import BackTopBar from '../../../components/common/BackTopBar';
+import BottomInsetFiller from '../../../components/common/BottomInsetFiller';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 import { resolveApiUrl } from '../../../utils/apiUrl';
@@ -82,7 +83,6 @@ import { tokens } from '../../../theme/tokens';
 import { verifyNicknameAvailable } from '../../../api/auth';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
-import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import {
   NICKNAME_MAX_LENGTH,
   getNicknameLengthError,
@@ -446,7 +446,6 @@ export default function ProfileScreenView({
   scrollToItinerary,
 }: ProfileScreenViewProps) {
   const navigation = useNavigation<any>();
-  const screenInsets = useScreenInsets(true);
   const queryClient = useQueryClient();
   const { showAlert } = useAlert();
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -994,9 +993,7 @@ export default function ProfileScreenView({
   };
 
   return (
-    <View
-      style={[styles.container, { paddingBottom: screenInsets.paddingBottom }]}
-    >
+    <View style={styles.container}>
       <StatusBar
         barStyle="dark-content"
         backgroundColor={tokens.colors.white}
@@ -1300,6 +1297,8 @@ export default function ProfileScreenView({
           </>
         )}
       </ScrollView>
+
+      <BottomInsetFiller />
 
       <DatePicker
         modal

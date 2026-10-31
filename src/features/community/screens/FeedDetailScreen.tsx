@@ -30,6 +30,7 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CalendarModal } from '../../../components/common';
 import BackTopBar from '../../../components/common/BackTopBar';
+import BottomInsetFiller from '../../../components/common/BottomInsetFiller';
 import { FeedStackParamList } from '../../../navigation/types';
 import {
   usePost,
@@ -712,6 +713,7 @@ ${WEB_URL}/travel/${post.id}`,
           </>
         )}
       </ScrollView>
+      <BottomInsetFiller />
 
       <PublicProfileModal
         visible={isAuthorProfileVisible}

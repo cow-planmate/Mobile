@@ -40,6 +40,7 @@ import { styles, COLORS } from './PostDetailScreen.styles';
 import { tokens } from '../../../theme/tokens';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import BackTopBar from '../../../components/common/BackTopBar';
+import BottomInsetFiller from '../../../components/common/BottomInsetFiller';
 
 type DetailRoute = RouteProp<CommunityStackParamList, 'CommunityDetail'>;
 
@@ -426,6 +427,7 @@ export default function PostDetailScreen() {
           </>
         )}
       </ScrollView>
+      <BottomInsetFiller />
 
       <PublicProfileModal
         visible={isAuthorProfileVisible}

@@ -31,6 +31,7 @@ import { styles, COLORS } from './PostCreateScreen.styles';
 import { tokens } from '../../../theme/tokens';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import BackTopBar from '../../../components/common/BackTopBar';
+import BottomInsetFiller from '../../../components/common/BottomInsetFiller';
 
 type CreateRoute = RouteProp<CommunityStackParamList, 'CommunityCreate'>;
 
@@ -248,6 +249,7 @@ export default function PostCreateScreen() {
           ))}
         </View>
       </ScrollView>
+      <BottomInsetFiller />
     </KeyboardAvoidingView>
   );
 }
