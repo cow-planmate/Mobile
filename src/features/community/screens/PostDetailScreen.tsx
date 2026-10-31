@@ -39,7 +39,6 @@ import { BoardKey, boardLabel } from '../constants/board';
 import { styles, COLORS } from './PostDetailScreen.styles';
 import { tokens } from '../../../theme/tokens';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
-import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import BackTopBar from '../../../components/common/BackTopBar';
 
 type DetailRoute = RouteProp<CommunityStackParamList, 'CommunityDetail'>;
@@ -51,7 +50,6 @@ export default function PostDetailScreen() {
   const [isAuthorProfileVisible, setAuthorProfileVisible] = useState(false);
 
   const postId = route.params?.postId;
-  const screenInsets = useScreenInsets(false);
   const user = useAuthStore(state => state.user);
   const isLoggedIn = !!user;
 
@@ -135,12 +133,16 @@ export default function PostDetailScreen() {
   };
 
   const renderTopBar = () => (
-    <BackTopBar title="게시글" onBack={() => navigation.goBack()} />
+    <BackTopBar
+      title="게시글"
+      onBack={() => navigation.goBack()}
+      safeTop
+    />
   );
 
   if (isLoading) {
     return (
-      <View style={[styles.container, screenInsets]}>
+      <View style={styles.container}>
         {renderTopBar()}
         <View style={styles.stateBox}>
           <ActivityIndicator color={COLORS.primary} />
@@ -155,7 +157,7 @@ export default function PostDetailScreen() {
       ? getResourceLoadError(error, '게시글')
       : { message: '게시글을 찾을 수 없어요.', canRetry: false };
     return (
-      <View style={[styles.container, screenInsets]}>
+      <View style={styles.container}>
         {renderTopBar()}
         <View style={styles.stateBox}>
           <Text style={styles.stateText}>{failure.message}</Text>
@@ -179,7 +181,7 @@ export default function PostDetailScreen() {
 
 
   return (
-    <View style={[styles.container, screenInsets]}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
       {renderTopBar()}
 

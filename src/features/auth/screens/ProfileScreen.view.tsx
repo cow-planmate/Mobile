@@ -994,12 +994,14 @@ export default function ProfileScreenView({
   };
 
   return (
-    <View style={[styles.container, screenInsets]}>
+    <View
+      style={[styles.container, { paddingBottom: screenInsets.paddingBottom }]}
+    >
       <StatusBar
         barStyle="dark-content"
         backgroundColor={tokens.colors.white}
       />
-      <BackTopBar title="마이페이지" onBack={handleBackPress} />
+      <BackTopBar title="마이페이지" onBack={handleBackPress} safeTop />
 
       {/* 프로필이 탭 하나로 내려오면서 탭줄이 머리에 붙는다. 굴려도 따라오지
           않고 제자리에 있어야 최상단 전환기로 읽힌다. */}

@@ -60,7 +60,6 @@ import {
 } from '../utils/itineraryEntries';
 import { styles, COLORS } from './FeedDetailScreen.styles';
 import { tokens } from '../../../theme/tokens';
-import { useScreenInsets } from '../../../hooks/useScreenInsets';
 
 type FeedDetailRoute = RouteProp<FeedStackParamList, 'FeedDetail'>;
 
@@ -70,7 +69,6 @@ export default function FeedDetailScreen() {
   const { showAlert } = useAlert();
 
   const postId = route.params?.postId;
-  const screenInsets = useScreenInsets(false);
   const user = useAuthStore(state => state.user);
   const isLoggedIn = !!user;
 
@@ -225,12 +223,16 @@ ${WEB_URL}/travel/${post.id}`,
   };
 
   const renderTopBar = () => (
-    <BackTopBar title="여행기" onBack={() => navigation.goBack()} />
+    <BackTopBar
+      title="여행기"
+      onBack={() => navigation.goBack()}
+      safeTop
+    />
   );
 
   if (isLoading) {
     return (
-      <View style={[styles.container, screenInsets]}>
+      <View style={styles.container}>
         {renderTopBar()}
         <View style={styles.stateBox}>
           <ActivityIndicator color={COLORS.primary} />
@@ -245,7 +247,7 @@ ${WEB_URL}/travel/${post.id}`,
       ? getResourceLoadError(error, '여행기')
       : { message: '여행기를 찾을 수 없어요.', canRetry: false };
     return (
-      <View style={[styles.container, screenInsets]}>
+      <View style={styles.container}>
         {renderTopBar()}
         <View style={styles.stateBox}>
           <Text style={styles.stateText}>{failure.message}</Text>
@@ -350,7 +352,7 @@ ${WEB_URL}/travel/${post.id}`,
   const regionLabel = post.location ?? post.region;
 
   return (
-    <View style={[styles.container, screenInsets]}>
+    <View style={styles.container}>
       <StatusBar
         barStyle="dark-content"
         backgroundColor={tokens.colors.white}
