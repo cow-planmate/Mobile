@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Keychain from 'react-native-keychain';
 import {
   ensureFreshAccessToken,
   observeAccessToken,
@@ -96,7 +97,7 @@ describe('인증 없이 호출하는 경로의 토큰 처리', () => {
     );
 
     await expect(responseHandler(error)).rejects.toBe(error);
-    expect(mockedStorage.getItem).not.toHaveBeenCalledWith('refreshToken');
+    expect(Keychain.getGenericPassword).not.toHaveBeenCalled();
   });
 
   it('일반 API의 401 AUTH_001은 여전히 재발급을 시도한다', async () => {
@@ -105,7 +106,7 @@ describe('인증 없이 호출하는 경로의 토큰 처리', () => {
     const error = make401('/api/user/profile', 'AUTH_001');
 
     await expect(responseHandler(error)).rejects.toBe(error);
-    expect(mockedStorage.getItem).toHaveBeenCalledWith('refreshToken');
+    expect(Keychain.getGenericPassword).toHaveBeenCalled();
   });
 
   it('iat가 없는 새 토큰은 이전 토큰의 시계 보정값을 사용하지 않는다', async () => {
@@ -119,6 +120,6 @@ describe('인증 없이 호출하는 경로의 토큰 처리', () => {
     );
 
     await expect(ensureFreshAccessToken()).resolves.toBe(accessToken);
-    expect(mockedStorage.getItem).not.toHaveBeenCalledWith('refreshToken');
+    expect(Keychain.getGenericPassword).not.toHaveBeenCalled();
   });
 });

@@ -12,6 +12,12 @@ import {
 import { observeAccessToken } from '../api/axiosConfig';
 import { queryClient } from '../api/queryClient';
 import { clearWebViewCookies } from '../features/auth/webViewCookies';
+import {
+  clearRefreshToken,
+  getRefreshToken,
+  migrateLegacyRefreshToken,
+  setRefreshToken,
+} from '../utils/refreshTokenStorage';
 
 export interface User {
   userId: string;
@@ -71,6 +77,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   initialize: async () => {
     try {
+      await migrateLegacyRefreshToken();
+
       const [[, userJson], [, token], [, lastMethod], [, lastEmail], [, tokenReceivedAt]] =
         await AsyncStorage.multiGet([
           'user',
@@ -135,11 +143,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           email: userEmail || email,
         };
 
-
+        await setRefreshToken(refreshToken);
         await AsyncStorage.multiSet([
           ['user', JSON.stringify(userData)],
           ['accessToken', accessToken],
-          ['refreshToken', refreshToken],
           [ACCESS_TOKEN_RECEIVED_AT_KEY, String(receivedAtMs)],
           [LAST_LOGIN_METHOD_KEY, 'email'],
           [LAST_LOGIN_EMAIL_KEY, email],
@@ -180,10 +187,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       };
 
       const receivedAtMs = Date.now();
+      await setRefreshToken(refreshToken);
       await AsyncStorage.multiSet([
         ['user', JSON.stringify(userData)],
         ['accessToken', accessToken],
-        ['refreshToken', refreshToken],
         [ACCESS_TOKEN_RECEIVED_AT_KEY, String(receivedAtMs)],
         ...(provider ? [[LAST_LOGIN_METHOD_KEY, provider] as [string, string]] : []),
       ]);
@@ -217,10 +224,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           email: email || data.email || '',
         };
 
+        await setRefreshToken(refreshToken);
         await AsyncStorage.multiSet([
           ['user', JSON.stringify(userData)],
           ['accessToken', accessToken],
-          ['refreshToken', refreshToken],
           [ACCESS_TOKEN_RECEIVED_AT_KEY, String(receivedAtMs)],
           ...(provider ? [[LAST_LOGIN_METHOD_KEY, provider] as [string, string]] : []),
         ]);
@@ -247,11 +254,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user: null, ...(forgetLoginMethod ? { lastLoginMethod: null, lastLoginEmail: null } : {}) });
     queryClient.clear();
     try {
-      await AsyncStorage.multiRemove(
-        forgetLoginMethod
-          ? [...LOGOUT_CLEARED_KEYS, ...IDENTITY_CLEARED_KEYS]
-          : LOGOUT_CLEARED_KEYS,
-      );
+      await Promise.all([
+        AsyncStorage.multiRemove(
+          forgetLoginMethod
+            ? [...LOGOUT_CLEARED_KEYS, ...IDENTITY_CLEARED_KEYS]
+            : LOGOUT_CLEARED_KEYS,
+        ),
+        clearRefreshToken(),
+      ]);
     } finally {
       await clearWebViewCookies();
     }
@@ -260,7 +270,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   revokeRefreshToken: async () => {
     try {
       const accessToken = await AsyncStorage.getItem('accessToken');
-      const refreshToken = await AsyncStorage.getItem('refreshToken');
+      const refreshToken = await getRefreshToken();
       if (!accessToken || !refreshToken) return;
 
       await axios.post(
@@ -278,7 +288,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       const accessToken = await AsyncStorage.getItem('accessToken');
-      const refreshToken = await AsyncStorage.getItem('refreshToken');
+      const refreshToken = await getRefreshToken();
 
       if (accessToken) {
         await axios.post(

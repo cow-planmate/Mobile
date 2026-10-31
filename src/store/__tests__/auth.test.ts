@@ -1,6 +1,11 @@
 import { useAuthStore } from '../useAuthStore';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Keychain from 'react-native-keychain';
+import {
+  getRefreshToken,
+  setRefreshToken,
+} from '../../utils/refreshTokenStorage';
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -163,6 +168,71 @@ describe('Auth Store - Social Login & Complete', () => {
     } finally {
       nowSpy.mockRestore();
     }
+  });
+
+  it('갱신 토큰은 평문 저장소가 아니라 암호화 저장소에 둔다', async () => {
+    mockedAxios.post.mockResolvedValueOnce({
+      data: {
+        accessToken: 'mock-access-token',
+        refreshToken: 'mock-refresh-token',
+        userId: 789,
+        nickname: '일반가입자',
+        email: 'user@example.com',
+      },
+    });
+
+    await useAuthStore.getState().login('user@example.com', 'password123');
+
+    await expect(getRefreshToken()).resolves.toBe('mock-refresh-token');
+    const savedKeys = mockedAsyncStorage.multiSet.mock.calls[0][0].map(
+      ([key]) => key,
+    );
+    expect(savedKeys).not.toContain('refreshToken');
+  });
+
+  it('갱신 토큰을 저장하지 못하면 로그인을 끝내지 않는다', async () => {
+    mockedAxios.post.mockResolvedValueOnce({
+      data: {
+        accessToken: 'mock-access-token',
+        refreshToken: 'mock-refresh-token',
+        userId: 789,
+        nickname: '일반가입자',
+        email: 'user@example.com',
+      },
+    });
+    (Keychain.setGenericPassword as jest.Mock).mockResolvedValueOnce(false);
+
+    await expect(
+      useAuthStore.getState().login('user@example.com', 'password123'),
+    ).rejects.toThrow();
+    expect(useAuthStore.getState().user).toBeNull();
+    expect(AsyncStorage.multiSet).not.toHaveBeenCalled();
+  });
+
+  it('세션을 비우면 암호화 저장소의 갱신 토큰도 지운다', async () => {
+    await setRefreshToken('mock-refresh-token');
+
+    await useAuthStore.getState().clearSession();
+
+    await expect(getRefreshToken()).resolves.toBeNull();
+  });
+
+  it('로그아웃할 때 암호화 저장소의 갱신 토큰으로 서버 폐기를 요청한다', async () => {
+    await setRefreshToken('mock-refresh-token');
+    mockedAsyncStorage.getItem.mockImplementation(key =>
+      Promise.resolve(key === 'accessToken' ? 'mock-access-token' : null),
+    );
+    mockedAxios.post.mockResolvedValueOnce({ status: 204 });
+
+    await useAuthStore.getState().logout();
+
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      expect.stringContaining('/api/auth/logout'),
+      { refreshToken: 'mock-refresh-token' },
+      expect.any(Object),
+    );
+    await expect(getRefreshToken()).resolves.toBeNull();
+    mockedAsyncStorage.getItem.mockImplementation(() => Promise.resolve(null));
   });
 
   it('should throw error when login response fails', async () => {

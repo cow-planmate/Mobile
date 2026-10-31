@@ -7,6 +7,7 @@ import {
 } from '../constants/storageKeys';
 import { getJwtIssuedAtMs, isTokenExpiringSoon } from '../utils/jwt';
 import { isTokenAuthFailure } from '../utils/authError';
+import { clearRefreshToken, getRefreshToken } from '../utils/refreshTokenStorage';
 
 const normalizedApiUrl = (API_URL ?? '').trim().replace(/\/+$/, '');
 
@@ -74,7 +75,7 @@ export const observeAccessToken = (
 };
 
 const performTokenRefresh = async (): Promise<string | null> => {
-  const refreshToken = await AsyncStorage.getItem('refreshToken');
+  const refreshToken = await getRefreshToken();
   if (!refreshToken) return null;
 
   const response = await axios.post('/api/auth/token', { refreshToken });
@@ -133,7 +134,10 @@ const clearSession = async () => {
     );
   }
 
-  await AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS);
+  await Promise.all([
+    AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS),
+    clearRefreshToken(),
+  ]);
 };
 
 if (axios && axios.defaults) {
