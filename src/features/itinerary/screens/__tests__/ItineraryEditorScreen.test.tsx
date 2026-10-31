@@ -261,13 +261,6 @@ jest.mock('../../../../hooks/usePlanOwnership', () => ({
   usePlanOwnership: () => mockPlanOwnership,
 }));
 
-const mockMutateAsync = jest.fn();
-jest.mock('../../../../hooks/usePlanQueries', () => ({
-  useCreateFullPlan: () => ({
-    mutateAsync: mockMutateAsync,
-  }),
-}));
-
 const mockWebSocket = {
   connect: jest.fn(),
   disconnect: jest.fn(),
@@ -928,23 +921,19 @@ describe('ItineraryEditorScreen Component', () => {
     expect(mockDispatch).not.toHaveBeenCalled();
   });
 
-  it('아직 저장되지 않은 새 일정에서는 사라진다고 경고한다', async () => {
+  it('일정 ID 없이 열리면 새로 만들지 않고 안내한 뒤 돌아간다', async () => {
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
 
-    const mockAddListener = jest.fn<
-      () => jest.Mock,
-      [string, (...args: any[]) => void]
-    >(() => jest.fn());
     const mockNavigation = {
-      addListener: mockAddListener,
+      addListener: jest.fn(() => jest.fn()),
       goBack: jest.fn(),
       navigate: jest.fn(),
       dispatch: jest.fn(),
       setParams: jest.fn(),
     } as any;
 
-    // planId가 없으면 완료를 눌러야 서버에 만들어진다 — 이때는 경고가 맞다.
+    // 모든 진입 경로가 먼저 일정을 만들어 ID를 넘긴다. ID가 없는 진입은 비정상이다.
     const mockRoute = { params: { destination: '제주도' } } as any;
 
     await act(async () => {
@@ -953,24 +942,17 @@ describe('ItineraryEditorScreen Component', () => {
       );
     });
 
-    const beforeRemoveHandler = mockAddListener.mock.calls.find(
-      call => call[0] === 'beforeRemove',
-    )?.[1];
-
-    await act(async () => {
-      beforeRemoveHandler!({
-        preventDefault: jest.fn(),
-        data: { action: { type: 'GO_BACK' } },
-      });
-    });
-
     expect(mockShowAlert).toHaveBeenCalledWith(
-      expect.objectContaining({ title: '저장되지 않은 일정', type: 'warning' }),
+      expect.objectContaining({ title: '일정을 열 수 없어요', type: 'error' }),
     );
-    const leaveButton = mockShowAlert.mock.calls[0][0].buttons.find(
-      (btn: any) => btn.text === '나가기',
+    expect(mockNavigation.goBack).not.toHaveBeenCalled();
+
+    const confirm = mockShowAlert.mock.calls[0][0].buttons.find(
+      (btn: any) => btn.text === '확인',
     );
-    expect(leaveButton.style).toBe('destructive');
+    act(() => confirm.onPress());
+    expect(mockNavigation.goBack).toHaveBeenCalledTimes(1);
+    expect(axios.post).not.toHaveBeenCalled();
   });
 
   it('does not show warning alert when completed via onComplete', async () => {
