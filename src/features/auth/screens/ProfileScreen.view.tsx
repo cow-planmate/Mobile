@@ -54,6 +54,7 @@ import FallbackImage from '../../../components/common/FallbackImage';
 import { normalize } from '../../../utils/normalize';
 import ProfileTasteCard from '../components/ProfileTasteCard';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
+import FeedbackModal from '../components/FeedbackModal';
 import { allSettledWithConcurrency } from '../../../utils/concurrency';
 import { toPlanDate } from '../utils/planDate';
 import {
@@ -450,6 +451,7 @@ export default function ProfileScreenView({
   const { showAlert } = useAlert();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [isPrivacyPolicyVisible, setPrivacyPolicyVisible] = useState(false);
+  const [isFeedbackVisible, setFeedbackVisible] = useState(false);
   const [themeModalCategory, setThemeModalCategory] = useState<
     '관광지' | '숙소' | '식당' | undefined
   >(undefined);
@@ -1110,6 +1112,16 @@ export default function ProfileScreenView({
                   개인정보 처리방침
                 </Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setFeedbackVisible(true)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="의견 보내기"
+              >
+                <Text style={[styles.appVersionText, styles.privacyPolicyLink]}>
+                  의견 보내기
+                </Text>
+              </TouchableOpacity>
               <Text style={styles.appVersionText}>버전 {APP_VERSION}</Text>
             </View>
           </>
@@ -1541,6 +1553,10 @@ export default function ProfileScreenView({
         visible={isPrivacyPolicyVisible}
         onClose={() => setPrivacyPolicyVisible(false)}
         variant="policy"
+      />
+      <FeedbackModal
+        visible={isFeedbackVisible}
+        onClose={() => setFeedbackVisible(false)}
       />
 
       <MenuModal
