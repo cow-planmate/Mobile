@@ -35,11 +35,6 @@ const TimelineComponent = React.memo(
     {
       selectedDay: Day;
       onDeletePlace: (placeId: string) => void;
-      onEditPlaceTime: (
-        placeId: string,
-        type: 'startTime' | 'endTime',
-        time: string,
-      ) => void;
       onUpdatePlaceTimes: (
         placeId: string,
         newStartMinutes: number,
@@ -80,7 +75,6 @@ const TimelineComponent = React.memo(
       {
         selectedDay,
         onDeletePlace,
-        onEditPlaceTime,
         onUpdatePlaceTimes,
         onPressPlace,
         onShowBlockDetail,
@@ -279,9 +273,6 @@ const TimelineComponent = React.memo(
                     place={demoPlace}
                     offsetMinutes={offsetMinutes}
                     visible={isDemoBlockVisible}
-                    onEditTime={type =>
-                      onEditPlaceTime(demoPlace.id, type, demoPlace[type])
-                    }
                     onEditPlace={
                       onPressPlace ? () => onPressPlace(demoPlace) : undefined
                     }
@@ -302,7 +293,6 @@ const TimelineComponent = React.memo(
                     maxEndMinutes={maxEndMinutes}
                     minStartMinutes={minStartMinutes}
                     onDelete={onDeletePlace}
-                    onEditTime={onEditPlaceTime}
                     onEditPlace={onPressPlace}
                     onDragEnd={onUpdatePlaceTimes}
                     onPress={onPressPlace}

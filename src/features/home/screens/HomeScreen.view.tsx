@@ -155,7 +155,6 @@ export const HomeScreenView: React.FC<HomeScreenViewProps> = ({
   destination,
   dateText,
   paxText,
-  isFormValid,
   isSearchModalVisible,
   isCalendarVisible,
   isPaxModalVisible,

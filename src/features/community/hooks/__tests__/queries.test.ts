@@ -111,14 +111,14 @@ describe('community mutation cache invalidation', () => {
 describe.each([
   ['커뮤니티', () => usePosts('free'), fetchPosts],
   ['여행기', () => useFeedPosts({}), fetchFeedPosts],
-] as const)('%s 외부 변경 동기화', (_label, useList, fetchList) => {
+] as const)('%s 외부 변경 동기화', (_label, renderList, fetchList) => {
   let client: QueryClient;
   let unsubscribe: (() => void) | undefined;
   let wasServer: boolean;
   const api = fetchList as jest.Mock;
   const page = (id: number) => ({ items: [{ id }], page: 0, totalPages: 1 });
   const observe = () => {
-    useList();
+    renderList();
     const options = (useInfiniteQuery as jest.Mock).mock.calls.at(-1)[0];
     const observer = new InfiniteQueryObserver(client, options);
     unsubscribe = observer.subscribe(() => undefined);

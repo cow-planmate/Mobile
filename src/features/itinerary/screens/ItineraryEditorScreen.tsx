@@ -23,8 +23,6 @@ import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
 import { usePlanOwnership } from '../../../hooks/usePlanOwnership';
 import { invalidatePlanCaches } from '../../../hooks/planCache';
 import {
-  timeToMinutes,
-  dateToTime,
   formatDateLocal,
   normalizeTime,
   DEFAULT_DAY_START,
@@ -72,13 +70,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setTripName,
     isEditingTripName,
     setIsEditingTripName,
-    isTimePickerVisible,
-    setTimePickerVisible,
-    editingTime,
-    setEditingTime,
     timelineScrollRef,
     formatDate,
-    handleEditTime,
     handleUpdatePlaceTimes,
     handleDeletePlace,
     handleAddPlace,
@@ -612,46 +605,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setScheduleEditVisible(false);
   };
 
-  const onConfirmTimePicker = (date: Date) => {
-    if (!editingTime || !selectedDay) return;
-    const newTime = dateToTime(date);
-    const place = selectedDay.places.find(p => p.id === editingTime.placeId);
-    if (place) {
-      const newStartTimeMinutes = timeToMinutes(newTime);
-      if (editingTime.type === 'startTime') {
-        const endTimeMinutes = timeToMinutes(place.endTime);
-        const durationMinutes = endTimeMinutes - timeToMinutes(place.startTime);
-        if (durationMinutes < 15) {
-          handleUpdatePlaceTimes(
-            place.id,
-            newStartTimeMinutes,
-            newStartTimeMinutes + 15,
-          );
-        } else {
-          handleUpdatePlaceTimes(
-            place.id,
-            newStartTimeMinutes,
-            newStartTimeMinutes + durationMinutes,
-          );
-        }
-      } else {
-        const newEndTimeMinutes = timeToMinutes(newTime);
-        const startTimeMinutes = timeToMinutes(place.startTime);
-        if (newEndTimeMinutes <= startTimeMinutes) {
-          handleUpdatePlaceTimes(
-            place.id,
-            startTimeMinutes,
-            startTimeMinutes + 15,
-          );
-        } else {
-          handleUpdatePlaceTimes(place.id, startTimeMinutes, newEndTimeMinutes);
-        }
-      }
-    }
-    setTimePickerVisible(false);
-    setEditingTime(null);
-  };
-
   const onComplete = async () => {
     if (isSavingRef.current) return;
     isSavingRef.current = true;
@@ -870,7 +823,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     !isChecklistVisible &&
     !isPlaceEditModalVisible &&
     !isScheduleEditVisible &&
-    !isTimePickerVisible &&
     !placeDetail;
 
   return (
@@ -884,12 +836,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         setIsEditingTripName={setIsEditingTripName}
         setTripName={setTripName}
         onSaveTripName={handleSaveTripName}
-        isTimePickerVisible={isTimePickerVisible}
-        setTimePickerVisible={setTimePickerVisible}
-        editingTime={editingTime}
         timelineScrollRef={timelineScrollRef}
         formatDate={formatDate}
-        handleEditTime={handleEditTime}
         handleUpdatePlaceTimes={handleUpdatePlaceTimes}
         handleDeletePlace={handleDeletePlace}
         handleAddPlace={handleAddPlaceOverride}
@@ -910,7 +858,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           setScheduleEditVisible(visible);
         }}
         onConfirmScheduleEdit={onConfirmScheduleEdit}
-        onConfirmTimePicker={onConfirmTimePicker}
         destination={destination || ''}
         onComplete={onComplete}
         onOpenParticipants={handleOpenParticipants}

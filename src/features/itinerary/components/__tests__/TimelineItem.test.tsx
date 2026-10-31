@@ -74,8 +74,8 @@ describe('TimelineItem 메모', () => {
 });
 
 describe('TimelineItem 튜토리얼 앵커 버튼 동작', () => {
-  it('튜토리얼 실행 중일 때 시간 수정과 장소 정보는 동작하고 삭제는 비활성화된다', () => {
-    const onEditTime = jest.fn();
+  it('튜토리얼 실행 중일 때 일정 수정과 장소 정보는 동작하고 삭제는 비활성화된다', () => {
+    const onEditPlace = jest.fn();
     const onShowDetail = jest.fn();
     const onDelete = jest.fn();
 
@@ -86,7 +86,7 @@ describe('TimelineItem 튜토리얼 앵커 버튼 동작', () => {
           item={basePlace}
           isTourAnchor
           isTourRunning
-          onEditTime={onEditTime}
+          onEditPlace={onEditPlace}
           onShowDetail={onShowDetail}
           onDelete={onDelete}
         />,
@@ -104,7 +104,7 @@ describe('TimelineItem 튜토리얼 앵커 버튼 동작', () => {
     act(() => {
       editBtn.props.onPress();
     });
-    expect(onEditTime).toHaveBeenCalledWith('startTime');
+    expect(onEditPlace).toHaveBeenCalledTimes(1);
 
     act(() => {
       detailBtn.props.onPress();

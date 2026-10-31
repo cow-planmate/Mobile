@@ -103,7 +103,6 @@ function ViewHarness(props: {
       }}
       isPlanOwner
       scrollRef={scrollRef}
-      handleConfirm={action('완료')}
       goBack={action('뒤로가기')}
       handleEdit={action('편집으로 이동')}
       planId="101"
@@ -131,7 +130,6 @@ const meta = {
     setChecklistVisible: noop,
     isPlanOwner: true,
     scrollRef: { current: null },
-    handleConfirm: action('완료'),
     goBack: action('뒤로가기'),
     handleEdit: action('편집으로 이동'),
     planId: '101',

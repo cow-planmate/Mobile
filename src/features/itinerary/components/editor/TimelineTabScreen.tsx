@@ -13,7 +13,6 @@ const TimelineTabScreen = React.memo(() => {
     timelineScrollRef,
     selectedDay,
     handleDeletePlace,
-    handleEditTime,
     handleUpdatePlaceTimes,
     onOpenDetail,
     onShowPlaceDetail,
@@ -55,7 +54,6 @@ const TimelineTabScreen = React.memo(() => {
         ref={timelineScrollRef}
         selectedDay={selectedDay}
         onDeletePlace={handleDeletePlace}
-        onEditPlaceTime={handleEditTime}
         onUpdatePlaceTimes={handleUpdatePlaceTimes}
         onPressPlace={onOpenDetail}
         onShowBlockDetail={

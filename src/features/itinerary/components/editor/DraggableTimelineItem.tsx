@@ -38,7 +38,6 @@ const DraggableTimelineItem = React.memo(
     maxEndMinutes,
     minStartMinutes,
     onDelete,
-    onEditTime,
     onEditPlace,
     onDragEnd,
     onPress,
@@ -58,11 +57,6 @@ const DraggableTimelineItem = React.memo(
     maxEndMinutes: number;
     minStartMinutes: number;
     onDelete: (placeId: string) => void;
-    onEditTime?: (
-      placeId: string,
-      type: 'startTime' | 'endTime',
-      time: string,
-    ) => void;
     onEditPlace?: (place: Place) => void;
     onDragEnd: (
       placeId: string,
@@ -234,18 +228,6 @@ const DraggableTimelineItem = React.memo(
         },
       );
     }, [onDelete, placeId, exitOpacity, exitScale, exitTranslateY]);
-
-    const handleEditTime = React.useCallback(
-      (type: 'startTime' | 'endTime') => {
-        if (isDeletingRef.current) return;
-        onEditTime?.(
-          placeId,
-          type,
-          type === 'startTime' ? place.startTime : place.endTime,
-        );
-      },
-      [onEditTime, placeId, place.startTime, place.endTime],
-    );
 
     const handleEditPlace = React.useCallback(() => {
       if (isDeletingRef.current) return;
@@ -595,7 +577,6 @@ const DraggableTimelineItem = React.memo(
               <TimelineItem
                 item={place}
                 onDelete={handleDeleteWithAnim}
-                onEditTime={handleEditTime}
                 onEditPlace={handleEditPlace}
                 onShowDetail={
                   onShowDetail ? () => onShowDetail(place) : undefined

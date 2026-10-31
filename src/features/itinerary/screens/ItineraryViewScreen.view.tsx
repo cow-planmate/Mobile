@@ -96,7 +96,6 @@ export interface ItineraryViewScreenViewProps {
 
   isPlanOwner: boolean;
   scrollRef: React.RefObject<ScrollView | null>;
-  handleConfirm?: () => void;
   goBack: () => void;
   handleEdit: () => void;
   planId?: string;
@@ -120,7 +119,6 @@ export default function ItineraryViewScreenView({
   setChecklistVisible,
   isPlanOwner,
   scrollRef,
-  handleConfirm,
   goBack,
   handleEdit,
   planId,

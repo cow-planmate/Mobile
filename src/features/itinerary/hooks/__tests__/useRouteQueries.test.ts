@@ -1,4 +1,5 @@
-import { useSegmentInfo } from '../useRouteQueries';
+// useQuery를 목으로 바꿔 옵션 객체를 그대로 돌려받으므로 훅이 아니라 일반 함수처럼 부른다.
+import { useSegmentInfo as buildSegmentQuery } from '../useRouteQueries';
 import { fetchRouteTable, fetchTransit } from '../../../../api/route';
 import { TRANSIT_API_LIMIT_MESSAGE } from '../../constants/transit';
 
@@ -6,7 +7,7 @@ jest.mock('@tanstack/react-query', () => ({ useQuery: (options: unknown) => opti
 jest.mock('../../../../api/route', () => ({ fetchRouteTable: jest.fn(), fetchTransit: jest.fn() }));
 
 const points = [{ lat: 37, lng: 127 }, { lat: 38, lng: 128 }];
-const options = () => useSegmentInfo(points, true) as unknown as {
+const options = () => buildSegmentQuery(points, true) as unknown as {
   queryFn: (context: { signal: AbortSignal }) => Promise<any>;
   staleTime: (query: any) => number;
 };

@@ -302,16 +302,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     }
   }, [selectedDayIndex]);
 
-  const handleConfirm = () => {
-    navigation.reset({
-      index: 1,
-      routes: [
-        { name: 'MainTabs' },
-        { name: 'Profile', params: { scrollToItinerary: true } },
-      ],
-    });
-  };
-
   return (
     <ItineraryViewScreenView
       days={days}
@@ -325,7 +315,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       setChecklistVisible={setChecklistVisible}
       isPlanOwner={isPlanOwner}
       scrollRef={scrollRef}
-      handleConfirm={handleConfirm}
       goBack={handleGoBack}
       handleEdit={() =>
         navigation.navigate('ItineraryEditor', {

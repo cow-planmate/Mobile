@@ -306,13 +306,8 @@ const mockItineraryEditor = {
   setTripName: jest.fn(),
   isEditingTripName: false,
   setIsEditingTripName: jest.fn(),
-  isTimePickerVisible: false,
-  setTimePickerVisible: jest.fn(),
-  editingTime: null as any,
-  setEditingTime: jest.fn(),
   timelineScrollRef: { current: null } as any,
   formatDate: (d: Date) => d.toISOString().split('T')[0],
-  handleEditTime: jest.fn(),
   handleUpdatePlaceTimes: jest.fn(),
   handleDeletePlace: jest.fn(),
   handleAddPlace: jest.fn(),
@@ -393,12 +388,8 @@ describe('ItineraryEditorScreenView Component', () => {
             setIsEditingTripName={() => {}}
             setTripName={() => {}}
             onSaveTripName={() => {}}
-            isTimePickerVisible={false}
-            setTimePickerVisible={() => {}}
-            editingTime={null}
             timelineScrollRef={{ current: null } as any}
             formatDate={d => d.toISOString().split('T')[0]}
-            handleEditTime={() => {}}
             handleUpdatePlaceTimes={() => {}}
             handleDeletePlace={() => {}}
             handleAddPlace={() => {}}
@@ -406,7 +397,6 @@ describe('ItineraryEditorScreenView Component', () => {
             isScheduleEditVisible={false}
             setScheduleEditVisible={() => {}}
             onConfirmScheduleEdit={() => {}}
-            onConfirmTimePicker={() => {}}
             destination="제주도"
             onComplete={() => {}}
             onOpenParticipants={() => {}}
@@ -501,12 +491,8 @@ describe('ItineraryEditorScreenView Component', () => {
           setIsEditingTripName={() => {}}
           setTripName={() => {}}
           onSaveTripName={() => {}}
-          isTimePickerVisible={false}
-          setTimePickerVisible={() => {}}
-          editingTime={null}
           timelineScrollRef={{ current: null } as any}
           formatDate={d => d.toISOString().split('T')[0]}
-          handleEditTime={() => {}}
           handleUpdatePlaceTimes={() => {}}
           handleDeletePlace={() => {}}
           handleAddPlace={() => {}}
@@ -514,7 +500,6 @@ describe('ItineraryEditorScreenView Component', () => {
           isScheduleEditVisible={false}
           setScheduleEditVisible={() => {}}
           onConfirmScheduleEdit={() => {}}
-          onConfirmTimePicker={() => {}}
           destination="제주도"
           onComplete={() => {}}
           onOpenParticipants={() => {}}

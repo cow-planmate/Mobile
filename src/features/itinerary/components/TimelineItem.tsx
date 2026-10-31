@@ -6,7 +6,6 @@ import XIcon from 'lucide-react-native/dist/esm/icons/x';
 import { View, Text, TouchableOpacity } from 'react-native';
 
 import { styles, CATEGORY_COLORS } from './TimelineItem.styles';
-import { tokens } from '../../../theme/tokens';
 import { timeToMinutes } from '../../../utils/timeUtils';
 import { useCoachmarkTarget } from '../coachmark/CoachmarkContext';
 import { buildNaverMapUrl } from '../../../utils/naverMapLink';
@@ -38,7 +37,6 @@ export type Place = {
 type TimelineItemProps = {
   item: Place;
   onDelete?: () => void;
-  onEditTime?: (type: 'startTime' | 'endTime') => void;
   /** 장소 메모 및 시간 수정 모달을 여는 핸들러 */
   onEditPlace?: () => void;
   /** 어떤 곳인지 보는 길. 열쇠를 모르는 장소(직접 추가)에는 주지 않는다. */
@@ -86,7 +84,6 @@ export const CATEGORY_NAMES: { [key: number]: string } = {
 const TimelineItem = React.memo(function TimelineItem({
   item,
   onDelete,
-  onEditTime,
   onEditPlace,
   onShowDetail,
   onOpenMap,
@@ -255,7 +252,7 @@ const TimelineItem = React.memo(function TimelineItem({
                 styles.actionButton,
                 isCompact && styles.actionButtonCompact,
               ]}
-              onPress={onEditPlace ?? (() => onEditTime?.('startTime'))}
+              onPress={onEditPlace}
               accessibilityRole="button"
               accessibilityLabel="일정 수정"
               hitSlop={actionSlop}

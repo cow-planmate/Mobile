@@ -98,20 +98,8 @@ export interface ItineraryEditorScreenViewProps {
   setIsEditingTripName: (visible: boolean) => void;
   setTripName: (value: string) => void;
   onSaveTripName: () => void;
-  isTimePickerVisible: boolean;
-  setTimePickerVisible: (visible: boolean) => void;
-  editingTime: {
-    placeId: string;
-    type: 'startTime' | 'endTime';
-    time: string;
-  } | null;
   timelineScrollRef: React.RefObject<ScrollView | null>;
   formatDate: (date: Date) => string;
-  handleEditTime: (
-    placeId: string,
-    type: 'startTime' | 'endTime',
-    time: string,
-  ) => void;
   handleUpdatePlaceTimes: (
     placeId: string,
     newStartMinutes: number,
@@ -125,7 +113,6 @@ export interface ItineraryEditorScreenViewProps {
   isScheduleEditVisible: boolean;
   setScheduleEditVisible: (v: boolean) => void;
   onConfirmScheduleEdit: (updatedDays: any[]) => void;
-  onConfirmTimePicker: (date: Date) => void;
   destination: string;
   onComplete: () => void;
   onOpenParticipants: () => void;
@@ -171,13 +158,9 @@ export default function ItineraryEditorScreenView({
   setIsEditingTripName,
   setTripName,
   onSaveTripName,
-  isTimePickerVisible,
-  setTimePickerVisible,
   onGoBack,
-  editingTime,
   timelineScrollRef,
   formatDate,
-  handleEditTime,
   handleUpdatePlaceTimes,
   handleDeletePlace,
   handleAddPlace,
@@ -186,7 +169,6 @@ export default function ItineraryEditorScreenView({
   isScheduleEditVisible,
   setScheduleEditVisible,
   onConfirmScheduleEdit,
-  onConfirmTimePicker,
   destination,
   onComplete,
   onOpenParticipants,
@@ -375,7 +357,6 @@ export default function ItineraryEditorScreenView({
       timelineScrollRef,
       selectedDay,
       handleDeletePlace,
-      handleEditTime,
       handleUpdatePlaceTimes,
       onOpenDetail,
       onShowPlaceDetail,
@@ -407,7 +388,6 @@ export default function ItineraryEditorScreenView({
     timelineScrollRef,
     selectedDay,
     handleDeletePlace,
-    handleEditTime,
     handleUpdatePlaceTimes,
     onOpenDetail,
     onShowPlaceDetail,
