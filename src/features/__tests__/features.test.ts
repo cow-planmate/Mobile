@@ -43,6 +43,9 @@ jest.mock('react-native-date-picker', () => {
 jest.mock('react-native-image-picker', () => ({
   launchImageLibrary: jest.fn(),
 }));
+jest.mock('@shopify/flash-list', () => ({
+  FlashList: () => null,
+}));
 
 jest.mock('react-native-webview', () => {
   const React = require('react');
