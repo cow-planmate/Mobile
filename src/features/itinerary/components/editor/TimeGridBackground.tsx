@@ -27,7 +27,13 @@ const TimeGridBackground = React.memo(
                   isLastHour ? styles.hourHeightZero : styles.hourHeightFull,
                 ]}
               >
-                <Text style={[styles.timeLabelText, styles.timeLabelTop]}>
+                <Text
+                  style={[
+                    styles.timeLabelText,
+                    styles.timeLabelTop,
+                    styles.timeLabelHour,
+                  ]}
+                >
                   {`${hourStr(hour)}:00`}
                 </Text>
                 {!isLastHour && (

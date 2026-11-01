@@ -207,10 +207,10 @@ jest.mock('react-native-date-picker', () => {
 });
 
 import ItineraryEditorScreenView from '../ItineraryEditorScreen.view';
-import { TAB_FILL } from '../ItineraryEditorScreen.styles';
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import ItineraryEditorScreenComponent from '../ItineraryEditorScreen';
+import { TAB_FILL } from '../ItineraryEditorScreen.styles';
 
 // 화면 뷰는 여러 파일로 나뉘어 있어서, 소스 검사는 뷰와 editor 폴더 전체를 합쳐서 본다.
 const readEditorViewSource = () =>
@@ -1191,20 +1191,23 @@ describe('일정 편집기 제스처 및 UI 동작 개선', () => {
     expect(source).toContain('Math.round(sheetMaxRef.current * ratio)');
   });
 
-  it('플로팅 실행 취소 단추는 가장 옅은 그림자 토큰을 쓴다', () => {
+  it('플로팅 실행 취소 알약은 가장 옅은 그림자 토큰을 쓴다', () => {
     const {
       styles: editorStyles,
     } = require('../ItineraryEditorScreen.styles');
     const { tokens } = require('../../../../theme/tokens');
 
-    expect(editorStyles.floatingHistoryButton.elevation).toBe(
+    // 되돌리기·다시 실행은 한 알약으로 묶여 그림자와 테두리는 알약이 가진다.
+    expect(editorStyles.floatingHistoryContainer.elevation).toBe(
       tokens.shadows.sm.elevation,
     );
-    expect(editorStyles.floatingHistoryButton.shadowOpacity).toBe(
+    expect(editorStyles.floatingHistoryContainer.shadowOpacity).toBe(
       tokens.shadows.sm.shadowOpacity,
     );
     // 테두리가 경계를 그으므로 그림자를 더 키울 이유가 없다.
-    expect(editorStyles.floatingHistoryButton.borderWidth).toBe(1);
+    expect(editorStyles.floatingHistoryContainer.borderWidth).toBe(1);
+    // 알약 안의 버튼은 따로 떠 보이지 않는다.
+    expect(editorStyles.floatingHistoryButton.borderWidth).toBeUndefined();
   });
 
   it('중복 라벨(movingPlace)이 제거되었다', () => {

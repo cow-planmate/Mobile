@@ -268,6 +268,31 @@ const TimelineComponent = React.memo(
                 pointerEvents="box-none"
               >
                 <TimeGridBackground hours={gridHours} endHour={endHour} />
+                {/* 빈 날에는 놓을 곳을 먼저 알려 준다. 끌어오는 중이거나 안내 중에는 가린다. */}
+                {!hasPlaces &&
+                  !pendingPlace &&
+                  !isDragging &&
+                  !showDemoBlock && (
+                    <View
+                      pointerEvents="none"
+                      style={[
+                        styles.emptyDaySlot,
+                        {
+                          top:
+                            GRID_TOP_OFFSET +
+                            (minStartMinutes - offsetMinutes) * MINUTE_HEIGHT,
+                          height: 60 * MINUTE_HEIGHT,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.emptyDayTitle}>
+                        장소를 꾹 눌러 여기로 끌어 놓아 보세요
+                      </Text>
+                      <Text style={styles.emptyDayHint}>
+                        한 곳당 기본 1시간, 15분 단위로 맞춰져요
+                      </Text>
+                    </View>
+                  )}
                 {showDemoBlock && (
                   <DemoTimelineBlock
                     place={demoPlace}

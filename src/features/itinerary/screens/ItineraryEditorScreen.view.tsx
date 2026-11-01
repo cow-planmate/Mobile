@@ -26,7 +26,6 @@ import Animated, {
 import { Place } from '../components/TimelineItem';
 import { AirplaneLoading } from '../../../components/common';
 import ScheduleEditModal from '../components/ScheduleEditModal';
-import BackTopBar from '../../../components/common/BackTopBar';
 import PlaceRecommendationList, {
   type PlaceTab,
 } from '../components/PlaceRecommendationList';
@@ -54,7 +53,7 @@ import MessageCircle from 'lucide-react-native/dist/esm/icons/message-circle';
 import MapOutlineIcon from 'lucide-react-native/dist/esm/icons/map';
 import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
 import CalendarDaysIcon from 'lucide-react-native/dist/esm/icons/calendar-days';
-import CheckIcon from 'lucide-react-native/dist/esm/icons/check';
+import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import InfoIcon from 'lucide-react-native/dist/esm/icons/info';
 import Undo2 from 'lucide-react-native/dist/esm/icons/undo-2';
 import Redo2 from 'lucide-react-native/dist/esm/icons/redo-2';
@@ -68,6 +67,7 @@ import {
   AUTO_SCROLL_MAX_STEP,
   AUTO_SCROLL_MIN_STEP,
   AUTO_SCROLL_TICK_MS,
+  WEATHER_BAND_HEIGHT,
 } from '../components/editor/editorConstants';
 import ToolbarIconButton from '../components/editor/ToolbarIconButton';
 import { EditorStateContext } from '../components/editor/EditorStateContext';
@@ -86,6 +86,8 @@ import TimelineTabScreen from '../components/editor/TimelineTabScreen';
 const claimTouch = () => true;
 
 const FLOATING_BUTTON_SIZE = normalize(44);
+/** 사용법 버튼은 AI 도우미 버튼 위에 한 단계 작게 선다. */
+const FLOATING_HELP_SIZE = normalize(36);
 const FLOATING_BUTTON_GAP = normalize(10);
 const FLOATING_BUTTON_BOTTOM_OFFSET = 14;
 
@@ -212,7 +214,6 @@ export default function ItineraryEditorScreenView({
   const undoTarget = useCoachmarkTarget('undo');
   const redoTarget = useCoachmarkTarget('redo');
 
-  const [inputWidth, setInputWidth] = useState(120);
   const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
   const [dayScrollLayoutWidth, setDayScrollLayoutWidth] = useState(0);
   const [dayScrollX, setDayScrollX] = useState(0);
@@ -644,7 +645,7 @@ export default function ItineraryEditorScreenView({
       0,
       sheetMax.value -
         FLOATING_BUTTON_BOTTOM_OFFSET -
-        (FLOATING_BUTTON_SIZE * 2 + FLOATING_BUTTON_GAP),
+        (FLOATING_BUTTON_SIZE + FLOATING_BUTTON_GAP + FLOATING_HELP_SIZE),
     );
 
     return {
@@ -674,7 +675,7 @@ export default function ItineraryEditorScreenView({
         gridTopRef.current ||
         bodyTop.current +
           (selectedDay && weatherMap[formatDateLocal(selectedDay.date)]
-            ? 62
+            ? WEATHER_BAND_HEIGHT
             : 0);
       const areaTop = timelineTop.current;
       // 시트가 접힌 뒤의 시간표 바닥. 손잡이 줄 위까지가 놓을 수 있는 자리다.
@@ -918,22 +919,23 @@ export default function ItineraryEditorScreenView({
 
   return (
     <View style={[styles.container, screenInsets]}>
-      <BackTopBar title="일정 편집" onBack={() => onGoBack?.()} />
-
+      {/* 위 줄은 뒤로가기와 일정 이름, 아래 줄은 도구와 완료다. 이름이 길어도
+          한 줄을 통째로 쓰고, 고치는 중에도 입력칸이 아이콘을 덮지 않는다. */}
       <View style={styles.topToolbar}>
-        <View style={styles.toolbarLeftGroup}>
-          {isEditingTripName ? (
-            <>
-              <Text
-                style={[styles.toolbarTitleInput, styles.toolbarTitleMeasure]}
-                onLayout={e => {
-                  const { width } = e.nativeEvent.layout;
-                  const finalWidth = Math.max(30, Math.min(170, width + 8));
-                  setInputWidth(finalWidth);
-                }}
-              >
-                {tripName || '일정 이름'}
-              </Text>
+        <View style={styles.toolbarTitleRow}>
+          <TouchableOpacity
+            style={styles.toolbarBackButton}
+            onPress={() => onGoBack?.()}
+            activeOpacity={0.6}
+            accessibilityRole="button"
+            accessibilityLabel="뒤로 가기"
+          >
+            <ChevronLeft size={24} color={COLORS.text} />
+          </TouchableOpacity>
+          <View style={styles.toolbarLeftGroup}>
+            {isEditingTripName ? (
+              // 글자 폭을 재서 입력칸을 늘리면 칠 때마다 한 박자 늦게 따라온다.
+              // 줄 폭을 그대로 채우면 늘어날 것이 없어 글자와 같이 움직인다.
               <TextInput
                 value={tripName}
                 onChangeText={setTripName}
@@ -943,80 +945,84 @@ export default function ItineraryEditorScreenView({
                 numberOfLines={1}
                 maxLength={PLAN_NAME_MAX_LENGTH}
                 returnKeyType="done"
-                style={[
-                  styles.toolbarTitleInput,
-                  styles.toolbarTitleInputSized,
-                  { width: inputWidth },
-                ]}
+                style={styles.toolbarTitleInput}
                 placeholder="일정 이름"
                 placeholderTextColor={COLORS.placeholder}
+                selectionColor={COLORS.primary}
               />
-            </>
-          ) : (
-            <TouchableOpacity
-              onPress={() => setIsEditingTripName(true)}
-              activeOpacity={0.8}
-              style={styles.toolbarTitleButton}
-            >
-              <Text style={styles.toolbarTitleText} numberOfLines={1}>
-                {tripName}
-              </Text>
-            </TouchableOpacity>
-          )}
+            ) : (
+              <TouchableOpacity
+                onPress={() => setIsEditingTripName(true)}
+                activeOpacity={0.8}
+                style={styles.toolbarTitleButton}
+              >
+                <Text style={styles.toolbarTitleText} numberOfLines={1}>
+                  {tripName}
+                </Text>
+              </TouchableOpacity>
+            )}
 
-          <ToolbarIconButton
-            onPress={onOpenPlanInfo}
-            label="일정 정보"
-            variant="info"
-            targetRef={planInfoTarget}
-          >
-            <InfoIcon color={COLORS.text} size={18} />
-          </ToolbarIconButton>
-          <ToolbarIconButton
-            onPress={onOpenChecklist}
-            label="체크리스트"
-            variant="outlineDark"
-            targetRef={checklistTarget}
-          >
-            <ListChecks color={COLORS.text} size={17} strokeWidth={2} />
-          </ToolbarIconButton>
+            {/* 이름을 고치는 동안에는 입력칸이 줄 끝까지 쓰므로 치운다. */}
+            {!isEditingTripName && (
+              <ToolbarIconButton
+                onPress={onOpenPlanInfo}
+                label="일정 정보"
+                targetRef={planInfoTarget}
+              >
+                <InfoIcon color={COLORS.textMuted} size={16} strokeWidth={2} />
+              </ToolbarIconButton>
+            )}
+          </View>
         </View>
 
         <View style={styles.toolbarRightGroup}>
           <ToolbarIconButton
+            onPress={onOpenChecklist}
+            label="체크리스트"
+            targetRef={checklistTarget}
+          >
+            <ListChecks color={COLORS.textLabel} size={22} strokeWidth={1.75} />
+          </ToolbarIconButton>
+          <ToolbarIconButton
             onPress={onOpenParticipants}
             label="현재 접속자"
             badgeCount={participantsCount}
-            variant="outlineBlue"
             targetRef={participantsTarget}
           >
-            <UsersIcon color={COLORS.primary} size={17} />
+            <UsersIcon color={COLORS.textLabel} size={22} strokeWidth={1.75} />
           </ToolbarIconButton>
           <ToolbarIconButton
             onPress={onOpenMap}
             label="여행 동선"
-            variant="outlineDark"
             targetRef={mapTarget}
           >
-            <MapOutlineIcon color={COLORS.text} size={17} strokeWidth={2} />
+            <MapOutlineIcon
+              color={COLORS.textLabel}
+              size={22}
+              strokeWidth={1.75}
+            />
           </ToolbarIconButton>
           <ToolbarIconButton
             onPress={onOpenShare}
             label="공유 및 초대"
-            variant="filledGray"
             targetRef={inviteTarget}
           >
-            <UserPlusIcon color={COLORS.text} size={17} />
+            <UserPlusIcon
+              color={COLORS.textLabel}
+              size={22}
+              strokeWidth={1.75}
+            />
           </ToolbarIconButton>
-          <ToolbarIconButton
+          <TouchableOpacity
+            ref={completeTarget}
+            style={styles.doneButton}
             onPress={onComplete}
-            label="완료"
-            variant="filledBlue"
-            active
-            targetRef={completeTarget}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="완료"
           >
-            <CheckIcon color={COLORS.white} size={18} />
-          </ToolbarIconButton>
+            <Text style={styles.doneButtonText}>완료</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -1041,17 +1047,13 @@ export default function ItineraryEditorScreenView({
             return (
               <TouchableOpacity
                 key={index}
-                style={[
-                  styles.dayTab,
-                  isSelected && styles.dayTabSelected,
-                  !isSelected && styles.dayTabUnselected,
-                ]}
+                style={styles.dayTab}
                 onPress={() => handleDaySelect(index)}
                 onLayout={event => {
                   const { x, width } = event.nativeEvent.layout;
                   dayTabLayoutsRef.current[index] = { x, width };
                 }}
-                activeOpacity={0.85}
+                activeOpacity={0.7}
                 accessibilityRole="button"
                 accessibilityLabel={`${day.dayNumber}일차 ${formatDate(
                   day.date,
@@ -1066,14 +1068,10 @@ export default function ItineraryEditorScreenView({
                 >
                   {day.dayNumber}일차
                 </Text>
-                <Text
-                  style={[
-                    styles.dayTabDateInline,
-                    isSelected && styles.dayTabDateInlineSelected,
-                  ]}
-                >
+                <Text style={styles.dayTabDateInline}>
                   {formatDate(day.date)}
                 </Text>
+                {isSelected && <View style={styles.dayTabUnderline} />}
               </TouchableOpacity>
             );
           })}
@@ -1087,7 +1085,11 @@ export default function ItineraryEditorScreenView({
           accessibilityRole="button"
           accessibilityLabel="일정 기간 편집"
         >
-          <CalendarDaysIcon color={COLORS.textSecondary} size={22} />
+          <CalendarDaysIcon
+            color={COLORS.textLabel}
+            size={22}
+            strokeWidth={1.75}
+          />
         </TouchableOpacity>
 
         {showLeftFade && (
@@ -1161,7 +1163,7 @@ export default function ItineraryEditorScreenView({
                 accessibilityLabel="실행 취소"
                 hitSlop={6}
               >
-                <Undo2 color={COLORS.text} size={18} />
+                <Undo2 color={COLORS.textLabel} size={20} />
               </TouchableOpacity>
               {!!onRedo && (
                 <TouchableOpacity
@@ -1174,7 +1176,7 @@ export default function ItineraryEditorScreenView({
                   accessibilityLabel="다시 실행"
                   hitSlop={6}
                 >
-                  <Redo2 color={COLORS.text} size={18} />
+                  <Redo2 color={COLORS.textLabel} size={20} />
                 </TouchableOpacity>
               )}
             </Animated.View>
@@ -1202,7 +1204,7 @@ export default function ItineraryEditorScreenView({
                 accessibilityLabel="AI 여행 도우미"
                 hitSlop={6}
               >
-                <MessageCircle color={COLORS.white} size={18} />
+                <MessageCircle color={COLORS.primary} size={20} />
               </TouchableOpacity>
             </Animated.View>
           )}

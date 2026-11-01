@@ -1069,15 +1069,12 @@ const plStyles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  // 테두리 없이 아이콘만 둔다. 행마다 반복되는 버튼이라 조용해야 장소 이름이 먼저 읽힌다.
   mapButton: {
     width: 32,
     height: 32,
-    borderRadius: 8,
-    backgroundColor: tokens.colors.white,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
   },
   mapModalContainer: {
     flex: 1,

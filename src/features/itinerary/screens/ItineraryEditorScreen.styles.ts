@@ -22,22 +22,28 @@ export const COLORS = {
   card: tokens.colors.white,
   text: tokens.colors.text,
   textSecondary: tokens.colors.textSecondary,
+  textMuted: tokens.colors.textMuted,
+  textLabel: tokens.colors.textLabel,
   placeholder: tokens.colors.textTertiary,
   border: tokens.colors.border,
   borderLight: tokens.colors.borderLight,
+  borderStrong: tokens.colors.borderStrong,
   white: tokens.colors.white,
   surface: tokens.colors.surface,
+  pageGround: tokens.colors.pageGround,
   danger: tokens.tones.danger.fg,
 };
 
 export const FONTS = tokens.fontFamily;
 
-export const HOUR_HEIGHT = normalize(180);
+export const HOUR_HEIGHT = normalize(120);
 export const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
-export const MIN_ITEM_HEIGHT = normalize(45);
 export const GRID_SNAP_HEIGHT = HOUR_HEIGHT / 4;
+/** 가장 짧은 블록은 눈금 한 칸(15분)이다. */
+export const MIN_ITEM_HEIGHT = GRID_SNAP_HEIGHT;
 
-export const GRID_TOP_OFFSET = normalize(40);
+/** 눈금판 위 여백. timelineWrapper와 gridContainer의 세로 패딩 합과 같아야 한다. */
+export const GRID_TOP_OFFSET = normalize(24);
 // 워클릿은 UI 스레드에서 도는데 normalize는 JS 스레드에만 있는 함수다.
 // 타임라인 블록의 좌우 여백·모서리는 화면 폭이 정해지면 고정이므로 여기서 한 번만 재고,
 // useAnimatedStyle 안에서는 이 상수를 읽기만 한다.
@@ -75,108 +81,73 @@ export const styles = StyleSheet.create({
   topBarSpacer: {
     width: normalize(28),
   },
+  // 화면 이름 줄은 없애고 일정 이름이 제목이다. 이름 줄 아래에 도구 줄을 둔다.
   topToolbar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: normalize(12),
-    marginTop: 0,
-    paddingTop: normalize(4),
-    paddingBottom: normalize(6),
+    paddingLeft: normalize(4),
+    paddingRight: normalize(8),
     backgroundColor: COLORS.background,
   },
-  toolbarLeftGroup: {
+  toolbarTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexShrink: 1,
-    gap: normalize(6),
+    minHeight: normalize(44),
+  },
+  toolbarBackButton: {
+    width: normalize(40),
+    height: normalize(40),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  toolbarLeftGroup: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 0,
   },
   toolbarRightGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: normalize(6),
+    alignSelf: 'flex-end',
+    // 제목 줄과 한 묶음으로 읽히도록 두 줄 사이를 좁힌다.
+    marginTop: -normalize(6),
   },
   toolbarTitleButton: {
-    maxWidth: normalize(120),
+    flexShrink: 1,
     minHeight: normalize(30),
     justifyContent: 'center',
   },
   toolbarTitleText: {
-    fontSize: normalize(16),
+    fontSize: normalize(18),
     fontFamily: FONTS.bold,
     color: COLORS.text,
-    lineHeight: normalize(20),
+    letterSpacing: -0.4,
+    lineHeight: normalize(24),
   },
   toolbarTitleInput: {
-    minWidth: normalize(120),
-    maxWidth: normalize(170),
+    flex: 1,
     minHeight: normalize(28),
     paddingVertical: 0,
     paddingHorizontal: 0,
-    fontSize: normalize(16),
+    fontSize: normalize(18),
     fontFamily: FONTS.bold,
     color: COLORS.text,
-    lineHeight: normalize(20),
+    letterSpacing: -0.4,
+    lineHeight: normalize(24),
   },
-  toolbarTitleMeasure: {
-    position: 'absolute',
-    opacity: 0,
-    width: 'auto',
-    minWidth: 0,
-    maxWidth: undefined,
-  },
-  toolbarTitleInputSized: {
-    minWidth: 0,
-    maxWidth: normalize(170),
-  },
+  // 테두리와 바탕 없이 아이콘만 둔다. 파란색은 완료 버튼에만 쓴다.
   toolbarIconButton: {
-    width: normalize(32),
-    height: normalize(32),
-    borderRadius: normalize(16),
+    width: normalize(36),
+    height: normalize(40),
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-  },
-  toolbarIconButtonPlain: {
-    width: normalize(24),
-    height: normalize(24),
-    borderRadius: normalize(12),
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-  },
-  toolbarIconButtonInfo: {
-    backgroundColor: COLORS.border,
-    borderColor: COLORS.border,
-  },
-  toolbarIconButtonOutlineBlue: {
-    backgroundColor: COLORS.white,
-    borderColor: COLORS.primary,
-    borderWidth: 1.5,
-  },
-  toolbarIconButtonOutlineDark: {
-    backgroundColor: COLORS.white,
-    borderColor: COLORS.placeholder,
-    borderWidth: 1.5,
-  },
-  toolbarIconButtonFilledGray: {
-    backgroundColor: COLORS.border,
-    borderColor: COLORS.border,
-  },
-  toolbarIconButtonFilledBlue: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  toolbarIconButtonActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
   },
   toolbarIconButtonDisabled: {
     opacity: 0.55,
   },
   toolbarBadge: {
     position: 'absolute',
-    top: normalize(-4),
-    right: normalize(-4),
+    top: normalize(4),
+    right: normalize(0),
     minWidth: normalize(16),
     height: normalize(16),
     borderRadius: normalize(8),
@@ -186,6 +157,20 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(3),
     borderWidth: 2,
     borderColor: COLORS.background,
+  },
+  doneButton: {
+    height: normalize(34),
+    marginLeft: normalize(6),
+    paddingHorizontal: normalize(14),
+    borderRadius: normalize(17),
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+  },
+  doneButtonText: {
+    fontSize: normalize(14),
+    fontFamily: FONTS.bold,
+    color: COLORS.white,
   },
   toolbarBadgeText: {
     color: COLORS.white,
@@ -224,25 +209,21 @@ export const styles = StyleSheet.create({
     fontSize: normalize(16),
     fontFamily: FONTS.semibold,
   },
+  // 일차 탭: 칩 대신 글자 굵기와 파란 밑줄로 선택을 보여 준다.
   dayTabsWrapper: {
     position: 'relative',
     backgroundColor: COLORS.card,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingLeft: 0,
-    paddingRight: normalize(12),
-    paddingTop: normalize(10),
-    paddingBottom: normalize(8),
-    gap: normalize(8),
+    alignItems: 'stretch',
+    minHeight: normalize(48),
+    paddingRight: normalize(8),
   },
   dayTabsContainer: {
-    alignItems: 'center',
-    paddingVertical: 0,
-    paddingLeft: normalize(16),
-    paddingRight: normalize(16),
-    gap: normalize(8),
+    alignItems: 'stretch',
+    paddingLeft: normalize(8),
+    paddingRight: normalize(8),
   },
   dayTabsScroll: {
     flex: 1,
@@ -250,26 +231,19 @@ export const styles = StyleSheet.create({
     flexShrink: 1,
   },
   dayTab: {
-    minWidth: normalize(80),
-    minHeight: normalize(36),
-    paddingVertical: normalize(6),
+    minWidth: normalize(64),
     paddingHorizontal: normalize(14),
-    borderRadius: normalize(10),
-    marginRight: normalize(8),
-    backgroundColor: COLORS.card,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    gap: normalize(6),
   },
-  dayTabSelected: {
+  dayTabUnderline: {
+    position: 'absolute',
+    left: normalize(14),
+    right: normalize(14),
+    bottom: 0,
+    height: 2.5,
+    borderRadius: 2,
     backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  dayTabUnselected: {
-    backgroundColor: COLORS.white,
   },
   dayTabLabel: {
     textAlign: 'center',
@@ -282,31 +256,28 @@ export const styles = StyleSheet.create({
     color: COLORS.white,
   },
   dayTabDayNumber: {
-    fontSize: normalize(14),
-    fontFamily: FONTS.bold,
-    color: COLORS.text,
-    lineHeight: normalize(16),
+    fontSize: normalize(15),
+    fontFamily: FONTS.semibold,
+    color: COLORS.textMuted,
+    lineHeight: normalize(20),
   },
   dayTabDayNumberSelected: {
-    color: COLORS.white,
+    fontFamily: FONTS.bold,
+    color: COLORS.text,
   },
   dayTabDateInline: {
-    fontSize: normalize(11),
+    fontSize: normalize(11.5),
     fontFamily: FONTS.regular,
-    color: COLORS.placeholder,
+    color: COLORS.textMuted,
     lineHeight: normalize(14),
-  },
-  dayTabDateInlineSelected: {
-    color: COLORS.white,
-    opacity: 0.85,
+    fontVariant: ['tabular-nums'],
   },
   dayEditButton: {
-    width: normalize(32),
-    height: normalize(32),
-    borderRadius: normalize(16),
+    width: normalize(40),
+    height: normalize(40),
+    alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: normalize(2),
   },
   bottomTabBar: {
     backgroundColor: COLORS.white,
@@ -364,9 +335,10 @@ export const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
+  // 흰 블록이 떠 보이도록 surface보다 한 단계 진한 바탕을 쓴다.
   timelineSceneBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.pageGround,
   },
   timelineWeatherOverlay: {
     position: 'absolute',
@@ -397,13 +369,43 @@ export const styles = StyleSheet.create({
   timelineDemoHidden: {
     opacity: 0,
   },
+  /** 일정이 없는 날, 처음 놓일 한 시간 자리를 점선으로 보여 준다. */
+  emptyDaySlot: {
+    position: 'absolute',
+    left: TIMELINE_BLOCK_LEFT,
+    right: TIMELINE_BLOCK_RIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    paddingHorizontal: normalize(20),
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: COLORS.borderStrong,
+    borderRadius: TIMELINE_BLOCK_RADIUS,
+    // 15분 눈금선이 안내 글자를 가로지르지 않게 시간표 바탕색으로 덮는다.
+    backgroundColor: COLORS.pageGround,
+  },
+  emptyDayTitle: {
+    fontSize: normalize(14),
+    fontFamily: FONTS.semibold,
+    color: COLORS.textLabel,
+    textAlign: 'center',
+    letterSpacing: -0.2,
+  },
+  emptyDayHint: {
+    fontSize: normalize(12),
+    fontFamily: FONTS.regular,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+  },
 
+  // 두 세로 패딩의 합이 GRID_TOP_OFFSET이다. 한쪽만 바꾸면 블록이 눈금에서 어긋난다.
   timelineWrapper: {
     position: 'relative',
-    paddingVertical: normalize(20),
+    paddingVertical: normalize(12),
   },
   gridContainer: {
-    paddingVertical: normalize(20),
+    paddingVertical: normalize(12),
   },
   hourBlock: {
     flexDirection: 'row',
@@ -417,13 +419,23 @@ export const styles = StyleSheet.create({
   timeLabelText: {
     position: 'absolute',
     marginTop: normalize(-8),
-    color: COLORS.placeholder,
+    color: COLORS.textMuted,
     fontSize: normalize(12),
     fontFamily: FONTS.medium,
+    fontVariant: ['tabular-nums'],
     width: '100%',
-    textAlign: 'center',
+    paddingLeft: normalize(16),
+    textAlign: 'left',
   },
-  minuteLabel: {},
+  // 15분 글자는 정각보다 한 단계 옅게. 색 토큰에 중간 회색이 없어 투명도로 맞춘다.
+  minuteLabel: {
+    opacity: 0.7,
+  },
+  // 정각은 진하고 굵게. 15분 글자(회색)와 한눈에 갈린다.
+  timeLabelHour: {
+    color: COLORS.text,
+    fontFamily: FONTS.semibold,
+  },
   hourContent: {
     flex: 1,
     marginLeft: 0,
@@ -439,7 +451,7 @@ export const styles = StyleSheet.create({
     borderTopColor: COLORS.border,
   },
   firstQuarterBlock: {
-    borderTopColor: COLORS.placeholder,
+    borderTopColor: COLORS.borderStrong,
   },
   lastHourBorder: {
     borderTopWidth: 1,
@@ -577,11 +589,12 @@ export const styles = StyleSheet.create({
     height: normalize(14),
     paddingBottom: normalize(4),
   },
+  // 갈래 색은 왼쪽 막대에만 쓰므로 손잡이는 회색이다.
   resizeHandleIndicator: {
     width: normalize(28),
     height: normalize(3),
     borderRadius: normalize(999),
-    opacity: 0.5,
+    backgroundColor: COLORS.borderStrong,
   },
   emptyContainer: {
     padding: normalize(20),
@@ -660,13 +673,22 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.semibold,
   },
 
+  // 되돌리기·다시 실행은 한 알약으로 묶는다. 두 동작은 한 쌍이라 따로 띄울 이유가 없다.
   floatingHistoryContainer: {
     position: 'absolute',
     left: normalize(16),
     bottom: SHEET_HANDLE_HEIGHT + 14,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: normalize(10),
+    height: normalize(44),
+    paddingHorizontal: normalize(4),
+    borderRadius: normalize(22),
+    backgroundColor: COLORS.white,
+    // 시간표 위에 살짝 뜬 정도면 충분하다. 테두리가 이미 경계를 그으므로
+    // 그림자는 토큰에서 가장 옅은 단계(sm)만 쓴다.
+    ...tokens.shadows.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     zIndex: 30,
   },
   // 사용법·AI 도우미는 오른쪽에 위아래로. 되돌리기와 바닥을 맞춘다.
@@ -674,22 +696,16 @@ export const styles = StyleSheet.create({
     position: 'absolute',
     right: normalize(16),
     bottom: SHEET_HANDLE_HEIGHT + 14,
-    alignItems: 'flex-end',
+    alignItems: 'center',
     gap: normalize(10),
     zIndex: 30,
   },
   floatingHistoryButton: {
-    width: normalize(44),
-    height: normalize(44),
-    borderRadius: normalize(22),
-    backgroundColor: COLORS.white,
+    width: normalize(42),
+    height: normalize(42),
+    borderRadius: normalize(21),
     justifyContent: 'center',
     alignItems: 'center',
-    // 시간표 위에 살짝 뜬 정도면 충분하다. 테두리가 이미 경계를 그으므로
-    // 그림자는 토큰에서 가장 옅은 단계(sm)만 쓴다.
-    ...tokens.shadows.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
   floatingUndoButton: {
     flexDirection: 'row',
@@ -702,14 +718,17 @@ export const styles = StyleSheet.create({
     fontSize: normalize(13),
     fontFamily: FONTS.semibold,
   },
-  // 웹도 AI 도우미만 파란 원으로 세운다 - 되돌리기·사용법과 달리 새로 여는 자리다.
+  // AI 도우미만 파란 아이콘으로 세운다 - 되돌리기·사용법과 달리 새로 여는 자리다.
+  // 면까지 채우면 완료 버튼과 파란색이 겹쳐 다투므로 흰 원에 아이콘만 파랗다.
   floatingChatButton: {
     width: normalize(44),
     height: normalize(44),
     borderRadius: normalize(22),
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     ...tokens.shadows.sm,
   },
   // AI 도우미 창이 서는 자리. 단추 묶음과 바닥을 맞추되 따라 움직이지는
@@ -886,30 +905,31 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(14),
     backgroundColor: COLORS.white,
   },
+  // 선택하지 않은 칩은 중립색이고, 선택된 칩만 갈래 색(TAB_FILL)으로 채운다.
   sheetCat: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: normalize(8),
-    paddingHorizontal: normalize(9),
-    paddingVertical: normalize(5),
+    height: normalize(32),
+    justifyContent: 'center',
+    borderRadius: normalize(16),
+    paddingHorizontal: normalize(12),
+    backgroundColor: COLORS.pageGround,
   },
   sheetCatText: {
-    fontSize: normalize(11.5),
+    fontSize: normalize(13),
     fontFamily: FONTS.semibold,
-    color: COLORS.textSecondary,
+    color: COLORS.textLabel,
   },
   sheetCatTextOn: {
     color: COLORS.white,
     fontFamily: FONTS.bold,
   },
   sheetHint: {
-    paddingHorizontal: normalize(14),
+    paddingHorizontal: normalize(16),
     paddingBottom: normalize(8),
-    fontSize: normalize(11),
-    color: COLORS.placeholder,
+    fontSize: normalize(12),
+    color: COLORS.textMuted,
   },
   sheetHintStrong: {
-    color: COLORS.textSecondary,
+    color: COLORS.textLabel,
     fontFamily: FONTS.bold,
   },
   sheetBody: {
