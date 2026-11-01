@@ -265,7 +265,7 @@ export const EDITOR_COACHMARK_STEPS: readonly CoachmarkStep[] = [
   {
     target: 'complete',
     title: '일정 완성',
-    body: '다 짰으면 눌러서 완성해요. 완성한 뒤에도 연필로 다시 열 수 있어요.',
+    body: '다 짰으면 눌러서 완성해요. 완성한 뒤에도 다시 열 수 있어요.',
     note: '누르지 않고 나가도 괜찮아요. 고친 내용은 그때그때 저장됩니다.',
     // 완료는 글자가 있는 알약 버튼이라 원 대신 둥근 사각형으로 짚는다.
     shape: 'rounded',
