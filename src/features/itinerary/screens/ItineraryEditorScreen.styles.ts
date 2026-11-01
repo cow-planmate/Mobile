@@ -36,7 +36,7 @@ export const COLORS = {
 
 export const FONTS = tokens.fontFamily;
 
-export const HOUR_HEIGHT = normalize(120);
+export const HOUR_HEIGHT = normalize(136);
 export const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
 export const GRID_SNAP_HEIGHT = HOUR_HEIGHT / 4;
 /** 가장 짧은 블록은 눈금 한 칸(15분)이다. */
