@@ -4,11 +4,13 @@ import WeatherIcon from './WeatherIcon';
 import { SimpleWeatherInfo, WeatherDataSource } from '../../../../api/trips';
 import { tokens } from '../../../../theme/tokens';
 import LinearGradient from 'react-native-linear-gradient';
+import { WEATHER_BAND_HEIGHT } from '../editor/editorConstants';
 
 interface WeatherHeaderProps {
   dayNumber: number;
   weather: SimpleWeatherInfo;
-  appearance?: 'default' | 'overlay';
+  /** band: 일정 편집 화면의 불투명한 고정 띠. 일차는 위 탭에 있어 적지 않는다. */
+  appearance?: 'default' | 'overlay' | 'band';
 }
 
 const DATA_SOURCE_LABELS: Record<WeatherDataSource, string | null> = {
@@ -26,6 +28,31 @@ export default function WeatherHeader({
   const dataSourceLabel = weather.dataSource
     ? DATA_SOURCE_LABELS[weather.dataSource]
     : null;
+
+  if (appearance === 'band') {
+    return (
+      <View style={bandStyles.band}>
+        <Text style={bandStyles.temp}>{Math.round(weather.tempMax)}°</Text>
+        <View style={bandStyles.text}>
+          <View style={bandStyles.titleRow}>
+            <Text style={bandStyles.description} numberOfLines={1}>
+              {weather.description}
+            </Text>
+            {dataSourceLabel && (
+              <Text style={bandStyles.source} numberOfLines={1}>
+                {dataSourceLabel}
+              </Text>
+            )}
+          </View>
+          <Text style={bandStyles.detail} numberOfLines={1}>
+            최저 {Math.round(weather.tempMin)}° · 체감{' '}
+            {Math.round(weather.feelsLike ?? weather.tempMax)}°
+          </Text>
+        </View>
+        <WeatherIcon description={weather.description} size={40} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, isOverlay && styles.containerOverlay]}>
@@ -84,6 +111,55 @@ export default function WeatherHeader({
     </View>
   );
 }
+
+const { colors, fontFamily, fontSize, spacing } = tokens;
+
+const bandStyles = StyleSheet.create({
+  band: {
+    height: WEATHER_BAND_HEIGHT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.m,
+    paddingHorizontal: spacing.m,
+    backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  temp: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.xl,
+    color: colors.text,
+    letterSpacing: -1,
+    fontVariant: ['tabular-nums'],
+  },
+  text: {
+    flex: 1,
+    minWidth: 0,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: spacing.s,
+  },
+  description: {
+    flexShrink: 1,
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.s,
+    color: colors.text,
+  },
+  source: {
+    flexShrink: 1,
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  detail: {
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    fontVariant: ['tabular-nums'],
+  },
+});
 
 const styles = StyleSheet.create({
   container: {

@@ -5,6 +5,7 @@ import { styles } from '../../screens/ItineraryEditorScreen.styles';
 import { formatDateLocal } from '../../../../utils/timeUtils';
 import TimelineComponent from './TimelineComponent';
 import { EditorStateContext } from './EditorStateContext';
+import { WEATHER_BAND_HEIGHT } from './editorConstants';
 
 const TimelineTabScreen = React.memo(() => {
   const state = useContext(EditorStateContext);
@@ -46,7 +47,7 @@ const TimelineTabScreen = React.memo(() => {
           <WeatherHeader
             dayNumber={selectedDay.dayNumber}
             weather={currentWeather}
-            appearance="overlay"
+            appearance="band"
           />
         </View>
       )}
@@ -66,7 +67,7 @@ const TimelineTabScreen = React.memo(() => {
                 })
             : undefined
         }
-        topPadding={selectedDay && currentWeather ? 62 : 0}
+        topPadding={selectedDay && currentWeather ? WEATHER_BAND_HEIGHT : 0}
         bottomPadding={sheetInset}
         pendingPlace={pendingPlace}
         previewStartTime={previewStartTime}

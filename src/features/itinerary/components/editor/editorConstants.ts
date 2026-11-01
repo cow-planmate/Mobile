@@ -20,3 +20,9 @@ export const AUTO_SCROLL_MAX_STEP = 12;
  */
 export const AUTO_SCROLL_MIN_STEP = 4;
 export const AUTO_SCROLL_TICK_MS = 16;
+
+/**
+ * 시간표 맨 위에 고정되는 날씨 띠의 높이(px).
+ * 시간표는 이만큼 아래에서 시작하고, 끌어놓기 눈금 계산도 같은 값을 쓴다.
+ */
+export const WEATHER_BAND_HEIGHT = 64;
