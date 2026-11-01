@@ -44,6 +44,15 @@ const textsOf = (place: Place, isReadOnly = false) => {
   return out.join('').replace(/\s+/g, ' ').trim();
 };
 
+/** ⋯를 눌러 동작 목록을 연다. 목록은 열기 전에는 그려지지 않는다. */
+const openMenu = (tree: renderer.ReactTestRenderer) => {
+  act(() => {
+    tree.root
+      .findByProps({ accessibilityLabel: '장소 옵션 열기' })
+      .props.onPress();
+  });
+};
+
 describe('TimelineItem 메모', () => {
   it('메모가 있으면 카드에 보인다', () => {
     expect(textsOf({ ...basePlace, memo: '표 예매함' })).toContain('표 예매함');
@@ -93,24 +102,27 @@ describe('TimelineItem 튜토리얼 앵커 버튼 동작', () => {
       );
     });
 
-    const editBtn = tree.root.findByProps({ accessibilityLabel: '일정 수정' });
-    const detailBtn = tree.root.findByProps({
-      accessibilityLabel: '장소 정보 보기',
-    });
-    const deleteBtn = tree.root.findByProps({
-      accessibilityLabel: '장소 삭제',
-    });
-
+    // 동작을 하나 고르면 목록이 닫히므로 그때마다 다시 연다.
+    openMenu(tree);
     act(() => {
-      editBtn.props.onPress();
+      tree.root
+        .findByProps({ accessibilityLabel: '일정 수정' })
+        .props.onPress();
     });
     expect(onEditPlace).toHaveBeenCalledTimes(1);
 
+    openMenu(tree);
     act(() => {
-      detailBtn.props.onPress();
+      tree.root
+        .findByProps({ accessibilityLabel: '장소 정보 보기' })
+        .props.onPress();
     });
     expect(onShowDetail).toHaveBeenCalled();
 
+    openMenu(tree);
+    const deleteBtn = tree.root.findByProps({
+      accessibilityLabel: '장소 삭제',
+    });
     expect(deleteBtn.props.disabled).toBe(true);
     act(() => {
       if (deleteBtn.props.onPress) {
@@ -120,7 +132,7 @@ describe('TimelineItem 튜토리얼 앵커 버튼 동작', () => {
     expect(onDelete).not.toHaveBeenCalled();
   });
 
-  it('연필 아이콘을 누르면 onEditPlace를 우선 호출하고 본문 텍스트는 클릭되지 않는다', () => {
+  it('메뉴에서 수정을 고르면 onEditPlace를 호출하고 메뉴를 닫는다', () => {
     const onEditPlace = jest.fn();
     const onPress = jest.fn();
 
@@ -135,11 +147,52 @@ describe('TimelineItem 튜토리얼 앵커 버튼 동작', () => {
       );
     });
 
+    openMenu(tree);
     const editBtn = tree.root.findByProps({ accessibilityLabel: '일정 수정' });
     act(() => {
       editBtn.props.onPress();
     });
     expect(onEditPlace).toHaveBeenCalledTimes(1);
+    expect(
+      tree.root.findAllByProps({ accessibilityLabel: '일정 수정' }),
+    ).toHaveLength(0);
+  });
+
+  it('카드 본문을 누르면 바로 수정 창이 열린다', () => {
+    const onEditPlace = jest.fn();
+
+    let tree!: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <TimelineItem item={basePlace} onEditPlace={onEditPlace} />,
+      );
+    });
+
+    const body = tree.root.findByProps({
+      accessibilityLabel: `${basePlace.name} 수정`,
+    });
+    act(() => {
+      body.props.onPress();
+    });
+    expect(onEditPlace).toHaveBeenCalledTimes(1);
+  });
+
+  it('완성된 일정(읽기 전용)에서는 ⋯도 본문 누르기도 없다', () => {
+    let tree!: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <TimelineItem item={basePlace} isReadOnly onEditPlace={jest.fn()} />,
+      );
+    });
+
+    expect(
+      tree.root.findAllByProps({ accessibilityLabel: '장소 옵션 열기' }),
+    ).toHaveLength(0);
+    expect(
+      tree.root.findAllByProps({
+        accessibilityLabel: `${basePlace.name} 수정`,
+      }),
+    ).toHaveLength(0);
   });
 
   it('튜토리얼이 아닌 실제 상황에서는 앵커 카드여도 삭제 버튼이 활성화된다', () => {
@@ -157,6 +210,7 @@ describe('TimelineItem 튜토리얼 앵커 버튼 동작', () => {
       );
     });
 
+    openMenu(tree);
     const deleteBtn = tree.root.findByProps({
       accessibilityLabel: '장소 삭제',
     });
@@ -169,8 +223,8 @@ describe('TimelineItem 튜토리얼 앵커 버튼 동작', () => {
   });
 });
 
-describe('TimelineItem 웹 맞춤 4개 액션 버튼', () => {
-  it('웹과 동일하게 상세 정보 → 지도 → 일정 수정 → 장소 삭제 순서로 4개의 버튼이 렌더된다', () => {
+describe('TimelineItem ⋯ 동작 목록', () => {
+  it('블록에는 ⋯ 하나만 보이고, 열면 웹과 같은 순서로 4개의 동작이 나온다', () => {
     let tree!: renderer.ReactTestRenderer;
     act(() => {
       tree = renderer.create(
@@ -186,16 +240,37 @@ describe('TimelineItem 웹 맞춤 4개 액션 버튼', () => {
     const actionContainer = tree.root.findByProps({
       testID: 'timeline-item-actions',
     });
-    const labels = React.Children.toArray(actionContainer.props.children)
+    const closedLabels = React.Children.toArray(actionContainer.props.children)
       .filter(React.isValidElement)
       .map((c: any) => c.props.accessibilityLabel);
+    expect(closedLabels).toEqual(['장소 옵션 열기']);
 
-    expect(labels).toEqual([
+    openMenu(tree);
+    const wanted = [
       '장소 정보 보기',
       '지도에서 보기',
       '일정 수정',
       '장소 삭제',
-    ]);
+    ];
+    const labels = tree.root
+      .findAll(node => wanted.includes(node.props.accessibilityLabel))
+      .map(node => node.props.accessibilityLabel);
+
+    expect(Array.from(new Set(labels))).toEqual(wanted);
+  });
+
+  it('장소 정보를 열 수 없는 장소(직접 추가)에는 정보 동작이 없다', () => {
+    let tree!: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <TimelineItem item={basePlace} onEditPlace={jest.fn()} />,
+      );
+    });
+
+    openMenu(tree);
+    expect(
+      tree.root.findAllByProps({ accessibilityLabel: '장소 정보 보기' }),
+    ).toHaveLength(0);
   });
 
   it('지도 버튼을 누르면 기본적으로 네이버 지도 검색 URL을 openExternalUrl로 연다', () => {
@@ -212,6 +287,7 @@ describe('TimelineItem 웹 맞춤 4개 액션 버튼', () => {
       );
     });
 
+    openMenu(tree);
     const mapBtn = tree.root.findByProps({
       accessibilityLabel: '지도에서 보기',
     });
@@ -241,6 +317,7 @@ describe('TimelineItem 웹 맞춤 4개 액션 버튼', () => {
       );
     });
 
+    openMenu(tree);
     const mapBtn = tree.root.findByProps({
       accessibilityLabel: '지도에서 보기',
     });

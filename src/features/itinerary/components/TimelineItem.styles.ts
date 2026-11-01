@@ -67,124 +67,87 @@ export const CATEGORY_COLORS = {
 };
 
 export const styles = StyleSheet.create({
+  // 위아래 2px씩 비워 붙어 있는 두 블록 사이에 틈을 만든다. 블록 높이는 머무는 시간 그대로다.
   cardContainer: {
     flexDirection: 'row',
     width: '100%',
     paddingLeft: 0,
+    paddingVertical: 2,
     alignItems: 'stretch',
   },
-  // 시안 D: 플로팅 인디케이터 & 개별 소프트 버튼
+  // 흰 면 하나로 끝낸다. 테두리·그림자·배지 없이 글자 굵기와 막대 하나로 위계를 만든다.
   card: {
     flex: 1,
     flexDirection: 'row',
-    borderRadius: 10,
-    paddingLeft: 8,
-    paddingRight: 9,
-    paddingVertical: 8,
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    borderRadius: tokens.radius.l,
+    paddingLeft: 12,
+    paddingRight: 4,
     overflow: 'hidden',
-    borderWidth: 1,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
+    backgroundColor: tokens.colors.white,
   },
+  // 15분 칸처럼 낮은 블록은 한 줄로 가운데에 놓는다.
   cardCompact: {
+    alignItems: 'center',
     paddingVertical: 2,
-    paddingLeft: 7,
-    paddingRight: 8,
   },
-  floatingAccentBar: {
-    width: 4,
-    alignSelf: 'stretch',
+  head: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    minWidth: 0,
+    marginTop: 12,
+  },
+  headCompact: {
+    marginTop: 0,
+  },
+  accentBar: {
+    width: 3,
     borderRadius: 999,
-    marginRight: 9,
-    marginVertical: 1,
+    marginRight: 10,
   },
   infoContainer: {
     flex: 1,
     justifyContent: 'center',
-    gap: 3,
-    minWidth: 0,
-  },
-  compactSingleRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+    gap: 2,
     minWidth: 0,
   },
   nameText: {
     fontSize: 14.5,
     fontFamily: FONTS.semibold,
-    color: '#0F172A',
+    color: tokens.colors.text,
     letterSpacing: -0.3,
   },
   nameTextCompact: {
-    flex: 1,
     fontSize: 13,
     fontFamily: FONTS.semibold,
-    color: '#0F172A',
+    color: tokens.colors.text,
     letterSpacing: -0.2,
   },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  miniTag: {
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 4,
-    borderWidth: 1,
-    marginRight: 2,
-  },
-  miniTagText: {
-    fontSize: 10.5,
-    fontFamily: FONTS.semibold,
-  },
   metaText: {
-    fontSize: 11.5,
+    fontSize: 12,
     fontFamily: FONTS.medium,
-    color: '#64748B',
-    fontVariant: ['tabular-nums'],
-  },
-  metaTextCompact: {
-    fontSize: 11,
-    fontFamily: FONTS.medium,
-    color: '#64748B',
+    color: tokens.colors.textMuted,
     fontVariant: ['tabular-nums'],
   },
   memoText: {
-    fontSize: 11.5,
+    fontSize: 12,
     fontFamily: FONTS.regular,
-    lineHeight: 15.5,
+    lineHeight: 16,
     marginTop: 2,
-    color: '#64748B',
+    color: tokens.colors.textMuted,
   },
   actionContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    marginLeft: 6,
+    marginLeft: 4,
+    marginTop: 4,
   },
-  actionButton: {
-    width: 25,
-    height: 25,
-    borderRadius: 7,
-    backgroundColor: '#F1F5F9',
+  actionCompact: {
+    marginTop: 0,
+  },
+  moreButton: {
+    width: 32,
+    height: 26,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  actionButtonCompact: {
-    width: 25,
-    height: 25,
-    borderRadius: 7,
-    backgroundColor: '#F1F5F9',
-  },
-  actionButtonDisabled: {
-    opacity: 0.35,
   },
 });
