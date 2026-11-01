@@ -71,6 +71,7 @@ import {
   WEATHER_BAND_HEIGHT,
   toWindowY,
 } from '../components/editor/editorConstants';
+import { DAY_UNDERLINE_SPRING } from '../components/editor/daySwitch';
 import ToolbarIconButton from '../components/editor/ToolbarIconButton';
 import { EditorStateContext } from '../components/editor/EditorStateContext';
 import {
@@ -224,6 +225,37 @@ export default function ItineraryEditorScreenView({
   const dayTabLayoutsRef = useRef<
     Record<number, { x: number; width: number }>
   >({});
+  // 밑줄은 탭마다 따로 그리지 않고 하나를 선택한 탭 아래로 미끄러뜨린다.
+  const underlineX = useSharedValue(0);
+  const underlineWidth = useSharedValue(0);
+  const underlineShown = useRef(false);
+  const moveUnderline = useCallback(
+    (index: number, animate: boolean) => {
+      const layout = dayTabLayoutsRef.current[index];
+      if (!layout) return;
+      const inset = normalize(14);
+      const x = layout.x + inset;
+      const width = Math.max(0, layout.width - inset * 2);
+      // 처음 자리는 미끄러져 오지 않고 그 자리에 놓는다.
+      if (animate && underlineShown.current) {
+        underlineX.value = withSpring(x, DAY_UNDERLINE_SPRING);
+        underlineWidth.value = withSpring(width, DAY_UNDERLINE_SPRING);
+      } else {
+        underlineX.value = x;
+        underlineWidth.value = width;
+      }
+      underlineShown.current = true;
+    },
+    [underlineX, underlineWidth],
+  );
+  useEffect(() => {
+    moveUnderline(selectedDayIndex, true);
+  }, [selectedDayIndex, moveUnderline]);
+  const underlineStyle = useAnimatedStyle(() => ({
+    width: underlineWidth.value,
+    transform: [{ translateX: underlineX.value }],
+  }));
+
   const isDayScrollable = dayScrollContentWidth > dayScrollLayoutWidth;
   const showLeftFade = isDayScrollable && dayScrollX > 5;
   const showRightFade =
@@ -1067,6 +1099,7 @@ export default function ItineraryEditorScreenView({
                 onLayout={event => {
                   const { x, width } = event.nativeEvent.layout;
                   dayTabLayoutsRef.current[index] = { x, width };
+                  if (isSelected) moveUnderline(index, false);
                 }}
                 activeOpacity={0.7}
                 accessibilityRole="button"
@@ -1086,10 +1119,13 @@ export default function ItineraryEditorScreenView({
                 <Text style={styles.dayTabDateInline}>
                   {formatDate(day.date)}
                 </Text>
-                {isSelected && <View style={styles.dayTabUnderline} />}
               </TouchableOpacity>
             );
           })}
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.dayTabIndicator, underlineStyle]}
+          />
         </ScrollView>
         <TouchableOpacity
           ref={dayPeriodTarget}

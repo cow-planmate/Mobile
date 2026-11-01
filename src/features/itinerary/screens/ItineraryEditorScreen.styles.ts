@@ -236,10 +236,10 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dayTabUnderline: {
+  // 선택한 탭 아래로 미끄러지는 밑줄. 자리와 폭은 탭을 잰 값으로 움직인다.
+  dayTabIndicator: {
     position: 'absolute',
-    left: normalize(14),
-    right: normalize(14),
+    left: 0,
     bottom: 0,
     height: 2.5,
     borderRadius: 2,
@@ -334,6 +334,10 @@ export const styles = StyleSheet.create({
   timelineStage: {
     flex: 1,
     position: 'relative',
+  },
+  // 일차를 넘길 때 시간표가 밀려 들어오는 틀.
+  timelineMotion: {
+    flex: 1,
   },
   // 흰 블록이 떠 보이도록 surface보다 한 단계 진한 바탕을 쓴다.
   timelineSceneBackdrop: {
