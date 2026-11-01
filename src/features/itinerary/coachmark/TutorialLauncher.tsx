@@ -104,8 +104,8 @@ export default function TutorialLauncher() {
           hitSlop={6}
         >
           <CircleQuestionMark
-            size={normalize(18)}
-            color={tokens.colors.primary}
+            size={normalize(20)}
+            color={tokens.colors.textMuted}
           />
         </TouchableOpacity>
       </View>
@@ -121,15 +121,16 @@ const styles = StyleSheet.create({
   hidden: {
     opacity: 0,
   },
+  // AI 도우미 버튼 위에 한 단계 작고 회색으로 선다. 파란색은 새로 여는 도우미에만 남긴다.
   button: {
-    width: normalize(44),
-    height: normalize(44),
-    borderRadius: normalize(22),
+    width: normalize(36),
+    height: normalize(36),
+    borderRadius: normalize(18),
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: tokens.colors.white,
     borderWidth: 1,
-    borderColor: tokens.colors.sub,
+    borderColor: tokens.colors.border,
     // 실행 취소 단추와 같은 단계만 쓴다. 시간표 위에 살짝 뜬 정도면 충분하다.
     ...tokens.shadows.sm,
   },
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
   // 오른쪽 끝에 맞춘다 - 왼쪽에 맞추면 말풍선이 화면 밖으로 나간다.
   nudge: {
     position: 'absolute',
-    bottom: normalize(52),
+    bottom: normalize(44),
     right: 0,
     width: normalize(250),
     paddingVertical: normalize(12),

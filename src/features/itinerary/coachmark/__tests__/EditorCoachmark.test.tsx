@@ -10,7 +10,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import EditorCoachmark from '../EditorCoachmark';
 import TutorialLauncher from '../TutorialLauncher';
 import { CoachmarkProvider, useCoachmarkTarget } from '../CoachmarkContext';
-import type { CoachmarkTargetId } from '../coachmarkSteps';
+import {
+  EDITOR_COACHMARK_STEPS,
+  type CoachmarkTargetId,
+} from '../coachmarkSteps';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -242,6 +245,63 @@ describe('EditorCoachmark', () => {
     // 웹 스포트라이트와 같은 두 겹 - 흰 줄 하나만으로는 어두운 바탕에 묻힌다.
     expect(borderColors).toContain('rgba(255, 255, 255, 0.95)');
     expect(borderColors).toContain('rgba(19, 68, 255, 0.72)');
+  });
+
+  it('다음 단계로 넘어가는 순간 이전 자리에 새 모양이 그려지지 않는다', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      // 둥글기와 여백이 서로 다른 두 단계다 - 일정 정보(원, 안쪽으로 줄임)와
+      // 며칠차 고르기(둥근 사각형, 넉넉히).
+      tree = renderTour(
+        <>
+          <FakeTarget id="planInfo" top={100} />
+          <FakeTarget id="dayTabs" top={300} />
+        </>,
+      );
+    });
+    await settle(tree);
+    await openTour(tree);
+
+    const ringBox = () => {
+      const ring = tree.root.find(node => {
+        if (node.type !== View) return false;
+        const style = Array.isArray(node.props.style)
+          ? node.props.style
+          : [node.props.style];
+        return style.some(
+          entry => entry?.borderColor === 'rgba(255, 255, 255, 0.95)',
+        );
+      });
+      const style = Array.isArray(ring.props.style)
+        ? Object.assign({}, ...ring.props.style)
+        : ring.props.style;
+      const { top, left, width, height, borderRadius } = style;
+      return { top, left, width, height, borderRadius };
+    };
+
+    const before = ringBox();
+    expect(visibleTexts(tree)).toContain('일정 정보');
+
+    // 새로 재기 전의 한 틈 - 다음을 누른 직후, 잰 값이 돌아오기 전이다.
+    act(() => {
+      tree.root
+        .findByProps({ accessibilityLabel: '다음 안내' })
+        .props.onPress();
+    });
+
+    // 말풍선 글과 구멍이 같은 단계 것이어야 한다. 이전 자리에 새 단계의
+    // 둥글기·여백을 입히면 구멍 모양이 한 번 튄다.
+    expect(ringBox()).toEqual(before);
+    expect(visibleTexts(tree)).toContain('일정 정보');
+
+    // 잰 값이 돌아오면 새 단계의 자리와 모양으로 한 번에 바뀐다.
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(visibleTexts(tree)).toContain('며칠차 고르기');
+    expect(ringBox()).not.toEqual(before);
+    expect(ringBox().top).toBe(300 - 5);
   });
 
   it('어두운 막은 길 하나로 덮고 구멍만 비운다', async () => {
@@ -493,8 +553,11 @@ describe('EditorCoachmark', () => {
 
     // 창 기준 100은 판 기준 148이다. 판이 창보다 48만큼 위에서 시작하므로
     // 그만큼 되돌려 놓지 않으면 테두리가 실제 버튼보다 48 위에 그려진다.
-    // 동그란 버튼은 구멍을 6만큼 넉넉히 뚫는다.
-    expect(ringTop(tree)).toBe(148 - 6);
+    // 구멍은 단계에 적힌 여백만큼 넉넉히(또는 빠듯이) 뚫린다.
+    const padding =
+      EDITOR_COACHMARK_STEPS.find(step => step.target === 'planInfo')
+        ?.padding ?? 6;
+    expect(ringTop(tree)).toBe(148 - padding);
   });
 
   it('판이 어긋나 있어도 실제 버튼 자리를 누르면 넘어간다', async () => {

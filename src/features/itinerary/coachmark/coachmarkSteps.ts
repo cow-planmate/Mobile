@@ -69,9 +69,22 @@ export interface CoachmarkDemo {
   /** 손가락이 닿는 자리. 짚은 자리 안에서의 비율(0이 왼쪽·위, 1이 오른쪽·아래). */
   fromX: number;
   fromY: number;
-  /** 거기서 끌려가는 거리(px). */
+  /**
+   * 거기서 끌려가는 거리(px). 아래 두 값으로 계산할 수 없을 때만 쓰는 대비책이다.
+   * 화면 치수에 매인 숫자라 가능하면 growMinutes·landAt으로 정한다.
+   */
   dx: number;
   dy: number;
+  /**
+   * grow에서 몇 분 늘어나는지. 시간표 눈금 높이를 곱해 거리를 정하므로
+   * 눈금이 바뀌어도 '30분쯤'이 30분쯤으로 남는다.
+   */
+  growMinutes?: number;
+  /**
+   * carry에서 놓일 자리. 함께 밝힌 시간표(lightAlso) 안에서 위에서부터의 비율이다.
+   * 놓이는 블록은 진짜 한 시간짜리 블록과 같은 크기로 그려진다.
+   */
+  landAt?: number;
 }
 
 export interface CoachmarkStep {
@@ -133,8 +146,11 @@ export const EDITOR_COACHMARK_STEPS: readonly CoachmarkStep[] = [
   {
     target: 'planInfo',
     title: '일정 정보',
-    body: '여행지·기간·인원 같은 기본 정보를 여기서 보고 바꿔요.',
+    body: '여행지·기간·인원 같은 기본 정보를 보고 바꿔요.',
     shape: 'circle',
+    // 작은 (i) 아이콘 둘레의 누르는 자리가 아이콘보다 훨씬 넓다. 그대로 두르면
+    // 원이 옆의 일정 이름을 걸친다 - 아이콘에 맞춰 안으로 줄인다.
+    padding: -8,
   },
   {
     target: 'dayTabs',
@@ -147,16 +163,29 @@ export const EDITOR_COACHMARK_STEPS: readonly CoachmarkStep[] = [
     title: '여행 기간 바꾸기',
     body: '여행 날짜를 늘리거나 줄여요. 일차가 함께 늘고 줄어듭니다.',
     shape: 'circle',
+    // 테두리 없는 아이콘이라 누르는 자리가 곧 구멍이다. 여백을 더하면 화면
+    // 오른쪽 끝에서 원이 잘린다.
+    padding: 0,
   },
   {
     target: 'placeSheet',
     title: '장소 담기',
-    body: '관광지·숙소·식당 중에 고르고 패널을 위로 끌어올리면 장소 목록이 나와요.',
+    body: '갈래를 고르고 장소를 꾹 눌러 시간표에 놓아요.',
     shape: 'rounded',
     padding: 0,
     // 장소 한 줄을 꾹 눌러 시간표에 놓는 데까지. 말풍선은 위로 치워 둔다 -
     // 패널과 시간표 사이에 앉아 있으면 들고 가는 카드가 그 뒤로 사라진다.
-    demo: { kind: 'carry', fromX: 0.35, fromY: 0.45, dx: 0, dy: -330 },
+    // 놓이는 자리는 밝혀 둔 시간표 안에서 비율로 정한다(landAt). 새 장소는
+    // 보통 마지막 블록 뒤 빈 시간에 놓이므로 아래쪽으로 잡아, 이미 담긴 블록과
+    // 겹쳐 그려지지 않게 한다.
+    demo: {
+      kind: 'carry',
+      fromX: 0.35,
+      fromY: 0.45,
+      dx: 0,
+      dy: -330,
+      landAt: 0.7,
+    },
     tipAway: true,
     practice: 'placeAdded',
     lightAlso: 'timeline',
@@ -167,16 +196,23 @@ export const EDITOR_COACHMARK_STEPS: readonly CoachmarkStep[] = [
     body: '위아래 회색 손잡이를 끌면 머무는 시간이 늘고, 블록째 끌면 시간대가 옮겨져요.',
     shape: 'rounded',
     // 아래쪽 손잡이를 잡고 아래로. 하루는 9시에서 시작하고 첫 블록이 그
-    // 근처에 놓이니, 위로 늘리면 늘어나는 자리가 날씨 카드 뒤로 숨는다.
-    // 110px은 시간표 눈금으로 30분쯤이다.
-    demo: { kind: 'grow', fromX: 0.5, fromY: 1, dx: 0, dy: 110 },
+    // 근처에 놓이니, 위로 늘리면 늘어나는 자리가 날씨 띠 뒤로 숨는다.
+    // 거리는 30분에 눈금 높이를 곱해 정한다(dy는 대비책).
+    demo: {
+      kind: 'grow',
+      fromX: 0.5,
+      fromY: 1,
+      dx: 0,
+      dy: 110,
+      growMinutes: 30,
+    },
     tipAbove: true,
     practice: 'timeChanged',
   },
   {
     target: 'blockActions',
     title: '고치기와 삭제',
-    body: '연필은 시간, ⓘ는 장소 정보, X는 지우기예요. 지운 건 되돌릴 수 있어요.',
+    body: '오른쪽 점 세 개를 누르면 수정, 장소 정보, 지도, 삭제가 열려요.',
     shape: 'rounded',
   },
   {
@@ -184,6 +220,8 @@ export const EDITOR_COACHMARK_STEPS: readonly CoachmarkStep[] = [
     title: '되돌리기',
     body: '방금 한 동작을 한 단계씩 취소해요. 잘못 옮겼을 때 바로 되돌립니다.',
     shape: 'circle',
+    // 되돌리기·다시 실행은 한 알약 안에 있다. 여백을 두면 원이 알약 밖으로 나간다.
+    padding: 0,
     interactive: false,
   },
   {
@@ -191,38 +229,46 @@ export const EDITOR_COACHMARK_STEPS: readonly CoachmarkStep[] = [
     title: '다시 실행',
     body: '되돌린 동작을 다시 적용해요. 취소한 내용을 복구할 수 있어요.',
     shape: 'circle',
+    padding: 0,
     interactive: false,
   },
+  // 도구 아이콘 넷은 테두리가 없어 누르는 자리가 곧 구멍이다. 여백을 더하면
+  // 원이 아이콘보다 훨씬 커 보인다.
   {
     target: 'checklist',
     title: '체크리스트',
     body: '챙길 짐과 할 일을 적어두는 곳이에요. 같이 가는 사람도 함께 봅니다.',
     shape: 'circle',
+    padding: 0,
   },
   {
     target: 'participants',
     title: '참여자',
     body: '함께 편집하는 사람 목록이에요. 빨간 숫자는 지금 참여 중인 인원입니다.',
     shape: 'circle',
+    padding: 0,
   },
   {
     target: 'invite',
     title: '친구 초대',
     body: '링크로 친구를 불러요. 초대받은 사람은 같이 고칠 수 있습니다.',
     shape: 'circle',
+    padding: 0,
   },
   {
     target: 'map',
     title: '동선 보기',
     body: '담은 장소를 지도 위에 순서대로 펼쳐요. 동선이 꼬였는지 여기서 확인해요.',
     shape: 'circle',
+    padding: 0,
   },
   {
     target: 'complete',
     title: '일정 완성',
     body: '다 짰으면 눌러서 완성해요. 완성한 뒤에도 연필로 다시 열 수 있어요.',
     note: '누르지 않고 나가도 괜찮아요. 고친 내용은 그때그때 저장됩니다.',
-    shape: 'circle',
+    // 완료는 글자가 있는 알약 버튼이라 원 대신 둥근 사각형으로 짚는다.
+    shape: 'rounded',
     interactive: false,
   },
   // 웹 CreateTutorial의 마지막 단계를 그대로 옮긴다. 다시 보는 길을 글로만
