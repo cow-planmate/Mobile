@@ -20,6 +20,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSpring,
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
@@ -72,8 +73,9 @@ import {
 import ToolbarIconButton from '../components/editor/ToolbarIconButton';
 import { EditorStateContext } from '../components/editor/EditorStateContext';
 import {
-  SHEET_SNAPS,
-  SHEET_INITIAL_RATIO,
+  SHEET_SPRING,
+  clampReleaseVelocity,
+  getSheetSnaps,
   nearestSnap,
 } from '../components/editor/sheetSnap';
 import SheetCategoryRow from '../components/editor/SheetCategoryRow';
@@ -446,10 +448,13 @@ export default function ItineraryEditorScreenView({
   const timelineViewRef = useRef<View>(null);
 
   const setSheetHeight = useCallback(
-    (height: number, animate = true) => {
+    (height: number, animate = true, velocity = 0) => {
       const next = Math.max(0, Math.min(sheetMaxRef.current, height));
       sheetHeightRef.current = next;
-      sheetBody.value = animate ? withTiming(next, { duration: 220 }) : next;
+      // 손을 뗀 속도를 이어받아 끌던 흐름 그대로 자리에 내려앉는다.
+      sheetBody.value = animate
+        ? withSpring(next, { ...SHEET_SPRING, velocity })
+        : next;
       // 끄는 동안에는 시간표를 다시 짜지 않는다. 손을 뗀 자리에서만 맞춘다.
       if (animate) setSheetRest(next);
     },
@@ -477,7 +482,7 @@ export default function ItineraryEditorScreenView({
   }, [isChatbotOpen, setSheetHeight]);
 
   const snapPoints = useCallback(
-    () => SHEET_SNAPS.map(ratio => Math.round(sheetMaxRef.current * ratio)),
+    () => getSheetSnaps(sheetMaxRef.current),
     [],
   );
 
@@ -513,7 +518,8 @@ export default function ItineraryEditorScreenView({
       // 작으면 그 1/3에 굳어 시트가 접힌 채로 열린 것처럼 보였다.
       // 손잡이를 잡기 전까지는 마지막으로 잰 크기에 맞춰 다시 연다.
       if (!sheetTouched.current && nextMax > 0) {
-        setSheetHeight(Math.round(nextMax * SHEET_INITIAL_RATIO));
+        // 스냅 자리와 같은 높이여야 첫 드래그가 안 튄다.
+        setSheetHeight(getSheetSnaps(nextMax)[1]);
       }
       measureGrid();
     },
@@ -555,6 +561,8 @@ export default function ItineraryEditorScreenView({
             const points = snapPoints();
             const velocityY = e.velocityY;
             const translationY = e.translationY;
+            // 위로 끌면 높이가 커지므로 손가락 속도와 부호가 반대다.
+            const releaseVelocity = clampReleaseVelocity(-velocityY);
 
             // 빠른 스와이프(플릭) 또는 30px 이상의 명확한 드래그 방향 반영
             if (velocityY < -250 || translationY < -30) {
@@ -563,16 +571,20 @@ export default function ItineraryEditorScreenView({
                 higherPoints.length > 0
                   ? higherPoints[0]
                   : points[points.length - 1];
-              setSheetHeight(target);
+              setSheetHeight(target, true, releaseVelocity);
             } else if (velocityY > 250 || translationY > 30) {
               const lowerPoints = points.filter(p => p < current - 10);
               const target =
                 lowerPoints.length > 0
                   ? lowerPoints[lowerPoints.length - 1]
                   : points[0];
-              setSheetHeight(target);
+              setSheetHeight(target, true, releaseVelocity);
             } else {
-              setSheetHeight(nearestSnap(current, points));
+              setSheetHeight(
+                nearestSnap(current, points),
+                true,
+                releaseVelocity,
+              );
             }
           }),
         Gesture.Tap()

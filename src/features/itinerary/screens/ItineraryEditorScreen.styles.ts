@@ -923,7 +923,9 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
   },
   sheetHint: {
-    paddingHorizontal: normalize(16),
+    // 왼쪽은 칩 줄과 같은 선에 맞추고, 위는 띄워 칩이 아닌 목록의 머리글로 읽히게 한다.
+    paddingHorizontal: normalize(14),
+    paddingTop: normalize(4),
     paddingBottom: normalize(8),
     fontSize: normalize(12),
     color: COLORS.textMuted,

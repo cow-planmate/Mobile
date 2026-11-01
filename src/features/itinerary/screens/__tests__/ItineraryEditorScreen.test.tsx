@@ -216,9 +216,9 @@ import { TAB_FILL } from '../ItineraryEditorScreen.styles';
 const readEditorViewSource = () =>
   [
     join(__dirname, '../ItineraryEditorScreen.view.tsx'),
-    ...readdirSync(join(__dirname, '../../components/editor')).map(name =>
-      join(__dirname, '../../components/editor', name),
-    ),
+    ...readdirSync(join(__dirname, '../../components/editor'))
+      .filter(name => /\.tsx?$/.test(name))
+      .map(name => join(__dirname, '../../components/editor', name)),
   ]
     .map(file => readFileSync(file, 'utf8'))
     .join('\n');
@@ -1176,7 +1176,7 @@ describe('일정 편집기 제스처 및 UI 동작 개선', () => {
   it('장소 추가 시트는 마지막으로 잰 몸통 크기에 맞춰 처음 높이를 연다', () => {
     // 화면이 뜨는 동안 몸통이 여러 번 재어지는데, 처음 잰 값에 굳으면
     // 시트가 접힌 채로 열린 것처럼 보였다. 손잡이를 잡기 전까지 다시 연다.
-    expect(source).toContain('SHEET_INITIAL_RATIO');
+    expect(source).toContain('getSheetSnaps(nextMax)[1]');
     expect(source).toContain('sheetTouched');
     expect(source).not.toContain('if (!sheetInited.current &&');
   });
@@ -1188,7 +1188,7 @@ describe('일정 편집기 제스처 및 UI 동작 개선', () => {
     // 되읽는 곳은 두 플로팅 묶음의 워클릿에서만 허용한다.
     expect(reads).toHaveLength(2);
     expect(source).toContain('Math.min(sheetMaxRef.current, height)');
-    expect(source).toContain('Math.round(sheetMaxRef.current * ratio)');
+    expect(source).toContain('getSheetSnaps(sheetMaxRef.current)');
   });
 
   it('플로팅 실행 취소 알약은 가장 옅은 그림자 토큰을 쓴다', () => {
@@ -1250,7 +1250,7 @@ describe('일정 편집기 제스처 및 UI 동작 개선', () => {
   });
 
   it('장소 추가 시트가 날씨 헤더 바로 밑까지 최대 확장되며 1.0 스냅을 지원한다', () => {
-    expect(source).toContain('SHEET_SNAPS = [0, 1 / 3, 2 / 3, 1]');
+    expect(source).toContain('(top * 2) / 3');
     expect(source).toContain(
       'sheetTopGap = hasWeather ? normalize(72) : normalize(8)',
     );
