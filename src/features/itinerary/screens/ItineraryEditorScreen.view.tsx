@@ -69,6 +69,7 @@ import {
   AUTO_SCROLL_MIN_STEP,
   AUTO_SCROLL_TICK_MS,
   WEATHER_BAND_HEIGHT,
+  toWindowY,
 } from '../components/editor/editorConstants';
 import ToolbarIconButton from '../components/editor/ToolbarIconButton';
 import { EditorStateContext } from '../components/editor/EditorStateContext';
@@ -682,7 +683,8 @@ export default function ItineraryEditorScreenView({
    * 더하고 빼며 맞추면 한 칸씩 어긋나기 쉽다.
    */
   const minutesAt = useCallback(
-    (absoluteY: number) => {
+    (screenY: number) => {
+      const absoluteY = toWindowY(screenY);
       const gridTop =
         gridTopRef.current ||
         bodyTop.current +
@@ -798,7 +800,8 @@ export default function ItineraryEditorScreenView({
    * 끌고 있는 동안 시간표의 손가락 스크롤은 꺼 두지만, 여기서 시키는 것은
    * 코드가 직접 옮기는 것이라 그대로 움직인다.
    */
-  const autoScrollStep = useCallback((pointY: number) => {
+  const autoScrollStep = useCallback((screenY: number) => {
+    const pointY = toWindowY(screenY);
     const top = timelineTop.current;
     const bottom = bodyTop.current + bodyHeight.current - SHEET_HANDLE_HEIGHT;
     if (!top || !bodyHeight.current) return 0;
