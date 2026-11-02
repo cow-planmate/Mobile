@@ -51,7 +51,8 @@ export const TIMELINE_BLOCK_LEFT = normalize(60);
 export const TIMELINE_BLOCK_RIGHT = normalize(15);
 export const TIMELINE_BLOCK_RADIUS = normalize(12);
 export const BOTTOM_TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 85 : 60;
-export const SHEET_HANDLE_HEIGHT = normalize(62);
+// 머릿줄(되돌리기·다시 실행·사용법이 들어가는 줄) 44 + 갈래 줄.
+export const SHEET_HANDLE_HEIGHT = normalize(80);
 
 export const styles = StyleSheet.create({
   container: {
@@ -677,25 +678,7 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.semibold,
   },
 
-  // 되돌리기·다시 실행은 한 알약으로 묶는다. 두 동작은 한 쌍이라 따로 띄울 이유가 없다.
-  floatingHistoryContainer: {
-    position: 'absolute',
-    left: normalize(16),
-    bottom: SHEET_HANDLE_HEIGHT + 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: normalize(44),
-    paddingHorizontal: normalize(4),
-    borderRadius: normalize(22),
-    backgroundColor: COLORS.white,
-    // 시간표 위에 살짝 뜬 정도면 충분하다. 테두리가 이미 경계를 그으므로
-    // 그림자는 토큰에서 가장 옅은 단계(sm)만 쓴다.
-    ...tokens.shadows.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    zIndex: 30,
-  },
-  // 사용법·AI 도우미는 오른쪽에 위아래로. 되돌리기와 바닥을 맞춘다.
+  // 사용법·AI 도우미는 오른쪽에 위아래로 세운다.
   floatingAssistContainer: {
     position: 'absolute',
     right: normalize(16),
@@ -704,36 +687,36 @@ export const styles = StyleSheet.create({
     gap: normalize(10),
     zIndex: 30,
   },
-  floatingHistoryButton: {
-    width: normalize(42),
-    height: normalize(42),
-    borderRadius: normalize(21),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  floatingUndoButton: {
-    flexDirection: 'row',
-    paddingHorizontal: normalize(14),
-    paddingVertical: normalize(10),
-    gap: normalize(6),
-  },
-  floatingHistoryLabel: {
-    color: COLORS.text,
-    fontSize: normalize(13),
-    fontFamily: FONTS.semibold,
-  },
-  // AI 도우미만 파란 아이콘으로 세운다 - 되돌리기·사용법과 달리 새로 여는 자리다.
-  // 면까지 채우면 완료 버튼과 파란색이 겹쳐 다투므로 흰 원에 아이콘만 파랗다.
+  // AI 도우미는 주력 기능이라 완료 버튼과 같은 파란 면 원으로 세운다. 원과
+  // 말풍선은 그대로 두고, 작은 "AI" 배지로 무슨 기능인지 글자로 알린다.
   floatingChatButton: {
-    width: normalize(44),
-    height: normalize(44),
-    borderRadius: normalize(22),
+    width: normalize(48),
+    height: normalize(48),
+    borderRadius: normalize(24),
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    ...tokens.shadows.md,
+  },
+  floatingChatBadge: {
+    position: 'absolute',
+    top: -normalize(4),
+    right: -normalize(6),
+    minWidth: normalize(22),
+    height: normalize(16),
+    paddingHorizontal: normalize(4),
+    borderRadius: normalize(8),
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...tokens.shadows.sm,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+  },
+  floatingChatBadgeText: {
+    fontSize: normalize(9),
+    lineHeight: normalize(11),
+    fontFamily: FONTS.bold,
+    color: COLORS.primary,
   },
   // AI 도우미 창이 서는 자리. 단추 묶음과 바닥을 맞추되 따라 움직이지는
   // 않는다 - 시트 위로 뜨는 창이라 자리가 고정이어야 한다.
@@ -756,11 +739,6 @@ export const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(2, 6, 23, 0.16)',
   },
-  floatingHistoryButtonDisabled: {
-    backgroundColor: COLORS.borderLight,
-    opacity: 0.5,
-  },
-
   previewBanner: {
     position: 'absolute',
     left: normalize(60),
@@ -890,10 +868,36 @@ export const styles = StyleSheet.create({
   },
   // 잡는 자리는 막대만. 갈래 줄까지 여기 넣으면 갈래를 누를 때 시트가 여닫힌다.
   sheetGrabArea: {
-    height: normalize(26),
-    justifyContent: 'center',
+    height: normalize(44),
+    // 머릿줄이 늘어도 막대는 예전 자리(맨 위에서 13dp)에 둔다. 양 끝 단추만
+    // 늘어난 줄의 가운데에 선다.
+    justifyContent: 'flex-start',
+    paddingTop: normalize(11),
     alignItems: 'center',
     backgroundColor: COLORS.white,
+  },
+  // 머릿줄 양 끝에 놓는 단추 자리. 막대 잡는 자리 위에 따로 얹어 단추를
+  // 눌러도 시트가 끌리지 않게 한다.
+  sheetHeaderLeft: {
+    position: 'absolute',
+    top: 0,
+    left: normalize(8),
+    height: normalize(44),
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sheetHeaderRight: {
+    position: 'absolute',
+    top: 0,
+    right: normalize(8),
+    height: normalize(44),
+    justifyContent: 'center',
+  },
+  sheetHeaderButton: {
+    width: normalize(44),
+    height: normalize(44),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sheetGrabber: {
     width: normalize(40),

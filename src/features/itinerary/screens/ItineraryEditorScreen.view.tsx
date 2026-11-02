@@ -61,7 +61,11 @@ import Redo2 from 'lucide-react-native/dist/esm/icons/redo-2';
 import UserPlusIcon from 'lucide-react-native/dist/esm/icons/user-plus';
 import UsersIcon from 'lucide-react-native/dist/esm/icons/users';
 import { useCoachmarkTarget } from '../coachmark/CoachmarkContext';
-import TutorialLauncher from '../coachmark/TutorialLauncher';
+import {
+  TutorialButton,
+  TutorialNudge,
+  useTutorialNudge,
+} from '../coachmark/TutorialLauncher';
 import type { PlaceDetailTarget } from '../components/PlaceDetailSheet';
 import {
   AUTO_SCROLL_EDGE,
@@ -89,10 +93,7 @@ import TimelineTabScreen from '../components/editor/TimelineTabScreen';
  */
 const claimTouch = () => true;
 
-const FLOATING_BUTTON_SIZE = normalize(44);
-/** 사용법 버튼은 AI 도우미 버튼 위에 한 단계 작게 선다. */
-const FLOATING_HELP_SIZE = normalize(36);
-const FLOATING_BUTTON_GAP = normalize(10);
+const FLOATING_BUTTON_SIZE = normalize(48);
 const FLOATING_BUTTON_BOTTOM_OFFSET = 14;
 
 export interface ItineraryEditorScreenViewProps {
@@ -215,6 +216,7 @@ export default function ItineraryEditorScreenView({
   const dayTabsTarget = useCoachmarkTarget('dayTabs');
   const dayPeriodTarget = useCoachmarkTarget('dayPeriod');
   const placeSheetTarget = useCoachmarkTarget('placeSheet');
+  const tutorialNudge = useTutorialNudge();
   const undoTarget = useCoachmarkTarget('undo');
   const redoTarget = useCoachmarkTarget('redo');
 
@@ -681,24 +683,10 @@ export default function ItineraryEditorScreenView({
       ? ('none' as const)
       : ('box-none' as const);
 
-  const floatingHistoryAnimStyle = useAnimatedStyle(() => {
-    const hideAt = Math.max(
-      0,
-      sheetMax.value - FLOATING_BUTTON_BOTTOM_OFFSET - FLOATING_BUTTON_SIZE,
-    );
-
-    return {
-      opacity: sheetBody.value >= hideAt ? 0 : 1,
-      transform: [{ translateY: -sheetBody.value + sheetShift.value }],
-    };
-  });
-
   const floatingAssistAnimStyle = useAnimatedStyle(() => {
     const hideAt = Math.max(
       0,
-      sheetMax.value -
-        FLOATING_BUTTON_BOTTOM_OFFSET -
-        (FLOATING_BUTTON_SIZE + FLOATING_BUTTON_GAP + FLOATING_HELP_SIZE),
+      sheetMax.value - FLOATING_BUTTON_BOTTOM_OFFSET - FLOATING_BUTTON_SIZE,
     );
 
     return {
@@ -1206,57 +1194,20 @@ export default function ItineraryEditorScreenView({
             <TimelineTabScreen />
           </View>
 
-          {/* 창이 떠 있는 동안에는 치운다. 뒤가 잠겨 있어 눌러도 되는 것이
-            없고, 창이 그 자리까지 내려와 서로 겹친다. */}
-          {!isChatbotOpen && (
-            <Animated.View
-              pointerEvents={floatingPointerEvents}
-              style={[
-                styles.floatingHistoryContainer,
-                floatingHistoryAnimStyle,
-              ]}
-            >
-              <TouchableOpacity
-                ref={undoTarget}
-                testID="btn-undo"
-                style={styles.floatingHistoryButton}
-                onPress={onUndo}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="실행 취소"
-                hitSlop={6}
-              >
-                <Undo2 color={COLORS.textLabel} size={20} />
-              </TouchableOpacity>
-              {!!onRedo && (
-                <TouchableOpacity
-                  ref={redoTarget}
-                  testID="btn-redo"
-                  style={styles.floatingHistoryButton}
-                  onPress={onRedo}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel="다시 실행"
-                  hitSlop={6}
-                >
-                  <Redo2 color={COLORS.textLabel} size={20} />
-                </TouchableOpacity>
-              )}
-            </Animated.View>
-          )}
+          {/* 시간표 위에는 AI 도우미만 남긴다. 되돌리기·다시 실행·사용법은 시트
+            머릿줄로 내렸다. 시트 높이를 따라 움직여서 시트를 올려도 가려지지
+            않는다.
 
-          {/* 도움을 청하는 두 단추는 오른쪽에 위아래로 세운다 - 되돌리기는
-            방금 한 일을 무르는 손이고, 이 둘은 새로 여는 자리라 갈라 둔다.
-            둘 다 시트 높이를 따라 움직여서 시트를 올려도 가려지지 않는다.
-
-            창이 떠 있는 동안에는 이 묶음도 치운다. 창이 이 자리까지 내려와
+            창이 떠 있는 동안에는 이 단추도 치운다. 창이 이 자리까지 내려와
             겹치고, 닫기는 창 머릿줄의 X가 맡는다. */}
           {!isChatbotOpen && (
             <Animated.View
               pointerEvents={floatingPointerEvents}
               style={[styles.floatingAssistContainer, floatingAssistAnimStyle]}
             >
-              <TutorialLauncher />
+              {/* 처음 온 사람에게 한 번 권하는 말풍선. 시트 머릿줄 안에서는
+                시트에 잘려서 여기에 띄운다. */}
+              <TutorialNudge nudge={tutorialNudge} />
               {/* 웹과 같은 토글이다 - 열려 있으면 같은 자리에서 X로 바뀐다. */}
               <TouchableOpacity
                 testID="btn-chatbot"
@@ -1267,7 +1218,10 @@ export default function ItineraryEditorScreenView({
                 accessibilityLabel="AI 여행 도우미"
                 hitSlop={6}
               >
-                <MessageCircle color={COLORS.primary} size={20} />
+                <MessageCircle color={COLORS.white} size={24} />
+                <View pointerEvents="none" style={styles.floatingChatBadge}>
+                  <Text style={styles.floatingChatBadgeText}>AI</Text>
+                </View>
               </TouchableOpacity>
             </Animated.View>
           )}
@@ -1323,6 +1277,42 @@ export default function ItineraryEditorScreenView({
                 <View style={styles.sheetGrabber} />
               </View>
             </GestureDetector>
+
+            {/* 머릿줄 양 끝의 단추. 막대 잡는 자리 위에 따로 얹는다. 가운데 막대와
+              떨어져 있고, 시간표를 가리지도 완료 버튼 옆에 붙지도 않는다. */}
+            <View style={styles.sheetHeaderLeft}>
+              <TouchableOpacity
+                ref={undoTarget}
+                testID="btn-undo"
+                style={styles.sheetHeaderButton}
+                onPress={onUndo}
+                activeOpacity={0.6}
+                accessibilityRole="button"
+                accessibilityLabel="실행 취소"
+              >
+                <Undo2 color={COLORS.textLabel} size={24} strokeWidth={1.75} />
+              </TouchableOpacity>
+              {!!onRedo && (
+                <TouchableOpacity
+                  ref={redoTarget}
+                  testID="btn-redo"
+                  style={styles.sheetHeaderButton}
+                  onPress={onRedo}
+                  activeOpacity={0.6}
+                  accessibilityRole="button"
+                  accessibilityLabel="다시 실행"
+                >
+                  <Redo2
+                    color={COLORS.textLabel}
+                    size={24}
+                    strokeWidth={1.75}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.sheetHeaderRight}>
+              <TutorialButton nudge={tutorialNudge} />
+            </View>
 
             <SheetCategoryRow selected={placeTab} onSelect={setPlaceTab} />
 

@@ -467,7 +467,7 @@ describe('ItineraryEditorScreenView Component', () => {
     ).toThrow();
   });
 
-  it('renders undo button integrated with place sheet', async () => {
+  it('renders undo and redo buttons in the title row', async () => {
     const mockUndo = jest.fn();
     const mockRedo = jest.fn();
 
@@ -527,11 +527,6 @@ describe('ItineraryEditorScreenView Component', () => {
     });
     expect(undoButton).toBeDefined();
 
-    // 아이콘은 lucide 딥임포트로 렌더된다 — 버튼에 아이콘이 붙어 있는지 확인
-    expect(
-      React.Children.count(undoButton?.props.children),
-    ).toBeGreaterThanOrEqual(1);
-
     await act(async () => {
       undoButton?.props.onPress();
     });
@@ -542,10 +537,6 @@ describe('ItineraryEditorScreenView Component', () => {
       testID: 'btn-redo',
     });
     expect(redoButton).toBeDefined();
-
-    expect(
-      React.Children.count(redoButton?.props.children),
-    ).toBeGreaterThanOrEqual(1);
 
     await act(async () => {
       redoButton?.props.onPress();
@@ -1277,29 +1268,10 @@ describe('일정 편집기 제스처 및 UI 동작 개선', () => {
     // 공유값에 쓴 값을 JS에서 곧바로 되읽으면 아직 반영되지 않은 0이 나온다.
     // 그 0이 setSheetHeight의 상한이 되어 처음 높이가 통째로 잘렸다.
     const reads = source.match(/sheetMax\.value(?!\s*=)/g) ?? [];
-    // 되읽는 곳은 두 플로팅 묶음의 워클릿에서만 허용한다.
-    expect(reads).toHaveLength(2);
+    // 되읽는 곳은 플로팅 단추 묶음의 워클릿에서만 허용한다.
+    expect(reads).toHaveLength(1);
     expect(source).toContain('Math.min(sheetMaxRef.current, height)');
     expect(source).toContain('getSheetSnaps(sheetMaxRef.current)');
-  });
-
-  it('플로팅 실행 취소 알약은 가장 옅은 그림자 토큰을 쓴다', () => {
-    const {
-      styles: editorStyles,
-    } = require('../ItineraryEditorScreen.styles');
-    const { tokens } = require('../../../../theme/tokens');
-
-    // 되돌리기·다시 실행은 한 알약으로 묶여 그림자와 테두리는 알약이 가진다.
-    expect(editorStyles.floatingHistoryContainer.elevation).toBe(
-      tokens.shadows.sm.elevation,
-    );
-    expect(editorStyles.floatingHistoryContainer.shadowOpacity).toBe(
-      tokens.shadows.sm.shadowOpacity,
-    );
-    // 테두리가 경계를 그으므로 그림자를 더 키울 이유가 없다.
-    expect(editorStyles.floatingHistoryContainer.borderWidth).toBe(1);
-    // 알약 안의 버튼은 따로 떠 보이지 않는다.
-    expect(editorStyles.floatingHistoryButton.borderWidth).toBeUndefined();
   });
 
   it('중복 라벨(movingPlace)이 제거되었다', () => {
@@ -1307,9 +1279,10 @@ describe('일정 편집기 제스처 및 UI 동작 개선', () => {
     expect(source).not.toContain('movingPlaceName');
   });
 
-  it('실행 취소 버튼이 플로팅 버튼으로 시트와 동기화되어 렌더된다', () => {
-    expect(source).toContain('styles.floatingHistoryContainer');
-    expect(source).toContain('styles.floatingHistoryButton');
+  it('실행 취소·다시 실행은 시간표 위에 뜨지 않고 제목 줄에 있다', () => {
+    expect(source).not.toContain('styles.floatingHistoryContainer');
+    expect(source).toContain('testID="btn-undo"');
+    expect(source).toContain('testID="btn-redo"');
     expect(source).not.toContain('styles.sheetTopBar');
   });
 
