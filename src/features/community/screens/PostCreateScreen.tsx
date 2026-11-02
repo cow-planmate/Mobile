@@ -154,7 +154,7 @@ export default function PostCreateScreen() {
             accessibilityLabel={isEditMode ? '게시글 수정' : '게시글 등록'}
             accessibilityState={{ disabled: !canSubmit }}
           >
-            <Text style={styles.submitButtonText}>
+            <Text numberOfLines={1} style={styles.submitButtonText}>
               {createPost.isPending || updatePost.isPending
                 ? isEditMode
                   ? '수정 중'

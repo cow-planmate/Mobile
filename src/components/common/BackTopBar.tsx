@@ -100,8 +100,9 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
     textAlign: 'center',
   },
+  // 고정 폭이면 "등록"처럼 글자가 든 단추가 48dp 안에 눌려 줄이 꺾인다.
   rightSlot: {
-    width: TOP_BAR_METRICS.actionSize,
+    minWidth: TOP_BAR_METRICS.actionSize,
     height: TOP_BAR_METRICS.actionSize,
     alignItems: 'flex-end',
     justifyContent: 'center',
