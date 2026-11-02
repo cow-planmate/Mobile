@@ -133,10 +133,11 @@ export default function PostDetailScreen() {
     });
   };
 
-  const renderTopBar = () => (
+  const renderTopBar = (right?: React.ReactNode) => (
     <BackTopBar
       title="게시글"
       onBack={() => navigation.goBack()}
+      right={right}
       safeTop
     />
   );
@@ -184,7 +185,7 @@ export default function PostDetailScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
-      {renderTopBar()}
+      {renderTopBar(!isAuthor && <ReportPostButton postId={post.id} />)}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -299,12 +300,6 @@ export default function PostDetailScreen() {
                   삭제
                 </Text>
               </TouchableOpacity>
-            </View>
-          )}
-
-          {!isAuthor && (
-            <View style={styles.authorActions}>
-              <ReportPostButton postId={post.id} />
             </View>
           )}
 

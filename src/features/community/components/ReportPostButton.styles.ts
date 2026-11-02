@@ -5,19 +5,20 @@ import { tokens } from '../../../theme/tokens';
 const COLORS = tokens.colors;
 
 export const styles = StyleSheet.create({
-  // 상세 화면의 삭제 단추와 같은 규격·같은 색이다. 삭제는 작성자에게만, 신고는
-  // 작성자가 아닌 사람에게만 보여서 한 화면에 같이 나오지 않는다.
-  trigger: {
-    flexDirection: 'row',
+  // 상단바 오른쪽 자리(48dp)에 들어가는 "⋯" 단추. 드물게 쓰는 신고는 본문 위에
+  // 드러내지 않고 메뉴 안에 둔다.
+  menuButton: {
+    width: normalize(48),
+    height: normalize(48),
     alignItems: 'center',
-    gap: normalize(4),
-    paddingHorizontal: normalize(10),
-    paddingVertical: normalize(6),
-    borderRadius: tokens.radius.m,
-    backgroundColor: tokens.tones.danger.bg,
+    justifyContent: 'center',
   },
-  triggerText: {
-    fontSize: normalize(11),
+  menuRow: {
+    paddingHorizontal: normalize(16),
+    paddingVertical: normalize(14),
+  },
+  menuRowDangerText: {
+    fontSize: normalize(15),
     fontFamily: tokens.fontFamily.semibold,
     color: tokens.tones.danger.fg,
   },

@@ -223,10 +223,11 @@ ${WEB_URL}/travel/${post.id}`,
     }
   };
 
-  const renderTopBar = () => (
+  const renderTopBar = (right?: React.ReactNode) => (
     <BackTopBar
       title="여행기"
       onBack={() => navigation.goBack()}
+      right={right}
       safeTop
     />
   );
@@ -358,7 +359,7 @@ ${WEB_URL}/travel/${post.id}`,
         barStyle="dark-content"
         backgroundColor={tokens.colors.white}
       />
-      {renderTopBar()}
+      {renderTopBar(!isAuthor && <ReportPostButton postId={post.id} feed />)}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -473,11 +474,6 @@ ${WEB_URL}/travel/${post.id}`,
               </View>
             )}
 
-            {!isAuthor && (
-              <View style={styles.authorActions}>
-                <ReportPostButton postId={post.id} feed />
-              </View>
-            )}
           </View>
 
           {hasBody && (
