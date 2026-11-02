@@ -328,7 +328,9 @@ export default function PostDetailScreen() {
             <ThumbsUp
               size={normalize(14)}
               color={
-                post.myReaction === 'like' ? COLORS.white : COLORS.textSecondary
+                post.myReaction === 'like'
+                  ? tokens.tones.primary.fg
+                  : COLORS.textSecondary
               }
             />
             <Text
@@ -337,7 +339,7 @@ export default function PostDetailScreen() {
                 post.myReaction === 'like' && styles.reactionTextActive,
               ]}
             >
-              좋아요 {post.likes.toLocaleString()}
+              추천 {post.likes.toLocaleString()}
             </Text>
           </TouchableOpacity>
 
@@ -355,17 +357,18 @@ export default function PostDetailScreen() {
               size={normalize(14)}
               color={
                 post.myReaction === 'dislike'
-                  ? COLORS.white
+                  ? COLORS.text
                   : COLORS.textSecondary
               }
             />
             <Text
               style={[
                 styles.reactionText,
-                post.myReaction === 'dislike' && styles.reactionTextActive,
+                post.myReaction === 'dislike' &&
+                  styles.reactionTextActiveDislike,
               ]}
             >
-              싫어요 {post.dislikes}
+              비추천 {post.dislikes}
             </Text>
           </TouchableOpacity>
         </View>

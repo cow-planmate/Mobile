@@ -295,7 +295,9 @@ ${WEB_URL}/travel/${post.id}`,
         <ThumbsUp
           size={normalize(14)}
           color={
-            post.myReaction === 'like' ? COLORS.white : COLORS.textSecondary
+            post.myReaction === 'like'
+              ? tokens.tones.primary.fg
+              : COLORS.textSecondary
           }
         />
         <Text
@@ -323,13 +325,13 @@ ${WEB_URL}/travel/${post.id}`,
         <ThumbsDown
           size={normalize(14)}
           color={
-            post.myReaction === 'dislike' ? COLORS.white : COLORS.textSecondary
+            post.myReaction === 'dislike' ? COLORS.text : COLORS.textSecondary
           }
         />
         <Text
           style={[
             styles.reactionText,
-            post.myReaction === 'dislike' && styles.reactionTextActive,
+            post.myReaction === 'dislike' && styles.reactionTextActiveDislike,
           ]}
         >
           비추천 {post.dislikes}

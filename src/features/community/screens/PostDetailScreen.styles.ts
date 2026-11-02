@@ -198,29 +198,29 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: normalize(7),
     minWidth: normalize(112),
-    height: normalize(42),
+    height: normalize(44),
     paddingHorizontal: normalize(16),
-    borderRadius: tokens.radius.l,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    borderRadius: tokens.radius.round,
+    backgroundColor: COLORS.pageGround,
   },
   reactionButtonActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: tokens.tones.primary.bg,
   },
   reactionButtonActiveDislike: {
-    backgroundColor: COLORS.textSecondary,
-    borderColor: COLORS.textSecondary,
+    backgroundColor: COLORS.border,
   },
   reactionText: {
-    fontSize: normalize(12.5),
-    fontFamily: tokens.fontFamily.semibold,
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.bold,
     color: COLORS.textSecondary,
     letterSpacing: -0.2,
+    fontVariant: ['tabular-nums'],
   },
   reactionTextActive: {
-    color: COLORS.white,
+    color: tokens.tones.primary.fg,
+  },
+  reactionTextActiveDislike: {
+    color: COLORS.text,
   },
 
   otherHeading: {
