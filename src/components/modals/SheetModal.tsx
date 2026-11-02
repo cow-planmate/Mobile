@@ -117,14 +117,8 @@ export default function SheetModal({
       onRequestClose={onClose}
     >
       <Root style={styles.root} accessibilityViewIsModal {...rootProps}>
-        <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
-        <View
-          pointerEvents="none"
-          style={[styles.statusBarBackground, { height: insets.top }]}
-        />
-        <Animated.View
-          style={[styles.backdrop, { top: insets.top }, backdropStyle]}
-        >
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" />
+        <Animated.View style={[styles.backdrop, backdropStyle]}>
           <Pressable
             testID="sheet-backdrop"
             style={StyleSheet.absoluteFill}
@@ -188,13 +182,6 @@ const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(12, 15, 20, 0.28)',
-  },
-  statusBarBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: tokens.colors.white,
   },
   sheet: {
     backgroundColor: tokens.colors.white,

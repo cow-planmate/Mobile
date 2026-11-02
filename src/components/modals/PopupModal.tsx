@@ -15,7 +15,6 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ArrowRight from 'lucide-react-native/dist/esm/icons/arrow-right';
 import X from 'lucide-react-native/dist/esm/icons/x';
@@ -73,7 +72,6 @@ export default function PopupModal({
   footer,
   children,
 }: Props) {
-  const insets = useSafeAreaInsets();
   const [mounted, setMounted] = useState(visible);
   const progress = useSharedValue(0);
 
@@ -123,14 +121,8 @@ export default function PopupModal({
       onRequestClose={onClose}
     >
       <View style={styles.root} accessibilityViewIsModal>
-        <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
-        <View
-          pointerEvents="none"
-          style={[styles.statusBarBackground, { height: insets.top }]}
-        />
-        <Animated.View
-          style={[styles.backdrop, { top: insets.top }, backdropStyle]}
-        >
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" />
+        <Animated.View style={[styles.backdrop, backdropStyle]}>
           <Pressable
             testID="popup-backdrop"
             style={StyleSheet.absoluteFill}
@@ -215,13 +207,6 @@ const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(12, 15, 20, 0.28)',
-  },
-  statusBarBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: tokens.colors.white,
   },
   card: {
     width: '100%',
