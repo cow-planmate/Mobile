@@ -7,7 +7,6 @@ import {
   View,
 } from 'react-native';
 import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
-import Ellipsis from 'lucide-react-native/dist/esm/icons/ellipsis';
 import { normalize } from '../../../utils/normalize';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAuthStore } from '../../../store/useAuthStore';
@@ -36,7 +35,6 @@ export default function ReportPostButton({ postId, feed = false }: ReportPostBut
   const report = useReportPost(postId, feed);
   const submitLock = useSubmitLock();
 
-  const [menuOpen, setMenuOpen] = useState(false);
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<ReportReason | ''>('');
   const [details, setDetails] = useState('');
@@ -46,7 +44,6 @@ export default function ReportPostButton({ postId, feed = false }: ReportPostBut
   const canSubmit = canSubmitReport(reason, details) && !submitLock.isSubmitting;
 
   const handleOpen = () => {
-    setMenuOpen(false);
     if (!user) {
       showAlert({ title: '로그인 필요', message: '로그인 후 신고할 수 있습니다.' });
       return;
@@ -122,30 +119,14 @@ export default function ReportPostButton({ postId, feed = false }: ReportPostBut
   return (
     <>
       <TouchableOpacity
-        style={styles.menuButton}
-        onPress={() => setMenuOpen(true)}
+        style={styles.trigger}
+        onPress={handleOpen}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel="더보기"
+        accessibilityLabel="게시글 신고"
       >
-        <Ellipsis size={24} color={tokens.colors.text} />
+        <Text style={styles.triggerText}>신고</Text>
       </TouchableOpacity>
-
-      <SheetModal
-        visible={menuOpen}
-        title="게시글"
-        onClose={() => setMenuOpen(false)}
-        maxHeightRatio={0.4}
-      >
-        <TouchableOpacity
-          style={styles.menuRow}
-          onPress={handleOpen}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-        >
-          <Text style={styles.menuRowDangerText}>신고하기</Text>
-        </TouchableOpacity>
-      </SheetModal>
 
       <SheetModal
         visible={open}

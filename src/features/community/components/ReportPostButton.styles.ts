@@ -5,21 +5,17 @@ import { tokens } from '../../../theme/tokens';
 const COLORS = tokens.colors;
 
 export const styles = StyleSheet.create({
-  // 상단바 오른쪽 자리(48dp)에 들어가는 "⋯" 단추. 드물게 쓰는 신고는 본문 위에
-  // 드러내지 않고 메뉴 안에 둔다.
-  menuButton: {
+  // 상단바 오른쪽 자리(48dp)에 들어가는 빨간 글자. 경고의 성격이 한눈에 보이게
+  // 색은 쓰되, 면이나 테두리 없이 글자만 두어 본문보다 먼저 보이지 않게 한다.
+  trigger: {
     width: normalize(48),
     height: normalize(48),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  menuRow: {
-    paddingHorizontal: normalize(16),
-    paddingVertical: normalize(14),
-  },
-  menuRowDangerText: {
-    fontSize: normalize(15),
-    fontFamily: tokens.fontFamily.semibold,
+  triggerText: {
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.bold,
     color: tokens.tones.danger.fg,
   },
 
