@@ -345,8 +345,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: tokens.colors.white,
   },
+  // 떠 있는 여행기 쓰기 단추(아래 20 + 높이 48)보다 높게 비워, 맨 아래까지
+  // 내리면 마지막 카드가 단추 위로 올라오게 한다.
   listContent: {
-    paddingBottom: normalize(12),
+    paddingBottom: normalize(88),
   },
 
   // 카드 테두리 대신 전체 폭 구분선 하나로 나눈다.
