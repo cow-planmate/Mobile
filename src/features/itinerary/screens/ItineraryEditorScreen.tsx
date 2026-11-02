@@ -519,7 +519,12 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   const handleSaveTripName = useCallback(async () => {
     setIsEditingTripName(false);
-    if (!tripName || !planId) return;
+    // 이름을 모두 지우고 끝내면 빈 제목이 화면에 남는다. 저장되어 있던 이름으로 되돌린다.
+    if (!tripName.trim()) {
+      if (syncedTripNameRef.current) setTripName(syncedTripNameRef.current);
+      return;
+    }
+    if (!planId) return;
     if (tripName === syncedTripNameRef.current) return;
 
     const lastSyncedName = syncedTripNameRef.current;
@@ -553,6 +558,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     planId,
     sendMessage,
     setIsEditingTripName,
+    setTripName,
     showAlert,
     tripName,
   ]);

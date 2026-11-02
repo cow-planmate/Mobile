@@ -217,6 +217,13 @@ export default function ItineraryEditorScreenView({
   const dayPeriodTarget = useCoachmarkTarget('dayPeriod');
   const placeSheetTarget = useCoachmarkTarget('placeSheet');
   const tutorialNudge = useTutorialNudge();
+  // 제목 아래 부제. 일차 탭에 이미 날짜가 있어 목적지와 기간만 적는다.
+  const tripSubtitle = [
+    destination,
+    days.length > 1 ? `${days.length - 1}박 ${days.length}일` : '당일',
+  ]
+    .filter(Boolean)
+    .join(' · ');
   const undoTarget = useCoachmarkTarget('undo');
   const redoTarget = useCoachmarkTarget('redo');
 
@@ -979,20 +986,31 @@ export default function ItineraryEditorScreenView({
             {isEditingTripName ? (
               // 글자 폭을 재서 입력칸을 늘리면 칠 때마다 한 박자 늦게 따라온다.
               // 줄 폭을 그대로 채우면 늘어날 것이 없어 글자와 같이 움직인다.
-              <TextInput
-                value={tripName}
-                onChangeText={setTripName}
-                onBlur={onSaveTripName}
-                onSubmitEditing={onSaveTripName}
-                autoFocus
-                numberOfLines={1}
-                maxLength={PLAN_NAME_MAX_LENGTH}
-                returnKeyType="done"
-                style={styles.toolbarTitleInput}
-                placeholder="일정 이름"
-                placeholderTextColor={COLORS.placeholder}
-                selectionColor={COLORS.primary}
-              />
+              <View style={styles.toolbarTitleInputWrap}>
+                <TextInput
+                  value={tripName}
+                  onChangeText={setTripName}
+                  onBlur={onSaveTripName}
+                  onSubmitEditing={onSaveTripName}
+                  autoFocus
+                  numberOfLines={1}
+                  maxLength={PLAN_NAME_MAX_LENGTH}
+                  returnKeyType="done"
+                  style={styles.toolbarTitleInput}
+                  placeholder="일정 이름"
+                  placeholderTextColor={COLORS.placeholder}
+                  selectionColor={COLORS.primary}
+                />
+                <Text
+                  style={[
+                    styles.toolbarTitleCounter,
+                    tripName.length >= PLAN_NAME_MAX_LENGTH &&
+                      styles.toolbarTitleCounterFull,
+                  ]}
+                >
+                  {tripName.length}/{PLAN_NAME_MAX_LENGTH}
+                </Text>
+              </View>
             ) : (
               <TouchableOpacity
                 onPress={() => setIsEditingTripName(true)}
@@ -1016,56 +1034,77 @@ export default function ItineraryEditorScreenView({
               </ToolbarIconButton>
             )}
           </View>
+
+          {/* 키보드의 완료 말고도 끝낼 자리를 눈에 보이게 둔다. */}
+          {isEditingTripName && (
+            <TouchableOpacity
+              style={styles.toolbarTitleConfirm}
+              onPress={() => {
+                Keyboard.dismiss();
+                onSaveTripName();
+              }}
+              activeOpacity={0.6}
+              accessibilityRole="button"
+              accessibilityLabel="일정 이름 저장"
+            >
+              <Text style={styles.toolbarTitleConfirmText}>확인</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        <View style={styles.toolbarRightGroup}>
-          <ToolbarIconButton
-            onPress={onOpenChecklist}
-            label="체크리스트"
-            targetRef={checklistTarget}
-          >
-            <ListChecks color={COLORS.textLabel} size={22} strokeWidth={1.75} />
-          </ToolbarIconButton>
-          <ToolbarIconButton
-            onPress={onOpenParticipants}
-            label="현재 접속자"
-            badgeCount={participantsCount}
-            targetRef={participantsTarget}
-          >
-            <UsersIcon color={COLORS.textLabel} size={22} strokeWidth={1.75} />
-          </ToolbarIconButton>
-          <ToolbarIconButton
-            onPress={onOpenMap}
-            label="여행 동선"
-            targetRef={mapTarget}
-          >
-            <MapOutlineIcon
-              color={COLORS.textLabel}
-              size={22}
-              strokeWidth={1.75}
-            />
-          </ToolbarIconButton>
-          <ToolbarIconButton
-            onPress={onOpenShare}
-            label="공유 및 초대"
-            targetRef={inviteTarget}
-          >
-            <UserPlusIcon
-              color={COLORS.textLabel}
-              size={22}
-              strokeWidth={1.75}
-            />
-          </ToolbarIconButton>
-          <TouchableOpacity
-            ref={completeTarget}
-            style={styles.doneButton}
-            onPress={onComplete}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="완료"
-          >
-            <Text style={styles.doneButtonText}>완료</Text>
-          </TouchableOpacity>
+        <View style={styles.toolbarToolsRow}>
+          <Text style={styles.toolbarSubtitle} numberOfLines={1}>
+            {isEditingTripName ? '이름을 바꾸는 중' : tripSubtitle}
+          </Text>
+          <View style={styles.toolbarRightGroup}>
+            <ToolbarIconButton
+              onPress={onOpenChecklist}
+              label="체크리스트"
+              targetRef={checklistTarget}
+            >
+              <ListChecks color={COLORS.textLabel} size={22} strokeWidth={1.75} />
+            </ToolbarIconButton>
+            <ToolbarIconButton
+              onPress={onOpenParticipants}
+              label="현재 접속자"
+              badgeCount={participantsCount}
+              targetRef={participantsTarget}
+            >
+              <UsersIcon color={COLORS.textLabel} size={22} strokeWidth={1.75} />
+            </ToolbarIconButton>
+            <ToolbarIconButton
+              onPress={onOpenMap}
+              label="여행 동선"
+              targetRef={mapTarget}
+            >
+              <MapOutlineIcon
+                color={COLORS.textLabel}
+                size={22}
+                strokeWidth={1.75}
+              />
+            </ToolbarIconButton>
+            <ToolbarIconButton
+              onPress={onOpenShare}
+              label="공유 및 초대"
+              targetRef={inviteTarget}
+            >
+              <UserPlusIcon
+                color={COLORS.textLabel}
+                size={22}
+                strokeWidth={1.75}
+              />
+            </ToolbarIconButton>
+            <TouchableOpacity
+              ref={completeTarget}
+              style={styles.doneButton}
+              onPress={onComplete}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="완료"
+            >
+              <Text style={styles.doneButtonText}>완료</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 

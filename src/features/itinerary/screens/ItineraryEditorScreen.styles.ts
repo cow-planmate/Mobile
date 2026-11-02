@@ -105,12 +105,25 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 0,
   },
+  // 도구 줄. 왼쪽에는 제목 아래 부제가, 오른쪽 끝에는 도구와 완료가 선다.
+  // 제목 줄과 한 묶음으로 읽히도록 두 줄 사이를 좁힌다.
+  toolbarToolsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: -normalize(6),
+  },
+  toolbarSubtitle: {
+    flex: 1,
+    // 뒤로 가기 단추 폭만큼 들여 제목 글자와 왼쪽 끝을 맞춘다.
+    marginLeft: normalize(40),
+    marginRight: normalize(8),
+    fontSize: normalize(12.5),
+    fontFamily: FONTS.medium,
+    color: COLORS.textMuted,
+  },
   toolbarRightGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-end',
-    // 제목 줄과 한 묶음으로 읽히도록 두 줄 사이를 좁힌다.
-    marginTop: -normalize(6),
   },
   toolbarTitleButton: {
     flexShrink: 1,
@@ -123,6 +136,34 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
     letterSpacing: -0.4,
     lineHeight: normalize(24),
+  },
+  // 이름을 고치는 중에는 제목 아래에 파란 밑줄이 그어진다. 일차 탭 밑줄과 같은 표현이다.
+  toolbarTitleInputWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(8),
+    borderBottomWidth: 2,
+    borderBottomColor: COLORS.primary,
+  },
+  toolbarTitleCounter: {
+    fontSize: normalize(12),
+    fontFamily: FONTS.medium,
+    color: COLORS.textMuted,
+    fontVariant: ['tabular-nums'],
+  },
+  toolbarTitleCounterFull: {
+    color: COLORS.danger,
+  },
+  toolbarTitleConfirm: {
+    height: normalize(40),
+    paddingHorizontal: normalize(12),
+    justifyContent: 'center',
+  },
+  toolbarTitleConfirmText: {
+    fontSize: normalize(15),
+    fontFamily: FONTS.bold,
+    color: COLORS.primary,
   },
   toolbarTitleInput: {
     flex: 1,
