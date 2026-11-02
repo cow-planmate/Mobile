@@ -24,11 +24,16 @@ import {
   AppStackParamList,
   INITIAL_TAB,
 } from './types';
-import { Platform, View, Animated, AccessibilityInfo } from 'react-native';
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  Animated,
+  AccessibilityInfo,
+} from 'react-native';
 import MessageSquare from 'lucide-react-native/dist/esm/icons/message-square';
 import Compass from 'lucide-react-native/dist/esm/icons/compass';
 import PlusCircle from 'lucide-react-native/dist/esm/icons/circle-plus';
-import Plus from 'lucide-react-native/dist/esm/icons/plus';
 
 const FeedStackNavigator = createNativeStackNavigator<FeedStackParamList>();
 const ScheduleStackNavigator =
@@ -192,22 +197,7 @@ const ScheduleTabIcon = ({
   size: number;
 }) => (
   <TabIconWrapper focused={focused}>
-    {focused ? (
-      <View
-        style={{
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: color,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Plus size={size * 0.62} color="#FFFFFF" strokeWidth={2.4} />
-      </View>
-    ) : (
-      <PlusCircle size={size} color={color} strokeWidth={1.8} />
-    )}
+    <PlusCircle size={size} color={color} strokeWidth={focused ? 2.3 : 1.8} />
   </TabIconWrapper>
 );
 
@@ -224,10 +214,35 @@ const CommunityTabIcon = ({
     <MessageSquare
       size={size}
       color={color}
-      fill={focused ? color : 'none'}
-      strokeWidth={focused ? 2 : 1.8}
+      strokeWidth={focused ? 2.3 : 1.8}
     />
   </TabIconWrapper>
+);
+
+const tabLabelStyles = StyleSheet.create({
+  base: { fontSize: 11, marginTop: 4 },
+  inactive: { fontFamily: 'Pretendard-SemiBold' },
+  active: { fontFamily: 'Pretendard-Bold' },
+});
+
+const TabLabel = ({
+  focused,
+  color,
+  children,
+}: {
+  focused: boolean;
+  color: string;
+  children: string;
+}) => (
+  <Text
+    style={[
+      tabLabelStyles.base,
+      focused ? tabLabelStyles.active : tabLabelStyles.inactive,
+      { color },
+    ]}
+  >
+    {children}
+  </Text>
 );
 
 function MainTabs() {
@@ -243,11 +258,7 @@ function MainTabs() {
         headerShown: false,
         tabBarActiveTintColor: '#1344FF',
         tabBarInactiveTintColor: '#6B7280',
-        tabBarLabelStyle: {
-          fontFamily: 'Pretendard-SemiBold',
-          fontSize: 11,
-          marginTop: 4,
-        },
+        tabBarLabel: TabLabel,
         tabBarStyle: {
           ...baseTabBarStyle,
           paddingBottom: bottomInset,
