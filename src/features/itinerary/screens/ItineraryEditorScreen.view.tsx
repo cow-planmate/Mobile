@@ -220,7 +220,12 @@ export default function ItineraryEditorScreenView({
 
   const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
   const [dayScrollLayoutWidth, setDayScrollLayoutWidth] = useState(0);
-  const [dayScrollX, setDayScrollX] = useState(0);
+  // 스크롤 위치는 프레임마다 바뀌므로 상태로 두지 않는다. 상태로 두면 탭을
+  // 옆으로 미는 내내 편집 화면 전체가 다시 그려진다. 흐림 효과를 보일지만
+  // 상태로 두어, 보일지 말지가 바뀔 때만 그린다.
+  const dayScrollXRef = useRef(0);
+  const [showLeftFade, setShowLeftFade] = useState(false);
+  const [showRightFade, setShowRightFade] = useState(false);
   const dayTabsScrollRef = useRef<ScrollView>(null);
   const dayTabLayoutsRef = useRef<
     Record<number, { x: number; width: number }>
@@ -256,11 +261,19 @@ export default function ItineraryEditorScreenView({
     transform: [{ translateX: underlineX.value }],
   }));
 
-  const isDayScrollable = dayScrollContentWidth > dayScrollLayoutWidth;
-  const showLeftFade = isDayScrollable && dayScrollX > 5;
-  const showRightFade =
-    isDayScrollable &&
-    dayScrollX < dayScrollContentWidth - dayScrollLayoutWidth - 5;
+  const updateDayFades = useCallback(
+    (x: number) => {
+      const scrollable = dayScrollContentWidth > dayScrollLayoutWidth;
+      setShowLeftFade(scrollable && x > 5);
+      setShowRightFade(
+        scrollable && x < dayScrollContentWidth - dayScrollLayoutWidth - 5,
+      );
+    },
+    [dayScrollContentWidth, dayScrollLayoutWidth],
+  );
+  useEffect(() => {
+    updateDayFades(dayScrollXRef.current);
+  }, [updateDayFades]);
 
   const handleDaySelect = useCallback(
     (index: number) => {
@@ -270,9 +283,9 @@ export default function ItineraryEditorScreenView({
       if (!layout || dayScrollLayoutWidth <= 0) return;
 
       const edgePadding = normalize(8);
-      const visibleStart = dayScrollX;
+      const visibleStart = dayScrollXRef.current;
       const visibleEnd = visibleStart + dayScrollLayoutWidth;
-      let nextX = dayScrollX;
+      let nextX = dayScrollXRef.current;
 
       if (layout.x < visibleStart + edgePadding) {
         nextX = layout.x - edgePadding;
@@ -286,16 +299,11 @@ export default function ItineraryEditorScreenView({
       );
       nextX = Math.max(0, Math.min(nextX, maxScrollX));
 
-      if (Math.abs(nextX - dayScrollX) > 1) {
+      if (Math.abs(nextX - dayScrollXRef.current) > 1) {
         dayTabsScrollRef.current?.scrollTo({ x: nextX, animated: true });
       }
     },
-    [
-      dayScrollContentWidth,
-      dayScrollLayoutWidth,
-      dayScrollX,
-      setSelectedDayIndex,
-    ],
+    [dayScrollContentWidth, dayScrollLayoutWidth, setSelectedDayIndex],
   );
 
   React.useEffect(() => {
@@ -1085,7 +1093,11 @@ export default function ItineraryEditorScreenView({
           style={styles.dayTabsScroll}
           onContentSizeChange={w => setDayScrollContentWidth(w)}
           onLayout={e => setDayScrollLayoutWidth(e.nativeEvent.layout.width)}
-          onScroll={e => setDayScrollX(e.nativeEvent.contentOffset.x)}
+          onScroll={e => {
+            const x = e.nativeEvent.contentOffset.x;
+            dayScrollXRef.current = x;
+            updateDayFades(x);
+          }}
           scrollEventThrottle={16}
         >
           {days.map((day, index) => {

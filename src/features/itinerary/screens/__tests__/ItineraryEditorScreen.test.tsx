@@ -555,6 +555,98 @@ describe('ItineraryEditorScreenView Component', () => {
   });
 });
 
+describe('날짜 탭 스크롤', () => {
+  const manyDays: Day[] = Array.from({ length: 12 }, (_, i) => ({
+    ...mockDays[0],
+    dayNumber: i + 1,
+    date: new Date(Date.UTC(2024, 7, 1 + i)),
+  }));
+
+  it('탭을 미는 동안 편집 화면을 다시 그리지 않고 흐림이 바뀔 때만 그린다', async () => {
+    let commits = 0;
+    let rendererInstance: renderer.ReactTestRenderer | undefined;
+
+    await act(async () => {
+      rendererInstance = renderer.create(
+        <React.Profiler id="editor" onRender={() => (commits += 1)}>
+          <ItineraryEditorScreenView
+            days={manyDays}
+            selectedDayIndex={0}
+            setSelectedDayIndex={() => {}}
+            tripName="제주도 여행"
+            isEditingTripName={false}
+            setIsEditingTripName={() => {}}
+            setTripName={() => {}}
+            onSaveTripName={() => {}}
+            timelineScrollRef={{ current: null } as any}
+            formatDate={d => d.toISOString().split('T')[0]}
+            handleUpdatePlaceTimes={() => {}}
+            handleDeletePlace={() => {}}
+            handleAddPlace={() => {}}
+            selectedDay={manyDays[0]}
+            isScheduleEditVisible={false}
+            setScheduleEditVisible={() => {}}
+            onConfirmScheduleEdit={() => {}}
+            destination="제주도"
+            onComplete={() => {}}
+            onOpenParticipants={() => {}}
+            onOpenMap={() => {}}
+            onOpenShare={() => {}}
+            onOpenChecklist={() => {}}
+            onOpenChatbot={() => {}}
+            onUndo={() => {}}
+            onRedo={() => {}}
+            participantsCount={0}
+            planId={null}
+            onOpenDetail={() => {}}
+            weatherMap={{}}
+            onOpenPlanInfo={() => {}}
+            onGoBack={() => {}}
+            pendingPlace={null}
+            previewStartTime={null}
+            previewEndTime={null}
+            setPreviewStartTime={() => {}}
+            setPreviewEndTime={() => {}}
+            onConfirmPlacement={() => {}}
+            onCancelPlacement={() => {}}
+            onCancelPreview={() => {}}
+          />
+        </React.Profiler>,
+      );
+    });
+
+    const tabs = rendererInstance!.root.find(
+      node => node.props.horizontal === true && !!node.props.onScroll,
+    );
+    // 탭 줄이 화면보다 넓어서 밀 수 있는 상태로 만든다.
+    await act(async () => {
+      tabs.props.onLayout({ nativeEvent: { layout: { width: 300 } } });
+      tabs.props.onContentSizeChange(1200, 48);
+    });
+
+    const scrollTo = async (x: number) => {
+      await act(async () => {
+        tabs.props.onScroll({ nativeEvent: { contentOffset: { x } } });
+      });
+    };
+
+    // 흐름이 자리 잡을 때까지 두 번 민다.
+    await scrollTo(100);
+    await scrollTo(150);
+    const settled = commits;
+
+    // 흐림이 그대로인 범위에서 계속 밀어도 다시 그리지 않는다.
+    await scrollTo(200);
+    await scrollTo(250);
+    await scrollTo(300);
+    expect(commits).toBe(settled);
+
+    // 끝에 닿아 오른쪽 흐림이 사라질 때만 다시 그린다.
+    await scrollTo(900);
+    expect(commits).toBe(settled + 1);
+  });
+});
+
 describe('ItineraryEditorScreen Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
