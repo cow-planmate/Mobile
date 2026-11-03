@@ -80,8 +80,9 @@ describe('CalendarModal', () => {
     const onConfirm = jest.fn();
     const tree = mount(onConfirm);
 
-    // 9월 2일 → 10월 3일은 32일이라 한도를 넘는다. 10월 3일은 9월 격자의 다음 달 칸에 있다.
+    // 9월 2일 → 10월 3일은 32일이라 한도를 넘는다. 다음 달 날짜는 달을 넘겨야 누를 수 있다.
     press(tree, dayLabel(2026, 8, 2));
+    press(tree, '다음 달');
     press(tree, dayLabel(2026, 9, 3));
 
     expect(onConfirm).not.toHaveBeenCalled();
@@ -169,11 +170,12 @@ describe('CalendarModal', () => {
 
   it('지난 날짜는 누를 수 없다', () => {
     const onConfirm = jest.fn();
+    jest.setSystemTime(new Date(2026, 8, 10, 9, 0, 0));
     const tree = mount(onConfirm);
 
-    // 9월 1일 기준으로 8월 31일은 지난 날짜다.
+    // 9월 10일 기준으로 9월 9일은 지난 날짜다.
     expect(
-      tree.root.findByProps({ accessibilityLabel: dayLabel(2026, 7, 31) }).props
+      tree.root.findByProps({ accessibilityLabel: dayLabel(2026, 8, 9) }).props
         .disabled,
     ).toBe(true);
 

@@ -48,16 +48,17 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  // 테두리 없는 둥근 회색 면. 못 누르는 단추는 투명도만 낮춰 자리를 남긴다.
   counterButton: {
-    width: normalize(32),
-    height: normalize(32),
+    width: normalize(36),
+    height: normalize(36),
+    borderRadius: normalize(18),
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    backgroundColor: tokens.colors.pageGround,
   },
   counterButtonDisabled: {
-    borderColor: COLORS.surface,
+    opacity: 0.55,
   },
   counterGlyph: {
     fontSize: normalize(16),
@@ -66,7 +67,7 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
   },
   counterGlyphDisabled: {
-    color: COLORS.border,
+    color: COLORS.placeholder,
   },
   counterValue: {
     fontSize: normalize(18),
@@ -75,6 +76,7 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     fontWeight: '700',
     color: COLORS.text,
+    fontVariant: ['tabular-nums'],
   },
   divider: {
     height: 1,
