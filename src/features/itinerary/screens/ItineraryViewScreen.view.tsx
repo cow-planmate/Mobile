@@ -3,7 +3,6 @@ import LinearGradient from 'react-native-linear-gradient';
 import { View, Text, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import MapOutlineIcon from 'lucide-react-native/dist/esm/icons/map';
 import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
-import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import Share2 from 'lucide-react-native/dist/esm/icons/share-2';
 import PlanMapModal from '../components/PlanMapModal';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
@@ -33,7 +32,9 @@ type ToolbarButtonVariant =
   | 'outlineBlue'
   | 'outlineDark'
   | 'filledGray'
-  | 'filledBlue';
+  | 'filledBlue'
+  | 'bare'
+  | 'editText';
 
 const ToolbarIconButton = ({
   label,
@@ -65,6 +66,8 @@ const ToolbarIconButton = ({
       variant === 'outlineDark' && styles.toolbarIconButtonOutlineDark,
       variant === 'filledGray' && styles.toolbarIconButtonFilledGray,
       variant === 'filledBlue' && styles.toolbarIconButtonFilledBlue,
+      variant === 'bare' && styles.toolbarIconButtonBare,
+      variant === 'editText' && styles.toolbarIconButtonEditText,
       active && styles.toolbarIconButtonActive,
       disabled && styles.toolbarIconButtonDisabled,
     ]}
@@ -206,33 +209,39 @@ export default function ItineraryViewScreenView({
         </View>
 
         <View style={styles.toolbarRightGroup}>
+          {/* 편집 화면 도구 줄과 같은 테두리 없는 아이콘. 편집만 이 화면의 주된
+              동작이라 글자 단추로 둔다. */}
           <ToolbarIconButton
             onPress={() => setMapVisible(!isMapVisible)}
             label="여행 동선"
-            variant="outlineDark"
+            variant="bare"
           >
-            <MapOutlineIcon color={COLORS.text} size={17} strokeWidth={2} />
+            <MapOutlineIcon
+              color={COLORS.textLabel}
+              size={24}
+              strokeWidth={1.75}
+            />
           </ToolbarIconButton>
           <ToolbarIconButton
             onPress={() => setChecklistVisible(true)}
             label="체크리스트"
-            variant="outlineDark"
+            variant="bare"
           >
-            <ListChecks size={17} color={COLORS.text} strokeWidth={2} />
+            <ListChecks size={24} color={COLORS.textLabel} strokeWidth={1.75} />
           </ToolbarIconButton>
           <ToolbarIconButton
             onPress={() => setShareModalVisible(true)}
             label="공유 및 초대"
-            variant="outlineDark"
+            variant="bare"
           >
-            <Share2 color={COLORS.text} size={17} />
+            <Share2 color={COLORS.textLabel} size={24} strokeWidth={1.75} />
           </ToolbarIconButton>
           <ToolbarIconButton
             label="일정 수정"
             onPress={handleEdit}
-            variant="filledGray"
+            variant="editText"
           >
-            <Pencil color={COLORS.text} size={17} />
+            <Text style={styles.toolbarEditText}>편집</Text>
           </ToolbarIconButton>
         </View>
       </View>
@@ -327,25 +336,15 @@ export default function ItineraryViewScreenView({
             <View style={styles.timelineStage}>
               <View pointerEvents="none" style={styles.timelineSceneBackdrop} />
               {weatherMap[formatDateLocal(selectedDay.date)] && (
-                <View
-                  pointerEvents="none"
-                  style={styles.timelineWeatherOverlay}
-                >
-                  <WeatherHeader
-                    dayNumber={selectedDay.dayNumber}
-                    weather={weatherMap[formatDateLocal(selectedDay.date)]}
-                    appearance="overlay"
-                  />
-                </View>
+                <WeatherHeader
+                  dayNumber={selectedDay.dayNumber}
+                  weather={weatherMap[formatDateLocal(selectedDay.date)]}
+                  appearance="band"
+                />
               )}
               <ScrollView
                 ref={scrollRef}
-                contentContainerStyle={[
-                  styles.timelineContentContainer,
-                  weatherMap[formatDateLocal(selectedDay.date)]
-                    ? styles.timelineWeatherPadding
-                    : undefined,
-                ]}
+                contentContainerStyle={styles.timelineContentContainer}
               >
                 <PlanScheduleList
                   places={selectedDay.places}
