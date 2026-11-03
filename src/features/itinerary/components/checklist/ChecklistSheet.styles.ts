@@ -42,11 +42,13 @@ export const styles = StyleSheet.create({
     borderBottomColor: COLORS.borderLight,
   },
   heading: { flex: 1 },
+  // 웹 디자인의 영어 머리말은 두되, 한국어 제목이 먼저 읽히도록 한 단계 낮춘다.
   eyebrow: {
     fontSize: normalize(10),
-    fontFamily: tokens.fontFamily.bold,
-    letterSpacing: 1.3,
+    fontFamily: tokens.fontFamily.medium,
+    letterSpacing: 1,
     color: COLORS.primary,
+    opacity: 0.7,
     marginBottom: normalize(6),
   },
   title: {

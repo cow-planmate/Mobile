@@ -32,7 +32,10 @@ export default function WeatherHeader({
   if (appearance === 'band') {
     return (
       <View style={bandStyles.band}>
-        <Text style={bandStyles.temp}>{Math.round(weather.tempMax)}°</Text>
+        <View style={bandStyles.tempBlock}>
+          <Text style={bandStyles.tempLabel}>최고</Text>
+          <Text style={bandStyles.temp}>{Math.round(weather.tempMax)}°</Text>
+        </View>
         <View style={bandStyles.text}>
           <View style={bandStyles.titleRow}>
             <Text style={bandStyles.description} numberOfLines={1}>
@@ -124,6 +127,16 @@ const bandStyles = StyleSheet.create({
     backgroundColor: colors.white,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  tempBlock: {
+    alignItems: 'flex-start',
+  },
+  // 큰 숫자가 어느 기온인지 알린다. 열람 화면이 쓰는 말과 같다.
+  tempLabel: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.xxs,
+    color: colors.textMuted,
+    marginBottom: -2,
   },
   temp: {
     fontFamily: fontFamily.bold,

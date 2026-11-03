@@ -59,6 +59,10 @@ describe('WeatherHeader', () => {
     expect(text).toContain('최저 19° · 체감 29°');
   });
 
+  it('band는 큰 숫자가 최고기온임을 글자로 알린다', () => {
+    expect(textsOf(baseWeather)).toContain('최고');
+  });
+
   it('band에는 일차 글자를 적지 않는다', () => {
     expect(textsOf(baseWeather)).not.toContain('일차');
   });

@@ -85,7 +85,8 @@ export const styles = StyleSheet.create({
   // 화면 이름 줄은 없애고 일정 이름이 제목이다. 이름 줄 아래에 도구 줄을 둔다.
   topToolbar: {
     paddingLeft: normalize(4),
-    paddingRight: normalize(8),
+    // 완료 버튼 오른쪽 끝이 화면 끝에서 16dp 떨어지게 한다. 제목·일차 탭·장소 목록의 여백과 같다.
+    paddingRight: normalize(15),
     backgroundColor: COLORS.background,
   },
   toolbarTitleRow: {
@@ -193,7 +194,8 @@ export const styles = StyleSheet.create({
     minWidth: normalize(16),
     height: normalize(16),
     borderRadius: normalize(8),
-    backgroundColor: COLORS.danger,
+    // 접속자 수는 확인할 일이 있다는 경고가 아니라 지금 같이 있다는 표시라서 브랜드 파랑이다.
+    backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: normalize(3),
