@@ -780,7 +780,7 @@ export const styles = StyleSheet.create({
    */
   chatbotScrim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(2, 6, 23, 0.16)',
+    backgroundColor: 'rgba(12, 15, 20, 0.28)',
   },
   previewBanner: {
     position: 'absolute',

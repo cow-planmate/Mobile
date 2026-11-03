@@ -172,7 +172,7 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
   );
 
   const backdropStyle = useAnimatedStyle(() => ({
-    opacity: backdrop.value * 0.45,
+    opacity: backdrop.value * 0.28,
   }));
 
   const cardStyle = useAnimatedStyle(() => ({
