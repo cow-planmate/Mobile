@@ -259,9 +259,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       // 장소를 넣고 옮기고 지우는 것도, 일정 이름도 실시간 동기화로 그때그때
       // 저장된다. 이미 저장된 일정을 두고 "저장 안 됨"이라 겁줄 이유가 없다.
       showAlert({
-        title: '편집 마치기',
-        message: '바꾼 내용은 그때그때 저장되고 있어요. 편집을 마칠까요?',
+        title: '편집을 마칠까요?',
+        message: '바꾼 내용은 그때그때 저장되고 있어요.',
         type: 'confirm',
+        // 안심시키는 안내라 경고처럼 보이는 느낌표를 달지 않는다.
+        showIcon: false,
         buttons: [
           {
             text: '계속 편집',

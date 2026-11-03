@@ -129,7 +129,8 @@ describe('대화상자', () => {
     });
     const [close, retry] = buttonsOf(tree);
     expect(close.label).toBe('닫기');
-    expect(close.background).toBeUndefined();
+    // 취소는 파란 면이 아니라 회색 면이다.
+    expect(close.background).not.toBe(BLUE);
     expect(retry.label).toBe('다시 시도');
     expect(retry.background).toBe(BLUE);
   });

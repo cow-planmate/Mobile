@@ -41,6 +41,8 @@ interface AlertOptions {
   title: string;
   message?: string;
   type?: AlertType;
+  /** 끄면 제목 옆 표식을 그리지 않는다. 경고가 아닌 안심시키는 안내에 쓴다. */
+  showIcon?: boolean;
   buttons?: AlertButton[];
 }
 
@@ -190,6 +192,7 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
     ? 'warning'
     : options?.type ?? inferType(options?.title);
   const { Icon, color } = ICON_MAP[alertType];
+  const showIcon = options?.showIcon !== false;
 
   return (
     <AlertContext.Provider value={contextValue}>
@@ -205,15 +208,19 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
       >
         <View style={s.overlay}>
           <Animated.View style={[s.backdrop, backdropStyle]} />
-          <Animated.View style={[s.card, cardStyle]}>
+          <Animated.View
+            style={[s.card, !showIcon && s.cardNoIcon, cardStyle]}
+          >
 
             {/* 표식은 글 칸 바깥 여백에 매단다. 감싸지 않으므로 제목이 길어져도
                 제목과 본문이 하나의 왼쪽 선을 유지한다. */}
             <View style={s.head}>
-              <View style={s.gutter}>
-                <Icon size={18} color={color} strokeWidth={1.9} />
-              </View>
-              <View style={s.headText}>
+              {showIcon && (
+                <View style={s.gutter}>
+                  <Icon size={18} color={color} strokeWidth={1.9} />
+                </View>
+              )}
+              <View style={[s.headText, !showIcon && s.headTextNoIcon]}>
                 <Text style={s.title}>{options?.title}</Text>
                 {options?.message ? (
                   <Text style={s.message}>{options.message}</Text>
@@ -297,8 +304,15 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
+  // 표식이 없으면 왼쪽 여백이 표식 자리를 포함하던 만큼 비어 보이므로 오른쪽과 같게 맞춘다.
+  cardNoIcon: {
+    paddingLeft: 22,
+  },
   head: {
     flexDirection: 'row',
+  },
+  headTextNoIcon: {
+    marginLeft: 0,
   },
   gutter: {
     width: 20,
@@ -342,7 +356,7 @@ const s = StyleSheet.create({
     backgroundColor: '#1344FF',
   },
   buttonQuiet: {
-    borderColor: '#E5E7EB',
+    backgroundColor: tokens.colors.pageGround,
   },
   // 채우지 않고 테두리만 둘러 취소보다 약하되, 어디까지가 단추인지는 분명하게.
   buttonDestructive: {

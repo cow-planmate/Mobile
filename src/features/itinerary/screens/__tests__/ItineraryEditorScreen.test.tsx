@@ -921,8 +921,9 @@ describe('ItineraryEditorScreen Component', () => {
     // 장소도 이름도 실시간 동기화로 이미 저장돼 있다. 겁주는 문구를 쓰지 않는다.
     expect(mockShowAlert).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: '편집 마치기',
+        title: '편집을 마칠까요?',
         type: 'confirm',
+        showIcon: false,
         buttons: expect.any(Array),
       }),
     );
