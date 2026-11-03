@@ -95,12 +95,12 @@ const InputRow = ({
               <Text style={styles.placeholderText}>{placeholder}</Text>
             )}
           </View>
-          <View style={styles.rowIcon}>
+          <View style={[styles.rowIcon, hasValue && styles.rowIconFilled]}>
             <Icon
               color={
-                hasValue ? tokens.colors.primary : tokens.colors.textTertiary
+                hasValue ? tokens.colors.primary : tokens.colors.textMuted
               }
-              size={normalize(18)}
+              size={normalize(20)}
             />
           </View>
         </View>
