@@ -1,13 +1,8 @@
 import React from 'react';
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import SheetModal from '../../../components/modals/SheetModal';
 import { tokens } from '../../../theme/tokens';
+import { normalize } from '../../../utils/normalize';
 
 export type BlockAction = {
   key: string;
@@ -15,7 +10,6 @@ export type BlockAction = {
   label: string;
   /** 스크린 리더와 테스트가 찾는 이름 */
   accessibilityLabel: string;
-  icon: React.ReactNode;
   onPress?: () => void;
   destructive?: boolean;
   disabled?: boolean;
@@ -28,11 +22,15 @@ type BlockActionSheetProps = {
   onClose: () => void;
 };
 
-const { colors, fontFamily, fontSize, radius, spacing, tones } = tokens;
+const { colors, fontFamily, fontSize, tones } = tokens;
 
 /**
  * 시간표 블록의 ⋯ 를 누르면 열리는 동작 목록.
  * 블록에 아이콘 넷을 늘어놓는 대신 필요할 때만 꺼낸다.
+ *
+ * 다른 아래 시트와 같은 껍데기(SheetModal)를 쓴다 — 손잡이와 제목 줄, 닫기가
+ * 같은 자리에 있어야 시트마다 다르게 느껴지지 않는다. 줄에는 아이콘을 달지 않고
+ * 글자만 두며, 지우기는 구분선 아래에 빨간 글자로 따로 둔다.
  */
 export default function BlockActionSheet({
   visible,
@@ -41,27 +39,12 @@ export default function BlockActionSheet({
   onClose,
 }: BlockActionSheetProps) {
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={onClose}
-    >
-      <Pressable
-        style={styles.backdrop}
-        onPress={onClose}
-        accessibilityRole="button"
-        accessibilityLabel="닫기"
-      >
-        {/* 목록 안을 눌렀을 때 바탕의 닫기까지 번지지 않게 한다. */}
-        <View style={styles.sheet} onStartShouldSetResponder={() => true}>
-          <Text style={styles.title} numberOfLines={1}>
-            {title}
-          </Text>
-          {actions.map(action => (
+    <SheetModal visible={visible} title={title} onClose={onClose}>
+      <View style={styles.list}>
+        {actions.map(action => (
+          <React.Fragment key={action.key}>
+            {action.destructive ? <View style={styles.divider} /> : null}
             <TouchableOpacity
-              key={action.key}
               style={[styles.row, action.disabled && styles.rowDisabled]}
               onPress={action.disabled ? undefined : action.onPress}
               disabled={action.disabled}
@@ -70,52 +53,35 @@ export default function BlockActionSheet({
               accessibilityLabel={action.accessibilityLabel}
               accessibilityState={{ disabled: !!action.disabled }}
             >
-              {action.icon}
               <Text
                 style={[styles.label, action.destructive && styles.labelDanger]}
               >
                 {action.label}
               </Text>
             </TouchableOpacity>
-          ))}
-        </View>
-      </Pressable>
-    </Modal>
+          </React.Fragment>
+        ))}
+      </View>
+    </SheetModal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(26, 26, 26, 0.32)',
-  },
-  sheet: {
-    paddingTop: spacing.m,
-    paddingBottom: spacing.l,
-    paddingHorizontal: spacing.s,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    backgroundColor: colors.white,
-  },
-  title: {
-    paddingHorizontal: spacing.m,
-    paddingBottom: spacing.s,
-    fontFamily: fontFamily.bold,
-    fontSize: fontSize.m,
-    color: colors.text,
-    letterSpacing: -0.3,
+  list: {
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(8),
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.m,
-    minHeight: 52,
-    paddingHorizontal: spacing.m,
-    borderRadius: radius.l,
+    minHeight: normalize(50),
+    justifyContent: 'center',
   },
   rowDisabled: {
     opacity: 0.35,
+  },
+  divider: {
+    height: 1,
+    marginVertical: normalize(4),
+    backgroundColor: colors.border,
   },
   label: {
     fontFamily: fontFamily.medium,

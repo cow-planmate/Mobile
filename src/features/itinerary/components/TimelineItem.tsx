@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
 import Ellipsis from 'lucide-react-native/dist/esm/icons/ellipsis';
-import Info from 'lucide-react-native/dist/esm/icons/info';
-import MapPinned from 'lucide-react-native/dist/esm/icons/map-pinned';
-import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
-import XIcon from 'lucide-react-native/dist/esm/icons/x';
 import { View, Text, TouchableOpacity } from 'react-native';
 
 import { styles, CATEGORY_COLORS } from './TimelineItem.styles';
@@ -132,11 +128,6 @@ const TimelineItem = React.memo(function TimelineItem({
     action?.();
   };
 
-  const menuIconProps = {
-    size: 20,
-    color: tokens.colors.textLabel,
-    strokeWidth: 1.9,
-  };
   const actions: BlockAction[] = [
     ...(onShowDetail
       ? [
@@ -144,7 +135,6 @@ const TimelineItem = React.memo(function TimelineItem({
             key: 'detail',
             label: '장소 정보 보기',
             accessibilityLabel: '장소 정보 보기',
-            icon: <Info {...menuIconProps} />,
             onPress: runAfterClose(onShowDetail),
           },
         ]
@@ -153,21 +143,18 @@ const TimelineItem = React.memo(function TimelineItem({
       key: 'map',
       label: '지도에서 보기',
       accessibilityLabel: '지도에서 보기',
-      icon: <MapPinned {...menuIconProps} />,
       onPress: runAfterClose(handleOpenMap),
     },
     {
       key: 'edit',
       label: '시간·메모 수정',
       accessibilityLabel: '일정 수정',
-      icon: <Pencil {...menuIconProps} />,
       onPress: runAfterClose(onEditPlace),
     },
     {
       key: 'delete',
       label: '삭제',
       accessibilityLabel: '장소 삭제',
-      icon: <XIcon {...menuIconProps} color={tokens.tones.danger.fg} />,
       onPress: runAfterClose(onDelete),
       destructive: true,
       disabled: isDeleteDisabled,
