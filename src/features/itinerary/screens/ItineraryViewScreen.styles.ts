@@ -49,29 +49,49 @@ export const styles = StyleSheet.create({
   topBarSpacer: {
     width: normalize(28),
   },
+  // 편집 화면 머리줄과 같은 여백·높이.
   topToolbar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: normalize(12),
-    marginTop: 0,
-    paddingTop: normalize(4),
-    paddingBottom: normalize(6),
+    paddingLeft: normalize(4),
+    paddingRight: normalize(15),
     backgroundColor: COLORS.background,
   },
-  toolbarLeftGroup: {
+  toolbarTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexShrink: 1,
-    gap: normalize(6),
+    minHeight: normalize(44),
+  },
+  toolbarBackButton: {
+    width: normalize(40),
+    height: normalize(40),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  toolbarLeftGroup: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 0,
+  },
+  toolbarToolsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: -normalize(6),
+  },
+  toolbarSubtitle: {
+    flex: 1,
+    // 뒤로 가기 단추 폭만큼 들여 제목 글자와 왼쪽 끝을 맞춘다.
+    marginLeft: normalize(40),
+    marginRight: normalize(8),
+    fontSize: normalize(12.5),
+    fontFamily: FONTS.medium,
+    color: COLORS.textMuted,
   },
   toolbarRightGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: normalize(2),
   },
   toolbarTitleButton: {
-    maxWidth: normalize(160),
+    flexShrink: 1,
     minHeight: normalize(30),
     justifyContent: 'center',
   },
@@ -127,7 +147,7 @@ export const styles = StyleSheet.create({
   },
   // 테두리와 바탕 없이 아이콘만. 편집 화면 도구 줄과 같다.
   toolbarIconButtonBare: {
-    width: normalize(40),
+    width: normalize(36),
     height: normalize(40),
     borderRadius: normalize(20),
     borderWidth: 0,
@@ -137,7 +157,7 @@ export const styles = StyleSheet.create({
     width: 'auto',
     minWidth: normalize(60),
     height: normalize(34),
-    marginLeft: normalize(4),
+    marginLeft: normalize(6),
     paddingHorizontal: normalize(14),
     borderRadius: normalize(17),
     borderWidth: 0,

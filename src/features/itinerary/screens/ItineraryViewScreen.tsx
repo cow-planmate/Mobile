@@ -332,6 +332,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       planId={planId}
       weatherMap={weatherMap}
       tripName={tripName}
+      destination={destinationCity || routeDestination}
       isWeatherLoading={isWeatherLoading}
       loadError={loadError}
       onRetryLoad={fetchCompletePlan}
