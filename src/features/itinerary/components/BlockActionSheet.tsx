@@ -1,6 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import SheetModal from '../../../components/modals/SheetModal';
+import FallbackImage from '../../../components/common/FallbackImage';
+import { toSecureImageUrl } from '../../../utils/imageUrl';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 
@@ -10,6 +12,8 @@ export type BlockAction = {
   label: string;
   /** 스크린 리더와 테스트가 찾는 이름 */
   accessibilityLabel: string;
+  /** 항목 아래 회색 한 줄. 눌렀을 때 무엇이 되는지 알린다. */
+  description?: string;
   onPress?: () => void;
   destructive?: boolean;
   disabled?: boolean;
@@ -18,6 +22,10 @@ export type BlockAction = {
 type BlockActionSheetProps = {
   visible: boolean;
   title: string;
+  /** 제목 아래 줄. 갈래와 시간 같은 장소 요약. */
+  subtitle?: string;
+  /** 제목 앞의 장소 사진. */
+  imageUri?: string | null;
   actions: BlockAction[];
   onClose: () => void;
 };
@@ -35,11 +43,27 @@ const { colors, fontFamily, fontSize, tones } = tokens;
 export default function BlockActionSheet({
   visible,
   title,
+  subtitle,
+  imageUri,
   actions,
   onClose,
 }: BlockActionSheetProps) {
   return (
-    <SheetModal visible={visible} title={title} onClose={onClose}>
+    <SheetModal
+      visible={visible}
+      title={title}
+      subtitle={subtitle}
+      leading={
+        imageUri !== undefined ? (
+          <FallbackImage
+            uri={toSecureImageUrl(imageUri ?? '')}
+            style={styles.photo}
+            fallback={<View style={[styles.photo, styles.photoEmpty]} />}
+          />
+        ) : undefined
+      }
+      onClose={onClose}
+    >
       <View style={styles.list}>
         {actions.map(action => (
           <React.Fragment key={action.key}>
@@ -58,6 +82,9 @@ export default function BlockActionSheet({
               >
                 {action.label}
               </Text>
+              {action.description ? (
+                <Text style={styles.description}>{action.description}</Text>
+              ) : null}
             </TouchableOpacity>
           </React.Fragment>
         ))}
@@ -71,9 +98,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     paddingBottom: normalize(8),
   },
+  photo: {
+    width: normalize(44),
+    height: normalize(44),
+    borderRadius: normalize(10),
+  },
+  photoEmpty: {
+    backgroundColor: colors.borderLight,
+  },
   row: {
     minHeight: normalize(50),
+    paddingVertical: normalize(8),
     justifyContent: 'center',
+  },
+  description: {
+    marginTop: normalize(2),
+    fontFamily: fontFamily.regular,
+    fontSize: normalize(13),
+    color: colors.textMuted,
   },
   rowDisabled: {
     opacity: 0.35,

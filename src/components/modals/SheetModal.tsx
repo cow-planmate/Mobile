@@ -28,6 +28,10 @@ import { tokens } from '../../theme/tokens';
 type Props = {
   visible: boolean;
   title: string;
+  /** 제목 아래에 작게 붙는 보조 줄. 무엇에 대한 시트인지 알릴 때 쓴다. */
+  subtitle?: string;
+  /** 제목 앞에 붙는 작은 그림(사진 등). */
+  leading?: React.ReactNode;
   /** 배경 탭·뒤로가기·닫기 어느 쪽으로 닫히든 불린다. */
   onClose: () => void;
   /**
@@ -62,6 +66,8 @@ const EXIT_MS = 220;
 export default function SheetModal({
   visible,
   title,
+  subtitle,
+  leading,
   onClose,
   headerAction,
   maxHeightRatio = 0.85,
@@ -145,7 +151,19 @@ export default function SheetModal({
           <View style={styles.grabber} />
 
           <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
+            <View style={styles.headerLeft}>
+              {leading}
+              <View style={styles.titleBlock}>
+                <Text style={styles.title} numberOfLines={1}>
+                  {title}
+                </Text>
+                {subtitle ? (
+                  <Text style={styles.subtitle} numberOfLines={1}>
+                    {subtitle}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
             <View style={styles.headerRight}>
               {headerAction}
               <TouchableOpacity
@@ -205,6 +223,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     paddingTop: normalize(12),
     paddingBottom: normalize(10),
+  },
+  headerLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: normalize(10),
+    minWidth: 0,
+    marginRight: normalize(12),
+  },
+  titleBlock: {
+    flex: 1,
+    minWidth: 0,
+  },
+  subtitle: {
+    marginTop: normalize(2),
+    fontSize: normalize(12.5),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textMuted,
   },
   headerRight: {
     flexDirection: 'row',

@@ -128,6 +128,7 @@ const TimelineItem = React.memo(function TimelineItem({
     action?.();
   };
 
+  const timeRange = `${item.startTime.slice(0, 5)} – ${item.endTime.slice(0, 5)}`;
   const actions: BlockAction[] = [
     ...(onShowDetail
       ? [
@@ -135,6 +136,7 @@ const TimelineItem = React.memo(function TimelineItem({
             key: 'detail',
             label: '장소 정보 보기',
             accessibilityLabel: '장소 정보 보기',
+            description: '사진, 소개, 이용 시간',
             onPress: runAfterClose(onShowDetail),
           },
         ]
@@ -143,18 +145,21 @@ const TimelineItem = React.memo(function TimelineItem({
       key: 'map',
       label: '지도에서 보기',
       accessibilityLabel: '지도에서 보기',
+      description: '지도 앱에서 열어요',
       onPress: runAfterClose(handleOpenMap),
     },
     {
       key: 'edit',
       label: '시간·메모 수정',
       accessibilityLabel: '일정 수정',
+      description: `${timeRange} · ${item.memo?.trim() ? '메모 있음' : '메모 없음'}`,
       onPress: runAfterClose(onEditPlace),
     },
     {
       key: 'delete',
       label: '삭제',
       accessibilityLabel: '장소 삭제',
+      description: '이 일정에서 장소를 빼요',
       onPress: runAfterClose(onDelete),
       destructive: true,
       disabled: isDeleteDisabled,
@@ -228,6 +233,8 @@ const TimelineItem = React.memo(function TimelineItem({
         <BlockActionSheet
           visible={isMenuOpen}
           title={item.name}
+          subtitle={`${categoryName} · ${timeRange}`}
+          imageUri={item.imageUrl}
           actions={actions}
           onClose={() => setMenuOpen(false)}
         />
