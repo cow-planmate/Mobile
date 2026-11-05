@@ -532,6 +532,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       <Modal
         visible={isCreating}
         transparent={false}
+        statusBarTranslucent
+        navigationBarTranslucent
         animationType="fade"
         onRequestClose={() => {}}
       >

@@ -921,6 +921,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           (isInitialPlanLoading || days.length === 0 || isSaving || isBacking)
         }
         transparent={false}
+        statusBarTranslucent
+        navigationBarTranslucent
         animationType="fade"
         onRequestClose={handleGoBack}
       >

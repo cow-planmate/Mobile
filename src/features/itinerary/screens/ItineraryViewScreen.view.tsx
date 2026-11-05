@@ -413,6 +413,8 @@ export default function ItineraryViewScreenView({
       <Modal
         visible={days.length === 0}
         transparent={false}
+        statusBarTranslucent
+        navigationBarTranslucent
         animationType="fade"
         onRequestClose={goBack}
       >
