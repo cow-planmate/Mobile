@@ -6,6 +6,8 @@
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- 시작할 때 앱 코드가 그려지기 전 보이는 바탕. 앱 시작 화면과 같은 흰색으로 맞춘다. -->
+        <item name="android:windowBackground">@android:color/white</item>
     </style>
 
 </resources>
