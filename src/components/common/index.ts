@@ -4,7 +4,7 @@ export { default as Header } from './Header';
 export * from './Header';
 export { default as BackTopBar } from './BackTopBar';
 export * from './BackTopBar';
-export { default as LoadingSpinner } from './LoadingSpinner';
+export { default as LoadingSpinner, Spinner } from './LoadingSpinner';
 export { default as Logo } from './Logo';
 export { default as FallbackImage } from './FallbackImage';
 export { default as ErrorBoundary } from './ErrorBoundary';

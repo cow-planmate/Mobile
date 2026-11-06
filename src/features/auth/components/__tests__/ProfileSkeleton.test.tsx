@@ -1,13 +1,13 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
-import ProfileSkeleton, { SKELETON_DELAY_MS } from '../ProfileSkeleton';
+import ProfileSkeleton from '../ProfileSkeleton';
+import { SKELETON_DELAY_MS } from '../../../../components/ui';
 
 describe('ProfileSkeleton', () => {
   let renderer: ReactTestRenderer.ReactTestRenderer;
 
   const hasBones = () =>
-    renderer.root.findAllByProps({ testID: 'profile-skeleton-bones' }).length >
-    0;
+    renderer.root.findAllByProps({ testID: 'skeleton-bones' }).length > 0;
 
   beforeEach(async () => {
     jest.useFakeTimers();
