@@ -42,6 +42,7 @@ const api = {
   Easing,
   useSharedValue: value => ({ value }),
   useAnimatedStyle: fn => fn(),
+  useAnimatedProps: fn => fn(),
   useDerivedValue: fn => ({ value: fn() }),
   useAnimatedScrollHandler: () => () => {},
   useAnimatedRef: () => ({ current: null }),
