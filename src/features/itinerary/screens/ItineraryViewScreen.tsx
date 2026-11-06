@@ -240,9 +240,20 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     };
   }, [connect, disconnect, navigation, planId]);
 
-  const weatherRangeStart = days.length > 0 ? formatDateLocal(days[0].date) : '';
+  // 일정 응답을 기다리지 않고 이전 화면에서 받은 날짜로 날씨를 먼저 요청한다.
+  // 응답의 날짜가 다르면 아래 effect가 다시 요청한다.
+  const routeRangeStart = routeStartDate
+    ? formatDateLocal(new Date(routeStartDate))
+    : '';
+  const routeRangeEnd = routeEndDate
+    ? formatDateLocal(new Date(routeEndDate))
+    : '';
+  const weatherRangeStart =
+    days.length > 0 ? formatDateLocal(days[0].date) : routeRangeStart;
   const weatherRangeEnd =
-    days.length > 0 ? formatDateLocal(days[days.length - 1].date) : '';
+    days.length > 0
+      ? formatDateLocal(days[days.length - 1].date)
+      : routeRangeEnd;
 
   useEffect(() => {
     if (!weatherDestinationId || !weatherRangeStart || !weatherRangeEnd) {

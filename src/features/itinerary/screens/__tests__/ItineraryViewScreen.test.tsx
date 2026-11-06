@@ -189,6 +189,30 @@ describe('ItineraryViewScreen - Loading & Weather Logic', () => {
     expect(viewComponent.props.isWeatherLoading).toBe(false);
   });
 
+  it('requests weather with route params before the plan response arrives', async () => {
+    mockedAxios.get.mockReturnValueOnce(new Promise(() => {}) as any);
+    mockFetchWeather.mockResolvedValue({ weather: [], recommendation: '' });
+    const route = {
+      params: {
+        planId: '123',
+        travelId: 7,
+        startDate: new Date(2026, 7, 1).toISOString(),
+        endDate: new Date(2026, 7, 3).toISOString(),
+      },
+    } as any;
+
+    await mount(
+      <ItineraryViewScreen navigation={mockNavigation} route={route} />,
+    );
+
+    expect(mockFetchWeather).toHaveBeenCalledWith(
+      7,
+      '2026-08-01',
+      '2026-08-03',
+      expect.anything(),
+    );
+  });
+
   it('passes itinerary dates when navigating back to the editor', async () => {
     mockedAxios.get.mockResolvedValueOnce({
       data: {

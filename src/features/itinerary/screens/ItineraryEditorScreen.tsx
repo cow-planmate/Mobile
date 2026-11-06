@@ -310,10 +310,20 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     Record<string, SimpleWeatherInfo>
   >({});
 
+  // 일정 응답을 기다리지 않고 이전 화면에서 받은 날짜로 날씨를 먼저 요청한다.
+  // 응답의 날짜가 다르면 아래 effect가 다시 요청한다.
+  const routeStartDate = route.params.startDate
+    ? formatDateLocal(new Date(route.params.startDate))
+    : '';
+  const routeEndDate = route.params.endDate
+    ? formatDateLocal(new Date(route.params.endDate))
+    : '';
   const weatherRangeStart =
-    days.length > 0 ? formatDateLocal(days[0].date) : '';
+    days.length > 0 ? formatDateLocal(days[0].date) : routeStartDate;
   const weatherRangeEnd =
-    days.length > 0 ? formatDateLocal(days[days.length - 1].date) : '';
+    days.length > 0
+      ? formatDateLocal(days[days.length - 1].date)
+      : routeEndDate;
 
   const buildPlanSyncPayload = useCallback(
     (targetPlanId: string, planName: string) => ({
