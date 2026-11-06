@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   StatusBar,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -30,6 +29,7 @@ import {
 } from '../hooks/queries';
 import PostContentView from '../components/PostContentView';
 import PostListItem from '../components/PostListItem';
+import { DetailSkeleton } from '../components/CommunitySkeletons';
 import CommentSection from '../components/CommentSection';
 import UserAvatar from '../components/UserAvatar';
 import PublicProfileModal from '../components/PublicProfileModal';
@@ -146,10 +146,7 @@ export default function PostDetailScreen() {
     return (
       <View style={styles.container}>
         {renderTopBar()}
-        <View style={styles.stateBox}>
-          <ActivityIndicator color={COLORS.primary} />
-          <Text style={styles.stateText}>게시글을 불러오는 중…</Text>
-        </View>
+        <DetailSkeleton label="게시글을 불러오는 중" />
       </View>
     );
   }

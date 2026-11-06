@@ -15,6 +15,7 @@ import { FlashList } from '@shopify/flash-list';
 import Copy from 'lucide-react-native/dist/esm/icons/copy';
 import { EmptyState } from '../../../components/ui';
 import FallbackImage from '../../../components/common/FallbackImage';
+import { FeedListSkeleton } from './CommunitySkeletons';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 
@@ -285,7 +286,7 @@ export default function TravelFeedList({
 
   const renderEmpty = useCallback(() => {
     if (isLoading) {
-      return <EmptyState title="여행기를 불러오는 중…" loading />;
+      return <FeedListSkeleton isGrid={viewMode === 'grid'} />;
     }
     if (isError) {
       return (
@@ -310,7 +311,7 @@ export default function TravelFeedList({
         }
       />
     );
-  }, [isLoading, isFiltered, isError, isRefreshing, onRefresh]);
+  }, [isLoading, isFiltered, isError, isRefreshing, onRefresh, viewMode]);
 
   return (
     <View style={styles.container}>

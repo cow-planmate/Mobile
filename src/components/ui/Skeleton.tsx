@@ -30,6 +30,8 @@ type SkeletonProps = PropsWithChildren<{
   /** 스크린 리더가 읽는 문구. 예: '게시글을 불러오는 중' */
   label: string;
   style?: StyleProp<ViewStyle>;
+  /** 조각들을 감싸는 안쪽 틀의 스타일. 조각 사이 간격을 줄 때 쓴다. */
+  contentStyle?: StyleProp<ViewStyle>;
   delayMs?: number;
 }>;
 
@@ -42,6 +44,7 @@ type SkeletonProps = PropsWithChildren<{
 export function Skeleton({
   label,
   style,
+  contentStyle,
   delayMs = SKELETON_DELAY_MS,
   children,
 }: SkeletonProps) {
@@ -71,7 +74,9 @@ export function Skeleton({
     >
       {visible && (
         <PulseContext.Provider value={progress}>
-          <View testID="skeleton-bones">{children}</View>
+          <View testID="skeleton-bones" style={contentStyle}>
+            {children}
+          </View>
         </PulseContext.Provider>
       )}
     </View>

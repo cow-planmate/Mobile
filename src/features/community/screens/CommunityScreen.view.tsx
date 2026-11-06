@@ -21,6 +21,7 @@ import { normalize } from '../../../utils/normalize';
 import { CommunityPostSummary } from '../types';
 import { BoardKey, SortKey, SORT_OPTIONS } from '../constants/board';
 import PostListItem from '../components/PostListItem';
+import { PostListSkeleton } from '../components/CommunitySkeletons';
 import PostTypeBadges from '../components/PostTypeBadges';
 import UserAvatar from '../components/UserAvatar';
 
@@ -246,13 +247,7 @@ export default function CommunityScreenView({
 
   const listEmpty = useMemo(() => {
     if (isLoading) {
-      return (
-        <EmptyState
-          title="게시글을 불러오는 중…"
-          loading
-          style={styles.listStateBox}
-        />
-      );
+      return <PostListSkeleton />;
     }
     if (isError) {
       return (

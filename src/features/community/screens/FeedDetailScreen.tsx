@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   StatusBar,
   Share,
 } from 'react-native';
@@ -49,6 +48,7 @@ import UserAvatar from '../components/UserAvatar';
 import FallbackImage from '../../../components/common/FallbackImage';
 import PublicProfileModal from '../components/PublicProfileModal';
 import ReportPostButton from '../components/ReportPostButton';
+import { DetailSkeleton } from '../components/CommunitySkeletons';
 import { ReactionType } from '../types';
 import { ScheduleTimeline } from '../../itinerary/components/PlanScheduleList';
 import PlaceDetailSheet, {
@@ -236,10 +236,7 @@ ${WEB_URL}/travel/${post.id}`,
     return (
       <View style={styles.container}>
         {renderTopBar()}
-        <View style={styles.stateBox}>
-          <ActivityIndicator color={COLORS.primary} />
-          <Text style={styles.stateText}>여행기를 불러오는 중…</Text>
-        </View>
+        <DetailSkeleton label="여행기를 불러오는 중" />
       </View>
     );
   }

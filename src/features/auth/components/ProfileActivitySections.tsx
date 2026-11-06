@@ -1,11 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Heart from 'lucide-react-native/dist/esm/icons/heart';
 import MessageCircle from 'lucide-react-native/dist/esm/icons/message-circle';
@@ -24,6 +18,7 @@ import {
 import { CommunityComment, CommunityPostSummary } from '../../community/types';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
+import { ActivityRowsSkeleton } from './ProfileTabSkeletons';
 type ActivityTab = 'posts' | 'likes' | 'comments';
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -167,7 +162,7 @@ export function ProfileTravelLogSection() {
   const renderBody = () => {
     if (tab === 'comments') {
       if (isCommentLoading) {
-        return <ActivityIndicator color={tokens.colors.primary} />;
+        return <ActivityRowsSkeleton variant="comment" />;
       }
       if (isCommentError) {
         return (
@@ -217,7 +212,7 @@ export function ProfileTravelLogSection() {
     }
 
     if (isLoading) {
-      return <ActivityIndicator color={tokens.colors.primary} />;
+      return <ActivityRowsSkeleton />;
     }
     if (isError) {
       return (
@@ -325,7 +320,7 @@ export function ProfileCommunitySection() {
   const renderBody = () => {
     if (activityTab === 'comments') {
       if (isCommentLoading) {
-        return <ActivityIndicator color={tokens.colors.primary} />;
+        return <ActivityRowsSkeleton variant="comment" />;
       }
       if (isCommentError) {
         return (
@@ -375,7 +370,7 @@ export function ProfileCommunitySection() {
     }
 
     if (isActivityLoading) {
-      return <ActivityIndicator color={tokens.colors.primary} />;
+      return <ActivityRowsSkeleton />;
     }
     if (isActivityError) {
       return (

@@ -14,9 +14,13 @@ import PopupModal from '../../../components/common/PopupModal';
 import { useNavigation } from '@react-navigation/native';
 import { INITIAL_TAB } from '../../../navigation/types';
 import { useAlert } from '../../../contexts/AlertContext';
-import { LoadingSpinner, ShareModal } from '../../../components/common';
+import { ShareModal } from '../../../components/common';
 import MenuModal from '../components/MenuModal';
 import ProfileSkeleton from '../components/ProfileSkeleton';
+import {
+  ProfileStoriesSkeleton,
+  ProfileTravelSkeleton,
+} from '../components/ProfileTabSkeletons';
 import UpdatePasswordModal from '../components/UpdatePasswordModal';
 import UpdateThemeModal from '../components/UpdateThemeModal';
 import UpdateValueModal from '../components/UpdateValueModal';
@@ -89,7 +93,7 @@ import {
   NICKNAME_MAX_LENGTH,
   getNicknameLengthError,
 } from '../../../utils/nickname';
-import { styles, COLORS } from './ProfileScreen.styles';
+import { styles } from './ProfileScreen.styles';
 import appPackage from '../../../../package.json';
 
 const LEAVE_EDITOR_CONCURRENCY = 4;
@@ -813,13 +817,9 @@ export default function ProfileScreenView({
     return (
       <View style={styles.container}>
         {screenHeader}
-        {profileSection === 'profile' ? (
-          <ProfileSkeleton />
-        ) : (
-          <View style={styles.loadingContainer}>
-            <LoadingSpinner color={COLORS.primary} />
-          </View>
-        )}
+        {profileSection === 'profile' && <ProfileSkeleton />}
+        {profileSection === 'travel' && <ProfileTravelSkeleton />}
+        {profileSection === 'stories' && <ProfileStoriesSkeleton />}
       </View>
     );
   }
