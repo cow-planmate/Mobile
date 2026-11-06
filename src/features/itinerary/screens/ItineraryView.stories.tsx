@@ -109,6 +109,7 @@ function ViewHarness(props: {
       weatherMap={{}}
       tripName="가을 제주 3일"
       isWeatherLoading={false}
+      isWaitingWeather={false}
       loadError={!!props.loadError}
       onRetryLoad={action('다시 시도')}
     />
@@ -136,6 +137,7 @@ const meta = {
     weatherMap: {},
     tripName: '가을 제주 3일',
     isWeatherLoading: false,
+    isWaitingWeather: false,
     loadError: false,
     onRetryLoad: action('다시 시도'),
   },

@@ -26,6 +26,7 @@ import {
 } from '../../../api/trips';
 import { useWebSocket } from '../../../contexts/WebSocketContext';
 import { usePlanOwnership } from '../../../hooks/usePlanOwnership';
+import { useWeatherWaitGate } from '../hooks/useWeatherWaitGate';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
 
 interface PlanFrameVO {
@@ -255,6 +256,17 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       ? formatDateLocal(days[days.length - 1].date)
       : routeRangeEnd;
 
+  // 현재 날씨 요청 조건이 아직 결과(성공·실패)를 받지 못했는지 렌더 중에 바로 계산한다.
+  const weatherKey =
+    weatherDestinationId && weatherRangeStart && weatherRangeEnd
+      ? `${weatherDestinationId}|${weatherRangeStart}|${weatherRangeEnd}`
+      : '';
+  const [settledWeatherKey, setSettledWeatherKey] = useState('');
+  const isWaitingWeather = useWeatherWaitGate(
+    days.length > 0,
+    weatherKey !== '' && settledWeatherKey !== weatherKey,
+  );
+
   useEffect(() => {
     if (!weatherDestinationId || !weatherRangeStart || !weatherRangeEnd) {
       setWeatherMap({});
@@ -293,12 +305,13 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       .finally(() => {
         if (controller.signal.aborted) return;
         setIsWeatherLoading(false);
+        setSettledWeatherKey(weatherKey);
       });
 
     return () => {
       controller.abort();
     };
-  }, [weatherDestinationId, weatherRangeStart, weatherRangeEnd]);
+  }, [weatherDestinationId, weatherRangeStart, weatherRangeEnd, weatherKey]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -345,6 +358,7 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       tripName={tripName}
       destination={destinationCity || routeDestination}
       isWeatherLoading={isWeatherLoading}
+      isWaitingWeather={isWaitingWeather}
       loadError={loadError}
       onRetryLoad={fetchCompletePlan}
     />

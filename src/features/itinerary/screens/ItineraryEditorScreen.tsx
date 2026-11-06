@@ -33,6 +33,7 @@ import {
   mergeScheduleEditDays,
 } from '../utils/scheduleEditSync';
 import { SimpleWeatherInfo, fetchWeather } from '../../../api/trips';
+import { useWeatherWaitGate } from '../hooks/useWeatherWaitGate';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { ShareModal, AirplaneLoading } from '../../../components/common';
 import PlanInfoModal from '../components/PlanInfoModal';
@@ -348,6 +349,17 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     planMetadata?.destinationId ||
     null;
 
+  // 현재 날씨 요청 조건이 아직 결과(성공·실패)를 받지 못했는지 렌더 중에 바로 계산한다.
+  const weatherKey =
+    weatherDestinationId && weatherRangeStart && weatherRangeEnd
+      ? `${weatherDestinationId}|${weatherRangeStart}|${weatherRangeEnd}`
+      : '';
+  const [settledWeatherKey, setSettledWeatherKey] = useState('');
+  const isWaitingWeather = useWeatherWaitGate(
+    !isInitialPlanLoading && days.length > 0,
+    weatherKey !== '' && settledWeatherKey !== weatherKey,
+  );
+
   useEffect(() => {
     if (!weatherDestinationId || !weatherRangeStart || !weatherRangeEnd) {
       setWeatherMap({});
@@ -380,12 +392,16 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
         console.warn('날씨 조회 실패:', error);
         setWeatherMap({});
+      })
+      .finally(() => {
+        if (controller.signal.aborted) return;
+        setSettledWeatherKey(weatherKey);
       });
 
     return () => {
       controller.abort();
     };
-  }, [weatherDestinationId, weatherRangeStart, weatherRangeEnd]);
+  }, [weatherDestinationId, weatherRangeStart, weatherRangeEnd, weatherKey]);
 
   const hasInitialFetchedRef = useRef(false);
   const isConnectedRef = useRef(isConnected);
@@ -928,7 +944,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       <Modal
         visible={
           !isAccessDenied &&
-          (isInitialPlanLoading || days.length === 0 || isSaving || isBacking)
+          (isInitialPlanLoading ||
+            days.length === 0 ||
+            isWaitingWeather ||
+            isSaving ||
+            isBacking)
         }
         transparent={false}
         statusBarTranslucent

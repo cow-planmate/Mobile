@@ -107,6 +107,8 @@ export interface ItineraryViewScreenViewProps {
   destination?: string;
 
   isWeatherLoading: boolean;
+  /** 일정은 준비됐지만 날씨를 잠깐 더 기다리는 동안 로딩을 유지한다. */
+  isWaitingWeather: boolean;
   loadError: boolean;
   onRetryLoad: () => void;
 }
@@ -129,6 +131,7 @@ export default function ItineraryViewScreenView({
   weatherMap,
   tripName,
   destination,
+  isWaitingWeather,
   loadError,
   onRetryLoad,
 }: ItineraryViewScreenViewProps) {
@@ -411,7 +414,7 @@ export default function ItineraryViewScreenView({
       {/* 로딩이 끝나지 않으면 이 모달이 화면 전체를 덮는다 —
           안드로이드 뒤로가기로 빠져나갈 수 있어야 갇히지 않는다 */}
       <Modal
-        visible={days.length === 0}
+        visible={days.length === 0 || isWaitingWeather}
         transparent={false}
         statusBarTranslucent
         navigationBarTranslucent
