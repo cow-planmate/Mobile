@@ -16,6 +16,7 @@ import { INITIAL_TAB } from '../../../navigation/types';
 import { useAlert } from '../../../contexts/AlertContext';
 import { LoadingSpinner, ShareModal } from '../../../components/common';
 import MenuModal from '../components/MenuModal';
+import ProfileSkeleton from '../components/ProfileSkeleton';
 import UpdatePasswordModal from '../components/UpdatePasswordModal';
 import UpdateThemeModal from '../components/UpdateThemeModal';
 import UpdateValueModal from '../components/UpdateValueModal';
@@ -775,10 +776,50 @@ export default function ProfileScreenView({
     setIsEditMode(false);
   };
 
+  const handleBackPress = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('MainTabs', { screen: INITIAL_TAB });
+    }
+  };
+
+  // 로딩 중에도 상단 줄과 탭은 그대로 둔다.
+  const screenHeader = (
+    <>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={tokens.colors.white}
+      />
+      <BackTopBar title="마이페이지" onBack={handleBackPress} safeTop />
+
+      {/* 프로필이 탭 하나로 내려오면서 탭줄이 머리에 붙는다. 굴려도 따라오지
+          않고 제자리에 있어야 최상단 전환기로 읽힌다. */}
+      <View style={styles.sectionTabsWrap}>
+        <UnderlineTabs
+          items={PROFILE_SECTIONS}
+          selectedKey={profileSection}
+          onSelect={key => setProfileSection(key as ProfileSection)}
+          scrollable={false}
+          align="fill"
+          compact
+          style={styles.sectionTabs}
+        />
+      </View>
+    </>
+  );
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <LoadingSpinner color={COLORS.primary} />
+      <View style={styles.container}>
+        {screenHeader}
+        {profileSection === 'profile' ? (
+          <ProfileSkeleton />
+        ) : (
+          <View style={styles.loadingContainer}>
+            <LoadingSpinner color={COLORS.primary} />
+          </View>
+        )}
       </View>
     );
   }
@@ -986,35 +1027,9 @@ export default function ProfileScreenView({
       }
     });
 
-  const handleBackPress = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    } else {
-      navigation.navigate('MainTabs', { screen: INITIAL_TAB });
-    }
-  };
-
   return (
     <View style={styles.container}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor={tokens.colors.white}
-      />
-      <BackTopBar title="마이페이지" onBack={handleBackPress} safeTop />
-
-      {/* 프로필이 탭 하나로 내려오면서 탭줄이 머리에 붙는다. 굴려도 따라오지
-          않고 제자리에 있어야 최상단 전환기로 읽힌다. */}
-      <View style={styles.sectionTabsWrap}>
-        <UnderlineTabs
-          items={PROFILE_SECTIONS}
-          selectedKey={profileSection}
-          onSelect={key => setProfileSection(key as ProfileSection)}
-          scrollable={false}
-          align="fill"
-          compact
-          style={styles.sectionTabs}
-        />
-      </View>
+      {screenHeader}
 
       <ScrollView
         ref={scrollRef}
