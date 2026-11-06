@@ -8,9 +8,9 @@ import {
   ScrollView,
   FlatList,
   StatusBar,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import Plus from 'lucide-react-native/dist/esm/icons/plus';
 import Search from 'lucide-react-native/dist/esm/icons/search';
 import { styles } from './CommunityScreen.styles';
@@ -240,7 +240,7 @@ export default function CommunityScreenView({
     if (!isFetchingNextPage) return null;
     return (
       <View style={styles.listFooterLoading}>
-        <ActivityIndicator color={tokens.colors.primary} />
+        <Spinner color={tokens.colors.primary} />
       </View>
     );
   }, [isFetchingNextPage]);

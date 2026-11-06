@@ -10,11 +10,11 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   PermissionsAndroid,
   Platform,
   useWindowDimensions,
 } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import Geolocation from '@react-native-community/geolocation';
 import RouteIcon from 'lucide-react-native/dist/esm/icons/route';
 import Wand2 from 'lucide-react-native/dist/esm/icons/wand-sparkles';
@@ -396,10 +396,7 @@ export default function RouteMapSection({
                 accessibilityState={{ disabled: isOptimizing }}
               >
                 {isOptimizing ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={tokens.colors.primary}
-                  />
+                  <Spinner color={tokens.colors.primary} />
                 ) : (
                   <Wand2 size={normalize(20)} color={tokens.colors.primary} />
                 )}
@@ -416,7 +413,7 @@ export default function RouteMapSection({
               accessibilityState={{ disabled: isLocating }}
             >
               {isLocating ? (
-                <ActivityIndicator size="small" color={tokens.colors.primary} />
+                <Spinner color={tokens.colors.primary} />
               ) : (
                 <LocateFixed
                   size={normalize(20)}

@@ -4,13 +4,13 @@ import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
   RefreshControl,
   Pressable,
   StyleProp,
   NativeScrollEvent,
   NativeSyntheticEvent,
 } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import { FlashList } from '@shopify/flash-list';
 import Copy from 'lucide-react-native/dist/esm/icons/copy';
 import { EmptyState } from '../../../components/ui';
@@ -105,7 +105,7 @@ const FeedThumbnail = ({
           pointerEvents="none"
           style={[StyleSheet.absoluteFillObject, styles.thumbnailLoading]}
         >
-          <ActivityIndicator size="small" color={tokens.colors.primary} />
+          <Spinner color={tokens.colors.primary} />
         </View>
       )}
     </View>
@@ -279,7 +279,7 @@ export default function TravelFeedList({
     if (!isLoadingMore) return null;
     return (
       <View style={styles.footerLoading}>
-        <ActivityIndicator size="small" color={tokens.colors.primary} />
+        <Spinner color={tokens.colors.primary} />
       </View>
     );
   }, [isLoadingMore]);

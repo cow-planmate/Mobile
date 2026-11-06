@@ -4,9 +4,9 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   StyleSheet,
 } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import axios from 'axios';
 import { PreferredThemeVO, changePreferredThemes } from '../../../api/themes';
 import ThemeSelector, {
@@ -149,7 +149,7 @@ export default function UpdateThemeModal({
             accessibilityState={{ disabled: saving || loading }}
           >
             {saving ? (
-              <ActivityIndicator size="small" color={tokens.colors.white} />
+              <Spinner color={tokens.colors.white} trackColor="transparent" />
             ) : (
               <Text style={styles.confirmText}>완료</Text>
             )}
@@ -158,7 +158,7 @@ export default function UpdateThemeModal({
       >
         {loading ? (
           <View style={styles.loading}>
-            <ActivityIndicator color={tokens.colors.primary} />
+            <Spinner color={tokens.colors.primary} />
           </View>
         ) : (
           <ScrollView
@@ -202,7 +202,7 @@ export default function UpdateThemeModal({
         onComplete={handleSelectorComplete}
         initialSelections={selectedThemes}
         initialStep={
-          initialCategory ? (CATEGORY_STEP_MAP[initialCategory] ?? 0) : 0
+          initialCategory ? CATEGORY_STEP_MAP[initialCategory] ?? 0 : 0
         }
       />
     </>

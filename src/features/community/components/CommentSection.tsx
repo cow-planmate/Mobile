@@ -7,8 +7,8 @@ import {
   StyleSheet,
   StyleProp,
   ViewStyle,
-  ActivityIndicator,
 } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import CornerDownRight from 'lucide-react-native/dist/esm/icons/corner-down-right';
 import MessageCircle from 'lucide-react-native/dist/esm/icons/message-circle';
 import Send from 'lucide-react-native/dist/esm/icons/send';
@@ -372,10 +372,7 @@ export default function CommentSection({
       />
 
       {commentsQuery.isLoading ? (
-        <ActivityIndicator
-          style={styles.loading}
-          color={tokens.colors.primary}
-        />
+        <Spinner color={tokens.colors.primary} style={styles.loading} />
       ) : topLevel.length === 0 ? (
         <Text style={styles.empty}>첫 댓글을 남겨보세요!</Text>
       ) : (
@@ -391,7 +388,7 @@ export default function CommentSection({
               }}
             >
               {commentsQuery.isFetchingNextPage ? (
-                <ActivityIndicator color={tokens.colors.primary} />
+                <Spinner color={tokens.colors.primary} />
               ) : (
                 <Text style={styles.loadMoreText}>댓글 더 보기</Text>
               )}

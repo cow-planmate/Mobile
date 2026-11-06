@@ -4,12 +4,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
   Modal,
   ScrollView,
   Pressable,
   StatusBar,
 } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -382,7 +382,7 @@ export const LoginScreenView = ({
               startInLoadingState={true}
               renderLoading={() => (
                 <View style={styles.snsLoading}>
-                  <ActivityIndicator size="large" color={COLORS.primary} />
+                  <Spinner size="large" color={COLORS.primary} />
                 </View>
               )}
             />

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Dimensions,
   Image,
   Linking,
@@ -9,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import { formatUseTime } from '../utils/formatUseTime';
 import ExternalLink from 'lucide-react-native/dist/esm/icons/external-link';
 import ImageOff from 'lucide-react-native/dist/esm/icons/image-off';
@@ -237,7 +237,7 @@ export default function PlaceDetailSheet({
     >
       {isLoading ? (
         <View style={styles.state}>
-          <ActivityIndicator size="small" color={COLORS.primary} />
+          <Spinner color={COLORS.primary} />
           <Text style={styles.stateText}>장소 정보를 불러오고 있어요</Text>
         </View>
       ) : error ? (

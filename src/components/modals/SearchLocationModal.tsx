@@ -4,10 +4,10 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ActivityIndicator,
   ScrollView,
   TextInput,
 } from 'react-native';
+import { Spinner } from '../common/LoadingSpinner';
 import axios from 'axios';
 import Search from 'lucide-react-native/dist/esm/icons/search';
 
@@ -145,7 +145,7 @@ export default function SearchLocationModal({
     >
       {isLoading ? (
         <View style={styles.inlineLoaderContainer}>
-          <ActivityIndicator size="small" color={COLORS.primary} />
+          <Spinner color={COLORS.primary} />
           <Text style={styles.loaderText}>불러오는 중...</Text>
         </View>
       ) : (

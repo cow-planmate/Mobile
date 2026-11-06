@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import { useQuery } from '@tanstack/react-query';
 import Lock from 'lucide-react-native/dist/esm/icons/lock';
 import { normalize } from '../../../utils/normalize';
@@ -48,7 +49,7 @@ export default function PublicProfileModal({
     >
       {query.isLoading ? (
         <View style={styles.stateBox}>
-          <ActivityIndicator color={tokens.colors.primary} />
+          <Spinner color={tokens.colors.primary} />
         </View>
       ) : isPrivate ? (
         <View style={styles.stateBox}>

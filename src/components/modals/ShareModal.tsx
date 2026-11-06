@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   StyleSheet,
   ScrollView,
   Share,
@@ -13,6 +12,7 @@ import {
   Pressable,
   Animated,
 } from 'react-native';
+import { Spinner } from '../common/LoadingSpinner';
 import Toast from 'react-native-toast-message';
 import Share2 from 'lucide-react-native/dist/esm/icons/share-2';
 import {
@@ -426,7 +426,7 @@ export default function ShareModal({
             accessibilityState={{ disabled: inviteLock.isSubmitting }}
           >
             {inviteLock.isSubmitting ? (
-              <ActivityIndicator color={tokens.colors.white} size="small" />
+              <Spinner color={tokens.colors.white} trackColor="transparent" />
             ) : (
               <Text style={styles.inviteText}>초대</Text>
             )}

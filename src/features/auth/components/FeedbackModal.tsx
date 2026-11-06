@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import Toast from 'react-native-toast-message';
 import PopupModal from '../../../components/common/PopupModal';
 import { FEEDBACK_MAX_LENGTH, submitFeedback } from '../../../api/feedback';
@@ -19,7 +19,10 @@ type FeedbackModalProps = {
   onClose: () => void;
 };
 
-export default function FeedbackModal({ visible, onClose }: FeedbackModalProps) {
+export default function FeedbackModal({
+  visible,
+  onClose,
+}: FeedbackModalProps) {
   const [content, setContent] = useState('');
   const [isSending, setIsSending] = useState(false);
 
@@ -73,7 +76,7 @@ export default function FeedbackModal({ visible, onClose }: FeedbackModalProps) 
           accessibilityState={{ disabled: !canSend }}
         >
           {isSending ? (
-            <ActivityIndicator size="small" color={tokens.colors.white} />
+            <Spinner color={tokens.colors.white} trackColor="transparent" />
           ) : (
             <Text
               style={[

@@ -20,12 +20,11 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-
-  ActivityIndicator,
   StyleSheet,
   Modal,
   RefreshControl,
 } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import Bed from 'lucide-react-native/dist/esm/icons/bed';
 import ExternalLink from 'lucide-react-native/dist/esm/icons/external-link';
@@ -663,7 +662,7 @@ export default function PlaceRecommendationList({
     if (isLoading) {
       return (
         <View style={plStyles.footerLoading}>
-          <ActivityIndicator size="small" color={tokens.colors.primary} />
+          <Spinner color={tokens.colors.primary} />
         </View>
       );
     }

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import Animated, {
   Easing,
@@ -32,6 +32,7 @@ export interface SpinnerProps {
   color?: string;
   /** 호 아래 깔리는 연한 원의 색. 파란 버튼 안처럼 원이 거슬리는 곳에서는 'transparent'. */
   trackColor?: string;
+  style?: StyleProp<ViewStyle>;
 }
 
 /**
@@ -42,6 +43,7 @@ export function Spinner({
   size = 'small',
   color = PRIMARY,
   trackColor = TRACK,
+  style,
 }: SpinnerProps) {
   const { diameter, stroke } = SIZES[size];
   const radius = (diameter - stroke) / 2;
@@ -92,7 +94,7 @@ export function Spinner({
   });
 
   return (
-    <Animated.View style={spinStyle}>
+    <Animated.View style={[spinStyle, style]}>
       <Svg width={diameter} height={diameter}>
         <Circle
           cx={diameter / 2}

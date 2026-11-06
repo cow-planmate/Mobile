@@ -4,9 +4,9 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Bus from 'lucide-react-native/dist/esm/icons/bus';
 import Car from 'lucide-react-native/dist/esm/icons/car';
@@ -730,7 +730,7 @@ export default function RouteSegmentSheet({
         </View>
       ) : isLoading && !data ? (
         <View style={styles.stateBox}>
-          <ActivityIndicator color={COLORS.primary} />
+          <Spinner color={COLORS.primary} />
           <Text style={styles.stateText}>구간 정보를 불러오는 중…</Text>
         </View>
       ) : (

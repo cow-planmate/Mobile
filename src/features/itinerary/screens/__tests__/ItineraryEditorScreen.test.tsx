@@ -65,6 +65,13 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
+// 이 테스트의 애니메이션 목은 최소한이라 회전 호가 쓰는 항목이 없다. 그림은 필요 없으니 비운다.
+jest.mock('../../../../components/common/LoadingSpinner', () => ({
+  __esModule: true,
+  default: () => null,
+  Spinner: () => null,
+}));
+
 jest.mock('@react-native-community/geolocation', () => ({
   __esModule: true,
   default: {
