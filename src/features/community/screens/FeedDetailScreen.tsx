@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   StatusBar,
   Share,
 } from 'react-native';
@@ -30,6 +29,7 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { useAlert } from '../../../contexts/AlertContext';
 import { CalendarModal } from '../../../components/common';
 import BackTopBar from '../../../components/common/BackTopBar';
+import BottomInsetFiller from '../../../components/common/BottomInsetFiller';
 import { FeedStackParamList } from '../../../navigation/types';
 import {
   usePost,
@@ -49,6 +49,7 @@ import FallbackImage from '../../../components/common/FallbackImage';
 import PublicProfileModal from '../components/PublicProfileModal';
 import ReportPostButton from '../components/ReportPostButton';
 import SendMessageButton from '../../social/components/SendMessageButton';
+import { DetailSkeleton } from '../components/CommunitySkeletons';
 import { ReactionType } from '../types';
 import { ScheduleTimeline } from '../../itinerary/components/PlanScheduleList';
 import PlaceDetailSheet, {
@@ -61,7 +62,6 @@ import {
 } from '../utils/itineraryEntries';
 import { styles, COLORS } from './FeedDetailScreen.styles';
 import { tokens } from '../../../theme/tokens';
-import { useScreenInsets } from '../../../hooks/useScreenInsets';
 
 type FeedDetailRoute = RouteProp<FeedStackParamList, 'FeedDetail'>;
 
@@ -71,7 +71,6 @@ export default function FeedDetailScreen() {
   const { showAlert } = useAlert();
 
   const postId = route.params?.postId;
-  const screenInsets = useScreenInsets(false);
   const user = useAuthStore(state => state.user);
   const isLoggedIn = !!user;
 
@@ -225,18 +224,20 @@ ${WEB_URL}/travel/${post.id}`,
     }
   };
 
-  const renderTopBar = () => (
-    <BackTopBar title="여행기" onBack={() => navigation.goBack()} />
+  const renderTopBar = (right?: React.ReactNode) => (
+    <BackTopBar
+      title="여행기"
+      onBack={() => navigation.goBack()}
+      right={right}
+      safeTop
+    />
   );
 
   if (isLoading) {
     return (
-      <View style={[styles.container, screenInsets]}>
+      <View style={styles.container}>
         {renderTopBar()}
-        <View style={styles.stateBox}>
-          <ActivityIndicator color={COLORS.primary} />
-          <Text style={styles.stateText}>여행기를 불러오는 중…</Text>
-        </View>
+        <DetailSkeleton label="여행기를 불러오는 중" />
       </View>
     );
   }
@@ -246,7 +247,7 @@ ${WEB_URL}/travel/${post.id}`,
       ? getResourceLoadError(error, '여행기')
       : { message: '여행기를 찾을 수 없어요.', canRetry: false };
     return (
-      <View style={[styles.container, screenInsets]}>
+      <View style={styles.container}>
         {renderTopBar()}
         <View style={styles.stateBox}>
           <Text style={styles.stateText}>{failure.message}</Text>
@@ -292,7 +293,9 @@ ${WEB_URL}/travel/${post.id}`,
         <ThumbsUp
           size={normalize(14)}
           color={
-            post.myReaction === 'like' ? COLORS.white : COLORS.textSecondary
+            post.myReaction === 'like'
+              ? tokens.tones.primary.fg
+              : COLORS.textSecondary
           }
         />
         <Text
@@ -320,13 +323,13 @@ ${WEB_URL}/travel/${post.id}`,
         <ThumbsDown
           size={normalize(14)}
           color={
-            post.myReaction === 'dislike' ? COLORS.white : COLORS.textSecondary
+            post.myReaction === 'dislike' ? COLORS.text : COLORS.textSecondary
           }
         />
         <Text
           style={[
             styles.reactionText,
-            post.myReaction === 'dislike' && styles.reactionTextActive,
+            post.myReaction === 'dislike' && styles.reactionTextActiveDislike,
           ]}
         >
           비추천 {post.dislikes}
@@ -351,12 +354,19 @@ ${WEB_URL}/travel/${post.id}`,
   const regionLabel = post.location ?? post.region;
 
   return (
-    <View style={[styles.container, screenInsets]}>
+    <View style={styles.container}>
       <StatusBar
         barStyle="dark-content"
         backgroundColor={tokens.colors.white}
       />
-      {renderTopBar()}
+      {renderTopBar(
+        !isAuthor && (
+          <View style={styles.topBarActions}>
+            <SendMessageButton target={post} />
+            <ReportPostButton postId={post.id} feed />
+          </View>
+        ),
+      )}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -471,12 +481,6 @@ ${WEB_URL}/travel/${post.id}`,
               </View>
             )}
 
-            {!isAuthor && (
-              <View style={styles.authorActions}>
-                <SendMessageButton target={post} />
-                <ReportPostButton postId={post.id} feed />
-              </View>
-            )}
           </View>
 
           {hasBody && (
@@ -712,6 +716,7 @@ ${WEB_URL}/travel/${post.id}`,
           </>
         )}
       </ScrollView>
+      <BottomInsetFiller />
 
       <PublicProfileModal
         visible={isAuthorProfileVisible}

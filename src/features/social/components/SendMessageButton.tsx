@@ -2,7 +2,6 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Mail from 'lucide-react-native/dist/esm/icons/mail';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
@@ -36,24 +35,15 @@ export default function SendMessageButton({ target, compact = false }: { target:
       <Text style={styles.compactText}>쪽지</Text>
     </TouchableOpacity>
   ) : (
-    <TouchableOpacity style={styles.trigger} onPress={open} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="작성자에게 쪽지 보내기">
-      <Mail size={normalize(12)} color={tokens.colors.primary} />
+    <TouchableOpacity style={styles.trigger} onPress={open} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="작성자에게 쪽지 보내기">
       <Text style={styles.triggerText}>쪽지</Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  // 옆의 신고하기 단추와 같은 규격이다
-  trigger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(4),
-    paddingHorizontal: normalize(10),
-    paddingVertical: normalize(6),
-    borderRadius: tokens.radius.m,
-    backgroundColor: tokens.tones.primary.bg,
-  },
-  triggerText: { fontSize: normalize(11), fontFamily: tokens.fontFamily.semibold, color: tokens.colors.primary },
+  // 상단바에서 옆의 신고 단추와 같은 48dp 글자 단추다
+  trigger: { width: normalize(48), height: normalize(48), alignItems: 'center', justifyContent: 'center' },
+  triggerText: { fontSize: normalize(14), fontFamily: tokens.fontFamily.bold, color: tokens.colors.primary },
   compactText: { fontSize: normalize(12), fontFamily: tokens.fontFamily.medium, color: tokens.colors.primary },
 });

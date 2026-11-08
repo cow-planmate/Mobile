@@ -24,10 +24,7 @@ const SheetCategoryRow = React.memo(function SheetCategoryRow({
             key={tab}
             style={[
               styles.sheetCat,
-              isOn && {
-                backgroundColor: TAB_FILL[tab] ?? COLORS.primary,
-                borderColor: TAB_FILL[tab] ?? COLORS.primary,
-              },
+              isOn && { backgroundColor: TAB_FILL[tab] ?? COLORS.primary },
             ]}
             onPress={() => onSelect(tab)}
             activeOpacity={0.8}

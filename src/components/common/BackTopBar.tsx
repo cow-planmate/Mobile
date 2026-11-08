@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tokens } from '../../theme/tokens';
 
 export const TOP_BAR_METRICS = {
@@ -16,6 +17,11 @@ interface BackTopBarProps {
   onBack: () => void;
   backDisabled?: boolean;
   right?: ReactNode;
+  /**
+   * 화면 맨 위에 놓일 때 켠다. 상태바 자리까지 상단바 색(흰색)으로 채워서
+   * 화면 배경이 회색이어도 상태바 뒤가 회색으로 비치지 않는다.
+   */
+  safeTop?: boolean;
 }
 
 const BackTopBar = ({
@@ -23,29 +29,43 @@ const BackTopBar = ({
   onBack,
   backDisabled = false,
   right,
-}: BackTopBarProps) => (
-  <View style={styles.container}>
-    <TouchableOpacity
-      style={styles.backButton}
-      onPress={onBack}
-      disabled={backDisabled}
-      activeOpacity={0.7}
-      accessibilityRole="button"
-      accessibilityLabel="뒤로 가기"
-      accessibilityState={{ disabled: backDisabled }}
+  safeTop = false,
+}: BackTopBarProps) => {
+  const insets = useSafeAreaInsets();
+  const topInset = safeTop ? insets.top : 0;
+
+  return (
+    <View
+      style={[
+        styles.container,
+        topInset > 0 && {
+          height: TOP_BAR_METRICS.height + topInset,
+          paddingTop: topInset,
+        },
+      ]}
     >
-      <ChevronLeft size={24} color={tokens.colors.text} />
-    </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={onBack}
+        disabled={backDisabled}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel="뒤로 가기"
+        accessibilityState={{ disabled: backDisabled }}
+      >
+        <ChevronLeft size={24} color={tokens.colors.text} />
+      </TouchableOpacity>
 
-    <View pointerEvents="none" style={styles.titleWrap}>
-      <Text numberOfLines={1} style={styles.title}>
-        {title}
-      </Text>
+      <View pointerEvents="none" style={[styles.titleWrap, { top: topInset }]}>
+        <Text numberOfLines={1} style={styles.title}>
+          {title}
+        </Text>
+      </View>
+
+      <View style={styles.rightSlot}>{right}</View>
     </View>
-
-    <View style={styles.rightSlot}>{right}</View>
-  </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -80,8 +100,9 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
     textAlign: 'center',
   },
+  // 고정 폭이면 "등록"처럼 글자가 든 단추가 48dp 안에 눌려 줄이 꺾인다.
   rightSlot: {
-    width: TOP_BAR_METRICS.actionSize,
+    minWidth: TOP_BAR_METRICS.actionSize,
     height: TOP_BAR_METRICS.actionSize,
     alignItems: 'flex-end',
     justifyContent: 'center',

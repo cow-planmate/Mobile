@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -10,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import Check from 'lucide-react-native/dist/esm/icons/check';
 import MapPin from 'lucide-react-native/dist/esm/icons/map-pin';
@@ -19,6 +19,7 @@ import Copy from 'lucide-react-native/dist/esm/icons/copy';
 import Clock from 'lucide-react-native/dist/esm/icons/clock';
 import X from 'lucide-react-native/dist/esm/icons/x';
 import BackTopBar from '../../../components/common/BackTopBar';
+import BottomInsetFiller from '../../../components/common/BottomInsetFiller';
 import PopupModal from '../../../components/common/PopupModal';
 import SearchLocationModal from '../../../components/common/SearchLocationModal';
 import FeedEditor from '../components/FeedEditor';
@@ -205,11 +206,11 @@ export function FeedCreateScreenView({
           </View>
 
           {isEditMode && isExistingPostLoading ? (
-            <ActivityIndicator color={tokens.colors.primary} />
+            <Spinner color={tokens.colors.primary} />
           ) : isEditMode && isExistingPostError ? (
             <Text style={styles.emptyText}>여행기를 불러올 수 없어요.</Text>
           ) : isEditMode ? null : isProfileLoading ? (
-            <ActivityIndicator color={tokens.colors.primary} />
+            <Spinner color={tokens.colors.primary} />
           ) : isProfileError ? (
             <Pressable onPress={onRefetchProfile}>
               <Text style={styles.emptyText}>
@@ -466,7 +467,7 @@ export function FeedCreateScreenView({
           </View>
 
           {initialHtml === null ? (
-            <ActivityIndicator color={tokens.colors.primary} />
+            <Spinner color={tokens.colors.primary} />
           ) : (
             <FeedEditor
               initialHtml={initialHtml}
@@ -478,6 +479,7 @@ export function FeedCreateScreenView({
           )}
         </View>
       </ScrollView>
+      <BottomInsetFiller />
 
       {/* 지역 선택 모달 */}
       <SearchLocationModal
@@ -516,7 +518,7 @@ export function FeedCreateScreenView({
           contentContainerStyle={styles.modalListContent}
         >
           {isProfileLoading ? (
-            <ActivityIndicator
+            <Spinner
               color={tokens.colors.primary}
               style={{ marginVertical: normalize(24) }}
             />
@@ -548,7 +550,7 @@ export function FeedCreateScreenView({
                     </Text>
                   </View>
                   {isLoading ? (
-                    <ActivityIndicator color={tokens.colors.primary} />
+                    <Spinner color={tokens.colors.primary} />
                   ) : selected ? (
                     <Check size={20} color={tokens.colors.primary} />
                   ) : null}

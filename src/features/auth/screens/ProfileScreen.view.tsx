@@ -14,12 +14,18 @@ import PopupModal from '../../../components/common/PopupModal';
 import { useNavigation } from '@react-navigation/native';
 import { INITIAL_TAB } from '../../../navigation/types';
 import { useAlert } from '../../../contexts/AlertContext';
-import { LoadingSpinner, ShareModal } from '../../../components/common';
+import { ShareModal } from '../../../components/common';
 import MenuModal from '../components/MenuModal';
+import ProfileSkeleton from '../components/ProfileSkeleton';
+import {
+  ProfileStoriesSkeleton,
+  ProfileTravelSkeleton,
+} from '../components/ProfileTabSkeletons';
 import UpdatePasswordModal from '../components/UpdatePasswordModal';
 import UpdateThemeModal from '../components/UpdateThemeModal';
 import UpdateValueModal from '../components/UpdateValueModal';
 import BackTopBar from '../../../components/common/BackTopBar';
+import BottomInsetFiller from '../../../components/common/BottomInsetFiller';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 import { resolveApiUrl } from '../../../utils/apiUrl';
@@ -53,6 +59,7 @@ import FallbackImage from '../../../components/common/FallbackImage';
 import { normalize } from '../../../utils/normalize';
 import ProfileTasteCard from '../components/ProfileTasteCard';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
+import FeedbackModal from '../components/FeedbackModal';
 import { allSettledWithConcurrency } from '../../../utils/concurrency';
 import { toPlanDate } from '../utils/planDate';
 import {
@@ -82,12 +89,11 @@ import { tokens } from '../../../theme/tokens';
 import { verifyNicknameAvailable } from '../../../api/auth';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
-import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import {
   NICKNAME_MAX_LENGTH,
   getNicknameLengthError,
 } from '../../../utils/nickname';
-import { styles, COLORS } from './ProfileScreen.styles';
+import { styles } from './ProfileScreen.styles';
 import appPackage from '../../../../package.json';
 
 const LEAVE_EDITOR_CONCURRENCY = 4;
@@ -446,11 +452,11 @@ export default function ProfileScreenView({
   scrollToItinerary,
 }: ProfileScreenViewProps) {
   const navigation = useNavigation<any>();
-  const screenInsets = useScreenInsets(true);
   const queryClient = useQueryClient();
   const { showAlert } = useAlert();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [isPrivacyPolicyVisible, setPrivacyPolicyVisible] = useState(false);
+  const [isFeedbackVisible, setFeedbackVisible] = useState(false);
   const [themeModalCategory, setThemeModalCategory] = useState<
     '관광지' | '숙소' | '식당' | undefined
   >(undefined);
@@ -774,10 +780,46 @@ export default function ProfileScreenView({
     setIsEditMode(false);
   };
 
+  const handleBackPress = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('MainTabs', { screen: INITIAL_TAB });
+    }
+  };
+
+  // 로딩 중에도 상단 줄과 탭은 그대로 둔다.
+  const screenHeader = (
+    <>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={tokens.colors.white}
+      />
+      <BackTopBar title="마이페이지" onBack={handleBackPress} safeTop />
+
+      {/* 프로필이 탭 하나로 내려오면서 탭줄이 머리에 붙는다. 굴려도 따라오지
+          않고 제자리에 있어야 최상단 전환기로 읽힌다. */}
+      <View style={styles.sectionTabsWrap}>
+        <UnderlineTabs
+          items={PROFILE_SECTIONS}
+          selectedKey={profileSection}
+          onSelect={key => setProfileSection(key as ProfileSection)}
+          scrollable={false}
+          align="fill"
+          compact
+          style={styles.sectionTabs}
+        />
+      </View>
+    </>
+  );
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <LoadingSpinner color={COLORS.primary} />
+      <View style={styles.container}>
+        {screenHeader}
+        {profileSection === 'profile' && <ProfileSkeleton />}
+        {profileSection === 'travel' && <ProfileTravelSkeleton />}
+        {profileSection === 'stories' && <ProfileStoriesSkeleton />}
       </View>
     );
   }
@@ -985,35 +1027,9 @@ export default function ProfileScreenView({
       }
     });
 
-  const handleBackPress = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    } else {
-      navigation.navigate('MainTabs', { screen: INITIAL_TAB });
-    }
-  };
-
   return (
-    <View style={[styles.container, screenInsets]}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor={tokens.colors.white}
-      />
-      <BackTopBar title="마이페이지" onBack={handleBackPress} />
-
-      {/* 프로필이 탭 하나로 내려오면서 탭줄이 머리에 붙는다. 굴려도 따라오지
-          않고 제자리에 있어야 최상단 전환기로 읽힌다. */}
-      <View style={styles.sectionTabsWrap}>
-        <UnderlineTabs
-          items={PROFILE_SECTIONS}
-          selectedKey={profileSection}
-          onSelect={key => setProfileSection(key as ProfileSection)}
-          scrollable={false}
-          align="fill"
-          compact
-          style={styles.sectionTabs}
-        />
-      </View>
+    <View style={styles.container}>
+      {screenHeader}
 
       <ScrollView
         ref={scrollRef}
@@ -1121,6 +1137,16 @@ export default function ProfileScreenView({
               >
                 <Text style={[styles.appVersionText, styles.privacyPolicyLink]}>
                   개인정보 처리방침
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setFeedbackVisible(true)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="의견 보내기"
+              >
+                <Text style={[styles.appVersionText, styles.privacyPolicyLink]}>
+                  의견 보내기
                 </Text>
               </TouchableOpacity>
               <Text style={styles.appVersionText}>버전 {APP_VERSION}</Text>
@@ -1310,6 +1336,8 @@ export default function ProfileScreenView({
           </>
         )}
       </ScrollView>
+
+      <BottomInsetFiller />
 
       <DatePicker
         modal
@@ -1552,6 +1580,10 @@ export default function ProfileScreenView({
         visible={isPrivacyPolicyVisible}
         onClose={() => setPrivacyPolicyVisible(false)}
         variant="policy"
+      />
+      <FeedbackModal
+        visible={isFeedbackVisible}
+        onClose={() => setFeedbackVisible(false)}
       />
 
       <MenuModal

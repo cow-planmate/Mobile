@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Dimensions,
   Image,
   Linking,
@@ -9,13 +8,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import BedDouble from 'lucide-react-native/dist/esm/icons/bed-double';
-import CalendarDays from 'lucide-react-native/dist/esm/icons/calendar-days';
-import Car from 'lucide-react-native/dist/esm/icons/car';
-import Clock3 from 'lucide-react-native/dist/esm/icons/clock-3';
-import Phone from 'lucide-react-native/dist/esm/icons/phone';
-import UtensilsCrossed from 'lucide-react-native/dist/esm/icons/utensils-crossed';
-import WalletCards from 'lucide-react-native/dist/esm/icons/wallet-cards';
+import { Spinner } from '../../../components/common/LoadingSpinner';
+import { formatUseTime } from '../utils/formatUseTime';
 import ExternalLink from 'lucide-react-native/dist/esm/icons/external-link';
 import ImageOff from 'lucide-react-native/dist/esm/icons/image-off';
 import Info from 'lucide-react-native/dist/esm/icons/info';
@@ -111,20 +105,6 @@ interface InfoRow {
   value: string;
 }
 
-/** 줄마다 다른 그림. 시계만 늘어놓으면 요금도 문의도 시간처럼 읽힌다. */
-const INFO_ICON: Record<string, typeof Clock3> = {
-  '이용 시간': Clock3,
-  '영업 시간': Clock3,
-  체크인: Clock3,
-  체크아웃: Clock3,
-  '쉬는 날': CalendarDays,
-  '이용 요금': WalletCards,
-  '객실 수': BedDouble,
-  주차: Car,
-  취사: UtensilsCrossed,
-  문의: Phone,
-};
-
 /**
  * 장소 상세.
  *
@@ -195,7 +175,9 @@ export default function PlaceDetailSheet({
     if (!detail) return [];
     const pick = (label: string, value: unknown): InfoRow[] => {
       const text = cleanText(value);
-      return text ? [{ label, value: text }] : [];
+      if (!text) return [];
+      const isTime = label === '이용 시간' || label === '영업 시간';
+      return [{ label, value: isTime ? formatUseTime(text) : text }];
     };
     const { attraction, accommodation, restaurant } = detail;
     if (detail.category === 'ATTRACTION') {
@@ -255,7 +237,7 @@ export default function PlaceDetailSheet({
     >
       {isLoading ? (
         <View style={styles.state}>
-          <ActivityIndicator size="small" color={COLORS.primary} />
+          <Spinner color={COLORS.primary} />
           <Text style={styles.stateText}>장소 정보를 불러오고 있어요</Text>
         </View>
       ) : error ? (
@@ -383,18 +365,14 @@ export default function PlaceDetailSheet({
           {infoRows.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>이용 정보</Text>
-              {infoRows.map(row => {
-                const Icon = INFO_ICON[row.label] ?? Clock3;
-                return (
-                  <View key={row.label} style={styles.infoRow}>
-                    <Icon size={normalize(13)} color={COLORS.primary} />
-                    <View style={styles.infoBody}>
-                      <Text style={styles.infoLabel}>{row.label}</Text>
-                      <Text style={styles.infoValue}>{row.value}</Text>
-                    </View>
+              {infoRows.map(row => (
+                <View key={row.label} style={styles.infoRow}>
+                  <View style={styles.infoBody}>
+                    <Text style={styles.infoLabel}>{row.label}</Text>
+                    <Text style={styles.infoValue}>{row.value}</Text>
                   </View>
-                );
-              })}
+                </View>
+              ))}
             </View>
           )}
 

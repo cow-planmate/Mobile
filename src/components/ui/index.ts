@@ -10,5 +10,6 @@ export { default as StatRow, StatItem } from './StatRow';
 export * from './StatRow';
 export { default as EmptyState } from './EmptyState';
 export * from './EmptyState';
+export * from './Skeleton';
 export { default as UnderlineTabs } from './UnderlineTabs';
 export * from './UnderlineTabs';

@@ -1,11 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Spinner } from '../../../../components/common/LoadingSpinner';
 import Toast from 'react-native-toast-message';
 import Check from 'lucide-react-native/dist/esm/icons/check';
 import Plus from 'lucide-react-native/dist/esm/icons/plus';
@@ -204,7 +199,7 @@ export default function ChecklistSheet({
     if (isLoading) {
       return (
         <View style={styles.stateBox}>
-          <ActivityIndicator color={COLORS.primary} />
+          <Spinner color={COLORS.primary} />
           <Text style={styles.stateText}>준비 목록을 불러오는 중…</Text>
         </View>
       );
@@ -408,7 +403,7 @@ export default function ChecklistSheet({
             accessibilityState={{ disabled: !canSubmitDraft }}
           >
             {createItem.isPending ? (
-              <ActivityIndicator size="small" color={COLORS.white} />
+              <Spinner color={COLORS.white} trackColor="transparent" />
             ) : (
               <Plus
                 size={normalize(22)}

@@ -7,7 +7,6 @@ import {
   View,
 } from 'react-native';
 import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
-import Flag from 'lucide-react-native/dist/esm/icons/flag';
 import { normalize } from '../../../utils/normalize';
 import { getBackendErrorMessage } from '../../../utils/errorHandler';
 import { useAuthStore } from '../../../store/useAuthStore';
@@ -122,12 +121,11 @@ export default function ReportPostButton({ postId, feed = false }: ReportPostBut
       <TouchableOpacity
         style={styles.trigger}
         onPress={handleOpen}
-        activeOpacity={0.8}
+        activeOpacity={0.7}
         accessibilityRole="button"
         accessibilityLabel="게시글 신고"
       >
-        <Flag size={normalize(12)} color={tokens.tones.danger.fg} />
-        <Text style={styles.triggerText}>신고하기</Text>
+        <Text style={styles.triggerText}>신고</Text>
       </TouchableOpacity>
 
       <SheetModal

@@ -35,11 +35,6 @@ const TimelineComponent = React.memo(
     {
       selectedDay: Day;
       onDeletePlace: (placeId: string) => void;
-      onEditPlaceTime: (
-        placeId: string,
-        type: 'startTime' | 'endTime',
-        time: string,
-      ) => void;
       onUpdatePlaceTimes: (
         placeId: string,
         newStartMinutes: number,
@@ -80,7 +75,6 @@ const TimelineComponent = React.memo(
       {
         selectedDay,
         onDeletePlace,
-        onEditPlaceTime,
         onUpdatePlaceTimes,
         onPressPlace,
         onShowBlockDetail,
@@ -274,14 +268,36 @@ const TimelineComponent = React.memo(
                 pointerEvents="box-none"
               >
                 <TimeGridBackground hours={gridHours} endHour={endHour} />
+                {/* 빈 날에는 놓을 곳을 먼저 알려 준다. 끌어오는 중이거나 안내 중에는 가린다. */}
+                {!hasPlaces &&
+                  !pendingPlace &&
+                  !isDragging &&
+                  !showDemoBlock && (
+                    <View
+                      pointerEvents="none"
+                      style={[
+                        styles.emptyDaySlot,
+                        {
+                          top:
+                            GRID_TOP_OFFSET +
+                            (minStartMinutes - offsetMinutes) * MINUTE_HEIGHT,
+                          height: 60 * MINUTE_HEIGHT,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.emptyDayTitle}>
+                        장소를 꾹 눌러 여기로 끌어 놓아 보세요
+                      </Text>
+                      <Text style={styles.emptyDayHint}>
+                        한 곳당 기본 1시간, 15분 단위로 맞춰져요
+                      </Text>
+                    </View>
+                  )}
                 {showDemoBlock && (
                   <DemoTimelineBlock
                     place={demoPlace}
                     offsetMinutes={offsetMinutes}
                     visible={isDemoBlockVisible}
-                    onEditTime={type =>
-                      onEditPlaceTime(demoPlace.id, type, demoPlace[type])
-                    }
                     onEditPlace={
                       onPressPlace ? () => onPressPlace(demoPlace) : undefined
                     }
@@ -302,7 +318,6 @@ const TimelineComponent = React.memo(
                     maxEndMinutes={maxEndMinutes}
                     minStartMinutes={minStartMinutes}
                     onDelete={onDeletePlace}
-                    onEditTime={onEditPlaceTime}
                     onEditPlace={onPressPlace}
                     onDragEnd={onUpdatePlaceTimes}
                     onPress={onPressPlace}

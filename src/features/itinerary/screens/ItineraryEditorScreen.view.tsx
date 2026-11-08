@@ -20,13 +20,13 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSpring,
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
 import { Place } from '../components/TimelineItem';
 import { AirplaneLoading } from '../../../components/common';
 import ScheduleEditModal from '../components/ScheduleEditModal';
-import BackTopBar from '../../../components/common/BackTopBar';
 import PlaceRecommendationList, {
   type PlaceTab,
 } from '../components/PlaceRecommendationList';
@@ -54,26 +54,34 @@ import MessageCircle from 'lucide-react-native/dist/esm/icons/message-circle';
 import MapOutlineIcon from 'lucide-react-native/dist/esm/icons/map';
 import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
 import CalendarDaysIcon from 'lucide-react-native/dist/esm/icons/calendar-days';
-import CheckIcon from 'lucide-react-native/dist/esm/icons/check';
+import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import InfoIcon from 'lucide-react-native/dist/esm/icons/info';
 import Undo2 from 'lucide-react-native/dist/esm/icons/undo-2';
 import Redo2 from 'lucide-react-native/dist/esm/icons/redo-2';
 import UserPlusIcon from 'lucide-react-native/dist/esm/icons/user-plus';
 import UsersIcon from 'lucide-react-native/dist/esm/icons/users';
 import { useCoachmarkTarget } from '../coachmark/CoachmarkContext';
-import TutorialLauncher from '../coachmark/TutorialLauncher';
+import {
+  TutorialButton,
+  TutorialNudge,
+  useTutorialNudge,
+} from '../coachmark/TutorialLauncher';
 import type { PlaceDetailTarget } from '../components/PlaceDetailSheet';
 import {
   AUTO_SCROLL_EDGE,
   AUTO_SCROLL_MAX_STEP,
   AUTO_SCROLL_MIN_STEP,
   AUTO_SCROLL_TICK_MS,
+  WEATHER_BAND_HEIGHT,
+  toWindowY,
 } from '../components/editor/editorConstants';
+import { DAY_UNDERLINE_SPRING } from '../components/editor/daySwitch';
 import ToolbarIconButton from '../components/editor/ToolbarIconButton';
 import { EditorStateContext } from '../components/editor/EditorStateContext';
 import {
-  SHEET_SNAPS,
-  SHEET_INITIAL_RATIO,
+  SHEET_SPRING,
+  clampReleaseVelocity,
+  getSheetSnaps,
   nearestSnap,
 } from '../components/editor/sheetSnap';
 import SheetCategoryRow from '../components/editor/SheetCategoryRow';
@@ -85,8 +93,7 @@ import TimelineTabScreen from '../components/editor/TimelineTabScreen';
  */
 const claimTouch = () => true;
 
-const FLOATING_BUTTON_SIZE = normalize(44);
-const FLOATING_BUTTON_GAP = normalize(10);
+const FLOATING_BUTTON_SIZE = normalize(48);
 const FLOATING_BUTTON_BOTTOM_OFFSET = 14;
 
 export interface ItineraryEditorScreenViewProps {
@@ -98,20 +105,8 @@ export interface ItineraryEditorScreenViewProps {
   setIsEditingTripName: (visible: boolean) => void;
   setTripName: (value: string) => void;
   onSaveTripName: () => void;
-  isTimePickerVisible: boolean;
-  setTimePickerVisible: (visible: boolean) => void;
-  editingTime: {
-    placeId: string;
-    type: 'startTime' | 'endTime';
-    time: string;
-  } | null;
   timelineScrollRef: React.RefObject<ScrollView | null>;
   formatDate: (date: Date) => string;
-  handleEditTime: (
-    placeId: string,
-    type: 'startTime' | 'endTime',
-    time: string,
-  ) => void;
   handleUpdatePlaceTimes: (
     placeId: string,
     newStartMinutes: number,
@@ -125,7 +120,6 @@ export interface ItineraryEditorScreenViewProps {
   isScheduleEditVisible: boolean;
   setScheduleEditVisible: (v: boolean) => void;
   onConfirmScheduleEdit: (updatedDays: any[]) => void;
-  onConfirmTimePicker: (date: Date) => void;
   destination: string;
   onComplete: () => void;
   onOpenParticipants: () => void;
@@ -171,13 +165,9 @@ export default function ItineraryEditorScreenView({
   setIsEditingTripName,
   setTripName,
   onSaveTripName,
-  isTimePickerVisible,
-  setTimePickerVisible,
   onGoBack,
-  editingTime,
   timelineScrollRef,
   formatDate,
-  handleEditTime,
   handleUpdatePlaceTimes,
   handleDeletePlace,
   handleAddPlace,
@@ -186,7 +176,6 @@ export default function ItineraryEditorScreenView({
   isScheduleEditVisible,
   setScheduleEditVisible,
   onConfirmScheduleEdit,
-  onConfirmTimePicker,
   destination,
   onComplete,
   onOpenParticipants,
@@ -227,22 +216,73 @@ export default function ItineraryEditorScreenView({
   const dayTabsTarget = useCoachmarkTarget('dayTabs');
   const dayPeriodTarget = useCoachmarkTarget('dayPeriod');
   const placeSheetTarget = useCoachmarkTarget('placeSheet');
+  const tutorialNudge = useTutorialNudge();
+  // 제목 아래 부제. 일차 탭에 이미 날짜가 있어 목적지와 기간만 적는다.
+  const tripSubtitle = [
+    destination,
+    days.length > 1 ? `${days.length - 1}박 ${days.length}일` : '당일',
+  ]
+    .filter(Boolean)
+    .join(' · ');
   const undoTarget = useCoachmarkTarget('undo');
   const redoTarget = useCoachmarkTarget('redo');
 
-  const [inputWidth, setInputWidth] = useState(120);
   const [dayScrollContentWidth, setDayScrollContentWidth] = useState(0);
   const [dayScrollLayoutWidth, setDayScrollLayoutWidth] = useState(0);
-  const [dayScrollX, setDayScrollX] = useState(0);
+  // 스크롤 위치는 프레임마다 바뀌므로 상태로 두지 않는다. 상태로 두면 탭을
+  // 옆으로 미는 내내 편집 화면 전체가 다시 그려진다. 흐림 효과를 보일지만
+  // 상태로 두어, 보일지 말지가 바뀔 때만 그린다.
+  const dayScrollXRef = useRef(0);
+  const [showLeftFade, setShowLeftFade] = useState(false);
+  const [showRightFade, setShowRightFade] = useState(false);
   const dayTabsScrollRef = useRef<ScrollView>(null);
   const dayTabLayoutsRef = useRef<
     Record<number, { x: number; width: number }>
   >({});
-  const isDayScrollable = dayScrollContentWidth > dayScrollLayoutWidth;
-  const showLeftFade = isDayScrollable && dayScrollX > 5;
-  const showRightFade =
-    isDayScrollable &&
-    dayScrollX < dayScrollContentWidth - dayScrollLayoutWidth - 5;
+  // 밑줄은 탭마다 따로 그리지 않고 하나를 선택한 탭 아래로 미끄러뜨린다.
+  const underlineX = useSharedValue(0);
+  const underlineWidth = useSharedValue(0);
+  const underlineShown = useRef(false);
+  const moveUnderline = useCallback(
+    (index: number, animate: boolean) => {
+      const layout = dayTabLayoutsRef.current[index];
+      if (!layout) return;
+      const inset = normalize(14);
+      const x = layout.x + inset;
+      const width = Math.max(0, layout.width - inset * 2);
+      // 처음 자리는 미끄러져 오지 않고 그 자리에 놓는다.
+      if (animate && underlineShown.current) {
+        underlineX.value = withSpring(x, DAY_UNDERLINE_SPRING);
+        underlineWidth.value = withSpring(width, DAY_UNDERLINE_SPRING);
+      } else {
+        underlineX.value = x;
+        underlineWidth.value = width;
+      }
+      underlineShown.current = true;
+    },
+    [underlineX, underlineWidth],
+  );
+  useEffect(() => {
+    moveUnderline(selectedDayIndex, true);
+  }, [selectedDayIndex, moveUnderline]);
+  const underlineStyle = useAnimatedStyle(() => ({
+    width: underlineWidth.value,
+    transform: [{ translateX: underlineX.value }],
+  }));
+
+  const updateDayFades = useCallback(
+    (x: number) => {
+      const scrollable = dayScrollContentWidth > dayScrollLayoutWidth;
+      setShowLeftFade(scrollable && x > 5);
+      setShowRightFade(
+        scrollable && x < dayScrollContentWidth - dayScrollLayoutWidth - 5,
+      );
+    },
+    [dayScrollContentWidth, dayScrollLayoutWidth],
+  );
+  useEffect(() => {
+    updateDayFades(dayScrollXRef.current);
+  }, [updateDayFades]);
 
   const handleDaySelect = useCallback(
     (index: number) => {
@@ -252,9 +292,9 @@ export default function ItineraryEditorScreenView({
       if (!layout || dayScrollLayoutWidth <= 0) return;
 
       const edgePadding = normalize(8);
-      const visibleStart = dayScrollX;
+      const visibleStart = dayScrollXRef.current;
       const visibleEnd = visibleStart + dayScrollLayoutWidth;
-      let nextX = dayScrollX;
+      let nextX = dayScrollXRef.current;
 
       if (layout.x < visibleStart + edgePadding) {
         nextX = layout.x - edgePadding;
@@ -268,16 +308,11 @@ export default function ItineraryEditorScreenView({
       );
       nextX = Math.max(0, Math.min(nextX, maxScrollX));
 
-      if (Math.abs(nextX - dayScrollX) > 1) {
+      if (Math.abs(nextX - dayScrollXRef.current) > 1) {
         dayTabsScrollRef.current?.scrollTo({ x: nextX, animated: true });
       }
     },
-    [
-      dayScrollContentWidth,
-      dayScrollLayoutWidth,
-      dayScrollX,
-      setSelectedDayIndex,
-    ],
+    [dayScrollContentWidth, dayScrollLayoutWidth, setSelectedDayIndex],
   );
 
   React.useEffect(() => {
@@ -375,7 +410,6 @@ export default function ItineraryEditorScreenView({
       timelineScrollRef,
       selectedDay,
       handleDeletePlace,
-      handleEditTime,
       handleUpdatePlaceTimes,
       onOpenDetail,
       onShowPlaceDetail,
@@ -407,7 +441,6 @@ export default function ItineraryEditorScreenView({
     timelineScrollRef,
     selectedDay,
     handleDeletePlace,
-    handleEditTime,
     handleUpdatePlaceTimes,
     onOpenDetail,
     onShowPlaceDetail,
@@ -465,10 +498,13 @@ export default function ItineraryEditorScreenView({
   const timelineViewRef = useRef<View>(null);
 
   const setSheetHeight = useCallback(
-    (height: number, animate = true) => {
+    (height: number, animate = true, velocity = 0) => {
       const next = Math.max(0, Math.min(sheetMaxRef.current, height));
       sheetHeightRef.current = next;
-      sheetBody.value = animate ? withTiming(next, { duration: 220 }) : next;
+      // 손을 뗀 속도를 이어받아 끌던 흐름 그대로 자리에 내려앉는다.
+      sheetBody.value = animate
+        ? withSpring(next, { ...SHEET_SPRING, velocity })
+        : next;
       // 끄는 동안에는 시간표를 다시 짜지 않는다. 손을 뗀 자리에서만 맞춘다.
       if (animate) setSheetRest(next);
     },
@@ -496,7 +532,7 @@ export default function ItineraryEditorScreenView({
   }, [isChatbotOpen, setSheetHeight]);
 
   const snapPoints = useCallback(
-    () => SHEET_SNAPS.map(ratio => Math.round(sheetMaxRef.current * ratio)),
+    () => getSheetSnaps(sheetMaxRef.current),
     [],
   );
 
@@ -532,7 +568,8 @@ export default function ItineraryEditorScreenView({
       // 작으면 그 1/3에 굳어 시트가 접힌 채로 열린 것처럼 보였다.
       // 손잡이를 잡기 전까지는 마지막으로 잰 크기에 맞춰 다시 연다.
       if (!sheetTouched.current && nextMax > 0) {
-        setSheetHeight(Math.round(nextMax * SHEET_INITIAL_RATIO));
+        // 스냅 자리와 같은 높이여야 첫 드래그가 안 튄다.
+        setSheetHeight(getSheetSnaps(nextMax)[1]);
       }
       measureGrid();
     },
@@ -574,6 +611,8 @@ export default function ItineraryEditorScreenView({
             const points = snapPoints();
             const velocityY = e.velocityY;
             const translationY = e.translationY;
+            // 위로 끌면 높이가 커지므로 손가락 속도와 부호가 반대다.
+            const releaseVelocity = clampReleaseVelocity(-velocityY);
 
             // 빠른 스와이프(플릭) 또는 30px 이상의 명확한 드래그 방향 반영
             if (velocityY < -250 || translationY < -30) {
@@ -582,16 +621,20 @@ export default function ItineraryEditorScreenView({
                 higherPoints.length > 0
                   ? higherPoints[0]
                   : points[points.length - 1];
-              setSheetHeight(target);
+              setSheetHeight(target, true, releaseVelocity);
             } else if (velocityY > 250 || translationY > 30) {
               const lowerPoints = points.filter(p => p < current - 10);
               const target =
                 lowerPoints.length > 0
                   ? lowerPoints[lowerPoints.length - 1]
                   : points[0];
-              setSheetHeight(target);
+              setSheetHeight(target, true, releaseVelocity);
             } else {
-              setSheetHeight(nearestSnap(current, points));
+              setSheetHeight(
+                nearestSnap(current, points),
+                true,
+                releaseVelocity,
+              );
             }
           }),
         Gesture.Tap()
@@ -647,24 +690,10 @@ export default function ItineraryEditorScreenView({
       ? ('none' as const)
       : ('box-none' as const);
 
-  const floatingHistoryAnimStyle = useAnimatedStyle(() => {
-    const hideAt = Math.max(
-      0,
-      sheetMax.value - FLOATING_BUTTON_BOTTOM_OFFSET - FLOATING_BUTTON_SIZE,
-    );
-
-    return {
-      opacity: sheetBody.value >= hideAt ? 0 : 1,
-      transform: [{ translateY: -sheetBody.value + sheetShift.value }],
-    };
-  });
-
   const floatingAssistAnimStyle = useAnimatedStyle(() => {
     const hideAt = Math.max(
       0,
-      sheetMax.value -
-        FLOATING_BUTTON_BOTTOM_OFFSET -
-        (FLOATING_BUTTON_SIZE * 2 + FLOATING_BUTTON_GAP),
+      sheetMax.value - FLOATING_BUTTON_BOTTOM_OFFSET - FLOATING_BUTTON_SIZE,
     );
 
     return {
@@ -689,12 +718,13 @@ export default function ItineraryEditorScreenView({
    * 더하고 빼며 맞추면 한 칸씩 어긋나기 쉽다.
    */
   const minutesAt = useCallback(
-    (absoluteY: number) => {
+    (screenY: number) => {
+      const absoluteY = toWindowY(screenY);
       const gridTop =
         gridTopRef.current ||
         bodyTop.current +
           (selectedDay && weatherMap[formatDateLocal(selectedDay.date)]
-            ? 62
+            ? WEATHER_BAND_HEIGHT
             : 0);
       const areaTop = timelineTop.current;
       // 시트가 접힌 뒤의 시간표 바닥. 손잡이 줄 위까지가 놓을 수 있는 자리다.
@@ -805,7 +835,8 @@ export default function ItineraryEditorScreenView({
    * 끌고 있는 동안 시간표의 손가락 스크롤은 꺼 두지만, 여기서 시키는 것은
    * 코드가 직접 옮기는 것이라 그대로 움직인다.
    */
-  const autoScrollStep = useCallback((pointY: number) => {
+  const autoScrollStep = useCallback((screenY: number) => {
+    const pointY = toWindowY(screenY);
     const top = timelineTop.current;
     const bottom = bodyTop.current + bodyHeight.current - SHEET_HANDLE_HEIGHT;
     if (!top || !bodyHeight.current) return 0;
@@ -938,105 +969,142 @@ export default function ItineraryEditorScreenView({
 
   return (
     <View style={[styles.container, screenInsets]}>
-      <BackTopBar title="일정 편집" onBack={() => onGoBack?.()} />
-
+      {/* 위 줄은 뒤로가기와 일정 이름, 아래 줄은 도구와 완료다. 이름이 길어도
+          한 줄을 통째로 쓰고, 고치는 중에도 입력칸이 아이콘을 덮지 않는다. */}
       <View style={styles.topToolbar}>
-        <View style={styles.toolbarLeftGroup}>
-          {isEditingTripName ? (
-            <>
-              <Text
-                style={[styles.toolbarTitleInput, styles.toolbarTitleMeasure]}
-                onLayout={e => {
-                  const { width } = e.nativeEvent.layout;
-                  const finalWidth = Math.max(30, Math.min(170, width + 8));
-                  setInputWidth(finalWidth);
-                }}
+        <View style={styles.toolbarTitleRow}>
+          <TouchableOpacity
+            style={styles.toolbarBackButton}
+            onPress={() => onGoBack?.()}
+            activeOpacity={0.6}
+            accessibilityRole="button"
+            accessibilityLabel="뒤로 가기"
+          >
+            <ChevronLeft size={24} color={COLORS.text} />
+          </TouchableOpacity>
+          <View style={styles.toolbarLeftGroup}>
+            {isEditingTripName ? (
+              // 글자 폭을 재서 입력칸을 늘리면 칠 때마다 한 박자 늦게 따라온다.
+              // 줄 폭을 그대로 채우면 늘어날 것이 없어 글자와 같이 움직인다.
+              <View style={styles.toolbarTitleInputWrap}>
+                <TextInput
+                  value={tripName}
+                  onChangeText={setTripName}
+                  onBlur={onSaveTripName}
+                  onSubmitEditing={onSaveTripName}
+                  autoFocus
+                  numberOfLines={1}
+                  maxLength={PLAN_NAME_MAX_LENGTH}
+                  returnKeyType="done"
+                  style={styles.toolbarTitleInput}
+                  placeholder="일정 이름"
+                  placeholderTextColor={COLORS.placeholder}
+                  selectionColor={COLORS.primary}
+                />
+                <Text
+                  style={[
+                    styles.toolbarTitleCounter,
+                    tripName.length >= PLAN_NAME_MAX_LENGTH &&
+                      styles.toolbarTitleCounterFull,
+                  ]}
+                >
+                  {tripName.length}/{PLAN_NAME_MAX_LENGTH}
+                </Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                onPress={() => setIsEditingTripName(true)}
+                activeOpacity={0.8}
+                style={styles.toolbarTitleButton}
               >
-                {tripName || '일정 이름'}
-              </Text>
-              <TextInput
-                value={tripName}
-                onChangeText={setTripName}
-                onBlur={onSaveTripName}
-                onSubmitEditing={onSaveTripName}
-                autoFocus
-                numberOfLines={1}
-                maxLength={PLAN_NAME_MAX_LENGTH}
-                returnKeyType="done"
-                style={[
-                  styles.toolbarTitleInput,
-                  styles.toolbarTitleInputSized,
-                  { width: inputWidth },
-                ]}
-                placeholder="일정 이름"
-                placeholderTextColor={COLORS.placeholder}
-              />
-            </>
-          ) : (
+                <Text style={styles.toolbarTitleText} numberOfLines={1}>
+                  {tripName}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* 이름을 고치는 동안에는 입력칸이 줄 끝까지 쓰므로 치운다. */}
+            {!isEditingTripName && (
+              <ToolbarIconButton
+                onPress={onOpenPlanInfo}
+                label="일정 정보"
+                targetRef={planInfoTarget}
+              >
+                <InfoIcon color={COLORS.textMuted} size={16} strokeWidth={2} />
+              </ToolbarIconButton>
+            )}
+          </View>
+
+          {/* 키보드의 완료 말고도 끝낼 자리를 눈에 보이게 둔다. */}
+          {isEditingTripName && (
             <TouchableOpacity
-              onPress={() => setIsEditingTripName(true)}
-              activeOpacity={0.8}
-              style={styles.toolbarTitleButton}
+              style={styles.toolbarTitleConfirm}
+              onPress={() => {
+                Keyboard.dismiss();
+                onSaveTripName();
+              }}
+              activeOpacity={0.6}
+              accessibilityRole="button"
+              accessibilityLabel="일정 이름 저장"
             >
-              <Text style={styles.toolbarTitleText} numberOfLines={1}>
-                {tripName}
-              </Text>
+              <Text style={styles.toolbarTitleConfirmText}>확인</Text>
             </TouchableOpacity>
           )}
-
-          <ToolbarIconButton
-            onPress={onOpenPlanInfo}
-            label="일정 정보"
-            variant="info"
-            targetRef={planInfoTarget}
-          >
-            <InfoIcon color={COLORS.text} size={18} />
-          </ToolbarIconButton>
-          <ToolbarIconButton
-            onPress={onOpenChecklist}
-            label="체크리스트"
-            variant="outlineDark"
-            targetRef={checklistTarget}
-          >
-            <ListChecks color={COLORS.text} size={17} strokeWidth={2} />
-          </ToolbarIconButton>
         </View>
 
-        <View style={styles.toolbarRightGroup}>
-          <ToolbarIconButton
-            onPress={onOpenParticipants}
-            label="현재 접속자"
-            badgeCount={participantsCount}
-            variant="outlineBlue"
-            targetRef={participantsTarget}
-          >
-            <UsersIcon color={COLORS.primary} size={17} />
-          </ToolbarIconButton>
-          <ToolbarIconButton
-            onPress={onOpenMap}
-            label="여행 동선"
-            variant="outlineDark"
-            targetRef={mapTarget}
-          >
-            <MapOutlineIcon color={COLORS.text} size={17} strokeWidth={2} />
-          </ToolbarIconButton>
-          <ToolbarIconButton
-            onPress={onOpenShare}
-            label="공유 및 초대"
-            variant="filledGray"
-            targetRef={inviteTarget}
-          >
-            <UserPlusIcon color={COLORS.text} size={17} />
-          </ToolbarIconButton>
-          <ToolbarIconButton
-            onPress={onComplete}
-            label="완료"
-            variant="filledBlue"
-            active
-            targetRef={completeTarget}
-          >
-            <CheckIcon color={COLORS.white} size={18} />
-          </ToolbarIconButton>
+        <View style={styles.toolbarToolsRow}>
+          <Text style={styles.toolbarSubtitle} numberOfLines={1}>
+            {isEditingTripName ? '이름을 바꾸는 중' : tripSubtitle}
+          </Text>
+          <View style={styles.toolbarRightGroup}>
+            <ToolbarIconButton
+              onPress={onOpenChecklist}
+              label="체크리스트"
+              targetRef={checklistTarget}
+            >
+              <ListChecks color={COLORS.textLabel} size={22} strokeWidth={1.75} />
+            </ToolbarIconButton>
+            <ToolbarIconButton
+              onPress={onOpenParticipants}
+              label="현재 접속자"
+              badgeCount={participantsCount}
+              targetRef={participantsTarget}
+            >
+              <UsersIcon color={COLORS.textLabel} size={22} strokeWidth={1.75} />
+            </ToolbarIconButton>
+            <ToolbarIconButton
+              onPress={onOpenMap}
+              label="여행 동선"
+              targetRef={mapTarget}
+            >
+              <MapOutlineIcon
+                color={COLORS.textLabel}
+                size={22}
+                strokeWidth={1.75}
+              />
+            </ToolbarIconButton>
+            <ToolbarIconButton
+              onPress={onOpenShare}
+              label="공유 및 초대"
+              targetRef={inviteTarget}
+            >
+              <UserPlusIcon
+                color={COLORS.textLabel}
+                size={22}
+                strokeWidth={1.75}
+              />
+            </ToolbarIconButton>
+            <TouchableOpacity
+              ref={completeTarget}
+              style={styles.doneButton}
+              onPress={onComplete}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="완료"
+            >
+              <Text style={styles.doneButtonText}>완료</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -1052,7 +1120,11 @@ export default function ItineraryEditorScreenView({
           style={styles.dayTabsScroll}
           onContentSizeChange={w => setDayScrollContentWidth(w)}
           onLayout={e => setDayScrollLayoutWidth(e.nativeEvent.layout.width)}
-          onScroll={e => setDayScrollX(e.nativeEvent.contentOffset.x)}
+          onScroll={e => {
+            const x = e.nativeEvent.contentOffset.x;
+            dayScrollXRef.current = x;
+            updateDayFades(x);
+          }}
           scrollEventThrottle={16}
         >
           {days.map((day, index) => {
@@ -1061,17 +1133,14 @@ export default function ItineraryEditorScreenView({
             return (
               <TouchableOpacity
                 key={index}
-                style={[
-                  styles.dayTab,
-                  isSelected && styles.dayTabSelected,
-                  !isSelected && styles.dayTabUnselected,
-                ]}
+                style={styles.dayTab}
                 onPress={() => handleDaySelect(index)}
                 onLayout={event => {
                   const { x, width } = event.nativeEvent.layout;
                   dayTabLayoutsRef.current[index] = { x, width };
+                  if (isSelected) moveUnderline(index, false);
                 }}
-                activeOpacity={0.85}
+                activeOpacity={0.7}
                 accessibilityRole="button"
                 accessibilityLabel={`${day.dayNumber}일차 ${formatDate(
                   day.date,
@@ -1086,17 +1155,16 @@ export default function ItineraryEditorScreenView({
                 >
                   {day.dayNumber}일차
                 </Text>
-                <Text
-                  style={[
-                    styles.dayTabDateInline,
-                    isSelected && styles.dayTabDateInlineSelected,
-                  ]}
-                >
+                <Text style={styles.dayTabDateInline}>
                   {formatDate(day.date)}
                 </Text>
               </TouchableOpacity>
             );
           })}
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.dayTabIndicator, underlineStyle]}
+          />
         </ScrollView>
         <TouchableOpacity
           ref={dayPeriodTarget}
@@ -1107,7 +1175,11 @@ export default function ItineraryEditorScreenView({
           accessibilityRole="button"
           accessibilityLabel="일정 기간 편집"
         >
-          <CalendarDaysIcon color={COLORS.textSecondary} size={22} />
+          <CalendarDaysIcon
+            color={COLORS.textLabel}
+            size={22}
+            strokeWidth={1.75}
+          />
         </TouchableOpacity>
 
         {showLeftFade && (
@@ -1161,57 +1233,20 @@ export default function ItineraryEditorScreenView({
             <TimelineTabScreen />
           </View>
 
-          {/* 창이 떠 있는 동안에는 치운다. 뒤가 잠겨 있어 눌러도 되는 것이
-            없고, 창이 그 자리까지 내려와 서로 겹친다. */}
-          {!isChatbotOpen && (
-            <Animated.View
-              pointerEvents={floatingPointerEvents}
-              style={[
-                styles.floatingHistoryContainer,
-                floatingHistoryAnimStyle,
-              ]}
-            >
-              <TouchableOpacity
-                ref={undoTarget}
-                testID="btn-undo"
-                style={styles.floatingHistoryButton}
-                onPress={onUndo}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="실행 취소"
-                hitSlop={6}
-              >
-                <Undo2 color={COLORS.text} size={18} />
-              </TouchableOpacity>
-              {!!onRedo && (
-                <TouchableOpacity
-                  ref={redoTarget}
-                  testID="btn-redo"
-                  style={styles.floatingHistoryButton}
-                  onPress={onRedo}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel="다시 실행"
-                  hitSlop={6}
-                >
-                  <Redo2 color={COLORS.text} size={18} />
-                </TouchableOpacity>
-              )}
-            </Animated.View>
-          )}
+          {/* 시간표 위에는 AI 도우미만 남긴다. 되돌리기·다시 실행·사용법은 시트
+            머릿줄로 내렸다. 시트 높이를 따라 움직여서 시트를 올려도 가려지지
+            않는다.
 
-          {/* 도움을 청하는 두 단추는 오른쪽에 위아래로 세운다 - 되돌리기는
-            방금 한 일을 무르는 손이고, 이 둘은 새로 여는 자리라 갈라 둔다.
-            둘 다 시트 높이를 따라 움직여서 시트를 올려도 가려지지 않는다.
-
-            창이 떠 있는 동안에는 이 묶음도 치운다. 창이 이 자리까지 내려와
+            창이 떠 있는 동안에는 이 단추도 치운다. 창이 이 자리까지 내려와
             겹치고, 닫기는 창 머릿줄의 X가 맡는다. */}
           {!isChatbotOpen && (
             <Animated.View
               pointerEvents={floatingPointerEvents}
               style={[styles.floatingAssistContainer, floatingAssistAnimStyle]}
             >
-              <TutorialLauncher />
+              {/* 처음 온 사람에게 한 번 권하는 말풍선. 시트 머릿줄 안에서는
+                시트에 잘려서 여기에 띄운다. */}
+              <TutorialNudge nudge={tutorialNudge} />
               {/* 웹과 같은 토글이다 - 열려 있으면 같은 자리에서 X로 바뀐다. */}
               <TouchableOpacity
                 testID="btn-chatbot"
@@ -1222,7 +1257,10 @@ export default function ItineraryEditorScreenView({
                 accessibilityLabel="AI 여행 도우미"
                 hitSlop={6}
               >
-                <MessageCircle color={COLORS.white} size={18} />
+                <MessageCircle color={COLORS.white} size={24} />
+                <View pointerEvents="none" style={styles.floatingChatBadge}>
+                  <Text style={styles.floatingChatBadgeText}>AI</Text>
+                </View>
               </TouchableOpacity>
             </Animated.View>
           )}
@@ -1278,6 +1316,42 @@ export default function ItineraryEditorScreenView({
                 <View style={styles.sheetGrabber} />
               </View>
             </GestureDetector>
+
+            {/* 머릿줄 양 끝의 단추. 막대 잡는 자리 위에 따로 얹는다. 가운데 막대와
+              떨어져 있고, 시간표를 가리지도 완료 버튼 옆에 붙지도 않는다. */}
+            <View style={styles.sheetHeaderLeft}>
+              <TouchableOpacity
+                ref={undoTarget}
+                testID="btn-undo"
+                style={styles.sheetHeaderButton}
+                onPress={onUndo}
+                activeOpacity={0.6}
+                accessibilityRole="button"
+                accessibilityLabel="실행 취소"
+              >
+                <Undo2 color={COLORS.textLabel} size={24} strokeWidth={1.75} />
+              </TouchableOpacity>
+              {!!onRedo && (
+                <TouchableOpacity
+                  ref={redoTarget}
+                  testID="btn-redo"
+                  style={styles.sheetHeaderButton}
+                  onPress={onRedo}
+                  activeOpacity={0.6}
+                  accessibilityRole="button"
+                  accessibilityLabel="다시 실행"
+                >
+                  <Redo2
+                    color={COLORS.textLabel}
+                    size={24}
+                    strokeWidth={1.75}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.sheetHeaderRight}>
+              <TutorialButton nudge={tutorialNudge} />
+            </View>
 
             <SheetCategoryRow selected={placeTab} onSelect={setPlaceTab} />
 

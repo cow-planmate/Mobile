@@ -263,10 +263,18 @@ export const styles = StyleSheet.create({
     color: tokens.colors.textTertiary,
     letterSpacing: -0.3,
   },
+  // 연한 회색 면에 담아 장식이 아니라 누르는 자리로 읽히게 한다. 값을 채우면 옅은 파랑.
   rowIcon: {
+    width: normalize(36),
+    height: normalize(36),
+    borderRadius: normalize(12),
     marginLeft: normalize(8),
+    backgroundColor: tokens.colors.pageGround,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  rowIconFilled: {
+    backgroundColor: tokens.colors.primaryTint,
   },
   submitButton: {
     backgroundColor: tokens.colors.primary,

@@ -93,7 +93,7 @@ describe('Header Component', () => {
         const menuStyle = StyleSheet.flatten(
           tree!.root.findByProps({ testID: 'profile-menu' }).props.style,
         );
-        expect(menuStyle.top).toBe(40 - 24 + 28 + normalize(6));
+        expect(menuStyle.top).toBe(40 - 24 + 28 + normalize(4));
         expect(menuStyle.right).toBe(Math.max(normalize(16), 32));
         expect(
           tree!.root.findAllByProps({ children: 'test@test.com' }).length,

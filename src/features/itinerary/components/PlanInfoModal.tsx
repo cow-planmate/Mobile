@@ -68,11 +68,10 @@ export default function PlanInfoModal({
       onClose={onClose}
       footer={null}
     >
-      {/* 어느 줄이 눌리는지 보이지 않아 편집할 수 있다는 걸 모르고 닫는다.
-          웹이 같은 자리에 둔 안내를 그대로 옮겼다 - 손으로 만지는 화면이라
-          '클릭'만 '누르면'으로 바꿨다. */}
+      {/* 고칠 수 있는 줄은 제목과 기간뿐이다. 모든 줄이 눌리는 것처럼 말하면
+          여행지와 인원을 눌러 보고 반응이 없어 헷갈린다. */}
       <Text style={styles.guide}>
-        각 영역을 누르면 정보를 수정할 수 있어요.
+        일정 제목과 기간은 편집을 눌러 바꿀 수 있어요.
       </Text>
 
       <View style={styles.list}>

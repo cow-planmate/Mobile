@@ -53,7 +53,7 @@ describe('ReportPostButton', () => {
     mockUser = null;
     const tree = render();
 
-    act(() => findButton(tree, '신고하기').props.onPress());
+    act(() => findButton(tree, '신고').props.onPress());
 
     expect(mockShowAlert).toHaveBeenCalledWith(
       expect.objectContaining({ message: '로그인 후 신고할 수 있습니다.' }),
@@ -63,7 +63,7 @@ describe('ReportPostButton', () => {
 
   it('사유를 고르기 전에는 접수 버튼이 눌리지 않는다', () => {
     const tree = render();
-    act(() => findButton(tree, '신고하기').props.onPress());
+    act(() => findButton(tree, '신고').props.onPress());
 
     expect(findButton(tree, '신고 접수').props.disabled).toBe(true);
   });
@@ -71,7 +71,7 @@ describe('ReportPostButton', () => {
   it('사유를 고르고 접수하면 사유와 상세 내용을 보내고 완료 화면을 보여 준다', async () => {
     mockMutateAsync.mockResolvedValueOnce({ message: 'ok' });
     const tree = render();
-    act(() => findButton(tree, '신고하기').props.onPress());
+    act(() => findButton(tree, '신고').props.onPress());
 
     act(() => findButton(tree, '스팸 / 광고').props.onPress());
     act(() => tree.root.findByType(TextInput).props.onChangeText('광고예요'));
@@ -85,7 +85,7 @@ describe('ReportPostButton', () => {
 
   it('기타는 상세 내용을 적어야 접수할 수 있다', () => {
     const tree = render();
-    act(() => findButton(tree, '신고하기').props.onPress());
+    act(() => findButton(tree, '신고').props.onPress());
 
     act(() => findButton(tree, '기타').props.onPress());
     expect(findButton(tree, '신고 접수').props.disabled).toBe(true);
@@ -99,7 +99,7 @@ describe('ReportPostButton', () => {
       response: { status: 500, data: { message: '잠시 후 다시 시도해 주세요.' } },
     });
     const tree = render();
-    act(() => findButton(tree, '신고하기').props.onPress());
+    act(() => findButton(tree, '신고').props.onPress());
     act(() => findButton(tree, '스팸 / 광고').props.onPress());
 
     await act(async () => {

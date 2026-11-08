@@ -1,11 +1,9 @@
-import React from 'react';
-import Info from 'lucide-react-native/dist/esm/icons/info';
-import MapPinned from 'lucide-react-native/dist/esm/icons/map-pinned';
-import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
-import XIcon from 'lucide-react-native/dist/esm/icons/x';
+import React, { useState } from 'react';
+import Ellipsis from 'lucide-react-native/dist/esm/icons/ellipsis';
 import { View, Text, TouchableOpacity } from 'react-native';
 
 import { styles, CATEGORY_COLORS } from './TimelineItem.styles';
+import BlockActionSheet, { type BlockAction } from './BlockActionSheet';
 import { tokens } from '../../../theme/tokens';
 import { timeToMinutes } from '../../../utils/timeUtils';
 import { useCoachmarkTarget } from '../coachmark/CoachmarkContext';
@@ -38,7 +36,6 @@ export type Place = {
 type TimelineItemProps = {
   item: Place;
   onDelete?: () => void;
-  onEditTime?: (type: 'startTime' | 'endTime') => void;
   /** 장소 메모 및 시간 수정 모달을 여는 핸들러 */
   onEditPlace?: () => void;
   /** 어떤 곳인지 보는 길. 열쇠를 모르는 장소(직접 추가)에는 주지 않는다. */
@@ -86,7 +83,6 @@ export const CATEGORY_NAMES: { [key: number]: string } = {
 const TimelineItem = React.memo(function TimelineItem({
   item,
   onDelete,
-  onEditTime,
   onEditPlace,
   onShowDetail,
   onOpenMap,
@@ -110,11 +106,7 @@ const TimelineItem = React.memo(function TimelineItem({
     CATEGORY_COLORS[4];
   const categoryName = CATEGORY_NAMES[categoryId] || item.type || '기타';
 
-  const textColorMain = '#0F172A';
-  const textColorSub = '#64748B';
-  const badgeTextColor = categoryColor.badgeText || categoryColor.textMain;
-  const borderTintColor = categoryColor.borderTint || categoryColor.border;
-  const actionIconColor = '#64748B';
+  const [isMenuOpen, setMenuOpen] = useState(false);
 
   const handleOpenMap = () => {
     if (onOpenMap) {
@@ -130,158 +122,123 @@ const TimelineItem = React.memo(function TimelineItem({
     }
   };
 
-  // 짧은 일정은 블록이 낮아 버튼도 같이 낮아진다.
-  const actionSlop = isCompact
-    ? { top: 14, bottom: 14, left: 3, right: 3 }
-    : { top: 10, bottom: 10, left: 3, right: 3 };
-  const deleteSlop = { ...actionSlop, right: 10 };
+  // 메뉴를 닫은 뒤에 동작을 부른다. 열려 있는 창 위에서 다른 창이 뜨지 않게 한다.
+  const runAfterClose = (action?: () => void) => () => {
+    setMenuOpen(false);
+    action?.();
+  };
 
-  const iconSize = 14;
-  const xSize = 15;
+  const timeRange = `${item.startTime.slice(0, 5)} – ${item.endTime.slice(0, 5)}`;
+  const actions: BlockAction[] = [
+    ...(onShowDetail
+      ? [
+          {
+            key: 'detail',
+            label: '장소 정보 보기',
+            accessibilityLabel: '장소 정보 보기',
+            description: '사진, 소개, 이용 시간',
+            onPress: runAfterClose(onShowDetail),
+          },
+        ]
+      : []),
+    {
+      key: 'map',
+      label: '지도에서 보기',
+      accessibilityLabel: '지도에서 보기',
+      description: '지도 앱에서 열어요',
+      onPress: runAfterClose(handleOpenMap),
+    },
+    {
+      key: 'edit',
+      label: '시간·메모 수정',
+      accessibilityLabel: '일정 수정',
+      description: `${timeRange} · ${item.memo?.trim() ? '메모 있음' : '메모 없음'}`,
+      onPress: runAfterClose(onEditPlace),
+    },
+    {
+      key: 'delete',
+      label: '삭제',
+      accessibilityLabel: '장소 삭제',
+      description: '이 일정에서 장소를 빼요',
+      onPress: runAfterClose(onDelete),
+      destructive: true,
+      disabled: isDeleteDisabled,
+    },
+  ];
 
   return (
     <View style={[styles.cardContainer, style]}>
-      {/* 화이트 카드 & 플로팅 인디케이터 디자인 */}
-      <View
-        style={[
-          styles.card,
-          {
-            backgroundColor: '#FFFFFF',
-            borderColor: borderTintColor,
-          },
-          isCompact && styles.cardCompact,
-        ]}
-      >
-        {/* 안쪽에 떠 있는 둥근 캡슐형 컬러 바 */}
-        <View
-          style={[
-            styles.floatingAccentBar,
-            { backgroundColor: categoryColor.border },
-          ]}
-        />
+      <View style={[styles.card, isCompact && styles.cardCompact]}>
+        {/* 카드를 누르면 바로 수정 창이 열린다. 길게 누르면 끌어 옮긴다. */}
+        <TouchableOpacity
+          style={[styles.head, isCompact && styles.headCompact]}
+          onPress={isReadOnly ? undefined : onEditPlace}
+          disabled={isReadOnly}
+          activeOpacity={0.7}
+          accessibilityRole={isReadOnly ? undefined : 'button'}
+          accessibilityLabel={isReadOnly ? undefined : `${item.name} 수정`}
+        >
+          {/* 갈래 색은 이 막대에만 쓴다. */}
+          <View
+            style={[
+              styles.accentBar,
+              { backgroundColor: categoryColor.border },
+            ]}
+          />
 
-        <View style={styles.infoContainer}>
-          {isCompact ? (
-            <View style={styles.compactSingleRow}>
-              <Text
-                style={[styles.nameTextCompact, { color: textColorMain }]}
-                numberOfLines={1}
-              >
+          <View style={styles.infoContainer}>
+            {isCompact ? (
+              <Text style={styles.nameTextCompact} numberOfLines={1}>
                 {item.name}
               </Text>
-            </View>
-          ) : (
-            <>
-              <Text
-                style={[styles.nameText, { color: textColorMain }]}
-                numberOfLines={1}
-              >
-                {item.name}
-              </Text>
-
-              <View style={styles.metaRow}>
-                <View
-                  style={[
-                    styles.miniTag,
-                    {
-                      backgroundColor: categoryColor.badgeBg,
-                      borderColor: borderTintColor,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.miniTagText, { color: badgeTextColor }]}
-                  >
-                    {categoryName}
+            ) : (
+              <>
+                <Text style={styles.nameText} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <Text style={styles.metaText} numberOfLines={1}>
+                  {categoryName} · {item.startTime} - {item.endTime}
+                </Text>
+                {!!item.memo?.trim() && (
+                  <Text style={styles.memoText} numberOfLines={2}>
+                    {item.memo.trim()}
                   </Text>
-                </View>
-                <Text style={[styles.metaText, { color: textColorSub }]}>
-                  {item.startTime} - {item.endTime}
-                </Text>
-              </View>
-
-              {!isCompact && !!item.memo?.trim() && (
-                <Text
-                  style={[styles.memoText, { color: textColorSub }]}
-                  numberOfLines={2}
-                >
-                  {item.memo.trim()}
-                </Text>
-              )}
-            </>
-          )}
-        </View>
+                )}
+              </>
+            )}
+          </View>
+        </TouchableOpacity>
 
         {!isReadOnly && (
           <View
             ref={actionsTarget}
-            style={styles.actionContainer}
+            style={[styles.actionContainer, isCompact && styles.actionCompact]}
             testID="timeline-item-actions"
           >
-            {!!onShowDetail && (
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  isCompact && styles.actionButtonCompact,
-                ]}
-                onPress={onShowDetail}
-                accessibilityRole="button"
-                accessibilityLabel="장소 정보 보기"
-                hitSlop={actionSlop}
-                activeOpacity={0.65}
-              >
-                <Info size={iconSize} color={actionIconColor} strokeWidth={2.1} />
-              </TouchableOpacity>
-            )}
             <TouchableOpacity
-              style={[
-                styles.actionButton,
-                isCompact && styles.actionButtonCompact,
-              ]}
-              onPress={handleOpenMap}
+              style={styles.moreButton}
+              onPress={() => setMenuOpen(true)}
               accessibilityRole="button"
-              accessibilityLabel="지도에서 보기"
-              hitSlop={actionSlop}
-              activeOpacity={0.65}
+              accessibilityLabel="장소 옵션 열기"
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              activeOpacity={0.6}
             >
-              <MapPinned
-                size={iconSize}
-                color={actionIconColor}
-                strokeWidth={2.1}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                isCompact && styles.actionButtonCompact,
-              ]}
-              onPress={onEditPlace ?? (() => onEditTime?.('startTime'))}
-              accessibilityRole="button"
-              accessibilityLabel="일정 수정"
-              hitSlop={actionSlop}
-              activeOpacity={0.65}
-            >
-              <Pencil size={iconSize} color={actionIconColor} strokeWidth={2.1} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                isCompact && styles.actionButtonCompact,
-                isDeleteDisabled && styles.actionButtonDisabled,
-              ]}
-              onPress={isDeleteDisabled ? undefined : onDelete}
-              disabled={isDeleteDisabled}
-              accessibilityRole="button"
-              accessibilityLabel="장소 삭제"
-              accessibilityState={{ disabled: isDeleteDisabled }}
-              hitSlop={deleteSlop}
-              activeOpacity={0.65}
-            >
-              <XIcon size={xSize} color={actionIconColor} strokeWidth={2.2} />
+              <Ellipsis size={20} color={tokens.colors.textMuted} />
             </TouchableOpacity>
           </View>
         )}
       </View>
+
+      {!isReadOnly && (
+        <BlockActionSheet
+          visible={isMenuOpen}
+          title={item.name}
+          subtitle={`${categoryName} · ${timeRange}`}
+          imageUri={item.imageUrl}
+          actions={actions}
+          onClose={() => setMenuOpen(false)}
+        />
+      )}
     </View>
   );
 });

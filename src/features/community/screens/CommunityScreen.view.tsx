@@ -8,9 +8,9 @@ import {
   ScrollView,
   FlatList,
   StatusBar,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import Plus from 'lucide-react-native/dist/esm/icons/plus';
 import Search from 'lucide-react-native/dist/esm/icons/search';
 import { styles } from './CommunityScreen.styles';
@@ -21,6 +21,7 @@ import { normalize } from '../../../utils/normalize';
 import { CommunityPostSummary } from '../types';
 import { BoardKey, SortKey, SORT_OPTIONS } from '../constants/board';
 import PostListItem from '../components/PostListItem';
+import { PostListSkeleton } from '../components/CommunitySkeletons';
 import PostTypeBadges from '../components/PostTypeBadges';
 import UserAvatar from '../components/UserAvatar';
 
@@ -239,20 +240,14 @@ export default function CommunityScreenView({
     if (!isFetchingNextPage) return null;
     return (
       <View style={styles.listFooterLoading}>
-        <ActivityIndicator color={tokens.colors.primary} />
+        <Spinner color={tokens.colors.primary} />
       </View>
     );
   }, [isFetchingNextPage]);
 
   const listEmpty = useMemo(() => {
     if (isLoading) {
-      return (
-        <EmptyState
-          title="게시글을 불러오는 중…"
-          loading
-          style={styles.listStateBox}
-        />
-      );
+      return <PostListSkeleton />;
     }
     if (isError) {
       return (

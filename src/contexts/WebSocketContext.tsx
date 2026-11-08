@@ -195,6 +195,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     const client = createProtoSyncClient({
       baseUrl: resolveApiUrl(''),
       token: token ?? '',
+      getToken: ensureFreshAccessToken,
       roomId: String(planId),
       onLog: wsLog,
 

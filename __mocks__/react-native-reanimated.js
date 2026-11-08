@@ -42,9 +42,11 @@ const api = {
   Easing,
   useSharedValue: value => ({ value }),
   useAnimatedStyle: fn => fn(),
+  useAnimatedProps: fn => fn(),
   useDerivedValue: fn => ({ value: fn() }),
   useAnimatedScrollHandler: () => () => {},
   useAnimatedRef: () => ({ current: null }),
+  useReducedMotion: () => false,
   // 콜백을 받는 형태를 쓰므로 테스트에서도 완료로 처리한다.
   withTiming: (value, _config, callback) => {
     if (typeof callback === 'function') callback(true);

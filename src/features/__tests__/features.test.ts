@@ -12,10 +12,18 @@ jest.mock('react-native-reanimated', () => {
     },
     cancelAnimation: () => {},
     runOnJS: (fn: any) => fn,
+    // AirplaneLoading이 모듈을 불러올 때 Easing을 바로 부른다.
+    Easing: {
+      linear: (value: number) => value,
+      sin: (value: number) => value,
+      inOut: () => (value: number) => value,
+      bezier: () => ({ factory: () => (value: number) => value }),
+    },
     interpolate: (value: number, inputRange: number[], outputRange: number[]) => value,
     Extrapolation: {
       CLAMP: 'clamp',
     },
+    createAnimatedComponent: (Component: any) => Component,
     default: {
       call: () => {},
     },
@@ -42,6 +50,9 @@ jest.mock('react-native-date-picker', () => {
 });
 jest.mock('react-native-image-picker', () => ({
   launchImageLibrary: jest.fn(),
+}));
+jest.mock('@shopify/flash-list', () => ({
+  FlashList: () => null,
 }));
 
 jest.mock('react-native-webview', () => {

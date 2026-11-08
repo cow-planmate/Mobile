@@ -356,7 +356,9 @@ export default function CoachmarkOverlay({
 
       {/* 짚어 준 것 위에서 손짓을 흉내 낸다. 말풍선보다 아래에 그려 말풍선이
           가려지지 않게 한다. */}
-      {!!step.demo && <CoachmarkGesture rect={rect} demo={step.demo} />}
+      {!!step.demo && (
+        <CoachmarkGesture rect={rect} demo={step.demo} landing={alsoHole} />
+      )}
 
       <View
         style={[

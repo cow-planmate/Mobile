@@ -1,11 +1,6 @@
 import React, { useEffect } from 'react';
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  StyleProp,
-  ViewStyle,
-} from 'react-native';
+import { StyleSheet, Text, StyleProp, ViewStyle } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -79,7 +74,7 @@ export default function AuthSubmitButton({
           style={[StyleSheet.absoluteFill, styles.center, spinnerStyle]}
           pointerEvents="none"
         >
-          <ActivityIndicator color={COLORS.onPrimary} />
+          <Spinner color={COLORS.onPrimary} trackColor="transparent" />
         </Animated.View>
       </PressableScale>
     </Animated.View>

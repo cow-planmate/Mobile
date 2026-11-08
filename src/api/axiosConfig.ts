@@ -7,6 +7,7 @@ import {
 } from '../constants/storageKeys';
 import { getJwtIssuedAtMs, isTokenExpiringSoon } from '../utils/jwt';
 import { isTokenAuthFailure } from '../utils/authError';
+import { clearRefreshToken, getRefreshToken } from '../utils/refreshTokenStorage';
 
 const normalizedApiUrl = (API_URL ?? '').trim().replace(/\/+$/, '');
 
@@ -44,7 +45,21 @@ const matchesPath = (url: string | undefined, paths: string[]) => {
   );
 };
 
-let refreshPromise: Promise<string | null> | null = null;
+interface RefreshOutcome {
+  token: string | null;
+  /** 갱신 토큰이 없거나 서버가 거절했을 때만 true. 네트워크·서버 오류는 false다. */
+  sessionInvalid: boolean;
+}
+
+let refreshPromise: Promise<RefreshOutcome> | null = null;
+
+// 서버가 갱신 토큰 자체를 거절한 응답. 401(무효·만료), 403(정지 계정), 404(사용자 없음).
+const SESSION_REJECTED_STATUSES = [400, 401, 403, 404];
+
+const isSessionRejected = (error: unknown): boolean => {
+  const status = (error as AxiosError | undefined)?.response?.status;
+  return status !== undefined && SESSION_REJECTED_STATUSES.includes(status);
+};
 
 let clockSkewMs = 0;
 
@@ -60,7 +75,7 @@ export const observeAccessToken = (
 };
 
 const performTokenRefresh = async (): Promise<string | null> => {
-  const refreshToken = await AsyncStorage.getItem('refreshToken');
+  const refreshToken = await getRefreshToken();
   if (!refreshToken) return null;
 
   const response = await axios.post('/api/auth/token', { refreshToken });
@@ -77,14 +92,15 @@ const performTokenRefresh = async (): Promise<string | null> => {
   return newAccessToken;
 };
 
-export const refreshAccessToken = (): Promise<string | null> => {
+const runTokenRefresh = (): Promise<RefreshOutcome> => {
   if (!refreshPromise) {
     refreshPromise = performTokenRefresh()
+      .then(token => ({ token, sessionInvalid: token === null }))
       .catch(error => {
         if (__DEV__) {
           console.error('Token refresh failed:', error);
         }
-        return null;
+        return { token: null, sessionInvalid: isSessionRejected(error) };
       })
       .finally(() => {
         refreshPromise = null;
@@ -92,6 +108,9 @@ export const refreshAccessToken = (): Promise<string | null> => {
   }
   return refreshPromise;
 };
+
+export const refreshAccessToken = async (): Promise<string | null> =>
+  (await runTokenRefresh()).token;
 
 export const ensureFreshAccessToken = async (): Promise<string | null> => {
   const token = await AsyncStorage.getItem('accessToken');
@@ -115,7 +134,10 @@ const clearSession = async () => {
     );
   }
 
-  await AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS);
+  await Promise.all([
+    AsyncStorage.multiRemove(LOGOUT_CLEARED_KEYS),
+    clearRefreshToken(),
+  ]);
 };
 
 if (axios && axios.defaults) {
@@ -206,14 +228,19 @@ if (axios && axios.interceptors && axios.interceptors.request) {
         ) {
           originalRequest._retry = true;
 
-          const newAccessToken = await refreshAccessToken();
+          const { token: newAccessToken, sessionInvalid } =
+            await runTokenRefresh();
 
           if (newAccessToken) {
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
             return axios(originalRequest);
           }
 
-          await clearSession();
+          // 지하철처럼 잠깐 끊긴 것만으로 로그아웃시키지 않는다. 이 요청만 실패로 두고
+          // 다음 요청에서 다시 갱신을 시도한다.
+          if (sessionInvalid) {
+            await clearSession();
+          }
           return Promise.reject(error);
         }
 

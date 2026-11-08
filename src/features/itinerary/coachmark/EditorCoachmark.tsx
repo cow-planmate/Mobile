@@ -75,6 +75,8 @@ interface EditorCoachmarkProps {
 
 const EMPTY_PLACES: readonly CoachmarkPlaceTime[] = [];
 
+const noop = () => {};
+
 const timeMap = (places: readonly CoachmarkPlaceTime[]) =>
   new Map(
     places.map(place => [place.id, `${place.startTime}-${place.endTime}`]),
@@ -102,10 +104,23 @@ export default function EditorCoachmark({
 
   const [plan, setPlan] = useState<CoachmarkStep[] | null>(null);
   const [index, setIndex] = useState(0);
-  // 지금 짚고 있는 자리. 가려져 있는 동안에는 비운다 - 그동안 안내는 숨는다.
-  const [rect, setRect] = useState<CoachmarkRect | null>(null);
-  // 짚은 것과 함께 밝혀 둘 자리(장소를 놓을 시간표처럼).
-  const [extraRect, setExtraRect] = useState<CoachmarkRect | null>(null);
+  /**
+   * 지금 짚고 있는 자리. 가려져 있는 동안에는 비운다 - 그동안 안내는 숨는다.
+   *
+   * 어느 단계의 자리인지(index)를 함께 담는다. 단계를 넘기면 index는 곧바로
+   * 바뀌지만 새 자리는 다시 잰 뒤에야 들어온다. 그 사이에 자리만 이전 것이면
+   * 새 단계의 둥글기·여백이 이전 자리에 입혀져 구멍 모양이 한 번 튄다. 둘을 한
+   * 묶음으로 바꿔야 말풍선도 구멍도 한 번에 넘어간다.
+   *
+   * extraRect는 짚은 것과 함께 밝혀 둘 자리(장소를 놓을 시간표처럼)다.
+   */
+  const [view, setView] = useState<{
+    index: number;
+    rect: CoachmarkRect;
+    extraRect: CoachmarkRect | null;
+  } | null>(null);
+  // 지금 단계의 자리. 아직 다시 재는 중이면 null이라 판정은 모두 이 값만 본다.
+  const rect = view && view.index === index ? view.rect : null;
   // 지금 단계에서 권한 일을 해냈는지.
   const [isDone, setIsDone] = useState(false);
   /** 그 단계에 들어설 때의 시간표. 여기서 달라진 것이 있어야 해낸 것이다. */
@@ -135,8 +150,7 @@ export default function EditorCoachmark({
       clearAdvance();
       setPlan(null);
       setIndex(0);
-      setRect(null);
-      setExtraRect(null);
+      setView(null);
       baseline.current = null;
       revealed.current = null;
       setIsDone(false);
@@ -193,7 +207,7 @@ export default function EditorCoachmark({
   useEffect(() => {
     if (!isRunning || !plan || !step) return;
     if (!enabled) {
-      setRect(null);
+      setView(null);
       return;
     }
 
@@ -203,7 +217,7 @@ export default function EditorCoachmark({
     if (revealed.current !== index) {
       revealed.current = index;
       if (onRevealTarget?.(step.target)) {
-        setRect(null);
+        setView(null);
         revealTimer.current = setTimeout(() => {
           revealTimer.current = null;
           setProbe(value => value + 1);
@@ -213,7 +227,7 @@ export default function EditorCoachmark({
     }
     // 끌어오는 중에는 재지 않는다. 옮겨 가는 도중의 자리를 짚게 된다.
     if (revealTimer.current !== null) {
-      setRect(null);
+      setView(null);
       return;
     }
 
@@ -228,13 +242,16 @@ export default function EditorCoachmark({
       if (!alive) return;
       const local = toHostRect(measured, host);
       const also = toHostRect(alsoMeasured, host);
-      setExtraRect(also && isRectVisible(also, width, height) ? also : null);
       if (local && isRectVisible(local, width, height)) {
-        setRect(local);
+        setView({
+          index,
+          rect: local,
+          extraRect: also && isRectVisible(also, width, height) ? also : null,
+        });
         return;
       }
       // 사라진 자리는 짚을 수 없다. 마지막이었으면 여기서 끝낸다.
-      setRect(null);
+      setView(null);
       if (index >= plan.length - 1) {
         closeTour?.();
         return;
@@ -399,18 +416,29 @@ export default function EditorCoachmark({
     [],
   );
 
-  if (!isRunning || !plan || !step || !rect) return null;
+  // 해보기 권유도 자리와 함께 넘어가야 한다. 다시 재는 동안 이전 단계가 보이는데
+  // 권유만 새 단계 것으로 바뀌면 글이 한 번 튄다.
+  const shownHint = useRef<string | null>(null);
+  if (rect) shownHint.current = practiceHint;
+
+  if (!isRunning || !plan || !view) return null;
+  // 새로 잰 자리가 오기 전에는 이전 단계를 그대로 둔다. 숨기면 어두운 막이
+  // 깜빡이고, 새 단계 모양을 이전 자리에 입히면 구멍이 튄다.
+  const shown = plan[view.index];
+  if (!shown) return null;
+  // 넘어가는 중에 한 번 더 눌러도 한 단계씩만 간다 - 보이는 단계와 다르면 막는다.
+  const isSettled = view.index === index;
 
   return (
     <CoachmarkOverlay
-      step={step}
-      index={index}
+      step={shown}
+      index={view.index}
       total={plan.length}
-      rect={rect}
-      extraRect={extraRect}
-      practiceHint={practiceHint}
-      onNext={handleNext}
-      onPrev={index > 0 ? handlePrev : undefined}
+      rect={view.rect}
+      extraRect={view.extraRect}
+      practiceHint={isSettled ? practiceHint : shownHint.current}
+      onNext={isSettled ? handleNext : noop}
+      onPrev={view.index > 0 ? (isSettled ? handlePrev : noop) : undefined}
       onSkip={finish}
     />
   );

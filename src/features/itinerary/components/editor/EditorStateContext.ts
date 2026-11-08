@@ -6,7 +6,6 @@ export const EditorStateContext = createContext<{
   timelineScrollRef: any;
   selectedDay: any;
   handleDeletePlace: any;
-  handleEditTime: any;
   handleUpdatePlaceTimes: any;
   onOpenDetail: any;
   /** 블록의 ⓘ. 시간표는 화면 깊숙이 있어 맥락으로 내려보낸다. */

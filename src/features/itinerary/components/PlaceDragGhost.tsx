@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   type SharedValue,
@@ -31,8 +31,9 @@ interface PlaceDragGhostProps {
  * 집은 자리는 흐려지기만 하고 손끝에는 아무것도 없었다. 어디로 가져가는
  * 중인지가 점선 하나로만 남아, 놓기 전까지 무엇을 옮기는지 보이지 않았다.
  *
- * 놓이면 될 시간표 블록과 같은 색을 입는다. 사진과 그림자를 얹은 목록 카드
- * 모양으로 들면 무엇으로 바뀔지가 손에 남지 않는다.
+ * 놓이면 될 시간표 블록과 같은 모양을 입는다 - 흰 면에 갈래 색 막대 하나.
+ * 사진을 얹은 목록 카드 모양으로 들면 무엇으로 바뀔지가 손에 남지 않는다.
+ * 떠 있는 상태라 블록과 달리 그림자를 얹어 아래 블록과 구분한다.
  *
  * 손끝 좌표는 화면 기준으로 들어오고 이 카드는 화면 맨 위 겹에 그대로
  * 얹히므로, 자리를 옮겨 적을 것 없이 받은 값을 그대로 쓴다.
@@ -66,22 +67,17 @@ export default function PlaceDragGhost({
     <Animated.View
       testID="place-drag-ghost"
       pointerEvents="none"
-      style={[
-        styles.root,
-        {
-          backgroundColor: color.bg,
-          borderColor: color.border,
-          borderLeftColor: color.border,
-        },
-        style,
-      ]}
+      style={[styles.root, style]}
     >
-      <Text style={[styles.name, { color: color.textMain }]} numberOfLines={1}>
-        {place.name}
-      </Text>
-      <Text style={[styles.meta, { color: color.textSub }]} numberOfLines={1}>
-        {CATEGORY_NAMES[categoryId] || place.type}
-      </Text>
+      <View style={[styles.accentBar, { backgroundColor: color.border }]} />
+      <View style={styles.info}>
+        <Text style={styles.name} numberOfLines={1}>
+          {place.name}
+        </Text>
+        <Text style={styles.meta} numberOfLines={1}>
+          {CATEGORY_NAMES[categoryId] || place.type}
+        </Text>
+      </View>
     </Animated.View>
   );
 }
@@ -93,22 +89,36 @@ const styles = StyleSheet.create({
     top: 0,
     width: WIDTH,
     height: HEIGHT,
-    justifyContent: 'center',
-    gap: 3,
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 8,
-    // 블록 위를 지날 때 같은 색끼리 뭉개지지 않게 테두리를 한 줄 두른다.
-    // 그림자를 지운 자리를 이 줄이 대신한다.
-    borderWidth: 1.5,
-    borderLeftWidth: 4,
+    borderRadius: tokens.radius.l,
+    backgroundColor: tokens.colors.white,
+    // 흰 블록 위를 지날 때 구분은 그림자가 맡는다.
+    ...tokens.shadows.md,
     zIndex: 900,
   },
+  accentBar: {
+    width: 3,
+    borderRadius: 999,
+    marginRight: 10,
+  },
+  info: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 2,
+    minWidth: 0,
+  },
   name: {
-    fontFamily: FONTS.bold,
-    fontSize: 13.5,
+    fontFamily: FONTS.semibold,
+    fontSize: 14.5,
+    color: tokens.colors.text,
+    letterSpacing: -0.3,
   },
   meta: {
-    fontFamily: FONTS.regular,
-    fontSize: 11.5,
+    fontFamily: FONTS.medium,
+    fontSize: 12,
+    color: tokens.colors.textMuted,
   },
 });

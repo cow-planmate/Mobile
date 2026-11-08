@@ -10,8 +10,7 @@ import Animated, {
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
-import TimelineItem, { Place, resolveCategoryId } from '../TimelineItem';
-import { CATEGORY_COLORS } from '../TimelineItem.styles';
+import TimelineItem, { Place } from '../TimelineItem';
 import {
   styles,
   COLORS,
@@ -38,7 +37,6 @@ const DraggableTimelineItem = React.memo(
     maxEndMinutes,
     minStartMinutes,
     onDelete,
-    onEditTime,
     onEditPlace,
     onDragEnd,
     onPress,
@@ -58,11 +56,6 @@ const DraggableTimelineItem = React.memo(
     maxEndMinutes: number;
     minStartMinutes: number;
     onDelete: (placeId: string) => void;
-    onEditTime?: (
-      placeId: string,
-      type: 'startTime' | 'endTime',
-      time: string,
-    ) => void;
     onEditPlace?: (place: Place) => void;
     onDragEnd: (
       placeId: string,
@@ -95,11 +88,6 @@ const DraggableTimelineItem = React.memo(
     const endMinutes = timeToMinutes(place.endTime);
     const durationMinutes = endMinutes - startMinutes;
     const isCompact = durationMinutes < 30;
-
-    const categoryId = resolveCategoryId(place);
-    const categoryColor =
-      CATEGORY_COLORS[categoryId as keyof typeof CATEGORY_COLORS] ||
-      CATEGORY_COLORS[4];
 
     const initialTop =
       (startMinutes - offsetMinutes) * MINUTE_HEIGHT + GRID_TOP_OFFSET;
@@ -234,18 +222,6 @@ const DraggableTimelineItem = React.memo(
         },
       );
     }, [onDelete, placeId, exitOpacity, exitScale, exitTranslateY]);
-
-    const handleEditTime = React.useCallback(
-      (type: 'startTime' | 'endTime') => {
-        if (isDeletingRef.current) return;
-        onEditTime?.(
-          placeId,
-          type,
-          type === 'startTime' ? place.startTime : place.endTime,
-        );
-      },
-      [onEditTime, placeId, place.startTime, place.endTime],
-    );
 
     const handleEditPlace = React.useCallback(() => {
       if (isDeletingRef.current) return;
@@ -595,7 +571,6 @@ const DraggableTimelineItem = React.memo(
               <TimelineItem
                 item={place}
                 onDelete={handleDeleteWithAnim}
-                onEditTime={handleEditTime}
                 onEditPlace={handleEditPlace}
                 onShowDetail={
                   onShowDetail ? () => onShowDetail(place) : undefined
@@ -612,12 +587,7 @@ const DraggableTimelineItem = React.memo(
             <GestureDetector gesture={panGestureResizeTop}>
               <Animated.View style={styles.resizeHandleTop}>
                 <Animated.View style={topHandleStyle}>
-                  <View
-                    style={[
-                      styles.resizeHandleIndicator,
-                      { backgroundColor: categoryColor.border },
-                    ]}
-                  />
+                  <View style={styles.resizeHandleIndicator} />
                 </Animated.View>
               </Animated.View>
             </GestureDetector>
@@ -631,12 +601,7 @@ const DraggableTimelineItem = React.memo(
               ]}
             >
               <Animated.View style={bottomHandleStyle}>
-                <View
-                  style={[
-                    styles.resizeHandleIndicator,
-                    { backgroundColor: categoryColor.border },
-                  ]}
-                />
+                <View style={styles.resizeHandleIndicator} />
               </Animated.View>
             </Animated.View>
           </GestureDetector>

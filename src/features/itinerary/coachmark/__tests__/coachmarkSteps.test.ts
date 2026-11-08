@@ -105,10 +105,36 @@ describe('일정 편집 코치마크 스텝', () => {
     );
 
     // 하루가 9시에서 시작해 첫 블록이 맨 위에 놓인다. 위로 늘리면 늘어나는
-    // 자리가 날씨 카드 뒤로 숨는다.
+    // 자리가 날씨 띠 뒤로 숨는다.
     expect(step?.demo?.kind).toBe('grow');
     expect(step?.demo?.dy).toBeGreaterThan(0);
     expect(step?.demo?.fromY).toBe(1);
+  });
+
+  it('손짓 거리는 눈금과 밝힌 시간표에서 정하고, 픽셀은 대비책일 뿐이다', () => {
+    const grow = EDITOR_COACHMARK_STEPS.find(one => one.demo?.kind === 'grow');
+    const carry = EDITOR_COACHMARK_STEPS.find(
+      one => one.demo?.kind === 'carry',
+    );
+
+    // 눈금 높이를 곱해 정하므로 '30분쯤'이 화면 치수가 바뀌어도 30분쯤으로 남는다.
+    expect(grow?.demo?.growMinutes).toBe(30);
+    // 놓이는 자리는 밝힌 시간표 안의 비율이고, 시간표를 밝히는 단계에만 쓴다.
+    expect(carry?.demo?.landAt).toBeGreaterThan(0);
+    expect(carry?.demo?.landAt).toBeLessThan(1);
+    expect(carry?.lightAlso).toBe('timeline');
+  });
+
+  it('테두리 없는 아이콘은 누르는 자리 그대로 짚는다', () => {
+    const byTarget = (id: string) =>
+      EDITOR_COACHMARK_STEPS.find(step => step.target === id);
+
+    // 아이콘보다 넓은 누르는 자리에 여백을 더하면 원이 아이콘보다 훨씬 커진다.
+    ['dayPeriod', 'undo', 'redo', 'checklist', 'participants', 'invite', 'map']
+      .map(byTarget)
+      .forEach(step => expect(step?.padding).toBe(0));
+    // 작은 (i)는 옆의 일정 이름을 걸치지 않게 안으로 줄인다.
+    expect(byTarget('planInfo')?.padding).toBeLessThan(0);
   });
 
   it('동그란 버튼은 테두리가 원을 따라가도록 표시해 둔다', () => {
@@ -116,12 +142,12 @@ describe('일정 편집 코치마크 스텝', () => {
       step => step.shape === 'circle',
     ).map(step => step.target);
 
-    // 툴바 아이콘 여섯과 기간 편집·되돌리기가 동그란 버튼이다.
+    // 툴바 아이콘 다섯과 기간 편집·되돌리기가 동그란 버튼이다.
+    // 완료는 글자가 있는 알약 버튼이라 둥근 사각형으로 짚는다.
     expect(circles).toEqual(
       expect.arrayContaining([
         'planInfo',
         'dayPeriod',
-        'complete',
         'undo',
         'redo',
         'checklist',
@@ -130,5 +156,6 @@ describe('일정 편집 코치마크 스텝', () => {
         'map',
       ]),
     );
+    expect(circles).not.toContain('complete');
   });
 });

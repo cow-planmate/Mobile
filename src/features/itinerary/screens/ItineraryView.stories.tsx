@@ -103,13 +103,13 @@ function ViewHarness(props: {
       }}
       isPlanOwner
       scrollRef={scrollRef}
-      handleConfirm={action('완료')}
       goBack={action('뒤로가기')}
       handleEdit={action('편집으로 이동')}
       planId="101"
       weatherMap={{}}
       tripName="가을 제주 3일"
       isWeatherLoading={false}
+      isWaitingWeather={false}
       loadError={!!props.loadError}
       onRetryLoad={action('다시 시도')}
     />
@@ -131,13 +131,13 @@ const meta = {
     setChecklistVisible: noop,
     isPlanOwner: true,
     scrollRef: { current: null },
-    handleConfirm: action('완료'),
     goBack: action('뒤로가기'),
     handleEdit: action('편집으로 이동'),
     planId: '101',
     weatherMap: {},
     tripName: '가을 제주 3일',
     isWeatherLoading: false,
+    isWaitingWeather: false,
     loadError: false,
     onRetryLoad: action('다시 시도'),
   },

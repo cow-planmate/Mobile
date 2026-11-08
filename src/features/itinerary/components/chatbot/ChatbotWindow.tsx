@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   BackHandler,
   Image,
   Keyboard,
@@ -11,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Spinner } from '../../../../components/common/LoadingSpinner';
 import AlertCircle from 'lucide-react-native/dist/esm/icons/circle-alert';
 import Bot from 'lucide-react-native/dist/esm/icons/bot';
 import Check from 'lucide-react-native/dist/esm/icons/check';
@@ -421,7 +421,7 @@ function PlanCard({
             accessibilityState={{ disabled: isApplying }}
           >
             {isApplying ? (
-              <ActivityIndicator size="small" color={COLORS.white} />
+              <Spinner color={COLORS.white} trackColor="transparent" />
             ) : (
               <Check size={normalize(14)} color={COLORS.white} />
             )}
@@ -908,7 +908,7 @@ export default function ChatbotWindow({
           {isSending && (
             <View style={styles.pending}>
               <View style={styles.pendingLine}>
-                <ActivityIndicator size="small" color={COLORS.primary} />
+                <Spinner color={COLORS.primary} />
                 <Text style={styles.pendingText}>일정을 살펴보고 있어요</Text>
               </View>
               <Text style={styles.pendingSub}>
@@ -955,7 +955,7 @@ export default function ChatbotWindow({
             accessibilityState={{ disabled: !canSend }}
           >
             {isSending ? (
-              <ActivityIndicator size="small" color={COLORS.white} />
+              <Spinner color={COLORS.white} trackColor="transparent" />
             ) : (
               <Send size={normalize(16)} color={COLORS.white} />
             )}

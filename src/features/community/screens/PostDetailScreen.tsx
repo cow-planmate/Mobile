@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   StatusBar,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -30,6 +29,7 @@ import {
 } from '../hooks/queries';
 import PostContentView from '../components/PostContentView';
 import PostListItem from '../components/PostListItem';
+import { DetailSkeleton } from '../components/CommunitySkeletons';
 import CommentSection from '../components/CommentSection';
 import UserAvatar from '../components/UserAvatar';
 import PublicProfileModal from '../components/PublicProfileModal';
@@ -40,8 +40,8 @@ import { BoardKey, boardLabel } from '../constants/board';
 import { styles, COLORS } from './PostDetailScreen.styles';
 import { tokens } from '../../../theme/tokens';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
-import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import BackTopBar from '../../../components/common/BackTopBar';
+import BottomInsetFiller from '../../../components/common/BottomInsetFiller';
 
 type DetailRoute = RouteProp<CommunityStackParamList, 'CommunityDetail'>;
 
@@ -52,7 +52,6 @@ export default function PostDetailScreen() {
   const [isAuthorProfileVisible, setAuthorProfileVisible] = useState(false);
 
   const postId = route.params?.postId;
-  const screenInsets = useScreenInsets(false);
   const user = useAuthStore(state => state.user);
   const isLoggedIn = !!user;
 
@@ -135,18 +134,20 @@ export default function PostDetailScreen() {
     });
   };
 
-  const renderTopBar = () => (
-    <BackTopBar title="게시글" onBack={() => navigation.goBack()} />
+  const renderTopBar = (right?: React.ReactNode) => (
+    <BackTopBar
+      title="게시글"
+      onBack={() => navigation.goBack()}
+      right={right}
+      safeTop
+    />
   );
 
   if (isLoading) {
     return (
-      <View style={[styles.container, screenInsets]}>
+      <View style={styles.container}>
         {renderTopBar()}
-        <View style={styles.stateBox}>
-          <ActivityIndicator color={COLORS.primary} />
-          <Text style={styles.stateText}>게시글을 불러오는 중…</Text>
-        </View>
+        <DetailSkeleton label="게시글을 불러오는 중" />
       </View>
     );
   }
@@ -156,7 +157,7 @@ export default function PostDetailScreen() {
       ? getResourceLoadError(error, '게시글')
       : { message: '게시글을 찾을 수 없어요.', canRetry: false };
     return (
-      <View style={[styles.container, screenInsets]}>
+      <View style={styles.container}>
         {renderTopBar()}
         <View style={styles.stateBox}>
           <Text style={styles.stateText}>{failure.message}</Text>
@@ -180,9 +181,16 @@ export default function PostDetailScreen() {
 
 
   return (
-    <View style={[styles.container, screenInsets]}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
-      {renderTopBar()}
+      {renderTopBar(
+        !isAuthor && (
+          <View style={styles.topBarActions}>
+            <SendMessageButton target={post} />
+            <ReportPostButton postId={post.id} />
+          </View>
+        ),
+      )}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -300,13 +308,6 @@ export default function PostDetailScreen() {
             </View>
           )}
 
-          {!isAuthor && (
-            <View style={styles.authorActions}>
-              <SendMessageButton target={post} />
-              <ReportPostButton postId={post.id} />
-            </View>
-          )}
-
         </View>
 
         <View style={styles.headerDivider} />
@@ -332,7 +333,9 @@ export default function PostDetailScreen() {
             <ThumbsUp
               size={normalize(14)}
               color={
-                post.myReaction === 'like' ? COLORS.white : COLORS.textSecondary
+                post.myReaction === 'like'
+                  ? tokens.tones.primary.fg
+                  : COLORS.textSecondary
               }
             />
             <Text
@@ -341,7 +344,7 @@ export default function PostDetailScreen() {
                 post.myReaction === 'like' && styles.reactionTextActive,
               ]}
             >
-              좋아요 {post.likes.toLocaleString()}
+              추천 {post.likes.toLocaleString()}
             </Text>
           </TouchableOpacity>
 
@@ -359,17 +362,18 @@ export default function PostDetailScreen() {
               size={normalize(14)}
               color={
                 post.myReaction === 'dislike'
-                  ? COLORS.white
+                  ? COLORS.text
                   : COLORS.textSecondary
               }
             />
             <Text
               style={[
                 styles.reactionText,
-                post.myReaction === 'dislike' && styles.reactionTextActive,
+                post.myReaction === 'dislike' &&
+                  styles.reactionTextActiveDislike,
               ]}
             >
-              싫어요 {post.dislikes}
+              비추천 {post.dislikes}
             </Text>
           </TouchableOpacity>
         </View>
@@ -426,6 +430,7 @@ export default function PostDetailScreen() {
           </>
         )}
       </ScrollView>
+      <BottomInsetFiller />
 
       <PublicProfileModal
         visible={isAuthorProfileVisible}

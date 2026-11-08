@@ -31,6 +31,7 @@ import { styles, COLORS } from './PostCreateScreen.styles';
 import { tokens } from '../../../theme/tokens';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import BackTopBar from '../../../components/common/BackTopBar';
+import BottomInsetFiller from '../../../components/common/BottomInsetFiller';
 
 type CreateRoute = RouteProp<CommunityStackParamList, 'CommunityCreate'>;
 
@@ -153,7 +154,7 @@ export default function PostCreateScreen() {
             accessibilityLabel={isEditMode ? '게시글 수정' : '게시글 등록'}
             accessibilityState={{ disabled: !canSubmit }}
           >
-            <Text style={styles.submitButtonText}>
+            <Text numberOfLines={1} style={styles.submitButtonText}>
               {createPost.isPending || updatePost.isPending
                 ? isEditMode
                   ? '수정 중'
@@ -248,6 +249,7 @@ export default function PostCreateScreen() {
           ))}
         </View>
       </ScrollView>
+      <BottomInsetFiller />
     </KeyboardAvoidingView>
   );
 }

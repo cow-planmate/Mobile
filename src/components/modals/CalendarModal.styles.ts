@@ -122,11 +122,15 @@ export const styles = StyleSheet.create({
   dayCircleSelected: {
     backgroundColor: COLORS.primary,
   },
-  dayCircleToday: {
-    borderWidth: 1.5,
-    borderColor: COLORS.primary,
+  // 오늘은 원 대신 파란 숫자와 작은 글자로 알린다. 채운 원은 고른 날짜만 쓴다.
+  todayLabel: {
+    fontSize: normalize(9),
+    lineHeight: normalize(10),
+    fontFamily: FONTS.medium,
+    color: COLORS.primary,
   },
   dayText: {
+    fontVariant: ['tabular-nums'],
     fontSize: normalize(14),
     fontFamily: FONTS.medium,
     fontWeight: '500',

@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   StyleSheet,
   ScrollView,
   Share,
@@ -13,10 +12,9 @@ import {
   Pressable,
   Animated,
 } from 'react-native';
+import { Spinner } from '../common/LoadingSpinner';
 import Toast from 'react-native-toast-message';
-import Link2 from 'lucide-react-native/dist/esm/icons/link-2';
-import Lock from 'lucide-react-native/dist/esm/icons/lock';
-import Copy from 'lucide-react-native/dist/esm/icons/copy';
+import Share2 from 'lucide-react-native/dist/esm/icons/share-2';
 import {
   getShareUrl,
   buildShareUrl,
@@ -114,7 +112,7 @@ export default function ShareModal({
     });
 
   const handleCopyLink = () => {
-    if (!shareLink) return;
+    if (!shareLink || !isShared) return;
 
     const hasNativeClipboard = !!NativeModules.RNCClipboard;
     if (hasNativeClipboard) {
@@ -140,7 +138,7 @@ export default function ShareModal({
   };
 
   const handleShareLink = async () => {
-    if (!shareLink) return;
+    if (!shareLink || !isShared) return;
     try {
       await Share.share({
         message: `[PlanMate] 완성된 여행 일정 링크예요!\n${shareLink}`,
@@ -304,18 +302,6 @@ export default function ShareModal({
         <Text style={styles.groupTitle}>링크로 공유</Text>
         <View style={styles.sharePanel}>
           <View style={styles.switchRow}>
-            <View
-              style={[styles.statusIcon, !isShared && styles.statusIconOff]}
-            >
-              {isShared ? (
-                <Link2 size={normalize(18)} color={tokens.colors.primary} />
-              ) : (
-                <Lock
-                  size={normalize(18)}
-                  color={tokens.colors.textSecondary}
-                />
-              )}
-            </View>
             <View style={styles.statusBody}>
               <Text style={styles.switchLabel}>
                 {isShared ? '링크가 있는 모든 사용자' : '제한됨'}
@@ -381,39 +367,41 @@ export default function ShareModal({
             )}
           </View>
 
-          <View style={styles.linkRow}>
-            <Text
-              style={styles.linkInput}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              accessibilityLabel="공유 링크"
-            >
-              {shareLink}
-            </Text>
-            <TouchableOpacity
-              style={styles.copyButton}
-              onPress={handleCopyLink}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel="공유 링크 복사"
-            >
-              <Copy size={normalize(14)} color={tokens.colors.primary} />
-              <Text style={styles.copyText}>링크 복사</Text>
-            </TouchableOpacity>
-          </View>
+          {/* 공유가 꺼지면 받은 사람이 열어도 볼 수 없으므로 웹처럼 링크를 감춘다. */}
+          {isShared && (
+            <>
+              <View style={styles.linkRow}>
+                <Text
+                  style={styles.linkInput}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  accessibilityLabel="공유 링크"
+                >
+                  {shareLink}
+                </Text>
+                <TouchableOpacity
+                  style={styles.copyButton}
+                  onPress={handleCopyLink}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="공유 링크 복사"
+                >
+                  <Text style={styles.copyText}>복사</Text>
+                </TouchableOpacity>
+              </View>
 
-          <TouchableOpacity
-            style={styles.shareButton}
-            onPress={handleShareLink}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel="공유 링크 보내기"
-          >
-            <Text style={styles.shareText}>링크 공유하기</Text>
-          </TouchableOpacity>
-          <Text style={styles.helper}>
-            링크를 복사하거나 공유하여 친구들에게 보내세요.
-          </Text>
+              <TouchableOpacity
+                style={styles.shareButton}
+                onPress={handleShareLink}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="공유 링크 보내기"
+              >
+                <Share2 size={normalize(16)} color={tokens.colors.text} />
+                <Text style={styles.shareText}>다른 앱으로 보내기</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
 
         <Text style={styles.sectionLabel}>일정 편집 초대</Text>
@@ -438,7 +426,7 @@ export default function ShareModal({
             accessibilityState={{ disabled: inviteLock.isSubmitting }}
           >
             {inviteLock.isSubmitting ? (
-              <ActivityIndicator color={tokens.colors.white} size="small" />
+              <Spinner color={tokens.colors.white} trackColor="transparent" />
             ) : (
               <Text style={styles.inviteText}>초대</Text>
             )}
@@ -492,24 +480,8 @@ const styles = StyleSheet.create({
     color: tokens.colors.textLabel,
     marginBottom: normalize(10),
   },
-  sharePanel: {
-    padding: normalize(12),
-    borderRadius: normalize(14),
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  statusIcon: {
-    width: normalize(36),
-    height: normalize(36),
-    borderRadius: normalize(18),
-    backgroundColor: tokens.colors.sub,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statusIconOff: {
-    backgroundColor: tokens.colors.border,
-  },
+  // 카드로 감싸지 않는다. 구역 제목과 구분선만으로 나눈다.
+  sharePanel: {},
   statusBody: {
     flex: 1,
   },
@@ -555,14 +527,12 @@ const styles = StyleSheet.create({
     height: 0,
     overflow: 'hidden',
   },
-  // 주소와 복사 단추를 한 테두리 안에 넣어 둘이 한 덩이로 읽히게 한다.
+  // 주소와 복사 단추를 회색 면 하나에 넣어 둘이 한 덩이로 읽히게 한다. 테두리는 두지 않는다.
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: tokens.colors.white,
-    borderRadius: normalize(10),
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.pageGround,
+    borderRadius: normalize(12),
     padding: normalize(4),
   },
   linkInput: {
@@ -579,37 +549,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: normalize(10),
     flexDirection: 'row',
     gap: normalize(5),
-    borderRadius: normalize(7),
-    backgroundColor: tokens.colors.primaryTint,
+    borderRadius: normalize(9),
+    backgroundColor: tokens.colors.white,
     alignItems: 'center',
     justifyContent: 'center',
   },
   copyText: {
-    fontSize: normalize(12.5),
+    fontSize: normalize(13),
     fontFamily: tokens.fontFamily.bold,
-    color: tokens.colors.primary,
+    color: tokens.colors.text,
   },
+  // 파란 채운 버튼은 "초대" 하나만 남기고, 링크 보내기는 회색 면으로 낮춘다.
   shareButton: {
     marginTop: normalize(8),
-    height: normalize(44),
-    borderRadius: normalize(10),
-    backgroundColor: tokens.colors.primary,
-    borderWidth: 1,
-    borderColor: tokens.colors.sub,
+    height: normalize(48),
+    flexDirection: 'row',
+    gap: normalize(6),
+    borderRadius: normalize(12),
+    backgroundColor: tokens.colors.pageGround,
     alignItems: 'center',
     justifyContent: 'center',
   },
   shareText: {
-    fontSize: normalize(13.5),
+    fontSize: normalize(14),
     fontFamily: tokens.fontFamily.semibold,
-    color: tokens.colors.white,
-  },
-  helper: {
-    marginTop: normalize(6),
-    fontSize: normalize(12),
-    lineHeight: normalize(18),
-    fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textSecondary,
+    color: tokens.colors.text,
   },
   // 이름표가 곧 칸막이다. 위에 실선을 얹어 따로 divider를 두지 않는다.
   sectionLabel: {
@@ -628,11 +592,9 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    height: normalize(44),
-    backgroundColor: tokens.colors.surface,
-    borderRadius: normalize(10),
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
+    height: normalize(48),
+    backgroundColor: tokens.colors.pageGround,
+    borderRadius: normalize(12),
     paddingHorizontal: normalize(14),
     paddingVertical: 0,
     fontSize: normalize(13.5),
@@ -640,10 +602,10 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
   },
   inviteButton: {
-    height: normalize(44),
+    height: normalize(48),
     minWidth: normalize(72),
     paddingHorizontal: normalize(18),
-    borderRadius: normalize(10),
+    borderRadius: normalize(12),
     backgroundColor: tokens.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

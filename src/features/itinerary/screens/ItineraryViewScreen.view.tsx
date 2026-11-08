@@ -1,9 +1,9 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import { View, Text, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import ChevronLeft from 'lucide-react-native/dist/esm/icons/chevron-left';
 import MapOutlineIcon from 'lucide-react-native/dist/esm/icons/map';
 import ListChecks from 'lucide-react-native/dist/esm/icons/list-checks';
-import Pencil from 'lucide-react-native/dist/esm/icons/pencil';
 import Share2 from 'lucide-react-native/dist/esm/icons/share-2';
 import PlanMapModal from '../components/PlanMapModal';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
@@ -11,7 +11,6 @@ import {
   ShareModal,
   AirplaneLoading,
 } from '../../../components/common';
-import BackTopBar from '../../../components/common/BackTopBar';
 import PlanScheduleList, {
   formatFullDate,
 } from '../components/PlanScheduleList';
@@ -33,7 +32,9 @@ type ToolbarButtonVariant =
   | 'outlineBlue'
   | 'outlineDark'
   | 'filledGray'
-  | 'filledBlue';
+  | 'filledBlue'
+  | 'bare'
+  | 'editText';
 
 const ToolbarIconButton = ({
   label,
@@ -65,6 +66,8 @@ const ToolbarIconButton = ({
       variant === 'outlineDark' && styles.toolbarIconButtonOutlineDark,
       variant === 'filledGray' && styles.toolbarIconButtonFilledGray,
       variant === 'filledBlue' && styles.toolbarIconButtonFilledBlue,
+      variant === 'bare' && styles.toolbarIconButtonBare,
+      variant === 'editText' && styles.toolbarIconButtonEditText,
       active && styles.toolbarIconButtonActive,
       disabled && styles.toolbarIconButtonDisabled,
     ]}
@@ -96,14 +99,16 @@ export interface ItineraryViewScreenViewProps {
 
   isPlanOwner: boolean;
   scrollRef: React.RefObject<ScrollView | null>;
-  handleConfirm?: () => void;
   goBack: () => void;
   handleEdit: () => void;
   planId?: string;
   weatherMap: Record<string, SimpleWeatherInfo>;
   tripName: string;
+  destination?: string;
 
   isWeatherLoading: boolean;
+  /** 일정은 준비됐지만 날씨를 잠깐 더 기다리는 동안 로딩을 유지한다. */
+  isWaitingWeather: boolean;
   loadError: boolean;
   onRetryLoad: () => void;
 }
@@ -120,12 +125,13 @@ export default function ItineraryViewScreenView({
   setChecklistVisible,
   isPlanOwner,
   scrollRef,
-  handleConfirm,
   goBack,
   handleEdit,
   planId,
   weatherMap,
   tripName,
+  destination,
+  isWaitingWeather,
   loadError,
   onRetryLoad,
 }: ItineraryViewScreenViewProps) {
@@ -181,6 +187,13 @@ export default function ItineraryViewScreenView({
     ],
   );
   const screenInsets = useScreenInsets(true);
+  // 편집 화면 제목 아래 부제와 같은 규칙. 날짜는 일차 탭에 이미 있어 적지 않는다.
+  const tripSubtitle = [
+    destination,
+    days.length > 1 ? `${days.length - 1}박 ${days.length}일` : '당일',
+  ]
+    .filter(Boolean)
+    .join(' · ');
   const mapPlaces = useMemo(
     () =>
       selectedDay?.places.map(place => ({
@@ -196,46 +209,66 @@ export default function ItineraryViewScreenView({
   );
   return (
     <View style={[styles.container, screenInsets]}>
-      <BackTopBar title="완성된 일정" onBack={goBack} />
-
+      {/* 편집 화면과 같은 머리줄. 위 줄은 뒤로 가기와 일정 이름, 아래 줄은
+          부제와 도구다. 편집만 이 화면의 주된 동작이라 글자 단추로 둔다. */}
       <View style={styles.topToolbar}>
-        <View style={styles.toolbarLeftGroup}>
-          <View style={styles.toolbarTitleButton}>
-            <Text style={styles.toolbarTitleText} numberOfLines={1}>
-              {tripName}
-            </Text>
+        <View style={styles.toolbarTitleRow}>
+          <TouchableOpacity
+            style={styles.toolbarBackButton}
+            onPress={goBack}
+            activeOpacity={0.6}
+            accessibilityRole="button"
+            accessibilityLabel="뒤로 가기"
+          >
+            <ChevronLeft size={24} color={COLORS.text} />
+          </TouchableOpacity>
+          <View style={styles.toolbarLeftGroup}>
+            <View style={styles.toolbarTitleButton}>
+              <Text style={styles.toolbarTitleText} numberOfLines={1}>
+                {tripName}
+              </Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.toolbarRightGroup}>
-          <ToolbarIconButton
-            onPress={() => setMapVisible(!isMapVisible)}
-            label="여행 동선"
-            variant="outlineDark"
-          >
-            <MapOutlineIcon color={COLORS.text} size={17} strokeWidth={2} />
-          </ToolbarIconButton>
-          <ToolbarIconButton
-            onPress={() => setChecklistVisible(true)}
-            label="체크리스트"
-            variant="outlineDark"
-          >
-            <ListChecks size={17} color={COLORS.text} strokeWidth={2} />
-          </ToolbarIconButton>
-          <ToolbarIconButton
-            onPress={() => setShareModalVisible(true)}
-            label="공유 및 초대"
-            variant="outlineDark"
-          >
-            <Share2 color={COLORS.text} size={17} />
-          </ToolbarIconButton>
-          <ToolbarIconButton
-            label="일정 수정"
-            onPress={handleEdit}
-            variant="filledGray"
-          >
-            <Pencil color={COLORS.text} size={17} />
-          </ToolbarIconButton>
+        <View style={styles.toolbarToolsRow}>
+          <Text style={styles.toolbarSubtitle} numberOfLines={1}>
+            {tripSubtitle}
+          </Text>
+          <View style={styles.toolbarRightGroup}>
+            <ToolbarIconButton
+              onPress={() => setMapVisible(!isMapVisible)}
+              label="여행 동선"
+              variant="bare"
+            >
+              <MapOutlineIcon
+                color={COLORS.textLabel}
+                size={22}
+                strokeWidth={1.75}
+              />
+            </ToolbarIconButton>
+            <ToolbarIconButton
+              onPress={() => setChecklistVisible(true)}
+              label="체크리스트"
+              variant="bare"
+            >
+              <ListChecks size={22} color={COLORS.textLabel} strokeWidth={1.75} />
+            </ToolbarIconButton>
+            <ToolbarIconButton
+              onPress={() => setShareModalVisible(true)}
+              label="공유 및 초대"
+              variant="bare"
+            >
+              <Share2 color={COLORS.textLabel} size={22} strokeWidth={1.75} />
+            </ToolbarIconButton>
+            <ToolbarIconButton
+              label="일정 수정"
+              onPress={handleEdit}
+              variant="editText"
+            >
+              <Text style={styles.toolbarEditText}>편집</Text>
+            </ToolbarIconButton>
+          </View>
         </View>
       </View>
 
@@ -329,25 +362,15 @@ export default function ItineraryViewScreenView({
             <View style={styles.timelineStage}>
               <View pointerEvents="none" style={styles.timelineSceneBackdrop} />
               {weatherMap[formatDateLocal(selectedDay.date)] && (
-                <View
-                  pointerEvents="none"
-                  style={styles.timelineWeatherOverlay}
-                >
-                  <WeatherHeader
-                    dayNumber={selectedDay.dayNumber}
-                    weather={weatherMap[formatDateLocal(selectedDay.date)]}
-                    appearance="overlay"
-                  />
-                </View>
+                <WeatherHeader
+                  dayNumber={selectedDay.dayNumber}
+                  weather={weatherMap[formatDateLocal(selectedDay.date)]}
+                  appearance="band"
+                />
               )}
               <ScrollView
                 ref={scrollRef}
-                contentContainerStyle={[
-                  styles.timelineContentContainer,
-                  weatherMap[formatDateLocal(selectedDay.date)]
-                    ? styles.timelineWeatherPadding
-                    : undefined,
-                ]}
+                contentContainerStyle={styles.timelineContentContainer}
               >
                 <PlanScheduleList
                   places={selectedDay.places}
@@ -391,8 +414,10 @@ export default function ItineraryViewScreenView({
       {/* 로딩이 끝나지 않으면 이 모달이 화면 전체를 덮는다 —
           안드로이드 뒤로가기로 빠져나갈 수 있어야 갇히지 않는다 */}
       <Modal
-        visible={days.length === 0}
+        visible={days.length === 0 || isWaitingWeather}
         transparent={false}
+        statusBarTranslucent
+        navigationBarTranslucent
         animationType="fade"
         onRequestClose={goBack}
       >

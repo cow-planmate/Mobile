@@ -31,17 +31,22 @@ export const styles = StyleSheet.create({
     fontFamily: tokens.fontFamily.semibold,
     color: COLORS.text,
   },
+  // 파란 면 단추. 아직 쓸 수 없을 때는 같은 파랑을 연하게 해 누를 단추임은
+  // 알리되 못 누르는 상태임을 보인다. 폭은 글자에 맞춰 늘어난다.
   submitButton: {
+    height: normalize(34),
     paddingHorizontal: normalize(14),
-    paddingVertical: normalize(6),
-    borderRadius: tokens.radius.m,
+    marginRight: normalize(8),
+    borderRadius: tokens.radius.round,
     backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   submitButtonDisabled: {
-    backgroundColor: COLORS.disabled,
+    opacity: 0.4,
   },
   submitButtonText: {
-    fontSize: normalize(12),
+    fontSize: normalize(14),
     fontFamily: tokens.fontFamily.bold,
     color: COLORS.white,
   },

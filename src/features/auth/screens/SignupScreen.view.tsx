@@ -5,10 +5,10 @@ import {
   TextInput,
   TouchableOpacity,
   Pressable,
-  ActivityIndicator,
   ScrollView,
   Dimensions,
 } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import Animated, {
   FadeInDown,
   FadeOut,
@@ -387,9 +387,9 @@ export const SignupScreenView = ({
                       accessibilityLabel="인증번호 요청"
                     >
                       {isSendingEmail ? (
-                        <ActivityIndicator
+                        <Spinner
                           color={COLORS.onPrimary}
-                          size="small"
+                          trackColor="transparent"
                         />
                       ) : (
                         <Text style={styles.inlineButtonText}>인증요청</Text>
@@ -443,10 +443,7 @@ export const SignupScreenView = ({
                         accessibilityLabel="인증번호 6자리"
                       />
                       {isVerifying ? (
-                        <ActivityIndicator
-                          size="small"
-                          color={COLORS.primary}
-                        />
+                        <Spinner color={COLORS.primary} />
                       ) : isEmailVerified ? (
                         <Check
                           size={sf(20)}

@@ -116,9 +116,7 @@ export const styles = StyleSheet.create({
     borderBottomRightRadius: normalize(5),
   },
   bubbleBot: {
-    backgroundColor: tokens.colors.white,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.pageGround,
     borderBottomLeftRadius: normalize(5),
   },
   /** 카드 다음에 이어지는 글. 카드에 붙어 버리지 않게 한 칸 띄운다. */
@@ -165,9 +163,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(12),
     paddingVertical: normalize(11),
     borderRadius: tokens.radius.l,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.white,
+    backgroundColor: tokens.colors.pageGround,
   },
   promptText: {
     flex: 1,
@@ -183,9 +179,7 @@ export const styles = StyleSheet.create({
     paddingVertical: normalize(11),
     borderRadius: normalize(16),
     borderBottomLeftRadius: normalize(5),
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.white,
+    backgroundColor: tokens.colors.pageGround,
   },
   pendingLine: {
     flexDirection: 'row',
@@ -527,9 +521,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: normalize(12),
     paddingVertical: normalize(10),
     borderRadius: tokens.radius.l,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.pageGround,
     fontSize: normalize(13),
     fontFamily: tokens.fontFamily.regular,
     color: tokens.colors.text,

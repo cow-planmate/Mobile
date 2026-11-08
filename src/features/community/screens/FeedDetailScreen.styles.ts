@@ -5,6 +5,9 @@ import { tokens } from '../../../theme/tokens';
 export const COLORS = tokens.colors;
 
 export const styles = StyleSheet.create({
+  topBarActions: {
+    flexDirection: 'row',
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.pageGround,
@@ -295,10 +298,8 @@ export const styles = StyleSheet.create({
     gap: normalize(6),
     height: normalize(44),
     paddingHorizontal: normalize(8),
-    borderRadius: tokens.radius.l,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    borderRadius: tokens.radius.round,
+    backgroundColor: COLORS.pageGround,
   },
   // 추천·비추천과 같은 높이의 정사각. 숫자가 없으니 늘어날 이유도 없다.
   shareButton: {
@@ -306,24 +307,21 @@ export const styles = StyleSheet.create({
     height: normalize(44),
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: tokens.radius.l,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    borderRadius: tokens.radius.round,
+    backgroundColor: COLORS.pageGround,
   },
   reactionButtonActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: tokens.tones.primary.bg,
   },
   reactionButtonActiveDislike: {
-    backgroundColor: COLORS.textSecondary,
-    borderColor: COLORS.textSecondary,
+    backgroundColor: COLORS.border,
   },
   reactionText: {
-    fontSize: normalize(12.5),
-    fontFamily: tokens.fontFamily.semibold,
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.bold,
     color: COLORS.textSecondary,
     letterSpacing: -0.2,
+    fontVariant: ['tabular-nums'],
   },
   similarHeading: {
     paddingHorizontal: normalize(16),
@@ -381,6 +379,9 @@ export const styles = StyleSheet.create({
   },
 
   reactionTextActive: {
-    color: COLORS.white,
+    color: tokens.tones.primary.fg,
+  },
+  reactionTextActiveDislike: {
+    color: COLORS.text,
   },
 });

@@ -53,7 +53,6 @@ const formatDate = (date: Date) =>
 function EditorHarness(props: {
   initialDays?: Day[];
   participantsCount?: number;
-  initialTimePicker?: boolean;
   initialScheduleEdit?: boolean;
   initialEditingTripName?: boolean;
 }) {
@@ -63,20 +62,8 @@ function EditorHarness(props: {
   const [isEditingTripName, setIsEditingTripName] = useState(
     !!props.initialEditingTripName,
   );
-  const [isTimePickerVisible, setTimePickerVisible] = useState(
-    !!props.initialTimePicker,
-  );
   const [isScheduleEditVisible, setScheduleEditVisible] = useState(
     !!props.initialScheduleEdit,
-  );
-  const [editingTime, setEditingTime] = useState<{
-    placeId: string;
-    type: 'startTime' | 'endTime';
-    time: string;
-  } | null>(
-    props.initialTimePicker
-      ? { placeId: 'p1', type: 'startTime', time: '09:00' }
-      : null,
   );
   const timelineScrollRef = useRef<ScrollView>(null);
 
@@ -105,16 +92,8 @@ function EditorHarness(props: {
         action('일정 이름 저장')(tripName);
         setIsEditingTripName(false);
       }}
-      isTimePickerVisible={isTimePickerVisible}
-      setTimePickerVisible={setTimePickerVisible}
-      editingTime={editingTime}
       timelineScrollRef={timelineScrollRef}
       formatDate={formatDate}
-      handleEditTime={(placeId, type, time) => {
-        action('시간 편집 열기')({ placeId, type, time });
-        setEditingTime({ placeId, type, time });
-        setTimePickerVisible(true);
-      }}
       handleUpdatePlaceTimes={(placeId, startMinutes, endMinutes) =>
         action('장소 시간 변경')({ placeId, startMinutes, endMinutes })
       }
@@ -139,11 +118,6 @@ function EditorHarness(props: {
       isScheduleEditVisible={isScheduleEditVisible}
       setScheduleEditVisible={setScheduleEditVisible}
       onConfirmScheduleEdit={action('일정 시간표 저장')}
-      onConfirmTimePicker={date => {
-        action('시간 확정')(date.toISOString());
-        setTimePickerVisible(false);
-        setEditingTime(null);
-      }}
       destination="제주"
       onComplete={action('완료')}
       onOpenParticipants={action('참여자 열기')}
@@ -176,12 +150,8 @@ const meta = {
     setIsEditingTripName: noop,
     setTripName: noop,
     onSaveTripName: noop,
-    isTimePickerVisible: false,
-    setTimePickerVisible: noop,
-    editingTime: null,
     timelineScrollRef: { current: null },
     formatDate,
-    handleEditTime: noop,
     handleUpdatePlaceTimes: noop,
     handleDeletePlace: noop,
     handleAddPlace: noop,
@@ -189,7 +159,6 @@ const meta = {
     isScheduleEditVisible: false,
     setScheduleEditVisible: noop,
     onConfirmScheduleEdit: noop,
-    onConfirmTimePicker: noop,
     destination: '제주',
     onComplete: action('완료'),
     onOpenParticipants: action('참여자 열기'),
@@ -240,12 +209,6 @@ export const SoloPlan: Story = {
 export const EditingTripName: Story = {
   name: '여행 이름 편집',
   render: () => <EditorHarness initialEditingTripName />,
-};
-
-/** 타임라인 블록의 시간을 눌러 여는 시간 선택 모달 */
-export const TimePickerOpen: Story = {
-  name: '시간 선택 열림',
-  render: () => <EditorHarness initialTimePicker />,
 };
 
 /** 일자 시간표 편집 모달 */

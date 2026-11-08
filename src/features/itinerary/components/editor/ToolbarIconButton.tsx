@@ -2,31 +2,20 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { styles } from '../../screens/ItineraryEditorScreen.styles';
 
-type ToolbarButtonVariant =
-  | 'plain'
-  | 'info'
-  | 'outlineBlue'
-  | 'outlineDark'
-  | 'filledGray'
-  | 'filledBlue';
-
+/** 도구줄의 아이콘 버튼. 테두리와 바탕 없이 아이콘만 보인다. */
 const ToolbarIconButton = ({
   label,
   children,
   onPress,
-  active = false,
   disabled = false,
   badgeCount,
-  variant = 'info',
   targetRef,
 }: {
   children: React.ReactNode;
   label: string;
   onPress: () => void;
-  active?: boolean;
   disabled?: boolean;
   badgeCount?: number;
-  variant?: ToolbarButtonVariant;
   /** 첫 진입 안내가 이 버튼을 짚을 수 있게 다는 ref. */
   targetRef?: (node: unknown) => void;
 }) => (
@@ -34,17 +23,10 @@ const ToolbarIconButton = ({
     ref={targetRef}
     onPress={onPress}
     disabled={disabled}
-    activeOpacity={0.8}
-    hitSlop={8}
+    activeOpacity={0.6}
+    hitSlop={4}
     style={[
       styles.toolbarIconButton,
-      variant === 'plain' && styles.toolbarIconButtonPlain,
-      variant === 'info' && styles.toolbarIconButtonInfo,
-      variant === 'outlineBlue' && styles.toolbarIconButtonOutlineBlue,
-      variant === 'outlineDark' && styles.toolbarIconButtonOutlineDark,
-      variant === 'filledGray' && styles.toolbarIconButtonFilledGray,
-      variant === 'filledBlue' && styles.toolbarIconButtonFilledBlue,
-      active && styles.toolbarIconButtonActive,
       disabled && styles.toolbarIconButtonDisabled,
     ]}
     accessibilityRole="button"
@@ -61,6 +43,5 @@ const ToolbarIconButton = ({
     )}
   </TouchableOpacity>
 );
-
 
 export default ToolbarIconButton;

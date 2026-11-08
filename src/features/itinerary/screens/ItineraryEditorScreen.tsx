@@ -19,24 +19,21 @@ import { usePlaces } from '../contexts/PlacesContext';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useItineraryEditor } from '../hooks/useItineraryEditor';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCreateFullPlan } from '../../../hooks/usePlanQueries';
 import { usePlanOwnership } from '../../../hooks/usePlanOwnership';
 import { invalidatePlanCaches } from '../../../hooks/planCache';
 import {
-  timeToMinutes,
-  dateToTime,
   formatDateLocal,
   normalizeTime,
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
 } from '../../../utils/timeUtils';
-import { toLocalTime } from '../utils/planSyncPayload';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 import {
   buildScheduleEditSync,
   mergeScheduleEditDays,
 } from '../utils/scheduleEditSync';
 import { SimpleWeatherInfo, fetchWeather } from '../../../api/trips';
+import { useWeatherWaitGate } from '../hooks/useWeatherWaitGate';
 import ItineraryEditorScreenView from './ItineraryEditorScreen.view';
 import { ShareModal, AirplaneLoading } from '../../../components/common';
 import PlanInfoModal from '../components/PlanInfoModal';
@@ -48,7 +45,6 @@ import ParticipantsModal from '../components/ParticipantsModal';
 import PlanMapModal from '../components/PlanMapModal';
 import ChecklistSheet from '../components/checklist/ChecklistSheet';
 import EditAccessGate from '../components/EditAccessGate';
-import { normalizeCategoryId } from '../utils/placeCategory';
 import { CoachmarkProvider, EditorCoachmark } from '../coachmark';
 import type { CoachmarkTargetId } from '../coachmark';
 
@@ -63,7 +59,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     isResolved: isMembershipResolved,
   } = usePlanOwnership(route.params.planId);
   const queryClient = useQueryClient();
-  const createFullPlanMutation = useCreateFullPlan();
   const {
     days,
     selectedDayIndex,
@@ -72,13 +67,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setTripName,
     isEditingTripName,
     setIsEditingTripName,
-    isTimePickerVisible,
-    setTimePickerVisible,
-    editingTime,
-    setEditingTime,
     timelineScrollRef,
     formatDate,
-    handleEditTime,
     handleUpdatePlaceTimes,
     handleDeletePlace,
     handleAddPlace,
@@ -166,6 +156,28 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     navigation.goBack();
   }, [navigation]);
 
+  // 일정 ID 없이 열리면 편집할 일정이 없다. 예전에는 완료할 때 서버에 새로 만들었지만
+  // 이제 모든 진입 경로가 먼저 일정을 만들어 ID를 넘기므로, 만들지 않고 안내 후 돌아간다.
+  const missingPlanAlertedRef = useRef(false);
+  useEffect(() => {
+    if (route.params.planId || missingPlanAlertedRef.current) return;
+    missingPlanAlertedRef.current = true;
+    showAlert({
+      title: '일정을 열 수 없어요',
+      message: '편집할 일정 정보를 찾지 못했어요. 내 일정에서 다시 열어 주세요.',
+      type: 'error',
+      buttons: [
+        {
+          text: '확인',
+          onPress: () => {
+            isBackingRef.current = true;
+            navigation.goBack();
+          },
+        },
+      ],
+    });
+  }, [route.params.planId, navigation, showAlert]);
+
   // 새로 만드는 일정(planId 없음)은 판정 대상이 아니다. 소유/편집 목록 갱신이 끝난
   // 뒤에만 권한 없음으로 단정한다 — 갱신 중에는 직전 목록이 남아 오판이 난다.
   const isAccessDenied =
@@ -247,15 +259,12 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
       // 장소를 넣고 옮기고 지우는 것도, 일정 이름도 실시간 동기화로 그때그때
       // 저장된다. 이미 저장된 일정을 두고 "저장 안 됨"이라 겁줄 이유가 없다.
-      // 아직 서버에 없는 일정(planId 없음)만 완료를 눌러야 저장된다.
-      const isSavedPlan = !!route.params.planId;
-
       showAlert({
-        title: isSavedPlan ? '편집 마치기' : '저장되지 않은 일정',
-        message: isSavedPlan
-          ? '바꾼 내용은 그때그때 저장되고 있어요. 편집을 마칠까요?'
-          : '아직 저장하지 않은 일정이에요. 나가면 지금까지 짠 일정이 사라져요.',
-        type: isSavedPlan ? 'confirm' : 'warning',
+        title: '편집을 마칠까요?',
+        message: '바꾼 내용은 그때그때 저장되고 있어요.',
+        type: 'confirm',
+        // 안심시키는 안내라 경고처럼 보이는 느낌표를 달지 않는다.
+        showIcon: false,
         buttons: [
           {
             text: '계속 편집',
@@ -264,7 +273,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           },
           {
             text: '나가기',
-            style: isSavedPlan ? 'default' : 'destructive',
+            style: 'default',
             onPress: () => {
               isBackingRef.current = true;
               setIsBacking(true);
@@ -295,7 +304,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     isSaving,
     navigation,
     route.params.createdFromHome,
-    route.params.planId,
     showAlert,
   ]);
 
@@ -303,10 +311,20 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     Record<string, SimpleWeatherInfo>
   >({});
 
+  // 일정 응답을 기다리지 않고 이전 화면에서 받은 날짜로 날씨를 먼저 요청한다.
+  // 응답의 날짜가 다르면 아래 effect가 다시 요청한다.
+  const routeStartDate = route.params.startDate
+    ? formatDateLocal(new Date(route.params.startDate))
+    : '';
+  const routeEndDate = route.params.endDate
+    ? formatDateLocal(new Date(route.params.endDate))
+    : '';
   const weatherRangeStart =
-    days.length > 0 ? formatDateLocal(days[0].date) : '';
+    days.length > 0 ? formatDateLocal(days[0].date) : routeStartDate;
   const weatherRangeEnd =
-    days.length > 0 ? formatDateLocal(days[days.length - 1].date) : '';
+    days.length > 0
+      ? formatDateLocal(days[days.length - 1].date)
+      : routeEndDate;
 
   const buildPlanSyncPayload = useCallback(
     (targetPlanId: string, planName: string) => ({
@@ -330,6 +348,17 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     route.params.travelId ||
     planMetadata?.destinationId ||
     null;
+
+  // 현재 날씨 요청 조건이 아직 결과(성공·실패)를 받지 못했는지 렌더 중에 바로 계산한다.
+  const weatherKey =
+    weatherDestinationId && weatherRangeStart && weatherRangeEnd
+      ? `${weatherDestinationId}|${weatherRangeStart}|${weatherRangeEnd}`
+      : '';
+  const [settledWeatherKey, setSettledWeatherKey] = useState('');
+  const isWaitingWeather = useWeatherWaitGate(
+    !isInitialPlanLoading && days.length > 0,
+    weatherKey !== '' && settledWeatherKey !== weatherKey,
+  );
 
   useEffect(() => {
     if (!weatherDestinationId || !weatherRangeStart || !weatherRangeEnd) {
@@ -363,12 +392,16 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
         console.warn('날씨 조회 실패:', error);
         setWeatherMap({});
+      })
+      .finally(() => {
+        if (controller.signal.aborted) return;
+        setSettledWeatherKey(weatherKey);
       });
 
     return () => {
       controller.abort();
     };
-  }, [weatherDestinationId, weatherRangeStart, weatherRangeEnd]);
+  }, [weatherDestinationId, weatherRangeStart, weatherRangeEnd, weatherKey]);
 
   const hasInitialFetchedRef = useRef(false);
   const isConnectedRef = useRef(isConnected);
@@ -514,7 +547,12 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   const handleSaveTripName = useCallback(async () => {
     setIsEditingTripName(false);
-    if (!tripName || !planId) return;
+    // 이름을 모두 지우고 끝내면 빈 제목이 화면에 남는다. 저장되어 있던 이름으로 되돌린다.
+    if (!tripName.trim()) {
+      if (syncedTripNameRef.current) setTripName(syncedTripNameRef.current);
+      return;
+    }
+    if (!planId) return;
     if (tripName === syncedTripNameRef.current) return;
 
     const lastSyncedName = syncedTripNameRef.current;
@@ -548,6 +586,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     planId,
     sendMessage,
     setIsEditingTripName,
+    setTripName,
     showAlert,
     tripName,
   ]);
@@ -610,46 +649,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     );
 
     setScheduleEditVisible(false);
-  };
-
-  const onConfirmTimePicker = (date: Date) => {
-    if (!editingTime || !selectedDay) return;
-    const newTime = dateToTime(date);
-    const place = selectedDay.places.find(p => p.id === editingTime.placeId);
-    if (place) {
-      const newStartTimeMinutes = timeToMinutes(newTime);
-      if (editingTime.type === 'startTime') {
-        const endTimeMinutes = timeToMinutes(place.endTime);
-        const durationMinutes = endTimeMinutes - timeToMinutes(place.startTime);
-        if (durationMinutes < 15) {
-          handleUpdatePlaceTimes(
-            place.id,
-            newStartTimeMinutes,
-            newStartTimeMinutes + 15,
-          );
-        } else {
-          handleUpdatePlaceTimes(
-            place.id,
-            newStartTimeMinutes,
-            newStartTimeMinutes + durationMinutes,
-          );
-        }
-      } else {
-        const newEndTimeMinutes = timeToMinutes(newTime);
-        const startTimeMinutes = timeToMinutes(place.startTime);
-        if (newEndTimeMinutes <= startTimeMinutes) {
-          handleUpdatePlaceTimes(
-            place.id,
-            startTimeMinutes,
-            startTimeMinutes + 15,
-          );
-        } else {
-          handleUpdatePlaceTimes(place.id, startTimeMinutes, newEndTimeMinutes);
-        }
-      }
-    }
-    setTimePickerVisible(false);
-    setEditingTime(null);
   };
 
   const onComplete = async () => {
@@ -715,102 +714,11 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       return;
     }
 
-    try {
-      const timetableVOs = days.map(day => ({
-        date: formatDateLocal(day.date),
-        timeTableStartTime: toLocalTime(day.startTime) || DEFAULT_DAY_START,
-        timeTableEndTime: toLocalTime(day.endTime) || DEFAULT_DAY_END,
-      }));
-
-      const allBlocks = days.flatMap(day => {
-        const dateStr = formatDateLocal(day.date);
-        return day.places.map(place => {
-          const categoryId = normalizeCategoryId(place.categoryId, place.type);
-          const startTime =
-            place.startTime.length === 5
-              ? place.startTime + ':00'
-              : place.startTime;
-          const endTime =
-            place.endTime.length === 5 ? place.endTime + ':00' : place.endTime;
-          return {
-            blockId: null,
-            timeTableId: 0,
-            date: dateStr,
-            placeCategoryId: categoryId,
-            placeName: place.name || '',
-            placeAddress: place.address || '',
-            placeLink: place.place_url || '',
-            placeId: place.placeRefId || '',
-            photoUrl: place.imageUrl || null,
-            memo: place.memo || '',
-            startTime,
-            endTime,
-            blockStartTime: startTime,
-            blockEndTime: endTime,
-            xLocation: place.longitude || 0,
-            yLocation: place.latitude || 0,
-            placeContentTypeId: place.contentTypeId || null,
-            placeThumbnailUrl: place.imageUrl || null,
-            placeCopyrightDivCd: place.copyrightDivCd || null,
-          };
-        });
-      });
-
-      const result = await createFullPlanMutation.mutateAsync({
-        planFrame: {
-          destinationId: route.params.travelId || 1,
-          adultCount: route.params.adults || 1,
-          childCount: route.params.children || 0,
-        },
-        timetables: timetableVOs,
-        timetablePlaceBlocks: allBlocks,
-      });
-
-      const newPlanId = result?.planId;
-
-      if (!newPlanId) {
-        console.error('Plan creation response did not include planId:', result);
-        isCompletingRef.current = false;
-        showAlert({
-          title: '일정을 확인할 수 없어요',
-          message:
-            '일정 생성 응답에 식별자가 없어요. 내 일정에서 생성됐는지 확인해 주세요.',
-        });
-        return;
-      }
-
-      if (newPlanId && tripName) {
-        try {
-          await axios.patch(resolveApiUrl(`/api/plan/${newPlanId}/name`), {
-            planName: tripName,
-          });
-        } catch (patchErr) {
-          console.error('Failed to patch plan name after creation:', patchErr);
-        }
-      }
-
-      disconnect();
-
-      navigation.navigate('ItineraryView', {
-        days,
-        tripName,
-        planId: newPlanId,
-        departure: route.params.departure,
-        destination: route.params.destination,
-        travelId: route.params.travelId,
-        adults: route.params.adults,
-        children: route.params.children,
-        startDate: route.params.startDate,
-        endDate: route.params.endDate,
-      });
-    } catch (error: any) {
-      console.error('Failed to create plan:', error);
-      showAlert({ title: '오류', message: '일정을 저장하지 못했어요.' });
-      isCompletingRef.current = false;
-    } finally {
-      isSavingRef.current = false;
-      setIsSaving(false);
-    }
+    // 일정 ID 없이 열리는 경로는 화면 진입 때 막는다. 여기까지 왔다면 저장할 곳이
+    // 없으므로 서버에 새로 만들지 않고 그대로 둔다.
+    isCompletingRef.current = false;
+    isSavingRef.current = false;
+    setIsSaving(false);
   };
 
   /**
@@ -870,7 +778,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     !isChecklistVisible &&
     !isPlaceEditModalVisible &&
     !isScheduleEditVisible &&
-    !isTimePickerVisible &&
     !placeDetail;
 
   return (
@@ -884,12 +791,8 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         setIsEditingTripName={setIsEditingTripName}
         setTripName={setTripName}
         onSaveTripName={handleSaveTripName}
-        isTimePickerVisible={isTimePickerVisible}
-        setTimePickerVisible={setTimePickerVisible}
-        editingTime={editingTime}
         timelineScrollRef={timelineScrollRef}
         formatDate={formatDate}
-        handleEditTime={handleEditTime}
         handleUpdatePlaceTimes={handleUpdatePlaceTimes}
         handleDeletePlace={handleDeletePlace}
         handleAddPlace={handleAddPlaceOverride}
@@ -910,7 +813,6 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           setScheduleEditVisible(visible);
         }}
         onConfirmScheduleEdit={onConfirmScheduleEdit}
-        onConfirmTimePicker={onConfirmTimePicker}
         destination={destination || ''}
         onComplete={onComplete}
         onOpenParticipants={handleOpenParticipants}
@@ -1042,9 +944,15 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       <Modal
         visible={
           !isAccessDenied &&
-          (isInitialPlanLoading || days.length === 0 || isSaving || isBacking)
+          (isInitialPlanLoading ||
+            days.length === 0 ||
+            isWaitingWeather ||
+            isSaving ||
+            isBacking)
         }
         transparent={false}
+        statusBarTranslucent
+        navigationBarTranslucent
         animationType="fade"
         onRequestClose={handleGoBack}
       >

@@ -4,9 +4,9 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   StyleSheet,
 } from 'react-native';
+import { Spinner } from './LoadingSpinner';
 import ArrowRight from 'lucide-react-native/dist/esm/icons/arrow-right';
 import { PreferredThemeVO, getPreferredThemes } from '../../api/themes';
 import PopupModal from './PopupModal';
@@ -249,7 +249,7 @@ export default function ThemeSelector({
     >
       {loading ? (
         <View style={styles.loading}>
-          <ActivityIndicator color={tokens.colors.primary} />
+          <Spinner color={tokens.colors.primary} />
         </View>
       ) : (
         <View style={styles.body}>

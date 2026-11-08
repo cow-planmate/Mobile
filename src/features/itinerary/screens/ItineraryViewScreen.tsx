@@ -26,6 +26,7 @@ import {
 } from '../../../api/trips';
 import { useWebSocket } from '../../../contexts/WebSocketContext';
 import { usePlanOwnership } from '../../../hooks/usePlanOwnership';
+import { useWeatherWaitGate } from '../hooks/useWeatherWaitGate';
 import ItineraryViewScreenView from './ItineraryViewScreen.view';
 
 interface PlanFrameVO {
@@ -240,9 +241,31 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     };
   }, [connect, disconnect, navigation, planId]);
 
-  const weatherRangeStart = days.length > 0 ? formatDateLocal(days[0].date) : '';
+  // 일정 응답을 기다리지 않고 이전 화면에서 받은 날짜로 날씨를 먼저 요청한다.
+  // 응답의 날짜가 다르면 아래 effect가 다시 요청한다.
+  const routeRangeStart = routeStartDate
+    ? formatDateLocal(new Date(routeStartDate))
+    : '';
+  const routeRangeEnd = routeEndDate
+    ? formatDateLocal(new Date(routeEndDate))
+    : '';
+  const weatherRangeStart =
+    days.length > 0 ? formatDateLocal(days[0].date) : routeRangeStart;
   const weatherRangeEnd =
-    days.length > 0 ? formatDateLocal(days[days.length - 1].date) : '';
+    days.length > 0
+      ? formatDateLocal(days[days.length - 1].date)
+      : routeRangeEnd;
+
+  // 현재 날씨 요청 조건이 아직 결과(성공·실패)를 받지 못했는지 렌더 중에 바로 계산한다.
+  const weatherKey =
+    weatherDestinationId && weatherRangeStart && weatherRangeEnd
+      ? `${weatherDestinationId}|${weatherRangeStart}|${weatherRangeEnd}`
+      : '';
+  const [settledWeatherKey, setSettledWeatherKey] = useState('');
+  const isWaitingWeather = useWeatherWaitGate(
+    days.length > 0,
+    weatherKey !== '' && settledWeatherKey !== weatherKey,
+  );
 
   useEffect(() => {
     if (!weatherDestinationId || !weatherRangeStart || !weatherRangeEnd) {
@@ -282,12 +305,13 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       .finally(() => {
         if (controller.signal.aborted) return;
         setIsWeatherLoading(false);
+        setSettledWeatherKey(weatherKey);
       });
 
     return () => {
       controller.abort();
     };
-  }, [weatherDestinationId, weatherRangeStart, weatherRangeEnd]);
+  }, [weatherDestinationId, weatherRangeStart, weatherRangeEnd, weatherKey]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -302,16 +326,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
     }
   }, [selectedDayIndex]);
 
-  const handleConfirm = () => {
-    navigation.reset({
-      index: 1,
-      routes: [
-        { name: 'MainTabs' },
-        { name: 'Profile', params: { scrollToItinerary: true } },
-      ],
-    });
-  };
-
   return (
     <ItineraryViewScreenView
       days={days}
@@ -325,7 +339,6 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       setChecklistVisible={setChecklistVisible}
       isPlanOwner={isPlanOwner}
       scrollRef={scrollRef}
-      handleConfirm={handleConfirm}
       goBack={handleGoBack}
       handleEdit={() =>
         navigation.navigate('ItineraryEditor', {
@@ -343,7 +356,9 @@ export default function ItineraryViewScreen({ route, navigation }: Props) {
       planId={planId}
       weatherMap={weatherMap}
       tripName={tripName}
+      destination={destinationCity || routeDestination}
       isWeatherLoading={isWeatherLoading}
+      isWaitingWeather={isWaitingWeather}
       loadError={loadError}
       onRetryLoad={fetchCompletePlan}
     />

@@ -206,14 +206,6 @@ export default function CalendarModal({
     );
   };
 
-  const getDayColorType = (date: Date, isCurrentMonth: boolean) => {
-    if (!isCurrentMonth) return 'outside';
-    const day = date.getDay();
-    if (day === 0) return 'sunday';
-    if (day === 6) return 'saturday';
-    return 'weekday';
-  };
-
   return (
     <PopupModal
       visible={visible}
@@ -302,10 +294,13 @@ export default function CalendarModal({
                 const isSelected = isStart || isEnd;
                 const isRangeActive = startTime !== null && endTime !== null;
 
-                const dayColorType = getDayColorType(item.date, item.isCurrentMonth);
                 const isPast = itemTime < todayStart.getTime();
 
                 const dayLabel = `${item.date.getFullYear()}년 ${item.date.getMonth() + 1}월 ${item.date.getDate()}일 ${WEEK_DAYS[item.date.getDay()]}요일`;
+
+                if (!item.isCurrentMonth) {
+                  return <View key={index} style={styles.dayCell} />;
+                }
 
                 return (
                   <TouchableOpacity
@@ -333,15 +328,11 @@ export default function CalendarModal({
                       style={[
                         styles.dayCircle,
                         isSelected && styles.dayCircleSelected,
-                        isToday(item.date) && !isSelected && styles.dayCircleToday,
                       ]}
                     >
                       <Text
                         style={[
                           styles.dayText,
-                          dayColorType === 'outside' && styles.dayTextOutside,
-                          dayColorType === 'sunday' && !isSelected && { color: COLORS.danger },
-                          dayColorType === 'saturday' && !isSelected && { color: COLORS.weekendBlue },
                           isToday(item.date) && !isSelected && styles.dayTextToday,
                           isPast && styles.dayTextPast,
                           isSelected && styles.dayTextSelected,
@@ -349,6 +340,9 @@ export default function CalendarModal({
                       >
                         {item.dayNumber}
                       </Text>
+                      {isToday(item.date) && !isSelected && (
+                        <Text style={styles.todayLabel}>오늘</Text>
+                      )}
                     </View>
                   </TouchableOpacity>
                 );

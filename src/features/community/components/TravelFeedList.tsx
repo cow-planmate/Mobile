@@ -4,17 +4,18 @@ import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
   RefreshControl,
   Pressable,
   StyleProp,
   NativeScrollEvent,
   NativeSyntheticEvent,
 } from 'react-native';
+import { Spinner } from '../../../components/common/LoadingSpinner';
 import { FlashList } from '@shopify/flash-list';
 import Copy from 'lucide-react-native/dist/esm/icons/copy';
 import { EmptyState } from '../../../components/ui';
 import FallbackImage from '../../../components/common/FallbackImage';
+import { FeedListSkeleton } from './CommunitySkeletons';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 
@@ -104,7 +105,7 @@ const FeedThumbnail = ({
           pointerEvents="none"
           style={[StyleSheet.absoluteFillObject, styles.thumbnailLoading]}
         >
-          <ActivityIndicator size="small" color={tokens.colors.primary} />
+          <Spinner color={tokens.colors.primary} />
         </View>
       )}
     </View>
@@ -278,14 +279,14 @@ export default function TravelFeedList({
     if (!isLoadingMore) return null;
     return (
       <View style={styles.footerLoading}>
-        <ActivityIndicator size="small" color={tokens.colors.primary} />
+        <Spinner color={tokens.colors.primary} />
       </View>
     );
   }, [isLoadingMore]);
 
   const renderEmpty = useCallback(() => {
     if (isLoading) {
-      return <EmptyState title="여행기를 불러오는 중…" loading />;
+      return <FeedListSkeleton isGrid={viewMode === 'grid'} />;
     }
     if (isError) {
       return (
@@ -310,7 +311,7 @@ export default function TravelFeedList({
         }
       />
     );
-  }, [isLoading, isFiltered, isError, isRefreshing, onRefresh]);
+  }, [isLoading, isFiltered, isError, isRefreshing, onRefresh, viewMode]);
 
   return (
     <View style={styles.container}>
@@ -345,8 +346,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: tokens.colors.white,
   },
+  // 떠 있는 여행기 쓰기 단추(아래 20 + 높이 48)보다 높게 비워, 맨 아래까지
+  // 내리면 마지막 카드가 단추 위로 올라오게 한다.
   listContent: {
-    paddingBottom: normalize(12),
+    paddingBottom: normalize(88),
   },
 
   // 카드 테두리 대신 전체 폭 구분선 하나로 나눈다.

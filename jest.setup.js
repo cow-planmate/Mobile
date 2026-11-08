@@ -20,6 +20,30 @@ jest.mock('@env', () => ({
   WEB_URL: 'http://localhost:3000',
 }), { virtual: true });
 
+// 암호화 저장소. 서비스 이름별로 메모리에 담아 저장·삭제 흐름을 그대로 검증한다.
+jest.mock('react-native-keychain', () => {
+  const store = new Map();
+  const serviceOf = options => (options && options.service) || 'default';
+  return {
+    ACCESSIBLE: {
+      AFTER_FIRST_UNLOCK: 'AccessibleAfterFirstUnlock',
+      AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY:
+        'AccessibleAfterFirstUnlockThisDeviceOnly',
+    },
+    setGenericPassword: jest.fn((username, password, options) => {
+      const service = serviceOf(options);
+      store.set(service, { username, password, service });
+      return Promise.resolve({ service, storage: 'mock' });
+    }),
+    getGenericPassword: jest.fn(options =>
+      Promise.resolve(store.get(serviceOf(options)) || false),
+    ),
+    resetGenericPassword: jest.fn(options =>
+      Promise.resolve(store.delete(serviceOf(options))),
+    ),
+  };
+});
+
 jest.mock('@react-native-clipboard/clipboard', () => ({
   setString: jest.fn(),
   getString: jest.fn(() => Promise.resolve('')),

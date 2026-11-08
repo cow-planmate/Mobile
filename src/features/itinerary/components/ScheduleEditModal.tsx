@@ -223,6 +223,9 @@ export default function ScheduleEditModal({
       onClose={onClose}
       footer={null}
     >
+      {/* 확인 단추가 없고 고르는 즉시 일정에 반영된다. 모르고 닫아도 괜찮다는 것을 알린다. */}
+      <Text style={styles.hint}>바꾸면 바로 저장돼요</Text>
+
       <View style={styles.counterRow}>
         <Text style={styles.counterLabel}>여행 일수</Text>
         <View style={styles.counterControls}>
@@ -344,6 +347,13 @@ export default function ScheduleEditModal({
 }
 
 const styles = StyleSheet.create({
+  hint: {
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(12),
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textMuted,
+  },
   counterRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -361,17 +371,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: normalize(12),
   },
+  // 테두리 없이 회색 면 원. 시간 칸과 같은 면 규칙이다.
   counterButton: {
-    width: normalize(30),
-    height: normalize(30),
-    borderRadius: normalize(8),
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
+    width: normalize(34),
+    height: normalize(34),
+    borderRadius: normalize(17),
+    backgroundColor: tokens.colors.pageGround,
     alignItems: 'center',
     justifyContent: 'center',
   },
   counterButtonOff: {
-    borderColor: tokens.colors.borderLight,
+    opacity: 0.45,
   },
   counterValue: {
     minWidth: normalize(38),
@@ -383,7 +393,7 @@ const styles = StyleSheet.create({
 
   list: {
     paddingHorizontal: normalize(16),
-    paddingBottom: normalize(4),
+    paddingBottom: normalize(20),
   },
   dayRow: {
     flexDirection: 'row',
@@ -405,12 +415,11 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: normalize(7),
   },
-  // 날짜는 누를 수 있다는 것을 색으로만 알린다. 테두리까지 두르면
-  // 아래 시간 칸과 같은 무게로 보여 위계가 사라진다.
+  // 날짜는 시간보다 먼저 눈에 들어오지 않게 회색 보통 글자로 둔다.
   dateText: {
     fontSize: normalize(14),
-    fontFamily: tokens.fontFamily.semibold,
-    color: tokens.colors.primary,
+    fontFamily: tokens.fontFamily.medium,
+    color: tokens.colors.textLabel,
   },
   timeRow: {
     flexDirection: 'row',
@@ -419,21 +428,21 @@ const styles = StyleSheet.create({
   },
   timeButton: {
     flex: 1,
-    height: normalize(38),
-    borderRadius: normalize(8),
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
+    height: normalize(42),
+    borderRadius: normalize(12),
+    backgroundColor: tokens.colors.pageGround,
     alignItems: 'center',
     justifyContent: 'center',
   },
   timeText: {
-    fontSize: normalize(13.5),
+    fontSize: normalize(15),
     fontFamily: tokens.fontFamily.semibold,
     color: tokens.colors.text,
+    fontVariant: ['tabular-nums'],
   },
   timeDash: {
-    fontSize: normalize(12),
-    color: tokens.colors.textTertiary,
+    fontSize: normalize(13),
+    color: tokens.colors.textMuted,
   },
 
   confirmButton: {

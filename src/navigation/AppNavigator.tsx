@@ -5,7 +5,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../store/useAuthStore';
 import { savePreferredThemes, PreferredThemeVO } from '../api/themes';
 import ThemeSelector, { ThemeSelectorResult } from '../components/common/ThemeSelector';
-import LoadingSpinner from '../components/common/LoadingSpinner';
 import AuthStack from './AuthStack';
 import AppStack from './AppStack';
 import ErrorBoundary from '../components/common/ErrorBoundary';
@@ -50,12 +49,9 @@ export default function AppNavigator() {
     setNeedsThemeSelection(false);
   };
 
+  // 안드로이드 시작 화면과 같은 흰 바탕만 잇는다. 로그인 정보를 읽는 아주 짧은 구간이라 표시는 두지 않는다.
   if (isInitializing) {
-    return (
-      <View style={styles.splash}>
-        <LoadingSpinner />
-      </View>
-    );
+    return <View style={styles.splash} />;
   }
 
   return (

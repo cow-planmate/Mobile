@@ -1,5 +1,7 @@
 export const ACCESS_TOKEN_RECEIVED_AT_KEY = 'accessTokenReceivedAt';
 
+// 갱신 토큰은 이제 암호화 저장소(utils/refreshTokenStorage)에 둔다. 'refreshToken'은
+// 업데이트 전에 평문으로 남은 값을 로그아웃 때 함께 치우려고 남겨 둔다.
 export const AUTH_STORAGE_KEYS = [
   'user',
   'accessToken',

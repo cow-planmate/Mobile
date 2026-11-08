@@ -15,12 +15,12 @@ import { useCoachmarkTarget, useCoachmarkTour } from './CoachmarkContext';
  * 사용법 안내를 여는 물음표 단추와, 처음 온 사람에게 한 번 권하는 말풍선.
  *
  * 웹 CreateTutorial과 같은 짜임이다 - 안내를 들이밀지 않고 "볼래요?"만 묻는다.
- * AI 도우미 단추 바로 위, 오른쪽 아래 묶음에 둔다. 그 자리가 장소 추가 시트를
- * 따라 움직이기 때문이다. 다른 데 두면 시트를 올렸을 때 가려진다.
+ * 단추와 말풍선은 따로 놓을 수 있게 갈라 두었다. 단추는 추천 장소 시트의
+ * 머릿줄 안에 들어가 시트 밖으로 잘리지만, 말풍선은 시트 위로 떠야 하기
+ * 때문이다. 둘이 같은 권유 상태를 보도록 상태는 훅으로 뺐다.
  */
-export default function TutorialLauncher() {
+export function useTutorialNudge() {
   const tour = useCoachmarkTour();
-  const buttonTarget = useCoachmarkTarget('tutorial');
   const [isNudgeVisible, setNudgeVisible] = useState(false);
 
   useEffect(() => {
@@ -52,63 +52,92 @@ export default function TutorialLauncher() {
     tour?.openTour();
   }, [dismissNudge, tour]);
 
+  return { isNudgeVisible, dismissNudge, openTour };
+}
+
+type Nudge = ReturnType<typeof useTutorialNudge>;
+
+/** 처음 온 사람에게 한 번 띄우는 말풍선. 안내 중에는 숨는다. */
+export function TutorialNudge({ nudge }: { nudge: Nudge }) {
+  const tour = useCoachmarkTour();
+  if (!tour || tour.isRunning || !nudge.isNudgeVisible) return null;
+
+  return (
+    <View style={styles.nudge}>
+      <Text style={styles.nudgeTitle}>일정 만들기가 처음인가요?</Text>
+      <TouchableOpacity
+        onPress={nudge.openTour}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel="핵심만 빠르게 보기"
+      >
+        <Text style={styles.nudgeLink}>핵심만 빠르게 보기 →</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.nudgeClose}
+        onPress={nudge.dismissNudge}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel="사용법 안내 닫기"
+        hitSlop={10}
+      >
+        <X size={normalize(14)} color={tokens.colors.textTertiary} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+/**
+ * 물음표 단추.
+ *
+ * 안내 중에는 숨는다. 다만 자리는 남겨 둔다 - 마지막에 이 단추를 짚어 주는데,
+ * 안내가 순서를 정할 때 잴 수 없으면 그 단계가 목록에서 빠진다.
+ * 제 차례가 오면 다시 보이고, 그때도 눌리지는 않는다.
+ */
+export function TutorialButton({ nudge }: { nudge: Nudge }) {
+  const tour = useCoachmarkTour();
+  const buttonTarget = useCoachmarkTarget('tutorial');
   if (!tour) return null;
 
-  /**
-   * 안내 중에는 숨는다. 다만 자리는 남겨 둔다 - 마지막에 이 단추를 짚어 주는데,
-   * 안내가 순서를 정할 때 잴 수 없으면 그 단계가 목록에서 빠진다.
-   * 제 차례가 오면 다시 보이고, 그때도 눌리지는 않는다.
-   */
   const isRunning = tour.isRunning;
   const isTourStep = tour.activeTarget === 'tutorial';
 
   return (
     <View
-      style={styles.wrap}
-      pointerEvents={isRunning ? 'none' : 'box-none'}
+      ref={buttonTarget}
+      pointerEvents={isRunning ? 'none' : 'auto'}
+      style={isRunning && !isTourStep ? styles.hidden : null}
     >
-      {!isRunning && isNudgeVisible && (
-        <View style={styles.nudge}>
-          <Text style={styles.nudgeTitle}>일정 만들기가 처음인가요?</Text>
-          <TouchableOpacity
-            onPress={openTour}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="핵심만 빠르게 보기"
-          >
-            <Text style={styles.nudgeLink}>핵심만 빠르게 보기 →</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.nudgeClose}
-            onPress={dismissNudge}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="사용법 안내 닫기"
-            hitSlop={10}
-          >
-            <X size={normalize(14)} color={tokens.colors.textTertiary} />
-          </TouchableOpacity>
-        </View>
-      )}
-
-      <View
-        ref={buttonTarget}
-        style={isRunning && !isTourStep ? styles.hidden : null}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={nudge.openTour}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel="사용법 보기"
+        hitSlop={6}
       >
-        <TouchableOpacity
-          style={styles.button}
-          onPress={openTour}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel="사용법 보기"
-          hitSlop={6}
-        >
-          <CircleQuestionMark
-            size={normalize(18)}
-            color={tokens.colors.primary}
-          />
-        </TouchableOpacity>
-      </View>
+        <CircleQuestionMark
+          size={normalize(24)}
+          color={tokens.colors.textMuted}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+/** 단추와 말풍선을 한 자리에 같이 놓는 묶음. */
+export default function TutorialLauncher() {
+  const nudge = useTutorialNudge();
+  const tour = useCoachmarkTour();
+  if (!tour) return null;
+
+  return (
+    <View
+      style={styles.wrap}
+      pointerEvents={tour.isRunning ? 'none' : 'box-none'}
+    >
+      <TutorialNudge nudge={nudge} />
+      <TutorialButton nudge={nudge} />
     </View>
   );
 }
@@ -121,23 +150,19 @@ const styles = StyleSheet.create({
   hidden: {
     opacity: 0,
   },
+  // 시트 머릿줄 안에 들어가므로 면과 테두리 없이 아이콘만 둔다. 파란색은
+  // 새로 여는 도우미에만 남기려고 회색이다.
   button: {
     width: normalize(44),
     height: normalize(44),
-    borderRadius: normalize(22),
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: tokens.colors.white,
-    borderWidth: 1,
-    borderColor: tokens.colors.sub,
-    // 실행 취소 단추와 같은 단계만 쓴다. 시간표 위에 살짝 뜬 정도면 충분하다.
-    ...tokens.shadows.sm,
   },
   // 단추 위에 띄운다. 자리를 차지하면 아래 단추가 밀려 내려간다.
   // 오른쪽 끝에 맞춘다 - 왼쪽에 맞추면 말풍선이 화면 밖으로 나간다.
   nudge: {
     position: 'absolute',
-    bottom: normalize(52),
+    bottom: normalize(56),
     right: 0,
     width: normalize(250),
     paddingVertical: normalize(12),

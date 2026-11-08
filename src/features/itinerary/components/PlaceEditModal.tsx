@@ -180,7 +180,7 @@ export default function PlaceEditModal({
   return (
     <PopupModal
       visible={visible}
-      title="장소 수정"
+      title="시간·메모 수정"
       onClose={handleClose}
       footer={
         <View style={styles.footer}>
@@ -231,28 +231,31 @@ export default function PlaceEditModal({
           </View>
         </View>
 
-        {!!onShowDetail && (
-          <TouchableOpacity
-            style={styles.mapRow}
-            onPress={onShowDetail}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="장소 정보 보기"
-          >
-            <Text style={styles.mapText}>장소 정보 보기</Text>
-          </TouchableOpacity>
-        )}
-
-        {canOpenMap && (
-          <TouchableOpacity
-            style={styles.mapRow}
-            onPress={handleOpenMap}
-            activeOpacity={0.7}
-            accessibilityRole="link"
-            accessibilityLabel="지도에서 보기"
-          >
-            <Text style={styles.mapText}>지도에서 보기</Text>
-          </TouchableOpacity>
+        {(!!onShowDetail || canOpenMap) && (
+          <View style={styles.linkRow}>
+            {!!onShowDetail && (
+              <TouchableOpacity
+                style={styles.linkPill}
+                onPress={onShowDetail}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="장소 정보 보기"
+              >
+                <Text style={styles.linkPillText}>장소 정보</Text>
+              </TouchableOpacity>
+            )}
+            {canOpenMap && (
+              <TouchableOpacity
+                style={styles.linkPill}
+                onPress={handleOpenMap}
+                activeOpacity={0.7}
+                accessibilityRole="link"
+                accessibilityLabel="지도에서 보기"
+              >
+                <Text style={styles.linkPillText}>지도에서 보기</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         )}
 
         {(dayStartTime || dayEndTime) && (
@@ -376,16 +379,27 @@ const styles = StyleSheet.create({
   },
 
   // 바깥으로 나가는 자리는 줄 하나로만 표시한다. 채운 단추는 저장과 겨룬다.
-  mapRow: {
-    paddingVertical: normalize(11),
+  // 바깥으로 나가는 두 동작은 회색 알약으로 낮춰 저장과 겨루지 않게 한다.
+  linkRow: {
+    flexDirection: 'row',
+    gap: normalize(8),
+    paddingVertical: normalize(12),
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: tokens.colors.borderLight,
   },
-  mapText: {
-    fontSize: normalize(13),
-    fontFamily: tokens.fontFamily.semibold,
-    color: tokens.colors.primary,
+  linkPill: {
+    height: normalize(36),
+    paddingHorizontal: normalize(14),
+    borderRadius: tokens.radius.round,
+    backgroundColor: tokens.colors.pageGround,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  linkPillText: {
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.bold,
+    color: tokens.colors.text,
   },
 
   timeRow: {

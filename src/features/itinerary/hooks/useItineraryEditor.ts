@@ -93,13 +93,6 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
   const [isEditingTripName, setIsEditingTripName] = useState(false);
   const [planMetadata, setPlanMetadata] = useState<any>(null);
 
-  const [isTimePickerVisible, setTimePickerVisible] = useState(false);
-  const [editingTime, setEditingTime] = useState<{
-    placeId: string;
-    type: 'startTime' | 'endTime';
-    time: string;
-  } | null>(null);
-
   const timelineScrollRef = useRef<ScrollView>(null);
 
   const loadedPlanIdRef = useRef<string | null>(null);
@@ -344,14 +337,6 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     }
   }, [lastAddedPlaceId, selectedDay, setLastAddedPlaceId]);
 
-  const handleEditTime = useCallback(
-    (placeId: string, type: 'startTime' | 'endTime', time: string) => {
-      setEditingTime({ placeId, type, time });
-      setTimePickerVisible(true);
-    },
-    [],
-  );
-
   const handleUpdatePlaceTimes = useCallback(
     (placeId: string, newStartMinutes: number, newEndMinutes: number) => {
       const newStartTime = minutesToTime(newStartMinutes);
@@ -401,13 +386,8 @@ export const useItineraryEditor = (route: any, _navigation: any) => {
     setTripName,
     isEditingTripName,
     setIsEditingTripName,
-    isTimePickerVisible,
-    setTimePickerVisible,
-    editingTime,
-    setEditingTime,
     timelineScrollRef,
     formatDate,
-    handleEditTime,
     handleUpdatePlaceTimes,
     handleDeletePlace,
     handleAddPlace,

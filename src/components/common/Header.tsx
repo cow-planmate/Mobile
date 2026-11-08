@@ -14,8 +14,6 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { INITIAL_TAB } from '../../navigation/types';
 import UserIcon from 'lucide-react-native/dist/esm/icons/user';
-import Mail from 'lucide-react-native/dist/esm/icons/mail';
-import LogOut from 'lucide-react-native/dist/esm/icons/log-out';
 import Bell from 'lucide-react-native/dist/esm/icons/bell';
 import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -27,6 +25,9 @@ import Logo from './Logo';
 import { TOP_BAR_METRICS } from './BackTopBar';
 import { tokens } from '../../theme/tokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// 작게 시작해 아바타 쪽 모서리에서 펼쳐진다. 너무 작으면 튀어 보여 0.9에서 시작한다.
+const MENU_START_SCALE = 0.9;
 
 export interface HeaderProps {
   nickname?: string;
@@ -56,7 +57,7 @@ const Header: React.FC<HeaderProps> = ({
   const overlayRef = useRef<View>(null);
 
   const [reduceMotion, setReduceMotion] = useState(false);
-  const scaleAnim = useRef(new Animated.Value(0.96)).current;
+  const scaleAnim = useRef(new Animated.Value(MENU_START_SCALE)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -81,12 +82,12 @@ const Header: React.FC<HeaderProps> = ({
         opacityAnim.setValue(1);
         return;
       }
-      scaleAnim.setValue(0.96);
+      scaleAnim.setValue(MENU_START_SCALE);
       opacityAnim.setValue(0);
       Animated.parallel([
         Animated.timing(scaleAnim, {
           toValue: 1,
-          duration: 150,
+          duration: 180,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
@@ -98,7 +99,7 @@ const Header: React.FC<HeaderProps> = ({
         }),
       ]).start();
     } else {
-      scaleAnim.setValue(0.96);
+      scaleAnim.setValue(MENU_START_SCALE);
       opacityAnim.setValue(0);
     }
   }, [menuVisible, reduceMotion, scaleAnim, opacityAnim]);
@@ -113,8 +114,9 @@ const Header: React.FC<HeaderProps> = ({
         normalize(16),
         screenWidth - (pageX - originX + width),
       );
+      // 측정값은 상태 표시줄 아래부터 센다. 전체 화면을 덮는 모달 좌표로 맞춘다.
       setMenuPosition({
-        top: pageY - originY + height + normalize(6),
+        top: pageY - originY + insets.top + height + normalize(4),
         right,
       });
       setMenuVisible(true);
@@ -275,7 +277,12 @@ const Header: React.FC<HeaderProps> = ({
                   {nickname || '사용자'}
                 </Text>
                 {!!email && (
-                  <Text style={styles.accountEmail} numberOfLines={1}>
+                  <Text
+                    style={styles.accountEmail}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.6}
+                  >
                     {email}
                   </Text>
                 )}
@@ -288,9 +295,6 @@ const Header: React.FC<HeaderProps> = ({
               accessibilityLabel="마이페이지"
               activeOpacity={0.65}
             >
-              <View style={styles.menuIcon}>
-                <UserIcon size={normalize(18)} color={tokens.colors.primary} />
-              </View>
               <Text style={styles.menuText}>마이페이지</Text>
               <ChevronRight
                 size={normalize(16)}
@@ -305,9 +309,6 @@ const Header: React.FC<HeaderProps> = ({
               accessibilityLabel="친구·쪽지"
               activeOpacity={0.65}
             >
-              <View style={styles.menuIcon}>
-                <Mail size={normalize(18)} color={tokens.colors.primary} />
-              </View>
               <Text style={styles.menuText}>친구·쪽지</Text>
               <ChevronRight
                 size={normalize(16)}
@@ -316,15 +317,12 @@ const Header: React.FC<HeaderProps> = ({
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.menuItem, styles.logoutItem]}
+              style={styles.menuItem}
               onPress={() => handleMenuItemPress('logout')}
               accessibilityRole="button"
               accessibilityLabel="로그아웃"
               activeOpacity={0.65}
             >
-              <View style={[styles.menuIcon, styles.logoutIcon]}>
-                <LogOut size={normalize(18)} color={tokens.tones.danger.fg} />
-              </View>
               <Text style={styles.logoutText}>로그아웃</Text>
             </TouchableOpacity>
           </Animated.View>
@@ -404,34 +402,36 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(26, 26, 26, 0.12)',
+    backgroundColor: 'rgba(12, 15, 20, 0.28)',
   },
   dropdownMenu: {
     position: 'absolute',
+    // 창이 아바타에서 열린 것으로 보이도록 크기 변화의 기준점을 오른쪽 위로 둔다.
+    transformOrigin: 'top right',
     backgroundColor: tokens.colors.white,
-    borderRadius: normalize(20),
-    padding: normalize(10),
-    width: normalize(260),
+    borderRadius: normalize(18),
+    paddingHorizontal: normalize(10),
+    paddingTop: normalize(10),
+    // 마지막 줄 안쪽 여백이 이미 있어 아래는 위보다 적게 둔다.
+    paddingBottom: normalize(4),
+    width: normalize(208),
     maxWidth: '90%',
-    borderWidth: 1,
-    borderColor: 'rgba(26, 26, 26, 0.06)',
     shadowColor: tokens.colors.text,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.12,
-    shadowRadius: 28,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
   },
   accountInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: normalize(10),
-    backgroundColor: tokens.colors.surface,
-    borderRadius: normalize(14),
-    paddingHorizontal: normalize(12),
-    paddingVertical: normalize(10),
-    marginBottom: normalize(4),
-    borderWidth: 1,
-    borderColor: 'rgba(26, 26, 26, 0.04)',
+    paddingHorizontal: normalize(4),
+    paddingTop: normalize(2),
+    paddingBottom: normalize(10),
+    marginBottom: normalize(2),
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.border,
   },
   accountAvatar: {
     width: normalize(36),
@@ -454,44 +454,27 @@ const styles = StyleSheet.create({
   },
   accountEmail: {
     marginTop: normalize(2),
-    fontSize: normalize(11.5),
+    fontSize: normalize(12),
     fontFamily: tokens.fontFamily.regular,
-    color: tokens.colors.textSecondary,
+    color: tokens.colors.textMuted,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: normalize(48),
-    paddingVertical: normalize(8),
-    paddingHorizontal: normalize(8),
+    minHeight: normalize(44),
+    paddingVertical: normalize(6),
+    paddingHorizontal: normalize(4),
     borderRadius: normalize(12),
     gap: normalize(10),
   },
-  menuIcon: {
-    width: normalize(32),
-    height: normalize(32),
-    borderRadius: normalize(11),
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: tokens.colors.primaryTint,
-  },
-  logoutIcon: {
-    backgroundColor: tokens.tones.danger.bg,
-  },
   menuText: {
     flex: 1,
-    fontSize: normalize(14),
+    fontSize: normalize(15),
     color: tokens.colors.text,
     fontFamily: tokens.fontFamily.medium,
   },
-  logoutItem: {
-    borderTopWidth: 1,
-    borderTopColor: tokens.colors.borderLight,
-    marginTop: normalize(4),
-    paddingTop: normalize(10),
-  },
   logoutText: {
-    fontSize: normalize(14),
+    fontSize: normalize(15),
     color: tokens.tones.danger.fg,
     fontFamily: tokens.fontFamily.medium,
   },

@@ -13,10 +13,15 @@ import {
   TouchableOpacity,
   ScrollView,
   Text,
-  Animated,
-  Easing,
   AccessibilityInfo,
 } from 'react-native';
+import Animated, {
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Search from 'lucide-react-native/dist/esm/icons/search';
@@ -66,6 +71,9 @@ const FEED_FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=800';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
+// 접고 펼치는 데 걸리는 시간. 단추 하나가 움직이는 것이라 길게 잡으면 굼뜬다.
+const CREATE_BUTTON_MOTION_MS = 240;
 
 const DURATION_RANGES: Record<string, { minDays?: number; maxDays?: number }> =
   {
@@ -215,7 +223,9 @@ export default function TravelFeedScreen() {
   const [isCreateOpen, setCreateOpen] = useState(true);
   const [createWidth, setCreateWidth] = useState<number | null>(null);
   const [createLabelWidth, setCreateLabelWidth] = useState<number | null>(null);
-  const createAnim = useRef(new Animated.Value(1)).current;
+  // 1이면 펼침, 0이면 접힘. UI 스레드에서 돌려 목록이 스크롤되는 중에도
+  // 자바스크립트 부하와 상관없이 프레임이 끊기지 않게 한다.
+  const createProgress = useSharedValue(1);
   const lastFeedOffset = useRef(0);
   const reduceMotion = useRef(false);
 
@@ -237,15 +247,41 @@ export default function TravelFeedScreen() {
   }, []);
 
   useEffect(() => {
-    Animated.timing(createAnim, {
-      toValue: isCreateOpen ? 1 : 0,
-      duration: reduceMotion.current ? 0 : 200,
+    createProgress.value = withTiming(isCreateOpen ? 1 : 0, {
+      duration: reduceMotion.current ? 0 : CREATE_BUTTON_MOTION_MS,
       easing: Easing.out(Easing.cubic),
-      // 너비는 네이티브 드라이버로 옮길 수 없다. 움직이는 것이 단추 하나뿐이라
-      // 자바스크립트 쪽에서 돌려도 끊기지 않는다.
-      useNativeDriver: false,
-    }).start();
-  }, [isCreateOpen, createAnim]);
+    });
+  }, [isCreateOpen, createProgress]);
+
+  // normalize는 UI 스레드에서 부를 수 없어 애니메이션 밖에서 미리 계산한다.
+  const createPaddingOpen = normalize(16);
+  const createDiameter = normalize(CREATE_BUTTON_COLLAPSED);
+  const createLabelGap = normalize(6);
+
+  const createButtonStyle = useAnimatedStyle(() => ({
+    paddingHorizontal: interpolate(
+      createProgress.value,
+      [0, 1],
+      [0, createPaddingOpen],
+    ),
+    ...(createWidth !== null && {
+      width: interpolate(
+        createProgress.value,
+        [0, 1],
+        [createDiameter, createWidth],
+      ),
+    }),
+  }));
+
+  // 글자는 단추가 줄어들기 전에 먼저 사라지고, 펼칠 때는 거의 다 펴진 뒤에
+  // 나타난다. 줄어드는 도중 글자가 잘려 "…"로 보이는 순간이 없게 한다.
+  const createLabelStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(createProgress.value, [0, 0.55, 1], [0, 0, 1]),
+    ...(createLabelWidth !== null && {
+      width: interpolate(createProgress.value, [0, 1], [0, createLabelWidth]),
+      marginLeft: interpolate(createProgress.value, [0, 1], [0, createLabelGap]),
+    }),
+  }));
 
   const handleFeedScroll = useCallback((offsetY: number) => {
     const previous = lastFeedOffset.current;
@@ -550,21 +586,7 @@ export default function TravelFeedScreen() {
         </View>
 
         <AnimatedTouchable
-          style={[
-            styles.createButton,
-            {
-              paddingHorizontal: createAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, normalize(16)],
-              }),
-            },
-            createWidth !== null && {
-              width: createAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [normalize(CREATE_BUTTON_COLLAPSED), createWidth],
-              }),
-            },
-          ]}
+          style={[styles.createButton, createButtonStyle]}
           onLayout={event => {
             if (createWidth === null) {
               setCreateWidth(event.nativeEvent.layout.width);
@@ -578,20 +600,7 @@ export default function TravelFeedScreen() {
           <Plus size={20} color={tokens.colors.white} />
           {/* 접힐 때 글자 너비까지 0으로 줄여야 +가 한가운데에 온다 */}
           <Animated.Text
-            style={[
-              styles.createButtonText,
-              { opacity: createAnim },
-              createLabelWidth !== null && {
-                width: createAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, createLabelWidth],
-                }),
-                marginLeft: createAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, normalize(6)],
-                }),
-              },
-            ]}
+            style={[styles.createButtonText, createLabelStyle]}
             numberOfLines={1}
             onLayout={event => {
               if (createLabelWidth === null) {

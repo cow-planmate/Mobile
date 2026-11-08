@@ -20,7 +20,6 @@ const DemoTimelineBlock = React.memo(function DemoTimelineBlock({
   place,
   offsetMinutes,
   visible,
-  onEditTime,
   onEditPlace,
   onShowDetail,
   isTourRunning = true,
@@ -28,7 +27,6 @@ const DemoTimelineBlock = React.memo(function DemoTimelineBlock({
   place: Place;
   offsetMinutes: number;
   visible: boolean;
-  onEditTime?: (type: 'startTime' | 'endTime') => void;
   onEditPlace?: () => void;
   onShowDetail?: () => void;
   isTourRunning?: boolean;
@@ -55,7 +53,6 @@ const DemoTimelineBlock = React.memo(function DemoTimelineBlock({
         item={place}
         isTourAnchor
         isTourRunning={isTourRunning}
-        onEditTime={onEditTime}
         onEditPlace={onEditPlace}
         onShowDetail={onShowDetail}
         style={styles.flex1}

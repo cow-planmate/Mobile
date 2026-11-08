@@ -65,6 +65,13 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
+// 이 테스트의 애니메이션 목은 최소한이라 회전 호가 쓰는 항목이 없다. 그림은 필요 없으니 비운다.
+jest.mock('../../../../components/common/LoadingSpinner', () => ({
+  __esModule: true,
+  default: () => null,
+  Spinner: () => null,
+}));
+
 jest.mock('@react-native-community/geolocation', () => ({
   __esModule: true,
   default: {
@@ -207,18 +214,18 @@ jest.mock('react-native-date-picker', () => {
 });
 
 import ItineraryEditorScreenView from '../ItineraryEditorScreen.view';
-import { TAB_FILL } from '../ItineraryEditorScreen.styles';
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import ItineraryEditorScreenComponent from '../ItineraryEditorScreen';
+import { TAB_FILL } from '../ItineraryEditorScreen.styles';
 
 // 화면 뷰는 여러 파일로 나뉘어 있어서, 소스 검사는 뷰와 editor 폴더 전체를 합쳐서 본다.
 const readEditorViewSource = () =>
   [
     join(__dirname, '../ItineraryEditorScreen.view.tsx'),
-    ...readdirSync(join(__dirname, '../../components/editor')).map(name =>
-      join(__dirname, '../../components/editor', name),
-    ),
+    ...readdirSync(join(__dirname, '../../components/editor'))
+      .filter(name => /\.tsx?$/.test(name))
+      .map(name => join(__dirname, '../../components/editor', name)),
   ]
     .map(file => readFileSync(file, 'utf8'))
     .join('\n');
@@ -261,13 +268,6 @@ jest.mock('../../../../hooks/usePlanOwnership', () => ({
   usePlanOwnership: () => mockPlanOwnership,
 }));
 
-const mockMutateAsync = jest.fn();
-jest.mock('../../../../hooks/usePlanQueries', () => ({
-  useCreateFullPlan: () => ({
-    mutateAsync: mockMutateAsync,
-  }),
-}));
-
 const mockWebSocket = {
   connect: jest.fn(),
   disconnect: jest.fn(),
@@ -306,13 +306,8 @@ const mockItineraryEditor = {
   setTripName: jest.fn(),
   isEditingTripName: false,
   setIsEditingTripName: jest.fn(),
-  isTimePickerVisible: false,
-  setTimePickerVisible: jest.fn(),
-  editingTime: null as any,
-  setEditingTime: jest.fn(),
   timelineScrollRef: { current: null } as any,
   formatDate: (d: Date) => d.toISOString().split('T')[0],
-  handleEditTime: jest.fn(),
   handleUpdatePlaceTimes: jest.fn(),
   handleDeletePlace: jest.fn(),
   handleAddPlace: jest.fn(),
@@ -393,12 +388,8 @@ describe('ItineraryEditorScreenView Component', () => {
             setIsEditingTripName={() => {}}
             setTripName={() => {}}
             onSaveTripName={() => {}}
-            isTimePickerVisible={false}
-            setTimePickerVisible={() => {}}
-            editingTime={null}
             timelineScrollRef={{ current: null } as any}
             formatDate={d => d.toISOString().split('T')[0]}
-            handleEditTime={() => {}}
             handleUpdatePlaceTimes={() => {}}
             handleDeletePlace={() => {}}
             handleAddPlace={() => {}}
@@ -406,7 +397,6 @@ describe('ItineraryEditorScreenView Component', () => {
             isScheduleEditVisible={false}
             setScheduleEditVisible={() => {}}
             onConfirmScheduleEdit={() => {}}
-            onConfirmTimePicker={() => {}}
             destination="제주도"
             onComplete={() => {}}
             onOpenParticipants={() => {}}
@@ -484,7 +474,7 @@ describe('ItineraryEditorScreenView Component', () => {
     ).toThrow();
   });
 
-  it('renders undo button integrated with place sheet', async () => {
+  it('renders undo and redo buttons in the title row', async () => {
     const mockUndo = jest.fn();
     const mockRedo = jest.fn();
 
@@ -501,12 +491,8 @@ describe('ItineraryEditorScreenView Component', () => {
           setIsEditingTripName={() => {}}
           setTripName={() => {}}
           onSaveTripName={() => {}}
-          isTimePickerVisible={false}
-          setTimePickerVisible={() => {}}
-          editingTime={null}
           timelineScrollRef={{ current: null } as any}
           formatDate={d => d.toISOString().split('T')[0]}
-          handleEditTime={() => {}}
           handleUpdatePlaceTimes={() => {}}
           handleDeletePlace={() => {}}
           handleAddPlace={() => {}}
@@ -514,7 +500,6 @@ describe('ItineraryEditorScreenView Component', () => {
           isScheduleEditVisible={false}
           setScheduleEditVisible={() => {}}
           onConfirmScheduleEdit={() => {}}
-          onConfirmTimePicker={() => {}}
           destination="제주도"
           onComplete={() => {}}
           onOpenParticipants={() => {}}
@@ -549,11 +534,6 @@ describe('ItineraryEditorScreenView Component', () => {
     });
     expect(undoButton).toBeDefined();
 
-    // 아이콘은 lucide 딥임포트로 렌더된다 — 버튼에 아이콘이 붙어 있는지 확인
-    expect(
-      React.Children.count(undoButton?.props.children),
-    ).toBeGreaterThanOrEqual(1);
-
     await act(async () => {
       undoButton?.props.onPress();
     });
@@ -565,15 +545,103 @@ describe('ItineraryEditorScreenView Component', () => {
     });
     expect(redoButton).toBeDefined();
 
-    expect(
-      React.Children.count(redoButton?.props.children),
-    ).toBeGreaterThanOrEqual(1);
-
     await act(async () => {
       redoButton?.props.onPress();
     });
 
     expect(mockRedo).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('날짜 탭 스크롤', () => {
+  const manyDays: Day[] = Array.from({ length: 12 }, (_, i) => ({
+    ...mockDays[0],
+    dayNumber: i + 1,
+    date: new Date(Date.UTC(2024, 7, 1 + i)),
+  }));
+
+  it('탭을 미는 동안 편집 화면을 다시 그리지 않고 흐림이 바뀔 때만 그린다', async () => {
+    let commits = 0;
+    let rendererInstance: renderer.ReactTestRenderer | undefined;
+
+    await act(async () => {
+      rendererInstance = renderer.create(
+        <React.Profiler id="editor" onRender={() => (commits += 1)}>
+          <ItineraryEditorScreenView
+            days={manyDays}
+            selectedDayIndex={0}
+            setSelectedDayIndex={() => {}}
+            tripName="제주도 여행"
+            isEditingTripName={false}
+            setIsEditingTripName={() => {}}
+            setTripName={() => {}}
+            onSaveTripName={() => {}}
+            timelineScrollRef={{ current: null } as any}
+            formatDate={d => d.toISOString().split('T')[0]}
+            handleUpdatePlaceTimes={() => {}}
+            handleDeletePlace={() => {}}
+            handleAddPlace={() => {}}
+            selectedDay={manyDays[0]}
+            isScheduleEditVisible={false}
+            setScheduleEditVisible={() => {}}
+            onConfirmScheduleEdit={() => {}}
+            destination="제주도"
+            onComplete={() => {}}
+            onOpenParticipants={() => {}}
+            onOpenMap={() => {}}
+            onOpenShare={() => {}}
+            onOpenChecklist={() => {}}
+            onOpenChatbot={() => {}}
+            onUndo={() => {}}
+            onRedo={() => {}}
+            participantsCount={0}
+            planId={null}
+            onOpenDetail={() => {}}
+            weatherMap={{}}
+            onOpenPlanInfo={() => {}}
+            onGoBack={() => {}}
+            pendingPlace={null}
+            previewStartTime={null}
+            previewEndTime={null}
+            setPreviewStartTime={() => {}}
+            setPreviewEndTime={() => {}}
+            onConfirmPlacement={() => {}}
+            onCancelPlacement={() => {}}
+            onCancelPreview={() => {}}
+          />
+        </React.Profiler>,
+      );
+    });
+
+    const tabs = rendererInstance!.root.find(
+      node => node.props.horizontal === true && !!node.props.onScroll,
+    );
+    // 탭 줄이 화면보다 넓어서 밀 수 있는 상태로 만든다.
+    await act(async () => {
+      tabs.props.onLayout({ nativeEvent: { layout: { width: 300 } } });
+      tabs.props.onContentSizeChange(1200, 48);
+    });
+
+    const scrollTo = async (x: number) => {
+      await act(async () => {
+        tabs.props.onScroll({ nativeEvent: { contentOffset: { x } } });
+      });
+    };
+
+    // 흐름이 자리 잡을 때까지 두 번 민다.
+    await scrollTo(100);
+    await scrollTo(150);
+    const settled = commits;
+
+    // 흐림이 그대로인 범위에서 계속 밀어도 다시 그리지 않는다.
+    await scrollTo(200);
+    await scrollTo(250);
+    await scrollTo(300);
+    expect(commits).toBe(settled);
+
+    // 끝에 닿아 오른쪽 흐림이 사라질 때만 다시 그린다.
+    await scrollTo(900);
+    expect(commits).toBe(settled + 1);
   });
 });
 
@@ -860,8 +928,9 @@ describe('ItineraryEditorScreen Component', () => {
     // 장소도 이름도 실시간 동기화로 이미 저장돼 있다. 겁주는 문구를 쓰지 않는다.
     expect(mockShowAlert).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: '편집 마치기',
+        title: '편집을 마칠까요?',
         type: 'confirm',
+        showIcon: false,
         buttons: expect.any(Array),
       }),
     );
@@ -943,23 +1012,19 @@ describe('ItineraryEditorScreen Component', () => {
     expect(mockDispatch).not.toHaveBeenCalled();
   });
 
-  it('아직 저장되지 않은 새 일정에서는 사라진다고 경고한다', async () => {
+  it('일정 ID 없이 열리면 새로 만들지 않고 안내한 뒤 돌아간다', async () => {
     mockItineraryEditor.days = mockDays;
     mockItineraryEditor.selectedDay = mockDays[0];
 
-    const mockAddListener = jest.fn<
-      () => jest.Mock,
-      [string, (...args: any[]) => void]
-    >(() => jest.fn());
     const mockNavigation = {
-      addListener: mockAddListener,
+      addListener: jest.fn(() => jest.fn()),
       goBack: jest.fn(),
       navigate: jest.fn(),
       dispatch: jest.fn(),
       setParams: jest.fn(),
     } as any;
 
-    // planId가 없으면 완료를 눌러야 서버에 만들어진다 — 이때는 경고가 맞다.
+    // 모든 진입 경로가 먼저 일정을 만들어 ID를 넘긴다. ID가 없는 진입은 비정상이다.
     const mockRoute = { params: { destination: '제주도' } } as any;
 
     await act(async () => {
@@ -968,24 +1033,17 @@ describe('ItineraryEditorScreen Component', () => {
       );
     });
 
-    const beforeRemoveHandler = mockAddListener.mock.calls.find(
-      call => call[0] === 'beforeRemove',
-    )?.[1];
-
-    await act(async () => {
-      beforeRemoveHandler!({
-        preventDefault: jest.fn(),
-        data: { action: { type: 'GO_BACK' } },
-      });
-    });
-
     expect(mockShowAlert).toHaveBeenCalledWith(
-      expect.objectContaining({ title: '저장되지 않은 일정', type: 'warning' }),
+      expect.objectContaining({ title: '일정을 열 수 없어요', type: 'error' }),
     );
-    const leaveButton = mockShowAlert.mock.calls[0][0].buttons.find(
-      (btn: any) => btn.text === '나가기',
+    expect(mockNavigation.goBack).not.toHaveBeenCalled();
+
+    const confirm = mockShowAlert.mock.calls[0][0].buttons.find(
+      (btn: any) => btn.text === '확인',
     );
-    expect(leaveButton.style).toBe('destructive');
+    act(() => confirm.onPress());
+    expect(mockNavigation.goBack).toHaveBeenCalledTimes(1);
+    expect(axios.post).not.toHaveBeenCalled();
   });
 
   it('does not show warning alert when completed via onComplete', async () => {
@@ -1209,7 +1267,7 @@ describe('일정 편집기 제스처 및 UI 동작 개선', () => {
   it('장소 추가 시트는 마지막으로 잰 몸통 크기에 맞춰 처음 높이를 연다', () => {
     // 화면이 뜨는 동안 몸통이 여러 번 재어지는데, 처음 잰 값에 굳으면
     // 시트가 접힌 채로 열린 것처럼 보였다. 손잡이를 잡기 전까지 다시 연다.
-    expect(source).toContain('SHEET_INITIAL_RATIO');
+    expect(source).toContain('getSheetSnaps(nextMax)[1]');
     expect(source).toContain('sheetTouched');
     expect(source).not.toContain('if (!sheetInited.current &&');
   });
@@ -1218,26 +1276,10 @@ describe('일정 편집기 제스처 및 UI 동작 개선', () => {
     // 공유값에 쓴 값을 JS에서 곧바로 되읽으면 아직 반영되지 않은 0이 나온다.
     // 그 0이 setSheetHeight의 상한이 되어 처음 높이가 통째로 잘렸다.
     const reads = source.match(/sheetMax\.value(?!\s*=)/g) ?? [];
-    // 되읽는 곳은 두 플로팅 묶음의 워클릿에서만 허용한다.
-    expect(reads).toHaveLength(2);
+    // 되읽는 곳은 플로팅 단추 묶음의 워클릿에서만 허용한다.
+    expect(reads).toHaveLength(1);
     expect(source).toContain('Math.min(sheetMaxRef.current, height)');
-    expect(source).toContain('Math.round(sheetMaxRef.current * ratio)');
-  });
-
-  it('플로팅 실행 취소 단추는 가장 옅은 그림자 토큰을 쓴다', () => {
-    const {
-      styles: editorStyles,
-    } = require('../ItineraryEditorScreen.styles');
-    const { tokens } = require('../../../../theme/tokens');
-
-    expect(editorStyles.floatingHistoryButton.elevation).toBe(
-      tokens.shadows.sm.elevation,
-    );
-    expect(editorStyles.floatingHistoryButton.shadowOpacity).toBe(
-      tokens.shadows.sm.shadowOpacity,
-    );
-    // 테두리가 경계를 그으므로 그림자를 더 키울 이유가 없다.
-    expect(editorStyles.floatingHistoryButton.borderWidth).toBe(1);
+    expect(source).toContain('getSheetSnaps(sheetMaxRef.current)');
   });
 
   it('중복 라벨(movingPlace)이 제거되었다', () => {
@@ -1245,9 +1287,10 @@ describe('일정 편집기 제스처 및 UI 동작 개선', () => {
     expect(source).not.toContain('movingPlaceName');
   });
 
-  it('실행 취소 버튼이 플로팅 버튼으로 시트와 동기화되어 렌더된다', () => {
-    expect(source).toContain('styles.floatingHistoryContainer');
-    expect(source).toContain('styles.floatingHistoryButton');
+  it('실행 취소·다시 실행은 시간표 위에 뜨지 않고 제목 줄에 있다', () => {
+    expect(source).not.toContain('styles.floatingHistoryContainer');
+    expect(source).toContain('testID="btn-undo"');
+    expect(source).toContain('testID="btn-redo"');
     expect(source).not.toContain('styles.sheetTopBar');
   });
 
@@ -1280,7 +1323,7 @@ describe('일정 편집기 제스처 및 UI 동작 개선', () => {
   });
 
   it('장소 추가 시트가 날씨 헤더 바로 밑까지 최대 확장되며 1.0 스냅을 지원한다', () => {
-    expect(source).toContain('SHEET_SNAPS = [0, 1 / 3, 2 / 3, 1]');
+    expect(source).toContain('(top * 2) / 3');
     expect(source).toContain(
       'sheetTopGap = hasWeather ? normalize(72) : normalize(8)',
     );

@@ -3,11 +3,11 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ActivityIndicator,
   StyleSheet,
   StyleProp,
   ViewStyle,
 } from 'react-native';
+import { Spinner } from '../common/LoadingSpinner';
 import { tokens } from '../../theme/tokens';
 import { normalize } from '../../utils/normalize';
 
@@ -32,7 +32,7 @@ export default function EmptyState({
 }: EmptyStateProps) {
   return (
     <View style={[styles.container, style]}>
-      {loading ? <ActivityIndicator color={tokens.colors.primary} /> : icon}
+      {loading ? <Spinner color={tokens.colors.primary} /> : icon}
       <Text style={styles.title}>{title}</Text>
       {description ? (
         <Text style={styles.description}>{description}</Text>

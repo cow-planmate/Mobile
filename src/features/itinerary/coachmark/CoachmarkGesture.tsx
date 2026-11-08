@@ -8,7 +8,15 @@ import {
 } from 'react-native';
 import { tokens } from '../../../theme/tokens';
 import { CATEGORY_COLORS } from '../components/TimelineItem.styles';
+import {
+  HOUR_HEIGHT,
+  MINUTE_HEIGHT,
+  TIMELINE_BLOCK_LEFT,
+  TIMELINE_BLOCK_RADIUS,
+  TIMELINE_BLOCK_RIGHT,
+} from '../screens/ItineraryEditorScreen.styles';
 import type { CoachmarkDemo } from './coachmarkSteps';
+import { resolveDemoTravel } from './demoTravel';
 import type { CoachmarkRect } from './measureTarget';
 
 const COLORS = tokens.colors;
@@ -41,6 +49,11 @@ interface CoachmarkGestureProps {
   /** 짚어 준 자리(안내가 그려지는 판 기준). */
   rect: CoachmarkRect;
   demo: CoachmarkDemo;
+  /**
+   * 함께 밝혀 둔 자리. carry는 여기 안에 놓인다 - 놓일 곳을 픽셀로 못 박지 않고
+   * 밝힌 시간표에서 잡으므로 위쪽 영역이 바뀌어도 시간표 안에 떨어진다.
+   */
+  landing?: CoachmarkRect | null;
 }
 
 /**
@@ -59,6 +72,7 @@ interface CoachmarkGestureProps {
 export default function CoachmarkGesture({
   rect,
   demo,
+  landing = null,
 }: CoachmarkGestureProps) {
   // 기기에서 '동작 줄이기'를 켠 사람에게는 움직이지 않는다.
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -101,6 +115,18 @@ export default function CoachmarkGesture({
     [rect, demo],
   );
 
+  /** 끌려가는 거리와 놓이는 자리. 잰 자리와 시간표 눈금에서 정한다. */
+  const trip = useMemo(
+    () =>
+      resolveDemoTravel(demo, rect, landing, {
+        minuteHeight: MINUTE_HEIGHT,
+        hourHeight: HOUR_HEIGHT,
+        blockLeft: TIMELINE_BLOCK_LEFT,
+        blockRight: TIMELINE_BLOCK_RIGHT,
+      }),
+    [demo, rect, landing],
+  );
+
   /** 끌려가는 길. 가운데를 빠르게, 끝을 느리게 - 진짜 손이 그렇게 움직인다. */
   const travel = useMemo(() => {
     const span = DRAG_TO - DRAG_FROM;
@@ -116,10 +142,10 @@ export default function CoachmarkGesture({
     return {
       inputRange: path.map(point => point.at),
       gone: path.map(point => point.gone),
-      x: path.map(point => point.gone * demo.dx),
-      y: path.map(point => point.gone * demo.dy),
+      x: path.map(point => point.gone * trip.dx),
+      y: path.map(point => point.gone * trip.dy),
     };
-  }, [demo]);
+  }, [trip]);
 
   if (reduceMotion) return null;
 
@@ -158,7 +184,7 @@ export default function CoachmarkGesture({
   // 늘어나는 자리는 아래를 붙박아 둔 채 위로 자란다. 높이를 직접 바꾸는 대신
   // 눌러 편 비율을 쓰고, 줄어든 만큼 내려 밀어 아랫변을 제자리에 둔다 -
   // 그래야 네이티브 쪽에서 그려져 끊기지 않는다.
-  const grow = Math.abs(demo.dy);
+  const grow = Math.abs(trip.dy);
 
   return (
     <>
@@ -169,10 +195,10 @@ export default function CoachmarkGesture({
           pointerEvents="none"
           style={[
             styles.grow,
-            demo.dy < 0 ? styles.growUp : styles.growDown,
+            trip.dy < 0 ? styles.growUp : styles.growDown,
             {
               left: rect.x,
-              top: demo.dy < 0 ? rect.y - grow : rect.y + rect.height,
+              top: trip.dy < 0 ? rect.y - grow : rect.y + rect.height,
               width: rect.width,
               height: grow,
               opacity: progress.interpolate({
@@ -185,7 +211,7 @@ export default function CoachmarkGesture({
                     inputRange: travel.inputRange,
                     outputRange: travel.gone.map(
                       gone =>
-                        ((demo.dy < 0 ? 1 : -1) * (grow * (1 - gone))) / 2,
+                        ((trip.dy < 0 ? 1 : -1) * (grow * (1 - gone))) / 2,
                     ),
                   }),
                 },
@@ -207,13 +233,19 @@ export default function CoachmarkGesture({
           pointerEvents="none"
           style={[
             styles.dropped,
-            {
-              left: cardAt.left + demo.dx,
-              top: cardAt.top + demo.dy,
-              opacity: droppedOpacity,
-            },
+            // 놓일 자리를 알면 진짜 한 시간짜리 블록 크기로, 모르면 카드 크기로 그린다.
+            trip.drop
+              ? {
+                  left: trip.drop.x,
+                  top: trip.drop.y,
+                  width: trip.drop.width,
+                  height: trip.drop.height,
+                }
+              : { left: cardAt.left + trip.dx, top: cardAt.top + trip.dy },
+            { opacity: droppedOpacity },
           ]}
         >
+          <View style={styles.droppedBar} />
           <View style={styles.droppedLines}>
             <View style={styles.droppedLine} />
             <View style={[styles.droppedLine, styles.lineShort]} />
@@ -351,29 +383,40 @@ const styles = StyleSheet.create({
   lineShort: {
     width: '55%',
   },
+  // 놓이는 블록은 시간표의 진짜 블록과 같은 모양이다 - 흰 면에 갈래 색 막대 하나.
   dropped: {
     position: 'absolute',
     width: CARD_W,
     height: CARD_H,
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: BLOCK.border,
-    backgroundColor: BLOCK.bg,
+    borderRadius: TIMELINE_BLOCK_RADIUS,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
+    elevation: 4,
+  },
+  droppedBar: {
+    position: 'absolute',
+    left: 12,
+    top: 13,
+    width: 3,
+    height: 30,
+    borderRadius: 2,
+    backgroundColor: BLOCK.border,
   },
   droppedLines: {
     gap: 7,
+    paddingTop: 14,
+    paddingLeft: 26,
+    paddingRight: 24,
   },
   droppedLine: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: BLOCK.border,
-    opacity: 0.55,
+    backgroundColor: COLORS.borderStrong,
   },
   grow: {
     position: 'absolute',
-    backgroundColor: BLOCK.bg,
+    backgroundColor: COLORS.white,
   },
   growUp: {
     borderTopWidth: 2,
