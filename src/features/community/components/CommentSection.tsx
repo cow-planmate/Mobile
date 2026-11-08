@@ -27,6 +27,8 @@ import { CommunityComment } from '../types';
 import { mergeCommentPages } from '../utils/commentPages';
 import { useSubmitLock } from '../../../hooks/useSubmitLock';
 import UserAvatar from './UserAvatar';
+import PublicProfileModal from './PublicProfileModal';
+import SendMessageButton from '../../social/components/SendMessageButton';
 
 interface CommentSectionProps {
   postId: number;
@@ -135,6 +137,7 @@ export default function CommentSection({
 
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [profileTarget, setProfileTarget] = useState<CommunityComment | null>(null);
 
   const commentsQuery = useComments(postId, 20, feed);
   const createComment = useCreateComment(postId, feed);
@@ -277,15 +280,27 @@ export default function CommentSection({
               style={styles.replyIcon}
             />
           )}
-          <UserAvatar
-            name={comment.author}
-            imageUrl={comment.authorImage}
-            avatarHash={comment.authorAvatarHash}
-            size={normalize(28)}
-          />
+          <TouchableOpacity
+            onPress={() => setProfileTarget(comment)}
+            disabled={comment.authorDeleted}
+            accessibilityRole="button"
+            accessibilityLabel={`${comment.author} 프로필 보기`}
+          >
+            <UserAvatar
+              name={comment.author}
+              imageUrl={comment.authorImage}
+              avatarHash={comment.authorAvatarHash}
+              size={normalize(28)}
+            />
+          </TouchableOpacity>
           <View style={styles.commentBody}>
             <View style={styles.commentMeta}>
-              <Text style={styles.commentAuthor}>{comment.author}</Text>
+              <Text
+                style={styles.commentAuthor}
+                onPress={comment.authorDeleted ? undefined : () => setProfileTarget(comment)}
+              >
+                {comment.author}
+              </Text>
               <Text style={styles.commentTime}>{comment.createdAt}</Text>
             </View>
 
@@ -312,6 +327,7 @@ export default function CommentSection({
                       <Text style={styles.action}>답글 달기</Text>
                     </TouchableOpacity>
                   )}
+                  <SendMessageButton compact target={comment} />
                   {isAuthor && (
                     <>
                       <TouchableOpacity
@@ -399,6 +415,12 @@ export default function CommentSection({
           )}
         </>
       )}
+      <PublicProfileModal
+        visible={!!profileTarget}
+        onClose={() => setProfileTarget(null)}
+        userId={profileTarget?.userId ?? null}
+        fallbackName={profileTarget?.author}
+      />
     </View>
   );
 }

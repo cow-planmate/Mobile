@@ -48,6 +48,7 @@ import UserAvatar from '../components/UserAvatar';
 import FallbackImage from '../../../components/common/FallbackImage';
 import PublicProfileModal from '../components/PublicProfileModal';
 import ReportPostButton from '../components/ReportPostButton';
+import SendMessageButton from '../../social/components/SendMessageButton';
 import { ReactionType } from '../types';
 import { ScheduleTimeline } from '../../itinerary/components/PlanScheduleList';
 import PlaceDetailSheet, {
@@ -472,6 +473,7 @@ ${WEB_URL}/travel/${post.id}`,
 
             {!isAuthor && (
               <View style={styles.authorActions}>
+                <SendMessageButton target={post} />
                 <ReportPostButton postId={post.id} feed />
               </View>
             )}

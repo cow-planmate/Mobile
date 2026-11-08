@@ -8,6 +8,8 @@ import ItineraryViewScreen from '../features/itinerary/screens/ItineraryViewScre
 import TravelFeedScreen from '../features/community/screens/TravelFeedScreen';
 import ProfileScreen from '../features/auth/screens/ProfileScreen';
 import ChangePasswordScreen from '../features/auth/screens/ChangePasswordScreen';
+import SocialScreen from '../features/social/screens/SocialScreen';
+import ChatScreen from '../features/social/screens/ChatScreen';
 import {
   CommunityScreen,
   FeedCreateScreen,
@@ -298,6 +300,8 @@ export default function AppStack() {
       <Stack.Screen name="MainTabs" component={MainTabs} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+      <Stack.Screen name="Social" component={SocialScreen} />
+      <Stack.Screen name="Chat" component={ChatScreen} />
       <Stack.Screen
         name="ItineraryEditor"
         component={ItineraryEditorScreen}

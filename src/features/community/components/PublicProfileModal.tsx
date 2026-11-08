@@ -8,6 +8,15 @@ import { fetchPublicProfile } from '../../../api/user';
 import PopupModal from '../../../components/common/PopupModal';
 import UserAvatar from './UserAvatar';
 import { tokens } from '../../../theme/tokens';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Mail from 'lucide-react-native/dist/esm/icons/mail';
+import UserPlus from 'lucide-react-native/dist/esm/icons/user-plus';
+import { useAuthStore } from '../../../store/useAuthStore';
+import { useAlert } from '../../../contexts/AlertContext';
+import { getBackendErrorMessage } from '../../../utils/errorHandler';
+import { useSendFriendRequest } from '../../social/hooks';
+import type { AppStackParamList } from '../../../navigation/types';
 
 interface PublicProfileModalProps {
   visible: boolean;
@@ -26,6 +35,10 @@ export default function PublicProfileModal({
   userId,
   fallbackName,
 }: PublicProfileModalProps) {
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const { showAlert } = useAlert();
+  const myUserId = useAuthStore(state => state.user?.userId);
+  const sendRequest = useSendFriendRequest();
   const query = useQuery({
     queryKey: ['publicProfile', userId],
     queryFn: ({ signal }) => fetchPublicProfile(userId as string, signal),
@@ -38,6 +51,29 @@ export default function PublicProfileModal({
     query.isError && parseBackendError(query.error).code === PROFILE_PRIVATE_CODE;
   const profile = query.data;
   const failure = getResourceLoadError(query.error, '프로필');
+  // 비공개 프로필이어도 친구 요청·쪽지는 보낼 수 있다 (웹과 같다)
+  const canInteract = !!myUserId && !!userId && userId !== myUserId && !query.isLoading;
+  const nickname = profile?.nickname ?? fallbackName ?? '';
+
+  const handleFriendRequest = () =>
+    sendRequest.mutateAsync(userId as string).then(
+      result =>
+        showAlert({
+          title: result.status === 'ACCEPTED' ? '친구가 되었어요' : '친구 요청을 보냈어요',
+          type: 'success',
+        }),
+      error => showAlert({ title: '요청 실패', message: getBackendErrorMessage(error), type: 'error' }),
+    );
+
+  const handleMessage = () => {
+    onClose();
+    navigation.navigate('Chat', {
+      userId: userId as string,
+      nickname,
+      profileImageUrl: profile?.profileImageUrl ?? null,
+      avatarHash: null,
+    });
+  };
 
   return (
     <PopupModal
@@ -114,11 +150,49 @@ export default function PublicProfileModal({
           )}
         </View>
       )}
+      {canInteract && (
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleFriendRequest}
+            disabled={sendRequest.isPending}
+            accessibilityRole="button"
+          >
+            <UserPlus size={normalize(14)} color={tokens.colors.primary} />
+            <Text style={styles.actionText}>친구 추가</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton} onPress={handleMessage} accessibilityRole="button">
+            <Mail size={normalize(14)} color={tokens.colors.primary} />
+            <Text style={styles.actionText}>쪽지 보내기</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </PopupModal>
   );
 }
 
 const styles = StyleSheet.create({
+  actionRow: {
+    flexDirection: 'row',
+    gap: normalize(8),
+    paddingHorizontal: normalize(16),
+    paddingBottom: normalize(8),
+  },
+  actionButton: {
+    flex: 1,
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: normalize(6),
+    borderRadius: tokens.radius.m,
+    backgroundColor: tokens.tones.primary.bg,
+  },
+  actionText: {
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.semibold,
+    color: tokens.colors.primary,
+  },
   retryButton: {
     minHeight: 48,
     justifyContent: 'center',

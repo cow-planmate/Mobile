@@ -1,0 +1,72 @@
+import { StyleSheet } from 'react-native';
+import { tokens } from '../../../theme/tokens';
+import { normalize } from '../../../utils/normalize';
+
+export const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: tokens.colors.pageGround },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list: { flexGrow: 1, padding: normalize(16), gap: normalize(10) },
+  flipped: { transform: [{ scaleY: -1 }] },
+  empty: {
+    textAlign: 'center',
+    marginTop: normalize(40),
+    fontSize: normalize(13),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.textTertiary,
+  },
+  row: { flexDirection: 'row', alignItems: 'flex-end', gap: normalize(6) },
+  rowMine: { flexDirection: 'row-reverse' },
+  bubble: {
+    maxWidth: '75%',
+    paddingHorizontal: normalize(14),
+    paddingVertical: normalize(10),
+    borderRadius: normalize(16),
+  },
+  bubbleMine: { backgroundColor: tokens.colors.primary, borderBottomRightRadius: normalize(4) },
+  bubbleTheirs: {
+    backgroundColor: tokens.colors.white,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    borderBottomLeftRadius: normalize(4),
+  },
+  bubbleText: {
+    fontSize: normalize(14),
+    lineHeight: normalize(20),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.text,
+  },
+  bubbleTextMine: { color: tokens.colors.white },
+  deletedText: { fontStyle: 'italic', opacity: 0.7 },
+  time: { fontSize: normalize(10), fontFamily: tokens.fontFamily.regular, color: tokens.colors.textTertiary },
+  inputBar: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: normalize(8),
+    padding: normalize(12),
+    backgroundColor: tokens.colors.white,
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.border,
+  },
+  input: {
+    flex: 1,
+    minHeight: 44,
+    maxHeight: normalize(120),
+    paddingHorizontal: normalize(14),
+    paddingVertical: normalize(10),
+    borderRadius: normalize(12),
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    fontSize: normalize(14),
+    fontFamily: tokens.fontFamily.regular,
+    color: tokens.colors.text,
+  },
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: normalize(12),
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.primary,
+  },
+  sendButtonDisabled: { opacity: 0.4 },
+});

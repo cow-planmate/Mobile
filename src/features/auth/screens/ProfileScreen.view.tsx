@@ -1079,6 +1079,18 @@ export default function ProfileScreenView({
             <View style={styles.accountSection}>
               <TouchableOpacity
                 style={styles.accountItem}
+                onPress={() => navigation.navigate('Social')}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="친구·쪽지"
+              >
+                <Text style={styles.accountItemText}>친구·쪽지</Text>
+              </TouchableOpacity>
+
+              <View style={styles.accountItemDivider} />
+
+              <TouchableOpacity
+                style={styles.accountItem}
                 onPress={handleLogout}
                 activeOpacity={0.7}
                 accessibilityRole="button"

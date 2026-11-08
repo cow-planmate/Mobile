@@ -34,6 +34,7 @@ import CommentSection from '../components/CommentSection';
 import UserAvatar from '../components/UserAvatar';
 import PublicProfileModal from '../components/PublicProfileModal';
 import ReportPostButton from '../components/ReportPostButton';
+import SendMessageButton from '../../social/components/SendMessageButton';
 import { ReactionType } from '../types';
 import { BoardKey, boardLabel } from '../constants/board';
 import { styles, COLORS } from './PostDetailScreen.styles';
@@ -301,6 +302,7 @@ export default function PostDetailScreen() {
 
           {!isAuthor && (
             <View style={styles.authorActions}>
+              <SendMessageButton target={post} />
               <ReportPostButton postId={post.id} />
             </View>
           )}
