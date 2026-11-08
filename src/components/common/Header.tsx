@@ -14,6 +14,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { INITIAL_TAB } from '../../navigation/types';
 import UserIcon from 'lucide-react-native/dist/esm/icons/user';
+import Mail from 'lucide-react-native/dist/esm/icons/mail';
 import LogOut from 'lucide-react-native/dist/esm/icons/log-out';
 import Bell from 'lucide-react-native/dist/esm/icons/bell';
 import ChevronRight from 'lucide-react-native/dist/esm/icons/chevron-right';
@@ -122,7 +123,7 @@ const Header: React.FC<HeaderProps> = ({
 
   const handleProfilePress = () => positionMenu();
 
-  const handleMenuItemPress = (action: 'profile' | 'logout') => {
+  const handleMenuItemPress = (action: 'profile' | 'social' | 'logout') => {
     setMenuVisible(false);
     setTimeout(() => {
       if (action === 'profile') {
@@ -131,6 +132,8 @@ const Header: React.FC<HeaderProps> = ({
         } else {
           navigation.navigate('Profile');
         }
+      } else if (action === 'social') {
+        navigation.navigate('Social');
       } else if (action === 'logout') {
         // 스토리북처럼 WebSocketProvider 밖에서 렌더될 수 있어 존재할 때만 끊는다
         disconnect?.();
@@ -289,6 +292,23 @@ const Header: React.FC<HeaderProps> = ({
                 <UserIcon size={normalize(18)} color={tokens.colors.primary} />
               </View>
               <Text style={styles.menuText}>마이페이지</Text>
+              <ChevronRight
+                size={normalize(16)}
+                color={tokens.colors.textTertiary}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleMenuItemPress('social')}
+              accessibilityRole="button"
+              accessibilityLabel="친구·쪽지"
+              activeOpacity={0.65}
+            >
+              <View style={styles.menuIcon}>
+                <Mail size={normalize(18)} color={tokens.colors.primary} />
+              </View>
+              <Text style={styles.menuText}>친구·쪽지</Text>
               <ChevronRight
                 size={normalize(16)}
                 color={tokens.colors.textTertiary}

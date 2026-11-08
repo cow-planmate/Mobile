@@ -130,6 +130,7 @@ export default function SocialScreen() {
           { key: 'friends', label: '친구', count: friends.length },
           { key: 'chats', label: '쪽지함', count: unread || undefined },
         ]}
+        scrollable={false}
         selectedKey={tab}
         onSelect={key => setTab(key as Tab)}
       />
