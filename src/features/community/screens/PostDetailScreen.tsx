@@ -34,6 +34,7 @@ import CommentSection from '../components/CommentSection';
 import UserAvatar from '../components/UserAvatar';
 import PublicProfileModal from '../components/PublicProfileModal';
 import ReportPostButton from '../components/ReportPostButton';
+import SendMessageButton from '../../social/components/SendMessageButton';
 import { ReactionType } from '../types';
 import { BoardKey, boardLabel } from '../constants/board';
 import { styles, COLORS } from './PostDetailScreen.styles';
@@ -182,7 +183,14 @@ export default function PostDetailScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={tokens.colors.white} />
-      {renderTopBar(!isAuthor && <ReportPostButton postId={post.id} />)}
+      {renderTopBar(
+        !isAuthor && (
+          <View style={styles.topBarActions}>
+            <SendMessageButton target={post} />
+            <ReportPostButton postId={post.id} />
+          </View>
+        ),
+      )}
 
       <ScrollView
         showsVerticalScrollIndicator={false}

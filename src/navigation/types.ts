@@ -60,6 +60,13 @@ export type ScheduleStackParamList = {
   };
   Profile: { scrollToItinerary?: boolean } | undefined;
   ChangePassword: undefined;
+  Social: undefined;
+  Chat: {
+    userId: string;
+    nickname: string;
+    profileImageUrl?: string | null;
+    avatarHash?: string | null;
+  };
 };
 
 export type AppStackParamList = ScheduleStackParamList;
