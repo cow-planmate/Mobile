@@ -57,7 +57,10 @@ import gravatarUrl from '../../../utils/gravatarUrl';
 import { resolveAvatarUrl } from '../../community/utils/avatar';
 import FallbackImage from '../../../components/common/FallbackImage';
 import { normalize } from '../../../utils/normalize';
-import ProfileTasteCard from '../components/ProfileTasteCard';
+import {
+  ProfileMenuLabel,
+  ProfileMenuRow,
+} from '../components/ProfileMenu';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
 import FeedbackModal from '../components/FeedbackModal';
 import { allSettledWithConcurrency } from '../../../utils/concurrency';
@@ -1042,103 +1045,93 @@ export default function ProfileScreenView({
       >
         {profileSection === 'profile' && (
           <>
-            <View style={styles.profileHeader}>
-              <View style={styles.profileTopRow}>
-                <FallbackImage
-                  uri={avatarUri}
-                  style={styles.profileAvatar}
-                  fallback={
-                    <View style={styles.profileAvatarFallback}>
-                      <User size={26} color={tokens.colors.textTertiary} />
-                    </View>
-                  }
-                />
-
-                <View style={styles.profileNameBlock}>
-                  <Text style={styles.profileName} numberOfLines={1}>
-                    {user.name || '사용자'}
-                  </Text>
-                  <Text style={styles.profileEmail} numberOfLines={1}>
-                    {user.email || '이메일 없음'}
-                  </Text>
-                </View>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={handleOpenEditModal}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="프로필 수정"
+            >
+              <FallbackImage
+                uri={avatarUri}
+                style={styles.profileAvatar}
+                fallback={
+                  <View style={styles.profileAvatarFallback}>
+                    <User size={22} color={tokens.colors.textTertiary} />
+                  </View>
+                }
+              />
+              <View style={styles.profileNameBlock}>
+                <Text style={styles.profileName} numberOfLines={1}>
+                  {user.name || '사용자'}
+                </Text>
+                <Text style={styles.profileEmail} numberOfLines={1}>
+                  {user.email || '이메일 없음'}
+                </Text>
               </View>
-
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={handleOpenEditModal}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="프로필 수정"
-              >
-                <PenLine
-                  size={13}
-                  color="#4B5563"
-                  style={styles.editButtonIcon}
-                />
-                <Text style={styles.profileEditText}>프로필 수정</Text>
-              </TouchableOpacity>
-            </View>
+              <Text style={styles.profileEditText}>수정</Text>
+              <ChevronRight
+                size={normalize(18)}
+                color={tokens.colors.textMuted}
+                strokeWidth={2}
+              />
+            </TouchableOpacity>
 
             <View style={styles.sectionBand} />
 
-            <ProfileTasteCard
-              groups={tasteGroups}
-              onEdit={category => {
-                setThemeModalCategory(category);
-                setThemeModalVisible(true);
-              }}
+            <ProfileMenuLabel title="내 취향" />
+            {tasteGroups.map(group => (
+              <ProfileMenuRow
+                key={group.label}
+                label={group.label}
+                value={group.names.join(', ')}
+                emptyValue="골라 보기"
+                accessibilityLabel={`${group.label} 취향 편집`}
+                onPress={() => {
+                  setThemeModalCategory(
+                    group.label as '관광지' | '숙소' | '식당',
+                  );
+                  setThemeModalVisible(true);
+                }}
+              />
+            ))}
+
+            <View style={styles.sectionBand} />
+
+            <ProfileMenuLabel title="계정" />
+            {!user.socialLogin && (
+              <ProfileMenuRow
+                label="비밀번호 변경"
+                onPress={() => setPasswordModalVisible(true)}
+              />
+            )}
+            <ProfileMenuRow
+              label="로그아웃"
+              onPress={handleLogout}
+              chevron={false}
             />
 
             <View style={styles.sectionBand} />
 
-            <View style={styles.accountSection}>
-              <TouchableOpacity
-                style={styles.accountItem}
-                onPress={handleLogout}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="로그아웃"
-              >
-                <Text style={styles.accountItemText}>로그아웃</Text>
-              </TouchableOpacity>
-
-              <View style={styles.accountItemDivider} />
-
-              <TouchableOpacity
-                style={styles.accountItem}
-                onPress={handleResign}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="회원탈퇴"
-              >
-                <Text style={styles.accountResignText}>회원탈퇴</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.appVersionContainer}>
-              <TouchableOpacity
-                onPress={() => setPrivacyPolicyVisible(true)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="개인정보 처리방침"
-              >
-                <Text style={[styles.appVersionText, styles.privacyPolicyLink]}>
-                  개인정보 처리방침
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setFeedbackVisible(true)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="의견 보내기"
-              >
-                <Text style={[styles.appVersionText, styles.privacyPolicyLink]}>
-                  의견 보내기
-                </Text>
-              </TouchableOpacity>
-              <Text style={styles.appVersionText}>버전 {APP_VERSION}</Text>
-            </View>
+            <ProfileMenuLabel title="도움" />
+            <ProfileMenuRow
+              label="의견 보내기"
+              onPress={() => setFeedbackVisible(true)}
+            />
+            <ProfileMenuRow
+              label="개인정보 처리방침"
+              onPress={() => setPrivacyPolicyVisible(true)}
+            />
+            <ProfileMenuRow label="앱 버전" value={APP_VERSION} />
+            <TouchableOpacity
+              style={styles.resignAction}
+              onPress={handleResign}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="회원탈퇴"
+            >
+              <Text style={styles.resignActionText}>회원탈퇴</Text>
+            </TouchableOpacity>
           </>
         )}
 

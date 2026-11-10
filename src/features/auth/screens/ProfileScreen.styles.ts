@@ -550,20 +550,14 @@ export const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
+  // 사진·이름 줄 전체가 프로필 수정으로 들어가는 단추다.
   editButton: {
-    paddingVertical: normalize(2),
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    height: normalize(40),
-    backgroundColor: tokens.colors.borderLight,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: normalize(10),
-    marginTop: normalize(14),
-  },
-  editButtonIcon: {
-    marginRight: normalize(6),
+    gap: normalize(tokens.spacing.m),
+    paddingVertical: normalize(tokens.spacing.m),
+    paddingHorizontal: normalize(tokens.spacing.m),
+    backgroundColor: COLORS.white,
   },
   // 탭 하나가 가로 12를 이미 쓰므로 4만 더해 본문과 같은 16에 맞춘다.
   tabsInset: {
@@ -596,27 +590,16 @@ export const styles = StyleSheet.create({
 
   // ── 마이페이지 재설계: S2 틀 ──
   // 카드와 그림자를 걷어내고 흰 바탕 위에 1px 선과 8px 띠로만 나눈다.
-  profileHeader: {
-    backgroundColor: COLORS.white,
-    paddingHorizontal: normalize(16),
-    paddingTop: normalize(18),
-    paddingBottom: normalize(15),
-  },
-  profileTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(14),
-  },
   profileAvatar: {
-    width: normalize(56),
-    height: normalize(56),
-    borderRadius: normalize(28),
+    width: normalize(48),
+    height: normalize(48),
+    borderRadius: normalize(24),
     backgroundColor: COLORS.borderLight,
   },
   profileAvatarFallback: {
-    width: normalize(56),
-    height: normalize(56),
-    borderRadius: normalize(28),
+    width: normalize(48),
+    height: normalize(48),
+    borderRadius: normalize(24),
     backgroundColor: COLORS.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
@@ -626,15 +609,15 @@ export const styles = StyleSheet.create({
     minWidth: 0,
   },
   profileName: {
-    fontSize: normalize(19),
+    fontSize: normalize(tokens.fontSize.ml),
     fontFamily: FONTS.bold,
     color: COLORS.text,
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
   profileEmail: {
-    fontSize: normalize(12.5),
+    fontSize: normalize(tokens.fontSize.xs),
     fontFamily: FONTS.regular,
-    color: COLORS.textSecondary,
+    color: tokens.colors.textMuted,
     marginTop: normalize(2),
   },
   profileMeta: {
@@ -643,9 +626,9 @@ export const styles = StyleSheet.create({
     marginTop: normalize(3),
   },
   profileEditText: {
-    fontSize: normalize(13),
-    fontFamily: FONTS.semibold,
-    color: '#374151',
+    fontSize: normalize(tokens.fontSize.s),
+    fontFamily: FONTS.medium,
+    color: tokens.colors.textMuted,
   },
   profileStatRow: {
     flexDirection: 'row',
@@ -951,43 +934,20 @@ export const styles = StyleSheet.create({
     marginRight: normalize(4),
   },
 
-  // ── 하단 계정 관리 영역 ──
-  accountSection: {
-    backgroundColor: COLORS.white,
-    paddingHorizontal: normalize(16),
-  },
-  accountItem: {
-    paddingVertical: normalize(14),
+  // ── 하단 회원탈퇴 ──
+  // 자주 누르는 로그아웃과 떨어뜨려 맨 아래에 조용히 둔다. 높이는 터치 기준 44.
+  resignAction: {
+    alignSelf: 'flex-start',
     justifyContent: 'center',
+    minHeight: normalize(44),
+    marginTop: normalize(tokens.spacing.s),
+    paddingHorizontal: normalize(tokens.spacing.m),
   },
-  accountItemDivider: {
-    height: 1,
-    backgroundColor: tokens.colors.borderLight,
-  },
-  accountItemText: {
-    fontSize: normalize(13.5),
+  resignActionText: {
+    fontSize: normalize(tokens.fontSize.s),
     fontFamily: FONTS.medium,
-    color: tokens.colors.textSecondary,
-  },
-  accountResignText: {
-    fontSize: normalize(13.5),
-    fontFamily: FONTS.medium,
-    color: tokens.tones.danger.fg,
-  },
-  appVersionContainer: {
-    alignItems: 'center',
-    paddingTop: normalize(18),
-    paddingBottom: normalize(6),
-  },
-  appVersionText: {
-    fontSize: normalize(12),
-    fontFamily: FONTS.medium,
-    color: tokens.colors.textTertiary,
-  },
-  // 버전 표시와 같은 톤을 유지하되 밑줄로만 누를 수 있음을 알린다.
-  privacyPolicyLink: {
+    color: tokens.colors.textLabel,
     textDecorationLine: 'underline',
-    marginBottom: normalize(6),
   },
 
   // ── 프로필 수정 팝업: 비밀번호 설정 행 ──

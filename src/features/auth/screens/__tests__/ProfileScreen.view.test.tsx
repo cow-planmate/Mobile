@@ -153,7 +153,7 @@ describe('ProfileScreenView 탭', () => {
     });
 
     const body = textOf(tree!);
-    expect(body).toContain('내가 좋아하는 여행');
+    expect(body).toContain('내 취향');
     expect(body).not.toContain('여행 타임라인');
     act(() => tree!.unmount());
   });
@@ -170,7 +170,7 @@ describe('ProfileScreenView 탭', () => {
 
     const body = textOf(tree!);
     expect(body).toContain('여행 타임라인');
-    expect(body).not.toContain('내가 좋아하는 여행');
+    expect(body).not.toContain('내 취향');
     act(() => tree!.unmount());
   });
 });
