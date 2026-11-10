@@ -4,55 +4,68 @@ import { Bone, Skeleton } from '../../../components/ui';
 import { tokens } from '../../../theme/tokens';
 import { normalize } from '../../../utils/normalize';
 
-const TASTE_ROWS = 3;
+/** 구역 이름 한 줄(내 취향·계정·도움). */
+function LabelBone({ width }: { width: number }) {
+  return (
+    <View style={styles.label}>
+      <View style={styles.labelLine}>
+        <Bone width={width} height={12} />
+      </View>
+    </View>
+  );
+}
+
+/** 행 한 줄. 왼쪽 이름, 값이 있으면 오른쪽에 값. */
+function RowBone({
+  labelWidth,
+  valueWidth,
+}: {
+  labelWidth: number;
+  valueWidth?: number;
+}) {
+  return (
+    <View style={styles.row}>
+      <Bone width={labelWidth} height={16} />
+      {valueWidth ? <Bone width={valueWidth} height={14} /> : null}
+    </View>
+  );
+}
 
 /**
- * 마이페이지 프로필 탭의 뼈대. 실제 화면(프로필 머리, 취향 카드)과 같은 자리·크기로 짠다.
+ * 마이페이지 프로필 탭의 뼈대. 실제 화면(사진 줄, 내 취향·계정·도움 행 목록)과
+ * 같은 자리·크기로 짠다.
  */
 export default function ProfileSkeleton() {
   return (
     <Skeleton label="프로필을 불러오는 중" style={styles.container}>
       <View style={styles.head}>
-        <View style={styles.headRow}>
-          <Bone width={56} height={56} radius={28} />
-          <View style={styles.nameBlock}>
-            <Bone width={96} height={18} />
-            <Bone width={150} height={12} />
-          </View>
+        <Bone width={48} height={48} radius={24} />
+        <View style={styles.nameBlock}>
+          <Bone width={96} height={18} />
+          <Bone width={150} height={12} />
         </View>
-        <Bone width="100%" height={40} radius={10} />
+        <Bone width={24} height={14} />
       </View>
 
       <View style={styles.band} />
 
-      <View style={styles.tasteHeader}>
-        <View style={styles.tasteHeaderText}>
-          <Bone width={132} height={16} />
-          <Bone width={72} height={11} />
-        </View>
-        <Bone width={44} height={26} radius={8} />
-      </View>
+      <LabelBone width={36} />
+      <RowBone labelWidth={44} valueWidth={56} />
+      <RowBone labelWidth={32} valueWidth={44} />
+      <RowBone labelWidth={32} valueWidth={64} />
 
-      <View style={styles.tasteRows}>
-        {Array.from({ length: TASTE_ROWS }, (_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.tasteRow,
-              index === TASTE_ROWS - 1 && styles.tasteRowLast,
-            ]}
-          >
-            <View style={styles.tasteRowLeft}>
-              <Bone width={34} height={34} radius={10} />
-              <View style={styles.tasteRowText}>
-                <Bone width={52} height={13} />
-                <Bone width={70} height={10} />
-              </View>
-            </View>
-            <Bone width={56} height={22} radius={6} />
-          </View>
-        ))}
-      </View>
+      <View style={styles.band} />
+
+      <LabelBone width={24} />
+      <RowBone labelWidth={84} />
+      <RowBone labelWidth={52} />
+
+      <View style={styles.band} />
+
+      <LabelBone width={24} />
+      <RowBone labelWidth={72} />
+      <RowBone labelWidth={104} />
+      <RowBone labelWidth={56} valueWidth={36} />
     </Skeleton>
   );
 }
@@ -62,19 +75,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: tokens.colors.white,
   },
+  // 실제 화면의 사진·이름 줄(ProfileScreen.styles의 editButton)과 같은 여백.
   head: {
-    paddingHorizontal: normalize(16),
-    paddingTop: normalize(18),
-    paddingBottom: normalize(15),
-    gap: normalize(14),
-  },
-  headRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: normalize(14),
+    gap: normalize(tokens.spacing.m),
+    padding: normalize(tokens.spacing.m),
   },
   nameBlock: {
-    gap: normalize(8),
+    flex: 1,
+    gap: normalize(6),
   },
   band: {
     height: normalize(20),
@@ -83,37 +93,22 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.pageGround,
   },
-  tasteHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingHorizontal: normalize(16),
-    paddingTop: normalize(17),
+  // 실제 화면의 ProfileMenuLabel·ProfileMenuRow와 같은 여백과 높이.
+  label: {
+    paddingHorizontal: normalize(tokens.spacing.m),
+    paddingTop: normalize(tokens.spacing.m),
+    paddingBottom: normalize(tokens.spacing.xs),
   },
-  tasteHeaderText: {
-    gap: normalize(6),
+  // 12px 글자 한 줄의 높이. 뼈대 막대(12)만 두면 아래 행이 위로 뜬다.
+  labelLine: {
+    height: normalize(17),
+    justifyContent: 'center',
   },
-  tasteRows: {
-    paddingHorizontal: normalize(16),
-    paddingVertical: normalize(6),
-  },
-  tasteRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: normalize(11),
-    borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.borderLight,
-  },
-  tasteRowLast: {
-    borderBottomWidth: 0,
-  },
-  tasteRowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: normalize(10),
-  },
-  tasteRowText: {
-    gap: normalize(4),
+    minHeight: normalize(52),
+    paddingHorizontal: normalize(tokens.spacing.m),
   },
 });
