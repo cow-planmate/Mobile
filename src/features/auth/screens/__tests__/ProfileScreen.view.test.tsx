@@ -175,6 +175,32 @@ describe('ProfileScreenView 탭', () => {
   });
 });
 
+describe('ProfileScreenView 오프라인', () => {
+  it('인터넷이 없어 멈춘 상태면 빈 프로필 대신 연결 안내를 보여 준다', () => {
+    const onRetryOffline = jest.fn();
+    let tree!: renderer.ReactTestRenderer;
+    act(() => {
+      tree = renderer.create(
+        <ProfileScreenView
+          {...(BASE_PROPS as any)}
+          offline
+          onRetryOffline={onRetryOffline}
+        />,
+      );
+    });
+
+    const body = textOf(tree);
+    expect(body).toContain('인터넷에 연결되어 있지 않아요');
+    expect(body).not.toContain('내 취향');
+    expect(body).not.toContain('이메일 없음');
+
+    const retry = tree.root.findByProps({ accessibilityLabel: '다시 시도' });
+    act(() => retry.props.onPress());
+    expect(onRetryOffline).toHaveBeenCalledTimes(1);
+    act(() => tree.unmount());
+  });
+});
+
 describe('ProfileScreenView profile save', () => {
   beforeEach(() => {
     mockVerifyNicknameAvailable.mockReset();

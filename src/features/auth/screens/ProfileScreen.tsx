@@ -1,6 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
+import NetInfo from '@react-native-community/netinfo';
 import { useAlert } from '../../../contexts/AlertContext';
 import Toast from 'react-native-toast-message';
 import FastImage from 'react-native-fast-image';
@@ -38,8 +39,43 @@ export default function ProfileScreen({ route }: any) {
   const { showAlert } = useAlert();
   const { disconnect } = useWebSocket();
   const queryClient = useQueryClient();
-  const { data, isLoading, isError, refetch } = useUserProfile();
+  const { data, isLoading, isError, isPending, isPaused, refetch } =
+    useUserProfile();
   const user = data ?? EMPTY_PROFILE;
+  // 오프라인이면 요청이 멈춰 있어 isLoading·isError가 모두 false다. 처음 받는
+  // 프로필이 멈춘 경우만 따로 짚지 않으면 빈 프로필이 그대로 보인다.
+  const offline = !!isPending && !!isPaused;
+  const wasOffline = useRef(false);
+
+  useEffect(() => {
+    if (offline) {
+      wasOffline.current = true;
+      return;
+    }
+    if (wasOffline.current) {
+      wasOffline.current = false;
+      Toast.show({
+        type: 'success',
+        text1: '다시 연결됐어요. 최신 내용을 불러오고 있어요.',
+        position: 'top',
+        visibilityTime: 2500,
+      });
+    }
+  }, [offline]);
+
+  const handleRetryOffline = useCallback(async () => {
+    const state = await NetInfo.fetch();
+    if (state.isConnected) {
+      void refetch();
+      return;
+    }
+    Toast.show({
+      type: 'info',
+      text1: '아직 인터넷에 연결되지 않았어요.',
+      position: 'top',
+      visibilityTime: 2500,
+    });
+  }, [refetch]);
   const authUser = useAuthStore(state => state.user);
 
   const [isThemeModalVisible, setThemeModalVisible] = useState(false);
@@ -381,6 +417,8 @@ export default function ProfileScreen({ route }: any) {
       loading={isLoading}
       loadError={isError}
       onRetryLoad={refetch}
+      offline={offline}
+      onRetryOffline={handleRetryOffline}
       user={user}
       onRenamePlan={handleRenamePlan}
       onChangeProfileImage={handleChangeProfileImage}

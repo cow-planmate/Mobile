@@ -16,6 +16,7 @@ import { INITIAL_TAB } from '../../../navigation/types';
 import { useAlert } from '../../../contexts/AlertContext';
 import { ShareModal } from '../../../components/common';
 import MenuModal from '../components/MenuModal';
+import ProfileOfflineNotice from '../components/ProfileOfflineNotice';
 import ProfileSkeleton from '../components/ProfileSkeleton';
 import {
   ProfileStoriesSkeleton,
@@ -410,6 +411,9 @@ interface ProfileScreenViewProps {
 
   loadError?: boolean;
   onRetryLoad?: () => void;
+  /** 처음 받는 프로필이 인터넷이 없어 멈춰 있을 때. */
+  offline?: boolean;
+  onRetryOffline?: () => void;
   user: any;
   isThemeModalVisible: boolean;
   setThemeModalVisible: (visible: boolean) => void;
@@ -436,6 +440,8 @@ export default function ProfileScreenView({
   loading,
   loadError,
   onRetryLoad,
+  offline,
+  onRetryOffline,
   user,
   isThemeModalVisible,
   setThemeModalVisible,
@@ -815,6 +821,15 @@ export default function ProfileScreenView({
       </View>
     </>
   );
+
+  if (offline) {
+    return (
+      <View style={styles.container}>
+        {screenHeader}
+        <ProfileOfflineNotice onRetry={() => onRetryOffline?.()} />
+      </View>
+    );
+  }
 
   if (loading) {
     return (
