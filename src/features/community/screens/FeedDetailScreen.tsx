@@ -48,6 +48,7 @@ import UserAvatar from '../components/UserAvatar';
 import FallbackImage from '../../../components/common/FallbackImage';
 import PublicProfileModal from '../components/PublicProfileModal';
 import ReportPostButton from '../components/ReportPostButton';
+import SendMessageButton from '../../social/components/SendMessageButton';
 import { DetailSkeleton } from '../components/CommunitySkeletons';
 import { ReactionType } from '../types';
 import { ScheduleTimeline } from '../../itinerary/components/PlanScheduleList';
@@ -358,7 +359,14 @@ ${WEB_URL}/travel/${post.id}`,
         barStyle="dark-content"
         backgroundColor={tokens.colors.white}
       />
-      {renderTopBar(!isAuthor && <ReportPostButton postId={post.id} feed />)}
+      {renderTopBar(
+        !isAuthor && (
+          <View style={styles.topBarActions}>
+            <SendMessageButton target={post} />
+            <ReportPostButton postId={post.id} feed />
+          </View>
+        ),
+      )}
 
       <ScrollView
         showsVerticalScrollIndicator={false}

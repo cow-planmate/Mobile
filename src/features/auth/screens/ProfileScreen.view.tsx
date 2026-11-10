@@ -1121,6 +1121,10 @@ export default function ProfileScreenView({
               />
             )}
             <ProfileMenuRow
+              label="친구·쪽지"
+              onPress={() => navigation.navigate('Social')}
+            />
+            <ProfileMenuRow
               label="로그아웃"
               onPress={handleLogout}
               chevron={false}

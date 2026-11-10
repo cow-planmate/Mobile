@@ -5,6 +5,9 @@ import { tokens } from '../../../theme/tokens';
 export const COLORS = tokens.colors;
 
 export const styles = StyleSheet.create({
+  topBarActions: {
+    flexDirection: 'row',
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.pageGround,
