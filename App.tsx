@@ -25,6 +25,8 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from './src/components/common/toastConfig';
+import { useInAppUpdate } from './src/hooks/useInAppUpdate';
+import ForceUpdateModal from './src/components/common/ForceUpdateModal';
 
 LogBox.ignoreAllLogs();
 
@@ -32,6 +34,8 @@ const SHOW_STORYBOOK = process.env.NODE_ENV !== 'test' && false;
 
 function App() {
   const initializeAuth = useAuthStore(state => state.initialize);
+
+  const { updateRequired, retry: retryUpdate } = useInAppUpdate();
 
   React.useEffect(() => {
     void initializeAuth();
@@ -74,6 +78,10 @@ function App() {
                   <NavigationContainer>
                     <AppNavigator />
                   </NavigationContainer>
+                  <ForceUpdateModal
+                    visible={updateRequired}
+                    onUpdate={retryUpdate}
+                  />
                   <Toast config={toastConfig} />
                 </ItineraryProvider>
               </WebSocketProvider>

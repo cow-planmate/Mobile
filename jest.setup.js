@@ -79,6 +79,20 @@ jest.mock('react-native-date-picker', () => {
   };
 });
 
+// 플레이 인앱 업데이트는 네이티브 모듈이 없으면 import 시점에 터진다.
+jest.mock('sp-react-native-in-app-updates', () => {
+  const InAppUpdates = jest.fn().mockImplementation(() => ({
+    checkNeedsUpdate: jest.fn(() => Promise.resolve({ shouldUpdate: false })),
+    startUpdate: jest.fn(() => Promise.resolve()),
+    installUpdate: jest.fn(),
+  }));
+  return {
+    __esModule: true,
+    default: InAppUpdates,
+    IAUUpdateKind: { FLEXIBLE: 0, IMMEDIATE: 1 },
+  };
+});
+
 jest.mock('@react-native-community/netinfo', () =>
   require('@react-native-community/netinfo/jest/netinfo-mock'),
 );
