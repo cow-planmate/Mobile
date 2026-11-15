@@ -39,6 +39,7 @@ const TimelineComponent = React.memo(
         placeId: string,
         newStartMinutes: number,
         newEndMinutes: number,
+        overflowMinutes?: number,
       ) => void;
       onPressPlace?: (place: Place) => void;
       /** 블록의 ⓘ를 눌렀을 때. 시간표를 그리는 쪽은 열쇠만 넘긴다. */

@@ -24,9 +24,13 @@ import { invalidatePlanCaches } from '../../../hooks/planCache';
 import {
   formatDateLocal,
   normalizeTime,
+  timeToMinutes,
+  minutesToTime,
   DEFAULT_DAY_START,
   DEFAULT_DAY_END,
 } from '../../../utils/timeUtils';
+import { toLocalTime } from '../utils/planSyncPayload';
+import type { TimeTableDtoPayload } from '../utils/planSyncPayload';
 import { getDisplayErrorMessage } from '../../../utils/errorHandler';
 import {
   buildScheduleEditSync,
@@ -191,6 +195,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
 
   const {
     updatePlaceDetails,
+    addPlaceToDay,
     setDays,
     reorderPlacesInDay,
     setLastAddedPlaceId,
@@ -517,8 +522,117 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
     setPlaceEditModalVisible(true);
   }, []);
 
+  // 자정을 넘기는 장소를 이어 넣는다: 오늘은 24:00까지(호출하는 쪽이 맞춘다),
+  // 나머지는 다음 일차 00:00부터 같은 장소로 새로 넣는다.
+  const continueOnNextDay = useCallback(
+    (place: any, tailEndTime: string, memo?: string) => {
+      const today = days[selectedDayIndex];
+      const tomorrow = days[selectedDayIndex + 1];
+      if (!today || !tomorrow) return;
+
+      // 하루 범위를 먼저 넓혀야 시간표 밖으로 밀려나 사라지지 않는다.
+      const rangeUpdates: Partial<TimeTableDtoPayload>[] = [];
+      const widen = (
+        index: number,
+        day: typeof today,
+        range: { startTime?: string; endTime?: string },
+      ) => {
+        setDays(prev =>
+          prev.map((d, i) => (i === index ? { ...d, ...range } : d)),
+        );
+        if (planId && day.timetableId != null) {
+          rangeUpdates.push({
+            timeTableId: day.timetableId,
+            planId,
+            ...(range.startTime
+              ? { timeTableStartTime: toLocalTime(range.startTime) }
+              : {}),
+            ...(range.endTime
+              ? { timeTableEndTime: toLocalTime(range.endTime) }
+              : {}),
+          });
+        }
+      };
+      if (timeToMinutes(today.endTime || DEFAULT_DAY_END) < 24 * 60) {
+        widen(selectedDayIndex, today, { endTime: '24:00:00' });
+      }
+      if (timeToMinutes(tomorrow.startTime || DEFAULT_DAY_START) > 0) {
+        widen(selectedDayIndex + 1, tomorrow, { startTime: '00:00:00' });
+      }
+      if (rangeUpdates.length > 0) {
+        sendMessage('update', 'timetable', rangeUpdates);
+      }
+
+      addPlaceToDay(selectedDayIndex + 1, {
+        ...place,
+        id: place?.placeRefId,
+        memo: memo ?? place?.memo,
+        startTime: '00:00',
+        endTime: normalizeTime(tailEndTime),
+      });
+    },
+    [days, selectedDayIndex, setDays, sendMessage, planId, addPlaceToDay],
+  );
+
+  // 카드를 하루 끝(24:00)보다 더 끌어 늘리면, 넘긴 만큼을 다음 일차에 이어 넣을지 묻는다.
+  // 취소하면 24:00까지로 줄어든 채 그대로 둔다(예전 동작).
+  const handleUpdatePlaceTimesWithSplit = useCallback(
+    (
+      placeId: string,
+      newStartMinutes: number,
+      newEndMinutes: number,
+      overflowMinutes?: number,
+    ) => {
+      handleUpdatePlaceTimes(placeId, newStartMinutes, newEndMinutes);
+      if (!overflowMinutes || overflowMinutes < 15) return;
+      const place = days[selectedDayIndex]?.places.find(p => p.id === placeId);
+      if (!place || selectedDayIndex >= days.length - 1) return;
+
+      const tail = minutesToTime(overflowMinutes);
+      showAlert({
+        title: '다음 일차로 이어서 넣을까요?',
+        message: `오늘은 24:00까지, 다음 일차에는 00:00–${tail}로 이어서 넣어요. 두 일정은 따로 수정하고 삭제할 수 있어요.`,
+        type: 'confirm',
+        buttons: [
+          { text: '그대로 두기', style: 'cancel' },
+          {
+            text: '이어서 넣기',
+            onPress: () => continueOnNextDay(place, tail),
+          },
+        ],
+      });
+    },
+    [
+      handleUpdatePlaceTimes,
+      days,
+      selectedDayIndex,
+      showAlert,
+      continueOnNextDay,
+    ],
+  );
+
   const handlePlaceSave = useCallback(
     (updatedPlace: any) => {
+      // 자정을 넘기는 장소: 오늘은 24:00까지, 나머지는 다음 일차 00:00부터 이어 넣는다.
+      if (updatedPlace.overnightEndTime) {
+        if (!days[selectedDayIndex + 1]) return;
+        continueOnNextDay(
+          editingPlace,
+          updatedPlace.overnightEndTime,
+          updatedPlace.memo,
+        );
+        updatePlaceDetails(selectedDayIndex, updatedPlace.id, {
+          startTime: normalizeTime(updatedPlace.startTime),
+          endTime: '24:00',
+          memo: updatedPlace.memo,
+          name: updatedPlace.name,
+          address: updatedPlace.address,
+        });
+        setPlaceEditModalVisible(false);
+        setEditingPlace(null);
+        return;
+      }
+
       const values = {
         startTime: normalizeTime(updatedPlace.startTime),
         endTime: normalizeTime(updatedPlace.endTime),
@@ -542,7 +656,13 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
       setPlaceEditModalVisible(false);
       setEditingPlace(null);
     },
-    [updatePlaceDetails, selectedDayIndex, editingPlace],
+    [
+      updatePlaceDetails,
+      continueOnNextDay,
+      days,
+      selectedDayIndex,
+      editingPlace,
+    ],
   );
 
   const handleSaveTripName = useCallback(async () => {
@@ -793,7 +913,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
         onSaveTripName={handleSaveTripName}
         timelineScrollRef={timelineScrollRef}
         formatDate={formatDate}
-        handleUpdatePlaceTimes={handleUpdatePlaceTimes}
+        handleUpdatePlaceTimes={handleUpdatePlaceTimesWithSplit}
         handleDeletePlace={handleDeletePlace}
         handleAddPlace={handleAddPlaceOverride}
         onShowPlaceDetail={setPlaceDetail}
@@ -882,6 +1002,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           place={editingPlace}
           dayStartTime={selectedDay?.startTime || DEFAULT_DAY_START}
           dayEndTime={selectedDay?.endTime || DEFAULT_DAY_END}
+          hasNextDay={selectedDayIndex < days.length - 1}
           onClose={() => {
             setPlaceEditModalVisible(false);
             setEditingPlace(null);

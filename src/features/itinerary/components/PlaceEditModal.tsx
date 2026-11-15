@@ -24,6 +24,8 @@ interface PlaceEditModalProps {
   place: any;
   dayStartTime?: string;
   dayEndTime?: string;
+  /** 다음 일차가 있으면 자정을 넘기는 시간(종료가 시작보다 이름)을 이어 넣을 수 있다. */
+  hasNextDay?: boolean;
   onClose: () => void;
   onSave: (updatedPlace: any) => void;
   onDelete: (placeId: string) => void;
@@ -36,6 +38,7 @@ export default function PlaceEditModal({
   place,
   dayStartTime,
   dayEndTime,
+  hasNextDay = false,
   onClose,
   onSave,
   onDelete,
@@ -85,6 +88,43 @@ export default function PlaceEditModal({
     let endMinutes = endTime.getHours() * 60 + endTime.getMinutes();
     const requestedStart = startMinutes;
     const requestedEnd = endMinutes;
+
+    // 종료가 시작보다 이르면 자정을 넘기는 장소다. 오늘은 24:00까지, 나머지는
+    // 다음 일차 00:00부터 이어서 넣는다. 하루 범위는 저장하는 쪽에서 넓힌다.
+    if (endMinutes < startMinutes) {
+      if (!hasNextDay) {
+        showAlert({
+          title: '마지막 일차예요',
+          message:
+            '자정을 넘기려면 다음 일차가 필요해요. 일차를 추가하거나 종료 시간을 시작보다 늦게 잡아 주세요.',
+        });
+        return;
+      }
+      const tail = formatMinutes(endMinutes).slice(0, 5);
+      const head = formatMinutes(startMinutes).slice(0, 5);
+      showAlert({
+        title: '다음 일차로 이어서 넣을까요?',
+        message: `오늘은 ${head}–24:00, 다음 일차에는 00:00–${tail}로 나눠 넣어요. 두 일정은 따로 수정하고 삭제할 수 있어요.`,
+        type: 'confirm',
+        buttons: [
+          { text: '다시 설정', style: 'cancel' },
+          {
+            text: '이어서 넣기',
+            onPress: () => {
+              onSave({
+                ...place,
+                memo,
+                startTime: formatMinutes(startMinutes),
+                endTime: '24:00:00',
+                overnightEndTime: formatMinutes(endMinutes),
+              });
+              onClose();
+            },
+          },
+        ],
+      });
+      return;
+    }
 
     // 시간대를 하루 범위 밖으로 잡으면 타임라인 그리드 밖으로 밀려나 화면에서
     // 사라지므로, 저장 전에 그 날의 시작·종료 범위 안으로 당겨온다. 두 조건을

@@ -61,6 +61,8 @@ const DraggableTimelineItem = React.memo(
       placeId: string,
       newStartMinutes: number,
       newEndMinutes: number,
+      /** 하루 끝(24:00)보다 더 끌어 늘린 분. 15분 단위이며 넘기지 않았으면 없다. */
+      overflowMinutes?: number,
     ) => void;
     onPress?: (place: Place) => void;
     /** 블록의 ⓘ. 열쇠를 모르는 장소에는 주지 않아 단추가 서지 않는다. */
@@ -126,6 +128,8 @@ const DraggableTimelineItem = React.memo(
 
     const startY = useSharedValue(0);
     const startHeight = useSharedValue(0);
+    // 하루 끝에 막혀도 손가락이 어디까지 갔는지 남겨, 넘긴 만큼을 알 수 있게 한다.
+    const requestedBottom = useSharedValue(0);
     const isResizingTop = useSharedValue(0);
     const isResizingBottom = useSharedValue(0);
     const isDragging = useSharedValue(0);
@@ -413,6 +417,7 @@ const DraggableTimelineItem = React.memo(
       .onBegin(() => {
         if (isDeletingRef.current) return;
         startHeight.value = height.value;
+        requestedBottom.value = top.value + height.value;
         previewTop.value = top.value;
         previewHeight.value = height.value;
       })
@@ -428,6 +433,7 @@ const DraggableTimelineItem = React.memo(
       .onUpdate(event => {
         const newHeight = startHeight.value + event.translationY;
         const newBottom = top.value + newHeight;
+        requestedBottom.value = newBottom;
 
         if (newHeight >= MIN_ITEM_HEIGHT && newBottom <= MAX_BOTTOM_PX) {
           height.value = newHeight;
@@ -449,7 +455,16 @@ const DraggableTimelineItem = React.memo(
         const snappedHeight =
           Math.round(height.value / GRID_SNAP_HEIGHT) * GRID_SNAP_HEIGHT;
         let finalHeight = Math.max(snappedHeight, MIN_ITEM_HEIGHT);
-        if (top.value + finalHeight > MAX_BOTTOM_PX) {
+        // 하루 끝이 24:00일 때만 넘긴 만큼을 다음 일차로 이어 넣을 수 있다.
+        const overflowMinutes =
+          maxEndMinutes >= 24 * 60 && requestedBottom.value > MAX_BOTTOM_PX
+            ? Math.round(
+                (requestedBottom.value - MAX_BOTTOM_PX) / MINUTE_HEIGHT / 15,
+              ) * 15
+            : 0;
+        if (overflowMinutes >= 15) {
+          finalHeight = Math.max(MAX_BOTTOM_PX - top.value, MIN_ITEM_HEIGHT);
+        } else if (top.value + finalHeight > MAX_BOTTOM_PX) {
           finalHeight = Math.max(
             Math.floor((MAX_BOTTOM_PX - top.value) / GRID_SNAP_HEIGHT) *
               GRID_SNAP_HEIGHT,
@@ -474,7 +489,12 @@ const DraggableTimelineItem = React.memo(
           (top.value - GRID_TOP_OFFSET) / MINUTE_HEIGHT + offsetMinutes;
         const newEndMinutes = newStartMinutes + finalHeight / MINUTE_HEIGHT;
 
-        runOnJS(onDragEnd)(place.id, newStartMinutes, newEndMinutes);
+        runOnJS(onDragEnd)(
+          place.id,
+          newStartMinutes,
+          newEndMinutes,
+          overflowMinutes >= 15 ? overflowMinutes : undefined,
+        );
         if (onItemDragEnd) runOnJS(onItemDragEnd)();
       })
       .onFinalize((_event, success) => {
