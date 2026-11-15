@@ -298,10 +298,6 @@ export default function CalendarModal({
 
                 const dayLabel = `${item.date.getFullYear()}년 ${item.date.getMonth() + 1}월 ${item.date.getDate()}일 ${WEEK_DAYS[item.date.getDay()]}요일`;
 
-                if (!item.isCurrentMonth) {
-                  return <View key={index} style={styles.dayCell} />;
-                }
-
                 return (
                   <TouchableOpacity
                     key={index}
@@ -335,6 +331,8 @@ export default function CalendarModal({
                           styles.dayText,
                           isToday(item.date) && !isSelected && styles.dayTextToday,
                           isPast && styles.dayTextPast,
+                          // 이전·다음 달 날짜는 실제 달력처럼 이어 보이되 흐리게 둔다.
+                          !item.isCurrentMonth && styles.dayTextOutside,
                           isSelected && styles.dayTextSelected,
                         ]}
                       >

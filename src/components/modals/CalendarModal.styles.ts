@@ -146,8 +146,10 @@ export const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
   },
 
+  // 지난 날짜(placeholder 색)보다도 한 단계 옅게 해 이번 달과 구분한다.
   dayTextOutside: {
-    color: COLORS.subtextMuted,
+    color: COLORS.placeholder,
+    opacity: 0.55,
   },
 
   dayTextPast: {
