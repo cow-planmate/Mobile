@@ -1,6 +1,8 @@
 import {
   resolveConflictsAndSort,
   minutesToTime,
+  toWireTime,
+  normalizeTime,
   timeToMinutes,
   formatDateLocal,
   dateToTime,
@@ -77,7 +79,7 @@ describe('resolveConflictsAndSort', () => {
     });
   });
 
-  it('하루 종료 상한이 24:00으로 들어와도 23:45로 잘라낸다', () => {
+  it('하루 종료 상한이 24:00이면 24:00까지 밀 수 있다', () => {
     const places = [
       { id: '1', startTime: '22:00', endTime: '23:00' },
       { id: '2', startTime: '22:30', endTime: '23:59' },
@@ -86,7 +88,7 @@ describe('resolveConflictsAndSort', () => {
     const result = resolveConflictsAndSort(places, '1', 24 * 60);
 
     const pushed = result.find(p => p.id === '2')!;
-    expect(timeToMinutes(pushed.endTime)).toBeLessThanOrEqual(23 * 60 + 45);
+    expect(timeToMinutes(pushed.endTime)).toBeLessThanOrEqual(24 * 60);
   });
 });
 
@@ -97,9 +99,18 @@ describe('minutesToTime', () => {
     expect(minutesToTime(-1)).toBe('00:00');
   });
 
-  it('24:00 이상을 23:45로 클램프한다', () => {
-    expect(minutesToTime(1440)).toBe('23:45');
-    expect(minutesToTime(2000)).toBe('23:45');
+  it('24:00까지 표시하고 그 이상은 24:00으로 클램프한다', () => {
+    expect(minutesToTime(1425)).toBe('23:45');
+    expect(minutesToTime(1440)).toBe('24:00');
+    expect(minutesToTime(2000)).toBe('24:00');
+  });
+
+  it('서버로 보낼 때 24:00은 23:59:00으로, 받을 때 23:59는 24:00으로 바꾼다', () => {
+    expect(toWireTime('24:00')).toBe('23:59:00');
+    expect(toWireTime('24:00:00')).toBe('23:59:00');
+    expect(toWireTime('09:00')).toBe('09:00:00');
+    expect(normalizeTime('23:59:00')).toBe('24:00');
+    expect(normalizeTime('09:00:00')).toBe('09:00');
   });
 
   it('정상 범위는 15분 단위로 스냅한다', () => {

@@ -67,7 +67,7 @@ const coveringDayRange = (
 
   // 서버가 주던 모양(HH:MM:SS)을 그대로 돌려준다. 여기서 형식이 바뀌면
   // 저장 payload와 화면 표시가 제각각이 된다.
-  // minutesToTime이 하루 끝(23:45)까지로 잘라 준다.
+  // minutesToTime이 하루 끝(24:00)까지로 잘라 준다.
   return {
     startTime: `${minutesToTime(Math.max(0, start))}:00`,
     endTime: `${minutesToTime(end)}:00`,

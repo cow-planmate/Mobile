@@ -1,5 +1,9 @@
 
-import { DEFAULT_DAY_START, DEFAULT_DAY_END } from '../../../utils/timeUtils';
+import {
+  DEFAULT_DAY_START,
+  DEFAULT_DAY_END,
+  toWireTime,
+} from '../../../utils/timeUtils';
 
 export const TEMP_PLACE_ID_PREFIX = 'place_';
 
@@ -17,7 +21,7 @@ export const resolveBlockId = (id?: string | null): number | null => {
 
 export const toLocalTime = (time?: string | null): string | undefined => {
   if (!time) return undefined;
-  return time.length === 5 ? `${time}:00` : time;
+  return toWireTime(time);
 };
 
 export interface TimeTableDtoInput {

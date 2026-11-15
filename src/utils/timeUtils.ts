@@ -16,7 +16,8 @@ export const timeToMinutes = (time: string) => {
 };
 
 export const timeToDate = (time: string) => {
-  const totalMinutes = timeToMinutes(time);
+  // 24:00은 setHours에서 다음 날 00:00이 되어 시간 선택기에 엉뚱한 값이 뜬다.
+  const totalMinutes = Math.min(timeToMinutes(time), 23 * 60 + 59);
   const date = new Date();
   date.setHours(Math.floor(totalMinutes / 60), totalMinutes % 60, 0, 0);
   return date;
@@ -76,9 +77,25 @@ export const formatPeriod = (
   return `${startText} ~ ${endText}`;
 };
 
-/** `09:00:00` / `09:00` 어느 쪽이 와도 `09:00` */
-export const normalizeTime = (time?: string | null): string =>
-  (time || '').substring(0, 5);
+/**
+ * 앱이 하루 끝을 부르는 이름. 서버는 LocalTime이라 24:00을 받지 못하므로
+ * 보낼 때는 {@link DAY_END_WIRE}로 바꾸고, 받을 때는 다시 이 값으로 되돌린다.
+ */
+export const DAY_END_DISPLAY = '24:00';
+export const DAY_END_WIRE = '23:59:00';
+
+/** `09:00:00` / `09:00` 어느 쪽이 와도 `09:00`. 하루 끝(23:59)은 `24:00` */
+export const normalizeTime = (time?: string | null): string => {
+  const hhmm = (time || '').substring(0, 5);
+  return hhmm === '23:59' ? DAY_END_DISPLAY : hhmm;
+};
+
+/** 서버로 보내는 `HH:MM:SS`. 서버가 받지 못하는 24:00만 23:59:00으로 바꾼다. */
+export const toWireTime = (time: string): string => {
+  const hhmm = time.substring(0, 5);
+  if (hhmm === DAY_END_DISPLAY) return DAY_END_WIRE;
+  return time.length === 5 ? `${time}:00` : time;
+};
 
 // toLocaleTimeString은 엔진의 ICU 구현에 따라 'HH:mm'이 아닌 형식을 내줄 수
 // 있고, 그 결과가 timeToMinutes로 들어가면 NaN이 되어 시간이 통째로 깨진다.
@@ -89,7 +106,8 @@ export const dateToTime = (date: Date) => {
   return `${hours}:${minutes}`;
 };
 
-export const MAX_MINUTES_IN_DAY = 23 * 60 + 45;
+// 하루 끝은 24:00(1440분)까지 표시한다. 15분 단위 눈금이 23:45에서 끊기면 어색하다.
+export const MAX_MINUTES_IN_DAY = 24 * 60;
 
 export const minutesToTime = (totalMinutes: number) => {
   const snappedMinutes = Math.min(

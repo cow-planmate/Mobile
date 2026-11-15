@@ -120,6 +120,7 @@ import {
   resolveConflictsAndSort,
   formatDateLocal,
   normalizeTime,
+  toWireTime,
   DEFAULT_DAY_END,
 } from '../../../utils/timeUtils';
 import {
@@ -203,10 +204,8 @@ const blockCategoryToCategoryId = (blockCategory?: string, rawCategoryId?: any):
 const mapToTimetablePlaceBlockDto = (place: Place, timetableId?: number) => {
   const categoryId = normalizeCategoryId(place.categoryId, place.type);
 
-  const startTime =
-    place.startTime.length === 5 ? place.startTime + ':00' : place.startTime;
-  const endTime =
-    place.endTime.length === 5 ? place.endTime + ':00' : place.endTime;
+  const startTime = toWireTime(place.startTime);
+  const endTime = toWireTime(place.endTime);
 
   const blockId = resolveBlockId(place.id);
 
