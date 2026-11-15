@@ -525,7 +525,13 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
   // 자정을 넘기는 장소를 이어 넣는다: 오늘은 24:00까지(호출하는 쪽이 맞춘다),
   // 나머지는 다음 일차 00:00부터 같은 장소로 새로 넣는다.
   const continueOnNextDay = useCallback(
-    (place: any, tailEndTime: string, memo?: string) => {
+    (
+      place: any,
+      tailEndTime: string,
+      memo?: string,
+      /** 오늘 쪽이 시작하는 시각. 하루 시작보다 이르면 범위를 그만큼 넓힌다. */
+      headStartTime?: string,
+    ) => {
       const today = days[selectedDayIndex];
       const tomorrow = days[selectedDayIndex + 1];
       if (!today || !tomorrow) return;
@@ -553,8 +559,20 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           });
         }
       };
+      // 오늘은 끝을 24:00까지, 시작은 이어 넣는 장소가 들어갈 만큼(정시로 내림) 넓힌다.
+      // 시작을 넓히지 않으면 하루 시작보다 이른 장소가 시간표 밖에 놓여 보이지 않는다.
+      const todayRange: { startTime?: string; endTime?: string } = {};
       if (timeToMinutes(today.endTime || DEFAULT_DAY_END) < 24 * 60) {
-        widen(selectedDayIndex, today, { endTime: '24:00:00' });
+        todayRange.endTime = '24:00:00';
+      }
+      if (headStartTime) {
+        const headStart = Math.floor(timeToMinutes(headStartTime) / 60) * 60;
+        if (headStart < timeToMinutes(today.startTime || DEFAULT_DAY_START)) {
+          todayRange.startTime = `${minutesToTime(headStart)}:00`;
+        }
+      }
+      if (todayRange.startTime || todayRange.endTime) {
+        widen(selectedDayIndex, today, todayRange);
       }
       if (timeToMinutes(tomorrow.startTime || DEFAULT_DAY_START) > 0) {
         widen(selectedDayIndex + 1, tomorrow, { startTime: '00:00:00' });
@@ -620,6 +638,7 @@ export default function ItineraryEditorScreen({ route, navigation }: Props) {
           editingPlace,
           updatedPlace.overnightEndTime,
           updatedPlace.memo,
+          updatedPlace.startTime,
         );
         updatePlaceDetails(selectedDayIndex, updatedPlace.id, {
           startTime: normalizeTime(updatedPlace.startTime),

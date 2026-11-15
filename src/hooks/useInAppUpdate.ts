@@ -27,19 +27,23 @@ export function useInAppUpdate() {
   const [updateRequired, setUpdateRequired] = useState(false);
   const updatesRef = useRef<InAppUpdates | null>(null);
 
-  const retry = useCallback(async () => {
+  // 앱을 켜며 저절로 시작할 때는 실패해도 스토어로 넘기지 않는다. 안내 화면을 먼저
+  // 보여 주고, 사용자가 단추를 눌렀을 때만 스토어로 보낸다.
+  const startUpdate = useCallback(async (fromUser: boolean) => {
     const updates = updatesRef.current;
     if (!updates) {
-      await openPlayStore();
+      if (fromUser) await openPlayStore();
       return;
     }
     try {
       await updates.startUpdate({ updateType: IAUUpdateKind.IMMEDIATE });
     } catch {
       // 즉시 업데이트를 쓸 수 없는 기기나 상태다. 스토어 페이지로 보낸다.
-      await openPlayStore();
+      if (fromUser) await openPlayStore();
     }
   }, []);
+
+  const retry = useCallback(() => startUpdate(true), [startUpdate]);
 
   useEffect(() => {
     if (Platform.OS !== 'android') return;
@@ -54,7 +58,7 @@ export function useInAppUpdate() {
         .then(result => {
           if (cancelled || !result.shouldUpdate) return;
           setUpdateRequired(true);
-          void retry();
+          void startUpdate(false);
         })
         .catch(() => {
           // 확인하지 못했으면 막지 않는다.
@@ -66,7 +70,7 @@ export function useInAppUpdate() {
     return () => {
       cancelled = true;
     };
-  }, [retry]);
+  }, [startUpdate]);
 
   return { updateRequired, retry };
 }

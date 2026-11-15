@@ -13,7 +13,11 @@ import PopupModal from '../../../components/common/PopupModal';
 import { normalize } from '../../../utils/normalize';
 import { tokens } from '../../../theme/tokens';
 import { useAlert } from '../../../contexts/AlertContext';
-import { timeToMinutes, normalizeTime } from '../../../utils/timeUtils';
+import {
+  timeToMinutes,
+  timeToDate,
+  normalizeTime,
+} from '../../../utils/timeUtils';
 import { findInvalidDateOrder } from '../utils/scheduleEditSync';
 
 type DayConfig = {
@@ -173,11 +177,9 @@ export default function ScheduleEditModal({
 
     const timeStr =
       type === 'start' ? days[index].startTime : days[index].endTime;
-    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
-    const date = new Date();
-    date.setHours(hours || 0);
-    date.setMinutes(minutes || 0);
-    date.setSeconds(seconds || 0);
+    // 하루 끝 24:00은 setHours에서 다음 날 00:00이 되어 선택기가 00:00으로 열리고,
+    // 그대로 확인하면 시작보다 이른 종료가 된다. 선택기가 고를 수 있는 끝(23:59)으로 연다.
+    const date = timeToDate(timeStr);
 
     setPickerDate(date);
     setTimePickerOpen(true);

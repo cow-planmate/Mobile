@@ -81,12 +81,18 @@ describe('useInAppUpdate', () => {
     act(() => tree.unmount());
   });
 
-  it('즉시 업데이트를 시작하지 못하면 스토어 페이지로 보낸다', async () => {
+  it('즉시 업데이트를 시작하지 못하면 안내만 띄우고, 단추를 눌렀을 때 스토어로 보낸다', async () => {
     mockInstance({
       checkNeedsUpdate: jest.fn(() => Promise.resolve({ shouldUpdate: true })),
       startUpdate: jest.fn(() => Promise.reject(new Error('not allowed'))),
     });
     const tree = await mount();
+    expect(latest.updateRequired).toBe(true);
+    expect(Linking.openURL).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await latest.retry();
+    });
     expect(Linking.openURL).toHaveBeenCalledWith(
       'market://details?id=com.planmate.planmate',
     );
