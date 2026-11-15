@@ -1,5 +1,12 @@
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import {
+  Animated,
+  Easing,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import type { ToastConfig } from 'react-native-toast-message';
 import CheckCircle2 from 'lucide-react-native/dist/esm/icons/circle-check';
 import Info from 'lucide-react-native/dist/esm/icons/info';
@@ -9,43 +16,42 @@ import { tokens } from '../../theme/tokens';
 
 const toastStyles = StyleSheet.create({
   container: {
-    paddingHorizontal: sf(16),
-    paddingVertical: sf(12),
-    borderRadius: 14,
-    marginHorizontal: sf(24),
-    marginTop: sf(8),
+    paddingHorizontal: sf(tokens.spacing.m),
+    paddingVertical: sf(14),
+    borderRadius: tokens.radius.xl,
+    marginHorizontal: sf(tokens.spacing.l),
+    marginTop: sf(tokens.spacing.s),
     backgroundColor: tokens.colors.white,
     alignItems: 'center',
     justifyContent: 'flex-start',
     flexDirection: 'row',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+    // 떠 있는 요소라 테두리 대신 그림자로 바탕과 떼어 놓는다.
+    ...tokens.shadows.md,
   },
   textGroup: {
-    marginLeft: sf(8),
+    marginLeft: sf(tokens.spacing.s + tokens.spacing.xs),
     flexShrink: 1,
   },
+  // 제목은 굵기로, 설명은 옅은 색으로 위계를 만든다.
   text: {
     color: tokens.colors.text,
-    fontSize: sp(13),
-    fontFamily: 'Pretendard-Medium',
+    fontSize: sp(tokens.fontSize.s),
+    fontFamily: tokens.fontFamily.semibold,
+    letterSpacing: -0.2,
     textAlign: 'left',
     flexShrink: 1,
-    lineHeight: sp(18),
+    lineHeight: sp(20),
+    fontVariant: ['tabular-nums'],
   },
   subText: {
     marginTop: sf(2),
-    color: tokens.colors.textSecondary,
-    fontSize: sp(12),
-    fontFamily: 'Pretendard-Regular',
+    color: tokens.colors.textMuted,
+    fontSize: sp(tokens.fontSize.xs),
+    fontFamily: tokens.fontFamily.regular,
     textAlign: 'left',
     flexShrink: 1,
-    lineHeight: sp(16),
+    lineHeight: sp(17),
+    fontVariant: ['tabular-nums'],
   },
 });
 
@@ -69,36 +75,65 @@ const ToastShell = ({
 }: {
   onPress?: () => void;
   children: React.ReactNode;
-}) =>
-  onPress ? (
-    <TouchableOpacity
-      style={toastStyles.container}
-      onPress={onPress}
-      activeOpacity={0.85}
-      accessibilityRole="button"
-    >
-      {children}
-    </TouchableOpacity>
-  ) : (
-    <View style={toastStyles.container}>{children}</View>
+}) => {
+  // 라이브러리의 슬라이드(스프링, 튕김)는 props로 못 바꾸므로, 본체를 부드럽게 나타나게 해
+  // 튕김이 도드라지지 않게 한다. 네이티브 드라이버라 JS 스레드가 바빠도 끊기지 않는다.
+  const enter = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(enter, {
+      toValue: 1,
+      duration: 360,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [enter]);
+
+  const enterStyle = {
+    opacity: enter,
+    transform: [
+      { translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) },
+      { scale: enter.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1] }) },
+    ],
+  };
+
+  return (
+    <Animated.View style={enterStyle}>
+      {onPress ? (
+        <TouchableOpacity
+          style={toastStyles.container}
+          onPress={onPress}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+        >
+          {children}
+        </TouchableOpacity>
+      ) : (
+        <View style={toastStyles.container}>{children}</View>
+      )}
+    </Animated.View>
   );
+};
 
 export const toastConfig: ToastConfig = {
   error: ({ text1, text2, onPress }) => (
     <ToastShell onPress={onPress}>
-      <XCircle size={18} color={tokens.tones.danger.fg} strokeWidth={2.5} />
+      <XCircle size={20} color={tokens.tones.danger.fg} strokeWidth={2.5} />
       <ToastBody text1={text1} text2={text2} />
     </ToastShell>
   ),
   success: ({ text1, text2, onPress }) => (
     <ToastShell onPress={onPress}>
-      <CheckCircle2 size={18} color="#067647" strokeWidth={2.5} />
+      <CheckCircle2
+        size={20}
+        color={tokens.tones.success.fg}
+        strokeWidth={2.5}
+      />
       <ToastBody text1={text1} text2={text2} />
     </ToastShell>
   ),
   info: ({ text1, text2, onPress }) => (
     <ToastShell onPress={onPress}>
-      <Info size={18} color={tokens.colors.primary} strokeWidth={2.5} />
+      <Info size={20} color={tokens.colors.primary} strokeWidth={2.5} />
       <ToastBody text1={text1} text2={text2} />
     </ToastShell>
   ),
