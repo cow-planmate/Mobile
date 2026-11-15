@@ -298,6 +298,21 @@ function KakaoMapView(
     window.__setPlaces = function(places) { __pending.places = places; };
     window.__setRoute = function(path) { __pending.route = path; };
     window.__setLanes = function(lanes) { __pending.lanes = lanes; };
+    // 장소 이름·주소는 사용자가 쓰거나 함께 편집하는 사람이 넣은 글이라 HTML로
+    // 그대로 붙이면 스크립트가 실행될 수 있다. 글자로만 보이게 바꾼다.
+    window.__escapeHtml = function(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    };
+    // 링크는 http(s)만 연다. javascript: 같은 주소는 버린다.
+    window.__safeUrl = function(value) {
+      var url = String(value == null ? '' : value).trim();
+      return /^https?:\\/\\//i.test(url) ? url : '';
+    };
   </script>
   <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&libraries=services&autoload=false"></script>
   <script>
@@ -372,14 +387,15 @@ function KakaoMapView(
           customOverlay.setMap(map);
           markerOverlays.push(customOverlay);
 
+          var safePlaceUrl = window.__safeUrl(place.placeUrl);
           var infoContent =
             '<div class="info-card">' +
-              '<div class="place-name">' + place.name + '</div>' +
-              '<div class="place-addr">' + (place.address || '') + '</div>' +
+              '<div class="place-name">' + window.__escapeHtml(place.name) + '</div>' +
+              '<div class="place-addr">' + window.__escapeHtml(place.address) + '</div>' +
               '<div class="place-footer">' +
-                '<span class="order-badge">' + place.order + '</span>' +
-                (place.placeUrl
-                  ? '<a class="place-link" href="' + place.placeUrl + '" target="_blank">장소 정보 →</a>'
+                '<span class="order-badge">' + window.__escapeHtml(place.order) + '</span>' +
+                (safePlaceUrl
+                  ? '<a class="place-link" href="' + window.__escapeHtml(safePlaceUrl) + '" target="_blank">장소 정보 →</a>'
                   : '') +
               '</div>' +
             '</div>';
