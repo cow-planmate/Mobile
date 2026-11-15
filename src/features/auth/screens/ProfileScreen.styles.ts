@@ -946,7 +946,7 @@ export const styles = StyleSheet.create({
   resignActionText: {
     fontSize: normalize(tokens.fontSize.s),
     fontFamily: FONTS.medium,
-    color: tokens.colors.textLabel,
+    color: tokens.tones.danger.fg,
     textDecorationLine: 'underline',
   },
 
