@@ -23,6 +23,7 @@ import { formatDateLocal, formatMonthDayDot } from '../../../utils/timeUtils';
 import WeatherHeader from '../components/weather/WeatherHeader';
 import { useScreenInsets } from '../../../hooks/useScreenInsets';
 import { styles, COLORS } from './ItineraryViewScreen.styles';
+import { useInlineToolbar, TitleMeasure } from '../components/InlineToolbar';
 
 const formatDate = formatMonthDayDot;
 
@@ -207,12 +208,58 @@ export default function ItineraryViewScreenView({
       })) ?? [],
     [selectedDay],
   );
+  // 도구 단추는 제목이 짧으면 제목 줄 오른쪽에, 길면 아래 줄에 선다.
+  const { inline: inlineTools, onRowLayout, onToolsLayout, onTitleMeasure } =
+    useInlineToolbar();
+
+  const toolbarTools = (
+    <View style={styles.toolbarRightGroup} onLayout={onToolsLayout}>
+      <ToolbarIconButton
+        onPress={() => setMapVisible(!isMapVisible)}
+        label="여행 동선"
+        variant="bare"
+      >
+        <MapOutlineIcon
+          color={COLORS.textLabel}
+          size={22}
+          strokeWidth={1.75}
+        />
+      </ToolbarIconButton>
+      <ToolbarIconButton
+        onPress={() => setChecklistVisible(true)}
+        label="체크리스트"
+        variant="bare"
+      >
+        <ListChecks size={22} color={COLORS.textLabel} strokeWidth={1.75} />
+      </ToolbarIconButton>
+      <ToolbarIconButton
+        onPress={() => setShareModalVisible(true)}
+        label="공유 및 초대"
+        variant="bare"
+      >
+        <Share2 color={COLORS.textLabel} size={22} strokeWidth={1.75} />
+      </ToolbarIconButton>
+      <ToolbarIconButton
+        label="일정 수정"
+        onPress={handleEdit}
+        variant="editText"
+      >
+        <Text style={styles.toolbarEditText}>편집</Text>
+      </ToolbarIconButton>
+    </View>
+  );
+
   return (
     <View style={[styles.container, screenInsets]}>
       {/* 편집 화면과 같은 머리줄. 위 줄은 뒤로 가기와 일정 이름, 아래 줄은
           부제와 도구다. 편집만 이 화면의 주된 동작이라 글자 단추로 둔다. */}
       <View style={styles.topToolbar}>
-        <View style={styles.toolbarTitleRow}>
+        <View style={styles.toolbarTitleRow} onLayout={onRowLayout}>
+          <TitleMeasure
+            text={tripName}
+            style={styles.toolbarTitleText}
+            onMeasure={onTitleMeasure}
+          />
           <TouchableOpacity
             style={styles.toolbarBackButton}
             onPress={goBack}
@@ -229,46 +276,14 @@ export default function ItineraryViewScreenView({
               </Text>
             </View>
           </View>
+          {inlineTools && toolbarTools}
         </View>
 
         <View style={styles.toolbarToolsRow}>
           <Text style={styles.toolbarSubtitle} numberOfLines={1}>
             {tripSubtitle}
           </Text>
-          <View style={styles.toolbarRightGroup}>
-            <ToolbarIconButton
-              onPress={() => setMapVisible(!isMapVisible)}
-              label="여행 동선"
-              variant="bare"
-            >
-              <MapOutlineIcon
-                color={COLORS.textLabel}
-                size={22}
-                strokeWidth={1.75}
-              />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              onPress={() => setChecklistVisible(true)}
-              label="체크리스트"
-              variant="bare"
-            >
-              <ListChecks size={22} color={COLORS.textLabel} strokeWidth={1.75} />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              onPress={() => setShareModalVisible(true)}
-              label="공유 및 초대"
-              variant="bare"
-            >
-              <Share2 color={COLORS.textLabel} size={22} strokeWidth={1.75} />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              label="일정 수정"
-              onPress={handleEdit}
-              variant="editText"
-            >
-              <Text style={styles.toolbarEditText}>편집</Text>
-            </ToolbarIconButton>
-          </View>
+          {!inlineTools && toolbarTools}
         </View>
       </View>
 
